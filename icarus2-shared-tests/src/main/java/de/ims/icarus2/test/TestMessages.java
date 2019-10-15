@@ -33,6 +33,7 @@ class TestMessages {
 
 	static final String expectedNPE = "expected "+NullPointerException.class.getSimpleName();
 	static final String expectedIAE = "expected "+IllegalArgumentException.class.getSimpleName();
+	static final String expectedISE = "expected "+IllegalStateException.class.getSimpleName();
 	static final String expectedIOOB = "expected "+IndexOutOfBoundsException.class.getSimpleName();
 
 	/**

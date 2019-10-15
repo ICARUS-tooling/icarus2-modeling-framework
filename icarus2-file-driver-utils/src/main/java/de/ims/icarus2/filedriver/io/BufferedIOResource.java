@@ -517,9 +517,9 @@ public class BufferedIOResource {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public interface BlockCache {
+	public interface BlockCache extends AutoCloseable {
 
-		public static final int MIN_CAPACITY = 100;
+		public static final int MIN_CAPACITY = 32;
 
 		/**
 		 * Lookup the block stored for the specified {@code id}. If the cache
@@ -535,16 +535,19 @@ public class BufferedIOResource {
 		 * {@code id}. In case another block gets removed due the cache being full
 		 * it should be returned.
 		 *
-		 * @param block The block that was pushed out of the cache or {@code null}
+		 * @param block the block to be added to the cache
 		 * @param id
 		 * @return the block that got removed from the cache in case the cache was full
-		 * prior to calling this method.
+		 * prior to calling this method or {@code null}.
 		 * @throws IllegalStateException if the supplied block is already present in the cache
 		 */
 		Block addBlock(Block block, int id);
 
 		/**
 		 * Initialize storage and allocate basic resources.
+		 * The supplied {@code capacity} is meant as an upper limit of the size
+		 * of the cache. Upon reaching this limit, the cache should start discarding
+		 * unneeded entries when running out of space.
 		 */
 		void open(int capacity);
 
@@ -552,6 +555,7 @@ public class BufferedIOResource {
 		 * Discard any stored data and invalidate cache until
 		 * {@link #open()} gets called.
 		 */
+		@Override
 		void close();
 	}
 

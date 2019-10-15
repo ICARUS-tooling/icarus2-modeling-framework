@@ -16,8 +16,13 @@
  */
 package de.ims.icarus2.filedriver.io;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.strings.ToStringBuilder;
+import it.unimi.dsi.fastutil.HashCommon;
 
 /**
  * Implements a cache with a removal strategy based on the recent usage of blocks.
@@ -36,8 +41,12 @@ public class RUBlockCache implements BlockCache {
 
 	private Entry[] table;
 	private int capacity;
+	private int mask;
 	private int count;
 	private int threshold; //FIXME init capacity, load factor etc..!!!
+
+	private static final float LOAD_FACTOR = CollectionUtils.DEFAULT_LOAD_FACTOR;
+	private static final float INITIAL_CAPACITY = BlockCache.MIN_CAPACITY;
 
 	private final boolean isLRU;
 
@@ -45,17 +54,19 @@ public class RUBlockCache implements BlockCache {
 
 	private static class Entry {
 
-		// Block id used as hash key
+		/** Block id used as hash key */
 		int key;
 
-		// Data block
+		/** Data block */
 		Block block;
 
-		// Link to the next entry in the hash table
+		/** Link to the next entry in the hash table */
 		Entry next;
 
-		// Links for the usage list
-		Entry _next, _previous;
+		/** Next entry in the usage list or "root" */
+		Entry _next;
+		/** Previous entry in the usage list or "root" */
+		Entry _previous;
 
 		Entry(int key, Block block, Entry next) {
 			this.key = key;
@@ -85,13 +96,11 @@ public class RUBlockCache implements BlockCache {
 	 */
 	@Override
 	public String toString() {
-		return new StringBuilder()
-		.append(getClass().getName())
-		.append("[ capacity=").append(capacity)
-		.append(" size=").append(count)
-		.append(" isLRU=").append(isLRU)
-		.append(']')
-		.toString();
+		return ToStringBuilder.create(this)
+			.add("capacity", capacity)
+			.add("size", count)
+			.add("isLRU", isLRU)
+			.build();
 	}
 
 	/**
@@ -105,7 +114,7 @@ public class RUBlockCache implements BlockCache {
 	@Override
 	public Block getBlock(int id) {
 		Entry tab[] = table;
-		int index = (id & 0x7FFFFFFF) % tab.length;
+		int index = (id & 0x7FFFFFFF) & mask;
 		for (Entry e = tab[index]; e != null; e = e.next) {
 			if (e.key == id) {
 
@@ -131,10 +140,10 @@ public class RUBlockCache implements BlockCache {
 	@Override
 	public Block addBlock(Block block, int id) {
 		Entry tab[] = table;
-		int index = (id & 0x7FFFFFFF) % tab.length;
+		int index = (id & 0x7FFFFFFF) & mask;
 		for (Entry e = tab[index]; e != null; e = e.next) {
 			if (e.key == id)
-				throw new IllegalStateException("Cannot add block to cache - id already in use: "+id); //$NON-NLS-1$
+				throw new IllegalStateException("Cannot add block to cache - id already in use: "+id);
 		}
 
 		Block removed = null;
@@ -144,7 +153,7 @@ public class RUBlockCache implements BlockCache {
 			rehash();
 
 			tab = table;
-			index = (id & 0x7FFFFFFF) % tab.length;
+			index = (id & 0x7FFFFFFF) & mask;
 		} else if(count==capacity) {
 			// Remove another entry from the table
 
@@ -199,7 +208,7 @@ public class RUBlockCache implements BlockCache {
 
 	public Block removeBlock(int id) {
 		Entry tab[] = table;
-		int index = (id & 0x7FFFFFFF) % tab.length;
+		int index = (id & 0x7FFFFFFF) & mask;
 		for (Entry e = tab[index], prev = null; e != null; prev = e, e = e.next) {
 			if (e.key == id) {
 				if (prev != null) {
@@ -226,18 +235,19 @@ public class RUBlockCache implements BlockCache {
 		int oldCapacity = table.length;
 		Entry oldMap[] = table;
 
-		int newCapacity = Math.min(capacity, (oldCapacity * 2) + 1);
-		Entry newMap[] = new Entry[newCapacity];
+		int n = HashCommon.arraySize(oldCapacity+1, LOAD_FACTOR);
+		Entry newMap[] = new Entry[n];
 
-		threshold = (int) (newCapacity * 0.75f);
+		threshold = (int) (n * 0.75f);
 		table = newMap;
+		mask = n-1;
 
 		for (int i = oldCapacity; i-- > 0;) {
 			for (Entry old = oldMap[i]; old != null;) {
 				Entry e = old;
 				old = old.next;
 
-				int index = (e.key & 0x7FFFFFFF) % newCapacity;
+				int index = (e.key & 0x7FFFFFFF) & mask;
 				e.next = newMap[index];
 				newMap[index] = e;
 			}
@@ -250,14 +260,14 @@ public class RUBlockCache implements BlockCache {
 	@Override
 	public void open(int capacity) {
 		if(capacity<MIN_CAPACITY)
-			throw new IllegalArgumentException("Capacity below required minimum: "+capacity); //$NON-NLS-1$
+			throw new IllegalArgumentException("Capacity below required minimum: "+capacity);
 
 		this.capacity = capacity;
 
-		int size = Math.min(MIN_CAPACITY, capacity);
+		int n = HashCommon.arraySize(MIN_CAPACITY, LOAD_FACTOR);
 
-		table = new Entry[size];
-		threshold = (int) (size*0.75f);
+		table = new Entry[n];
+		threshold = (int) (n*LOAD_FACTOR);
 	}
 
 	/**
@@ -268,5 +278,12 @@ public class RUBlockCache implements BlockCache {
 		table = null;
 		count = 0;
 		threshold = 0;
+		root._next = root._previous = root;
+	}
+
+	/** Open for package-private reading for tests */
+	@VisibleForTesting
+	boolean isLRU() {
+		return isLRU;
 	}
 }

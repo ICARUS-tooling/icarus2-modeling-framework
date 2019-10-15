@@ -73,6 +73,9 @@ public class UnlimitedBlockCache implements BlockCache {
 	}
 
 	/**
+	 * This implementation ignores the {@code capacity} limit and treats it as a starting
+	 * size for the internal storage map.
+	 *
 	 * @see de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache#open(int)
 	 */
 	@Override

@@ -663,6 +663,15 @@ public class TestUtils {
 	}
 
 	/**
+	 * Expects a {@link IllegalStateException} for the given {@code executable}.
+	 *
+	 * @param executable
+	 */
+	public static IllegalStateException assertISE(Executable executable) {
+		return assertThrows(IllegalStateException.class, executable, TestMessages.expectedIAE);
+	}
+
+	/**
 	 * Expects a {@link IndexOutOfBoundsException} for the given {@code executable}.
 	 *
 	 * @param executable
