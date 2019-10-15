@@ -8,13 +8,17 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.test.TestUtils.randomIntStream;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
@@ -147,41 +151,203 @@ class HistogramTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#freq(int)}.
 		 */
-		@Test
-		default void testFreq() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		default Stream<DynamicNode> testFreq() {
+			return Stream.of(
+					dynamicContainer("single bin", IntStream.range(0, 100)
+							.distinct()
+							.limit(RUNS)
+							.mapToObj(bin -> dynamicTest(String.valueOf(bin), () -> {
+								H hist = createForBins(100);
+								int count = random(10, 1000);
+								long value = hist.lowerBound(bin);
+								// Fill histogram
+								for (int i = 0; i < count; i++) {
+									hist.accept(value);
+								}
+								// Verify
+								for (int i = 0; i < hist.bins(); i++) {
+									int target = i==bin ? count : 0;
+									assertEquals(target, hist.freq(i));
+								}
+							}))),
+					dynamicContainer("equal distribution", IntStream.range(1, 10)
+							.distinct()
+							.limit(RUNS)
+							.mapToObj(count -> dynamicTest(String.valueOf(count), () -> {
+								H hist = createForBins(100);
+								// Fill histogram
+								for (int i = 0; i < hist.bins(); i++) {
+									long value = hist.lowerBound(i);
+									for (int j = 0; j < count; j++) {
+										hist.accept(value);
+									}
+								}
+								// Verify
+								for (int i = 0; i < hist.bins(); i++) {
+									assertEquals(count, hist.freq(i));
+								}
+							}))),
+					dynamicContainer("random distribution", IntStream.rangeClosed(1, RUNS)
+							.mapToObj(run -> dynamicTest(String.format("run %d of %d",
+									_int(run), _int(RUNS)), () -> {
+								H hist = createForBins(100);
+								int[] counts = new int[100];
+								// Fill histogram
+								for (int i = 0; i < hist.bins(); i++) {
+									int count = random(0, 100);
+									int value = strictToInt(hist.lowerBound(i));
+									for (int j = 0; j < count; j++) {
+										hist.accept(value);
+									}
+									counts[i] = count;
+								}
+								// Verify
+								for (int i = 0; i < hist.bins(); i++) {
+									assertEquals(counts[i], hist.freq(i));
+								}
+							})))
+			);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#bin(long)}.
 		 */
-		@Test
-		default void testBin() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		default Stream<DynamicNode> testBin() {
+			return Stream.of(
+						dynamicTest("fixed 0 offset", () -> {
+							int bins = random(10, 100);
+							H hist = createForBins(bins);
+							for (int i = 0; i < bins; i++) {
+								assertEquals(i, hist.bin(i));
+							}
+						}),
+						dynamicTest("random offset", () -> {
+							int bins = random(10, 100);
+							long offset = random(Long.MIN_VALUE/2, Long.MAX_VALUE/2);
+							H hist = createForRange(offset, offset+bins-1);
+							for (int i = 0; i < bins; i++) {
+								assertEquals(i, hist.bin(i+offset));
+							}
+						})
+			);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#average()}.
 		 */
-		@Test
-		default void testAverage() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		default Stream<DynamicNode> testAverage() {
+			return Stream.of(
+					dynamicTest("empty", () -> {
+						assertEquals(Double.NaN, createForBins(100).average());
+					}),
+					dynamicContainer("single bin", IntStream.range(0, 100)
+							.distinct()
+							.limit(RUNS)
+							.mapToObj(bin -> dynamicTest("bin "+bin, () -> {
+								H hist = createForBins(100);
+								int count = random(10, 1000);
+								long value = hist.lowerBound(bin);
+								// Fill histogram
+								for (int i = 0; i < count; i++) {
+									hist.accept(value);
+								}
+								// Verify
+								assertEquals(value, hist.average());
+							}))),
+					dynamicContainer("equal distribution", IntStream.range(0, 100)
+							.distinct()
+							.limit(RUNS)
+							.mapToObj(run -> dynamicTest(String.format("run %d of %d",
+									_int(run), _int(RUNS)), () -> {
+								H hist = createForBins(100);
+								int count = random(10, 1000);
+								long sum = 0L;
+								// Fill histogram
+								for (int i = 0; i < hist.bins(); i++) {
+									int value = strictToInt(hist.lowerBound(i));
+									for (int j = 0; j < count; j++) {
+										hist.accept(value);
+									}
+									sum += value*count;
+								}
+								// Verify
+								assertEquals((double)sum/hist.entries(), hist.average());
+							}))),
+					dynamicContainer("random distribution", IntStream.range(0, 100)
+							.distinct()
+							.limit(RUNS)
+							.mapToObj(run -> dynamicTest(String.format("run %d of %d",
+									_int(run), _int(RUNS)), () -> {
+								H hist = createForBins(100);
+								long sum = 0L;
+								// Fill histogram
+								for (int bin = 0; bin < hist.bins(); bin++) {
+									int count = random(10, 1000);
+									int value = strictToInt(hist.lowerBound(bin));
+									for (int j = 0; j < count; j++) {
+										hist.accept(value);
+									}
+									sum += value*count;
+								}
+								// Verify
+								assertEquals((double)sum/hist.entries(), hist.average());
+							})))
+			);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#min()}.
 		 */
-		@Test
-		default void testMin() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		default Stream<DynamicNode> testMin() {
+			return Stream.of(
+					dynamicTest("no offset", () -> {
+						int bins = random(10, 100);
+						H hist = createForBins(bins);
+						assertEquals(0, hist.min());
+					}),
+					dynamicTest("negative offset", () -> {
+						int bins = random(10, 100);
+						long offset = random(Long.MIN_VALUE, 0);
+						H hist = createForRange(offset, offset+bins-1);
+						assertEquals(offset, hist.min());
+					}),
+					dynamicTest("positive offset", () -> {
+						int bins = random(10, 100);
+						long offset = random(1, Long.MAX_VALUE/2);
+						H hist = createForRange(offset, offset+bins-1);
+						assertEquals(offset, hist.min());
+					})
+			);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#max()}.
 		 */
-		@Test
-		default void testMax() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		default Stream<DynamicNode> testMax() {
+			return Stream.of(
+					dynamicTest("no offset", () -> {
+						int bins = random(10, 100);
+						H hist = createForBins(bins);
+						assertEquals(bins-1, hist.max());
+					}),
+					dynamicTest("negative offset", () -> {
+						int bins = random(10, 100);
+						long offset = random(Long.MIN_VALUE, -100);
+						H hist = createForRange(offset, offset+bins-1);
+						assertEquals(offset+bins-1, hist.max());
+					}),
+					dynamicTest("positive offset", () -> {
+						int bins = random(10, 100);
+						long offset = random(1, Long.MAX_VALUE/2);
+						H hist = createForRange(offset, offset+bins-1);
+						assertEquals(offset+bins-1, hist.max());
+					})
+			);
 		}
 
 	}

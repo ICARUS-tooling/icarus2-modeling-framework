@@ -159,8 +159,8 @@ public interface Histogram extends LongConsumer {
 			ensureIntegerValueRange(adjusted);
 			if(adjusted<0)
 				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
-						"Given value is below the minimum offset: "+v);
-			return (int) v;
+						"Given value is below the minimum offset or overflowed the bin limit: "+v);
+			return (int) adjusted;
 		}
 
 		/**
