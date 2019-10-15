@@ -21,6 +21,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.Function;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
+
 /**
  *
  * @param <B> the class of the derived builder, used to cast the results of appendable method calls
@@ -69,7 +72,12 @@ public abstract class AbstractBuilder<B extends AbstractBuilder<B, O>, O extends
 
 		Function<B, O> constructor = getConstructor();
 
-		//FIXME change this so that the final result is validated (not null, etc...) before returning it!
-		return constructor==null ? create() : constructor.apply((B) this);
+		O instance = constructor==null ? create() : constructor.apply((B) this);
+
+		if(instance==null)
+			throw new IcarusRuntimeException(GlobalErrorCode.DELEGATION_FAILED,
+					"Failed to create instance");
+
+		return instance;
 	}
 }
