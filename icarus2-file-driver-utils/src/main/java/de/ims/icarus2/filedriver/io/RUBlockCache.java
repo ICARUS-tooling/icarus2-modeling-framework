@@ -157,8 +157,15 @@ public class RUBlockCache implements BlockCache {
 		int id = block.getId();
 		int index = (id & 0x7FFFFFFF) & mask;
 		for (Entry e = tab[index]; e != null; e = e.next) {
-			if (e.key == id)
+			if (e.key == id) {
+				// Do nothing if the block is already present
+				if(e.block==block) {
+					return null;
+				}
+
+				// Otherwise report corrupted state
 				throw new IllegalStateException("Cannot add block to cache - id already in use: "+id);
+			}
 		}
 
 		Block removed = null;

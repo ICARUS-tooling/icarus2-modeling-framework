@@ -3,6 +3,8 @@
  */
 package de.ims.icarus2.filedriver.io;
 
+import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.block;
+import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.randomId;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertISE;
@@ -48,20 +50,6 @@ class RUBlockCacheTest {
 	@Test
 	void testNewMostRecentlyUsedCache() {
 		assertFalse(RUBlockCache.newMostRecentlyUsedCache().isLRU());
-	}
-
-	private static int randomId() {
-		return random(0, MAX_INTEGER_INDEX);
-	}
-
-	private static Block block() {
-		return new Block(new Object());
-	}
-
-	private static Block block(int id) {
-		Block block = block();
-		block.setId(id);
-		return block;
 	}
 
 	interface TestBase extends ApiGuardedTest<RUBlockCache> {
@@ -166,7 +154,21 @@ class RUBlockCacheTest {
 				Block block = block(randomId());
 
 				assertNull(cache.addBlock(block));
-				assertISE(() -> cache.addBlock(block));
+				assertNull(cache.addBlock(block));
+			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.RUBlockCache#addBlock(de.ims.icarus2.filedriver.io.BufferedIOResource.Block, int)}.
+		 */
+		@Test
+		default void testAddBlockDublicateId() {
+			try(RUBlockCache cache = create()) {
+				cache.open(100);
+				Block block = block(randomId());
+
+				assertNull(cache.addBlock(block));
+				assertISE(() -> cache.addBlock(block(block.getId())));
 			}
 		}
 
