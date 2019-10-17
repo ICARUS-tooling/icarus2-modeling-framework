@@ -114,6 +114,20 @@ public class ArrayUtils {
 		array[index1] = item0;
 	}
 
+	public static void swap(int[] array, int index0, int index1) {
+		int item0 = array[index0];
+		int item1 = array[index1];
+		array[index0] = item1;
+		array[index1] = item0;
+	}
+
+	public static void swap(long[] array, int index0, int index1) {
+		long item0 = array[index0];
+		long item1 = array[index1];
+		array[index0] = item1;
+		array[index1] = item0;
+	}
+
 	public static int[] fillAscending(int[] a) {
 		for(int i=0; i<a.length; i++)
 			a[i] = i;
@@ -159,19 +173,19 @@ public class ArrayUtils {
 
 	public static void shuffle(int[] array, Random random) {
 		for (int i = 0; i < array.length; i++) {
-			array[i] = array[random.nextInt(array.length)];
+			swap(array, i, random.nextInt(array.length));
 		}
 	}
 
 	public static void shuffle(long[] array, Random random) {
 		for (int i = 0; i < array.length; i++) {
-			array[i] = array[random.nextInt(array.length)];
+			swap(array, i, random.nextInt(array.length));
 		}
 	}
 
 	public static void shuffle(Object[] array, Random random) {
 		for (int i = 0; i < array.length; i++) {
-			array[i] = array[random.nextInt(array.length)];
+			swap(array, i, random.nextInt(array.length));
 		}
 	}
 
