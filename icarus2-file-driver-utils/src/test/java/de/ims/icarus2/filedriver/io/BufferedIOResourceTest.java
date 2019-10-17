@@ -3,21 +3,35 @@
  */
 package de.ims.icarus2.filedriver.io;
 
+import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.block;
+import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.randomId;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.random;
+import static de.ims.icarus2.util.collections.ArrayUtils.shuffle;
 import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives.strictToByte;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Disabled;
@@ -27,10 +41,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
+import de.ims.icarus2.test.func.ThrowingBiConsumer;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
 
 /**
@@ -39,35 +57,11 @@ import de.ims.icarus2.util.io.resource.VirtualIOResource;
  */
 class BufferedIOResourceTest {
 
-	/**
-	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#builder()}.
-	 */
-	@Test
-	void testBuilder() {
-		assertNotNull(BufferedIOResource.builder());
-	}
-
 	//TODO enable
 	@Disabled
 	@Nested
-	class Constructors {
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#BufferedIOResource(de.ims.icarus2.util.io.resource.IOResource, de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter, de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache, int, int)}.
-		 */
-		@Test
-		void testBufferedIOResourceIOResourcePayloadConverterBlockCacheIntInt() {
-			fail("Not yet implemented"); // TODO
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#BufferedIOResource(de.ims.icarus2.filedriver.io.BufferedIOResource.Builder)}.
-		 */
-		@Test
-		void testBufferedIOResourceBuilder() {
-			fail("Not yet implemented"); // TODO
-		}
-
+	class ForBuilder {
+		//TODO test the builder methods
 	}
 
 	@Disabled
@@ -104,7 +98,7 @@ class BufferedIOResourceTest {
 	Stream<Config> configurations() {
 		List<Config> buffer = new ArrayList<>();
 
-		for(int bytesPerBlock : new int[]{2, 8, 64}) {
+		for(int bytesPerBlock : new int[]{BufferedIOResource.MIN_BLOCK_SIZE, BufferedIOResource.MIN_BLOCK_SIZE*2, 128}) {
 			for(int cacheSize : new int[]{BlockCache.MIN_CAPACITY, BlockCache.MIN_CAPACITY*2, 1024}) {
 				for(int entries : new int[]{BlockCache.MIN_CAPACITY*2, 10_000}) {
 					Config config = new Config();
@@ -112,7 +106,7 @@ class BufferedIOResourceTest {
 					config.cacheSize = cacheSize;
 					config.cache = RUBlockCache.newLeastRecentlyUsedCache();
 					config.entries = entries;
-					config.resource = new VirtualIOResource(bytesPerBlock * entries);
+					config.resource = new VirtualIOResource(bytesPerBlock * config.entries);
 					config.converter = new PayloadConverter() {
 						@Override
 						public void write(Object source, ByteBuffer buffer, int length) throws IOException {
@@ -121,7 +115,8 @@ class BufferedIOResourceTest {
 						@Override
 						public int read(Object target, ByteBuffer buffer) throws IOException {
 							int length = buffer.remaining();
-							buffer.get((byte[])target);
+							if(length>0)
+								buffer.get((byte[])target);
 							return length;
 						}
 						@Override
@@ -140,15 +135,11 @@ class BufferedIOResourceTest {
 		return buffer.stream();
 	}
 
-	interface Task {
-		void execute(Config config, BufferedIOResource instance) throws IOException;
-	}
-
-	private Stream<DynamicNode> basicTests(Task task) {
+	private Stream<DynamicNode> basicTests(ThrowingBiConsumer<Config, BufferedIOResource> task) {
 		return configurations()
 				.map(config -> dynamicTest(config.label, () -> {
 					BufferedIOResource instance = config.create();
-					task.execute(config, instance);
+					task.accept(config, instance);
 				}));
 
 	}
@@ -158,7 +149,7 @@ class BufferedIOResourceTest {
 	 */
 	@TestFactory
 	Stream<DynamicNode> testGetResource() {
-		return basicTests((config, instance) -> assertSame(config.resource, instance.getResource()));
+		return basicTests((config, instance) -> assertSame(config.resourceMock, instance.getResource()));
 	}
 
 	/**
@@ -221,9 +212,25 @@ class BufferedIOResourceTest {
 	/**
 	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#flush()}.
 	 */
-	@Test
-	void testFlush() {
-		fail("Not yet implemented"); // TODO
+	@TestFactory
+	Stream<DynamicNode> testFlush() {
+		return basicTests((config, instance) -> {
+			try(ReadWriteAccessor accessor = instance.newAccessor(false)) {
+				Block[] blocks = IntStream.range(0, config.cacheSize/2)
+						.mapToObj(accessor::getBlock)
+						.toArray(Block[]::new);
+
+				Stream.of(blocks).forEach(b -> accessor.lockBlock(b, config.bytesPerBlock));
+
+				assertTrue(instance.hasLockedBlocks());
+				instance.flush();
+				assertFalse(instance.hasLockedBlocks());
+
+				for(Block block : blocks) {
+					assertFalse(block.isLocked());
+				}
+			}
+		});
 	}
 
 	/**
@@ -265,35 +272,344 @@ class BufferedIOResourceTest {
 	@Nested
 	class ForAccessor {
 
+		/** Generate tests with pre-initialized accessors, wrapping the tasks inside begin-end code */
+		private Stream<DynamicNode> accessorTests(boolean readOnly,
+				ThrowingBiConsumer<Config, ReadWriteAccessor> task) {
+			return configurations()
+					.map(config -> dynamicTest(config.label, () -> {
+						BufferedIOResource instance = config.create();
+						try(ReadWriteAccessor accessor = instance.newAccessor(readOnly)) {
+							accessor.begin();
+							try {
+								task.accept(config, accessor);
+							} finally {
+								accessor.end();
+							}
+						}
+					}));
+
+		}
+
+		/** Writes for every given id a block of data consisting of constant bytes of value id+1 */
+		private void writeBlocks(Config config, ReadWriteAccessor accessor, int...ids) throws IOException {
+			try(SeekableByteChannel channel = config.resource.getWriteChannel()) {
+				byte[] b = new byte[config.bytesPerBlock];
+				ByteBuffer bb = ByteBuffer.wrap(b);
+
+				for (int id : ids) {
+					bb.clear();
+					Arrays.fill(b, strictToByte(id+1));
+					channel.position(id * config.bytesPerBlock);
+					channel.write(bb);
+				}
+			}
+		}
+
+		private void assertBlock(int id, Block block) {
+			assertNotNull(block);
+			assertEquals(id, block.getId());
+			byte[] b = (byte[]) block.getData();
+			assertContent(b, id);
+		}
+
+		private void assertContent(byte[] b, int id) {
+			byte val = strictToByte(id+1);
+			for (int i = 0; i < b.length; i++) {
+				assertEquals(val, b[i]);
+			}
+		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#lockBlock(int, de.ims.icarus2.filedriver.io.BufferedIOResource.Block)}.
 		 */
-		@Test
-		void testLockBlock() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicNode> testLockBlockReadOnly() {
+			return accessorTests(true, (config, accessor) -> assertModelException(GlobalErrorCode.NO_WRITE_ACCESS,
+					() -> accessor.lockBlock(block(), 0)));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#lockBlock(int, de.ims.icarus2.filedriver.io.BufferedIOResource.Block)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testLockBlock() {
+			return accessorTests(false, (config, accessor) -> {
+				// Need to keep it below cacheSize/2, as that's the threshold for automatic flushing
+				int count = random(10, config.cacheSize/2);
+				int[] locked = IntStream.range(0, count).toArray();
+				shuffle(locked, random());
+				Block[] blocks = IntStream.range(0, count*2)
+						.mapToObj(accessor::getBlock)
+						.toArray(Block[]::new);
+
+				// Lock blocks
+				for (int id : locked) {
+					accessor.lockBlock(blocks[id], config.bytesPerBlock);
+				}
+
+				assertEquals(count, accessor.getSource().getStats().getCount(StatField.BLOCK_MARK));
+
+				// Verify locked blocks
+				for (int id : locked) {
+					assertTrue(blocks[id].isLocked());
+					blocks[id] = null;
+				}
+
+				// Verify that all other blocks remained unlocked
+				for (int i = 0; i < count; i++) {
+					if(blocks[i]!=null) {
+						assertFalse(blocks[i].isLocked(), "Unexpected locked block at index "+i);
+					}
+				}
+			});
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testAutoFlushing() {
+			return accessorTests(false, (config, accessor) -> {
+				// Locking cacheSize number of blocks should cause exactly 1 flush
+				int count = config.cacheSize;
+				int[] locked = IntStream.range(0, count).toArray();
+				shuffle(locked, random());
+				Block[] blocks = IntStream.range(0, count*2)
+						.mapToObj(accessor::getBlock)
+						.toArray(Block[]::new);
+
+				// Lock blocks
+				for (int id : locked) {
+					accessor.lockBlock(blocks[id], config.bytesPerBlock);
+				}
+
+				assertEquals(1, accessor.getSource().getStats().getCount(StatField.FLUSH));
+			});
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
 		 */
-		@Test
-		void testGetBlock() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicNode> testGetBlock() {
+			return accessorTests(true, (config, accessor) -> {
+				int[] ids = random().ints(0, Byte.MAX_VALUE)
+						.distinct()
+						.limit(BlockCache.MIN_CAPACITY)
+						.toArray();
+
+				// Prepare data
+				writeBlocks(config, accessor, ids);
+
+				// Access blocks
+				for(int id : ids) {
+					Block block = accessor.getBlock(id);
+					assertBlock(id, block);
+				}
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testGetBlockLastHitCache() {
+			return accessorTests(false, (config, accessor) -> {
+				int id = randomId();
+
+				Block block = accessor.getBlock(id);
+
+				int count = random(10, 100);
+				for (int i = 0; i < count; i++) {
+					assertSame(block, accessor.getBlock(id));
+				}
+
+				assertNotSame(block, accessor.getBlock(id+1));
+
+				assertEquals(count, accessor.getSource().getStats().getCount(StatField.LAST_HIT));
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testGetBlockCacheMiss() {
+			return accessorTests(false, (config, accessor) -> {
+				int[] ids = IntStream.range(0, config.cacheSize*2).toArray();
+
+				// Sequential access, overflowing cacheSize limit
+				for(int id : ids) {
+					assertNotNull(accessor.getBlock(id));
+				}
+
+				assertEquals(config.cacheSize*2, accessor.getSource().getStats().getCount(StatField.CACHE_MISS));
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testGetBlockCacheOverflow() {
+			return accessorTests(false, (config, accessor) -> {
+				int[] ids = IntStream.range(0, config.cacheSize).toArray();
+
+				// Sequential access within cacheSize limit
+				for(int id : ids) {
+					assertNotNull(accessor.getBlock(id));
+				}
+
+				assertEquals(config.cacheSize, accessor.getSource().getStats().getCount(StatField.CACHE_MISS));
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testGetBlockCacheSuccess() {
+			return accessorTests(false, (config, accessor) -> {
+				int[] ids = IntStream.range(0, config.cacheSize).toArray();
+
+				// First pass
+				for(int id : ids) {
+					assertNotNull(accessor.getBlock(id));
+				}
+				// Second pass
+				for(int id : ids) {
+					assertNotNull(accessor.getBlock(id));
+				}
+
+				// Only the first pass should generate cache misses
+				assertEquals(config.cacheSize, accessor.getSource().getStats().getCount(StatField.CACHE_MISS));
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testGetBlockNonExistent() {
+			return accessorTests(true, (config, accessor) -> {
+				int[] ids = random().ints(0, Byte.MAX_VALUE)
+						.distinct()
+						.limit(BlockCache.MIN_CAPACITY)
+						.toArray();
+
+				// Access blocks
+				for(int id : ids) {
+					assertNull(accessor.getBlock(id));
+				}
+			});
+		}
+
+		/**
+		 * Test method for {@link PayloadConverter#read(Object, ByteBuffer)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> verifyConverterRead() {
+			return accessorTests(true, (config, accessor) -> {
+				int[] ids = random().ints(0, Byte.MAX_VALUE)
+						.distinct()
+						.limit(BlockCache.MIN_CAPACITY)
+						.toArray();
+
+				// Prepare data
+				writeBlocks(config, accessor, ids);
+
+				// Access blocks
+				Block[] blocks = new Block[ids.length];
+				for(int i = 0; i<ids.length; i++) {
+					blocks[i] = accessor.getBlock(ids[i]);
+				}
+
+				verify(config.converterMock, times(ids.length)).newBlockData(config.bytesPerBlock);
+
+				// Verify converter access
+				for(int i = 0; i<blocks.length; i++) {
+					verify(config.converterMock).read(eq(blocks[i].getData()), any());
+				}
+			});
+		}
+
+		/**
+		 * Test method for {@link PayloadConverter#write(Object, ByteBuffer, int)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> verifyConverterWrite() {
+			return accessorTests(false, (config, accessor) -> {
+				int[] ids = random().ints(0, Byte.MAX_VALUE)
+						.distinct()
+						.limit(BlockCache.MIN_CAPACITY)
+						.toArray();
+
+				// Access blocks
+				Block[] blocks = new Block[ids.length];
+				for(int i = 0; i<ids.length; i++) {
+					blocks[i] = accessor.getBlock(ids[i]);
+					byte[] b = (byte[]) blocks[i].getData();
+					Arrays.fill(b, strictToByte(ids[i]+1));
+					accessor.lockBlock(blocks[i], b.length);
+				}
+
+				verify(config.converterMock, times(ids.length)).newBlockData(config.bytesPerBlock);
+
+				// Force blocks to be written
+				accessor.flush();
+
+				// Verify converter access
+				for(int i = 0; i<blocks.length; i++) {
+					verify(config.converterMock).write(eq(blocks[i].getData()), any(), eq(config.bytesPerBlock));
+				}
+
+				// Finally make sure the data arrived in our back-end storage
+				try(SeekableByteChannel channel = config.resource.getReadChannel()) {
+					byte[] b = new byte[config.bytesPerBlock];
+					ByteBuffer bb = ByteBuffer.wrap(b);
+
+					for (int id : ids) {
+						bb.clear();
+						channel.position(id * config.bytesPerBlock);
+						channel.read(bb);
+						assertEquals(0, bb.remaining());
+
+						assertContent(b, id);
+					}
+				}
+			});
 		}
 	}
 
 	private static class Config {
 		String label;
 		VirtualIOResource resource;
+		IOResource resourceMock;
 		BlockCache cache;
+		BlockCache cacheMock;
 		PayloadConverter converter;
+		PayloadConverter converterMock;
 		int entries;
 		int cacheSize;
 		int bytesPerBlock;
 
 		BufferedIOResource create() {
-			return new BufferedIOResource(resource, converter, cache, cacheSize, bytesPerBlock);
+			resourceMock = mock(IOResource.class, invoc -> {
+				return invoc.getMethod().invoke(resource, invoc.getArguments());
+			});
+			cacheMock = mock(BlockCache.class, invoc -> {
+				return invoc.getMethod().invoke(cache, invoc.getArguments());
+			});
+			converterMock = mock(PayloadConverter.class, invoc -> {
+				return invoc.getMethod().invoke(converter, invoc.getArguments());
+			});
+
+			// Use the builder, as this way we can activate stats tracking
+			return BufferedIOResource.builder()
+					.resource(resourceMock)
+					.cacheSize(cacheSize)
+					.bytesPerBlock(bytesPerBlock)
+					.blockCache(cacheMock)
+					.payloadConverter(converterMock)
+					.collectStats(true)
+					.build();
 		}
 	}
 }
