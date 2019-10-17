@@ -19,8 +19,10 @@ package de.ims.icarus2.filedriver.io;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
+import java.io.Flushable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
@@ -36,6 +38,7 @@ import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Stats;
 import de.ims.icarus2.util.io.resource.IOResource;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -82,7 +85,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
  * @author Markus Gärtner
  *
  */
-public class BufferedIOResource {
+public class BufferedIOResource implements Flushable {
 
 	public static Builder builder() {
 		return new Builder();
@@ -94,11 +97,11 @@ public class BufferedIOResource {
 	public static final long MAX_CHANNEL_SIZE = 1024L * 1024L * 1024L * 32L;
 
 	/**
-	 * Minimum size of cache blocks in bytes. Chosen to be {@value #MIN_BLOCK_SIZE}
+	 * Minimum size of cache blocks in bytes. Chosen to be {@code 16}
 	 * so that a channel within the size limitations of {@link #MAX_CHANNEL_SIZE} can still
 	 * be addressed on the block level by means of integer values.
 	 */
-	public static final long MIN_BLOCK_SIZE = MAX_CHANNEL_SIZE/IcarusUtils.MAX_INTEGER_INDEX;
+	public static final int MIN_BLOCK_SIZE = strictToInt(MAX_CHANNEL_SIZE/IcarusUtils.MAX_INTEGER_INDEX);
 
 	/**
 	 * Originally was {@link ReentrantReadWriteLock} but the stamped locking version should
@@ -161,21 +164,6 @@ public class BufferedIOResource {
 
 	private final Stats<StatField> stats;
 
-	public BufferedIOResource(IOResource resource, PayloadConverter payloadConverter,
-			BlockCache cache, int cacheSize, int bytesPerBlock) {
-		requireNonNull(resource);
-		requireNonNull(payloadConverter);
-		requireNonNull(cache);
-		checkArgument(cacheSize>=0);
-
-		this.resource = resource;
-		this.payloadConverter = payloadConverter;
-		this.cache = cache;
-		this.cacheSize = cacheSize;
-		this.bytesPerBlock = bytesPerBlock;
-		stats = null;
-	}
-
 	private BufferedIOResource(Builder builder) {
 		builder.validate();
 
@@ -191,20 +179,44 @@ public class BufferedIOResource {
 		return lock;
 	}
 
+	private void record(StatField field) {
+		if(stats!=null) {
+			stats.count(field);
+		}
+	}
+
+	public boolean isCollectStats() {
+		return stats!=null;
+	}
+
+	private void checkCollectStats() {
+		checkState("Not configured to record statistics", stats!=null);
+	}
+
+	public Stats<StatField> resetStats() {
+		checkCollectStats();
+		Stats<StatField> result = stats.clone();
+		stats.reset();
+		return result;
+	}
+
+	public Stats<StatField> getStats() {
+		checkCollectStats();
+		return stats.clone();
+	}
+
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder()
-		.append(getClass().getName())
-		.append("[useCount=").append(useCount.get())
-		.append(" bytesPerBlock=").append(bytesPerBlock)
-		.append(" cacheSize=").append(cacheSize)
-		.append(" bufferSize=").append(buffer==null ? -1 : buffer.capacity())
-		.append(" pendingBlockCount==").append(changedBlocks.size())
-		.append(" resource=").append(resource)
-		.append(" payloadConverter=").append(payloadConverter)
-		.append(" cache=").append(cache);
-
-		return sb.append(']').toString();
+		return ToStringBuilder.create(this)
+		.add("useCount", useCount.get())
+		.add("bytesPerBlock", bytesPerBlock)
+		.add("cacheSize=", cacheSize)
+		.add("bufferSize", buffer==null ? -1 : buffer.capacity())
+		.add("pendingBlockCount", changedBlocks.size())
+		.add("resource", resource)
+		.add("payloadConverter", payloadConverter)
+		.add("cache", cache)
+		.build();
 	}
 
 	public IOResource getResource() {
@@ -234,6 +246,10 @@ public class BufferedIOResource {
 	 * Tries to close down and then delete the underlying {@link #getResource() resource}.
 	 * This method will fail in case there are still {@link ReadWriteAccessor accessors}
 	 * active that potentially hold locks on this resource.
+	 * <p>
+	 * Note that this method must <b>not</b> be called from inside a {@link ReadWriteAccessor}'s
+	 * {@link ReadWriteAccessor#begin() begin} ... {@link ReadWriteAccessor#end() end}
+	 * code block!
 	 *
 	 * @throws IOException
 	 */
@@ -244,16 +260,19 @@ public class BufferedIOResource {
 		});
 	}
 
+	/** Must be called under write lock */
 	private boolean readBlockUnsafe(Block block, long offset) throws IOException {
 		try(SeekableByteChannel channel = resource.getReadChannel()) {
 
 			// Read data from channel
 			channel.position(offset);
+			buffer.clear();
 			int bytesRead = channel.read(buffer);
 
 			if(bytesRead==-1) {
 				return false;
 			}
+			buffer.flip();
 
 			// Read entries from buffer
 			int entriesRead = payloadConverter.read(block.data, buffer);
@@ -265,11 +284,14 @@ public class BufferedIOResource {
 		}
 	}
 
+	/** Must be called under write lock */
 	private boolean writeBlockUnsafe(Block block, long offset) throws IOException {
 		try(SeekableByteChannel channel = resource.getWriteChannel()) {
 
 			// Write data to buffer
+			buffer.clear();
 			payloadConverter.write(block.getData(), buffer, block.getSize());
+			buffer.flip();
 
 			// Copy buffer to channel
 			channel.position(offset);
@@ -280,28 +302,52 @@ public class BufferedIOResource {
 	}
 
 	/**
+	 * Returns whether or not there are blocks marked for serialization that haven't
+	 * yet been flushed. This method is mainly intended as an additional tool to verify
+	 * if flushing is required and/or if a performed call to {@link #flush()} actually
+	 * covered all the pending blocks. No synchronization is done when fetching the result
+	 * for this method, so client code is responsible for making sure that no structural
+	 * modification (e.g. {@link ReadWriteAccessor#lockBlock(Block, int) locking} new blocks)
+	 * happens concurrently!
+	 *
+	 * @return
+	 */
+	public boolean hasLockedBlocks() {
+		return !changedBlocks.isEmpty();
+	}
+
+	/**
 	 * Stores all pending changes in the underlying resource.
+	 * <p>
+	 * Note that this method must <b>not</b> be called from inside a {@link ReadWriteAccessor}'s
+	 * {@link ReadWriteAccessor#begin() begin} ... {@link ReadWriteAccessor#end() end}
+	 * code block!
 	 *
 	 * @throws IOException
 	 */
+	@Override
 	public void flush() throws IOException {
 		syncWrite(this::flushUnsafe);
 	}
 
 	private void flushUnsafe() throws IOException {
-		for(IntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
-			int id = it.nextInt();
+		if(!changedBlocks.isEmpty()) {
+			record(StatField.FLUSH);
+			for(IntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
+				int id = it.nextInt();
 
-			Block block = cache.getBlock(id);
-			if(block==null)
-				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Missing block previously marked as locked: "+id);
+				Block block = cache.getBlock(id);
+				if(block==null)
+					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+							"Missing block previously marked as locked: "+id);
 
-			long offset = id*(long)bytesPerBlock;
+				long offset = id*(long)bytesPerBlock;
 
-			writeBlockUnsafe(block, offset);
+				writeBlockUnsafe(block, offset);
 
-			it.remove();
-			block.unlock();
+				it.remove();
+				block.unlock();
+			}
 		}
 	}
 
@@ -335,9 +381,6 @@ public class BufferedIOResource {
 	}
 
 	private void openUnsafe() throws IOException {
-		if(bytesPerBlock<0)
-			throw new IllegalStateException("No block size defined - cannot allocate buffer");
-
 		buffer = ByteBuffer.allocateDirect(bytesPerBlock);
 
 		cache.open(cacheSize);
@@ -398,11 +441,15 @@ public class BufferedIOResource {
 	}
 
 	public static enum StatField {
-		READ,
-		WRITE,
+		READ_LOCK,
+		WRITE_LOCK,
 		READ_ACCESSOR,
 		WRITE_ACCESSOR,
+		FLUSH,
+		BLOCK_LOOKUP,
+		LAST_HIT,
 		CACHE_MISS,
+		BLOCK_MARK,
 		;
 	}
 
@@ -457,7 +504,20 @@ public class BufferedIOResource {
 		private int id = UNSET_INT;
 
 		Block(Object data) {
-			this.data = data;
+			setData(data);
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("size", size)
+					.add("locked", locked)
+					.add("data", data)
+					.build();
 		}
 
 		/**
@@ -468,11 +528,14 @@ public class BufferedIOResource {
 		}
 
 		/**
+		 * Returns the payload of this block casted to the desired type.
+		 *
 		 * @return stored data, the type of which is depending on the implementation of the
 		 * hosting {@link BufferedIOResource}.
 		 */
-		public Object getData() {
-			return data;
+		@SuppressWarnings("unchecked")
+		public <T> T getData() {
+			return (T) data;
 		}
 
 		/**
@@ -493,6 +556,12 @@ public class BufferedIOResource {
 
 		void setSize(int size) {
 			this.size = size;
+		}
+
+		void updateSize(int size) {
+			if(size>this.size) {
+				this.size = size;
+			}
 		}
 
 		void setData(Object data) {
@@ -571,7 +640,7 @@ public class BufferedIOResource {
 	 *
 	 * @param <T> The source type of the accessor
 	 */
-	public final class ReadWriteAccessor implements SynchronizedAccessor<BufferedIOResource> {
+	public final class ReadWriteAccessor implements SynchronizedAccessor<BufferedIOResource>, Flushable {
 
 		private long stamp;
 		private final boolean readOnly;
@@ -600,8 +669,10 @@ public class BufferedIOResource {
 		@Override
 		public void begin() {
 			if(readOnly) {
+				record(StatField.READ_LOCK);
 				stamp = getLock().readLock();
 			} else {
+				record(StatField.WRITE_LOCK);
 				stamp = getLock().writeLock();
 			}
 		}
@@ -613,12 +684,7 @@ public class BufferedIOResource {
 		public void end() {
 			long stamp = this.stamp;
 			this.stamp = 0L;
-
-			if(readOnly) {
-				getLock().unlockRead(stamp);
-			} else {
-				getLock().unlockWrite(stamp);
-			}
+			getLock().unlock(stamp);
 		}
 
 		/**
@@ -629,9 +695,59 @@ public class BufferedIOResource {
 			decrementUseCount();
 		}
 
-		public void lockBlock(Block block) {
-			changedBlocks.add(block.getId());
+		/**
+		 * Same as {@link BufferedIOResource#flush()} but safe to call from inside a
+		 * {@link #begin()} ... {@link #end()} code block.
+		 * @throws IOException if an error occured while writing the block contents.
+		 */
+		@Override
+		public void flush() throws IOException {
+			flushUnsafe();
+		}
+
+		/**
+		 * Marks the given {@code block} as changed so that its content will be
+		 * persisted when {@link BufferedIOResource#flush() flushing} the surrounding
+		 * resource or when enough blocks get marked to warrant automatic flushing.
+		 * <p>
+		 * This method must be called inside a {@link #begin()} ... {@link #end()} code
+		 * block and requires an accessor with write access!
+		 * @param block the {@link Block} that was modified and should be marked for flushing
+		 * @param size the portion of the block that has been modified. This information is
+		 * used to update the internal {@link Block#getSize() size} information of the block.
+		 */
+		public void lockBlock(Block block, int size) {
+			if(isReadOnly())
+				throw new ModelException(GlobalErrorCode.NO_WRITE_ACCESS,
+						"Accessor is read-only, cannot structurally modify underlying buffer!");
+
+			int id = block.getId();
+			if(id<0)
+				throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
+						"Cannot mark block for serialization - invalid id: "+id);
+
+			record(StatField.BLOCK_MARK);
+
+			if(block.isLocked()) {
+				return;
+			}
+
+			// Automatic flushing if cache gets crowded with locked blocks
+			if(changedBlocks.size()>(cacheSize>>1)) {
+				try {
+					flushUnsafe();
+				} catch (IOException e) {
+					throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
+							"Failed to automatically flush index changes", e);
+				}
+			}
+
 			block.lock();
+			block.updateSize(size);
+
+			// Ensure we have the block in cache (locking it will keep it there).
+			cache.addBlock(block);
+			changedBlocks.add(id);
 		}
 
 		/**
@@ -640,32 +756,28 @@ public class BufferedIOResource {
 		 * accessor to a full write lock if needed (this is the case if this
 		 * accessor only holds a read lock, but the method has to load a new block
 		 * and therefore structurally modify internal buffer data).
+		 * <p>
+		 * This method must be called inside a {@link #begin()} ... {@link #end()} block!
+		 *
 		 * @param id
 		 * @return
 		 */
 		public Block getBlock(int id) {
-			// CHeap effort at MRU caching
+			record(StatField.BLOCK_LOOKUP);
+			// Cheap effort at MRU caching
 			Block lastBlock = lastReturnedBlock;
 			if(lastBlock!=null && lastBlock.getId()==id) {
+				record(StatField.LAST_HIT);
 				return lastBlock;
 			}
 
 			Block block = cache.getBlock(id);
 
 			if(block==null) {
+				record(StatField.CACHE_MISS);
 				// Upgrade the lock to write lock if needed
 				stamp = getLock().tryConvertToWriteLock(stamp);
 				try {
-					// Automatic flushing if cache gets stale
-					if(changedBlocks.size()>(cacheSize>>1)) {
-						try {
-							flushUnsafe();
-						} catch (IOException e) {
-							throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-									"Failed to automatically flush index changes", e);
-						}
-					}
-
 					// Byte offset of the beginning of the block to be read
 					long offset = id*(long)bytesPerBlock;
 

@@ -239,8 +239,8 @@ public class DefaultChunkIndex implements ChunkIndex {
 			return delegateAccessor.getBlock(id);
 		}
 
-		protected void lockBlock(Block block) {
-			delegateAccessor.lockBlock(block);
+		protected void lockBlock(Block block, int index) {
+			delegateAccessor.lockBlock(block, index+1);
 		}
 	}
 
@@ -333,11 +333,11 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#setFileId(long, int)
 		 */
 		@Override
-		public int setFileId(long index, int fileId) {
+		public int setFileId(int fileId) {
 			checkWriteAccess();
 
 			int result = arrayAdapter.setFileId(block.getData(), localIndex, fileId);
-			lockBlock(block);
+			lockBlock(block, localIndex);
 
 			return result;
 		}
@@ -346,11 +346,11 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#setBeginOffset(long, long)
 		 */
 		@Override
-		public long setBeginOffset(long index, long offset) {
+		public long setBeginOffset(long offset) {
 			checkWriteAccess();
 
 			long result = arrayAdapter.setBeginOffset(block.getData(), localIndex, offset);
-			lockBlock(block);
+			lockBlock(block, localIndex);
 
 			return result;
 		}
@@ -359,11 +359,11 @@ public class DefaultChunkIndex implements ChunkIndex {
 		 * @see de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexCursor#setEndOffset(long, long)
 		 */
 		@Override
-		public long setEndOffset(long index, long offset) {
+		public long setEndOffset(long offset) {
 			checkWriteAccess();
 
 			long result = arrayAdapter.setEndOffset(block.getData(), localIndex, offset);
-			lockBlock(block);
+			lockBlock(block, localIndex);
 
 			return result;
 		}

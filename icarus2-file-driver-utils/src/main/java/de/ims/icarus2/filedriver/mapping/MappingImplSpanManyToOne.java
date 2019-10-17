@@ -503,6 +503,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 
 			blockStorage.setSpanBegin(buffer, localIndex, currentFrom);
 			blockStorage.setSpanEnd(buffer, localIndex, currentTo);
+			lockBlock(block, localIndex);
 		}
 
 		/**

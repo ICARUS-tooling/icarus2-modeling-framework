@@ -449,6 +449,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 
 			Block block = getBlock(id);
 			blockStorage.setEntry(block.getData(), localIndex, targetIndex);
+			lockBlock(block, localIndex);
 		}
 
 		/**

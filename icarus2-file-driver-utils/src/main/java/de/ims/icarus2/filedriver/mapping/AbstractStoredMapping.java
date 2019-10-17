@@ -227,6 +227,10 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		Block getBlock(int id) {
 			return delegateAccessor.getBlock(id);
 		}
+
+		void lockBlock(Block block, int index) {
+			delegateAccessor.lockBlock(block, index+1);
+		}
 	}
 
 	public static class PayloadConverterImpl implements PayloadConverter {

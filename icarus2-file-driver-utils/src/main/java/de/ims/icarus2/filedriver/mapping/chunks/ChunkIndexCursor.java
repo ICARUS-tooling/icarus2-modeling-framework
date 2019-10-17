@@ -94,8 +94,6 @@ public interface ChunkIndexCursor extends SynchronizedAccessor<ChunkIndex>, Flus
 	 *
 	 * @param index
 	 * @return
-	 *
-	 * @see ChunkIndexReader#getEndOffset(long)
 	 */
 	long getEndOffset();
 
@@ -104,28 +102,22 @@ public interface ChunkIndexCursor extends SynchronizedAccessor<ChunkIndex>, Flus
 	 * @param index
 	 * @param fileId
 	 * @return
-	 *
-	 * @see ChunkIndexWriter#setFileId(long, int)
 	 */
-	int setFileId(long index, int fileId);
+	int setFileId(int fileId);
 
 	/**
 	 *
 	 * @param index
 	 * @param offset
 	 * @return
-	 *
-	 * @see ChunkIndexWriter#setBeginOffset(long, long)
 	 */
-	long setBeginOffset(long index, long offset);
+	long setBeginOffset(long offset);
 
 	/**
 	 *
 	 * @param index
 	 * @param offset
 	 * @return
-	 *
-	 * @see ChunkIndexWriter#setEndOffset(long, long)
 	 */
-	long setEndOffset(long index, long offset);
+	long setEndOffset(long offset);
 }

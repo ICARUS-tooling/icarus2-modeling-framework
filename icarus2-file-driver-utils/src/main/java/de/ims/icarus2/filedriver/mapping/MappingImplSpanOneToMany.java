@@ -625,8 +625,10 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			int localIndex = localIndex(sourceFrom);
 
 			Block block = getBlock(id);
-			blockStorage.setSpanBegin(block.getData(), localIndex, targetFrom);
-			blockStorage.setSpanEnd(block.getData(), localIndex, targetTo);
+			Object buffer = block.getData();
+			blockStorage.setSpanBegin(buffer, localIndex, targetFrom);
+			blockStorage.setSpanEnd(buffer, localIndex, targetTo);
+			lockBlock(block, localIndex);
 		}
 
 		/**
@@ -645,7 +647,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			if(sourceIndices.size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from single index values");
 			if(!isContinuous(targetIndices))
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to spans");
 
 			map(sourceIndices.firstIndex(), sourceIndices.firstIndex(),
 					targetIndices.firstIndex(), targetIndices.lastIndex());
@@ -656,7 +658,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 			if(sourceIndices.length>1 || sourceIndices[0].size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from single index values");
 			if(!isContinuous(targetIndices))
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to spans");
 
 			long sourceIndex = firstIndex(sourceIndices);
 			map(sourceIndex, sourceIndex, firstIndex(targetIndices), lastIndex(targetIndices));
