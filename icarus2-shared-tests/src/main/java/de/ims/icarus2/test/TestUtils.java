@@ -68,6 +68,7 @@ import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.test.func.TriConsumer;
+import de.ims.icarus2.test.random.Randomizer;
 import de.ims.icarus2.test.util.IdentitySet;
 import de.ims.icarus2.test.util.Pair;
 

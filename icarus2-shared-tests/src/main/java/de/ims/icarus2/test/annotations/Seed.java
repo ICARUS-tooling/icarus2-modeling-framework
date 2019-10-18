@@ -1,0 +1,35 @@
+/**
+ *
+ */
+package de.ims.icarus2.test.annotations;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+@Documented
+@Retention(RUNTIME)
+@Target({ FIELD, METHOD, PARAMETER, TYPE })
+/**
+ * @author Markus Gärtner
+ *
+ */
+public @interface Seed {
+
+	/** Override the starting seed of the RNG with a fixed values. */
+	long value() default -1L;
+
+	/**
+	 * Override the starting seed of the RNG with a fixed values.
+	 * The given String will be taken instead of the fully qualified
+	 * class name of the test class in combination with the test method
+	 * name.
+	 */
+	String seedSource() default "";
+}

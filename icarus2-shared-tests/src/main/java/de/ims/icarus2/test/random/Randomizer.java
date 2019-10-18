@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.test;
+package de.ims.icarus2.test.random;
 
 import static java.util.Objects.requireNonNull;
 
