@@ -959,7 +959,7 @@ public class FileDriver extends AbstractDriver {
 			path = Paths.get(savedPath);
 		}
 
-		checkState("Failed to obtain valid file file for chunk index: "+layerManifest, path!=null);
+		checkState("Failed to obtain valid file for chunk index: "+layerManifest, path!=null);
 
 		//*******************************************
 		//  ValueType for chunk entries
@@ -1029,7 +1029,7 @@ public class FileDriver extends AbstractDriver {
 				cacheSize = Integer.parseInt(value);
 			} else {
 				// Very conservative cache size as fallback
-				cacheSize = 10;
+				cacheSize = BlockCache.MIN_CAPACITY;
 			}
 
 			metadataRegistry.setIntValue(cacheSizeKey, cacheSize);

@@ -90,9 +90,14 @@ public class DefaultMappingFactory implements MappingFactory {
 			options = Options.NONE;
 		}
 
+		// Try shortcut first
 		Mapping mapping = createFunctionMapping(manifest, options);
 
 		if(mapping==null) {
+			/*
+			 *  No luck in avoiding the more expensive route.
+			 *  Now we have to instantiate the appropriate AbstractStoredMapping.
+			 */
 			switch (ManifestUtils.require(manifest.getRelation(), manifest, "relation")) {
 			case ONE_TO_ONE:
 				mapping = createOneToOneMapping(manifest, options);
@@ -250,7 +255,8 @@ public class DefaultMappingFactory implements MappingFactory {
 		} else if(targetType==null) {
 			result = sourceType;
 		} else {
-			result = ClassUtils.min(sourceType, targetType);
+			// Pick the type with larger value space
+			result = ClassUtils.max(sourceType, targetType);
 		}
 
 		if(result==null) {
@@ -260,7 +266,8 @@ public class DefaultMappingFactory implements MappingFactory {
 		return result;
 	}
 
-	protected <B extends AbstractStoredMapping.AbstractStoredMappingBuilder<B, ?>> B initStoredMappingBuilder(B builder, MappingManifest manifest, Options options) {
+	protected <B extends AbstractStoredMapping.AbstractStoredMappingBuilder<B, ?>> B initStoredMappingBuilder(
+			B builder, MappingManifest manifest, Options options) {
 		initMappingBuilder(builder, manifest, options);
 
 		builder.resource(getResource(options));

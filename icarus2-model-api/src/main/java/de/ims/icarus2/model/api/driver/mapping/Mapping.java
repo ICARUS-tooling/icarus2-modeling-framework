@@ -24,7 +24,7 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
  * @author Markus Gärtner
  *
  */
-public interface Mapping {
+public interface Mapping extends AutoCloseable {
 
 	/**
 	 * Returns the driver that created and manages this mapping.
@@ -66,5 +66,6 @@ public interface Mapping {
 	/**
 	 * Releases all currently held resources.
 	 */
+	@Override
 	void close();
 }

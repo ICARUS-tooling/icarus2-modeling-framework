@@ -42,7 +42,6 @@ import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.driver.AbstractDriver;
 
 /**
  * Defines keys and key generation functions for the storage of file metadata.
@@ -527,9 +526,9 @@ public class FileDriverMetadata {
 		 * Value is to be interpreted as follows:
 		 * <table border="1">
 		 * <tr><th>Value</th><th>Description</th></tr>
-		 * <tr><td>{@link AbstractDriver#HINT_LRU_CACHE LRU}</td><td>Hint to use a {@link RUBlockCache#newLeastRecentlyUsedCache() least recently used} caching strategy</td></tr>
-		 * <tr><td>{@link AbstractDriver#HINT_MRU_CACHE MRU}</td><td>Hint to use a {@link RUBlockCache#newMostRecentlyUsedCache() most recently used} caching strategy</td></tr>
-		 * <tr><td>{@link AbstractDriver#HINT_UNLIMITED_CACHE UNLIMITED}</td><td>Hint to use a cache that {@link UnlimitedBlockCache never} discards blocks</td></tr>
+		 * <tr><td>{@link FileDriverUtils#HINT_LRU_CACHE LRU}</td><td>Hint to use a {@link RUBlockCache#newLeastRecentlyUsedCache() least recently used} caching strategy</td></tr>
+		 * <tr><td>{@link FileDriverUtils#HINT_MRU_CACHE MRU}</td><td>Hint to use a {@link RUBlockCache#newMostRecentlyUsedCache() most recently used} caching strategy</td></tr>
+		 * <tr><td>{@link FileDriverUtils#HINT_UNLIMITED_CACHE UNLIMITED}</td><td>Hint to use a cache that {@link UnlimitedBlockCache never} discards blocks</td></tr>
 		 * <tr><td><i>Any other String</i></td><td>Interpreted as the fully qualified class name of the {@link BlockCache} implementation to be used</td></tr>
 		 * </table>
 		 */

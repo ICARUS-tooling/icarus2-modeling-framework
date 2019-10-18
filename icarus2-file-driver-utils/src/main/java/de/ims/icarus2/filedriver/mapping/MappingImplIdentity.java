@@ -23,7 +23,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
@@ -128,7 +128,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		@Override
 		public IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws ModelException,
 				InterruptedException {
-			return new IndexSet[]{new SingletonIndexSet(sourceIndex)};
+			return IndexUtils.wrap(sourceIndex);
 		}
 
 		/**

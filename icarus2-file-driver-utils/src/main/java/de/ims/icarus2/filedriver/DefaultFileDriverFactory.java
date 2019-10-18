@@ -19,7 +19,6 @@ package de.ims.icarus2.filedriver;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +51,7 @@ import de.ims.icarus2.util.io.resource.ReadOnlyStringResource;
 import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
- * Wraps a factory implementation around a {@link Builder} to create a new
+ * Wraps a factory implementation around a {@link FileDriver#builder() Builder} to create a new
  * {@link FileDriver} instance.
  *
  * @author Markus Gärtner
@@ -193,7 +192,10 @@ public class DefaultFileDriverFactory implements Factory {
 		if(locationManifest.isInline()) {
 			// Special and easy case for inline data: just wrap it into a read-only resource
 			IOResource resource = new ReadOnlyStringResource(
-					locationManifest.getInlineData().toString(), StandardCharsets.UTF_8); //TODO fetch correct encoding from manifest?
+					locationManifest.getInlineData().orElseThrow(
+							ManifestException.missing(locationManifest, "inline data")).toString(),
+					// We simply use the encoding specified by the enclosing manifest
+					locationManifest.getManifestLocation().getEncoding());
 			return new SingletonResourceSet(resource);
 		}
 

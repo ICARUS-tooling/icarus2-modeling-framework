@@ -114,6 +114,15 @@ public abstract class ManifestLocation {
 		return classLoader;
 	}
 
+	/**
+	 * Returns the character encoding used for this manifest. If not overridden
+	 * by subclasses, this method returns {@link StandardCharsets#UTF_8} per default.
+	 * @return
+	 */
+	public Charset getEncoding() {
+		return StandardCharsets.UTF_8;
+	}
+
 	public static class URLManifestLocation extends ManifestLocation {
 
 		private final URL url;
@@ -135,6 +144,15 @@ public abstract class ManifestLocation {
 
 			this.url = url;
 			this.charset = charset;
+		}
+
+		/**
+		 * Returns the encoding specified at construction time.
+		 * @see de.ims.icarus2.model.manifest.api.ManifestLocation#getEncoding()
+		 */
+		@Override
+		public Charset getEncoding() {
+			return charset;
 		}
 
 		/**
@@ -186,6 +204,15 @@ public abstract class ManifestLocation {
 
 			this.path = path;
 			this.charset = charset;
+		}
+
+		/**
+		 * Returns the encoding specified at construction time.
+		 * @see de.ims.icarus2.model.manifest.api.ManifestLocation#getEncoding()
+		 */
+		@Override
+		public Charset getEncoding() {
+			return charset;
 		}
 
 		/**

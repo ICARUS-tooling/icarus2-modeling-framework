@@ -51,8 +51,8 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
-import de.ims.icarus2.util.io.resource.ResourceProvider;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
  * @author Markus Gärtner
@@ -404,9 +404,10 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			MutableInteger exceptionCounter = new MutableInteger();
 
+			// We're only interested in failures here
 			ModuleMonitor monitor = new EmptyModuleMonitor(){
 				@Override
-				public void error(DriverModule module, Exception e) {
+				public synchronized void error(DriverModule module, Exception e) {
 					exceptionCounter.incrementAndGet();
 					reportBuilder.addError(GlobalErrorCode.DELEGATION_FAILED, "Error while preparing modules", e);
 				}

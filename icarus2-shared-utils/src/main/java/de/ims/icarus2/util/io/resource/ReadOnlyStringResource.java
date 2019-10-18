@@ -37,7 +37,7 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  *
  */
 @TestableImplementation(IOResource.class)
-public class ReadOnlyStringResource implements IOResource {
+public class ReadOnlyStringResource implements IOResource, CharSequence {
 
 	private String source;
 	private final Charset encoding;
@@ -144,6 +144,30 @@ public class ReadOnlyStringResource implements IOResource {
 		checkOpen();
 
 		return buffer.size();
+	}
+
+	/**
+	 * @see java.lang.CharSequence#length()
+	 */
+	@Override
+	public int length() {
+		return source.length();
+	}
+
+	/**
+	 * @see java.lang.CharSequence#charAt(int)
+	 */
+	@Override
+	public char charAt(int index) {
+		return source.charAt(index);
+	}
+
+	/**
+	 * @see java.lang.CharSequence#subSequence(int, int)
+	 */
+	@Override
+	public CharSequence subSequence(int start, int end) {
+		return source.subSequence(start, end);
 	}
 
 }

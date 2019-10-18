@@ -62,7 +62,7 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		sourceLayer = builder.getSourceLayer();
 		targetLayer = builder.getTargetLayer();
 
-		resource = builder.createBufferedIOResource();
+		resource = requireNonNull(builder.createBufferedIOResource());
 	}
 
 	public BufferedIOResource getBufferedResource() {

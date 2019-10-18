@@ -65,6 +65,7 @@ import de.ims.icarus2.model.manifest.standard.PathResolverManifestImpl;
 import de.ims.icarus2.model.manifest.standard.RasterizerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureLayerManifestImpl;
 import de.ims.icarus2.model.manifest.standard.StructureManifestImpl;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.manifest.xml.delegates.DefaultManifestXmlDelegateFactory;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
@@ -109,7 +110,6 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 	private final ManifestRegistry registry;
 
-	//TODO use the 2 namespace related fields for checks in the reader/root stack!
 	private final String namespaceUri;
 	private final String namespacePrefix;
 
@@ -551,6 +551,12 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		public Optional<ManifestXmlHandler> startElement(ManifestLocation manifestLocation,
 				String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
+
+			if(namespaceUri!=null && !namespaceUri.equals(uri))
+				throw new SAXException(Messages.mismatch("Namespace URI mismatch", namespaceUri, uri));
+			if(namespacePrefix!=null && !namespacePrefix.regionMatches(
+					0, qName, 0, namespacePrefix.length()))
+				throw new SAXException(Messages.mismatch("Namespace prefix mismatch", namespacePrefix, qName));
 
 			ManifestXmlHandler handler = null;
 
