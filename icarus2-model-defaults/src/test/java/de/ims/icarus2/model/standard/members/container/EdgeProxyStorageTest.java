@@ -24,7 +24,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,6 +41,8 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -114,8 +115,9 @@ class EdgeProxyStorageTest implements ItemStorageTest<EdgeProxyStorage> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.EdgeProxyStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)}.
 		 */
 		@Test
-		void testGetItemAt() {
-			long index = randomId();
+		@RandomizedTest
+		void testGetItemAt(RandomGenerator rng) {
+			long index = rng.randomId();
 			storage.getItemAt(null, index);
 			verify(structure).getEdgeAt(index);
 		}
@@ -134,45 +136,50 @@ class EdgeProxyStorageTest implements ItemStorageTest<EdgeProxyStorage> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.EdgeProxyStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)}.
 		 */
 		@Test
-		void testAddItem() {
+		@RandomizedTest
+		void testAddItem(RandomGenerator rng) {
 			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> storage.addItem(null, randomId(), mockEdge()));
+					() -> storage.addItem(null, rng.randomId(), mockEdge()));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.EdgeProxyStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)}.
 		 */
 		@Test
-		void testAddItems() {
+		@RandomizedTest
+		void testAddItems(RandomGenerator rng) {
 			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> storage.addItems(null, randomId(), mockSequence()));
+					() -> storage.addItems(null, rng.randomId(), mockSequence()));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.EdgeProxyStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)}.
 		 */
 		@Test
-		void testRemoveItem() {
+		@RandomizedTest
+		void testRemoveItem(RandomGenerator rng) {
 			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> storage.removeItem(null, randomId()));
+					() -> storage.removeItem(null, rng.randomId()));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.EdgeProxyStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 		 */
 		@Test
-		void testRemoveItems() {
+		@RandomizedTest
+		void testRemoveItems(RandomGenerator rng) {
 			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> storage.removeItems(null, randomId(), randomId()));
+					() -> storage.removeItems(null, rng.randomId(), rng.randomId()));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.EdgeProxyStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 		 */
 		@Test
-		void testSwapItems() {
+		@RandomizedTest
+		void testSwapItems(RandomGenerator rng) {
 			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> storage.swapItems(null, randomId(), randomId()));
+					() -> storage.swapItems(null, rng.randomId(), rng.randomId()));
 		}
 
 		/**

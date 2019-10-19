@@ -21,7 +21,6 @@ package de.ims.icarus2.model.manifest.api.binding;
 
 import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
-import static de.ims.icarus2.test.TestUtils.randomizer;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,6 +39,8 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.Multiplicity;
 
 /**
@@ -85,7 +86,8 @@ public interface BindableTest<B extends Bindable> extends GenericTest<B> {
 	}
 
 	@Test
-	default void testGetBindingEndpoints() {
+	@RandomizedTest
+	default void testGetBindingEndpoints(RandomGenerator rand) {
 
 		// Test with unset endpoints, so expect empty set
 		B instance = createTestInstance(settings());
@@ -95,7 +97,7 @@ public interface BindableTest<B extends Bindable> extends GenericTest<B> {
 
 		// Test with predefined collection of endpoints
 		Set<Multiplicity> supportedMultiplicities = getSupportedBindingMultiplicities();
-		Supplier<Multiplicity> multRand = randomizer(supportedMultiplicities);
+		Supplier<Multiplicity> multRand = rand.randomizer(supportedMultiplicities);
 		Set<LayerPrerequisite> origBindings = new HashSet<>();
 		for(int i=0; i<100; i++) {
 			origBindings.add(mockPrerequisite(i, multRand.get()));

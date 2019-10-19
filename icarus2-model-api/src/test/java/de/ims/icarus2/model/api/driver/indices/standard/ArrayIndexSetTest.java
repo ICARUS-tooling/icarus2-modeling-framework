@@ -22,11 +22,6 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomBytes;
-import static de.ims.icarus2.test.TestUtils.randomInts;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
-import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -49,6 +44,8 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.bytes.ByteList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -62,7 +59,10 @@ import it.unimi.dsi.fastutil.shorts.ShortList;
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
+
+	static RandomGenerator rand;
 
 	private static Function<Config, IndexSet> constructor = config -> {
 		long[] indices = config.getIndices();
@@ -77,12 +77,13 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 	};
 
 	private static int randomSize() {
-		return random(10, 100);
+		return rand.random(10, 100);
 	}
 
 	@Override
 	public Stream<Config> configurations() {
 		Config base = new Config()
+				.rand(rand)
 				.defaultFeatures();
 
 		return Stream.of(IndexValueType.values())
@@ -107,7 +108,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 
 	@Override
 	public ArrayIndexSet createTestInstance(TestSettings settings) {
-		return settings.process(new ArrayIndexSet(randomInts(10, 0, Integer.MAX_VALUE)));
+		return settings.process(new ArrayIndexSet(new int[]{1, 2, 3, 4, 5}));
 	}
 
 	@Nested
@@ -174,11 +175,11 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		Stream<DynamicNode> testArrayIndexSetIndexValueTypeObjectInt() {
 			return Stream.of(IndexValueType.values())
 					.map(type -> dynamicContainer(type.name(),
-							random().ints(1, 1000)
+							rand.ints(1, 1000)
 								.limit(10)
 								.mapToObj(size -> dynamicTest(String.valueOf(size), () -> {
 									Object array = type.newArray(size);
-									int numIndices = random(1, size+1);
+									int numIndices = rand.random(1, size+1);
 									ArrayIndexSet set = new ArrayIndexSet(type, array, numIndices);
 									assertIndexSet(set, array, numIndices, type);
 								}))));
@@ -191,12 +192,12 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		Stream<DynamicNode> testArrayIndexSetIndexValueTypeObjectIntInt() {
 			return Stream.of(IndexValueType.values())
 					.map(type -> dynamicContainer(type.name(),
-							random().ints(1, 1000)
+							rand.ints(1, 1000)
 								.limit(10)
 								.mapToObj(size -> dynamicTest(String.valueOf(size), () -> {
 									Object array = type.newArray(size);
-									int from = random(0, size);
-									int to = random(from, size);
+									int from = rand.random(0, size);
+									int to = rand.random(from, size);
 									ArrayIndexSet set = new ArrayIndexSet(type, array, from, to);
 									assertIndexSet(set, array, to-from+1, type);
 								}))));
@@ -210,22 +211,22 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		Stream<DynamicNode> testArrayIndexSetIndexValueTypeObjectIntIntBoolean() {
 			return Stream.of(IndexValueType.values())
 					.map(type -> dynamicContainer(type.name(),
-							random().ints(1, 1000)
+							rand.ints(1, 1000)
 								.limit(10)
 								.mapToObj(Integer::valueOf)
 								.flatMap(size -> Stream.of(
 										dynamicTest(String.valueOf(size), () -> {
 										Object array = type.newArray(size);
-										int from = random(0, size);
-										int to = random(from, size);
+										int from = rand.random(0, size);
+										int to = rand.random(from, size);
 										ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, true);
 										assertIndexSet(set, array, to-from+1, type);
 										assertTrue(set.isSorted());
 										}),
 										dynamicTest(String.valueOf(size), () -> {
 										Object array = type.newArray(size);
-										int from = random(0, size);
-										int to = random(from, size);
+										int from = rand.random(0, size);
+										int to = rand.random(from, size);
 										ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, false);
 										assertIndexSet(set, array, to-from+1, type);
 										assertFalse(set.isSorted());
@@ -245,7 +246,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		Stream<DynamicTest> testCopyOfIndexSet() {
 			return Stream.of(IndexValueType.values())
 					.map(type -> dynamicTest(type.name(), () -> {
-						long[] indices = randomLongs(randomSize(), 0, type.maxValue());
+						long[] indices = rand.randomLongs(randomSize(), 0, type.maxValue());
 						IndexSet source = set(type, indices);
 						ArrayIndexSet set = ArrayIndexSet.copyOf(source);
 						assertIndicesEqualsExact(source, set);
@@ -261,10 +262,10 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 			return Stream.of(IndexValueType.values())
 					.map(type -> dynamicTest(type.name(), () -> {
 						int size = randomSize();
-						long[] indices = randomLongs(size, 0, type.maxValue());
+						long[] indices = rand.randomLongs(size, 0, type.maxValue());
 						IndexSet source = set(type, indices);
-						int from = random(0, size);
-						int to = random(from, size);
+						int from = rand.random(0, size);
+						int to = rand.random(from, size);
 						ArrayIndexSet set = ArrayIndexSet.copyOf(source, from, to);
 						assertEquals(to-from+1, set.size());
 						assertEquals(type, set.getIndexValueType());
@@ -279,7 +280,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		 */
 		@RepeatedTest(RUNS)
 		void testCopyOfByteList() {
-			ByteList list = new ByteArrayList(randomBytes(randomSize(), (byte)0, Byte.MAX_VALUE));
+			ByteList list = new ByteArrayList(rand.randomBytes(randomSize(), (byte)0, Byte.MAX_VALUE));
 			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
 			assertEquals(list.size(), set.size());
 			assertEquals(IndexValueType.BYTE, set.getIndexValueType());
@@ -293,7 +294,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		 */
 		@RepeatedTest(RUNS)
 		void testCopyOfShortList() {
-			ShortList list = new ShortArrayList(randomShorts(randomSize(), (short)0, Short.MAX_VALUE));
+			ShortList list = new ShortArrayList(rand.randomShorts(randomSize(), (short)0, Short.MAX_VALUE));
 			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
 			assertEquals(list.size(), set.size());
 			assertEquals(IndexValueType.SHORT, set.getIndexValueType());
@@ -307,7 +308,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		 */
 		@RepeatedTest(RUNS)
 		void testCopyOfIntList() {
-			IntList list = new IntArrayList(randomInts(randomSize(), 0, Integer.MAX_VALUE));
+			IntList list = new IntArrayList(rand.randomInts(randomSize(), 0, Integer.MAX_VALUE));
 			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
 			assertEquals(list.size(), set.size());
 			assertEquals(IndexValueType.INTEGER, set.getIndexValueType());
@@ -321,7 +322,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		 */
 		@RepeatedTest(RUNS)
 		void testCopyOfLongList() {
-			LongList list = new LongArrayList(randomLongs(randomSize(), 0L, Long.MAX_VALUE));
+			LongList list = new LongArrayList(rand.randomLongs(randomSize(), 0L, Long.MAX_VALUE));
 			ArrayIndexSet set = ArrayIndexSet.copyOf(list);
 			assertEquals(list.size(), set.size());
 			assertEquals(IndexValueType.LONG, set.getIndexValueType());
@@ -335,7 +336,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		 */
 		@RepeatedTest(RUNS)
 		void testFromIteratorOfInt() {
-			IntList list = new IntArrayList(randomInts(randomSize(), 0, Integer.MAX_VALUE));
+			IntList list = new IntArrayList(rand.randomInts(randomSize(), 0, Integer.MAX_VALUE));
 			ArrayIndexSet set = ArrayIndexSet.fromIterator(list.iterator());
 			assertEquals(list.size(), set.size());
 			assertEquals(IndexValueType.INTEGER, set.getIndexValueType());
@@ -349,7 +350,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 		 */
 		@RepeatedTest(RUNS)
 		void testFromIteratorOfLong() {
-			LongList list = new LongArrayList(randomLongs(randomSize(), 0L, Long.MAX_VALUE));
+			LongList list = new LongArrayList(rand.randomLongs(randomSize(), 0L, Long.MAX_VALUE));
 			ArrayIndexSet set = ArrayIndexSet.fromIterator(list.iterator());
 			assertEquals(list.size(), set.size());
 			assertEquals(IndexValueType.LONG, set.getIndexValueType());

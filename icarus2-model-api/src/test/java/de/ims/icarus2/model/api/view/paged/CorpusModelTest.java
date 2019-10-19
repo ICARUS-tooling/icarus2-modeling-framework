@@ -40,7 +40,6 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static de.ims.icarus2.test.TestUtils.DO_NOTHING;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
@@ -105,6 +104,8 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.ChangeableTest;
 import de.ims.icarus2.util.Mutable.MutableObject;
@@ -857,8 +858,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetIndex() {
-		long index = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetIndex(RandomGenerator rand) {
+		long index = rand.random(0, Long.MAX_VALUE);
 		Item item = mockUsableItem();
 		when(item.getIndex()).thenReturn(index);
 
@@ -879,8 +881,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetBeginOffset() {
-		long offset = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetBeginOffset(RandomGenerator rand) {
+		long offset = rand.random(0, Long.MAX_VALUE);
 		Item item = mockUsableItem();
 		when(item.getBeginOffset()).thenReturn(offset);
 
@@ -901,8 +904,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetEndOffset() {
-		long offset = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetEndOffset(RandomGenerator rand) {
+		long offset = rand.random(0, Long.MAX_VALUE);
 		Item item = mockUsableItem();
 		when(item.getEndOffset()).thenReturn(offset);
 
@@ -954,8 +958,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getContainerType(de.ims.icarus2.model.api.members.container.Container)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetContainerType() {
-		ContainerType type = random(ContainerType.values());
+	@RandomizedTest
+	default List<DynamicTest> testGetContainerType(RandomGenerator rand) {
+		ContainerType type = rand.random(ContainerType.values());
 		Container container = mockUsableContainer();
 		when(container.getContainerType()).thenReturn(type);
 
@@ -1018,8 +1023,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetItemCount() {
-		long count = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetItemCount(RandomGenerator rand) {
+		long count = rand.random(0, Long.MAX_VALUE);
 		Container container = mockUsableContainer();
 		when(container.getItemCount()).thenReturn(count);
 
@@ -1039,9 +1045,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetItemAt() {
+	@RandomizedTest
+	default List<DynamicTest> testGetItemAt(RandomGenerator rand) {
 		Item item = mockItem();
-		long index = random(0, Long.MAX_VALUE);
+		long index = rand.random(0, Long.MAX_VALUE);
 		Container container = mockUsableContainer();
 		when(container.getItemAt(eq(index))).thenReturn(item);
 
@@ -1062,9 +1069,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testIndexOfItem() {
+	@RandomizedTest
+	default List<DynamicTest> testIndexOfItem(RandomGenerator rand) {
 		Item item = mockItem();
-		long index = random(0, Long.MAX_VALUE);
+		long index = rand.random(0, Long.MAX_VALUE);
 		Container container = mockUsableContainer();
 		when(container.indexOfItem(eq(item))).thenReturn(index);
 
@@ -1130,10 +1138,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddItemContainerLongItem() {
+	@RandomizedTest
+	default List<DynamicTest> testAddItemContainerLongItem(RandomGenerator rand) {
 		Item item = mockItem();
-		long size = random(0, Long.MAX_VALUE);
-		long index = random(0, size);
+		long size = rand.random(0, Long.MAX_VALUE);
+		long index = rand.random(0, size);
 		Container container = mockUsableContainer();
 		stubItemCount(container, size);
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -1157,10 +1166,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddItems() {
-		long itemCount = random(0, Long.MAX_VALUE/2);
-		long index = random(0, itemCount);
-		long size = random(1, Long.MAX_VALUE-itemCount);
+	@RandomizedTest
+	default List<DynamicTest> testAddItems(RandomGenerator rand) {
+		long itemCount = rand.random(0, Long.MAX_VALUE/2);
+		long index = rand.random(0, itemCount);
+		long size = rand.random(1, Long.MAX_VALUE-itemCount);
 		DataSequence<Item> items = mockSequence(size);
 		Container container = mockUsableContainer();
 		stubItemCount(container, itemCount);
@@ -1185,9 +1195,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeItem(de.ims.icarus2.model.api.members.container.Container, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testRemoveItemContainerLong() {
-		long itemCount = random(10, Long.MAX_VALUE/2);
-		long index = random(0, itemCount);
+	@RandomizedTest
+	default List<DynamicTest> testRemoveItemContainerLong(RandomGenerator rand) {
+		long itemCount = rand.random(10, Long.MAX_VALUE/2);
+		long index = rand.random(0, itemCount);
 		Item item = mockItem();
 		Container container = mockUsableContainer();
 		stubItemCount(container, itemCount);
@@ -1214,9 +1225,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testRemoveItemContainerItem() {
-		long itemCount = random(10, Long.MAX_VALUE/2);
-		long index = random(0, itemCount);
+	@RandomizedTest
+	default List<DynamicTest> testRemoveItemContainerItem(RandomGenerator rand) {
+		long itemCount = rand.random(10, Long.MAX_VALUE/2);
+		long index = rand.random(0, itemCount);
 		Item item = mockItem();
 		Container container = mockUsableContainer();
 		when(container.indexOfItem(item)).thenReturn(index);
@@ -1244,10 +1256,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	default List<DynamicTest> testRemoveItems() {
-		long itemCount = random(10, Long.MAX_VALUE/2);
-		long index0 = random(0, itemCount/2);
-		long index1 = random(index0, itemCount);
+	@RandomizedTest
+	default List<DynamicTest> testRemoveItems(RandomGenerator rand) {
+		long itemCount = rand.random(10, Long.MAX_VALUE/2);
+		long index0 = rand.random(0, itemCount/2);
+		long index1 = rand.random(index0, itemCount);
 		Container container = mockUsableContainer();
 		stubItemCount(container, itemCount);
 		DataSequence<Item> items = mockSequence(index1-index0+1);
@@ -1273,10 +1286,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testSwapItems() {
-		long itemCount = random(10, Long.MAX_VALUE/2);
-		long index0 = random(0, itemCount/2);
-		long index1 = random(index0, itemCount);
+	@RandomizedTest
+	default List<DynamicTest> testSwapItems(RandomGenerator rand) {
+		long itemCount = rand.random(10, Long.MAX_VALUE/2);
+		long index0 = rand.random(0, itemCount/2);
+		long index1 = rand.random(index0, itemCount);
 		Item item0 = mockItem();
 		Item item1 = mockItem();
 		Container container = mockUsableContainer();
@@ -1304,8 +1318,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getStructureType(de.ims.icarus2.model.api.members.structure.Structure)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetStructureType() {
-		StructureType type = random(StructureType.values());
+	@RandomizedTest
+	default List<DynamicTest> testGetStructureType(RandomGenerator rand) {
+		StructureType type = rand.random(StructureType.values());
 		Structure structure = mockUsableStructure();
 		when(structure.getStructureType()).thenReturn(type);
 
@@ -1326,8 +1341,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetEdgeCountStructure() {
-		long count = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetEdgeCountStructure(RandomGenerator rand) {
+		long count = rand.random(0, Long.MAX_VALUE);
 		Structure structure = mockUsableStructure();
 		when(structure.getEdgeCount()).thenReturn(count);
 
@@ -1347,9 +1363,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetEdgeAtStructureLong() {
+	@RandomizedTest
+	default List<DynamicTest> testGetEdgeAtStructureLong(RandomGenerator rand) {
 		Edge edge = mockEdge();
-		long index = random(0, Long.MAX_VALUE);
+		long index = rand.random(0, Long.MAX_VALUE);
 		Structure structure = mockUsableStructure();
 		when(structure.getEdgeAt(eq(index))).thenReturn(edge);
 
@@ -1370,9 +1387,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testIndexOfEdge() {
+	@RandomizedTest
+	default List<DynamicTest> testIndexOfEdge(RandomGenerator rand) {
 		Edge edge = mockEdge();
-		long index = random(0, Long.MAX_VALUE);
+		long index = rand.random(0, Long.MAX_VALUE);
 		Structure structure = mockUsableStructure();
 		when(structure.indexOfEdge(eq(edge))).thenReturn(index);
 
@@ -1415,8 +1433,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetEdgeCountStructureItem() {
-		long count = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetEdgeCountStructureItem(RandomGenerator rand) {
+		long count = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
 		when(structure.getEdgeCount(item)).thenReturn(count);
@@ -1438,9 +1457,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetEdgeCountStructureItemBoolean() {
-		long count = random(0, Long.MAX_VALUE);
-		boolean isSource = random().nextBoolean();
+	@RandomizedTest
+	default List<DynamicTest> testGetEdgeCountStructureItemBoolean(RandomGenerator rand) {
+		long count = rand.random(0, Long.MAX_VALUE);
+		boolean isSource = rand.nextBoolean();
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
 		when(structure.getEdgeCount(item, isSource)).thenReturn(count);
@@ -1461,9 +1481,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getEdgeAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetEdgeAtStructureItemLongBoolean() {
-		long index = random(0, Long.MAX_VALUE);
-		boolean isSource = random().nextBoolean();
+	@RandomizedTest
+	default List<DynamicTest> testGetEdgeAtStructureItemLongBoolean(RandomGenerator rand) {
+		long index = rand.random(0, Long.MAX_VALUE);
+		boolean isSource = rand.nextBoolean();
 		Edge edge = mockEdge();
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
@@ -1508,8 +1529,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testIndexOfChild() {
-		long index = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testIndexOfChild(RandomGenerator rand) {
+		long index = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
 		when(structure.indexOfChild(item)).thenReturn(index);
@@ -1530,8 +1552,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getSiblingAt(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetSiblingAt() {
-		long index = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetSiblingAt(RandomGenerator rand) {
+		long index = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Item sibling = mockItem();
 		Structure structure = mockUsableStructure();
@@ -1554,8 +1577,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetHeight() {
-		long height = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetHeight(RandomGenerator rand) {
+		long height = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
 		when(structure.getHeight(item)).thenReturn(height);
@@ -1577,8 +1601,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetDepth() {
-		long depth = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetDepth(RandomGenerator rand) {
+		long depth = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
 		when(structure.getDepth(item)).thenReturn(depth);
@@ -1600,8 +1625,9 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetDescendantCount() {
-		long count = random(0, Long.MAX_VALUE);
+	@RandomizedTest
+	default List<DynamicTest> testGetDescendantCount(RandomGenerator rand) {
+		long count = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
 		when(structure.getDescendantCount(item)).thenReturn(count);
@@ -1689,10 +1715,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addEdge(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.model.api.members.item.Edge)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddEdgeStructureLongEdge() {
+	@RandomizedTest
+	default List<DynamicTest> testAddEdgeStructureLongEdge(RandomGenerator rand) {
 		Edge edge = mockEdge();
-		long edgeCount = random(0, Long.MAX_VALUE);
-		long index = random(0, edgeCount);
+		long edgeCount = rand.random(0, Long.MAX_VALUE);
+		long index = rand.random(0, edgeCount);
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -1716,10 +1743,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addEdges(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.util.collections.seq.DataSequence)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddEdges() {
-		long edgeCount = random(0, Long.MAX_VALUE/2);
-		long index = random(0, edgeCount);
-		long size = random(1, Long.MAX_VALUE-edgeCount);
+	@RandomizedTest
+	default List<DynamicTest> testAddEdges(RandomGenerator rand) {
+		long edgeCount = rand.random(0, Long.MAX_VALUE/2);
+		long index = rand.random(0, edgeCount);
+		long size = rand.random(1, Long.MAX_VALUE-edgeCount);
 		DataSequence<Edge> edges = mockSequence(size);
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
@@ -1744,9 +1772,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#removeEdge(de.ims.icarus2.model.api.members.structure.Structure, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testRemoveEdgeStructureLong() {
-		long edgeCount = random(10, Long.MAX_VALUE);
-		long index = random(0, edgeCount);
+	@RandomizedTest
+	default List<DynamicTest> testRemoveEdgeStructureLong(RandomGenerator rand) {
+		long edgeCount = rand.random(10, Long.MAX_VALUE);
+		long index = rand.random(0, edgeCount);
 		Edge edge = mockEdge();
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
@@ -1773,9 +1802,10 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testRemoveEdgeStructureEdge() {
-		long edgeCount = random(10, Long.MAX_VALUE);
-		long index = random(0, edgeCount);
+	@RandomizedTest
+	default List<DynamicTest> testRemoveEdgeStructureEdge(RandomGenerator rand) {
+		long edgeCount = rand.random(10, Long.MAX_VALUE);
+		long index = rand.random(0, edgeCount);
 		Edge edge = mockEdge();
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
@@ -1803,10 +1833,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("unchecked")
 	@TestFactory
-	default List<DynamicTest> testRemoveEdges() {
-		long edgeCount = random(10, Long.MAX_VALUE);
-		long index0 = random(0, edgeCount/2);
-		long index1 = random(index0, edgeCount);
+	@RandomizedTest
+	default List<DynamicTest> testRemoveEdges(RandomGenerator rand) {
+		long edgeCount = rand.random(10, Long.MAX_VALUE);
+		long index0 = rand.random(0, edgeCount/2);
+		long index1 = rand.random(index0, edgeCount);
 		DataSequence<Edge> edges = mockSequence(index1-index0+1);
 		Structure structure = mockUsableStructure();
 		stubEdgeCount(structure, edgeCount);
@@ -1832,10 +1863,11 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#swapEdges(de.ims.icarus2.model.api.members.structure.Structure, long, long)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testSwapEdges() {
-		long edgeCount = random(10, Long.MAX_VALUE);
-		long index0 = random(0, edgeCount/2);
-		long index1 = random(index0, edgeCount);
+	@RandomizedTest
+	default List<DynamicTest> testSwapEdges(RandomGenerator rand) {
+		long edgeCount = rand.random(10, Long.MAX_VALUE);
+		long index0 = rand.random(0, edgeCount/2);
+		long index1 = rand.random(index0, edgeCount);
 		Edge edge0 = mockEdge();
 		Edge edge1 = mockEdge();
 		Structure structure = mockUsableStructure();
@@ -1863,11 +1895,12 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setTerminal(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item, boolean)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testSetTerminal() {
+	@RandomizedTest
+	default List<DynamicTest> testSetTerminal(RandomGenerator rand) {
 		Structure structure = mockUsableStructure();
 		Edge edge = mockEdge(structure);
 		Item terminal = mockItem();
-		boolean isSource = random().nextBoolean();
+		boolean isSource = rand.nextBoolean();
 		MutableObject<AtomicChange> change = new MutableObject<>();
 
 		return new ModelTest<>(this, Structure.class)
@@ -2118,12 +2151,13 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetIntegerValue() {
+	@RandomizedTest
+	default List<DynamicTest> testGetIntegerValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		int value = random(0, Integer.MAX_VALUE);
+		int value = rand.random(0, Integer.MAX_VALUE);
 		String key = "key";
 		when(storage.getInteger(item, key)).thenReturn(value);
 
@@ -2144,12 +2178,13 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetLongValue() {
+	@RandomizedTest
+	default List<DynamicTest> testGetLongValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		long value = random(0, Long.MAX_VALUE);
+		long value = rand.random(0, Long.MAX_VALUE);
 		String key = "key";
 		when(storage.getLong(item, key)).thenReturn(value);
 
@@ -2170,12 +2205,13 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetFloatValue() {
+	@RandomizedTest
+	default List<DynamicTest> testGetFloatValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		float value = random().nextFloat();
+		float value = rand.nextFloat();
 		String key = "key";
 		when(storage.getFloat(item, key)).thenReturn(value);
 
@@ -2196,12 +2232,13 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetDoubleValue() {
+	@RandomizedTest
+	default List<DynamicTest> testGetDoubleValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		double value = random().nextDouble();
+		double value = rand.nextDouble();
 		String key = "key";
 		when(storage.getDouble(item, key)).thenReturn(value);
 
@@ -2222,12 +2259,13 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testGetBooleanValue() {
+	@RandomizedTest
+	default List<DynamicTest> testGetBooleanValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		boolean value = random().nextBoolean();
+		boolean value = rand.nextBoolean();
 		String key = "key";
 		when(storage.getBoolean(item, key)).thenReturn(value);
 
@@ -2247,6 +2285,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#setValue(de.ims.icarus2.model.api.layer.AnnotationLayer, de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default List<DynamicTest> testSetValue() {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
@@ -2278,13 +2317,14 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testSetIntegerValue() {
+	@RandomizedTest
+	default List<DynamicTest> testSetIntegerValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		int oldValue = random().nextInt();
-		int newValue = random().nextInt();
+		int oldValue = rand.nextInt();
+		int newValue = rand.nextInt();
 		String key = "key";
 		when(storage.getInteger(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -2309,13 +2349,14 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testSetLongValue() {
+	@RandomizedTest
+	default List<DynamicTest> testSetLongValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		long oldValue = random().nextLong();
-		long newValue = random().nextLong();
+		long oldValue = rand.nextLong();
+		long newValue = rand.nextLong();
 		String key = "key";
 		when(storage.getLong(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -2340,13 +2381,14 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testSetFloatValue() {
+	@RandomizedTest
+	default List<DynamicTest> testSetFloatValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		float oldValue = random().nextFloat();
-		float newValue = random().nextFloat();
+		float oldValue = rand.nextFloat();
+		float newValue = rand.nextFloat();
 		String key = "key";
 		when(storage.getFloat(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -2371,13 +2413,14 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testSetDoubleValue() {
+	@RandomizedTest
+	default List<DynamicTest> testSetDoubleValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		double oldValue = random().nextDouble();
-		double newValue = random().nextDouble();
+		double oldValue = rand.nextDouble();
+		double newValue = rand.nextDouble();
 		String key = "key";
 		when(storage.getDouble(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -2402,13 +2445,14 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testSetBooleanValue() {
+	@RandomizedTest
+	default List<DynamicTest> testSetBooleanValue(RandomGenerator rand) {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
 		Item item = mockUsableItem();
-		boolean oldValue = random().nextBoolean();
-		boolean newValue = random().nextBoolean();
+		boolean oldValue = rand.nextBoolean();
+		boolean newValue = rand.nextBoolean();
 		String key = "key";
 		when(storage.getBoolean(item, key)).thenReturn(oldValue);
 		MutableObject<AtomicChange> change = new MutableObject<>();

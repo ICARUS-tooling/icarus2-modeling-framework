@@ -26,6 +26,9 @@ import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -36,8 +39,9 @@ class ListSequenceTest implements DataSequenceTest<ListSequence<Object>> {
 	 * Test method for {@link de.ims.icarus2.util.collections.seq.ListSequence#ListSequence(java.util.List)}.
 	 */
 	@Test
-	void testListSequence() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	void testListSequence(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		ListSequence<Object> seq = new ListSequence<>(list(items));
 		for (int i = 0; i < items.length; i++) {
 			assertSame(items[i], seq.elementAt(i));

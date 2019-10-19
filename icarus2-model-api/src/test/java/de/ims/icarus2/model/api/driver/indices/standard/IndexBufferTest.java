@@ -22,7 +22,6 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.ArrayUtils.fillAscending;
@@ -66,6 +65,8 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.lang.Primitives;
@@ -74,7 +75,10 @@ import de.ims.icarus2.util.lang.Primitives;
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
+
+	static RandomGenerator rand;
 
 	private static final Function<Config, IndexSet> constructor = config -> {
 		long[] indices = config.getIndices();
@@ -86,7 +90,7 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 	private static final int MAX_SIZE = 100;
 
 	private static int randomSize() {
-		return random(10, MAX_SIZE);
+		return rand.random(10, MAX_SIZE);
 	}
 
 	@Override
@@ -94,6 +98,7 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		return Stream.of(IndexValueType.values())
 				.map(type -> new Config()
 						.valueType(type)
+						.rand(rand)
 						.defaultFeatures())
 				.flatMap(config -> Stream.of(
 						// Empty
@@ -169,9 +174,10 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {0, -1, Integer.MAX_VALUE})
-		void testIndexBufferIndexValueTypeInt(int capacity) {
+		@RandomizedTest
+		void testIndexBufferIndexValueTypeInt(RandomGenerator rand, int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new IndexBuffer(random(IndexValueType.values()), capacity));
+					() -> new IndexBuffer(rand.random(IndexValueType.values()), capacity));
 		}
 
 	}
@@ -215,7 +221,7 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 				}
 				return config.indices(config.isSorted() ?
 						IndexSetTest.sortedIndices(type, randomSize(), 0)
-						: IndexSetTest.randomIndices(type, randomSize()));
+						: IndexSetTest.randomIndices(config.rand(), type, randomSize()));
 			};
 		}
 
@@ -325,7 +331,8 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(long, long)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddLongLong() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddLongLong(RandomGenerator rand) {
 			return Stream.of(IndexValueType.values())
 					.map(type -> new Config()
 							.valueType(type)
@@ -336,12 +343,13 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 							.set(createEmpty))
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
 
 						int start = 0;
 						while(start < indices.length) {
-							int count = random(1, indices.length-start+1);
+							int count = rand.random(1, indices.length-start+1);
 							int end = start + count - 1;
 							buffer.add(indices[start], indices[end]);
 							start = end+1;
@@ -429,14 +437,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(byte[], int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddByteArrayIntInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddByteArrayIntInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeLimitedIndices(IndexValueType.BYTE))
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						byte[] tmp = new byte[indices.length*2];
 						for (int i = 0; i < indices.length; i++) {
 							tmp[offset+i] = strictToByte(indices[i]);
@@ -476,14 +486,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(short[], int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddShortArrayIntInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddShortArrayIntInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeLimitedIndices(IndexValueType.SHORT))
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						short[] tmp = new short[indices.length*2];
 						for (int i = 0; i < indices.length; i++) {
 							tmp[offset+i] = strictToShort(indices[i]);
@@ -523,14 +535,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(int[], int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddIntArrayIntInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddIntArrayIntInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeLimitedIndices(IndexValueType.INTEGER))
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						int[] tmp = new int[indices.length*2];
 						for (int i = 0; i < indices.length; i++) {
 							tmp[offset+i] = strictToInt(indices[i]);
@@ -566,14 +580,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(long[], int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddLongArrayIntInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddLongArrayIntInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeDefaultIndices)
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						long[] tmp = new long[indices.length*2];
 						System.arraycopy(indices, 0, tmp, offset, indices.length);
 
@@ -608,14 +624,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(de.ims.icarus2.model.api.driver.indices.IndexSet, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddIndexSetInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddIndexSetInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeDefaultIndices)
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						long[] tmp = new long[indices.length+offset];
 						System.arraycopy(indices, 0, tmp, offset, indices.length);
 						IndexSet set = set(tmp);
@@ -631,14 +649,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#add(de.ims.icarus2.model.api.driver.indices.IndexSet, int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddIndexSetIntInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddIndexSetIntInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeDefaultIndices)
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						long[] tmp = new long[indices.length*2];
 						System.arraycopy(indices, 0, tmp, offset, indices.length);
 						IndexSet set = set(tmp);
@@ -751,14 +771,16 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer#addFromItems(de.ims.icarus2.model.api.members.item.Item[], int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicTest> testAddFromItemsItemArrayIntInt() {
+		@RandomizedTest
+		Stream<DynamicTest> testAddFromItemsItemArrayIntInt(RandomGenerator rand) {
 			return configurations()
 					.map(makeDefaultIndices)
 					.map(Config::validate)
 					.map(config -> dynamicTest(config.getLabel(), () -> {
+						rand.reset();
 						IndexBuffer buffer = buffer(config);
 						long[] indices = config.getIndices();
-						int offset = random(1, indices.length);
+						int offset = rand.random(1, indices.length);
 						Item[] items = new Item[indices.length*2];
 						for (int i = 0; i < indices.length; i++) {
 							items[offset+i] = new DummyItem(indices[i]);

@@ -3,11 +3,8 @@
  */
 package de.ims.icarus2.util.stat;
 
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.displayString;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomIntStream;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,13 +19,14 @@ import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.stat.Histogram.ArrayHistogram;
 
 /**
@@ -67,10 +65,10 @@ class HistogramTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#bins()}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		default Stream<DynamicTest> testBins() {
-			return randomIntStream(100)
+		default Stream<DynamicTest> testBins(RandomGenerator rand) {
+			return rand.randomIntStream(100)
 					.distinct()
 					.limit(RUNS)
 					.map(i -> i+1)
@@ -83,10 +81,10 @@ class HistogramTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#lowerBound(int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		default Stream<DynamicTest> testLowerBound() {
-			return random()
+		default Stream<DynamicTest> testLowerBound(RandomGenerator rand) {
+			return rand
 					.longs(Long.MIN_VALUE/2, Long.MAX_VALUE/2)
 					.distinct()
 					.limit(RUNS)
@@ -100,10 +98,10 @@ class HistogramTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#higherBound(int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		default Stream<DynamicTest> testHigherBound() {
-			return random()
+		default Stream<DynamicTest> testHigherBound(RandomGenerator rand) {
+			return rand
 					.longs(Long.MIN_VALUE/2, Long.MAX_VALUE/2)
 					.distinct()
 					.limit(RUNS)
@@ -125,11 +123,12 @@ class HistogramTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#entries()}.
 		 */
+		@RandomizedTest
 		@RepeatedTest(RUNS)
-		default void testEntries() {
+		default void testEntries(RandomGenerator rand) {
 			Histogram hist = createForBins(100);
 
-			int count = random(1, 1000);
+			int count = rand.random(1, 1000);
 			for (int i = 0; i < count; i++) {
 				hist.accept(10);
 			}
@@ -152,14 +151,15 @@ class HistogramTest {
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#freq(int)}.
 		 */
 		@TestFactory
-		default Stream<DynamicNode> testFreq() {
+		@RandomizedTest
+		default Stream<DynamicNode> testFreq(RandomGenerator rand) {
 			return Stream.of(
 					dynamicContainer("single bin", IntStream.range(0, 100)
 							.distinct()
 							.limit(RUNS)
 							.mapToObj(bin -> dynamicTest(String.valueOf(bin), () -> {
 								H hist = createForBins(100);
-								int count = random(10, 1000);
+								int count = rand.random(10, 1000);
 								long value = hist.lowerBound(bin);
 								// Fill histogram
 								for (int i = 0; i < count; i++) {
@@ -195,7 +195,7 @@ class HistogramTest {
 								int[] counts = new int[100];
 								// Fill histogram
 								for (int i = 0; i < hist.bins(); i++) {
-									int count = random(0, 100);
+									int count = rand.random(0, 100);
 									int value = strictToInt(hist.lowerBound(i));
 									for (int j = 0; j < count; j++) {
 										hist.accept(value);
@@ -214,18 +214,19 @@ class HistogramTest {
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#bin(long)}.
 		 */
 		@TestFactory
-		default Stream<DynamicNode> testBin() {
+		@RandomizedTest
+		default Stream<DynamicNode> testBin(RandomGenerator rand) {
 			return Stream.of(
 						dynamicTest("fixed 0 offset", () -> {
-							int bins = random(10, 100);
+							int bins = rand.random(10, 100);
 							H hist = createForBins(bins);
 							for (int i = 0; i < bins; i++) {
 								assertEquals(i, hist.bin(i));
 							}
 						}),
 						dynamicTest("random offset", () -> {
-							int bins = random(10, 100);
-							long offset = random(Long.MIN_VALUE/2, Long.MAX_VALUE/2);
+							int bins = rand.random(10, 100);
+							long offset = rand.random(Long.MIN_VALUE/2, Long.MAX_VALUE/2);
 							H hist = createForRange(offset, offset+bins-1);
 							for (int i = 0; i < bins; i++) {
 								assertEquals(i, hist.bin(i+offset));
@@ -238,7 +239,8 @@ class HistogramTest {
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#average()}.
 		 */
 		@TestFactory
-		default Stream<DynamicNode> testAverage() {
+		@RandomizedTest
+		default Stream<DynamicNode> testAverage(RandomGenerator rand) {
 			return Stream.of(
 					dynamicTest("empty", () -> {
 						assertEquals(Double.NaN, createForBins(100).average());
@@ -248,7 +250,7 @@ class HistogramTest {
 							.limit(RUNS)
 							.mapToObj(bin -> dynamicTest("bin "+bin, () -> {
 								H hist = createForBins(100);
-								int count = random(10, 1000);
+								int count = rand.random(10, 1000);
 								long value = hist.lowerBound(bin);
 								// Fill histogram
 								for (int i = 0; i < count; i++) {
@@ -263,7 +265,7 @@ class HistogramTest {
 							.mapToObj(run -> dynamicTest(String.format("run %d of %d",
 									_int(run), _int(RUNS)), () -> {
 								H hist = createForBins(100);
-								int count = random(10, 1000);
+								int count = rand.random(10, 1000);
 								long sum = 0L;
 								// Fill histogram
 								for (int i = 0; i < hist.bins(); i++) {
@@ -285,7 +287,7 @@ class HistogramTest {
 								long sum = 0L;
 								// Fill histogram
 								for (int bin = 0; bin < hist.bins(); bin++) {
-									int count = random(10, 1000);
+									int count = rand.random(10, 1000);
 									int value = strictToInt(hist.lowerBound(bin));
 									for (int j = 0; j < count; j++) {
 										hist.accept(value);
@@ -302,22 +304,23 @@ class HistogramTest {
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#min()}.
 		 */
 		@TestFactory
-		default Stream<DynamicNode> testMin() {
+		@RandomizedTest
+		default Stream<DynamicNode> testMin(RandomGenerator rand) {
 			return Stream.of(
 					dynamicTest("no offset", () -> {
-						int bins = random(10, 100);
+						int bins = rand.random(10, 100);
 						H hist = createForBins(bins);
 						assertEquals(0, hist.min());
 					}),
 					dynamicTest("negative offset", () -> {
-						int bins = random(10, 100);
-						long offset = random(Long.MIN_VALUE, 0);
+						int bins = rand.random(10, 100);
+						long offset = rand.random(Long.MIN_VALUE, 0);
 						H hist = createForRange(offset, offset+bins-1);
 						assertEquals(offset, hist.min());
 					}),
 					dynamicTest("positive offset", () -> {
-						int bins = random(10, 100);
-						long offset = random(1, Long.MAX_VALUE/2);
+						int bins = rand.random(10, 100);
+						long offset = rand.random(1, Long.MAX_VALUE/2);
 						H hist = createForRange(offset, offset+bins-1);
 						assertEquals(offset, hist.min());
 					})
@@ -328,22 +331,23 @@ class HistogramTest {
 		 * Test method for {@link de.ims.icarus2.util.stat.Histogram#max()}.
 		 */
 		@TestFactory
-		default Stream<DynamicNode> testMax() {
+		@RandomizedTest
+		default Stream<DynamicNode> testMax(RandomGenerator rand) {
 			return Stream.of(
 					dynamicTest("no offset", () -> {
-						int bins = random(10, 100);
+						int bins = rand.random(10, 100);
 						H hist = createForBins(bins);
 						assertEquals(bins-1, hist.max());
 					}),
 					dynamicTest("negative offset", () -> {
-						int bins = random(10, 100);
-						long offset = random(Long.MIN_VALUE, -100);
+						int bins = rand.random(10, 100);
+						long offset = rand.random(Long.MIN_VALUE, -100);
 						H hist = createForRange(offset, offset+bins-1);
 						assertEquals(offset+bins-1, hist.max());
 					}),
 					dynamicTest("positive offset", () -> {
-						int bins = random(10, 100);
-						long offset = random(1, Long.MAX_VALUE/2);
+						int bins = rand.random(10, 100);
+						long offset = rand.random(1, Long.MAX_VALUE/2);
 						H hist = createForRange(offset, offset+bins-1);
 						assertEquals(offset+bins-1, hist.max());
 					})

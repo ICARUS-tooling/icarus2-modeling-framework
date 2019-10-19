@@ -23,12 +23,7 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertUnsupportedT
 import static de.ims.icarus2.test.TestTags.CONCURRENT;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomContent;
-import static de.ims.icarus2.test.TestUtils.randomString;
-import static de.ims.icarus2.test.TestUtils.randomSubLists;
 import static de.ims.icarus2.test.util.Triple.nullableTriple;
-import static de.ims.icarus2.util.collections.ArrayUtils.shuffle;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,7 +77,9 @@ import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataU
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.concurrent.Circuit;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
@@ -94,7 +91,10 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class PackedDataManagerTest {
+
+	static RandomGenerator rand;
 
 	private static final ValueType[] _types = {
 			ValueType.STRING,
@@ -108,12 +108,12 @@ class PackedDataManagerTest {
 
 	@SuppressWarnings("rawtypes")
 	private static final Supplier[] _gen = {
-			() -> randomString(20),
-			() -> Integer.valueOf(random().nextInt()),
-			() -> Long.valueOf(random().nextLong()),
-			() -> Double.valueOf(random().nextDouble()*Double.MAX_VALUE),
-			() -> Float.valueOf(random().nextFloat()*Float.MAX_VALUE),
-			() -> Boolean.valueOf(random().nextBoolean()),
+			() -> rand.randomString(20),
+			() -> Integer.valueOf(rand.nextInt()),
+			() -> Long.valueOf(rand.nextLong()),
+			() -> Double.valueOf(rand.nextDouble()*Double.MAX_VALUE),
+			() -> Float.valueOf(rand.nextFloat()*Float.MAX_VALUE),
+			() -> Boolean.valueOf(rand.nextBoolean()),
 			() -> new Object(),
 	};
 
@@ -189,7 +189,7 @@ class PackedDataManagerTest {
 		void setUp() {
 			IntStream.range(0, 20)
 				.forEach(i -> {
-					int index = i<_types.length ? i : random(0, _types.length);
+					int index = i<_types.length ? i : rand.random(0, _types.length);
 					ValueType type = _types[index];
 					String key = key(i);
 					handles.add(createHandle(type, key, true));
@@ -327,7 +327,7 @@ class PackedDataManagerTest {
 				@TestFactory
 				Stream<DynamicTest> testLookupHandlesForeignMulti() {
 					manager.registerHandles(handles.subList(0, 1));
-					return randomSubLists(handles.subList(1, handles.size()), 0.5)
+					return rand.randomSubLists(handles.subList(1, handles.size()), 0.5)
 							.map(list -> dynamicTest(String.valueOf(list.size()), () -> {
 								Set<Object> sources = list.stream()
 										.map(PackageHandle::getSource)
@@ -342,7 +342,7 @@ class PackedDataManagerTest {
 				@TestFactory
 				Stream<DynamicTest> testLookupHandlesFilled() {
 					manager.registerHandles(handles);
-					return randomSubLists(handles, 0.5)
+					return rand.randomSubLists(handles, 0.5)
 							.map(list -> dynamicTest(String.valueOf(list.size()), () -> {
 								Set<Object> sources = list.stream()
 										.map(PackageHandle::getSource)
@@ -678,7 +678,7 @@ class PackedDataManagerTest {
 									PackageHandle handle = handles.get(i);
 									Object item = item();
 									manager.register(item);
-									boolean value = random().nextBoolean();
+									boolean value = rand.nextBoolean();
 									if(typesForSetters(handle).contains(ValueType.BOOLEAN)) {
 										manager.setBoolean(item, handle, value);
 										assertTrue(manager.isUsed(item));
@@ -699,7 +699,7 @@ class PackedDataManagerTest {
 									PackageHandle handle = handles.get(i);
 									Object item = item();
 									manager.register(item);
-									int value = random().nextInt();
+									int value = rand.nextInt();
 									if(typesForSetters(handle).contains(ValueType.INTEGER)) {
 										manager.setInteger(item, handle, value);
 										assertTrue(manager.isUsed(item));
@@ -720,7 +720,7 @@ class PackedDataManagerTest {
 									PackageHandle handle = handles.get(i);
 									Object item = item();
 									manager.register(item);
-									long value = random().nextLong();
+									long value = rand.nextLong();
 									if(typesForSetters(handle).contains(ValueType.LONG)) {
 										manager.setLong(item, handle, value);
 										assertTrue(manager.isUsed(item));
@@ -741,7 +741,7 @@ class PackedDataManagerTest {
 									PackageHandle handle = handles.get(i);
 									Object item = item();
 									manager.register(item);
-									float value = random().nextFloat();
+									float value = rand.nextFloat();
 									if(typesForSetters(handle).contains(ValueType.FLOAT)) {
 										manager.setFloat(item, handle, value);
 										assertTrue(manager.isUsed(item));
@@ -762,7 +762,7 @@ class PackedDataManagerTest {
 									PackageHandle handle = handles.get(i);
 									Object item = item();
 									manager.register(item);
-									double value = random().nextDouble();
+									double value = rand.nextDouble();
 									if(typesForSetters(handle).contains(ValueType.DOUBLE)) {
 										manager.setDouble(item, handle, value);
 										assertTrue(manager.isUsed(item));
@@ -858,7 +858,7 @@ class PackedDataManagerTest {
 					 */
 					@TestFactory
 					Stream<DynamicTest> testLookupHandles() {
-						return randomSubLists(handles, 0.5)
+						return rand.randomSubLists(handles, 0.5)
 								.map(list -> dynamicTest(String.valueOf(list.size()), () -> {
 									Set<Object> sources = list.stream()
 											.map(PackageHandle::getSource)
@@ -886,7 +886,7 @@ class PackedDataManagerTest {
 					@RepeatedTest(RUNS)
 					void testClearSupplierEPackageHandleArray() {
 						Object[] items = Stream.generate(Object::new)
-								.limit(random(10, 20))
+								.limit(rand.random(10, 20))
 								.toArray();
 
 						/*
@@ -904,7 +904,7 @@ class PackedDataManagerTest {
 						// Decide on random handles to be cleared
 						BitSet clearP = new BitSet(handles.size());
 						List<PackageHandle> tmpP = new ArrayList<>();
-						random().ints(0, handles.size())
+						rand.ints(0, handles.size())
 								.distinct()
 								.limit(handles.size()/2)
 								.forEach(index -> {
@@ -915,7 +915,7 @@ class PackedDataManagerTest {
 						// Decide on random items to be cleared
 						BitSet clearI = new BitSet(items.length);
 						List<Object> tmpI = new ArrayList<>();
-						random().ints(0, items.length)
+						rand.ints(0, items.length)
 								.distinct()
 								.limit(items.length/2)
 								.forEach(index -> {
@@ -948,7 +948,7 @@ class PackedDataManagerTest {
 					@RepeatedTest(RUNS)
 					void testClearPackageHandleArray() {
 						Object[] items = Stream.generate(Object::new)
-								.limit(random(10, 20))
+								.limit(rand.random(10, 20))
 								.toArray();
 
 						/*
@@ -966,7 +966,7 @@ class PackedDataManagerTest {
 						// Decide on random handles to be cleared
 						BitSet clear = new BitSet(handles.size());
 						List<PackageHandle> tmp = new ArrayList<>();
-						random().ints(0, handles.size())
+						rand.ints(0, handles.size())
 								.distinct()
 								.limit(handles.size()/2)
 								.forEach(index -> {
@@ -1014,7 +1014,7 @@ class PackedDataManagerTest {
 					void testHasValuesFilled() {
 						Object item = item();
 						manager.register(item);
-						manager.setString(item, handles.get(0), randomString(10));
+						manager.setString(item, handles.get(0), rand.randomString(10));
 						assertTrue(manager.hasValues());
 					}
 
@@ -1051,7 +1051,7 @@ class PackedDataManagerTest {
 					@RepeatedTest(RUNS)
 					void testCollectHandles() {
 						// Decide on random handles to be used
-						int[] indices = random().ints(0, handles.size())
+						int[] indices = rand.ints(0, handles.size())
 								.distinct()
 								.limit(handles.size()/2)
 								.toArray();
@@ -1140,13 +1140,13 @@ class PackedDataManagerTest {
 					@RepeatedTest(RUNS)
 					void testUnregisterSupplierOfQextendsE() {
 						List<Object> items = Stream.generate(Object::new)
-								.limit(random(10, 30))
+								.limit(rand.random(10, 30))
 								.collect(Collectors.toList());
 
 						items.forEach(item -> assertTrue(manager.register(item)));
 
-						int from = random(1, items.size()/2);
-						int to = random(items.size()/2 + 1, items.size()-2);
+						int from = rand.random(1, items.size()/2);
+						int to = rand.random(items.size()/2 + 1, items.size()-2);
 
 						MutableInteger cursor = new MutableInteger(from);
 						Supplier<Object> supplier = () -> {
@@ -1334,7 +1334,7 @@ class PackedDataManagerTest {
 
 					owner = new Object();
 					manager.addNotify(owner);
-					items = randomContent(itemCount);
+					items = rand.randomContent(itemCount);
 					Stream.of(items).forEach(manager::register);
 				}
 
@@ -1360,13 +1360,13 @@ class PackedDataManagerTest {
 					try(Circuit circuit = new Circuit(writers)) {
 						for (int i = 0; i < writers; i++) {
 							circuit.addTask(() -> {
-								int steps = random(100, 10_000);
+								int steps = rand.random(100, 10_000);
 								for (int j = 0; j < steps; j++) {
-									int index = random(0, handles.size());
+									int index = rand.random(0, handles.size());
 
 									Object value = generators.get(index).get();
 									PackageHandle handle = handles.get(index);
-									Object item = random(items);
+									Object item = rand.random(items);
 
 									assertTrue(manager.isRegistered(item));
 
@@ -1453,13 +1453,13 @@ class PackedDataManagerTest {
 							circuit.addTask(() -> {
 								Object[] items = WithFixedManager.this.items.clone();
 								String[] keys = handleLookup.keySet().toArray(new String[0]);
-								shuffle(items, random());
-								shuffle(keys, random());
+								rand.shuffle(items);
+								rand.shuffle(keys);
 
 								for(Object item : items) {
 									for(String key : keys) {
 										Object[] values = data.get(item).get(key).toArray();
-										shuffle(values, random());
+										rand.shuffle(values);
 										for(Object value : values) {
 											manager.setValue(item, handleLookup.get(key), value);
 										}
@@ -1525,7 +1525,7 @@ class PackedDataManagerTest {
 					LongAdder comparisons = new LongAdder();
 
 					Consumer<Object> writer = item -> {
-						int index = random(0, handles.size());
+						int index = rand.random(0, handles.size());
 
 						Object value = generators.get(index).get();
 						PackageHandle handle = handles.get(index);
@@ -1540,7 +1540,7 @@ class PackedDataManagerTest {
 					};
 
 					Consumer<Object> reader = item -> {
-						int index = random(0, handles.size());
+						int index = rand.random(0, handles.size());
 
 						PackageHandle handle = handles.get(index);
 
@@ -1570,9 +1570,9 @@ class PackedDataManagerTest {
 						// Add writer tasks
 						for (int i = 0; i < writers; i++) {
 							circuit.addTask(() -> {
-								int steps = random(10, 1000);
+								int steps = rand.random(10, 1000);
 								for (int j = 0; j < steps; j++) {
-									writer.accept(random(items));
+									writer.accept(rand.random(items));
 								}
 								totalWrites.add(steps);
 							});
@@ -1580,9 +1580,9 @@ class PackedDataManagerTest {
 						// Add reader tasks
 						for (int i = 0; i < readers; i++) {
 							circuit.addTask(() -> {
-								int steps = random(100, 50_000);
+								int steps = rand.random(100, 50_000);
 								for (int j = 0; j < steps; j++) {
-									reader.accept(random(items));
+									reader.accept(rand.random(items));
 								}
 								totalReads.add(steps);
 							});

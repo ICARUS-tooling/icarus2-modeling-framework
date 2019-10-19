@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
@@ -54,6 +52,8 @@ import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackCon
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter.IntConverter;
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter.LongConverter;
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.BytePackConverter.SubstitutingConverterInt;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.mem.ByteAllocator;
@@ -110,7 +110,8 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testBoolean() {
+		@RandomizedTest
+		Stream<DynamicTest> testBoolean(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
@@ -128,7 +129,7 @@ class BytePackConverterTest {
 					assertEquals(Boolean.FALSE, converter.getValue(handle, cursor));
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setBoolean(handle, cursor, random().nextBoolean()));
+							() -> converter.setBoolean(handle, cursor, rng.nextBoolean()));
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getBoolean(handle, cursor));
 				}
@@ -136,19 +137,20 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testInteger() {
+		@RandomizedTest
+		Stream<DynamicTest> testInteger(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
 				if(types().contains(ValueType.INTEGER)) {
-					IntStream.generate(random()::nextInt)
-						.limit(random(10, 20))
+					IntStream.generate(rng::nextInt)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							converter.setInteger(handle, cursor, value);
 							assertEquals(value, converter.getInteger(handle, cursor));
 						});
-					IntStream.generate(random()::nextInt)
-						.limit(random(10, 20))
+					IntStream.generate(rng::nextInt)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							Integer wrapped = Integer.valueOf(value);
 							converter.setValue(handle, cursor, wrapped);
@@ -156,7 +158,7 @@ class BytePackConverterTest {
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setInteger(handle, cursor, random().nextInt()));
+							() -> converter.setInteger(handle, cursor, rng.nextInt()));
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getInteger(handle, cursor));
 				}
@@ -164,19 +166,20 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testLong() {
+		@RandomizedTest
+		Stream<DynamicTest> testLong(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
 				if(types().contains(ValueType.LONG)) {
-					LongStream.generate(random()::nextLong)
-						.limit(random(10, 20))
+					LongStream.generate(rng::nextLong)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							converter.setLong(handle, cursor, value);
 							assertEquals(value, converter.getLong(handle, cursor));
 						});
-					LongStream.generate(random()::nextLong)
-						.limit(random(10, 20))
+					LongStream.generate(rng::nextLong)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							Long wrapped = Long.valueOf(value);
 							converter.setValue(handle, cursor, wrapped);
@@ -184,7 +187,7 @@ class BytePackConverterTest {
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setLong(handle, cursor, random().nextLong()));
+							() -> converter.setLong(handle, cursor, rng.nextLong()));
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getLong(handle, cursor));
 				}
@@ -192,19 +195,20 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testFloat() {
+		@RandomizedTest
+		Stream<DynamicTest> testFloat(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
 				if(types().contains(ValueType.FLOAT)) {
-					DoubleStream.generate(random()::nextFloat)
-						.limit(random(10, 20))
+					DoubleStream.generate(rng::nextFloat)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							converter.setFloat(handle, cursor, (float) value);
 							assertEquals((float)value, converter.getFloat(handle, cursor));
 						});
-					DoubleStream.generate(random()::nextFloat)
-						.limit(random(10, 20))
+					DoubleStream.generate(rng::nextFloat)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							Float wrapped = Float.valueOf((float)value);
 							converter.setValue(handle, cursor, wrapped);
@@ -212,7 +216,7 @@ class BytePackConverterTest {
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setFloat(handle, cursor, random().nextFloat()));
+							() -> converter.setFloat(handle, cursor, rng.nextFloat()));
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getFloat(handle, cursor));
 				}
@@ -220,19 +224,20 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testDouble() {
+		@RandomizedTest
+		Stream<DynamicTest> testDouble(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
 				if(types().contains(ValueType.DOUBLE)) {
-					DoubleStream.generate(random()::nextDouble)
-						.limit(random(10, 20))
+					DoubleStream.generate(rng::nextDouble)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							converter.setDouble(handle, cursor, value);
 							assertEquals(value, converter.getDouble(handle, cursor));
 						});
-					DoubleStream.generate(random()::nextDouble)
-						.limit(random(10, 20))
+					DoubleStream.generate(rng::nextDouble)
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							Double wrapped = Double.valueOf(value);
 							converter.setValue(handle, cursor, wrapped);
@@ -240,7 +245,7 @@ class BytePackConverterTest {
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setDouble(handle, cursor, random().nextDouble()));
+							() -> converter.setDouble(handle, cursor, rng.nextDouble()));
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getDouble(handle, cursor));
 				}
@@ -248,13 +253,14 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testValue() {
+		@RandomizedTest
+		Stream<DynamicTest> testValue(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
 				if(types().contains(ValueType.CUSTOM)) {
 					Stream.generate(Object::new)
-						.limit(random(10, 20))
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							converter.setValue(handle, cursor, value);
 							assertEquals(value, converter.getValue(handle, cursor));
@@ -268,20 +274,21 @@ class BytePackConverterTest {
 		}
 
 		@TestFactory
-		Stream<DynamicTest> testString() {
+		@RandomizedTest
+		Stream<DynamicTest> testString(RandomGenerator rng) {
 			return instances().map(p -> dynamicTest(p.first, () -> {
 				C converter = p.second;
 
 				if(types().contains(ValueType.STRING)) {
-					Stream.generate(() -> randomString(20))
-						.limit(random(10, 20))
+					Stream.generate(() -> rng.randomString(20))
+						.limit(rng.random(10, 20))
 						.forEach(value -> {
 							converter.setString(handle, cursor, value);
 							assertEquals(value, converter.getString(handle, cursor));
 						});
 				} else {
 					ManifestTestUtils.assertUnsupportedType(
-							() -> converter.setString(handle, cursor, randomString(10)));
+							() -> converter.setString(handle, cursor, rng.randomString(10)));
 					ManifestTestUtils.assertUnsupportedType(
 							() -> converter.getString(handle, cursor));
 				}

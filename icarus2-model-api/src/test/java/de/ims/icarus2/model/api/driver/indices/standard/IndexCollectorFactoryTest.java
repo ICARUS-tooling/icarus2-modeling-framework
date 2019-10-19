@@ -33,7 +33,6 @@ import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.displayString;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
@@ -81,6 +80,8 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.Li
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.LimitedUnsortedSetBuilderLong;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.LimitedUnsortedSetBuilderShort;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.UnlimitedSortedSetBuilder;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -89,7 +90,10 @@ import it.unimi.dsi.fastutil.longs.LongSet;
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class IndexCollectorFactoryTest {
+
+	static RandomGenerator rand;
 
 	/**
 	 * Constant to limit the randomized size of index sets for testing.
@@ -749,15 +753,15 @@ class IndexCollectorFactoryTest {
 			long rawMax = valueType.maxValue();
 			int max = rawMax>MAX_INTEGER_INDEX ? MAX_INTEGER_INDEX : (int) rawMax;
 			int sizeMax = cycles>1 ? max/cycles : max;
-			size = random(64, Math.min(MAX_TEST_SIZE, sizeMax));
+			size = rand.random(64, Math.min(MAX_TEST_SIZE, sizeMax));
 			bufferSize = size * cycles;
 
 			int bytes = Math.min(2, valueType.bytesPerValue());
 			int maxPower = bytes*8;
-			chunkSize = 1<<random(2, maxPower);
+			chunkSize = 1<<rand.random(2, maxPower);
 
 			int maxStart = max - (cycles * size);
-			start = random(0, maxStart);
+			start = rand.random(0, maxStart);
 		}
 
 		TestParams(IndexValueType valueType, int size, int chunkSize) {
@@ -922,7 +926,7 @@ class IndexCollectorFactoryTest {
 			if(random) {
 				checkDynamicReq();
 				tests.add(createTest("Random indices ["+size+"]",
-						builderGen, () -> randomIndices(indexValueType, size), cycles));
+						builderGen, () -> randomIndices(indexValueType, size, rand), cycles));
 			}
 
 			if(sorted) {

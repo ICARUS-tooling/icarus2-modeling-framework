@@ -22,7 +22,6 @@ package de.ims.icarus2.model.api.driver.indices.func;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,6 +41,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 
@@ -99,13 +100,14 @@ class HeapMergeOfLongTest {
 	}
 
 	@TestFactory
-	Stream<DynamicTest> singular() {
+	@RandomizedTest
+	Stream<DynamicTest> singular(RandomGenerator rand) {
 		return IntStream.range(0, 4)
 				.mapToObj(index -> dynamicTest(String.valueOf(index), () -> {
 					LongStream[] streams = Stream.generate(LongStream::empty)
 							.limit(4)
 							.toArray(LongStream[]::new);
-					long value = random().nextLong();
+					long value = rand.nextLong();
 					streams[index] = LongStream.of(value);
 
 					assertArrayEquals(new long[] {value}, merge(streams));

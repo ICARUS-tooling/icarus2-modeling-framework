@@ -28,7 +28,6 @@ import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -52,6 +51,8 @@ import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -249,8 +250,9 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.WrappingItemStorage#getItemAt(de.ims.icarus2.model.api.members.container.Container, long)}.
 			 */
 			@Test
-			void testGetItemAt() {
-				long index = randomId();
+			@RandomizedTest
+			void testGetItemAt(RandomGenerator rng) {
+				long index = rng.randomId();
 				storage.getItemAt(context, index);
 				verify(source).getItemAt(index);
 			}
@@ -269,45 +271,50 @@ class WrappingItemStorageTest implements ItemStorageTest<WrappingItemStorage> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.WrappingItemStorage#addItem(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)}.
 			 */
 			@Test
-			void testAddItem() {
+			@RandomizedTest
+			void testAddItem(RandomGenerator rng) {
 				assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-						() -> storage.addItem(context, randomId(), mockItem()));
+						() -> storage.addItem(context, rng.randomId(), mockItem()));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.WrappingItemStorage#addItems(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.util.collections.seq.DataSequence)}.
 			 */
 			@Test
-			void testAddItems() {
+			@RandomizedTest
+			void testAddItems(RandomGenerator rng) {
 				assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-						() -> storage.addItems(context, randomId(), mockSequence()));
+						() -> storage.addItems(context, rng.randomId(), mockSequence()));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.WrappingItemStorage#removeItem(de.ims.icarus2.model.api.members.container.Container, long)}.
 			 */
 			@Test
-			void testRemoveItem() {
+			@RandomizedTest
+			void testRemoveItem(RandomGenerator rng) {
 				assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-						() -> storage.removeItem(context, randomId()));
+						() -> storage.removeItem(context, rng.randomId()));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.WrappingItemStorage#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 			 */
 			@Test
-			void testRemoveItems() {
+			@RandomizedTest
+			void testRemoveItems(RandomGenerator rng) {
 				assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-						() -> storage.removeItems(context, randomId(), randomId()));
+						() -> storage.removeItems(context, rng.randomId(), rng.randomId()));
 			}
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.WrappingItemStorage#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 			 */
 			@Test
-			void testSwapItems() {
+			@RandomizedTest
+			void testSwapItems(RandomGenerator rng) {
 				assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-						() -> storage.swapItems(context, randomId(), randomId()));
+						() -> storage.swapItems(context, rng.randomId(), rng.randomId()));
 			}
 
 			/**

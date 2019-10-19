@@ -40,6 +40,8 @@ import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -53,14 +55,15 @@ public interface IterableTest<T, S extends Iterable<T>> {
 	@Provider
 	S createFilled(@SuppressWarnings("unchecked") T...items);
 
-	T[] randomContent();
+	T[] randomContent(RandomGenerator rand);
 
 	/**
 	 * Test method for {@link de.ims.icarus2.util.collections.seq.DataSequence#iterator()}.
 	 */
 	@Test
-	default void testIterator() {
-		T[] items = randomContent();
+	@RandomizedTest
+	default void testIterator(RandomGenerator rand) {
+		T[] items = randomContent(rand);
 		S seq = createFilled(items);
 		Iterator<T> it = seq.iterator();
 		for (int i = 0; i < items.length; i++) {
@@ -83,8 +86,9 @@ public interface IterableTest<T, S extends Iterable<T>> {
 	 * Test method for {@link java.lang.Iterable#forEach(java.util.function.Consumer)}.
 	 */
 	@Test
-	default void testForEach() {
-		T[] items = randomContent();
+	@RandomizedTest
+	default void testForEach(RandomGenerator rand) {
+		T[] items = randomContent(rand);
 		S seq = createFilled(items);
 		List<T> tmp = new ArrayList<>();
 		seq.forEach(tmp::add);
@@ -105,8 +109,9 @@ public interface IterableTest<T, S extends Iterable<T>> {
 	 * Test method for {@link java.lang.Iterable#spliterator()}.
 	 */
 	@Test
-	default void testSpliterator() {
-		T[] items = randomContent();
+	@RandomizedTest
+	default void testSpliterator(RandomGenerator rand) {
+		T[] items = randomContent(rand);
 		S seq = createFilled(items);
 		assertArrayEquals(items, StreamSupport.stream(seq.spliterator(), false).toArray());
 	}

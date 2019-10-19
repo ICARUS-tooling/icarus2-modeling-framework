@@ -21,7 +21,6 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.test.TestUtils.K10;
 import static de.ims.icarus2.test.TestUtils.M100;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,6 +53,7 @@ import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.BucketSetBuilder;
 import de.ims.icarus2.test.JmhUtils;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -67,6 +67,8 @@ import de.ims.icarus2.test.JmhUtils;
 @Measurement(iterations=5, batchSize=M100)
 @Fork(value=5,jvmArgsAppend={"-Xmx8g", "-Xms8g"})
 public class BucketSetBuilderBenchmark {
+
+	private final RandomGenerator rand = RandomGenerator.random();
 
 	// Benchmark parameters
 
@@ -94,7 +96,7 @@ public class BucketSetBuilderBenchmark {
 		if(size<=1)
 			throw new IllegalStateException("Expecting batch size!!");
 
-		randomData = randomLongs(size, 0, indexValueType.maxValue());
+		randomData = rand.randomLongs(size, 0, indexValueType.maxValue());
 	}
 
 	@Setup(Level.Iteration)

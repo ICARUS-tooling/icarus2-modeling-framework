@@ -21,9 +21,6 @@ package de.ims.icarus2.model.api.layer.annotation;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomString;
-import static de.ims.icarus2.test.TestUtils.randomSubLists;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -54,6 +51,8 @@ import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -114,7 +113,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 
 	/**
 	 * Signals that the implementation under test can automatically remove annotations
-	 * storage when assigned a {@code noEntryValue}.
+	 * from storage when assigned a {@code noEntryValue}.
 	 *
 	 * @return
 	 */
@@ -321,6 +320,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setString(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.String)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSetStringMulti() {
 		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
 			S storage = config.storage();
@@ -328,11 +328,11 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 
 			for(String key : config.keys()) {
 				if(typesForSetters(key).contains(ValueType.STRING)) {
-					String value = randomString(10); // ValueType.CUSTOM would yield Object
+					String value = config.rand().randomString(10); // ValueType.CUSTOM would yield Object
 					storage.setString(item, key, value);
 					assertEquals(value, storage.getString(item, key));
 				} else {
-					ManifestTestUtils.assertUnsupportedType(() -> storage.setString(item, key, randomString(10)));
+					ManifestTestUtils.assertUnsupportedType(() -> storage.setString(item, key, config.rand().randomString(10)));
 				}
 			}
 		}));
@@ -342,6 +342,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSetIntegerMulti() {
 		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
 			S storage = config.storage();
@@ -353,7 +354,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setInteger(item, key, value);
 					assertEquals(value, storage.getInteger(item, key));
 				} else {
-					ManifestTestUtils.assertUnsupportedType(() -> storage.setInteger(item, key, random().nextInt()),
+					ManifestTestUtils.assertUnsupportedType(() -> storage.setInteger(item, key, config.rand().nextInt()),
 							"Expecting error when setting int on "+valueType(key));
 				}
 			}
@@ -364,6 +365,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSetLongMulti() {
 		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
 			S storage = config.storage();
@@ -375,7 +377,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setLong(item, key, value);
 					assertEquals(value, storage.getLong(item, key));
 				} else {
-					ManifestTestUtils.assertUnsupportedType(() -> storage.setLong(item, key, random().nextLong()),
+					ManifestTestUtils.assertUnsupportedType(() -> storage.setLong(item, key, config.rand().nextLong()),
 							"Expecting error when setting long on "+valueType(key));
 				}
 			}
@@ -386,6 +388,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSetFloatMulti() {
 		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
 			S storage = config.storage();
@@ -397,7 +400,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setFloat(item, key, value);
 					assertEquals(value, storage.getFloat(item, key));
 				} else {
-					ManifestTestUtils.assertUnsupportedType(() -> storage.setFloat(item, key, random().nextFloat()),
+					ManifestTestUtils.assertUnsupportedType(() -> storage.setFloat(item, key, config.rand().nextFloat()),
 							"Expecting error when setting float on "+valueType(key));
 				}
 			}
@@ -408,6 +411,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSetDoubleMulti() {
 		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
 			S storage = config.storage();
@@ -419,7 +423,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setDouble(item, key, value);
 					assertEquals(value, storage.getDouble(item, key));
 				} else {
-					ManifestTestUtils.assertUnsupportedType(() -> storage.setDouble(item, key, random().nextDouble()),
+					ManifestTestUtils.assertUnsupportedType(() -> storage.setDouble(item, key, config.rand().nextDouble()),
 							"Expecting error when setting double on "+valueType(key));
 				}
 			}
@@ -431,6 +435,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSetBooleanMulti() {
 		return Config.expand(this).map(config -> dynamicTest(config.label(), () -> {
 			S storage = config.storage();
@@ -442,7 +447,7 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					storage.setBoolean(item, key, value);
 					assertEquals(value, storage.getBoolean(item, key));
 				} else {
-					ManifestTestUtils.assertUnsupportedType(() -> storage.setBoolean(item, key, random().nextBoolean()),
+					ManifestTestUtils.assertUnsupportedType(() -> storage.setBoolean(item, key, config.rand().nextBoolean()),
 							"Expecting error when setting boolean on "+valueType(key));
 				}
 			}
@@ -504,6 +509,20 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 		private final String label;
 		private final Supplier<S> source;
 		private final List<String> keys;
+		private RandomGenerator rand;
+
+		private static final RandomGenerator defaultRand = RandomGenerator.forClass(Config.class);
+
+		public Config(String label, Supplier<S> source, List<String> keys) {
+			this.label = requireNonNull(label);
+			this.source = requireNonNull(source);
+			this.keys = requireNonNull(keys);
+		}
+
+		public Config<S> rand(RandomGenerator rand) {
+			this.rand = requireNonNull(rand);
+			return this;
+		}
 
 		S storage() {
 			return source.get();
@@ -526,11 +545,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 			throw new IllegalStateException("No key in config for type: "+valueType);
 		}
 
-		public Config(String label, Supplier<S> source,
-				List<String> keys) {
-			this.label = requireNonNull(label);
-			this.source = requireNonNull(source);
-			this.keys = requireNonNull(keys);
+		RandomGenerator rand() {
+			return rand == null ? defaultRand : rand;
 		}
 
 		/**
@@ -541,9 +557,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 		static <S extends AnnotationStorage> Stream<Config<S>> expand(
 				MultiKeyAnnotationStorageTest<S> test) {
 			return test.createConfigurations()
-					.flatMap(config -> randomSubLists(config.keys(), 0.5)
-							.map(subKeys -> new Config<S>(
-									config.label, config.source, subKeys)));
+					.flatMap(config -> config.rand().randomSubLists(config.keys(), 0.5)
+							.map(subKeys -> new Config<S>(config.label, config.source, subKeys)));
 
 		}
 
@@ -564,9 +579,8 @@ public interface MultiKeyAnnotationStorageTest<S extends AnnotationStorage>
 					.toArray(String[]::new);
 
 			return test.createConfigurations()
-					.flatMap(config -> randomSubLists(config.keys(), 0.5, sentinels)
-							.map(subKeys -> new Config<S>(
-									config.label, config.source, subKeys)));
+					.flatMap(config -> config.rand().randomSubLists(config.keys(), 0.5, sentinels)
+							.map(subKeys -> new Config<S>(config.label, config.source, subKeys)));
 
 		}
 	}

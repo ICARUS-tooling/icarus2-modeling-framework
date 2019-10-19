@@ -20,10 +20,8 @@
 package de.ims.icarus2.model.standard.raster;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -36,7 +34,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -46,6 +43,8 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.RasterAxisTest;
 import de.ims.icarus2.test.Dummy;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -119,10 +118,10 @@ class CharacterAxisTest implements RasterAxisTest<CharacterAxis> {
 		 * Test method for {@link de.ims.icarus2.model.standard.raster.CharacterAxis#getRasterSize(de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.layer.FragmentLayer, java.lang.Object)}.
 		 */
 		@TestFactory
-		@Tag(RANDOMIZED)
-		Stream<DynamicTest> testGetRasterSize() {
+		@RandomizedTest
+		Stream<DynamicTest> testGetRasterSize(RandomGenerator rng) {
 			return Stream.concat(Stream.of("", "1"),
-					random().ints(RUNS, 2, MAX_INTEGER_INDEX)
+					rng.ints(RUNS, 2, MAX_INTEGER_INDEX)
 						.mapToObj(length -> mockString(length)))
 					.map(value -> dynamicTest(String.valueOf(value.length()),
 							() -> assertEquals(value.length(),

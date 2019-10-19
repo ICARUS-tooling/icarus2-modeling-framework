@@ -23,7 +23,6 @@ import static de.ims.icarus2.SharedTestUtils.mockSet;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -51,6 +50,8 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -66,7 +67,8 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default Stream<DynamicTest> testNewContainer() {
+	@RandomizedTest
+	default Stream<DynamicTest> testNewContainer(RandomGenerator rand) {
 		return Stream.of(ContainerType.values())
 			.map(containerType -> dynamicTest(containerType.name(), () -> {
 				ContainerManifest manifest = mock(ContainerManifest.class);
@@ -82,7 +84,7 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 				when((ContainerManifest)baseContainer.getManifest()).thenReturn(baseManifest);
 				DataSet<Container> baseContainers = mockSet(baseContainer);
 
-				long id = randomId();
+				long id = rand.randomId();
 
 				Container container = create().newContainer(manifest, host, baseContainers, null, id);
 				assertNotNull(container);
@@ -101,7 +103,8 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default Stream<DynamicTest> testNewStructure() {
+	@RandomizedTest
+	default Stream<DynamicTest> testNewStructure(RandomGenerator rand) {
 		return Stream.of(StructureType.values())
 				.flatMap(structureType -> Stream.of(ContainerType.values())
 						.map(containerType -> dynamicTest(containerType+"+"+structureType, () -> {
@@ -119,7 +122,7 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 					when((ContainerManifest)baseContainer.getManifest()).thenReturn(baseManifest);
 					DataSet<Container> baseContainers = mockSet(baseContainer);
 
-					long id = randomId();
+					long id = rand.randomId();
 
 					Structure structure = create().newStructure(manifest, host, baseContainers, null, id);
 					assertNotNull(structure);
@@ -137,9 +140,10 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 * Test method for {@link de.ims.icarus2.model.api.registry.LayerMemberFactory#newItem(de.ims.icarus2.model.api.members.container.Container, long)}.
 	 */
 	@Test
-	default void testNewItem() {
+	@RandomizedTest
+	default void testNewItem(RandomGenerator rand) {
 		Container host = mock(Container.class);
-		long id = randomId();
+		long id = rand.randomId();
 
 		Item item = create().newItem(host, id);
 
@@ -151,9 +155,10 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 * Test method for {@link de.ims.icarus2.model.api.registry.LayerMemberFactory#newEdge(de.ims.icarus2.model.api.members.structure.Structure, long)}.
 	 */
 	@Test
-	default void testNewEdgeStructureLong() {
+	@RandomizedTest
+	default void testNewEdgeStructureLong(RandomGenerator rand) {
 		Structure host = mock(Structure.class);
-		long id = randomId();
+		long id = rand.randomId();
 
 		Edge edge = create().newEdge(host, id);
 
@@ -166,11 +171,12 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 * Test method for {@link de.ims.icarus2.model.api.registry.LayerMemberFactory#newEdge(de.ims.icarus2.model.api.members.structure.Structure, long, de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
-	default void testNewEdgeStructureLongItemItem() {
+	@RandomizedTest
+	default void testNewEdgeStructureLongItemItem(RandomGenerator rand) {
 		Structure host = mock(Structure.class);
 		Item source = mockItem();
 		Item target = mockItem();
-		long id = randomId();
+		long id = rand.randomId();
 
 		Edge edge = create().newEdge(host, id, source, target);
 
@@ -185,9 +191,10 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 * Test method for {@link de.ims.icarus2.model.api.registry.LayerMemberFactory#newFragment(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
-	default void testNewFragmentContainerLongItem() {
+	@RandomizedTest
+	default void testNewFragmentContainerLongItem(RandomGenerator rand) {
 		Container host = mock(Container.class);
-		long id = randomId();
+		long id = rand.randomId();
 		Item item = mockItem();
 
 		Fragment fragment = create().newFragment(host, id, item);
@@ -201,9 +208,10 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 	 * Test method for {@link de.ims.icarus2.model.api.registry.LayerMemberFactory#newFragment(de.ims.icarus2.model.api.members.container.Container, long, de.ims.icarus2.model.api.members.item.Item, de.ims.icarus2.model.api.raster.Position, de.ims.icarus2.model.api.raster.Position)}.
 	 */
 	@Test
-	default void testNewFragmentContainerLongItemPositionPosition() {
+	@RandomizedTest
+	default void testNewFragmentContainerLongItemPositionPosition(RandomGenerator rand) {
 		Container host = mock(Container.class);
-		long id = randomId();
+		long id = rand.randomId();
 		Item item = mockItem();
 		Position position1 = mockPosition();
 		Position position2 = mockPosition();

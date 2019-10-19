@@ -21,7 +21,6 @@ package de.ims.icarus2.model.api.view.paged;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,6 +37,8 @@ import de.ims.icarus2.model.api.view.CorpusViewTest;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -124,8 +125,9 @@ public interface PagedCorpusViewTest<V extends PagedCorpusView>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.PagedCorpusView#getPageSize()}.
 	 */
 	@RepeatedTest(value=RUNS)
-	default void testGetPageSize() {
-		int pageSize = random(1, 1000);
+	@RandomizedTest
+	default void testGetPageSize(RandomGenerator rand) {
+		int pageSize = rand.random(1, 1000);
 		try(V view = createView(createEnvironment(), AccessMode.READ, pageSize, DEFAULT_INDICES)) {
 			assertEquals(pageSize, view.getPageSize());
 		}

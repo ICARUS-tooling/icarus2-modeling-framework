@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -41,7 +41,8 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysLongStorage;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -49,8 +50,11 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@ExtendWith(Randomized.class)
 class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysLongStorage>,
 		ManagedAnnotationStorageTest<FixedKeysLongStorage> {
+
+	static RandomGenerator rand;
 
 	/** Maps keys to noEntryValues */
 	private Object2LongMap<String> setup = new Object2LongOpenHashMap<>();
@@ -60,7 +64,7 @@ class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKey
 	void setUp() {
 		for (int i = 0; i < 20; i++) {
 			String key = "key_" + i;
-			setup.put(key, random().nextLong());
+			setup.put(key, rand.nextLong());
 			keys.add(key);
 		}
 	}
@@ -86,7 +90,7 @@ class FixedKeysLongStorageTest implements MultiKeyAnnotationStorageTest<FixedKey
 		long noEntryValue = setup.getLong(key);
 		long value;
 		do {
-			value = random().nextLong();
+			value = rand.nextLong();
 		} while (value == noEntryValue);
 		return Long.valueOf(value);
 	}

@@ -35,7 +35,8 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.IterableTest;
 
 /**
@@ -46,8 +47,8 @@ public interface DataSetTest<S extends DataSet<Object>>
 		extends ApiGuardedTest<S>, IterableTest<Object, S> {
 
 	@Override
-	default Object[] randomContent() {
-		return TestUtils.randomContent();
+	default Object[] randomContent(RandomGenerator rand) {
+		return rand.randomContent();
 	}
 
 	/**
@@ -62,8 +63,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#entryCount()}.
 	 */
 	@Test
-	default void testEntryCount() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testEntryCount(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		assertEquals(items.length, createFilled(items).entryCount());
 	}
 
@@ -79,8 +81,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#isEmpty()}.
 	 */
 	@Test
-	default void testIsEmpty() {
-		assertFalse(createFilled(randomContent()).isEmpty());
+	@RandomizedTest
+	default void testIsEmpty(RandomGenerator rand) {
+		assertFalse(createFilled(randomContent(rand)).isEmpty());
 	}
 
 	/**
@@ -95,8 +98,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#entryAt(int)}.
 	 */
 	@Test
-	default void testEntryAt() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testEntryAt(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		for (int i = 0; i < items.length; i++) {
 			assertSame(items[i], set.entryAt(i));
@@ -115,8 +119,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#contains(java.lang.Object)}.
 	 */
 	@Test
-	default void testContains() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testContains(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		for (int i = 0; i < items.length; i++) {
 			assertTrue(set.contains(items[i]));
@@ -127,8 +132,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#contains(java.lang.Object)}.
 	 */
 	@Test
-	default void testContainsForeign() {
-		assertFalse(createFilled(randomContent()).contains(new Object()));
+	@RandomizedTest
+	default void testContainsForeign(RandomGenerator rand) {
+		assertFalse(createFilled(randomContent(rand)).contains(new Object()));
 	}
 
 	/**
@@ -143,8 +149,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toSet()}.
 	 */
 	@Test
-	default void testToSet() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testToSet(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		assertCollectionEquals(set.toSet(), items);
 	}
@@ -161,8 +168,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toList()}.
 	 */
 	@Test
-	default void testToList() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testToList(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		assertListEquals(set.toList(), items);
 	}
@@ -179,8 +187,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toArray()}.
 	 */
 	@Test
-	default void testToArray() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testToArray(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		assertArrayEquals(items, set.toArray());
 	}
@@ -197,8 +206,9 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.set.DataSet#toArray(Object[])}.
 	 */
 	@Test
-	default void testToArrayTArray() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testToArrayTArray(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		// Direct fit
 		assertArrayEquals(items, set.toArray(new Object[items.length]));

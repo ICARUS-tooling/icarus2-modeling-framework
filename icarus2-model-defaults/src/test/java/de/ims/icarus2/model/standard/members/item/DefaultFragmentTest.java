@@ -25,7 +25,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockRasterizer;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubOrder;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
@@ -33,7 +32,6 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.npeAsserter;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -56,7 +54,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -73,7 +70,8 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.Rasterizer;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -208,7 +206,6 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 			@ParameterizedTest
 			@ValueSource(longs = {UNSET_LONG, 0, 1, Long.MAX_VALUE})
 			@MethodSource("de.ims.icarus2.model.api.ModelTestUtils#randomIndices")
-			@Tag(RANDOMIZED)
 			void testGetBeginOffset(long value) {
 				when(item.getBeginOffset()).thenReturn(value);
 				assertEquals(value, instance.getBeginOffset());
@@ -222,7 +219,6 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 			@ParameterizedTest
 			@ValueSource(longs = {UNSET_LONG, 0, 1, Long.MAX_VALUE})
 			@MethodSource("de.ims.icarus2.model.api.ModelTestUtils#randomIndices")
-			@Tag(RANDOMIZED)
 			void testGetEndOffset(long value) {
 				when(item.getEndOffset()).thenReturn(value);
 				assertEquals(value, instance.getEndOffset());
@@ -236,9 +232,12 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 	 * @author Markus Gärtner
 	 *
 	 */
-	@Tag(RANDOMIZED)
+	@RandomizedTest
 	@Nested
 	class WithComplexEnvironment {
+
+		RandomGenerator rng;
+
 		private IdManager idManager;
 		private FragmentLayer layer;
 		private Rasterizer rasterizer;
@@ -265,11 +264,11 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 			 * |....|......|.........|
 			 * 0   used   size   Long.MAX
 			 */
-			axisSize = Math.max(20L, random().nextLong()/2);
+			axisSize = Math.max(20L, rng.nextLong()/2);
 
-			begin1 = mockPosition(random().nextInt(8));
+			begin1 = mockPosition(rng.nextInt(8));
 			end1 = mockPosition(axisSize/2-2);
-			begin2 = mockPosition(random().nextInt(5));
+			begin2 = mockPosition(rng.nextInt(5));
 			end2 = mockPosition(axisSize/2-1);
 
 			stubOrder(rasterizer, begin1, end1);
@@ -283,8 +282,8 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 
 			when(layer.getRasterSize(eq(item), eq(0))).thenReturn(axisSize);
 
-			id = Math.max(1L, TestUtils.random().nextLong());
-			index = Math.max(1L, TestUtils.random().nextLong());
+			id = Math.max(1L, rng.nextLong());
+			index = Math.max(1L, rng.nextLong());
 
 			instance = new DefaultFragment();
 			instance.setContainer(container);

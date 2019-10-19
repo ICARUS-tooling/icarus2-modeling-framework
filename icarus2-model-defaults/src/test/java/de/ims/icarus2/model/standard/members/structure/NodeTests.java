@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.members.structure;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,6 +28,7 @@ import java.util.List;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -39,12 +39,12 @@ class NodeTests {
 	static final int MIN = 3;
 	static final int MAX = 10;
 
-	static int randomCount() {
-		return random(MIN, MAX);
+	static int randomCount(RandomGenerator rng) {
+		return rng.random(MIN, MAX);
 	}
 
-	static int fillRandom(NodeInfo info, boolean incoming) {
-		int count = randomCount();
+	static int fillRandom(NodeInfo info, boolean incoming, RandomGenerator rng) {
+		int count = randomCount(rng);
 		fill(info, count, incoming);
 		return count;
 	}
@@ -55,8 +55,8 @@ class NodeTests {
 		}
 	}
 
-	static Edge[] randomEdges() {
-		int count = randomCount();
+	static Edge[] randomEdges(RandomGenerator rng) {
+		int count = randomCount(rng);
 		return edges(count);
 	}
 
@@ -91,15 +91,15 @@ class NodeTests {
 		assertEdgeAt(info, edges, incoming);
 	}
 
-	static void fillAndAssert(NodeInfo info, int count, boolean incoming) {
-		Edge[] edges = count==-1 ? randomEdges() : edges(count);
+	static void fillAndAssert(NodeInfo info, int count, boolean incoming, RandomGenerator rng) {
+		Edge[] edges = count==-1 ? randomEdges(rng) : edges(count);
 		fill(info, edges, incoming);
 		assertEdgeAt(info, edges, incoming);
 	}
 
-	static void fillAndAssert(NodeInfo info, int countIn, int countOut) {
-		Edge[] edgesIn = countIn==-1 ? randomEdges() : edges(countIn);
-		Edge[] edgesOut = countOut==-1 ? randomEdges() : edges(countOut);
+	static void fillAndAssert(NodeInfo info, int countIn, int countOut, RandomGenerator rng) {
+		Edge[] edgesIn = countIn==-1 ? randomEdges(rng) : edges(countIn);
+		Edge[] edgesOut = countOut==-1 ? randomEdges(rng) : edges(countOut);
 		fill(info, edgesIn, true);
 		fill(info, edgesOut, false);
 		assertEdgeAt(info, edgesIn, true);
@@ -112,11 +112,11 @@ class NodeTests {
 		}
 	}
 
-	static void removeAndAssert(NodeInfo info, Edge[] edges, boolean incoming) {
+	static void removeAndAssert(NodeInfo info, Edge[] edges, boolean incoming, RandomGenerator rng) {
 		List<Edge> buffer = list(edges);
 
 		while(!buffer.isEmpty()) {
-			int index = random(0, buffer.size());
+			int index = rng.random(0, buffer.size());
 			Edge edge = buffer.remove(index);
 			info.removeEdge(edge, incoming);
 
@@ -128,20 +128,20 @@ class NodeTests {
 		}
 	}
 
-	static void fillRemoveAndAssert(NodeInfo info, int count, boolean incoming) {
-		Edge[] edges = count==-1 ? randomEdges() : edges(count);
+	static void fillRemoveAndAssert(NodeInfo info, int count, boolean incoming, RandomGenerator rng) {
+		Edge[] edges = count==-1 ? randomEdges(rng) : edges(count);
 		fill(info, edges, incoming);
-		removeAndAssert(info, edges, incoming);
+		removeAndAssert(info, edges, incoming, rng);
 	}
 
-	static void fillRemoveAndAssert(NodeInfo info, int countIn, int countOut) {
-		Edge[] edgesIn = countIn==-1 ? randomEdges() : edges(countIn);
-		Edge[] edgesOut = countOut==-1 ? randomEdges() : edges(countOut);
+	static void fillRemoveAndAssert(NodeInfo info, int countIn, int countOut, RandomGenerator rng) {
+		Edge[] edgesIn = countIn==-1 ? randomEdges(rng) : edges(countIn);
+		Edge[] edgesOut = countOut==-1 ? randomEdges(rng) : edges(countOut);
 		fill(info, edgesIn, true);
 		fill(info, edgesOut, false);
 
-		removeAndAssert(info, edgesIn, true);
-		removeAndAssert(info, edgesOut, false);
+		removeAndAssert(info, edgesIn, true, rng);
+		removeAndAssert(info, edgesOut, false, rng);
 
 		assertModelException(ModelErrorCode.MODEL_ILLEGAL_MEMBER,
 				() -> info.removeEdge(mockEdge(), true));

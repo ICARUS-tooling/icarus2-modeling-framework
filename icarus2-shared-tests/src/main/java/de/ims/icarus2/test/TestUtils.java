@@ -41,8 +41,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.PrimitiveIterator;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,9 +53,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
@@ -68,7 +63,7 @@ import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.DiffUtils.Trace;
 import de.ims.icarus2.test.func.TriConsumer;
-import de.ims.icarus2.test.random.Randomizer;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.IdentitySet;
 import de.ims.icarus2.test.util.Pair;
 
@@ -352,258 +347,6 @@ public class TestUtils {
 	public static void println(String s) {
 		if(out!=null)
 			out.println(s);
-	}
-
-	// RANDOMIZATION SECTION
-
-	private static final Random RANDOM = new Random(System.currentTimeMillis());
-
-	public static Random random() {
-//		return new Random(1L);
-		return RANDOM;
-	}
-
-	/** Random non-negative id (without loss of generality, Long.MAX_VALUE is excluded) */
-	public static long randomId() {
-		return random(0, Long.MAX_VALUE);
-	}
-
-	// RANDOM PAIRS
-
-	public static Pair<Long, Long> randomLongPair(long lowerInc, long upperEx) {
-		long[] vals = random().longs(2, lowerInc, upperEx).toArray();
-		return Pair.longPair(vals[0], vals[1]);
-	}
-
-	public static Stream<Pair<Long, Long>> randomPairs(long lowerInc, long upperEx) {
-		return Stream.generate(() -> randomLongPair(lowerInc, upperEx));
-	}
-
-	// RANDOM STRINGS
-
-	private static final String alNum =
-			  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-          + "0123456789"
-          + "abcdefghijklmnopqrstuvxyz";
-
-	/**
-	 * Creates an alphanumerical random string of requested size.
-	 * @param len
-	 * @return
-	 */
-	public static String randomString(int len) {
-		char[] tmp = new char[len];
-		for(int i=0; i<len; i++) {
-			tmp[i] = alNum.charAt(RANDOM.nextInt(alNum.length()));
-		}
-		return new String(tmp);
-	}
-
-	// RANDOM STREAMS
-
-	public static <T> Stream<T> stream(Supplier<T> source) {
-		return Stream.generate(source);
-	}
-
-	public static Stream<String> stringStream(int strLen) {
-		return stream(() -> randomString(strLen));
-	}
-
-	public static Stream<String> stringStream(int strMinLenInclusive, int strMaxLenExclusive) {
-		return IntStream.range(strMinLenInclusive, strMaxLenExclusive)
-				.mapToObj(TestUtils::randomString);
-	}
-
-	// RANDOM values within bounds
-
-	public static int random(int minInclusive, int maxExclusive) {
-		return minInclusive + random().nextInt(maxExclusive-minInclusive);
-	}
-
-	/**
-	 * Very inefficient implementation
-	 * @param minInclusive
-	 * @param maxExclusive
-	 * @return
-	 */
-	public static long random(long minInclusive, long maxExclusive) {
-		return randomLongs(1, minInclusive, maxExclusive)[0];
-	}
-
-	// RANDOM ITERATORS (with filter)
-
-	public static PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {
-		return randomIntStream(spectrum).limit(size).iterator();
-	}
-
-	public static IntStream randomIntStream(int spectrum) {
-		int[] source = new int[spectrum];
-		for (int i = 0; i < source.length; i++) {
-			source[i] = i;
-		}
-
-		for (int i = 0; i < source.length; i++) {
-			int x = random(0, spectrum);
-			int tmp = source[i];
-			source[i] = source[x];
-			source[x] = tmp;
-		}
-
-		return IntStream.of(source);
-	}
-
-	/**
-	 * Creates a series of non-empty sublists of the given {@code source}.
-	 * The number of created sublists is defined by applying the specified
-	 * {@code fraction} to the {@link List#size() size} of the soruce list.
-	 *
-	 * @param source
-	 * @param fraction
-	 * @return
-	 */
-	public static <T> Stream<List<T>> randomSubLists(List<T> source, double fraction) {
-		assertFalse(source.isEmpty());
-		assertTrue(fraction>0.0 && fraction<=1.0);
-
-		int part = Math.max(1, (int) (source.size() * fraction));
-
-		return randomIntStream(source.size())
-				.filter(i -> i>0)
-				.limit(part)
-				.mapToObj(i -> source.subList(0, i));
-	}
-
-	private static final <T> Pair<Integer, Integer> bounds(List<T> source,
-			@SuppressWarnings("unchecked") T...sentinels) {
-		int min = Integer.MAX_VALUE;
-		int max = Integer.MIN_VALUE;
-		for(T sentinel : sentinels) {
-			int index = source.indexOf(sentinel);
-			assertTrue(index>-1);
-			min = Math.min(min, index);
-			max = Math.max(max, index);
-		}
-		assertTrue(min!=Integer.MAX_VALUE);
-		assertTrue(max!=Integer.MIN_VALUE);
-
-		return Pair.intPair(min, max);
-	}
-
-	@SuppressWarnings("boxing")
-	public static <T> Stream<List<T>> randomSubLists(List<T> source, double fraction,
-			@SuppressWarnings("unchecked") T...sentinels) {
-		assertFalse(source.isEmpty());
-		assertTrue(fraction>0.0 && fraction<=1.0);
-		assertTrue(sentinels.length>0);
-
-		// Bounds that need to be covered
-		Pair<Integer, Integer> bounds = bounds(source, sentinels);
-		assertTrue(bounds.first<=bounds.second);
-
-		int part = Math.max(1, (int) (source.size() * fraction));
-
-		return IntStream.generate(() -> random(0, bounds.first+1))
-				.mapToObj(i -> Pair.intPair(i, random(bounds.second, source.size())))
-				.distinct()
-				.limit(part)
-				.map(b -> source.subList(b.first, b.second+1));
-	}
-
-	// RANDOM ARRAYS
-
-	public static Object[] randomContent(int size) {
-		return IntStream.range(0, random(1, size+1))
-				.mapToObj(i -> "item_"+i)
-				.toArray();
-	}
-
-	public static Object[] randomContent() {
-		return IntStream.range(0, random(10, 100))
-				.mapToObj(i -> "item_"+i)
-				.toArray();
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> T[] randomContent(Supplier<T> gen) {
-		return (T[]) Stream.generate(gen)
-				.limit(random(10, 100))
-				.toArray();
-	}
-
-	public static long[] randomLongs(int size, long min, long max) {
-		return random().longs(size, min, max).toArray();
-	}
-
-	public static int[] randomInts(int size, int min, int max) {
-		return random().ints(size, min, max).toArray();
-	}
-
-	public static short[] randomShorts(int size, short min, short max) {
-		short[] array = new short[size];
-		for (int i = 0; i < array.length; i++) {
-			array[i] = (short) (random().nextInt(min+max)-min);
-		}
-		return array;
-	}
-
-	public static byte[] randomBytes(int size, byte min, byte max) {
-		byte[] array = new byte[size];
-		for (int i = 0; i < array.length; i++) {
-			array[i] = (byte) (random().nextInt(min+max)-min);
-		}
-		return array;
-	}
-
-	public static float[] randomFloats(int size) {
-		float[] array = new float[size];
-		for (int i = 0; i < array.length; i++) {
-			array[i] = random().nextFloat();
-		}
-		return array;
-	}
-
-	public static double[] randomDoubles(int size) {
-		return random().doubles().limit(size).toArray();
-	}
-
-	// RANDOMIZING OF INPUT
-
-	public static <T extends Object> Supplier<T> randomizer(Collection<? extends T> source) {
-		requireNonNull(source);
-		if(source.size()==1) {
-			final T singleton = source.iterator().next();
-			return () -> singleton;
-		}
-
-		Randomizer<T> randomizer = Randomizer.from(source);
-		return randomizer::randomize;
-	}
-
-	public static <T extends Object> Supplier<T> randomizer(
-			@SuppressWarnings("unchecked") T...source) {
-		requireNonNull(source);
-		if(source.length==1) {
-			return () -> source[0];
-		}
-
-		Randomizer<T> randomizer = Randomizer.from(source);
-		return randomizer::randomize;
-	}
-
-	public static <T extends Object> T random(@SuppressWarnings("unchecked") T...source) {
-		requireNonNull(source);
-		return source[random().nextInt(source.length)];
-	}
-
-	public static <T extends Object> T random(List<? extends T> source) {
-		requireNonNull(source);
-		return source.get(random().nextInt(source.size()));
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T extends Object> T random(Collection<? extends T> source) {
-		requireNonNull(source);
-		return (T) random(source.toArray());
 	}
 
 	// ARRAY FILLING
@@ -930,25 +673,6 @@ public class TestUtils {
 	public static <E extends Object> void assertArrayNotEmpty(E[] array) {
 		assertNotNull(array);
 		assertTrue(array.length>0);
-	}
-
-	public static <T> List<T> mix(@SuppressWarnings("unchecked") Queue<T>...input) {
-		List<Queue<T>> sources = Stream.of(input)
-				.filter(q -> !q.isEmpty())
-				.collect(Collectors.toList());
-
-		List<T> output = new ArrayList<>();
-
-		while(!sources.isEmpty()) {
-			int index = random(0, sources.size());
-			Queue<T> queue = sources.get(index);
-			output.add(queue.remove());
-			if(queue.isEmpty()) {
-				sources.remove(index);
-			}
-		}
-
-		return output;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1749,7 +1473,7 @@ public class TestUtils {
 
 	public static <T extends Object, K extends Object> void assertListIndexOf(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
-			BiFunction<T, K, Integer> indexOf, @SuppressWarnings("unchecked") K...values) {
+			BiFunction<T, K, Integer> indexOf, RandomGenerator rand, @SuppressWarnings("unchecked") K...values) {
 
 		values = filterUniques(values);
 
@@ -1766,10 +1490,8 @@ public class TestUtils {
 			buffer.add(value);
 		}
 
-		Random r = random();
-
 		while(!buffer.isEmpty()) {
-			int index = r.nextInt(buffer.size());
+			int index = rand.random(0, buffer.size());
 			K value = buffer.remove(index);
 			assertEquals(index, indexOf.apply(instance, value).intValue());
 			remover.accept(instance, value);
@@ -1780,7 +1502,7 @@ public class TestUtils {
 	@SuppressWarnings("boxing")
 	public static <T extends Object, K extends Object> void assertListAtIndex(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
-			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
+			BiFunction<T, Integer, K> atIndex, RandomGenerator rand, @SuppressWarnings("unchecked") K...values) {
 
 		values = filterUniques(values);
 
@@ -1798,10 +1520,8 @@ public class TestUtils {
 			buffer.add(value);
 		}
 
-		Random r = random();
-
 		while(!buffer.isEmpty()) {
-			int index = r.nextInt(buffer.size());
+			int index = rand.random(0, buffer.size());
 			K value = buffer.remove(index);
 			assertEquals(value, atIndex.apply(instance, index));
 			remover.accept(instance, value);

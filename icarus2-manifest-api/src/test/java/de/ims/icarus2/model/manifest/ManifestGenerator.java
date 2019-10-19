@@ -24,7 +24,6 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegist
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.test.TestUtils.isMock;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -796,7 +795,8 @@ public class ManifestGenerator {
 				spec = instantiate(ManifestType.MODULE_SPEC, driverManifest, config);
 				driverManifest.addModuleSpec(spec);
 			} else {
-				spec = random(specs);
+				// pseudo-random pick
+				spec = specs.iterator().next();
 			}
 
 			container.addFieldChange(manifest::setModuleSpecId, "specId", ManifestUtils.requireId(spec));

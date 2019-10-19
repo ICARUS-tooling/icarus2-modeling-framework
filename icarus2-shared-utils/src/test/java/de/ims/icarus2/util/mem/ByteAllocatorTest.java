@@ -19,11 +19,9 @@
  */
 package de.ims.icarus2.util.mem;
 
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestTags.STANDALONE;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -60,10 +58,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.io.Bits;
 import de.ims.icarus2.util.mem.ByteAllocator.Cursor;
 import de.ims.icarus2.util.mem.ByteAllocator.LockType;
@@ -170,8 +169,8 @@ class ByteAllocatorTest {
 	@SuppressWarnings("boxing")
 	@TestFactory
 	@DisabledOnCi
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testAllocationConsistency(TestReporter testReporter) {
+	@RandomizedTest
+	Stream<DynamicTest> testAllocationConsistency(TestReporter testReporter, RandomGenerator rand) {
 		return tests((config, allocator) -> {
 			final int SIZE = 1_000_000;
 			final int RUNS = SIZE * 100;
@@ -194,7 +193,7 @@ class ByteAllocatorTest {
 				int id = allocator.alloc();
 				assertTrue(id!=IcarusUtils.UNSET_INT);
 				assertFalse(used[id]);
-				long data = random().nextLong();
+				long data = rand.nextLong();
 				allocator.setLong(id, offset, data);
 				stored[id] = data;
 				used[id] = true;
@@ -216,7 +215,7 @@ class ByteAllocatorTest {
 			 */
 			for(int i=0; i<RUNS; i++) {
 
-				int id = random().nextInt(SIZE);
+				int id = rand.nextInt(SIZE);
 
 				// Should only happen in later phase -> just continue
 				if(!used[id]) {
@@ -227,7 +226,7 @@ class ByteAllocatorTest {
 				long data = allocator.getLong(id, offset);
 				assertEquals(stored[id], data);
 
-				int c = random().nextInt(100);
+				int c = rand.nextInt(100);
 
 				// Release with a 5% chance
 				if(c < 5) {
@@ -238,7 +237,7 @@ class ByteAllocatorTest {
 				} else
 				// Modify with a 25% chance
 				if(c < 30) {
-					long newData = random().nextLong();
+					long newData = rand.nextLong();
 					allocator.setLong(id, offset, newData);
 					stored[id] = newData;
 					changed++;
@@ -248,7 +247,7 @@ class ByteAllocatorTest {
 					int newId = allocator.alloc();
 					assertTrue(newId!=IcarusUtils.UNSET_INT);
 					assertFalse(used[newId]);
-					long newData = random().nextLong();
+					long newData = rand.nextLong();
 					allocator.setLong(newId, offset, newData);
 					stored[newId] = newData;
 					used[newId] = true;
@@ -684,11 +683,11 @@ class ByteAllocatorTest {
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
 		@TestFactory
-		@Tag(RANDOMIZED)
-		Stream<DynamicNode> testWriteBytesRandom() {
+		@RandomizedTest
+		Stream<DynamicNode> testWriteBytesRandom(RandomGenerator rand) {
 			return configurations()
 					.map(config -> dynamicContainer(config.label(),
-							random().ints(1, config.slotSize).distinct().limit(5).sorted()
+							rand.ints(1, config.slotSize).distinct().limit(5).sorted()
 				.boxed()
 				.flatMap(n -> IntStream.range(config.slotSize-n.intValue()+1, config.slotSize)
 						.mapToObj(offset -> DynamicTest.dynamicTest(
@@ -715,11 +714,11 @@ class ByteAllocatorTest {
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#readBytes(int, int, byte[], int)}.
 		 */
 		@TestFactory
-		@Tag(RANDOMIZED)
-		Stream<DynamicNode> testReadBytesRandom() {
+		@RandomizedTest
+		Stream<DynamicNode> testReadBytesRandom(RandomGenerator rand) {
 			return configurations()
 					.map(config -> dynamicContainer(config.label(),
-							random().ints(1, config.slotSize).distinct().limit(5).sorted()
+							rand.ints(1, config.slotSize).distinct().limit(5).sorted()
 					.boxed()
 					.flatMap(n -> IntStream.range(config.slotSize-n.intValue()+1, config.slotSize)
 							.mapToObj(offset -> DynamicTest.dynamicTest(
@@ -779,14 +778,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForByte() {
+		Stream<DynamicNode> testForByte(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize());
+				final int offset = rand.nextInt(alloc.getSlotSize());
 				byte[] array = new byte[SIZE]; // [id] = byte_stored
 
-				random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+				rand.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setByte(id, offset, (byte)v);
@@ -801,18 +800,18 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForNBytes() {
+		Stream<DynamicNode> testForNBytes(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				long[] array = new long[SIZE]; // [id] = long_stored
 				int[] n_bytes = new int[SIZE]; // [id] = n
 
-				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				rand.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
-						int n = random().nextInt(Long.BYTES)+1;
+						int n = rand.nextInt(Long.BYTES)+1;
 						alloc.setNBytes(id, offset, v, n);
 						array[id] = Bits.extractNBytes(v, n);
 						n_bytes[id] = n;
@@ -826,14 +825,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testGetShort() {
+		Stream<DynamicNode> testGetShort(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Short.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Short.BYTES+1);
 				short[] array = new short[SIZE]; // [id] = short_stored
 
-				random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+				rand.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setShort(id, offset, (short)v);
@@ -848,14 +847,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testGetInt() {
+		Stream<DynamicNode> testGetInt(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Integer.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Integer.BYTES+1);
 				int[] array = new int[SIZE]; // [id] = int_stored
 
-				random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+				rand.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setInt(id, offset, v);
@@ -870,14 +869,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testGetLong() {
+		Stream<DynamicNode> testGetLong(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				long[] array = new long[SIZE]; // [id] = long_stored
 
-				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				rand.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setLong(id, offset, v);
@@ -892,18 +891,18 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForBulk() {
+		Stream<DynamicNode> testForBulk(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
 
-				random().ints(SIZE, 1, alloc.getSlotSize()-offset)
+				rand.ints(SIZE, 1, alloc.getSlotSize()-offset)
 					.forEach(n -> {
 						int id = alloc.alloc();
 						byte[] bytes = new byte[n];
-						random().nextBytes(bytes);
+						rand.nextBytes(bytes);
 						alloc.writeBytes(id, offset, bytes, n);
 						array[id] = bytes;
 					});
@@ -929,14 +928,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForByte() {
+		Stream<DynamicNode> testForByte(RandomGenerator rand) {
 			return batchTests(MIN_SLOT_SIZE, alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize());
+				final int offset = rand.nextInt(alloc.getSlotSize());
 				byte[] array = new byte[SIZE]; // [id] = byte_stored
 
-				random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+				rand.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setByte(id, offset, (byte)v);
@@ -959,18 +958,18 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForNBytes() {
+		Stream<DynamicNode> testForNBytes(RandomGenerator rand) {
 			return batchTests(MIN_SLOT_SIZE, alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				long[] array = new long[SIZE]; // [id] = long_stored
 				int[] n_bytes = new int[SIZE]; // [id] = n
 
-				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				rand.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
-						int n = random().nextInt(Long.BYTES-2)+1;
+						int n = rand.nextInt(Long.BYTES-2)+1;
 						alloc.setNBytes(id, offset, v, n);
 						array[id] = Bits.extractNBytes(v, n);
 						n_bytes[id] = n;
@@ -994,14 +993,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForShort() {
+		Stream<DynamicNode> testForShort(RandomGenerator rand) {
 			return batchTests(MIN_SLOT_SIZE, alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Short.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Short.BYTES+1);
 				short[] array = new short[SIZE]; // [id] = short_stored
 
-				random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+				rand.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setShort(id, offset, (short)v);
@@ -1024,14 +1023,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForInt() {
+		Stream<DynamicNode> testForInt(RandomGenerator rand) {
 			return batchTests(MIN_SLOT_SIZE, alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Integer.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Integer.BYTES+1);
 				int[] array = new int[SIZE]; // [id] = int_stored
 
-				random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+				rand.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setInt(id, offset, v);
@@ -1054,14 +1053,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForLong() {
+		Stream<DynamicNode> testForLong(RandomGenerator rand) {
 			return batchTests(MIN_SLOT_SIZE, alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				long[] array = new long[SIZE]; // [id] = long_stored
 
-				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				rand.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setLong(id, offset, v);
@@ -1084,18 +1083,18 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForBulk() {
+		Stream<DynamicNode> testForBulk(RandomGenerator rand) {
 			return batchTests(MIN_SLOT_SIZE, alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
 
-				random().ints(SIZE, 1, alloc.getSlotSize()-offset)
+				rand.ints(SIZE, 1, alloc.getSlotSize()-offset)
 					.forEach(n -> {
 						int id = alloc.alloc();
 						byte[] bytes = new byte[n];
-						random().nextBytes(bytes);
+						rand.nextBytes(bytes);
 						alloc.writeBytes(id, offset, bytes, n);
 						array[id] = bytes;
 					});
@@ -1126,14 +1125,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getByte(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForByte() {
+		Stream<DynamicNode> testForByte(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize());
+				final int offset = rand.nextInt(alloc.getSlotSize());
 				byte[] array = new byte[SIZE]; // [id] = byte_stored
 
-				random().ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
+				rand.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setByte(id, offset, (byte)v);
@@ -1151,18 +1150,18 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getNBytes(int, int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForNBytes() {
+		Stream<DynamicNode> testForNBytes(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				long[] array = new long[SIZE]; // [id] = long_stored
 				int[] n_bytes = new int[SIZE]; // [id] = n
 
-				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				rand.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
-						int n = random().nextInt(Long.BYTES-2)+1;
+						int n = rand.nextInt(Long.BYTES-2)+1;
 						alloc.setNBytes(id, offset, v, n);
 						array[id] = Bits.extractNBytes(v, n);
 						n_bytes[id] = n;
@@ -1179,14 +1178,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getShort(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testGetShort() {
+		Stream<DynamicNode> testGetShort(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Short.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Short.BYTES+1);
 				short[] array = new short[SIZE]; // [id] = short_stored
 
-				random().ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
+				rand.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setShort(id, offset, (short)v);
@@ -1204,14 +1203,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getInt(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testGetInt() {
+		Stream<DynamicNode> testGetInt(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Integer.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Integer.BYTES+1);
 				int[] array = new int[SIZE]; // [id] = int_stored
 
-				random().ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
+				rand.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setInt(id, offset, v);
@@ -1229,14 +1228,14 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#getLong(int, int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testGetLong() {
+		Stream<DynamicNode> testGetLong(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				long[] array = new long[SIZE]; // [id] = long_stored
 
-				random().longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
+				rand.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 					.forEach(v -> {
 						int id = alloc.alloc();
 						alloc.setLong(id, offset, v);
@@ -1254,18 +1253,18 @@ class ByteAllocatorTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator#writeBytes(int, int, byte[], int)}.
 		 */
-		@Tag(RANDOMIZED)
+		@RandomizedTest
 		@TestFactory
-		Stream<DynamicNode> testForBulk() {
+		Stream<DynamicNode> testForBulk(RandomGenerator rand) {
 			return batchTests(alloc -> {
-				final int offset = random().nextInt(alloc.getSlotSize()-Long.BYTES+1);
+				final int offset = rand.nextInt(alloc.getSlotSize()-Long.BYTES+1);
 				byte[][] array = new byte[SIZE][]; // [id] = bytes_stored
 
-				random().ints(SIZE, 1, alloc.getSlotSize()-offset)
+				rand.ints(SIZE, 1, alloc.getSlotSize()-offset)
 					.forEach(n -> {
 						int id = alloc.alloc();
 						byte[] bytes = new byte[n];
-						random().nextBytes(bytes);
+						rand.nextBytes(bytes);
 						alloc.writeBytes(id, offset, bytes, n);
 						array[id] = bytes;
 					});
@@ -1468,11 +1467,8 @@ class ByteAllocatorTest {
 
 			private static final int SIZE = 100;
 
-			private void shuffleIds(int[] ids) {
-				ArrayUtils.shuffle(ids, random());
-			}
-
-			private Stream<DynamicNode> shuffledTests(ToIntFunction<ByteAllocator> bytes, int runs,
+			private Stream<DynamicNode> shuffledTests(ToIntFunction<ByteAllocator> bytes,
+					int runs, RandomGenerator rand,
 					CursorBatchTask writer, CursorBatchTask reader) {
 				return configurations()
 						.map(config -> dynamicContainer(config.label(),
@@ -1486,10 +1482,10 @@ class ByteAllocatorTest {
 										}
 
 										Cursor cursor = allocator.newCursor();
-										int offset = random().nextInt(
+										int offset = rand.nextInt(
 												allocator.getSlotSize()-bytes.applyAsInt(allocator)+1);
 
-										shuffleIds(ids);
+										rand.shuffle(ids);
 
 										// Write everything
 										for (int id : ids) {
@@ -1499,7 +1495,7 @@ class ByteAllocatorTest {
 										}
 
 										// Ensure we don't use the same order
-										shuffleIds(ids);
+										rand.shuffle(ids);
 
 										// Read and verify everything again
 										for(int id : ids) {
@@ -1515,12 +1511,13 @@ class ByteAllocatorTest {
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getByte(int)}.
 			 */
 			@TestFactory
-			Stream<DynamicNode> testBytes() {
-				final int[] values = random()
+			@RandomizedTest
+			Stream<DynamicNode> testBytes(RandomGenerator rand) {
+				final int[] values = rand
 						.ints(SIZE, Byte.MIN_VALUE, Byte.MAX_VALUE)
 						.toArray(); // [id] = byte_value
 
-				return shuffledTests(alloc -> Byte.BYTES, RUNS,
+				return shuffledTests(alloc -> Byte.BYTES, RUNS, rand,
 						(c, id, offset) -> {
 							byte v = (byte)values[id];
 							c.setByte(offset, v);
@@ -1536,12 +1533,13 @@ class ByteAllocatorTest {
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getShort(int)}.
 			 */
 			@TestFactory
-			Stream<DynamicNode> testShort() {
-				final int[] values = random()
+			@RandomizedTest
+			Stream<DynamicNode> testShort(RandomGenerator rand) {
+				final int[] values = rand
 						.ints(SIZE, Short.MIN_VALUE, Short.MAX_VALUE)
 						.toArray(); // [id] = short_value
 
-				return shuffledTests(alloc -> Short.BYTES, RUNS,
+				return shuffledTests(alloc -> Short.BYTES, RUNS, rand,
 						(c, id, offset) -> {
 							short v = (short)values[id];
 							c.setShort(offset, v);
@@ -1557,12 +1555,13 @@ class ByteAllocatorTest {
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getInt(int)}.
 			 */
 			@TestFactory
-			Stream<DynamicNode> testInt() {
-				final int[] values = random()
+			@RandomizedTest
+			Stream<DynamicNode> testInt(RandomGenerator rand) {
+				final int[] values = rand
 						.ints(SIZE, Integer.MIN_VALUE, Integer.MAX_VALUE)
 						.toArray(); // [id] = int_value
 
-				return shuffledTests(alloc -> Integer.BYTES, RUNS,
+				return shuffledTests(alloc -> Integer.BYTES, RUNS, rand,
 						(c, id, offset) -> {
 							int v = values[id];
 							c.setInt(offset, v);
@@ -1578,12 +1577,13 @@ class ByteAllocatorTest {
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getLong(int)}.
 			 */
 			@TestFactory
-			Stream<DynamicNode> testLong() {
-				final long[] values = random()
+			@RandomizedTest
+			Stream<DynamicNode> testLong(RandomGenerator rand) {
+				final long[] values = rand
 						.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 						.toArray(); // [id] = long_value
 
-				return shuffledTests(alloc -> Long.BYTES, RUNS,
+				return shuffledTests(alloc -> Long.BYTES, RUNS, rand,
 						(c, id, offset) -> {
 							long v = values[id];
 							c.setLong(offset, v);
@@ -1599,13 +1599,14 @@ class ByteAllocatorTest {
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#getNBytes(int, int)}.
 			 */
 			@TestFactory
-			Stream<DynamicNode> testNBytes() {
-				final long[] values = random()
+			@RandomizedTest
+			Stream<DynamicNode> testNBytes(RandomGenerator rand) {
+				final long[] values = rand
 						.longs(SIZE, Long.MIN_VALUE, Long.MAX_VALUE)
 						.toArray(); // [id] = long_value
-				final int n = random().nextInt(8)+1;
+				final int n = rand.nextInt(8)+1;
 
-				return shuffledTests(alloc -> n, RUNS,
+				return shuffledTests(alloc -> n, RUNS, rand,
 						(c, id, offset) -> {
 							long v = values[id];
 							c.setNBytes(offset, v, n);
@@ -1621,16 +1622,17 @@ class ByteAllocatorTest {
 			 * Test method for {@link de.ims.icarus2.util.mem.ByteAllocator.Cursor#writeBytes(int, byte[], int)}.
 			 */
 			@TestFactory
-			Stream<DynamicNode> testBytesArray() {
+			@RandomizedTest
+			Stream<DynamicNode> testBytesArray(RandomGenerator rand) {
 				final byte[][] values = new byte[SIZE][]; // [id] = long_value
-				final int n = random().nextInt(8)+1;
+				final int n = rand.nextInt(8)+1;
 
 				for (int i = 0; i < values.length; i++) {
 					values[i] = new byte[n];
-					random().nextBytes(values[i]);
+					rand.nextBytes(values[i]);
 				}
 
-				return shuffledTests(alloc -> n, RUNS,
+				return shuffledTests(alloc -> n, RUNS, rand,
 						(c, id, offset) -> {
 							byte[] v = values[id];
 							c.writeBytes(offset, v, n);

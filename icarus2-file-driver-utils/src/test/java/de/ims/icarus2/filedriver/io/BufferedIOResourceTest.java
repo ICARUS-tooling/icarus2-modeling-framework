@@ -4,10 +4,8 @@
 package de.ims.icarus2.filedriver.io;
 
 import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.block;
-import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.randomId;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.util.collections.ArrayUtils.shuffle;
+import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives.strictToByte;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +44,9 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
@@ -172,13 +172,16 @@ class BufferedIOResourceTest {
 	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getUseCount()}.
 	 */
 	@TestFactory
-	Stream<DynamicNode> testGetUseCount() {
+	@RandomizedTest
+	Stream<DynamicNode> testGetUseCount(RandomGenerator rand) {
 		return basicTests((config, instance) -> {
+			rand.reset();
+
 			assertEquals(0, instance.getUseCount());
 
-			int count = random(1, 10);
+			int count = rand.random(1, 10);
 			for (int i = 0; i < count; i++) {
-				instance.newAccessor(random().nextBoolean());
+				instance.newAccessor(rand.nextBoolean());
 			}
 
 			assertEquals(count, instance.getUseCount());
@@ -189,10 +192,11 @@ class BufferedIOResourceTest {
 	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#isUsed()}.
 	 */
 	@TestFactory
-	Stream<DynamicNode> testIsUsed() {
+	@RandomizedTest
+	Stream<DynamicNode> testIsUsed(RandomGenerator rand) {
 		return basicTests((config, instance) -> {
 			assertFalse(instance.isUsed());
-			instance.newAccessor(random().nextBoolean());
+			instance.newAccessor(rand.nextBoolean());
 			assertTrue(instance.isUsed());
 		});
 	}
@@ -201,10 +205,11 @@ class BufferedIOResourceTest {
 	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#delete()}.
 	 */
 	@TestFactory
-	Stream<DynamicNode> testDelete() {
+	@RandomizedTest
+	Stream<DynamicNode> testDelete(RandomGenerator rand) {
 		return basicTests((config, instance) -> {
 			assertFalse(instance.isUsed());
-			instance.newAccessor(random().nextBoolean());
+			instance.newAccessor(rand.nextBoolean());
 			assertTrue(instance.isUsed());
 		});
 	}
@@ -332,12 +337,14 @@ class BufferedIOResourceTest {
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#lockBlock(int, de.ims.icarus2.filedriver.io.BufferedIOResource.Block)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> testLockBlock() {
+		@RandomizedTest
+		Stream<DynamicNode> testLockBlock(RandomGenerator rand) {
 			return accessorTests(false, (config, accessor) -> {
 				// Need to keep it below cacheSize/2, as that's the threshold for automatic flushing
-				int count = random(10, config.cacheSize/2);
+				int count = rand.random(10, config.cacheSize/2);
 				int[] locked = IntStream.range(0, count).toArray();
-				shuffle(locked, random());
+				rand.reset();
+				rand.shuffle(locked);
 				Block[] blocks = IntStream.range(0, count*2)
 						.mapToObj(accessor::getBlock)
 						.toArray(Block[]::new);
@@ -365,12 +372,14 @@ class BufferedIOResourceTest {
 		}
 
 		@TestFactory
-		Stream<DynamicNode> testAutoFlushing() {
+		@RandomizedTest
+		Stream<DynamicNode> testAutoFlushing(RandomGenerator rand) {
 			return accessorTests(false, (config, accessor) -> {
 				// Locking cacheSize number of blocks should cause exactly 1 flush
 				int count = config.cacheSize;
 				int[] locked = IntStream.range(0, count).toArray();
-				shuffle(locked, random());
+				rand.reset();
+				rand.shuffle(locked);
 				Block[] blocks = IntStream.range(0, count*2)
 						.mapToObj(accessor::getBlock)
 						.toArray(Block[]::new);
@@ -388,9 +397,11 @@ class BufferedIOResourceTest {
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> testGetBlock() {
+		@RandomizedTest
+		Stream<DynamicNode> testGetBlock(RandomGenerator rand) {
 			return accessorTests(true, (config, accessor) -> {
-				int[] ids = random().ints(0, Byte.MAX_VALUE)
+				rand.reset();
+				int[] ids = rand.ints(0, Byte.MAX_VALUE)
 						.distinct()
 						.limit(BlockCache.MIN_CAPACITY)
 						.toArray();
@@ -410,13 +421,15 @@ class BufferedIOResourceTest {
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> testGetBlockLastHitCache() {
+		@RandomizedTest
+		Stream<DynamicNode> testGetBlockLastHitCache(RandomGenerator rand) {
 			return accessorTests(false, (config, accessor) -> {
-				int id = randomId();
+				int id = rand.nextInt(MAX_INTEGER_INDEX);
 
 				Block block = accessor.getBlock(id);
 
-				int count = random(10, 100);
+				rand.reset();
+				int count = rand.random(10, 100);
 				for (int i = 0; i < count; i++) {
 					assertSame(block, accessor.getBlock(id));
 				}
@@ -487,9 +500,11 @@ class BufferedIOResourceTest {
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#getBlock(int, boolean)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> testGetBlockNonExistent() {
+		@RandomizedTest
+		Stream<DynamicNode> testGetBlockNonExistent(RandomGenerator rand) {
 			return accessorTests(true, (config, accessor) -> {
-				int[] ids = random().ints(0, Byte.MAX_VALUE)
+				rand.reset();
+				int[] ids = rand.ints(0, Byte.MAX_VALUE)
 						.distinct()
 						.limit(BlockCache.MIN_CAPACITY)
 						.toArray();
@@ -505,9 +520,11 @@ class BufferedIOResourceTest {
 		 * Test method for {@link PayloadConverter#read(Object, ByteBuffer)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> verifyConverterRead() {
+		@RandomizedTest
+		Stream<DynamicNode> verifyConverterRead(RandomGenerator rand) {
 			return accessorTests(true, (config, accessor) -> {
-				int[] ids = random().ints(0, Byte.MAX_VALUE)
+				rand.reset();
+				int[] ids = rand.ints(0, Byte.MAX_VALUE)
 						.distinct()
 						.limit(BlockCache.MIN_CAPACITY)
 						.toArray();
@@ -534,9 +551,11 @@ class BufferedIOResourceTest {
 		 * Test method for {@link PayloadConverter#write(Object, ByteBuffer, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> verifyConverterWrite() {
+		@RandomizedTest
+		Stream<DynamicNode> verifyConverterWrite(RandomGenerator rand) {
 			return accessorTests(false, (config, accessor) -> {
-				int[] ids = random().ints(0, Byte.MAX_VALUE)
+				rand.reset();
+				int[] ids = rand.ints(0, Byte.MAX_VALUE)
 						.distinct()
 						.limit(BlockCache.MIN_CAPACITY)
 						.toArray();

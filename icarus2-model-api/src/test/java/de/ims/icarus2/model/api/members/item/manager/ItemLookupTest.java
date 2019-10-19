@@ -23,7 +23,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.assertListEquals;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -57,7 +56,7 @@ public interface ItemLookupTest<L extends ItemLookup> extends ApiGuardedTest<L> 
 	L createFilled(Item...items);
 
 	static Item[] makeItems() {
-		return mockItems(random(10, 20));
+		return mockItems(123);
 	}
 
 	/**

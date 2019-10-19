@@ -25,8 +25,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,6 +57,8 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.test.annotations.PostponedTest;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
@@ -263,8 +263,9 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticStructure#getItemAt(long)}.
 			 */
 			@Test
-			void testGetItemAt() {
-				long index = randomId();
+			@RandomizedTest
+			void testGetItemAt(RandomGenerator rng) {
+				long index = rng.randomId();
 				structure.getItemAt(index);
 				verify(itemStorage).getItemAt(structure, index);
 			}
@@ -345,8 +346,9 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticStructure#getEdgeAt(long)}.
 			 */
 			@Test
-			void testGetEdgeAtLong() {
-				long index = randomId();
+			@RandomizedTest
+			void testGetEdgeAtLong(RandomGenerator rng) {
+				long index = rng.randomId();
 				structure.getEdgeAt(index);
 			}
 
@@ -374,9 +376,10 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticStructure#getEdgeCount(de.ims.icarus2.model.api.members.item.Item, boolean)}.
 			 */
 			@Test
-			void testGetEdgeCountItemBoolean() {
+			@RandomizedTest
+			void testGetEdgeCountItemBoolean(RandomGenerator rng) {
 				Item item = mockItem();
-				boolean isSource = random().nextBoolean();
+				boolean isSource = rng.nextBoolean();
 				structure.getEdgeCount(item, isSource);
 				verify(edgeStorage).getEdgeCount(structure, item, isSource);
 			}
@@ -385,10 +388,11 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticStructure#getEdgeAt(de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
 			 */
 			@Test
-			void testGetEdgeAtItemLongBoolean() {
+			@RandomizedTest
+			void testGetEdgeAtItemLongBoolean(RandomGenerator rng) {
 				Item tiem = mockItem();
-				long index = randomId();
-				boolean isSource = random().nextBoolean();
+				long index = rng.randomId();
+				boolean isSource = rng.nextBoolean();
 				structure.getEdgeAt(tiem, index, isSource);
 				verify(edgeStorage).getEdgeAt(structure, tiem, index, isSource);
 			}
@@ -436,9 +440,10 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.builder.StaticStructure#getSiblingAt(de.ims.icarus2.model.api.members.item.Item, long)}.
 			 */
 			@Test
-			void testGetSiblingAt() {
+			@RandomizedTest
+			void testGetSiblingAt(RandomGenerator rng) {
 				Item item = mockItem();
-				long index = randomId();
+				long index = rng.randomId();
 				structure.getSiblingAt(item, index);
 				verify(edgeStorage).getSiblingAt(structure, item, index);
 			}

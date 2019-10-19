@@ -16,12 +16,10 @@
  */
 package de.ims.icarus2.util.eval.jdk;
 
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.EMOJI;
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_ASCII;
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_CHINESE;
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_ISO;
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
@@ -29,18 +27,18 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Random;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.eval.Expression;
 
 /**
@@ -178,8 +176,8 @@ public class JDKExpressionFactoryTest {
 
 	@Test
 	@DisabledOnCi
-	@Tag(RANDOMIZED)
-	public void testExpressionPerformance(TestReporter reporter) throws Exception {
+	@RandomizedTest
+	public void testExpressionPerformance(TestReporter reporter, RandomGenerator rand) throws Exception {
 		JDKExpressionFactory factory = new JDKExpressionFactory();
 
 		factory.addInputVariable("a", double.class);
@@ -210,11 +208,9 @@ public class JDKExpressionFactoryTest {
 		long runtime_raw = 0L;
 		long runtime_exp = 0L;
 
-		Random r = random();
-
 		for(int i=0; i<runs; i++) {
-			double a = r.nextDouble();
-			double b = r.nextDouble();
+			double a = rand.nextDouble();
+			double b = rand.nextDouble();
 			int iterations = 100;
 
 			// Raw

@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.util.io.resource;
 
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,13 +34,14 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 
 /**
@@ -144,14 +143,14 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	 * @throws IOException
 	 */
 	@TestFactory
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testSizeFilled() throws IOException {
-		return random().ints(10, 1, 1<<15)
+	@RandomizedTest
+	Stream<DynamicTest> testSizeFilled(RandomGenerator rand) throws IOException {
+		return rand.ints(10, 1, 1<<15)
 				.mapToObj(size -> dynamicTest("bytes="+size, () -> {
 					Path file = tempFile();
 					FileResource resource = new FileResource(file, AccessMode.READ);
 					byte[] bytes = new byte[size];
-					random().nextBytes(bytes);
+					rand.nextBytes(bytes);
 					Files.write(file, bytes);
 
 					assertEquals(size, resource.size());
@@ -163,14 +162,14 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	 * @throws IOException
 	 */
 	@TestFactory
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testRead() throws IOException {
-		return random().ints(10, 1, 1<<15)
+	@RandomizedTest
+	Stream<DynamicTest> testRead(RandomGenerator rand) throws IOException {
+		return rand.ints(10, 1, 1<<15)
 				.mapToObj(size -> dynamicTest("bytes="+size, () -> {
 					Path file = tempFile();
 					FileResource resource = new FileResource(file, AccessMode.READ);
 					byte[] bytes = new byte[size];
-					random().nextBytes(bytes);
+					rand.nextBytes(bytes);
 					Files.write(file, bytes);
 
 					assertArrayEquals(bytes, read(resource));
@@ -182,14 +181,14 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	 * @throws IOException
 	 */
 	@TestFactory
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testWrite() throws IOException {
-		return random().ints(10, 1, 1<<15)
+	@RandomizedTest
+	Stream<DynamicTest> testWrite(RandomGenerator rand) throws IOException {
+		return rand.ints(10, 1, 1<<15)
 				.mapToObj(size -> dynamicTest("bytes="+size, () -> {
 					Path file = tempFile();
 					FileResource resource = new FileResource(file, AccessMode.READ_WRITE);
 					byte[] bytes = new byte[size];
-					random().nextBytes(bytes);
+					rand.nextBytes(bytes);
 					write(resource, bytes);
 
 					Files.write(file, bytes);

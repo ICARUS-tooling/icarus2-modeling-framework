@@ -20,7 +20,6 @@
 package de.ims.icarus2.exp.io;
 
 import static de.ims.icarus2.test.TestUtils.LOREM_IPSUM_CHINESE;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.BufferedInputStream;
@@ -65,6 +64,7 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 
 import de.ims.icarus2.test.JmhUtils;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.io.IOUtil;
 
 /**
@@ -145,6 +145,7 @@ public class ReadBenchmark {
 
 	private static byte[] createRandomData(Charset charset, int size) throws CharacterCodingException {
 		CharsetEncoder encoder = charset.newEncoder();
+		RandomGenerator rand = RandomGenerator.random();
 
 		CharBuffer cb;
 		if(encoder.maxBytesPerChar()>1) {
@@ -156,12 +157,12 @@ public class ReadBenchmark {
 			}
 			// Pad the remaining space with random alphanumeric strings
 			if(cb.hasRemaining()) {
-				cb.put(randomString(cb.remaining()));
+				cb.put(rand.randomString(cb.remaining()));
 			}
 			cb.flip();
 		} else {
 			// ASCII style -> simply throw a long random alphanumerical string at it
-			cb = CharBuffer.wrap(randomString(size));
+			cb = CharBuffer.wrap(rand.randomString(size));
 		}
 
 

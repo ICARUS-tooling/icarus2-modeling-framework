@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -41,24 +41,28 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysBooleanBitSetStorage;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 
 /**
  * @author Markus Gärtner
  *
  */
+@ExtendWith(Randomized.class)
 class FixedKeysBooleanBitSetStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysBooleanBitSetStorage>,
 		ManagedAnnotationStorageTest<FixedKeysBooleanBitSetStorage> {
+
+	static RandomGenerator rand;
 
 	private List<String> keys = new ArrayList<>();
 	private boolean[] noEntryValues;
 
 	@BeforeEach
 	void setUp() {
-		int size = random(5, 20);
+		int size = rand.random(5, 20);
 		noEntryValues = new boolean[size];
 		for (int i = 0; i < size; i++) {
-			noEntryValues[i] = random().nextBoolean();
+			noEntryValues[i] = rand.nextBoolean();
 			keys.add("test_"+i);
 		}
 	}

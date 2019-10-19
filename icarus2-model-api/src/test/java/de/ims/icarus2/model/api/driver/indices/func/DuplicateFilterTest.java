@@ -21,7 +21,6 @@ package de.ims.icarus2.model.api.driver.indices.func;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.collections.ArrayUtils.fillAscending;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,6 +33,8 @@ import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 
@@ -70,8 +71,9 @@ class DuplicateFilterTest {
 	}
 
 	@Test
-	void sortedUnique() {
-		long[] values = fillAscending(new long[random(10, 100)], random(0, Long.MAX_VALUE/2));
+	@RandomizedTest
+	void sortedUnique(RandomGenerator rand) {
+		long[] values = fillAscending(new long[rand.random(10, 100)], rand.random(0, Long.MAX_VALUE/2));
 		assertArrayEquals(values, filter(values));
 	}
 

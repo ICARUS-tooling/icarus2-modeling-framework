@@ -23,7 +23,6 @@ import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
@@ -34,8 +33,6 @@ import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.defaultNullCheck;
 import static de.ims.icarus2.test.TestUtils.filledArray;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,7 +57,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -78,8 +74,9 @@ import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.seq.DataSequence;
@@ -460,16 +457,16 @@ class DefaultContainerTest implements ContainerTest<Container> {
 		 */
 		@SuppressWarnings("boxing")
 		@Test
-		@Tag(RANDOMIZED)
-		void testRevive() {
+		@RandomizedTest
+		void testRevive(RandomGenerator rng) {
 			IdManager idManager = mock(IdManager.class);
 			ItemLayer layer = mock(ItemLayer.class);
 
 			when(host.getLayer()).thenReturn(layer);
 			when(layer.getIdManager()).thenReturn(idManager);
 
-			long id = Math.max(1L, TestUtils.random().nextLong());
-			long index = Math.max(1L, TestUtils.random().nextLong());
+			long id = Math.max(1L, rng.nextLong());
+			long index = Math.max(1L, rng.nextLong());
 
 			instance = new DefaultContainer();
 			instance.setManifest(manifest);
@@ -638,10 +635,10 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#getItemAt(long)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetItemAt() {
+			@RandomizedTest
+			void testGetItemAt(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(itemStorage.getItemAt(eq(instance), eq(indices[idx])))
@@ -660,10 +657,10 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testIndexOfItem() {
+			@RandomizedTest
+			void testIndexOfItem(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(itemStorage.indexOfItem(eq(instance), eq(items[idx])))
@@ -680,9 +677,9 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#removeItem(long)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testRemoveItem() {
-				long[] indices = random().longs(20, 0, Long.MAX_VALUE).toArray();
+			@RandomizedTest
+			void testRemoveItem(RandomGenerator rng) {
+				long[] indices = rng.longs(20, 0, Long.MAX_VALUE).toArray();
 
 				LongStream.of(indices).forEach(instance::removeItem);
 
@@ -694,12 +691,12 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 */
 			@SuppressWarnings({ "unchecked", "boxing" })
 			@Test
-			void testRemoveItems() {
+			void testRemoveItems(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
 				};
 				@SuppressWarnings("rawtypes")
 				DataSequence[] items = filledArray(indices.length, DataSequence.class);
@@ -726,10 +723,10 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.DefaultContainer#addItem(long, de.ims.icarus2.model.api.members.item.Item)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testAddItem() {
+			@RandomizedTest
+			void testAddItem(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> instance.addItem(indices[idx], items[idx]));
@@ -743,11 +740,11 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 */
 			@SuppressWarnings("unchecked")
 			@Test
-			@Tag(RANDOMIZED)
-			void testAddItems() {
+			@RandomizedTest
+			void testAddItems(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				DataSequence[] items = filledArray(RUNS, DataSequence.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> instance.addItems(indices[idx], items[idx]));
@@ -761,14 +758,14 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testSwapItems() {
+			@RandomizedTest
+			void testSwapItems(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
 				};
 				IntStream.range(0, indices.length).forEach(
 						idx -> {

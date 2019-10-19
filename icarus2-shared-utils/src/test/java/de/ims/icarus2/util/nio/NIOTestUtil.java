@@ -19,13 +19,14 @@
  */
 package de.ims.icarus2.util.nio;
 
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -97,14 +98,10 @@ public class NIOTestUtil {
 		return EMPTY_BUFFER;
 	}
 
-	public static ByteBuffer randomBuffer(int size) {
+	public static ByteBuffer randomBuffer(RandomGenerator rand, int size) {
 		byte[] data = new byte[size];
-		randomize(data);
+		rand.nextBytes(data);
 		return ByteBuffer.wrap(data);
-	}
-
-	public static void randomize(byte[] data) {
-		random().nextBytes(data);
 	}
 
 	//TODO add methods for filling channels etc...

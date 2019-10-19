@@ -35,6 +35,8 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -60,7 +62,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.NodeInfo#edgeCount()}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testEdgeCount() {
+	@RandomizedTest
+	default List<DynamicTest> testEdgeCount(RandomGenerator rng) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		tests.add(dynamicTest("empty", () -> assertEquals(0, create().edgeCount())));
@@ -75,7 +78,7 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitIn==UNSET_INT) {
 			tests.add(dynamicTest("in: unlimited - random", () -> {
 				I info = create();
-				int count = NodeTests.fillRandom(info, true);
+				int count = NodeTests.fillRandom(info, true, rng);
 
 				assertEquals(count, info.edgeCount());
 			}));
@@ -91,7 +94,7 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitOut==UNSET_INT) {
 			tests.add(dynamicTest("out: unlimited - random", () -> {
 				I info = create();
-				int count = NodeTests.fillRandom(info, false);
+				int count = NodeTests.fillRandom(info, false, rng);
 
 				assertEquals(count, info.edgeCount());
 			}));
@@ -107,8 +110,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitIn==UNSET_INT && limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: unlimited - random", () -> {
 				I info = create();
-				int countIn = NodeTests.fillRandom(info, true);
-				int countOut = NodeTests.fillRandom(info, false);
+				int countIn = NodeTests.fillRandom(info, true, rng);
+				int countOut = NodeTests.fillRandom(info, false, rng);
 
 				assertEquals(countIn+countOut, info.edgeCount());
 			}));
@@ -123,13 +126,13 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
 				I info = create();
 				NodeTests.fill(info, limitIn, true);
-				int countOut = NodeTests.fillRandom(info, false);
+				int countOut = NodeTests.fillRandom(info, false, rng);
 				assertEquals(limitIn+countOut, info.edgeCount());
 			}));
 		} else if(limitIn==UNSET_INT & limitOut>0) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
 				I info = create();
-				int countIn = NodeTests.fillRandom(info, true);
+				int countIn = NodeTests.fillRandom(info, true, rng);
 				NodeTests.fill(info, limitOut, false);
 				assertEquals(countIn+limitOut, info.edgeCount());
 			}));
@@ -142,7 +145,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.NodeInfo#edgeCount(boolean)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testEdgeCountBoolean() {
+	@RandomizedTest
+	default List<DynamicTest> testEdgeCountBoolean(RandomGenerator rng) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		tests.add(dynamicTest("empty [in]", () -> assertEquals(0, create().edgeCount(true))));
@@ -158,7 +162,7 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitIn==UNSET_INT) {
 			tests.add(dynamicTest("in: unlimited - random", () -> {
 				I info = create();
-				int count = NodeTests.fillRandom(info, true);
+				int count = NodeTests.fillRandom(info, true, rng);
 
 				assertEquals(count, info.edgeCount(true));
 				assertEquals(0, info.edgeCount(false));
@@ -176,7 +180,7 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitOut==UNSET_INT) {
 			tests.add(dynamicTest("out: unlimited - random", () -> {
 				I info = create();
-				int count = NodeTests.fillRandom(info, false);
+				int count = NodeTests.fillRandom(info, false, rng);
 
 				assertEquals(count, info.edgeCount(false));
 				assertEquals(0, info.edgeCount(true));
@@ -194,8 +198,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitIn==UNSET_INT && limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: unlimited - random", () -> {
 				I info = create();
-				int countIn = NodeTests.fillRandom(info, true);
-				int countOut = NodeTests.fillRandom(info, false);
+				int countIn = NodeTests.fillRandom(info, true, rng);
+				int countOut = NodeTests.fillRandom(info, false, rng);
 
 				assertEquals(countIn, info.edgeCount(true));
 				assertEquals(countOut, info.edgeCount(false));
@@ -212,14 +216,14 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
 				I info = create();
 				NodeTests.fill(info, limitIn, true);
-				int countOut = NodeTests.fillRandom(info, false);
+				int countOut = NodeTests.fillRandom(info, false, rng);
 				assertEquals(limitIn, info.edgeCount(true));
 				assertEquals(countOut, info.edgeCount(false));
 			}));
 		} else if(limitIn==UNSET_INT & limitOut>0) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
 				I info = create();
-				int countIn = NodeTests.fillRandom(info, true);
+				int countIn = NodeTests.fillRandom(info, true, rng);
 				NodeTests.fill(info, limitOut, false);
 				assertEquals(countIn, info.edgeCount(true));
 				assertEquals(limitOut, info.edgeCount(false));
@@ -233,7 +237,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.NodeInfo#edgeAt(long, boolean)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testEdgeAt() {
+	@RandomizedTest
+	default List<DynamicTest> testEdgeAt(RandomGenerator rng) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		StructureType in = getIncomingEquivalent();
@@ -245,41 +250,41 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		// Only test by adding incoming edges
 		if(limitIn==UNSET_INT) {
 			tests.add(dynamicTest("in: unlimited - random", () -> {
-				NodeTests.fillAndAssert(create(), -1, true);
+				NodeTests.fillAndAssert(create(), -1, true, rng);
 			}));
 		} else if(limitIn>0) {
 			tests.add(dynamicTest("in: fixed limit - "+limitIn, () -> {
-				NodeTests.fillAndAssert(create(), limitIn, true);
+				NodeTests.fillAndAssert(create(), limitIn, true, rng);
 			}));
 		}
 
 		// Only test by adding outgoing edges
 		if(limitOut==UNSET_INT) {
 			tests.add(dynamicTest("out: unlimited - random", () -> {
-				NodeTests.fillAndAssert(create(), -1, false);
+				NodeTests.fillAndAssert(create(), -1, false, rng);
 			}));
 		} else if(limitOut>0) {
 			tests.add(dynamicTest("out: fixed limit - "+limitOut, () -> {
-				NodeTests.fillAndAssert(create(), limitOut, false);
+				NodeTests.fillAndAssert(create(), limitOut, false, rng);
 			}));
 		}
 
 		// Test by adding combinations of edges
 		if(limitIn==UNSET_INT && limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: unlimited - random", () -> {
-				NodeTests.fillAndAssert(create(), -1, -1);
+				NodeTests.fillAndAssert(create(), -1, -1, rng);
 			}));
 		} else if(limitIn>0 && limitOut>0) {
 			tests.add(dynamicTest("both: fixed limits", () -> {
-				NodeTests.fillAndAssert(create(), limitIn, limitOut);
+				NodeTests.fillAndAssert(create(), limitIn, limitOut, rng);
 			}));
 		} else if(limitIn>0 & limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
-				NodeTests.fillAndAssert(create(), limitIn, -1);
+				NodeTests.fillAndAssert(create(), limitIn, -1, rng);
 			}));
 		} else if(limitIn==UNSET_INT & limitOut>0) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
-				NodeTests.fillAndAssert(create(), -1, limitOut);
+				NodeTests.fillAndAssert(create(), -1, limitOut, rng);
 			}));
 		}
 
@@ -290,7 +295,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.NodeInfo#addEdge(de.ims.icarus2.model.api.members.item.Edge, boolean)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddEdge() {
+	@RandomizedTest
+	default List<DynamicTest> testAddEdge(RandomGenerator rng) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		StructureType in = getIncomingEquivalent();
@@ -302,7 +308,7 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		// Only test by adding incoming edges
 		if(limitIn==UNSET_INT) {
 			tests.add(dynamicTest("in: unlimited - random", () -> {
-				NodeTests.fillRandom(create(), true);
+				NodeTests.fillRandom(create(), true, rng);
 			}));
 		} else if(limitIn>0) {
 			tests.add(dynamicTest("in: fixed limit - "+limitIn, () -> {
@@ -325,7 +331,7 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		// Only test by adding outgoing edges
 		if(limitOut==UNSET_INT) {
 			tests.add(dynamicTest("out: unlimited - random", () -> {
-				NodeTests.fillRandom(create(), false);
+				NodeTests.fillRandom(create(), false, rng);
 			}));
 		} else if(limitOut>0) {
 			tests.add(dynamicTest("out: fixed limit - "+limitOut, () -> {
@@ -350,8 +356,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		if(limitIn==UNSET_INT && limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: unlimited - random", () -> {
 				I info = create();
-				NodeTests.fillRandom(info, true);
-				NodeTests.fillRandom(info, false);
+				NodeTests.fillRandom(info, true, rng);
+				NodeTests.fillRandom(info, false, rng);
 			}));
 		} else if(limitIn>0 && limitOut>0) {
 			tests.add(dynamicTest("both: fixed limits", () -> {
@@ -367,14 +373,14 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
 				I info = create();
 				NodeTests.fill(info, limitIn, true);
-				NodeTests.fillRandom(info, false);
+				NodeTests.fillRandom(info, false, rng);
 				assertModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 						() -> info.addEdge(mockEdge(), true));
 			}));
 		} else if(limitIn==UNSET_INT & limitOut>0) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
 				I info = create();
-				NodeTests.fillRandom(info, true);
+				NodeTests.fillRandom(info, true, rng);
 				NodeTests.fill(info, limitOut, false);
 				assertModelException(ModelErrorCode.MODEL_INVALID_REQUEST,
 						() -> info.addEdge(mockEdge(), false));
@@ -388,7 +394,8 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 	 * Test method for {@link de.ims.icarus2.model.standard.members.structure.NodeInfo#removeEdge(de.ims.icarus2.model.api.members.item.Edge, boolean)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testRemoveEdge() {
+	@RandomizedTest
+	default List<DynamicTest> testRemoveEdge(RandomGenerator rng) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		StructureType in = getIncomingEquivalent();
@@ -400,11 +407,11 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		// Only test by adding incoming edges
 		if(limitIn==UNSET_INT) {
 			tests.add(dynamicTest("in: unlimited - random", () -> {
-				NodeTests.fillRemoveAndAssert(create(), -1, true);
+				NodeTests.fillRemoveAndAssert(create(), -1, true, rng);
 			}));
 		} else if(limitIn>0) {
 			tests.add(dynamicTest("in: fixed limit - "+limitIn, () -> {
-				NodeTests.fillRemoveAndAssert(create(), limitIn, true);
+				NodeTests.fillRemoveAndAssert(create(), limitIn, true, rng);
 			}));
 		}
 
@@ -418,11 +425,11 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		// Only test by adding outgoing edges
 		if(limitOut==UNSET_INT) {
 			tests.add(dynamicTest("out: unlimited - random", () -> {
-				NodeTests.fillRemoveAndAssert(create(), -1, false);
+				NodeTests.fillRemoveAndAssert(create(), -1, false, rng);
 			}));
 		} else if(limitOut>0) {
 			tests.add(dynamicTest("out: fixed limit - "+limitOut, () -> {
-				NodeTests.fillRemoveAndAssert(create(), limitIn, false);
+				NodeTests.fillRemoveAndAssert(create(), limitIn, false, rng);
 			}));
 		}
 
@@ -436,19 +443,19 @@ public interface NodeInfoTest<I extends NodeInfo> extends ApiGuardedTest<I> {
 		// Test by adding combinations of edges
 		if(limitIn==UNSET_INT && limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: unlimited - random", () -> {
-				NodeTests.fillRemoveAndAssert(create(), -1, -1);
+				NodeTests.fillRemoveAndAssert(create(), -1, -1, rng);
 			}));
 		} else if(limitIn>0 && limitOut>0) {
 			tests.add(dynamicTest("both: fixed limits", () -> {
-				NodeTests.fillRemoveAndAssert(create(), limitIn, limitOut);
+				NodeTests.fillRemoveAndAssert(create(), limitIn, limitOut, rng);
 			}));
 		} else if(limitIn>0 & limitOut==UNSET_INT) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
-				NodeTests.fillRemoveAndAssert(create(), limitIn, -1);
+				NodeTests.fillRemoveAndAssert(create(), limitIn, -1, rng);
 			}));
 		} else if(limitIn==UNSET_INT & limitOut>0) {
 			tests.add(dynamicTest("both: in-limited out-unbound", () -> {
-				NodeTests.fillRemoveAndAssert(create(), -1, limitOut);
+				NodeTests.fillRemoveAndAssert(create(), -1, limitOut, rng);
 			}));
 		}
 

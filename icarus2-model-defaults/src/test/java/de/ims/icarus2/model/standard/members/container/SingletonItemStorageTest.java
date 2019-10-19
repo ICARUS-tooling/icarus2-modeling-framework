@@ -23,7 +23,6 @@ import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +43,8 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
@@ -379,8 +380,9 @@ class SingletonItemStorageTest implements ItemStorageTest<SingletonItemStorage>{
 		 */
 		@SuppressWarnings("boxing")
 		@Test
-		void testGetBeginOffset() {
-			long index = randomId();
+		@RandomizedTest
+		void testGetBeginOffset(RandomGenerator rng) {
+			long index = rng.randomId();
 			when(item.getBeginOffset()).thenReturn(index);
 			assertEquals(index, instance.getBeginOffset(context));
 		}
@@ -390,8 +392,9 @@ class SingletonItemStorageTest implements ItemStorageTest<SingletonItemStorage>{
 		 */
 		@SuppressWarnings("boxing")
 		@Test
-		void testGetEndOffset() {
-			long index = randomId();
+		@RandomizedTest
+		void testGetEndOffset(RandomGenerator rng) {
+			long index = rng.randomId();
 			when(item.getEndOffset()).thenReturn(index);
 			assertEquals(index, instance.getEndOffset(context));
 		}

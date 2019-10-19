@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.members.item;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
@@ -47,7 +46,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -60,7 +58,8 @@ import de.ims.icarus2.model.api.members.ItemTest;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.IcarusUtils;
 
 /**
@@ -338,8 +337,8 @@ class DefaultItemTest implements ItemTest<Item> {
 	 * @author Markus Gärtner
 	 *
 	 */
-	@Tag(RANDOMIZED)
 	@Nested
+	@RandomizedTest
 	class WithComplexEnvironment {
 		private IdManager idManager;
 		private ItemLayer layer;
@@ -350,7 +349,7 @@ class DefaultItemTest implements ItemTest<Item> {
 		private DefaultItem instance;
 
 		@BeforeEach
-		void setUp() {
+		void setUp(RandomGenerator rng) {
 			idManager = mock(IdManager.class);
 			layer = mock(ItemLayer.class);
 			container = mockContainer();
@@ -358,8 +357,8 @@ class DefaultItemTest implements ItemTest<Item> {
 			when(container.getLayer()).thenReturn(layer);
 			when(layer.getIdManager()).thenReturn(idManager);
 
-			id = Math.max(1L, TestUtils.random().nextLong());
-			index = Math.max(1L, TestUtils.random().nextLong());
+			id = Math.max(1L, rng.nextLong());
+			index = Math.max(1L, rng.nextLong());
 
 			instance = new DefaultItem();
 			instance.setContainer(container);

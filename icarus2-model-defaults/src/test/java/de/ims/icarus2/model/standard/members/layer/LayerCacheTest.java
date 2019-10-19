@@ -20,8 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer;
 
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomInts;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,9 +42,10 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
-import de.ims.icarus2.model.standard.members.layer.LayerCache;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -95,8 +94,9 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 100})
-		void testFromLayers(int size) {
-			Layer[] layers = randomLayers(randomInts(size, 0, Integer.MAX_VALUE));
+		@RandomizedTest
+		void testFromLayers(int size, RandomGenerator rng) {
+			Layer[] layers = randomLayers(rng.randomInts(size, 0, Integer.MAX_VALUE));
 			LayerCache cache = LayerCache.fromLayers(layers);
 			assertCollectionEquals(cache.layerCollection(), layers);
 		}
@@ -106,8 +106,9 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 100})
-		void testFromCollection(int size) {
-			Layer[] layers = randomLayers(randomInts(size, 0, Integer.MAX_VALUE));
+		@RandomizedTest
+		void testFromCollection(int size, RandomGenerator rng) {
+			Layer[] layers = randomLayers(rng.randomInts(size, 0, Integer.MAX_VALUE));
 			LayerCache cache = LayerCache.fromCollection(set(layers));
 			assertCollectionEquals(cache.layerCollection(), layers);
 		}
@@ -117,8 +118,9 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		 */
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 100})
-		void testFromScope(int size) {
-			Layer[] layers = randomLayers(randomInts(size, 0, Integer.MAX_VALUE/2));
+		@RandomizedTest
+		void testFromScope(int size, RandomGenerator rng) {
+			Layer[] layers = randomLayers(rng.randomInts(size, 0, Integer.MAX_VALUE/2));
 			int primaryUid = Integer.MAX_VALUE-1;
 			ItemLayer primaryLayer = mockLayer(ItemLayer.class,
 					ItemLayerManifest.class, primaryUid);
@@ -137,6 +139,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 	}
 
 	@Nested
+	@RandomizedTest
 	class Filled {
 
 		private int[] uids;
@@ -144,9 +147,9 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		private LayerCache cache;
 
 		@BeforeEach
-		void setUp() {
-			int size = random(5, 10);
-			uids = randomInts(size, 0, Integer.MAX_VALUE/2);
+		void setUp(RandomGenerator rng) {
+			int size = rng.random(5, 10);
+			uids = rng.randomInts(size, 0, Integer.MAX_VALUE/2);
 			layers = randomLayers(uids);
 			cache = LayerCache.fromLayers(layers);
 		}

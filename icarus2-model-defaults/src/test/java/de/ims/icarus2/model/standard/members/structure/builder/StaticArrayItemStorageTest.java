@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.test.TestUtils.assertListEquals;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -37,18 +36,23 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.standard.members.container.ImmutableItemStorageTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class StaticArrayItemStorageTest implements ImmutableItemStorageTest<StaticArrayItemStorage> {
+
+	RandomGenerator rng;
 
 	private Item[] items;
 
 	@BeforeEach
 	void setUp() {
-		items = mockItems(random(10, 20));
+		items = mockItems(rng.random(10, 20));
 	}
 
 	@AfterEach

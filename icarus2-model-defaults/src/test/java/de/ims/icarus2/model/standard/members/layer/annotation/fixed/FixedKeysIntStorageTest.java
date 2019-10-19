@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -41,7 +41,8 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysIntStorage;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -49,8 +50,11 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@ExtendWith(Randomized.class)
 class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysIntStorage>,
 	ManagedAnnotationStorageTest<FixedKeysIntStorage> {
+
+	static RandomGenerator rand;
 
 	/** Maps keys to noEntryValues */
 	private Object2IntMap<String> setup = new Object2IntOpenHashMap<>();
@@ -60,7 +64,7 @@ class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeys
 	void setUp() {
 		for (int i = 0; i < 20; i++) {
 			String key = "key_"+i;
-			setup.put(key, random().nextInt());
+			setup.put(key, rand.nextInt());
 			keys.add(key);
 		}
 	}
@@ -86,7 +90,7 @@ class FixedKeysIntStorageTest implements MultiKeyAnnotationStorageTest<FixedKeys
 		int noEntryValue = setup.getInt(key);
 		int value;
 		do {
-			value = random().nextInt();
+			value = rand.nextInt();
 		} while(value==noEntryValue);
 		return Integer.valueOf(value);
 	}

@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
@@ -33,12 +32,17 @@ import de.ims.icarus2.model.api.driver.indices.IndexSetTest;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class VirtualIndexSetTest implements RandomAccessIndexSetTest<VirtualIndexSet> {
+
+	static RandomGenerator rand;
 
 	private Stream<Config> variate(Config source) {
 		List<Config> configs = new ArrayList<>();
@@ -74,7 +78,7 @@ class VirtualIndexSetTest implements RandomAccessIndexSetTest<VirtualIndexSet> {
 	}
 
 	private static int randomSize() {
-		return random(10, 100);
+		return rand.random(10, 100);
 	}
 
 	@Override

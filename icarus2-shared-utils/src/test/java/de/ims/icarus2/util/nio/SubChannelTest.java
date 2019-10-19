@@ -35,6 +35,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -70,11 +73,12 @@ public class SubChannelTest {
 	}
 
 	@Test
-	public void testWriteReadOrigin() throws Exception {
+	@RandomizedTest
+	public void testWriteReadOrigin(RandomGenerator rand) throws Exception {
 
 		int size = 20;
 
-		ByteBuffer bb = NIOTestUtil.randomBuffer(size);
+		ByteBuffer bb = NIOTestUtil.randomBuffer(rand, size);
 		int bytesWritten = subChannel.write(bb);
 
 		assertEquals(size, bytesWritten);
@@ -87,14 +91,15 @@ public class SubChannelTest {
 	}
 
 	@Test
-	public void testWriteReadSection() throws Exception {
+	@RandomizedTest
+	public void testWriteReadSection(RandomGenerator rand) throws Exception {
 
 		int size = 20;
 		int pos = 30;
 
 		subChannel.setOffsets(pos, size);
 
-		ByteBuffer bb = NIOTestUtil.randomBuffer(size);
+		ByteBuffer bb = NIOTestUtil.randomBuffer(rand, size);
 		int bytesWritten = subChannel.write(bb);
 
 		assertEquals(size, bytesWritten);
@@ -107,11 +112,12 @@ public class SubChannelTest {
 	}
 
 	@Test
-	public void testEmpty() throws Exception {
+	@RandomizedTest
+	public void testEmpty(RandomGenerator rand) throws Exception {
 		subChannel.setOffsets(20, 0);
 		assertEquals(0, subChannel.size());
 
-		ByteBuffer bb = NIOTestUtil.randomBuffer(10);
+		ByteBuffer bb = NIOTestUtil.randomBuffer(rand, 10);
 		int bytesWritten = subChannel.write(bb);
 		assertTrue(bytesWritten<=0);
 

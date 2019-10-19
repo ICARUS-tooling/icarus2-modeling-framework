@@ -21,8 +21,6 @@ package de.ims.icarus2.model.api.driver.indices.func;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertOverflow;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -34,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
@@ -61,8 +61,9 @@ class Long2IntConverterTest {
 	}
 
 	@Test
-	void valid() {
-		long[] values = randomLongs(random(10, 100), Integer.MIN_VALUE, Integer.MAX_VALUE);
+	@RandomizedTest
+	void valid(RandomGenerator rand) {
+		long[] values = rand.randomLongs(rand.random(10, 100), Integer.MIN_VALUE, Integer.MAX_VALUE);
 		IntList tmp = new IntArrayList();
 
 		LongStream.of(values).forEach(new Long2IntConverter(tmp::add));

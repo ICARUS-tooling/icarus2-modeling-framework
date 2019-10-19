@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.driver.virtual;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.collections.ArrayUtils.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,6 +38,8 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemListTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -76,8 +77,9 @@ class DefaultItemListTest implements ItemListTest<DefaultItemList> {
 		 * Test method for {@link de.ims.icarus2.model.standard.driver.virtual.DefaultItemList#DefaultItemList(java.util.Collection)}.
 		 */
 		@Test
-		void testDefaultItemListCollectionOfQextendsItem() {
-			Item[] items = mockItems(random(10, 20));
+		@RandomizedTest
+		void testDefaultItemListCollectionOfQextendsItem(RandomGenerator rng) {
+			Item[] items = mockItems(rng.random(10, 20));
 			DefaultItemList list = new DefaultItemList(asList(items));
 
 			assertEquals(items.length, list.getItemCount());

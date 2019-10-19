@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
@@ -37,6 +35,7 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
@@ -44,16 +43,18 @@ import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 
 /**
  * @author Markus Gärtner
  *
  */
+@ExtendWith(Randomized.class)
 class PackedAnnotationStorageTest implements MultiKeyAnnotationStorageTest<PackedAnnotationStorage>,
 		ManagedAnnotationStorageTest<PackedAnnotationStorage> {
 
-	private static final Set<ValueType> NUMBERS =
-			set(ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE);
+	static RandomGenerator rand;
 
 	private static final ValueType[] _types = {
 			ValueType.STRING,
@@ -67,12 +68,12 @@ class PackedAnnotationStorageTest implements MultiKeyAnnotationStorageTest<Packe
 
 	@SuppressWarnings("rawtypes")
 	private static final Supplier[] _gen = {
-			() -> randomString(20),
-			() -> Integer.valueOf(random().nextInt()),
-			() -> Long.valueOf(random().nextLong()),
-			() -> Double.valueOf(random().nextDouble()*Double.MAX_VALUE),
-			() -> Float.valueOf(random().nextFloat()*Float.MAX_VALUE),
-			() -> Boolean.valueOf(random().nextBoolean()),
+			() -> rand.randomString(20),
+			() -> Integer.valueOf(rand.nextInt()),
+			() -> Long.valueOf(rand.nextLong()),
+			() -> Double.valueOf(rand.nextDouble()*Double.MAX_VALUE),
+			() -> Float.valueOf(rand.nextFloat()*Float.MAX_VALUE),
+			() -> Boolean.valueOf(rand.nextBoolean()),
 			() -> new Object(),
 	};
 
@@ -87,10 +88,10 @@ class PackedAnnotationStorageTest implements MultiKeyAnnotationStorageTest<Packe
 	@SuppressWarnings("unchecked")
 	@BeforeEach
 	void setUp() {
-		capacity = random(100, 1000);
+		capacity = rand.random(100, 1000);
 
 		for (int i = 0; i < 20; i++) {
-			int idx = i<_types.length ? i : random(0, _types.length);
+			int idx = i<_types.length ? i : rand.random(0, _types.length);
 			String key = key(i);
 			setup.put(key, new KeyConfig<>(_types[idx], _gen[idx]));
 			keys.add(key);

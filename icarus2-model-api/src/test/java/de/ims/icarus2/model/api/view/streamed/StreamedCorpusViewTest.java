@@ -20,9 +20,7 @@
 package de.ims.icarus2.model.api.view.streamed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -42,7 +40,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -54,6 +51,8 @@ import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.CorpusViewTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.IcarusUtils;
 
@@ -341,13 +340,13 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	 * Test method for {@link StreamedCorpusView#reset()}.
 	 */
 	@RepeatedTest(value=RUNS)
-	@Tag(RANDOMIZED)
-	default void testResetFull() {
-		int size = random(500, 1000);
+	@RandomizedTest
+	default void testResetFull(RandomGenerator rand) {
+		int size = rand.random(500, 1000);
 		try(V view = createForSize(size)) {
 
 			// Go to random index
-			int markedIndex = random(50, size-2);
+			int markedIndex = rand.random(50, size-2);
 			int index = 0;
 			while(index++<markedIndex) {
 				view.advance();
@@ -361,7 +360,7 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 			assertTrue(view.hasMark());
 
 			// Move random distance away
-			int distance = random(2, size-markedIndex);
+			int distance = rand.random(2, size-markedIndex);
 			while(distance-->0 && !view.wouldInvalidateMark() && view.advance()) {
 				// Just moving the cursor away as much as possible
 			}
@@ -389,13 +388,13 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	 * Test method for {@link StreamedCorpusView#wouldInvalidateMark()}.
 	 */
 	@RepeatedTest(value=RUNS)
-	@Tag(RANDOMIZED)
-	default void testWouldInvalidateMarkInitialFull() {
-		int size = random(500, 1000);
-		int capacity = random(20, size/2);
+	@RandomizedTest
+	default void testWouldInvalidateMarkInitialFull(RandomGenerator rand) {
+		int size = rand.random(500, 1000);
+		int capacity = rand.random(20, size/2);
 
 		try(V view = createView(createEnvironment(), AccessMode.READ_WRITE, size, capacity)) {
-			int markedIndex = random(0, capacity);
+			int markedIndex = rand.random(0, capacity);
 			for (int i = 0; i < capacity; i++) {
 				view.advance();
 				if(i==markedIndex) {
@@ -416,14 +415,14 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	 * Test method for {@link StreamedCorpusView#flush()}.
 	 */
 	@RepeatedTest(value=RUNS)
-	@Tag(RANDOMIZED)
-	default void testFlush() {
-		int size = random(500, 1000);
-		int capacity = random(20, size/2);
+	@RandomizedTest
+	default void testFlush(RandomGenerator rand) {
+		int size = rand.random(500, 1000);
+		int capacity = rand.random(20, size/2);
 
 		try(V view = createView(createEnvironment(), AccessMode.READ_WRITE, size, capacity)) {
 			// Create random mark
-			int markedIndex = random(0, capacity);
+			int markedIndex = rand.random(0, capacity);
 			for (int i = 0; i < capacity; i++) {
 				view.advance();
 				if(i==markedIndex) {
@@ -433,7 +432,7 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 			assertTrue(view.hasMark());
 
 			// Move random distance away
-			int distance = random(2, size-markedIndex);
+			int distance = rand.random(2, size-markedIndex);
 			while(distance-->0 && !view.wouldInvalidateMark() && view.advance()) {
 				// Just moving the cursor away as much as possible
 			}
@@ -452,15 +451,15 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	 * Test method for {@link StreamedCorpusView#skip(long)}.
 	 */
 	@RepeatedTest(value=RUNS)
-	@Tag(RANDOMIZED)
-	default void testSkipWithoutLossOfMark() {
-		int size = random(500, 1000);
-		int capacity = random(20, size/2);
+	@RandomizedTest
+	default void testSkipWithoutLossOfMark(RandomGenerator rand) {
+		int size = rand.random(500, 1000);
+		int capacity = rand.random(20, size/2);
 
 		try(V view = createView(createEnvironment(), AccessMode.READ_WRITE, size, capacity)) {
 			// Move to random spot
-			int initialSteps = random(capacity/4, capacity/2);
-			int markedIndex = random(0, capacity/4);
+			int initialSteps = rand.random(capacity/4, capacity/2);
+			int markedIndex = rand.random(0, capacity/4);
 			for (int i = 0; i < initialSteps; i++) {
 				view.advance();
 				if(i==markedIndex) {
@@ -470,7 +469,7 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 			assertTrue(view.hasMark());
 
 			// Now skip random number of items within current chunk
-			int distance = random(1, capacity-initialSteps);
+			int distance = rand.random(1, capacity-initialSteps);
 			view.skip(distance);
 
 			assertTrue(view.hasMark());
@@ -482,15 +481,15 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 	 * Test method for {@link StreamedCorpusView#skip(long)}.
 	 */
 	@RepeatedTest(value=RUNS)
-	@Tag(RANDOMIZED)
-	default void testSkipWithLossOfMark() {
-		int size = random(500, 1000);
-		int capacity = random(20, size/2);
+	@RandomizedTest
+	default void testSkipWithLossOfMark(RandomGenerator rand) {
+		int size = rand.random(500, 1000);
+		int capacity = rand.random(20, size/2);
 
 		try(V view = createView(createEnvironment(), AccessMode.READ_WRITE, size, capacity)) {
 			// Move to random spot
-			int initialSteps = random(capacity/4, capacity/2);
-			int markedIndex = random(0, capacity/4);
+			int initialSteps = rand.random(capacity/4, capacity/2);
+			int markedIndex = rand.random(0, capacity/4);
 			for (int i = 0; i < initialSteps; i++) {
 				view.advance();
 				if(i==markedIndex) {
@@ -500,7 +499,7 @@ public interface StreamedCorpusViewTest<V extends StreamedCorpusView>
 			assertTrue(view.hasMark());
 
 			// Now skip random number of items within current chunk
-			int distance = random(capacity, size-initialSteps);
+			int distance = rand.random(capacity, size-initialSteps);
 			view.skip(distance);
 
 			assertFalse(view.hasMark());

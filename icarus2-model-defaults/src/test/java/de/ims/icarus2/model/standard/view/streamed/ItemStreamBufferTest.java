@@ -20,9 +20,7 @@
 package de.ims.icarus2.model.standard.view.streamed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,7 +41,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -53,6 +50,8 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualItemLayerManager;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -299,12 +298,12 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#reset()}.
 			 */
-			@RepeatedTest(value=RUNS)
-			@Tag(RANDOMIZED)
-			void testResetFull() {
+			@RepeatedTest(RUNS)
+			@RandomizedTest
+			void testResetFull(RandomGenerator rng) {
 
 				// Go to random index
-				int markedIndex = random(0, size/2);
+				int markedIndex = rng.random(0, size/2);
 				int index = 0;
 				while(index++<=markedIndex) {
 					buffer.advance();
@@ -317,7 +316,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 				assertTrue(buffer.hasMark());
 
 				// Move random distance away
-				int distance = random(2, size-markedIndex);
+				int distance = rng.random(2, size-markedIndex);
 				while(distance-->0 && !buffer.wouldInvalidateMark() && buffer.advance()) {
 					// Just moving the cursor away as much as possible
 				}
@@ -340,10 +339,10 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#wouldInvalidateMark()}.
 			 */
-			@RepeatedTest(value=RUNS)
-			@Tag(RANDOMIZED)
-			void testWouldInvalidateMarkInitialFull() {
-				int markedIndex = random(0, capacity);
+			@RepeatedTest(RUNS)
+			@RandomizedTest
+			void testWouldInvalidateMarkInitialFull(RandomGenerator rng) {
+				int markedIndex = rng.random(0, capacity);
 				for (int i = 0; i < capacity; i++) {
 					assertFalse(buffer.wouldInvalidateMark());
 					buffer.advance();
@@ -361,11 +360,11 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#flush()}.
 			 */
-			@RepeatedTest(value=RUNS)
-			@Tag(RANDOMIZED)
-			void testFlush() {
+			@RepeatedTest(RUNS)
+			@RandomizedTest
+			void testFlush(RandomGenerator rng) {
 				// Create random mark
-				int markedIndex = random(0, capacity);
+				int markedIndex = rng.random(0, capacity);
 				for (int i = 0; i < capacity; i++) {
 					buffer.advance();
 					if(i==markedIndex) {
@@ -375,7 +374,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 				assertTrue(buffer.hasMark());
 
 				// Move random distance away
-				int distance = random(2, size-markedIndex);
+				int distance = rng.random(2, size-markedIndex);
 				while(distance-->0 && !buffer.wouldInvalidateMark() && buffer.advance()) {
 					// Just moving the cursor away as much as possible
 				}
@@ -392,12 +391,12 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#skip(long)}.
 			 */
-			@RepeatedTest(value=RUNS)
-			@Tag(RANDOMIZED)
-			void testSkipWithoutLossOfMark() {
+			@RepeatedTest(RUNS)
+			@RandomizedTest
+			void testSkipWithoutLossOfMark(RandomGenerator rng) {
 				// Move to random spot
-				int initialSteps = random(capacity/4, capacity/2);
-				int markedIndex = random(0, capacity/4);
+				int initialSteps = rng.random(capacity/4, capacity/2);
+				int markedIndex = rng.random(0, capacity/4);
 				for (int i = 0; i < initialSteps; i++) {
 					buffer.advance();
 					if(i==markedIndex) {
@@ -407,7 +406,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 				assertTrue(buffer.hasMark());
 
 				// Now skip random number of items within current chunk
-				int distance = random(1, capacity-initialSteps);
+				int distance = rng.random(1, capacity-initialSteps);
 				buffer.skip(distance);
 
 				assertTrue(buffer.hasMark());
@@ -417,12 +416,12 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.view.streamed.ItemStreamBuffer#skip(long)}.
 			 */
-			@RepeatedTest(value=RUNS)
-			@Tag(RANDOMIZED)
-			void testSkipWithLossOfMark() {
+			@RepeatedTest(RUNS)
+			@RandomizedTest
+			void testSkipWithLossOfMark(RandomGenerator rng) {
 				// Move to random spot
-				int initialSteps = random(capacity/4, capacity/2);
-				int markedIndex = random(0, capacity/4);
+				int initialSteps = rng.random(capacity/4, capacity/2);
+				int markedIndex = rng.random(0, capacity/4);
 				for (int i = 0; i < initialSteps; i++) {
 					buffer.advance();
 					if(i==markedIndex) {
@@ -432,7 +431,7 @@ class ItemStreamBufferTest implements ApiGuardedTest<ItemStreamBuffer> {
 				assertTrue(buffer.hasMark());
 
 				// Now skip random number of items within current chunk
-				int distance = random(capacity, size-initialSteps);
+				int distance = rng.random(capacity, size-initialSteps);
 				buffer.skip(distance);
 
 				assertFalse(buffer.hasMark());

@@ -40,6 +40,8 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -110,11 +112,13 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy> extends Lo
 	 */
 	@SuppressWarnings("unchecked")
 	@Test
-	default void testAtLevel() {
+	@RandomizedTest
+	default void testAtLevel(RandomGenerator rand) {
 		assertListAtIndex(createUnlocked(),
 				Hierarchy::add,
 				Hierarchy::remove,
 				Hierarchy::atLevel,
+				rand,
 				mockItem(), mockItem(), mockItem(), mockItem());
 	}
 
@@ -161,11 +165,13 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy> extends Lo
 	 */
 	@SuppressWarnings("unchecked")
 	@Test
-	default void testLevelOf() {
+	@RandomizedTest
+	default void testLevelOf(RandomGenerator rand) {
 		assertListIndexOf(createUnlocked(),
 				Hierarchy::add,
 				Hierarchy::remove,
 				Hierarchy::levelOf,
+				rand,
 				mockItem(), mockItem(), mockItem(), mockItem());
 	}
 

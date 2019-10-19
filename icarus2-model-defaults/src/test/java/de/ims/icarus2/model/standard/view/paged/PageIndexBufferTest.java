@@ -25,11 +25,8 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockIndices;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrapSpan;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomInts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -40,7 +37,6 @@ import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,6 +45,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -81,9 +79,9 @@ class PageIndexBufferTest {
 	 * Test method for {@link de.ims.icarus2.model.standard.view.paged.PageIndexBuffer#getPageSize()}.
 	 */
 	@Test
-	@Tag(RANDOMIZED)
-	void testGetPageSize() {
-		int size = random(1, Integer.MAX_VALUE);
+	@RandomizedTest
+	void testGetPageSize(RandomGenerator rng) {
+		int size = rng.random(1, Integer.MAX_VALUE);
 		PageIndexBuffer instance = new PageIndexBuffer(wrap(1), size);
 		assertEquals(size, instance.getPageSize());
 	}
@@ -92,9 +90,9 @@ class PageIndexBufferTest {
 	 * Test method for {@link de.ims.icarus2.model.standard.view.paged.PageIndexBuffer#getSize()}.
 	 */
 	@Test
-	@Tag(RANDOMIZED)
-	void testGetSizeSingle() {
-		int size = random(1, Integer.MAX_VALUE);
+	@RandomizedTest
+	void testGetSizeSingle(RandomGenerator rng) {
+		int size = rng.random(1, Integer.MAX_VALUE);
 		PageIndexBuffer instance = new PageIndexBuffer(mockIndices(size), 1);
 		assertEquals(size, instance.getSize());
 	}
@@ -103,10 +101,10 @@ class PageIndexBufferTest {
 	 * Test method for {@link de.ims.icarus2.model.standard.view.paged.PageIndexBuffer#getSize()}.
 	 */
 	@RepeatedTest(value=RUNS)
-	@Tag(RANDOMIZED)
-	void testGetSize() {
-		int count = random(2, 10);
-		int[] sizes = randomInts(count, 1, Integer.MAX_VALUE);
+	@RandomizedTest
+	void testGetSize(RandomGenerator rng) {
+		int count = rng.random(2, 10);
+		int[] sizes = rng.randomInts(count, 1, Integer.MAX_VALUE);
 		IndexSet[] sets = mockIndices(sizes);
 		PageIndexBuffer instance = new PageIndexBuffer(sets, 10);
 		long size = IndexUtils.count(sets);

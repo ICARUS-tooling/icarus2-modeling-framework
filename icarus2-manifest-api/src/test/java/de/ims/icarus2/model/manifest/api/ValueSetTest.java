@@ -42,7 +42,9 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
@@ -206,14 +208,17 @@ public interface ValueSetTest extends LockableTest<ValueSet>, TypedManifestTest<
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ValueSet#indexOfValue(java.lang.Object)}.
 	 */
 	@TestFactory
-	default Stream<DynamicTest> testIndexOfValue() {
+	@RandomizedTest
+	default Stream<DynamicTest> testIndexOfValue(RandomGenerator rand) {
 		return ManifestTestUtils.getAvailableTestTypes()
 				.stream()
 				.map(valueType -> DynamicTest.dynamicTest(valueType.getName(), () -> {
+						rand.reset(); // enforces same conditions for every test
 						assertListIndexOf(createWithType(settings(), valueType),
 								ValueSet::addValue,
 								ValueSet::removeValue,
 								ValueSet::indexOfValue,
+								rand,
 								ManifestTestUtils.getTestValues(valueType));
 					}));
 	}

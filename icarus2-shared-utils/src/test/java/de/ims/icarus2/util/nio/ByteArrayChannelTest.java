@@ -31,6 +31,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -64,9 +67,10 @@ public class ByteArrayChannelTest {
 	}
 
 	@Test
-	public void testWrite() throws Exception {
+	@RandomizedTest
+	public void testWrite(RandomGenerator rand) throws Exception {
 		byte[] chunk = new byte[20];
-		NIOTestUtil.randomize(chunk);
+		rand.nextBytes(chunk);
 		ByteBuffer bb = ByteBuffer.wrap(chunk);
 
 		int offset = 0;
@@ -76,7 +80,7 @@ public class ByteArrayChannelTest {
 			byte[] expected = Arrays.copyOfRange(data, offset, offset+bytesWritten);
 			assertContentEquals(expected, bb);
 
-			NIOTestUtil.randomize(chunk);
+			rand.nextBytes(chunk);
 			offset += bytesWritten;
 			bb.clear();
 		}
@@ -85,8 +89,9 @@ public class ByteArrayChannelTest {
 	}
 
 	@Test
-	public void testRead() throws Exception {
-		NIOTestUtil.randomize(data);
+	@RandomizedTest
+	public void testRead(RandomGenerator rand) throws Exception {
+		rand.nextBytes(data);
 
 		ByteBuffer bb = ByteBuffer.allocate(20);
 		int offset = 0;

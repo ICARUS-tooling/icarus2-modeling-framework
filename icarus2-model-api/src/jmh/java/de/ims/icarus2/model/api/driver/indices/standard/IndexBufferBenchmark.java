@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.test.TestUtils.M1;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
 
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +42,7 @@ import org.openjdk.jmh.runner.RunnerException;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.test.JmhUtils;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -50,6 +50,8 @@ import de.ims.icarus2.test.JmhUtils;
  */
 @State(Scope.Thread)
 public class IndexBufferBenchmark {
+
+	private final RandomGenerator rand = RandomGenerator.random();
 
 	private IndexBuffer buffer;
 	private long[] values;
@@ -62,7 +64,7 @@ public class IndexBufferBenchmark {
 
 	@Setup(Level.Trial)
 	public void initRandoms(BenchmarkParams params) {
-		values = randomLongs(size, 0, indexValueType.maxValue());
+		values = rand.randomLongs(size, 0, indexValueType.maxValue());
 	}
 
 	@Setup(Level.Iteration)

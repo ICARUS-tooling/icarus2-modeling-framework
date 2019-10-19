@@ -28,6 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -64,8 +67,9 @@ class CachedSetTest implements DataSetTest<CachedSet<Object>> {
 		 * Test method for {@link de.ims.icarus2.util.collections.set.CachedSet#CachedSet(E[])}.
 		 */
 		@Test
-		void testCachedSetEArray() {
-			Object[] items = randomContent();
+		@RandomizedTest
+		void testCachedSetEArray(RandomGenerator rand) {
+			Object[] items = randomContent(rand);
 			CachedSet<Object> set = new CachedSet<>(items);
 			assertArrayEquals(items, set.toArray());
 		}
@@ -74,8 +78,9 @@ class CachedSetTest implements DataSetTest<CachedSet<Object>> {
 		 * Test method for {@link de.ims.icarus2.util.collections.set.CachedSet#CachedSet(java.util.List)}.
 		 */
 		@Test
-		void testCachedSetListOfQextendsE() {
-			Object[] items = randomContent();
+		@RandomizedTest
+		void testCachedSetListOfQextendsE(RandomGenerator rand) {
+			Object[] items = randomContent(rand);
 			CachedSet<Object> set = new CachedSet<>(list(items));
 			assertArrayEquals(items, set.toArray());
 		}
@@ -86,8 +91,9 @@ class CachedSetTest implements DataSetTest<CachedSet<Object>> {
 	 * Test method for {@link de.ims.icarus2.util.collections.set.CachedSet#add(java.lang.Object)}.
 	 */
 	@Test
-	void testAdd() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	void testAdd(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		CachedSet<Object> set = createEmpty();
 		for (int i = 0; i < items.length; i++) {
 			Object item = items[i];
@@ -109,9 +115,10 @@ class CachedSetTest implements DataSetTest<CachedSet<Object>> {
 	 * Test method for {@link de.ims.icarus2.util.collections.set.CachedSet#reset(E[])}.
 	 */
 	@Test
-	void testResetEArray() {
+	@RandomizedTest
+	void testResetEArray(RandomGenerator rand) {
 		CachedSet<Object> set = createEmpty();
-		Object[] items = randomContent();
+		Object[] items = randomContent(rand);
 
 		set.reset(items);
 		assertArrayEquals(items, set.toArray());
@@ -121,9 +128,10 @@ class CachedSetTest implements DataSetTest<CachedSet<Object>> {
 	 * Test method for {@link de.ims.icarus2.util.collections.set.CachedSet#reset(java.util.List)}.
 	 */
 	@Test
-	void testResetListOfQextendsE() {
+	@RandomizedTest
+	void testResetListOfQextendsE(RandomGenerator rand) {
 		CachedSet<Object> set = createEmpty();
-		Object[] items = randomContent();
+		Object[] items = randomContent(rand);
 
 		set.reset(list(items));
 		assertArrayEquals(items, set.toArray());

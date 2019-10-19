@@ -22,7 +22,6 @@ package de.ims.icarus2.model.api.driver.indices;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,6 +44,8 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.driver.indices.IndexSet.Feature;
 import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
@@ -59,6 +60,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#size()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSize() {
 		return configurations()
 				.map(Config::validate)
@@ -76,6 +78,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#isEmpty()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testIsEmpty() {
 		return configurations()
 				.map(Config::validate)
@@ -93,6 +96,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#getIndexValueType()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testGetIndexValueType() {
 		return configurations()
 				.map(Config::validate)
@@ -106,6 +110,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#isSorted()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testIsSorted() {
 		return configurations()
 				.map(Config::validate)
@@ -123,6 +128,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#sort()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testSort() {
 		return configurations()
 				.map(Config::validate)
@@ -451,6 +457,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#externalize()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testExternalize() {
 		return configurations()
 				.map(Config::validate)
@@ -474,6 +481,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#getFeatures()}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testGetFeatures() {
 		return configurations()
 				.map(Config::validate)
@@ -487,6 +495,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#hasFeatures(de.ims.icarus2.model.api.driver.indices.IndexSet.Feature[])}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testHasFeatures() {
 		return configurations()
 				.map(Config::validate)
@@ -505,6 +514,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#hasFeature(de.ims.icarus2.model.api.driver.indices.IndexSet.Feature)}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testHasFeature() {
 		return configurations()
 				.map(Config::validate)
@@ -524,6 +534,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexSet#checkHasFeatures(de.ims.icarus2.model.api.driver.indices.IndexSet.Feature[])}.
 	 */
 	@TestFactory
+	@RandomizedTest
 	default Stream<DynamicTest> testCheckHasFeatures() {
 		return configurations()
 				.map(Config::validate)
@@ -604,11 +615,11 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 //				}));
 //	}
 
-	public static long[] randomIndices(IndexValueType valueType, int size) {
+	public static long[] randomIndices(RandomGenerator rand, IndexValueType valueType, int size) {
 		assertTrue(size<=valueType.maxValue());
 		IndexValueType smaller = valueType.smaller();
 		long min = smaller==null ? 0L : smaller.maxValue()+1;
-		return random().longs(min, valueType.maxValue())
+		return rand.longs(min, valueType.maxValue())
 				.distinct()
 				.limit(size)
 				.toArray();
@@ -631,6 +642,17 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		Set<Feature> features = EnumSet.noneOf(Feature.class);
 		boolean sorted;
 		IndexValueType valueType;
+		RandomGenerator rand;
+
+		public RandomGenerator rand() {
+			assertNotNull(rand, "No random generator defined");
+			return rand;
+		}
+
+		public Config rand(RandomGenerator rand) {
+			this.rand = requireNonNull(rand);
+			return this;
+		}
 
 		private Function<Config, IndexSet> constructor;
 
@@ -643,8 +665,8 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		/** Produce random indices outside the next smaller type's value space */
 		public Config randomIndices(int size) {
 			assertNotNull(valueType, "Value type missing");
-			indices = IndexSetTest.randomIndices(valueType, size);
-			indices[random(0, indices.length)] = valueType.maxValue();
+			indices = IndexSetTest.randomIndices(rand, valueType, size);
+			indices[rand.random(0, indices.length)] = valueType.maxValue();
 			return this;
 		}
 		/** Create sorted indices outside the next smaller type's value space */
@@ -697,6 +719,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 
 			clone.features = EnumSet.copyOf(features);
 			clone.indices = indices==null ? null : indices.clone();
+			clone.rand = rand==null ? null : rand.clone();
 
 			return clone;
 		}
@@ -723,8 +746,8 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		public Stream<Config> withSubSet() {
 			if(getIndices().length>0 && features.contains(Feature.EXPORTABLE)) {
 				long[] indices = getIndices();
-				int from = random(0, indices.length);
-				int to = random(from, indices.length);
+				int from = rand.random(0, indices.length);
+				int to = rand.random(from, indices.length);
 				long[] subs = Arrays.copyOfRange(indices, from, to+1);
 				IndexSet subSet = getSet().subSet(from, to);
 				return Stream.of(this,

@@ -22,7 +22,6 @@ package de.ims.icarus2.model.standard.members.layer.annotation.single;
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -37,13 +36,17 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyFloatStorage;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKeyFloatStorage> {
+
+	RandomGenerator rng;
 
 	@Nested
 	class Constructors {
@@ -135,7 +138,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 	 */
 	@Override
 	public Object testValue(String key) {
-		return Float.valueOf(random().nextFloat());
+		return Float.valueOf(rng.nextFloat());
 	}
 
 	/**

@@ -20,8 +20,6 @@
 package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -39,14 +37,15 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 
 /**
@@ -173,14 +172,14 @@ class ReadOnlyURLResourceTest implements IOResourceTest<ReadOnlyURLResource> {
 	 * @throws IOException
 	 */
 	@TestFactory
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testSizeFilled() throws IOException {
-		return random().ints(10, 1, 1<<15)
+	@RandomizedTest
+	Stream<DynamicTest> testSizeFilled(RandomGenerator rand) throws IOException {
+		return rand.ints(10, 1, 1<<15)
 				.mapToObj(size -> dynamicTest("bytes="+size, () -> {
 					Path file = tempFile();
 					ReadOnlyURLResource resource = create(toUrl(file));
 					byte[] bytes = new byte[size];
-					random().nextBytes(bytes);
+					rand.nextBytes(bytes);
 					Files.write(file, bytes);
 
 					resource.prepare();

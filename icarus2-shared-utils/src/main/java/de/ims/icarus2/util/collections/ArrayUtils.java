@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.IntBinaryOperator;
@@ -169,24 +168,6 @@ public class ArrayUtils {
 				return false;
 
 		return true;
-	}
-
-	public static void shuffle(int[] array, Random random) {
-		for (int i = 0; i < array.length; i++) {
-			swap(array, i, random.nextInt(array.length));
-		}
-	}
-
-	public static void shuffle(long[] array, Random random) {
-		for (int i = 0; i < array.length; i++) {
-			swap(array, i, random.nextInt(array.length));
-		}
-	}
-
-	public static void shuffle(Object[] array, Random random) {
-		for (int i = 0; i < array.length; i++) {
-			swap(array, i, random.nextInt(array.length));
-		}
 	}
 
 	public static void permutate(int[] a, int[] permutation) {

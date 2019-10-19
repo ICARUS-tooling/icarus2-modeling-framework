@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.stream.Stream;
@@ -30,13 +29,18 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.ArrayUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class SpanIndexSetTest implements RandomAccessIndexSetTest<SpanIndexSet> {
+
+	static RandomGenerator rand;
 
 	@Nested
 	class Constructors {
@@ -47,8 +51,8 @@ class SpanIndexSetTest implements RandomAccessIndexSetTest<SpanIndexSet> {
 		@Test
 		void testSpanIndexSet() {
 			assertNotNull(new SpanIndexSet(
-					random(0, Long.MAX_VALUE/2),
-					random(Long.MAX_VALUE/2, Long.MAX_VALUE)));
+					rand.random(0, Long.MAX_VALUE/2),
+					rand.random(Long.MAX_VALUE/2, Long.MAX_VALUE)));
 		}
 
 		//TODO add guard against wrong span values in constructor
@@ -62,14 +66,15 @@ class SpanIndexSetTest implements RandomAccessIndexSetTest<SpanIndexSet> {
 		return Stream.of(IndexValueType.values())
 				.flatMap(type -> {
 					Config base = new Config()
+							.rand(rand)
 							.valueType(type)
 							.sorted(true)
 							.defaultFeatures();
 
-					long singleton = random(type.maxValue()/2, type.maxValue());
+					long singleton = rand.random(type.maxValue()/2, type.maxValue());
 
-					int size = random(10, 50);
-					long spanBegin = random(type.maxValue()/2, type.maxValue()-size);
+					int size = rand.random(10, 50);
+					long spanBegin = rand.random(type.maxValue()/2, type.maxValue()-size);
 					long spanEnd = spanBegin+size-1;
 					long[] indices = new long[size];
 					ArrayUtils.fillAscending(indices, spanBegin);
@@ -102,8 +107,8 @@ class SpanIndexSetTest implements RandomAccessIndexSetTest<SpanIndexSet> {
 	@Override
 	public SpanIndexSet createTestInstance(TestSettings settings) {
 		return settings.process(new SpanIndexSet(
-				random(0, Long.MAX_VALUE/2),
-				random(Long.MAX_VALUE/2, Long.MAX_VALUE)));
+				rand.random(0, Long.MAX_VALUE/2),
+				rand.random(Long.MAX_VALUE/2, Long.MAX_VALUE)));
 	}
 
 }

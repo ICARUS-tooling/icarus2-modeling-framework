@@ -21,14 +21,7 @@ package de.ims.icarus2.model.api;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.SharedTestUtils.mockSequence;
-import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.RUNS_EXHAUSTIVE;
 import static de.ims.icarus2.test.TestUtils.assertMock;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomBytes;
-import static de.ims.icarus2.test.TestUtils.randomInts;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
-import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -47,7 +40,6 @@ import static org.mockito.Mockito.withSettings;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
 import java.util.function.LongConsumer;
-import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.internal.stubbing.answers.CallsRealMethods;
@@ -70,7 +62,7 @@ import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
 import de.ims.icarus2.model.api.raster.Rasterizer;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -86,17 +78,17 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  */
 public class ModelTestUtils {
 
-	/**
-	 * Produces a stream of {@value TestUtils#RUNS} random {@code long} values.
-	 * @return
-	 */
-	public static LongStream randomIndices() {
-		return random().longs(RUNS, 0L, Long.MAX_VALUE);
-	}
+//	/**
+//	 * Produces a stream of {@value TestUtils#RUNS} random {@code long} values.
+//	 * @return
+//	 */
+//	public static LongStream randomIndices() {
+//		return random().longs(RUNS, 0L, Long.MAX_VALUE);
+//	}
 
-	public static LongStream exhaustiveRandomIndices() {
-		return random().longs(RUNS_EXHAUSTIVE, 0L, Long.MAX_VALUE);
-	}
+//	public static LongStream exhaustiveRandomIndices() {
+//		return random().longs(RUNS_EXHAUSTIVE, 0L, Long.MAX_VALUE);
+//	}
 
 	@SuppressWarnings("boxing")
 	public static <I extends Item> I stubId(I item, long id) {
@@ -497,12 +489,12 @@ public class ModelTestUtils {
 				(offset, i) -> offset+i, true);
 	}
 
-	public static Object randomArray(IndexValueType indexValueType, int size) {
+	public static Object randomArray(IndexValueType indexValueType, int size, RandomGenerator rand) {
 		switch (indexValueType) {
-		case BYTE: return randomBytes(size, (byte)0, (byte)indexValueType.maxValue());
-		case SHORT: return randomShorts(size, (short)0, (short)indexValueType.maxValue());
-		case INTEGER: return randomInts(size, 0, (int)indexValueType.maxValue());
-		case LONG: return randomLongs(size, 0L, indexValueType.maxValue());
+		case BYTE: return rand.randomBytes(size, (byte)0, (byte)indexValueType.maxValue());
+		case SHORT: return rand.randomShorts(size, (short)0, (short)indexValueType.maxValue());
+		case INTEGER: return rand.randomInts(size, 0, (int)indexValueType.maxValue());
+		case LONG: return rand.randomLongs(size, 0L, indexValueType.maxValue());
 
 		default:
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
@@ -510,8 +502,8 @@ public class ModelTestUtils {
 		}
 	}
 
-	public static IndexSet randomIndices(IndexValueType indexValueType, int size) {
-		return new ArrayIndexSet(indexValueType, randomArray(indexValueType, size));
+	public static IndexSet randomIndices(IndexValueType indexValueType, int size, RandomGenerator rand) {
+		return new ArrayIndexSet(indexValueType, randomArray(indexValueType, size, rand));
 	}
 
 	public static void assertIndicesEqualsExact(IndexSet expected, IndexSet actual) {

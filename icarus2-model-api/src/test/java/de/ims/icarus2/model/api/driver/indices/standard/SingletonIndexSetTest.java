@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.stream.Stream;
@@ -34,12 +33,17 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSet> {
+
+	static RandomGenerator rand;
 
 	@Nested
 	class Constructors {
@@ -49,7 +53,7 @@ class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSe
 		 */
 		@Test
 		void testSingletonIndexSet() {
-			assertNotNull(SingletonIndexSet.of(random(0, Long.MAX_VALUE)));
+			assertNotNull(SingletonIndexSet.of(rand.random(0, Long.MAX_VALUE)));
 		}
 
 		/**
@@ -70,6 +74,7 @@ class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSe
 	public Stream<Config> configurations() {
 		return Stream.of(IndexValueType.values())
 				.map(type -> new Config()
+						.rand(rand)
 						.valueType(type)
 						.label(type.name())
 						.sorted(true)
@@ -91,7 +96,7 @@ class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSe
 	 */
 	@Override
 	public SingletonIndexSet createTestInstance(TestSettings settings) {
-		return settings.process(new SingletonIndexSet(random(0, Long.MAX_VALUE)));
+		return settings.process(new SingletonIndexSet(rand.random(0, Long.MAX_VALUE)));
 	}
 
 }

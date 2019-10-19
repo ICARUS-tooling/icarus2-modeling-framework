@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -38,12 +37,17 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<DelegatingFilteredIndexSet> {
+
+	static RandomGenerator rand;
 
 	private static IndexSet makeSet(Config config, int sourceSize, int[] filter) {
 		long[] indices = config.getIndices();
@@ -76,7 +80,7 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 	}
 
 	private static int randomSize() {
-		return random(10, 100);
+		return rand.random(10, 100);
 	}
 
 	private static String label(Config config, boolean full, Boolean filterSorted) {
@@ -128,6 +132,7 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 	@Override
 	public Stream<Config> configurations() {
 		Config base = new Config()
+				.rand(rand)
 				.defaultFeatures();
 
 		return Stream.of(IndexValueType.values())

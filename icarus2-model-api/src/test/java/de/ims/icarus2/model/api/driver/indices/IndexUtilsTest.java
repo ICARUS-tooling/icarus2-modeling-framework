@@ -31,16 +31,10 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.unwrap;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrapSpan;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.K10;
 import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomBytes;
-import static de.ims.icarus2.test.TestUtils.randomInts;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
-import static de.ims.icarus2.test.TestUtils.randomShorts;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,7 +52,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,6 +60,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.test.annotations.PostponedTest;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -381,12 +376,12 @@ class IndexUtilsTest {
 		 */
 		@SuppressWarnings("boxing")
 		@Test
-		@Tag(RANDOMIZED)
-		void testToIndices() {
+		@RandomizedTest
+		void testToIndices(RandomGenerator rand) {
 			assertNPE(() -> IndexUtils.toIndices(null, false));
 			assertIAE(() -> IndexUtils.toIndices(Collections.emptyList(), false));
 
-			long[] indices = randomLongs(K10, 0, Long.MAX_VALUE);
+			long[] indices = rand.randomLongs(K10, 0, Long.MAX_VALUE);
 			Item[] items = new Item[indices.length];
 
 			for (int i = 0; i < items.length; i++) {
@@ -455,13 +450,14 @@ class IndexUtilsTest {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#wrap(long[])}.
 		 */
 		@Test
-		void testWrapLongArray() {
+		@RandomizedTest
+		void testWrapLongArray(RandomGenerator rand) {
 			assertNPE(() -> IndexUtils.wrap((long[])null));
 			assertIAE(() -> IndexUtils.wrap(new long[0]));
 
 			assertIndices(IndexUtils.wrap(new long[] {1}), 1);
 
-			long[] indices = randomLongs(K10, 0, Long.MAX_VALUE);
+			long[] indices = rand.randomLongs(K10, 0, Long.MAX_VALUE);
 			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
@@ -469,13 +465,14 @@ class IndexUtilsTest {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#wrap(int[])}.
 		 */
 		@Test
-		void testWrapIntArray() {
+		@RandomizedTest
+		void testWrapIntArray(RandomGenerator rand) {
 			assertNPE(() -> IndexUtils.wrap((int[])null));
 			assertIAE(() -> IndexUtils.wrap(new int[0]));
 
 			assertIndices(IndexUtils.wrap(new int[] {1}), 1);
 
-			int[] indices = randomInts(K10, 0, Integer.MAX_VALUE);
+			int[] indices = rand.randomInts(K10, 0, Integer.MAX_VALUE);
 			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
@@ -483,13 +480,14 @@ class IndexUtilsTest {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#wrap(short[])}.
 		 */
 		@Test
-		void testWrapShortArray() {
+		@RandomizedTest
+		void testWrapShortArray(RandomGenerator rand) {
 			assertNPE(() -> IndexUtils.wrap((short[])null));
 			assertIAE(() -> IndexUtils.wrap(new short[0]));
 
 			assertIndices(IndexUtils.wrap(new short[] {1}), 1);
 
-			short[] indices = randomShorts(K10, (short)0, Short.MAX_VALUE);
+			short[] indices = rand.randomShorts(K10, (short)0, Short.MAX_VALUE);
 			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
@@ -497,13 +495,14 @@ class IndexUtilsTest {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#wrap(byte[])}.
 		 */
 		@Test
-		void testWrapByteArray() {
+		@RandomizedTest
+		void testWrapByteArray(RandomGenerator rand) {
 			assertNPE(() -> IndexUtils.wrap((byte[])null));
 			assertIAE(() -> IndexUtils.wrap(new byte[0]));
 
 			assertIndices(IndexUtils.wrap(new byte[] {1}), 1);
 
-			byte[] indices = randomBytes(100, (byte)0, Byte.MAX_VALUE);
+			byte[] indices = rand.randomBytes(100, (byte)0, Byte.MAX_VALUE);
 			assertIndices(IndexUtils.wrap(indices), indices);
 		}
 
@@ -531,10 +530,11 @@ class IndexUtilsTest {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexUtils#externalize(de.ims.icarus2.model.api.driver.indices.IndexSet[])}.
 		 */
 		@Test
-		void testExternalize() {
+		@RandomizedTest
+		void testExternalize(RandomGenerator rand) {
 			assertArrayEmpty(IndexUtils.externalize());
 
-			int size = random(10, 20);
+			int size = rand.random(10, 20);
 			IndexSet[] sources = new IndexSet[size];
 			IndexSet[] targets = new IndexSet[size];
 			for (int i = 0; i < size; i++) {

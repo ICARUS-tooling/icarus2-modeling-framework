@@ -27,7 +27,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertOverflow;
 import static de.ims.icarus2.model.api.ModelTestUtils.overflowAsserter;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.TestUtils.noOp;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -175,7 +174,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("spare room", () -> {
 							byte[] buffer = new byte[size*2];
 							Arrays.fill(buffer, (byte)-1);
-							int offset = size==1 ? 0 : random(0, size/2);
+							int offset = size==1 ? 0 : config.rand().random(0, size/2);
 							assertEquals(size, config.set.export(buffer, offset));
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+size) {
@@ -226,7 +225,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("spare room", () -> {
 							short[] buffer = new short[size*2];
 							Arrays.fill(buffer, (short)-1);
-							int offset = size==1 ? 0 : random(0, size/2);
+							int offset = size==1 ? 0 : config.rand().random(0, size/2);
 							assertEquals(size, config.set.export(buffer, offset));
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+size) {
@@ -277,7 +276,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("spare room", () -> {
 							int[] buffer = new int[size*2];
 							Arrays.fill(buffer, -1);
-							int offset = size==1 ? 0 : random(0, size/2);
+							int offset = size==1 ? 0 : config.rand().random(0, size/2);
 							assertEquals(size, config.set.export(buffer, offset));
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+size) {
@@ -328,7 +327,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("spare room", () -> {
 							long[] buffer = new long[size*2];
 							Arrays.fill(buffer, -1);
-							int offset = size==1 ? 0 : random(0, size/2);
+							int offset = size==1 ? 0 : config.rand().random(0, size/2);
 							assertEquals(size, config.set.export(buffer, offset));
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+size) {
@@ -368,8 +367,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new byte[size/2], 0))));
 						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							config.set.export(from, to, new byte[(to-from)/2], 0);
 						})));
 						// Normal match
@@ -381,8 +380,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 							}
 						}));
 						tests.add(dynamicTest("fitting (part)", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							byte[] buffer = new byte[to-from];
 							config.set.export(from, to, buffer, 0);
 							for (int i = from; i < to; i++) {
@@ -391,11 +390,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						}));
 						// Buffer bigger than needed
 						tests.add(dynamicTest("spare room", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							byte[] buffer = new byte[(to-from)*2];
 							Arrays.fill(buffer, (byte)-1);
-							int offset = random(0, buffer.length/2);
+							int offset = config.rand().random(0, buffer.length/2);
 							config.set.export(from, to, buffer, offset);
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+to-from) {
@@ -435,8 +434,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new short[size/2], 0))));
 						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							config.set.export(from, to, new short[(to-from)/2], 0);
 						})));
 						// Normal match
@@ -448,8 +447,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 							}
 						}));
 						tests.add(dynamicTest("fitting (part)", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							short[] buffer = new short[to-from];
 							config.set.export(from, to, buffer, 0);
 							for (int i = from; i < to; i++) {
@@ -458,11 +457,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						}));
 						// Buffer bigger than needed
 						tests.add(dynamicTest("spare room", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							short[] buffer = new short[(to-from)*2];
 							Arrays.fill(buffer, (short)-1);
-							int offset = random(0, buffer.length/2);
+							int offset = config.rand().random(0, buffer.length/2);
 							config.set.export(from, to, buffer, offset);
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+to-from) {
@@ -502,8 +501,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new int[size/2], 0))));
 						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							config.set.export(from, to, new int[(to-from)/2], 0);
 						})));
 						// Normal match
@@ -515,8 +514,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 							}
 						}));
 						tests.add(dynamicTest("fitting (part)", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							int[] buffer = new int[to-from];
 							config.set.export(from, to, buffer, 0);
 							for (int i = from; i < to; i++) {
@@ -525,11 +524,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						}));
 						// Buffer bigger than needed
 						tests.add(dynamicTest("spare room", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							int[] buffer = new int[(to-from)*2];
 							Arrays.fill(buffer, -1);
-							int offset = random(0, buffer.length/2);
+							int offset = config.rand().random(0, buffer.length/2);
 							config.set.export(from, to, buffer, offset);
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+to-from) {
@@ -569,8 +568,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("too small (full)", alternateIoobAsserter(
 								() -> config.set.export(0, size, new long[size/2], 0))));
 						tests.add(dynamicTest("too small (part)", alternateIoobAsserter(() -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							config.set.export(from, to, new long[(to-from)/2], 0);
 						})));
 						// Normal match
@@ -582,8 +581,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 							}
 						}));
 						tests.add(dynamicTest("fitting (part)", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							long[] buffer = new long[to-from];
 							config.set.export(from, to, buffer, 0);
 							for (int i = from; i < to; i++) {
@@ -592,11 +591,11 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						}));
 						// Buffer bigger than needed
 						tests.add(dynamicTest("spare room", () -> {
-							int from = random(0, size);
-							int to = random(from+1, size+1);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from+1, size+1);
 							long[] buffer = new long[(to-from)*2];
 							Arrays.fill(buffer, -1);
-							int offset = random(0, buffer.length/2);
+							int offset = config.rand().random(0, buffer.length/2);
 							config.set.export(from, to, buffer, offset);
 							for (int i = 0; i < buffer.length; i++) {
 								if(i<offset || i>=offset+to-from) {
@@ -646,8 +645,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertAlternateIOOB(() -> config.set.forEachIndex(
 								mock(LongConsumer.class), 0, 0));
 					} else {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						LongList buffer = new LongArrayList();
 						config.set.forEachIndex((LongConsumer)buffer::add, from, to);
 						assertEquals(to-from, buffer.size());
@@ -698,8 +697,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertAlternateIOOB(() -> config.set.forEachIndex(
 								mock(IntConsumer.class), 0, 0));
 					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						LongList buffer = new LongArrayList();
 						config.set.forEachIndex((IntConsumer)buffer::add, from, to);
 						assertEquals(to-from, buffer.size());
@@ -742,8 +741,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertAlternateIOOB(() -> config.set.forEachEntry(
 								mock(IntLongConsumer.class), 0, 0));
 					} else {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						LongList buffer = new LongArrayList();
 						config.set.forEachEntry((int idx, long val)
 								-> buffer.add(idx-from, val), from, to);
@@ -795,8 +794,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertAlternateIOOB(() -> config.set.forEachEntry(
 								mock(IntBiConsumer.class), 0, 0));
 					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						LongList buffer = new LongArrayList();
 						config.set.forEachEntry((int idx, int val)
 								-> buffer.add(idx-from, val), from, to);
@@ -852,8 +851,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertAlternateIOOB(() -> config.set.checkIndices(
 								mock(LongPredicate.class), 0, 0));
 					} else {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						MutableInteger index = new MutableInteger(from);
 						assertTrue(config.set.checkIndices((long val)
 								-> config.indices[index.getAndIncrement()] == val, from, to));
@@ -909,8 +908,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertAlternateIOOB(() -> config.set.checkIndices(
 								mock(IntPredicate.class), 0, 0));
 					} else if(IndexValueType.INTEGER.isValidSubstitute(config.valueType)) {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						MutableInteger index = new MutableInteger(from);
 						assertTrue(config.set.checkIndices((int val)
 								-> config.indices[index.getAndIncrement()] == val, from, to));
@@ -969,8 +968,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						assertFalse(config.set.checkConsecutiveIndices((v0, v1) -> false, 0, 1));
 					} else {
 						// Need a random span of at least size 2
-						int from = random(0, size-1);
-						int to = random(from+2, size+1);
+						int from = config.rand().random(0, size-1);
+						int to = config.rand().random(from+2, size+1);
 						MutableInteger index = new MutableInteger(from+1);
 						assertTrue(config.set.checkConsecutiveIndices((v0, v1)
 								-> config.indices[index.intValue()-1] == v0
@@ -1016,7 +1015,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						}));
 
 						tests.add(dynamicTest("random", () -> {
-							int chunkSize = size<=4 ? 1 : random(1, size-2);
+							int chunkSize = size<=4 ? 1 : config.rand().random(1, size-2);
 							IndexSet[] splits = config.set.split(chunkSize);
 							if(chunkSize>1 && size>1) {
 								assertTrue(splits.length>1);
@@ -1026,7 +1025,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else {
 						tests.add(dynamicTest("not supported", () ->
 							assertModelException(GlobalErrorCode.NOT_IMPLEMENTED,
-									() -> config.set.split(random(1, 10)))));
+									() -> config.set.split(config.rand().random(1, 10)))));
 					}
 
 					return dynamicContainer(config.label, tests);
@@ -1054,15 +1053,15 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 										config.set.subSet(0, size-1))));
 
 						tests.add(dynamicTest("singleton", () -> {
-							int index = random(0, size);
+							int index = config.rand().random(0, size);
 							IndexSet subset = config.set.subSet(index, index);
 							assertEquals(1, subset.size());
 							assertEquals(config.indices[index], subset.indexAt(0));
 						}));
 
 						tests.add(dynamicTest("random", () -> {
-							int from = random(0, size);
-							int to = random(from, size);
+							int from = config.rand().random(0, size);
+							int to = config.rand().random(from, size);
 
 							IndexSet subset = config.set.subSet(from, to);
 							assertEquals(to-from+1, subset.size());
@@ -1111,7 +1110,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					if(size==0) {
 						assertAlternateIOOB(() -> config.set.iterator(0));
 					} else  {
-						int start = size==1 ? 0 : random(0, size-1);
+						int start = size==1 ? 0 : config.rand().random(0, size-1);
 						OfLong iterator = config.set.iterator(start);
 						for(int i = start; i<size; i++) {
 							assertTrue(iterator.hasNext());
@@ -1135,8 +1134,8 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					if(size==0) {
 						assertAlternateIOOB(() -> config.set.iterator(0, 0));
 					} else  {
-						int from = random(0, size);
-						int to = random(from+1, size+1);
+						int from = config.rand().random(0, size);
+						int to = config.rand().random(from+1, size+1);
 						OfLong iterator = config.set.iterator(from, to);
 						for(int i = from; i<to; i++) {
 							assertTrue(iterator.hasNext());

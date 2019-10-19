@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.edit;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -44,6 +43,8 @@ import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.SimpleEventListener;
 
@@ -129,10 +130,11 @@ class CorpusEditManagerTest implements ApiGuardedTest<CorpusEditManager> {
 		}
 
 		@Test
-		void beginNamedUpdate() {
+		@RandomizedTest
+		void beginNamedUpdate(RandomGenerator rand) {
 			SimpleEventListener eventListener = mock(SimpleEventListener.class);
 			manager.addListener(eventListener);
-			String name = randomString(20);
+			String name = rand.randomString(20);
 
 			manager.beginUpdate(name);
 
@@ -145,10 +147,11 @@ class CorpusEditManagerTest implements ApiGuardedTest<CorpusEditManager> {
 		}
 
 		@Test
-		void beginRedundantNamedUpdate() {
+		@RandomizedTest
+		void beginRedundantNamedUpdate(RandomGenerator rand) {
 			manager.beginUpdate();
 			assertModelException(GlobalErrorCode.ILLEGAL_STATE,
-					() -> manager.beginUpdate(randomString(20)));
+					() -> manager.beginUpdate(rand.randomString(20)));
 		}
 
 		@Test

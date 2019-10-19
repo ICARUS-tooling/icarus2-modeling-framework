@@ -20,12 +20,10 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.DO_NOTHING;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,7 +53,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -63,6 +60,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 /**
@@ -70,8 +69,10 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
  *
  */
 @SuppressWarnings("rawtypes")
-@Tag(RANDOMIZED)
+@RandomizedTest
 class LookupListTest implements ApiGuardedTest<LookupList> {
+
+	static RandomGenerator rand;
 
 	@Override
 	public Class<LookupList> getTestTargetClass() {
@@ -87,7 +88,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 	 * Generates random size between 11 (inclusive) and 31 (exclusive)
 	 */
 	private int randomSize() {
-		return random(CollectionUtils.DEFAULT_COLLECTION_CAPACITY + 1,
+		return rand.random(CollectionUtils.DEFAULT_COLLECTION_CAPACITY + 1,
 				CollectionUtils.DEFAULT_COLLECTION_CAPACITY + 21);
 	}
 
@@ -205,7 +206,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		 */
 		@RepeatedTest(RUNS)
 		void testAddIntEIncremental() {
-			Object[] items = randomItems(random(20, 30));
+			Object[] items = randomItems(rand.random(20, 30));
 
 			for (int i = 0; i < items.length; i++) {
 				instance.add(items[i]);
@@ -224,7 +225,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			List<Object> list = new ArrayList<>();
 
 			for (int i = 0; i < items.length; i++) {
-				int insertionIndex = random(0, list.size()+1);
+				int insertionIndex = rand.random(0, list.size()+1);
 				instance.add(insertionIndex, items[i]);
 				list.add(insertionIndex, items[i]);
 			}
@@ -431,7 +432,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 
 				// Create new random data (including null) to overwrite existing list
 				Object[] items = randomItems(instance.size());
-				items[random(0, items.length)] = null;
+				items[rand.random(0, items.length)] = null;
 
 				for (int i = 0; i < items.length; i++) {
 					instance.set(i, items[i]);
@@ -487,7 +488,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				List<Object> list = list(existing);
 				fill(instance, existing);
 
-				int insertionIndex = random(1, list.size()-1);
+				int insertionIndex = rand.random(1, list.size()-1);
 				list.addAll(insertionIndex, coll);
 
 				instance.addAll(insertionIndex, coll);
@@ -536,7 +537,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			 */
 			@RepeatedTest(RUNS)
 			void testSetEInt() {
-				IntStream.generate(() -> random(0, items.length))
+				IntStream.generate(() -> rand.random(0, items.length))
 					.distinct()
 					.limit(items.length/2)
 					.forEach(index -> {
@@ -556,7 +557,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				List<Object> list = list(items);
 
 				while (!list.isEmpty()) {
-					int index = random(0, list.size());
+					int index = rand.random(0, list.size());
 					Object expected = list.remove(index);
 					assertSame(expected, instance.remove(index));
 
@@ -571,8 +572,8 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			 */
 			@RepeatedTest(RUNS)
 			void testRemoveAll() {
-				int index0 = random(0, items.length);
-				int index1 = random(index0, items.length);
+				int index0 = rand.random(0, items.length);
+				int index1 = rand.random(index0, items.length);
 
 				Consumer<Object> action = mock(Consumer.class);
 				List<Object> list = list(items);
@@ -592,8 +593,8 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 			 */
 			@RepeatedTest(RUNS)
 			void testRemoveAllInvalidIndices() {
-				int index1 = random(0, items.length/2);
-				int index0 = random(index1+1, items.length);
+				int index1 = rand.random(0, items.length/2);
+				int index0 = rand.random(index1+1, items.length);
 
 				assertThrows(IllegalArgumentException.class,
 						() -> instance.removeAll(index0, index1, mock(Consumer.class)));
@@ -609,7 +610,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				assertFalse(instance.remove(new Object()));
 
 				while (!list.isEmpty()) {
-					Object item = list.remove(random(0, list.size()));
+					Object item = list.remove(rand.random(0, list.size()));
 					assertTrue(instance.remove(item));
 
 					assertItems(instance, list);
@@ -724,7 +725,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 				 */
 				@RepeatedTest(RUNS)
 				void testRemove() {
-					int removalIndex = random(1, items.length);
+					int removalIndex = rand.random(1, items.length);
 					Object item = instance.get(removalIndex);
 					assertEquals(removalIndex, instance.indexOf(item));
 
@@ -802,7 +803,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		void testTrimWithContent() {
 			int initialCapacity = randomSize();
 			LookupList<Object> list = new LookupList<>(initialCapacity);
-			Object[] items = randomItems(random(1, initialCapacity/4));
+			Object[] items = randomItems(rand.random(1, initialCapacity/4));
 			fill(list, items);
 
 			list.trim();

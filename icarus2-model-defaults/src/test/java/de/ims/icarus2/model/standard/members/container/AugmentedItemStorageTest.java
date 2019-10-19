@@ -25,7 +25,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,6 +54,8 @@ import de.ims.icarus2.model.manifest.api.ContainerFlag;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -170,13 +171,16 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 		}
 
 		@Nested
+		@RandomizedTest
 		class WithRandomWrappedSize {
 			private long size;
+
+			RandomGenerator rng;
 
 			@SuppressWarnings("boxing")
 			@BeforeEach
 			void setUp() {
-				size = random(1, Long.MAX_VALUE/2);
+				size = rng.random(1, Long.MAX_VALUE/2);
 				when(source.getItemCount()).thenReturn(size);
 			}
 
@@ -209,7 +213,7 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 			 */
 			@RepeatedTest(RUNS)
 			void testGetItemAt() {
-				long index = random(0, size);
+				long index = rng.random(0, size);
 				storage.getItemAt(null, index);
 				verify(source).getItemAt(index);
 			}
@@ -230,7 +234,7 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 			@Test
 			void testIndexOfItem() {
 				Item item = mockItem();
-				long index = random(0, size);
+				long index = rng.random(0, size);
 				when(source.indexOfItem(item)).thenReturn(index);
 				assertEquals(index, storage.indexOfItem(null, item));
 				verify(source).indexOfItem(item);
@@ -377,7 +381,10 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 		}
 
 		@Nested
+		@RandomizedTest
 		class Internals {
+
+			RandomGenerator rng;
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.AugmentedItemStorage#createAugmentationBuffer(int)}.
@@ -397,7 +404,7 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 				@SuppressWarnings("boxing")
 				@BeforeEach
 				void setUp() {
-					size = random(1, Long.MAX_VALUE/2);
+					size = rng.random(1, Long.MAX_VALUE/2);
 					when(source.getItemCount()).thenReturn(size);
 				}
 

@@ -19,11 +19,8 @@
  */
 package de.ims.icarus2.model.manifest.util;
 
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.EMOJI;
 import static de.ims.icarus2.test.TestUtils.displayString;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.stringStream;
 import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._float;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -49,7 +46,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.api.ValueRange;
@@ -63,6 +59,8 @@ import de.ims.icarus2.model.manifest.util.ValueVerifier.IntVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.LongVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.ObjectVerifier;
 import de.ims.icarus2.model.manifest.util.ValueVerifier.VerificationResult;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -95,30 +93,30 @@ class ValueVerifierTest {
 	@Nested
 	class ForObjectVerifier {
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("empty")
-		Stream<DynamicContainer> testEmpty() {
+		@RandomizedTest
+		Stream<DynamicContainer> testEmpty(RandomGenerator rand) {
 			return config()
-					.expect(VerificationResult.VALID, stringStream(10, 20).limit(10))
+					.expect(VerificationResult.VALID, rand.stringStream(10, 20).limit(10))
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
+		@RandomizedTest
 		@DisplayName("with ValueSet of random strings")
-		Stream<DynamicContainer> testWithSet() {
+		Stream<DynamicContainer> testWithSet(RandomGenerator rand) {
 			// Use 10 random strings of length 10 to 20
 			return config()
 					.valueSet(createValueSet(ValueType.STRING,
-							stringStream(10, 20).limit(10)))
+							rand.stringStream(10, 20).limit(10)))
 					.expect(VerificationResult.VALUE_NOT_IN_SET,
 							Stream.of("a", "", EMOJI, "xxxxxxxxxxxxxxxxxx$"))
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
+		@RandomizedTest
 		@DisplayName("with ValueRange [c,k]")
 		Stream<DynamicContainer> testWithClosedRangeInclusive() {
 			// Use c to k as bounds
@@ -133,7 +131,6 @@ class ValueVerifierTest {
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (c,k)")
 		Stream<DynamicContainer> testWithClosedRangeExclusive() {
@@ -149,7 +146,6 @@ class ValueVerifierTest {
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [c..")
 		Stream<DynamicContainer> testWithRightOpenRangeInclusive() {
@@ -163,7 +159,6 @@ class ValueVerifierTest {
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange ..k]")
 		Stream<DynamicContainer> testWithLeftOpenRangeInclusive() {
@@ -177,7 +172,6 @@ class ValueVerifierTest {
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (c..")
 		Stream<DynamicContainer> testWithRightOpenRangeExclusive() {
@@ -191,7 +185,6 @@ class ValueVerifierTest {
 					.createTests(ObjectVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange ..k)")
 		Stream<DynamicContainer> testWithLeftOpenRangeExclusive() {
@@ -209,16 +202,15 @@ class ValueVerifierTest {
 	@Nested
 	class ForIntVerifier {
 
-		@Tag(RANDOMIZED)
 		@TestFactory
+		@RandomizedTest
 		@DisplayName("empty")
-		Stream<DynamicContainer> testEmpty() {
+		Stream<DynamicContainer> testEmpty(RandomGenerator rand) {
 			return config()
-					.expect(VerificationResult.VALID, random().ints(10).boxed())
+					.expect(VerificationResult.VALID, rand.ints(10).boxed())
 					.createTests(IntVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueSet [1,10]")
 		Stream<DynamicContainer> testWithSet() {
@@ -230,7 +222,6 @@ class ValueVerifierTest {
 					.createTests(IntVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,10]")
 		Stream<DynamicContainer> testWithClosedRangeInclusive() {
@@ -248,7 +239,6 @@ class ValueVerifierTest {
 					.createTests(IntVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,10] stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
@@ -271,7 +261,6 @@ class ValueVerifierTest {
 					.createTests(IntVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,10)")
 		Stream<DynamicContainer> testWithClosedRangeExclusive() {
@@ -289,7 +278,6 @@ class ValueVerifierTest {
 					.createTests(IntVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,10) stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
@@ -316,16 +304,15 @@ class ValueVerifierTest {
 	@Nested
 	class ForLongVerifier {
 
-		@Tag(RANDOMIZED)
 		@TestFactory
+		@RandomizedTest
 		@DisplayName("empty")
-		Stream<DynamicContainer> testEmpty() {
+		Stream<DynamicContainer> testEmpty(RandomGenerator rand) {
 			return config()
-					.expect(VerificationResult.VALID, random().longs(10).boxed())
+					.expect(VerificationResult.VALID, rand.longs(10).boxed())
 					.createTests(LongVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueSet [1,10]")
 		Stream<DynamicContainer> testWithSet() {
@@ -337,7 +324,6 @@ class ValueVerifierTest {
 					.createTests(LongVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,10]")
 		Stream<DynamicContainer> testWithClosedRangeInclusive() {
@@ -355,7 +341,6 @@ class ValueVerifierTest {
 					.createTests(LongVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1,9] stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
@@ -378,7 +363,6 @@ class ValueVerifierTest {
 					.createTests(LongVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,9)")
 		Stream<DynamicContainer> testWithClosedRangeExclusive() {
@@ -396,7 +380,6 @@ class ValueVerifierTest {
 					.createTests(LongVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1,10) stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
@@ -426,18 +409,17 @@ class ValueVerifierTest {
 	@Nested
 	class ForFloatVerifier {
 
-		@Tag(RANDOMIZED)
 		@TestFactory
+		@RandomizedTest
 		@DisplayName("empty")
-		Stream<DynamicContainer> testEmpty() {
+		Stream<DynamicContainer> testEmpty(RandomGenerator rand) {
 			return config()
 					.expect(VerificationResult.VALID,
-							random().doubles(10, -Float.MAX_VALUE, Float.MAX_VALUE)
+							rand.doubles(10, -Float.MAX_VALUE, Float.MAX_VALUE)
 							.mapToObj(toFloat))
 					.createTests(FloatVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueSet [1.5,3,...,15]")
 		Stream<DynamicContainer> testWithSet() {
@@ -452,7 +434,6 @@ class ValueVerifierTest {
 					.createTests(FloatVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1.5,9.5]")
 		Stream<DynamicContainer> testWithClosedRangeInclusive() {
@@ -468,7 +449,6 @@ class ValueVerifierTest {
 					.createTests(FloatVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1.5,9.5] stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
@@ -487,7 +467,6 @@ class ValueVerifierTest {
 					.createTests(FloatVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1.5,9.5)")
 		Stream<DynamicContainer> testWithClosedRangeExclusive() {
@@ -504,7 +483,6 @@ class ValueVerifierTest {
 					.createTests(FloatVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1.5,9.5) stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {
@@ -528,17 +506,16 @@ class ValueVerifierTest {
 	@Nested
 	class ForDoubleVerifier {
 
-		@Tag(RANDOMIZED)
 		@TestFactory
+		@RandomizedTest
 		@DisplayName("empty")
-		Stream<DynamicContainer> testEmpty() {
+		Stream<DynamicContainer> testEmpty(RandomGenerator rand) {
 			return config()
 					.expect(VerificationResult.VALID,
-							random().doubles(10, Double.MIN_VALUE, Double.MAX_VALUE).boxed())
+							rand.doubles(10, Double.MIN_VALUE, Double.MAX_VALUE).boxed())
 					.createTests(DoubleVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueSet [1.5,3,...,15]")
 		Stream<DynamicContainer> testWithSet() {
@@ -553,7 +530,6 @@ class ValueVerifierTest {
 					.createTests(DoubleVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1.5,9.5]")
 		Stream<DynamicContainer> testWithClosedRangeInclusive() {
@@ -569,7 +545,6 @@ class ValueVerifierTest {
 					.createTests(DoubleVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange [1.5,9.5] stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeInclusiveAndStepSize() {
@@ -588,7 +563,6 @@ class ValueVerifierTest {
 					.createTests(DoubleVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1.5,9.5)")
 		Stream<DynamicContainer> testWithClosedRangeExclusive() {
@@ -605,7 +579,6 @@ class ValueVerifierTest {
 					.createTests(DoubleVerifier::new);
 		}
 
-		@Tag(RANDOMIZED)
 		@TestFactory
 		@DisplayName("with ValueRange (1.5,9.5) stepSize=2")
 		Stream<DynamicContainer> testWithClosedRangeExclusiveAndStepSize() {

@@ -21,7 +21,6 @@ package de.ims.icarus2.model.api.layer;
 
 import static de.ims.icarus2.SharedTestUtils.mockSet;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,6 +39,8 @@ import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
@@ -103,13 +104,14 @@ public interface AnnotationLayerTest<L extends AnnotationLayer>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer#getValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testGetValueItemString() {
+	@RandomizedTest
+	default void testGetValueItemString(RandomGenerator rand) {
 		L layer = create();
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		layer.setAnnotationStorage(storage);
 
 		Item item = mockItem();
-		String key = randomString(5);
+		String key = rand.randomString(5);
 
 		layer.getValue(item, key);
 
@@ -120,11 +122,12 @@ public interface AnnotationLayerTest<L extends AnnotationLayer>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer#getValue(de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@Test
-	default void testGetValueItem() {
+	@RandomizedTest
+	default void testGetValueItem(RandomGenerator rand) {
 		AnnotationLayerManifest manifest = mock(AnnotationLayerManifest.class);
 
 		Item item = mockItem();
-		String key = randomString(5);
+		String key = rand.randomString(5);
 		when(manifest.getDefaultKey()).thenReturn(Optional.of(key));
 
 		L layer = createForManifest(manifest);
@@ -140,13 +143,14 @@ public interface AnnotationLayerTest<L extends AnnotationLayer>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer#setValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.Object)}.
 	 */
 	@Test
-	default void testSetValue() {
+	@RandomizedTest
+	default void testSetValue(RandomGenerator rand) {
 		L layer = create();
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		layer.setAnnotationStorage(storage);
 
 		Item item = mockItem();
-		String key = randomString(5);
+		String key = rand.randomString(5);
 		Object value = new Object();
 
 		layer.setValue(item, key, value);
@@ -157,10 +161,11 @@ public interface AnnotationLayerTest<L extends AnnotationLayer>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer#clearValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testClearValue() {
+	@RandomizedTest
+	default void testClearValue(RandomGenerator rand) {
 		Object noEntryValue = new Object();
 		Item item = mockItem();
-		String key = randomString(5);
+		String key = rand.randomString(5);
 		AnnotationManifest annotationManifest = mock(AnnotationManifest.class);
 		when(annotationManifest.getNoEntryValue()).thenReturn(Optional.of(noEntryValue));
 		AnnotationLayerManifest manifest = mock(AnnotationLayerManifest.class);
@@ -179,13 +184,14 @@ public interface AnnotationLayerTest<L extends AnnotationLayer>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer#clearValue(de.ims.icarus2.model.api.members.item.Item, java.lang.String)}.
 	 */
 	@Test
-	default void testClearValueNoDefault() {
+	@RandomizedTest
+	default void testClearValueNoDefault(RandomGenerator rand) {
 		L layer = create();
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		layer.setAnnotationStorage(storage);
 
 		Item item = mockItem();
-		String key = randomString(5);
+		String key = rand.randomString(5);
 
 		layer.clearValue(item, key);
 

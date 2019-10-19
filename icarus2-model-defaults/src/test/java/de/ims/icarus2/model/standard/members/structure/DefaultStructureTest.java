@@ -24,7 +24,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.RUNS;
@@ -32,8 +31,6 @@ import static de.ims.icarus2.test.TestUtils.assertFlagGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.defaultNullCheck;
 import static de.ims.icarus2.test.TestUtils.filledArray;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,7 +55,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -79,7 +75,9 @@ import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -673,10 +671,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getEdgeAt(long)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetEdgeAtLong() {
+			@RandomizedTest
+			void testGetEdgeAtLong(RandomGenerator rng) {
 				Edge[] edges = filledArray(RUNS, Edge.class);
-				long[] indices = random().longs(edges.length, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(edges.length, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, edges.length).forEach(
 						idx -> when(edgeStorage.getEdgeAt(eq(instance), eq(indices[idx])))
@@ -695,10 +693,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testIndexOfEdge() {
+			@RandomizedTest
+			void testIndexOfEdge(RandomGenerator rng) {
 				Edge[] edges = filledArray(10, Edge.class);
-				long[] indices = random().longs(edges.length, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(edges.length, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, edges.length).forEach(
 						idx -> when(edgeStorage.indexOfEdge(eq(instance), eq(edges[idx])))
@@ -716,10 +714,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetEdgeCountItem() {
+			@RandomizedTest
+			void testGetEdgeCountItem(RandomGenerator rng) {
 				Item[] items = filledArray(10, Item.class);
-				long[] counts = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] counts = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getEdgeCount(eq(instance), eq(items[idx])))
@@ -737,11 +735,11 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetEdgeCountItemBoolean() {
+			@RandomizedTest
+			void testGetEdgeCountItemBoolean(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] counts = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
-				boolean isSource = random().nextBoolean();
+				long[] counts = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				boolean isSource = rng.nextBoolean();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getEdgeCount(
@@ -761,12 +759,12 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getEdgeAt(de.ims.icarus2.model.api.members.item.Item, long, boolean)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetEdgeAtItemLongBoolean() {
+			@RandomizedTest
+			void testGetEdgeAtItemLongBoolean(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
 				Edge[] edges = filledArray(RUNS, Edge.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
-				boolean isSource = random().nextBoolean();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				boolean isSource = rng.nextBoolean();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getEdgeAt(
@@ -828,10 +826,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testIndexOfChild() {
+			@RandomizedTest
+			void testIndexOfChild(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.indexOfChild(
@@ -851,10 +849,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#getSiblingAt(de.ims.icarus2.model.api.members.item.Item, long)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetSiblingAt() {
+			@RandomizedTest
+			void testGetSiblingAt(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] indices = random().longs(RUNS).toArray();
+				long[] indices = rng.longs(RUNS).toArray();
 				Item[] siblings = filledArray(RUNS, Item.class);
 
 				IntStream.range(0, RUNS).forEach(
@@ -876,10 +874,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetHeight() {
+			@RandomizedTest
+			void testGetHeight(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] heights = random().longs(RUNS).toArray();
+				long[] heights = rng.longs(RUNS).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getHeight(
@@ -900,10 +898,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetDepth() {
+			@RandomizedTest
+			void testGetDepth(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] depths = random().longs(RUNS).toArray();
+				long[] depths = rng.longs(RUNS).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getDepth(
@@ -924,10 +922,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			@Tag(RANDOMIZED)
-			void testGetDescendantCount() {
+			@RandomizedTest
+			void testGetDescendantCount(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
-				long[] counts = random().longs(RUNS).toArray();
+				long[] counts = rng.longs(RUNS).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> when(edgeStorage.getDescendantCount(
@@ -947,10 +945,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#addEdge(long, de.ims.icarus2.model.api.members.item.Edge)}.
 			 */
 			@Test
-			@Tag(RANDOMIZED)
-			void testAddEdge() {
+			@RandomizedTest
+			void testAddEdge(RandomGenerator rng) {
 				Edge[] edges = filledArray(RUNS, Edge.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> instance.addEdge(indices[idx], edges[idx]));
@@ -964,11 +962,11 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("unchecked")
 			@Test
-			@Tag(RANDOMIZED)
-			void testAddEdges() {
+			@RandomizedTest
+			void testAddEdges(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				DataSequence[] edges = filledArray(RUNS, DataSequence.class);
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> instance.addEdges(indices[idx], edges[idx]));
@@ -981,8 +979,8 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#removeEdge(long)}.
 			 */
 			@Test
-			void testRemoveEdge() {
-				long[] indices = random().longs(RUNS, 0, Long.MAX_VALUE).toArray();
+			void testRemoveEdge(RandomGenerator rng) {
+				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
 				LongStream.of(indices).forEach(instance::removeEdge);
 
@@ -994,12 +992,12 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings({ "unchecked", "boxing" })
 			@Test
-			void testRemoveEdges() {
+			void testRemoveEdges(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
 				};
 				@SuppressWarnings("rawtypes")
 				DataSequence[] edges = filledArray(indices.length, DataSequence.class);
@@ -1027,13 +1025,13 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
-			void testSwapEdges() {
+			void testSwapEdges(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
-					randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
+					rng.randomLongPair(0, Long.MAX_VALUE),
 				};
 				IntStream.range(0, indices.length).forEach(
 						idx -> {
@@ -1054,10 +1052,10 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#setTerminal(de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item, boolean)}.
 			 */
 			@RepeatedTest(value=5)
-			void testSetTerminal() {
+			void testSetTerminal(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
 				Edge[] edges = filledArray(RUNS, Edge.class);
-				boolean isSource = random().nextBoolean();
+				boolean isSource = rng.nextBoolean();
 
 				IntStream.range(0, RUNS).forEach(
 						idx -> instance.setTerminal(edges[idx], items[idx], isSource));

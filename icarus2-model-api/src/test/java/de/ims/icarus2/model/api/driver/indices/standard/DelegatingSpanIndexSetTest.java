@@ -22,7 +22,6 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -43,12 +42,17 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.RandomAccessIndexSetTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class DelegatingSpanIndexSetTest implements RandomAccessIndexSetTest<DelegatingSpanIndexSet> {
+
+	static RandomGenerator rand;
 
 	private static Function<Config, IndexSet> constructor = config -> {
 		long[] indices = config.getIndices();
@@ -69,12 +73,13 @@ class DelegatingSpanIndexSetTest implements RandomAccessIndexSetTest<DelegatingS
 	};
 
 	private static int randomSize() {
-		return random(10, 100);
+		return rand.random(10, 100);
 	}
 
 	@Override
 	public Stream<Config> configurations() {
 		Config base = new Config()
+				.rand(rand)
 				.defaultFeatures();
 
 		return Stream.of(IndexValueType.values())
@@ -119,7 +124,7 @@ class DelegatingSpanIndexSetTest implements RandomAccessIndexSetTest<DelegatingS
 		@SuppressWarnings("boxing")
 		@BeforeEach
 		void setUp() {
-			size = random(20, Integer.MAX_VALUE);
+			size = rand.random(20, Integer.MAX_VALUE);
 			source = mock(IndexSet.class);
 			when(source.size()).thenReturn(size);
 		}
@@ -142,8 +147,8 @@ class DelegatingSpanIndexSetTest implements RandomAccessIndexSetTest<DelegatingS
 
 		@RepeatedTest(RUNS)
 		void spanPartial() {
-			int from = random(0, size);
-			int to = random(from, size);
+			int from = rand.random(0, size);
+			int to = rand.random(from, size);
 
 			DelegatingSpanIndexSet set = new DelegatingSpanIndexSet(source, from, to);
 			assertEquals(from, set.getBeginIndex());

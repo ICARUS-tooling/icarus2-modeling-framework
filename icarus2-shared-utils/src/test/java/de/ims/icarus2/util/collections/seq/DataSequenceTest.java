@@ -30,7 +30,8 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.IterableTest;
 
 /**
@@ -41,8 +42,8 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	extends ApiGuardedTest<S>, IterableTest<Object, S> {
 
 	@Override
-	default Object[] randomContent() {
-		return TestUtils.randomContent();
+	default Object[] randomContent(RandomGenerator rand) {
+		return rand.randomContent();
 	}
 
 	/**
@@ -57,8 +58,9 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.seq.DataSequence#entryCount()}.
 	 */
 	@Test
-	default void testEntryCount() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testEntryCount(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		assertEquals(items.length, createFilled(items).entryCount());
 	}
 
@@ -74,8 +76,9 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.seq.DataSequence#elementAt(long)}.
 	 */
 	@Test
-	default void testElementAt() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testElementAt(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S seq = createFilled(items);
 		for (int i = 0; i < items.length; i++) {
 			assertSame(items[i], seq.elementAt(i));
@@ -94,8 +97,9 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	 * Test method for {@link de.ims.icarus2.util.collections.seq.DataSequence#getEntries()}.
 	 */
 	@Test
-	default void testGetEntries() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	default void testGetEntries(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		S seq = createFilled(items);
 		assertListEquals(seq.getEntries(), items);
 	}

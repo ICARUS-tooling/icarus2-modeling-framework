@@ -24,8 +24,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.ModelTestUtils.sorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.EMPTY_SET;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -39,6 +37,8 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -65,9 +65,10 @@ class IndexSetMergerTest {
 	}
 
 	@Test
-	void mergeEmpty() {
+	@RandomizedTest
+	void mergeEmpty(RandomGenerator rand) {
 		assertMerge(EMPTY_SET, Stream.generate(() -> EMPTY_SET)
-				.limit(random(3, 10))
+				.limit(rand.random(3, 10))
 				.toArray(IndexSet[]::new));
 	}
 
@@ -87,11 +88,12 @@ class IndexSetMergerTest {
 	}
 
 	@TestFactory
-	Stream<DynamicTest> singularDisjoint() {
-		int count = random(4, 10);
+	@RandomizedTest
+	Stream<DynamicTest> singularDisjoint(RandomGenerator rand) {
+		int count = rand.random(4, 10);
 		return IntStream.range(0, count)
 				.mapToObj(index -> dynamicTest(String.valueOf(index), () -> {
-					long value = randomId();
+					long value = rand.randomId();
 					IndexSet[] sets = new IndexSet[count];
 					Arrays.fill(sets, EMPTY_SET);
 					sets[index] = sorted(value);

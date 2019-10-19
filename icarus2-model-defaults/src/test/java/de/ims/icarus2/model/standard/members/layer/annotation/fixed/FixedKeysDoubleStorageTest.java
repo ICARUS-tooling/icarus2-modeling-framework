@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.fixed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -41,7 +41,8 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.fixed.FixedKeysDoubleStorage;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
@@ -49,8 +50,11 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@ExtendWith(Randomized.class)
 class FixedKeysDoubleStorageTest implements MultiKeyAnnotationStorageTest<FixedKeysDoubleStorage>,
 		ManagedAnnotationStorageTest<FixedKeysDoubleStorage> {
+
+	static RandomGenerator rand;
 
 	/** Maps keys to noEntryValues */
 	private Object2DoubleMap<String> setup = new Object2DoubleOpenHashMap<>();
@@ -60,7 +64,7 @@ class FixedKeysDoubleStorageTest implements MultiKeyAnnotationStorageTest<FixedK
 	void setUp() {
 		for (int i = 0; i < 20; i++) {
 			String key = "key_" + i;
-			setup.put(key, random().nextDouble());
+			setup.put(key, rand.nextDouble());
 			keys.add(key);
 		}
 	}
@@ -86,7 +90,7 @@ class FixedKeysDoubleStorageTest implements MultiKeyAnnotationStorageTest<FixedK
 		double noEntryValue = setup.getDouble(key);
 		double value;
 		do {
-			value = random().nextDouble();
+			value = rand.nextDouble();
 		} while (value == noEntryValue);
 		return Double.valueOf(value);
 	}

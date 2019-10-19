@@ -23,8 +23,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.abort;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,6 +59,8 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -315,19 +315,20 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.function.Supplier)}.
 	 */
 	@Test
-	default void testRemoveAllValuesSupplierOfQextendsItem() {
+	@RandomizedTest
+	default void testRemoveAllValuesSupplierOfQextendsItem(RandomGenerator rand) {
 		String key = key();
 		S storage = createForKey(key);
 		Item[] items = Stream.generate(ModelTestUtils::mockItem)
-				.limit(random(12, 20))
+				.limit(rand.random(12, 20))
 				.toArray(Item[]::new);
 
 		for (Item item : items) {
 			storage.setValue(item, key, testValue(key));
 		}
 
-		int from = random(3, items.length/2);
-		int to = random(items.length/2 + 1, items.length-3);
+		int from = rand.random(3, items.length/2);
+		int to = rand.random(items.length/2 + 1, items.length-3);
 
 		MutableInteger pointer = new MutableInteger(from);
 		Supplier<? extends Item> supplier = () -> {
@@ -350,19 +351,20 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#removeAllValues(java.util.Iterator)}.
 	 */
 	@Test
-	default void testRemoveAllValuesIteratorOfQextendsItem() {
+	@RandomizedTest
+	default void testRemoveAllValuesIteratorOfQextendsItem(RandomGenerator rand) {
 		String key = key();
 		S storage = createForKey(key);
 		Item[] items = Stream.generate(ModelTestUtils::mockItem)
-				.limit(random(12, 20))
+				.limit(rand.random(12, 20))
 				.toArray(Item[]::new);
 
 		for (Item item : items) {
 			storage.setValue(item, key, testValue(key));
 		}
 
-		int from = random(3, items.length/2);
-		int to = random(items.length/2 + 1, items.length-3);
+		int from = rand.random(3, items.length/2);
+		int to = rand.random(items.length/2 + 1, items.length-3);
 
 		Iterator<? extends Item> iterator =
 				Arrays.asList(items).subList(from, to+1).iterator();
@@ -414,7 +416,8 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setString(de.ims.icarus2.model.api.members.item.Item, java.lang.String, java.lang.String)}.
 	 */
 	@Test
-	default void testSetString() {
+	@RandomizedTest
+	default void testSetString(RandomGenerator rand) {
 		String key = keyForType(ValueType.STRING);
 		S storage = createForKey(key);
 		Item item = mockItem();
@@ -424,7 +427,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setString(item, key, value);
 			assertEquals(value, storage.getString(item, key));
 		} else {
-			ManifestTestUtils.assertUnsupportedType(() -> storage.setString(item, key, randomString(10)));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setString(item, key, rand.randomString(10)));
 		}
 	}
 
@@ -449,7 +452,8 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setInteger(de.ims.icarus2.model.api.members.item.Item, java.lang.String, int)}.
 	 */
 	@Test
-	default void testSetInteger() {
+	@RandomizedTest
+	default void testSetInteger(RandomGenerator rand) {
 		String key = keyForType(ValueType.INTEGER);
 		S storage = createForKey(key);
 		Item item = mockItem();
@@ -459,7 +463,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setInteger(item, key, value);
 			assertEquals(value, storage.getInteger(item, key));
 		} else {
-			ManifestTestUtils.assertUnsupportedType(() -> storage.setInteger(item, key, random().nextInt()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setInteger(item, key, rand.nextInt()));
 		}
 	}
 
@@ -467,7 +471,8 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setLong(de.ims.icarus2.model.api.members.item.Item, java.lang.String, long)}.
 	 */
 	@Test
-	default void testSetLong() {
+	@RandomizedTest
+	default void testSetLong(RandomGenerator rand) {
 		String key = keyForType(ValueType.LONG);
 		S storage = createForKey(key);
 		Item item = mockItem();
@@ -477,7 +482,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setLong(item, key, value);
 			assertEquals(value, storage.getLong(item, key));
 		} else {
-			ManifestTestUtils.assertUnsupportedType(() -> storage.setLong(item, key, random().nextLong()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setLong(item, key, rand.nextLong()));
 		}
 	}
 
@@ -485,7 +490,8 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setFloat(de.ims.icarus2.model.api.members.item.Item, java.lang.String, float)}.
 	 */
 	@Test
-	default void testSetFloat() {
+	@RandomizedTest
+	default void testSetFloat(RandomGenerator rand) {
 		String key = keyForType(ValueType.FLOAT);
 		S storage = createForKey(key);
 		Item item = mockItem();
@@ -495,7 +501,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setFloat(item, key, value);
 			assertEquals(value, storage.getFloat(item, key));
 		} else {
-			ManifestTestUtils.assertUnsupportedType(() -> storage.setFloat(item, key,  random().nextFloat()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setFloat(item, key,  rand.nextFloat()));
 		}
 	}
 
@@ -503,7 +509,8 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 * Test method for {@link de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setDouble(de.ims.icarus2.model.api.members.item.Item, java.lang.String, double)}.
 	 */
 	@Test
-	default void testSetDouble() {
+	@RandomizedTest
+	default void testSetDouble(RandomGenerator rand) {
 		String key = keyForType(ValueType.DOUBLE);
 		S storage = createForKey(key);
 		Item item = mockItem();
@@ -513,7 +520,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setDouble(item, key, value);
 			assertEquals(value, storage.getDouble(item, key));
 		} else {
-			ManifestTestUtils.assertUnsupportedType(() -> storage.setDouble(item, key,  random().nextDouble()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setDouble(item, key,  rand.nextDouble()));
 		}
 	}
 
@@ -522,7 +529,8 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	 */
 	@SuppressWarnings("boxing")
 	@Test
-	default void testSetBoolean() {
+	@RandomizedTest
+	default void testSetBoolean(RandomGenerator rand) {
 		String key = keyForType(ValueType.BOOLEAN);
 		S storage = createForKey(key);
 		Item item = mockItem();
@@ -532,7 +540,7 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 			storage.setBoolean(item, key, value);
 			assertEquals(value, storage.getBoolean(item, key));
 		} else {
-			ManifestTestUtils.assertUnsupportedType(() -> storage.setBoolean(item, key,  random().nextBoolean()));
+			ManifestTestUtils.assertUnsupportedType(() -> storage.setBoolean(item, key,  rand.nextBoolean()));
 		}
 	}
 

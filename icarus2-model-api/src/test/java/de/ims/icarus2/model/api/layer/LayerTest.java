@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.layer;
 
 import static de.ims.icarus2.SharedTestUtils.mockSet;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -34,6 +33,8 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.PartTest;
 import de.ims.icarus2.util.collections.set.DataSet;
 
@@ -74,8 +75,9 @@ public interface LayerTest<L extends Layer, M extends Manifest> extends PartTest
 	 * Test method for {@link de.ims.icarus2.model.api.layer.Layer#getName()}.
 	 */
 	@Test
-	default void testGetName() {
-		String name = randomString(20);
+	@RandomizedTest
+	default void testGetName(RandomGenerator rand) {
+		String name = rand.randomString(20);
 		M manifest = createManifest(name);
 		L layer = createForManifest(manifest);
 		assertEquals(name, layer.getName());

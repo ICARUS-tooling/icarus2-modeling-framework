@@ -21,8 +21,6 @@ package de.ims.icarus2.model.api.driver.indices.func;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertOverflow;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomLongs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,6 +35,9 @@ import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -72,8 +73,9 @@ class Long2IntIteratorTest {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#hasNext()}.
 	 */
 	@Test
-	void testHasNext() {
-		Long2IntIterator it = new Long2IntIterator(LongStream.of(random().nextLong()).iterator());
+	@RandomizedTest
+	void testHasNext(RandomGenerator rand) {
+		Long2IntIterator it = new Long2IntIterator(LongStream.of(rand.nextLong()).iterator());
 		assertTrue(it.hasNext());
 	}
 
@@ -81,8 +83,9 @@ class Long2IntIteratorTest {
 	 * Test method for {@link de.ims.icarus2.model.api.driver.indices.func.Long2IntIterator#nextInt()}.
 	 */
 	@Test
-	void testNextInt() {
-		long[] values = randomLongs(random(10, 100), Integer.MIN_VALUE, Integer.MAX_VALUE);
+	@RandomizedTest
+	void testNextInt(RandomGenerator rand) {
+		long[] values = rand.randomLongs(rand.random(10, 100), Integer.MIN_VALUE, Integer.MAX_VALUE);
 		Long2IntIterator it = new Long2IntIterator(LongStream.of(values).iterator());
 
 		for (int i = 0; i < values.length; i++) {

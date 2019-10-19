@@ -20,8 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.unbound;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
@@ -50,6 +48,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -58,14 +57,16 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 import de.ims.icarus2.test.util.Pair;
 
 /**
  * @author Markus Gärtner
  *
  */
+@ExtendWith(Randomized.class)
 class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<ComplexAnnotationStorage>,
 		MultiKeyAnnotationStorageTest<ComplexAnnotationStorage> {
 
@@ -74,6 +75,8 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 
 	private static final Set<ValueType> NUMBERS =
 			set(ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE);
+
+	static RandomGenerator rand;
 
 	private static final ValueType[] _types = {
 			ValueType.STRING,
@@ -87,12 +90,12 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 
 	@SuppressWarnings("rawtypes")
 	private static final Supplier[] _gen = {
-			() -> randomString(20),
-			() -> Integer.valueOf(random().nextInt()),
-			() -> Long.valueOf(random().nextLong()),
-			() -> Double.valueOf(random().nextDouble()*Double.MAX_VALUE),
-			() -> Float.valueOf(random().nextFloat()*Float.MAX_VALUE),
-			() -> Boolean.valueOf(random().nextBoolean()),
+			() -> rand.randomString(20),
+			() -> Integer.valueOf(rand.nextInt()),
+			() -> Long.valueOf(rand.nextLong()),
+			() -> Double.valueOf(rand.nextDouble()*Double.MAX_VALUE),
+			() -> Float.valueOf(rand.nextFloat()*Float.MAX_VALUE),
+			() -> Boolean.valueOf(rand.nextBoolean()),
 			() -> new Object(),
 	};
 
@@ -104,7 +107,7 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 	@BeforeEach
 	void setUp() {
 		for (int i = 0; i < 20; i++) {
-			int idx = i<_types.length ? i : random(0, _types.length);
+			int idx = i<_types.length ? i : rand.random(0, _types.length);
 			String key = key(i);
 			setup.put(key, new KeyConfig<>(_types[idx], _gen[idx]));
 			keys.add(key);

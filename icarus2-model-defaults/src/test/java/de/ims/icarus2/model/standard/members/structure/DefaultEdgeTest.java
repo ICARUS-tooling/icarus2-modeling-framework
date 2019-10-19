@@ -29,7 +29,6 @@ import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
-import static de.ims.icarus2.test.TestUtils.randomLongPair;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -59,8 +58,8 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.EdgeTest;
 import de.ims.icarus2.model.api.members.structure.Structure;
-import de.ims.icarus2.test.TestUtils;
-import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.convert.ExtendedStringToPrimitiveConverter;
 
 /**
@@ -465,10 +464,6 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 			when(target.getEndOffset()).thenReturn(targetEnd);
 		}
 
-		Stream<Pair<Long, Long>> randomPairs() {
-			return TestUtils.randomPairs(UNSET_LONG, Long.MAX_VALUE);
-		}
-
 		/**
 		 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultEdge#getBeginOffset()}.
 		 */
@@ -527,8 +522,9 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 			 */
 			@SuppressWarnings("boxing")
 			@TestFactory
-			Stream<DynamicTest> testGetBeginOffsetRandomValues() {
-				return Stream.generate(() -> randomLongPair(UNSET_LONG, Long.MAX_VALUE))
+			@RandomizedTest
+			Stream<DynamicTest> testGetBeginOffsetRandomValues(RandomGenerator rng) {
+				return Stream.generate(() -> rng.randomLongPair(UNSET_LONG, Long.MAX_VALUE))
 						.limit(RUNS)
 						.map(p -> dynamicTest(p.toString(), () -> {
 							stubBegin(p.first, p.second);
@@ -541,8 +537,9 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 			 */
 			@SuppressWarnings("boxing")
 			@TestFactory
-			Stream<DynamicTest> testGetEndOffsetRandomValues() {
-				return Stream.generate(() -> randomLongPair(UNSET_LONG, Long.MAX_VALUE))
+			@RandomizedTest
+			Stream<DynamicTest> testGetEndOffsetRandomValues(RandomGenerator rng) {
+				return Stream.generate(() -> rng.randomLongPair(UNSET_LONG, Long.MAX_VALUE))
 						.limit(RUNS)
 						.map(p -> dynamicTest(p.toString(), () -> {
 							stubEnd(p.first, p.second);

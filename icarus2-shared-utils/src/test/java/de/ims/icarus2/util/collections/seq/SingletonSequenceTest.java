@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -34,7 +36,7 @@ class SingletonSequenceTest implements DataSequenceTest<SingletonSequence<Object
 	 * @see de.ims.icarus2.util.collections.seq.DataSequenceTest#randomContent()
 	 */
 	@Override
-	public Object[] randomContent() {
+	public Object[] randomContent(RandomGenerator rand) {
 		return new Object[] {new Object()};
 	}
 

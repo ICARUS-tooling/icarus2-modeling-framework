@@ -4,12 +4,10 @@
 package de.ims.icarus2.test.random;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.platform.commons.util.ReflectionUtils.isPrivate;
 import static org.junit.platform.commons.util.ReflectionUtils.makeAccessible;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -27,20 +25,24 @@ import org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode;
 import de.ims.icarus2.test.annotations.Seed;
 
 /**
+ * Provides and injects instances of {@link RandomGenerator}.
+ * Will automatically generate those instances for any declared parameters
+ * and/or field in designated test classes or test methods.
+ *
  * @author Markus Gärtner
  *
  */
 public class Randomized implements BeforeAllCallback, BeforeEachCallback, ParameterResolver {
 
 	/** Test seed derived from this class' name */
-	static final long TEST_SEED = computeSeed(Randomized.class.getName());
+	static final long TEST_SEED = RandomGenerator.forClass(Randomized.class).getSeed();
 
 	/**
 	 * @see org.junit.jupiter.api.extension.ParameterResolver#supportsParameter(org.junit.jupiter.api.extension.ParameterContext, org.junit.jupiter.api.extension.ExtensionContext)
 	 */
 	@Override
 	public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
-		return (parameterContext.getParameter().getType() == RandomSource.class);
+		return (parameterContext.getParameter().getType() == RandomGenerator.class);
 	}
 
 	/**
@@ -56,9 +58,9 @@ public class Randomized implements BeforeAllCallback, BeforeEachCallback, Parame
 	}
 
 	private void assertSupportedType(String target, Class<?> type) {
-		if (type != RandomSource.class) {
+		if (type != RandomGenerator.class) {
 			throw new ExtensionConfigurationException("Can only resolve " + target + " of type "
-					+ RandomSource.class.getName() + " but was: " + type.getName());
+					+ RandomGenerator.class.getName() + " but was: " + type.getName());
 		}
 	}
 
@@ -70,41 +72,21 @@ public class Randomized implements BeforeAllCallback, BeforeEachCallback, Parame
 		return seed;
 	}
 
-	private static long computeSeed(String s) {
-		int len = s.length();
-		assertTrue(len>=10, "Textual source of seed too small (needs at least 10 characters): "+s);
-		// adapted from String.hashCode()
-		long h = 1125899906842597L; // prime
+	private static RandomGenerator createRandom(ExtensionContext context, Seed seed) {
+		if(seed!=null) {
+			long s = seed.value();
+			if(s!=-1L) {
+				return RandomGenerator.forSeed(s);
+			}
 
-		for (int i = 0; i < len; i++) {
-			h = 31 * h + s.charAt(i);
-		}
-		return h;
-	}
-
-	private static long computeSeed(Seed seed) {
-		long s = seed.value();
-		if(s==-1L) {
 			String seedSource = seed.seedSource();
 			assertNotEquals("", seedSource, "No valid seed specified");
-			s = computeSeed(seedSource);
-		}
-		return s;
-	}
-
-	private static RandomSource createRandom(ExtensionContext context, Seed seed) {
-		long randomSeed;
-
-		if(seed!=null) {
-			randomSeed = computeSeed(seed);
-		} else {
-			String seedSource = context.getTestMethod()
-					.map(Method::getName)
-					.orElseGet(() -> context.getRequiredTestInstance().getClass().getName());
-			randomSeed = computeSeed(seedSource);
+			return RandomGenerator.forString(seedSource);
 		}
 
-		return new RandomSource(randomSeed);
+		return context.getTestMethod()
+					.map(RandomGenerator::forExecutable)
+					.orElseGet(() -> RandomGenerator.forClass(context.getRequiredTestClass()));
 	}
 
 	/**
@@ -135,7 +117,7 @@ public class Randomized implements BeforeAllCallback, BeforeEachCallback, Parame
 
 	private void injectFields(ExtensionContext context, Object testInstance, Predicate<Field> predicate) {
 		ReflectionUtils.findFields(context.getRequiredTestClass(),
-				predicate.and(field -> field.getType()==RandomSource.class),
+				predicate.and(field -> field.getType()==RandomGenerator.class),
 				HierarchyTraversalMode.TOP_DOWN).forEach(field -> {
 					assertValidFieldCandidate(field);
 					try {
@@ -150,7 +132,7 @@ public class Randomized implements BeforeAllCallback, BeforeEachCallback, Parame
 	private void assertValidFieldCandidate(Field field) {
 		assertSupportedType("field", field.getType());
 		if (isPrivate(field)) {
-			throw new ExtensionConfigurationException(RandomSource.class.getName()+" field [" + field + "] must not be private.");
+			throw new ExtensionConfigurationException(RandomGenerator.class.getName()+" field [" + field + "] must not be private.");
 		}
 	}
 

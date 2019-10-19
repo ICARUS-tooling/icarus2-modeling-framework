@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.api.driver.indices.func;
 
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -41,6 +40,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 
@@ -127,16 +128,17 @@ class DualIntersectionOfLongTest {
 	}
 
 	@Test
+	@RandomizedTest
 	@DisabledOnCi
-	void large(TestReporter reporter) {
+	void large(TestReporter reporter, RandomGenerator rand) {
 		Instant start = Instant.now();
 		int sizeLeft = 100_000_000;
 		int sizeRight = 30_000_000;
-		OfLong left = LongStream.iterate(random(Long.MIN_VALUE, Integer.MAX_VALUE),
+		OfLong left = LongStream.iterate(rand.random(Long.MIN_VALUE, Integer.MAX_VALUE),
 					v -> v+1_000_000)
 				.limit(sizeLeft)
 				.iterator();
-		OfLong right = LongStream.iterate(random(Long.MIN_VALUE, Integer.MAX_VALUE),
+		OfLong right = LongStream.iterate(rand.random(Long.MIN_VALUE, Integer.MAX_VALUE),
 					v -> v+10_000_000)
 				.limit(sizeRight)
 				.iterator();

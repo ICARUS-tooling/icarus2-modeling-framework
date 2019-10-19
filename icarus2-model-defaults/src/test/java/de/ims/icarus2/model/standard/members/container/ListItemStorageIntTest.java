@@ -30,8 +30,6 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomId;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -70,6 +68,8 @@ import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
@@ -129,8 +129,8 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 		return ContainerType.LIST;
 	}
 
-	private static Item[] randomItems() {
-		return mockItems(random(1, 30));
+	private static Item[] randomItems(RandomGenerator rng) {
+		return mockItems(rng.random(1, 30));
 	}
 
 	private static void fill(ListItemStorageInt storage, Item...items) {
@@ -203,10 +203,11 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.ListItemStorageInt#getBeginOffset(de.ims.icarus2.model.api.members.container.Container)}.
 		 */
 		@Test
-		void testGetBeginOffset() {
+		@RandomizedTest
+		void testGetBeginOffset(RandomGenerator rng) {
 			assertEquals(UNSET_LONG, storage.getBeginOffset(null));
 
-			long index = randomId();
+			long index = rng.randomId();
 			Item item = stubOffsets(mockItem(), index, index);
 			storage.setBeginItem(item);
 
@@ -218,10 +219,11 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 		 * Test method for {@link de.ims.icarus2.model.standard.members.container.ListItemStorageInt#getEndOffset(de.ims.icarus2.model.api.members.container.Container)}.
 		 */
 		@Test
-		void testGetEndOffset() {
+		@RandomizedTest
+		void testGetEndOffset(RandomGenerator rng) {
 			assertEquals(UNSET_LONG, storage.getEndOffset(null));
 
-			long index = randomId();
+			long index = rng.randomId();
 			Item item = stubOffsets(mockItem(), index, index);
 			storage.setEndItem(item);
 
@@ -460,12 +462,14 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 		}
 
 		@Nested
+		@RandomizedTest
 		class WithRandomItems {
+
 			private Item[] items;
 
 			@BeforeEach
-			void setUp() {
-				items = randomItems();
+			void setUp(RandomGenerator rng) {
+				items = randomItems(rng);
 			}
 
 			@AfterEach
@@ -530,10 +534,11 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 				 * Test method for {@link de.ims.icarus2.model.standard.members.container.ListItemStorageInt#removeItem(de.ims.icarus2.model.api.members.container.Container, long)}.
 				 */
 				@RepeatedTest(RUNS)
-				void testRemoveItem() {
+				@RandomizedTest
+				void testRemoveItem(RandomGenerator rng) {
 					List<Item> buffer = list(items);
 					while (!buffer.isEmpty()) {
-						int index = random(0, buffer.size());
+						int index = rng.random(0, buffer.size());
 						Item expected = buffer.remove(index);
 						assertSame(expected, storage.removeItem(null, index));
 						assertEquals(buffer.size(), storage.getItemCount(null));
@@ -544,11 +549,12 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 				 * Test method for {@link de.ims.icarus2.model.standard.members.container.ListItemStorageInt#removeItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 				 */
 				@RepeatedTest(RUNS)
-				void testRemoveItems() {
+				@RandomizedTest
+				void testRemoveItems(RandomGenerator rng) {
 					List<Item> buffer = list(items);
 					while (!buffer.isEmpty()) {
-						int index0 = random(0, buffer.size());
-						int index1 = random(index0, buffer.size());
+						int index0 = rng.random(0, buffer.size());
+						int index1 = rng.random(index0, buffer.size());
 
 						List<Item> subList = buffer.subList(index0, index1+1);
 						Item[] expected = subList.toArray(new Item[subList.size()]);
@@ -624,12 +630,13 @@ class ListItemStorageIntTest implements ItemStorageTest<ListItemStorageInt> {
 				 * Test method for {@link de.ims.icarus2.model.standard.members.container.ListItemStorageInt#swapItems(de.ims.icarus2.model.api.members.container.Container, long, long)}.
 				 */
 				@RepeatedTest(RUNS)
-				void testSwapItems() {
+				@RandomizedTest
+				void testSwapItems(RandomGenerator rng) {
 					List<Item> list = list(items);
 
 					for (int i = 0; i < items.length/2; i++) {
-						int index0 = random(0, items.length-1);
-						int index1 = random(index0+1, items.length);
+						int index0 = rng.random(0, items.length-1);
+						int index1 = rng.random(index0+1, items.length);
 
 						Item item0 = list.get(index0);
 						Item item1 = list.get(index1);

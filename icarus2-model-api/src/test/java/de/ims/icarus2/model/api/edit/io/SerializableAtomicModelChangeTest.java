@@ -29,9 +29,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
 import static de.ims.icarus2.test.TestUtils.abort;
 import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
-import static de.ims.icarus2.test.TestUtils.mix;
-import static de.ims.icarus2.test.TestUtils.random;
-import static de.ims.icarus2.test.TestUtils.randomString;
 import static de.ims.icarus2.test.util.Pair.nullablePair;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.ArrayUtils.swap;
@@ -80,6 +77,7 @@ import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.stubbing.Answer;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
@@ -110,6 +108,8 @@ import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.random.Randomized;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
@@ -414,16 +414,30 @@ class SerializableAtomicModelChangeTest {
 		}
 	}
 
-	private static int randomSize() {
-		return random(10, 30);
-	}
-
 	// Use this to "disable" all the methods we haven't stubbed
 	private static final Answer<?> UNSUPPORTED = invoc -> {
 		throw new UnsupportedOperationException();
 	};
 
-	abstract class ContainerContent {
+
+	@ExtendWith(Randomized.class)
+	abstract class TestBase {
+		RandomGenerator rand;
+
+		String randomKey() {
+			return rand.randomString(10);
+		}
+
+		String randomKey2() {
+			return rand.randomString(12);
+		}
+
+		int randomSize() {
+			return rand.random(10, 30);
+		}
+	}
+
+	abstract class ContainerContent extends TestBase {
 
 		public Stream<Pair<String, Container>> createData() {
 			return Stream.of(
@@ -521,7 +535,7 @@ class SerializableAtomicModelChangeTest {
 		//TODO
 	}
 
-	abstract class StructureContent {
+	abstract class StructureContent extends TestBase {
 
 		public Stream<Pair<String, Structure>> createData() {
 			return Stream.of(
@@ -646,14 +660,14 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 				pair("add", container -> {
 					long index = container.getItemCount();
-					if(index>0) index = random(0, index);
+					if(index>0) index = rand.random(0, index);
 					return new ItemChange(container, mockItem(),
 							container.getItemCount(), index, true);
 				}),
 				pair("remove", container -> {
 					long size = container.getItemCount();
 					if(size==0L) abort("Container already empty");
-					long index = random(0, size);
+					long index = rand.random(0, size);
 					return new ItemChange(container, container.getItemAt(index),
 							container.getItemCount(), index, false);
 				})
@@ -665,16 +679,16 @@ class SerializableAtomicModelChangeTest {
 			List<Pair<String, ItemChange>> changes = new ArrayList<>();
 			List<Item> dummy = list(items(source));
 			for (int i = 0; i < 10; i++) {
-				if(dummy.isEmpty() || random().nextBoolean()) {
+				if(dummy.isEmpty() || rand.nextBoolean()) {
 					// Add
-					int index = random(0, dummy.size()+1);
+					int index = rand.random(0, dummy.size()+1);
 					Item item = mockItem();
 					changes.add(pair("add "+index, new ItemChange(
 							source, item, dummy.size(), index, true)));
 					dummy.add(index, item);
 				} else {
 					// Remove
-					int index = random(0, dummy.size());
+					int index = rand.random(0, dummy.size());
 					Item item = dummy.remove(index);
 					changes.add(pair("remove "+index, new ItemChange(
 							source, item, dummy.size()+1, index, false)));
@@ -688,12 +702,12 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					pair("item added", (container, change) -> {
 						long index = container.getItemCount();
-						if(index>0) index = random(0, index);
+						if(index>0) index = rand.random(0, index);
 						container.addItem(index, mockItem());
 					}),
 					pair("item removed", (container, change) -> {
 						if(container.getItemCount()<1) abort("Container already empty");
-						container.removeItem(random(0, container.getItemCount()));
+						container.removeItem(rand.random(0, container.getItemCount()));
 					}),
 					pair("emptied", (container, change) -> {
 						if(container.getItemCount()<1) abort("Container already empty");
@@ -705,7 +719,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = change.getIndex();
 						long index1;
 						do {
-							index1 = random(0, container.getItemCount());
+							index1 = rand.random(0, container.getItemCount());
 						} while(index1==index0);
 						container.swapItems(index0, index1);
 					})
@@ -722,8 +736,8 @@ class SerializableAtomicModelChangeTest {
 						long index0;
 						long index1;
 						do {
-							index0 = random(0, size);
-							index1 = random(0, size);
+							index0 = rand.random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0 || index0==index || index1==index);
 						container.swapItems(index0, index1);
 					})
@@ -754,10 +768,10 @@ class SerializableAtomicModelChangeTest {
 				pair("move", container -> {
 					int size = strictToInt(container.getItemCount());
 					if(size<2) abort("Need 2 items for swapping");
-					int index0 = random(0, size);
+					int index0 = rand.random(0, size);
 					int index1;
 					do {
-						index1 = random(0, size);
+						index1 = rand.random(0, size);
 					} while(index1==index0);
 					Item item0 = container.getItemAt(index0);
 					Item item1 = container.getItemAt(index1);
@@ -774,10 +788,10 @@ class SerializableAtomicModelChangeTest {
 			List<Pair<String, ItemMoveChange>> changes = new ArrayList<>();
 			Item[] dummy = items(source);
 			for (int i = 0; i < size; i++) {
-				int index0 = random(0, size);
+				int index0 = rand.random(0, size);
 				int index1;
 				do {
-					index1 = random(0, size);
+					index1 = rand.random(0, size);
 				} while(index1==index0);
 				Item item0 = dummy[index0];
 				Item item1 = dummy[index1];
@@ -793,12 +807,12 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					pair("item added", (container, change) -> {
 						long index = container.getItemCount();
-						if(index>0) index = random(0, index);
+						if(index>0) index = rand.random(0, index);
 						container.addItem(index, mockItem());
 					}),
 					pair("item removed", (container, change) -> {
 						if(container.getItemCount()<1) abort("Container already empty");
-						container.removeItem(random(0, container.getItemCount()));
+						container.removeItem(rand.random(0, container.getItemCount()));
 					}),
 					pair("emptied", (container, change) -> {
 						if(container.getItemCount()<1) abort("Container already empty");
@@ -809,7 +823,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = change.getSourceIndex();
 						long index1;
 						do {
-							index1 = random(0, container.getItemCount());
+							index1 = rand.random(0, container.getItemCount());
 						} while(index1==index0);
 						container.swapItems(index0, index1);
 					}),
@@ -818,7 +832,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = change.getTargetIndex();
 						long index1;
 						do {
-							index1 = random(0, container.getItemCount());
+							index1 = rand.random(0, container.getItemCount());
 						} while(index1==index0);
 						container.swapItems(index0, index1);
 					})
@@ -836,8 +850,8 @@ class SerializableAtomicModelChangeTest {
 						long index0;
 						long index1;
 						do {
-							index0 = random(0, size);
-							index1 = random(0, size);
+							index0 = rand.random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0 || index0==indexS || index1==indexS
 								|| index0==indexT || index1==indexT);
 						container.swapItems(index0, index1);
@@ -866,28 +880,28 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 				pair("add single", container -> {
 					long index = container.getItemCount();
-					if(index>0) index = random(0, index);
+					if(index>0) index = rand.random(0, index);
 					return new ItemSequenceChange(container, container.getItemCount(),
 							index, mockSequence(mockItem()));
 				}),
 				pair("add bulk", container -> {
 					long index = container.getItemCount();
-					if(index>0) index = random(0, index);
+					if(index>0) index = rand.random(0, index);
 					return new ItemSequenceChange(container, container.getItemCount(),
 							index, mockSequence(mockItems(randomSize())));
 				}),
 				pair("remove single", container -> {
 					long size = container.getItemCount();
 					if(size<1) abort("Container already empty");
-					long index = random(0, size);
+					long index = rand.random(0, size);
 					return new ItemSequenceChange(container, container.getItemCount(),
 							index, index);
 				}),
 				pair("remove bulk", container -> {
 					long size = container.getItemCount();
 					if(size<2) abort("Need 2 items");
-					long index0 = random(0, size-1);
-					long index1 = random(index0+1, size);
+					long index0 = rand.random(0, size-1);
+					long index1 = rand.random(index0+1, size);
 					return new ItemSequenceChange(container, container.getItemCount(),
 							index0, index1);
 				})
@@ -899,17 +913,17 @@ class SerializableAtomicModelChangeTest {
 			List<Pair<String, ItemSequenceChange>> changes = new ArrayList<>();
 			List<Item> dummy = list(items(source));
 			for (int i = 0; i < 10; i++) {
-				if(dummy.isEmpty() || random().nextBoolean()) {
+				if(dummy.isEmpty() || rand.nextBoolean()) {
 					// Add
-					int index = random(0, dummy.size()+1);
+					int index = rand.random(0, dummy.size()+1);
 					DataSequence<Item> items = mockSequence(mockItems(randomSize()));
 					changes.add(pair("add "+index, new ItemSequenceChange(
 							source, dummy.size(), index, items)));
 					dummy.addAll(index, items.getEntries());
 				} else {
 					// Remove
-					int index0 = random(0, dummy.size());
-					int index1 = random(index0, dummy.size());
+					int index0 = rand.random(0, dummy.size());
+					int index1 = rand.random(index0, dummy.size());
 					List<Item> subList = dummy.subList(index0, index1+1);
 					changes.add(pair("remove ["+index0+"-"+index1+"]", new ItemSequenceChange(
 							source, dummy.size(), index0, index1)));
@@ -924,12 +938,12 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					pair("item added", (container, change) -> {
 						long index = container.getItemCount();
-						if(index>0) index = random(0, index);
+						if(index>0) index = rand.random(0, index);
 						container.addItem(index, mockItem());
 					}),
 					pair("item removed", (container, change) -> {
 						if(container.getItemCount()<1) abort("Container already empty");
-						container.removeItem(random(0, container.getItemCount()));
+						container.removeItem(rand.random(0, container.getItemCount()));
 					}),
 					pair("emptied", (container, change) -> {
 						if(container.getItemCount()<1) abort("Container already empty");
@@ -949,8 +963,8 @@ class SerializableAtomicModelChangeTest {
 						long index0;
 						long index1;
 						do {
-							index0 = random(0, size);
-							index1 = random(0, size);
+							index0 = rand.random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0);
 						container.swapItems(index0, index1);
 					}),
@@ -962,7 +976,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = (change.getBeginIndex()+change.getEndIndex())/2;
 						long index1;
 						do {
-							index1 = random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0);
 						container.swapItems(index0, index1);
 					})
@@ -992,14 +1006,14 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 				pair("add", structure -> {
 					long index = structure.getEdgeCount();
-					if(index>0) index = random(0, index);
+					if(index>0) index = rand.random(0, index);
 					return new EdgeChange(structure, mockEdge(),
 							structure.getEdgeCount(), index, true);
 				}),
 				pair("remove", structure -> {
 					long size = structure.getEdgeCount();
 					if(size<1) abort("Structure already empty");
-					long index = random(0, size);
+					long index = rand.random(0, size);
 					return new EdgeChange(structure, structure.getEdgeAt(index),
 							structure.getEdgeCount(), index, false);
 				})
@@ -1011,16 +1025,16 @@ class SerializableAtomicModelChangeTest {
 			List<Pair<String, EdgeChange>> changes = new ArrayList<>();
 			List<Edge> dummy = list(edges(source));
 			for (int i = 0; i < 10; i++) {
-				if(dummy.isEmpty() || random().nextBoolean()) {
+				if(dummy.isEmpty() || rand.nextBoolean()) {
 					// Add
-					int index = random(0, dummy.size()+1);
+					int index = rand.random(0, dummy.size()+1);
 					Edge edge = mockEdge();
 					changes.add(pair("add "+index, new EdgeChange(
 							source, edge, dummy.size(), index, true)));
 					dummy.add(index, edge);
 				} else {
 					// Remove
-					int index = random(0, dummy.size());
+					int index = rand.random(0, dummy.size());
 					Edge edge = dummy.remove(index);
 					changes.add(pair("remove "+index, new EdgeChange(
 							source, edge, dummy.size()+1, index, false)));
@@ -1034,12 +1048,12 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					pair("edge added", (container, change) -> {
 						long index = container.getEdgeCount();
-						if(index>0) index = random(0, index);
+						if(index>0) index = rand.random(0, index);
 						container.addEdge(index, mockEdge());
 					}),
 					pair("edge removed", (structure, change) -> {
 						if(structure.getEdgeCount()<1) abort("Structure already empty");
-						structure.removeEdge(random(0, structure.getEdgeCount()));
+						structure.removeEdge(rand.random(0, structure.getEdgeCount()));
 					}),
 					pair("emptied", (structure, change) -> {
 						if(structure.getEdgeCount()<1) abort("Structure already empty");
@@ -1051,7 +1065,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = change.getIndex();
 						long index1;
 						do {
-							index1 = random(0, structure.getEdgeCount());
+							index1 = rand.random(0, structure.getEdgeCount());
 						} while(index1==index0);
 						structure.swapEdges(index0, index1);
 					})
@@ -1068,8 +1082,8 @@ class SerializableAtomicModelChangeTest {
 						long index0;
 						long index1;
 						do {
-							index0 = random(0, size);
-							index1 = random(0, size);
+							index0 = rand.random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0 || index0==index || index1==index);
 						structure.swapEdges(index0, index1);
 					})
@@ -1100,10 +1114,10 @@ class SerializableAtomicModelChangeTest {
 				pair("move", structure -> {
 					int size = strictToInt(structure.getEdgeCount());
 					if(size<2) abort("Need 2 edges for swapping");
-					int index0 = random(0, size);
+					int index0 =  rand.random(0, size);
 					int index1;
 					do {
-						index1 = random(0, size);
+						index1 = rand.random(0, size);
 					} while(index1==index0);
 					Edge edge0 = structure.getEdgeAt(index0);
 					Edge edge1 = structure.getEdgeAt(index1);
@@ -1120,10 +1134,10 @@ class SerializableAtomicModelChangeTest {
 			List<Pair<String, EdgeMoveChange>> changes = new ArrayList<>();
 			Edge[] dummy = edges(source);
 			for (int i = 0; i < size; i++) {
-				int index0 = random(0, size);
+				int index0 = rand.random(0, size);
 				int index1;
 				do {
-					index1 = random(0, size);
+					index1 = rand.random(0, size);
 				} while(index1==index0);
 				Edge edge0 = dummy[index0];
 				Edge edge1 = dummy[index1];
@@ -1139,12 +1153,12 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					pair("edge added", (structure, change) -> {
 						long index = structure.getEdgeCount();
-						if(index>0) index = random(0, index);
+						if(index>0) index = rand.random(0, index);
 						structure.addEdge(index, mockEdge());
 					}),
 					pair("edge removed", (structure, change) -> {
 						if(structure.getEdgeCount()<1) abort("Structure already empty");
-						structure.removeEdge(random(0, structure.getEdgeCount()));
+						structure.removeEdge(rand.random(0, structure.getEdgeCount()));
 					}),
 					pair("emptied", (structure, change) -> {
 						if(structure.getEdgeCount()<1) abort("Structure already empty");
@@ -1155,7 +1169,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = change.getSourceIndex();
 						long index1;
 						do {
-							index1 = random(0, structure.getEdgeCount());
+							index1 = rand.random(0, structure.getEdgeCount());
 						} while(index1==index0);
 						structure.swapEdges(index0, index1);
 					}),
@@ -1164,7 +1178,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = change.getTargetIndex();
 						long index1;
 						do {
-							index1 = random(0, structure.getEdgeCount());
+							index1 = rand.random(0, structure.getEdgeCount());
 						} while(index1==index0);
 						structure.swapEdges(index0, index1);
 					})
@@ -1182,8 +1196,8 @@ class SerializableAtomicModelChangeTest {
 						long index0;
 						long index1;
 						do {
-							index0 = random(0, size);
-							index1 = random(0, size);
+							index0 = rand.random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0 || index0==indexS || index1==indexS
 								|| index0==indexT || index1==indexT);
 						structure.swapEdges(index0, index1);
@@ -1212,28 +1226,28 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 				pair("add single", structure -> {
 					long index = structure.getEdgeCount();
-					if(index>0) index = random(0, index);
+					if(index>0) index = rand.random(0, index);
 					return new EdgeSequenceChange(structure, structure.getEdgeCount(),
 							index, mockSequence(mockEdge()));
 				}),
 				pair("add bulk", structure -> {
 					long index = structure.getEdgeCount();
-					if(index>0) index = random(0, index);
+					if(index>0) index = rand.random(0, index);
 					return new EdgeSequenceChange(structure, structure.getEdgeCount(),
 							index, mockSequence(mockEdges(randomSize())));
 				}),
 				pair("remove single", structure -> {
 					long size = structure.getEdgeCount();
 					if(size<1) abort("Structure already empty");
-					long index = random(0, size);
+					long index = rand.random(0, size);
 					return new EdgeSequenceChange(structure, structure.getEdgeCount(),
 							index, index);
 				}),
 				pair("remove bulk", structure -> {
 					long size = structure.getEdgeCount();
 					if(size<2) abort("Structure already empty");
-					long index0 = random(0, size-1);
-					long index1 = random(index0+1, size);
+					long index0 = rand.random(0, size-1);
+					long index1 = rand.random(index0+1, size);
 					return new EdgeSequenceChange(structure, structure.getEdgeCount(),
 							index0, index1);
 				})
@@ -1245,17 +1259,17 @@ class SerializableAtomicModelChangeTest {
 			List<Pair<String, EdgeSequenceChange>> changes = new ArrayList<>();
 			List<Edge> dummy = list(edges(source));
 			for (int i = 0; i < 10; i++) {
-				if(dummy.isEmpty() || random().nextBoolean()) {
+				if(dummy.isEmpty() || rand.nextBoolean()) {
 					// Add
-					int index = random(0, dummy.size()+1);
+					int index = rand.random(0, dummy.size()+1);
 					DataSequence<Edge> edges = mockSequence(mockEdges(randomSize()));
 					changes.add(pair("add "+index, new EdgeSequenceChange(
 							source, dummy.size(), index, edges)));
 					dummy.addAll(index, edges.getEntries());
 				} else {
 					// Remove
-					int index0 = random(0, dummy.size());
-					int index1 = random(index0, dummy.size());
+					int index0 = rand.random(0, dummy.size());
+					int index1 = rand.random(index0, dummy.size());
 					List<Edge> subList = dummy.subList(index0, index1+1);
 					changes.add(pair("remove ["+index0+"-"+index1+"]", new EdgeSequenceChange(
 							source, dummy.size(), index0, index1)));
@@ -1270,12 +1284,12 @@ class SerializableAtomicModelChangeTest {
 			return Stream.of(
 					pair("edge added", (structure, change) -> {
 						long index = structure.getEdgeCount();
-						if(index>0) index = random(0, index);
+						if(index>0) index = rand.random(0, index);
 						structure.addEdge(index, mockEdge());
 					}),
 					pair("edge removed", (structure, change) -> {
 						if(structure.getEdgeCount()<1) abort("Cannot remove from empty structure");
-						structure.removeEdge(random(0, structure.getEdgeCount()));
+						structure.removeEdge(rand.random(0, structure.getEdgeCount()));
 					}),
 					pair("emptied", (structure, change) -> {
 						if(structure.getEdgeCount()<1) abort("Cannot empty an empty structure");
@@ -1295,8 +1309,8 @@ class SerializableAtomicModelChangeTest {
 						long index0;
 						long index1;
 						do {
-							index0 = random(0, size);
-							index1 = random(0, size);
+							index0 = rand.random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0);
 						structure.swapEdges(index0, index1);
 					}),
@@ -1308,7 +1322,7 @@ class SerializableAtomicModelChangeTest {
 						long index0 = (change.getBeginIndex()+change.getEndIndex())/2;
 						long index1;
 						do {
-							index1 = random(0, size);
+							index1 = rand.random(0, size);
 						} while(index1==index0);
 						structure.swapEdges(index0, index1);
 					})
@@ -1609,16 +1623,8 @@ class SerializableAtomicModelChangeTest {
 		}
 	}
 
-	private static String randomKey() {
-		return randomString(10);
-	}
-
-	private static String randomKey2() {
-		return randomString(12);
-	}
-
 	abstract class AnnotationContent<T, C extends AtomicValueChange<T> & SerializableAtomicChange>
-			implements ModelChangeTest<C, AnnotationLayer> {
+			extends TestBase implements ModelChangeTest<C, AnnotationLayer> {
 
 		/** Return all supported value types, at least 1! */
 		abstract Stream<ValueType> getValueTypes();
@@ -1696,7 +1702,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		public List<Pair<String, C>> createBulkChanges(AnnotationLayer source) {
 			AnnotationStorageDummy storage = (AnnotationStorageDummy) source.getAnnotationStorage();
-			return mix(Stream.of(mockItems(randomSize()))
+			return rand.mix(Stream.of(mockItems(randomSize()))
 					// Make keys
 					.flatMap(item -> IntStream.rangeClosed(1, 6)
 							.mapToObj(idx -> pair(item, "key_"+idx)))
@@ -1815,7 +1821,7 @@ class SerializableAtomicModelChangeTest {
 
 		@BeforeEach
 		void setUp() {
-			noEntryValue = random().nextInt();
+			noEntryValue = rand.nextInt();
 		}
 
 		@Override
@@ -1836,7 +1842,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		Stream<Pair<String, Object>> createValues(ValueType type) {
 			assertSame(ValueType.INTEGER, type);
-			return random().ints()
+			return rand.ints()
 					.limit(10)
 					.mapToObj(v -> pair(String.valueOf(v), _int(v)));
 		}
@@ -1856,7 +1862,7 @@ class SerializableAtomicModelChangeTest {
 
 		@BeforeEach
 		void setUp() {
-			noEntryValue = random().nextLong();
+			noEntryValue = rand.nextLong();
 		}
 
 		@Override
@@ -1877,7 +1883,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		Stream<Pair<String, Object>> createValues(ValueType type) {
 			assertSame(ValueType.LONG, type);
-			return random().longs()
+			return rand.longs()
 					.limit(10)
 					.mapToObj(v -> pair(String.valueOf(v), _long(v)));
 		}
@@ -1897,7 +1903,7 @@ class SerializableAtomicModelChangeTest {
 
 		@BeforeEach
 		void setUp() {
-			noEntryValue = random().nextFloat();
+			noEntryValue = rand.nextFloat();
 		}
 
 		@Override
@@ -1918,7 +1924,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		Stream<Pair<String, Object>> createValues(ValueType type) {
 			assertSame(ValueType.FLOAT, type);
-			return DoubleStream.generate(random()::nextFloat)
+			return DoubleStream.generate(rand::nextFloat)
 					.limit(10)
 					.mapToObj(v -> pair(String.valueOf(v), _float((float)v)));
 		}
@@ -1938,7 +1944,7 @@ class SerializableAtomicModelChangeTest {
 
 		@BeforeEach
 		void setUp() {
-			noEntryValue = random().nextDouble();
+			noEntryValue = rand.nextDouble();
 		}
 
 		@Override
@@ -1959,7 +1965,7 @@ class SerializableAtomicModelChangeTest {
 		@Override
 		Stream<Pair<String, Object>> createValues(ValueType type) {
 			assertSame(ValueType.DOUBLE, type);
-			return random().doubles()
+			return rand.doubles()
 					.limit(10)
 					.mapToObj(v -> pair(String.valueOf(v), _double(v)));
 		}

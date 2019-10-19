@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -33,8 +36,9 @@ class ArraySequenceTest implements DataSequenceTest<ArraySequence<Object>> {
 	 * Test method for {@link de.ims.icarus2.util.collections.seq.ArraySequence#ArraySequence(E[])}.
 	 */
 	@Test
-	void testArraySequence() {
-		Object[] items = randomContent();
+	@RandomizedTest
+	void testArraySequence(RandomGenerator rand) {
+		Object[] items = randomContent(rand);
 		ArraySequence<Object> seq = new ArraySequence<>(items);
 		for (int i = 0; i < items.length; i++) {
 			assertSame(items[i], seq.elementAt(i));

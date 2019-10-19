@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -49,7 +50,7 @@ class SingletonSetTest implements DataSetTest<SingletonSet<Object>> {
 	 * @see de.ims.icarus2.util.collections.set.DataSetTest#randomContent()
 	 */
 	@Override
-	public Object[] randomContent() {
+	public Object[] randomContent(RandomGenerator rand) {
 		return new Object[] {new Object()};
 	}
 

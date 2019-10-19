@@ -29,6 +29,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
+
 /**
  * @author Markus Gärtner
  *
@@ -49,9 +52,10 @@ public class ByteChannelBlockStreamTest {
 
 	@ParameterizedTest(name="run #{index}: buffer={0} allocateDirect={1}")
 	@MethodSource("data")
-	public void testFull(int bufferSize, boolean allocateDirect) throws Exception {
+	@RandomizedTest
+	public void testFull(int bufferSize, boolean allocateDirect, RandomGenerator rand) throws Exception {
 		byte[] data = new byte[SIZE];
-		NIOTestUtil.randomize(data);
+		rand.nextBytes(data);
 
 		try(ByteArrayChannel channel = new ByteArrayChannel(data);
 				ByteChannelBlockStream stream = new ByteChannelBlockStream(channel, bufferSize, allocateDirect)) {
@@ -79,9 +83,10 @@ public class ByteChannelBlockStreamTest {
 
 	@ParameterizedTest(name="run #{index}: buffer={0} allocateDirect={1}")
 	@MethodSource("data")
-	public void testParts(int bufferSize, boolean allocateDirect) throws Exception {
+	@RandomizedTest
+	public void testParts(int bufferSize, boolean allocateDirect, RandomGenerator rand) throws Exception {
 		byte[] data = new byte[SIZE];
-		NIOTestUtil.randomize(data);
+		rand.nextBytes(data);
 
 		try(ByteArrayChannel channel = new ByteArrayChannel(data);
 				ByteChannelBlockStream stream = new ByteChannelBlockStream(channel, bufferSize, allocateDirect)) {

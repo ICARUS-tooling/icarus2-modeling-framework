@@ -4,11 +4,9 @@
 package de.ims.icarus2.filedriver.io;
 
 import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.block;
-import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.randomId;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertISE;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.IcarusUtils.MAX_INTEGER_INDEX;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,7 +26,9 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
@@ -78,7 +78,7 @@ class RUBlockCacheTest {
 		@Test
 		default void testGetBlockBlank() {
 			try(RUBlockCache cache = create()) {
-				assertThrows(RuntimeException.class, () -> cache.getBlock(randomId()));
+				assertThrows(RuntimeException.class, () -> cache.getBlock(10));
 			}
 		}
 
@@ -89,7 +89,7 @@ class RUBlockCacheTest {
 		default void testGetBlockEmpty() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				assertNull(cache.getBlock(randomId()));
+				assertNull(cache.getBlock(10));
 			}
 		}
 
@@ -97,10 +97,11 @@ class RUBlockCacheTest {
 		 * Test method for {@link de.ims.icarus2.filedriver.io.RUBlockCache#getBlock(int)}.
 		 */
 		@Test
-		default void testGetBlockForeign() {
+		@RandomizedTest
+		default void testGetBlockForeign(RandomGenerator rand) {
 			try(RUBlockCache cache = create()) {
 				cache.open(200);
-				IntStream.generate(() -> random(0, 100))
+				IntStream.generate(() -> rand.random(0, 100))
 					.distinct()
 					.limit(RUNS)
 					.forEach(id -> assertNull(cache.addBlock(block(id))));
@@ -115,7 +116,7 @@ class RUBlockCacheTest {
 		default void testGetBlock() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				int id = randomId();
+				int id = 10;
 				Block block = block(id);
 
 				assertNull(cache.addBlock(block));
@@ -140,7 +141,7 @@ class RUBlockCacheTest {
 		default void testAddBlock() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				assertNull(cache.addBlock(block(randomId())));
+				assertNull(cache.addBlock(block(10)));
 			}
 		}
 
@@ -151,7 +152,7 @@ class RUBlockCacheTest {
 		default void testAddBlockDublicate() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				Block block = block(randomId());
+				Block block = block(10);
 
 				assertNull(cache.addBlock(block));
 				assertNull(cache.addBlock(block));
@@ -165,7 +166,7 @@ class RUBlockCacheTest {
 		default void testAddBlockDublicateId() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				Block block = block(randomId());
+				Block block = block(10);
 
 				assertNull(cache.addBlock(block));
 				assertISE(() -> cache.addBlock(block(block.getId())));
@@ -244,7 +245,7 @@ class RUBlockCacheTest {
 		@Test
 		default void testRemoveBlockBlank() {
 			try(RUBlockCache cache = create()) {
-				assertThrows(RuntimeException.class, () -> cache.removeBlock(randomId()));
+				assertThrows(RuntimeException.class, () -> cache.removeBlock(10));
 			}
 		}
 
@@ -255,7 +256,7 @@ class RUBlockCacheTest {
 		default void testRemoveBlockEmpty() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				assertNull(cache.removeBlock(randomId()));
+				assertNull(cache.removeBlock(10));
 			}
 		}
 
@@ -266,7 +267,7 @@ class RUBlockCacheTest {
 		default void testRemoveBlockForeign() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				int id = randomId();
+				int id = 10;
 				cache.addBlock(block(id));
 				assertNull(cache.removeBlock(id+1));
 			}
@@ -279,7 +280,7 @@ class RUBlockCacheTest {
 		default void testRemoveBlock() {
 			try(RUBlockCache cache = create()) {
 				cache.open(100);
-				int id = randomId();
+				int id = 10;
 				Block block = block(id);
 				cache.addBlock(block);
 
@@ -295,9 +296,10 @@ class RUBlockCacheTest {
 		 * Test method for {@link de.ims.icarus2.filedriver.io.RUBlockCache#open(int)}.
 		 */
 		@Test
-		default void testOpen() {
+		@RandomizedTest
+		default void testOpen(RandomGenerator rand) {
 			try(RUBlockCache cache = create()) {
-				cache.open(random(BlockCache.MIN_CAPACITY, 1_000));
+				cache.open(rand.random(BlockCache.MIN_CAPACITY, 1_000));
 			}
 		}
 
@@ -320,7 +322,7 @@ class RUBlockCacheTest {
 			@SuppressWarnings("resource")
 			RUBlockCache cache = create();
 			cache.open(100);
-			int id = randomId();
+			int id = 10;
 			cache.addBlock(block(id));
 			assertNotNull(cache.getBlock(id));
 
@@ -340,7 +342,7 @@ class RUBlockCacheTest {
 			@SuppressWarnings("resource")
 			RUBlockCache cache = create();
 			cache.open(100);
-			int id = randomId();
+			int id = 10;
 			cache.addBlock(block(id));
 			assertNotNull(cache.getBlock(id));
 

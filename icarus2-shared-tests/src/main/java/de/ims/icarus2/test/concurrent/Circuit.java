@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.test.concurrent;
 
-import static de.ims.icarus2.test.TestUtils.random;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Duration;
@@ -75,7 +74,7 @@ public class Circuit implements AutoCloseable {
 
 		Vector<Throwable> errors = new Vector<>();
 
-		Collections.shuffle(tasks, random());
+		Collections.shuffle(tasks);
 
 		for(Executable task : tasks) {
 			executor.execute(() -> {

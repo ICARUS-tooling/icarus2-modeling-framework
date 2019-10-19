@@ -20,9 +20,7 @@
 package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,13 +34,14 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.nio.MemoryByteStorage;
 
@@ -128,15 +127,15 @@ class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 	 * @throws IOException
 	 */
 	@TestFactory
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testRead() throws IOException {
-		return random().ints(10, 1, 1<<15)
+	@RandomizedTest
+	Stream<DynamicTest> testRead(RandomGenerator rand) throws IOException {
+		return rand.ints(10, 1, 1<<15)
 				.mapToObj(size -> dynamicTest("bytes="+size, () -> {
 					VirtualIOResource resource = create(AccessMode.READ);
 					resource.prepare();
 
 					byte[] bytes = new byte[size];
-					random().nextBytes(bytes);
+					rand.nextBytes(bytes);
 					ByteBuffer bb = ByteBuffer.wrap(bytes);
 
 					MemoryByteStorage buffer = resource.getBuffer();
@@ -151,15 +150,15 @@ class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 	 * @throws IOException
 	 */
 	@TestFactory
-	@Tag(RANDOMIZED)
-	Stream<DynamicTest> testWrite() throws IOException {
-		return random().ints(10, 1, 1<<15)
+	@RandomizedTest
+	Stream<DynamicTest> testWrite(RandomGenerator rand) throws IOException {
+		return rand.ints(10, 1, 1<<15)
 				.mapToObj(size -> dynamicTest("bytes="+size, () -> {
 					VirtualIOResource resource = create(AccessMode.WRITE);
 					resource.prepare();
 
 					byte[] bytes = new byte[size];
-					random().nextBytes(bytes);
+					rand.nextBytes(bytes);
 					write(resource, bytes);
 
 					MemoryByteStorage buffer = resource.getBuffer();

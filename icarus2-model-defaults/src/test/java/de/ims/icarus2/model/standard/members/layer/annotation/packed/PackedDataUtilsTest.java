@@ -20,7 +20,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.randomContent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,6 +28,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
 
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataUtils.Substitutor;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -44,9 +45,10 @@ class PackedDataUtilsTest {
 	class ForSubstitutor {
 
 		@RepeatedTest(RUNS)
-		void testConsistency() {
+		@RandomizedTest
+		void testConsistency(RandomGenerator rng) {
 			try(Substitutor<Object> sub = new Substitutor<>()) {
-				Object[] items = randomContent();
+				Object[] items = rng.randomContent();
 				Int2ObjectMap<Object> int2obj = new Int2ObjectOpenHashMap<>();
 				Object2IntMap<Object> obj2int = new Object2IntOpenHashMap<>();
 

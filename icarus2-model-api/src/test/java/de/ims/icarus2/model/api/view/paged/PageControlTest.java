@@ -24,9 +24,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.meAsserter;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
-import static de.ims.icarus2.test.TestTags.RANDOMIZED;
 import static de.ims.icarus2.test.TestUtils.npeAsserter;
-import static de.ims.icarus2.test.TestUtils.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -46,7 +44,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
@@ -57,6 +54,8 @@ import de.ims.icarus2.model.api.events.PageListener;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.PartTest;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.strings.NamedObject;
@@ -126,9 +125,9 @@ public interface PageControlTest<C extends PageControl> extends PartTest<PagedCo
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl#getPageSize()}.
 	 */
 	@Test
-	@Tag(RANDOMIZED)
-	default void testGetPageSize() {
-		int pageSize = random(2, 100);
+	@RandomizedTest
+	default void testGetPageSize(RandomGenerator rand) {
+		int pageSize = rand.random(2, 100);
 		C control = createFilled(createEnvironment(), pageSize, DEFAULT_INDICES);
 		assertEquals(pageSize, control.getPageSize());
 	}
