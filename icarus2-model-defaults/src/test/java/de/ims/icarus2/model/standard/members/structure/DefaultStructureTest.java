@@ -979,6 +979,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#removeEdge(long)}.
 			 */
 			@Test
+			@RandomizedTest
 			void testRemoveEdge(RandomGenerator rng) {
 				long[] indices = rng.longs(RUNS, 0, Long.MAX_VALUE).toArray();
 
@@ -992,6 +993,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings({ "unchecked", "boxing" })
 			@Test
+			@RandomizedTest
 			void testRemoveEdges(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
@@ -1025,6 +1027,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 */
 			@SuppressWarnings("boxing")
 			@Test
+			@RandomizedTest
 			void testSwapEdges(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
@@ -1052,6 +1055,7 @@ class DefaultStructureTest implements StructureTest<Structure> {
 			 * Test method for {@link de.ims.icarus2.model.standard.members.structure.DefaultStructure#setTerminal(de.ims.icarus2.model.api.members.item.Edge, de.ims.icarus2.model.api.members.item.Item, boolean)}.
 			 */
 			@RepeatedTest(value=5)
+			@RandomizedTest
 			void testSetTerminal(RandomGenerator rng) {
 				Item[] items = filledArray(RUNS, Item.class);
 				Edge[] edges = filledArray(RUNS, Edge.class);

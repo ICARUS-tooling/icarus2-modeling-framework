@@ -381,10 +381,7 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 		}
 
 		@Nested
-		@RandomizedTest
 		class Internals {
-
-			RandomGenerator rng;
 
 			/**
 			 * Test method for {@link de.ims.icarus2.model.standard.members.container.AugmentedItemStorage#createAugmentationBuffer(int)}.
@@ -398,12 +395,13 @@ class AugmentedItemStorageTest implements ItemStorageTest<AugmentedItemStorage> 
 			}
 
 			@Nested
+			@RandomizedTest
 			class WithRandomWrappedSize {
 				private long size;
 
 				@SuppressWarnings("boxing")
 				@BeforeEach
-				void setUp() {
+				void setUp(RandomGenerator rng) {
 					size = rng.random(1, Long.MAX_VALUE/2);
 					when(source.getItemCount()).thenReturn(size);
 				}

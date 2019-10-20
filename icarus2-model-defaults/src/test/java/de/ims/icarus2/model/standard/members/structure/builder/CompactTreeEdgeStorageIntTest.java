@@ -25,17 +25,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.standard.members.structure.builder.ChainsAndTrees.TreeConfig;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage.CompactTreeEdgeStorageInt;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class CompactTreeEdgeStorageIntTest implements StaticTreeEdgeStorageTest<CompactTreeEdgeStorageInt> {
+
+	RandomGenerator rng;
 
 	/**
 	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
@@ -53,15 +61,28 @@ class CompactTreeEdgeStorageIntTest implements StaticTreeEdgeStorageTest<Compact
 		return CompactTreeEdgeStorageInt.fromBuilder(builder);
 	}
 
+	@Override
+	public ChainsAndTrees.TreeConfig createDefaultTestConfiguration(int size) {
+		return StaticTreeEdgeStorageTest.defaultCreateRandomTestConfiguration(rng, size);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorageTest#createTestConfigurations()
+	 */
+	@Override
+	public Stream<TreeConfig> createTestConfigurations() {
+		return StaticTreeEdgeStorageTest.defaultCreateRandomTestConfigurations(rng);
+	}
+
 
 	@Nested
 	class EdgeCases {
 
 		@Test
 		@DisabledOnCi
-		void testMaxChainSize() {
+		void testMaxChainSize(RandomGenerator rng) {
 			int size = CompactTreeEdgeStorageInt.MAX_NODE_COUNT;
-			ChainsAndTrees.TreeConfig treeConfig = ChainsAndTrees.singleTree(size, 1.0,
+			ChainsAndTrees.TreeConfig treeConfig = ChainsAndTrees.singleTree(rng, size, 1.0,
 					CompactTreeEdgeStorageInt.MAX_HEIGHT, UNSET_INT);
 			CompactTreeEdgeStorageInt tree = createFromBuilder(toBuilder(treeConfig));
 			assertEquals(size, tree.getEdgeCount(treeConfig.structure));

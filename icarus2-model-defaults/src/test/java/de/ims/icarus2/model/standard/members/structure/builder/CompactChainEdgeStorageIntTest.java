@@ -31,12 +31,17 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.CompactChainEdgeStorageInt;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<CompactChainEdgeStorageInt>{
+
+	RandomGenerator rng;
 
 	@Override
 	public Class<? extends CompactChainEdgeStorageInt> getTestTargetClass() {
@@ -45,7 +50,7 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 
 	@Override
 	public ChainsAndTrees.ChainConfig createDefaultTestConfiguration(int size) {
-		return ChainsAndTrees.singleChain(size, 1.0);
+		return ChainsAndTrees.singleChain(rng, size, 1.0);
 	}
 
 	/**
@@ -54,10 +59,10 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 	@Override
 	public Stream<ChainsAndTrees.ChainConfig> createTestConfigurations() {
 		return Stream.of(
-				ChainsAndTrees.singleChain(ChainsAndTrees.randomSize(), 1.0),
-				ChainsAndTrees.multiChain(ChainsAndTrees.randomSize(), 1.0),
-				ChainsAndTrees.singleChain(ChainsAndTrees.randomSize(), 0.25),
-				ChainsAndTrees.multiChain(ChainsAndTrees.randomSize(), 0.25)
+				ChainsAndTrees.singleChain(rng, ChainsAndTrees.randomSize(rng), 1.0),
+				ChainsAndTrees.multiChain(rng, ChainsAndTrees.randomSize(rng), 1.0),
+				ChainsAndTrees.singleChain(rng, ChainsAndTrees.randomSize(rng), 0.25),
+				ChainsAndTrees.multiChain(rng, ChainsAndTrees.randomSize(rng), 0.25)
 				);
 	}
 
@@ -71,9 +76,10 @@ class CompactChainEdgeStorageIntTest implements StaticChainEdgeStorageTest<Compa
 
 		@Test
 		@DisabledOnCi
-		void testMaxChainSize() {
+		@RandomizedTest
+		void testMaxChainSize(RandomGenerator rng) {
 			int size = CompactChainEdgeStorageInt.MAX_NODE_COUNT;
-			ChainsAndTrees.ChainConfig chainConfig = ChainsAndTrees.singleChain(size, 1.0);
+			ChainsAndTrees.ChainConfig chainConfig = ChainsAndTrees.singleChain(rng, size, 1.0);
 			CompactChainEdgeStorageInt chain = createFromBuilder(toBuilder(chainConfig));
 			assertEquals(size, chain.getEdgeCount(chainConfig.structure));
 		}

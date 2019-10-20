@@ -74,9 +74,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	 * Returned stream must not be empty. Default implementation
 	 * returns {@link #createDefaultTestConfiguration()}.
 	 */
-	default Stream<ChainsAndTrees.ChainConfig> createTestConfigurations() {
-		return Stream.of(createDefaultTestConfiguration(ChainsAndTrees.randomSize()));
-	}
+	Stream<ChainsAndTrees.ChainConfig> createTestConfigurations();
 
 	@Provider
 	C createFromBuilder(StructureBuilder builder);

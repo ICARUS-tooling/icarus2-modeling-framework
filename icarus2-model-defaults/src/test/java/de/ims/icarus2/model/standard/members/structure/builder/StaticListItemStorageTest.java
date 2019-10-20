@@ -51,13 +51,11 @@ import de.ims.icarus2.test.random.RandomGenerator;
 @RandomizedTest
 class StaticListItemStorageTest implements ImmutableItemStorageTest<StaticListItemStorage> {
 
-	RandomGenerator rng;
-
 	private Item[] items;
 	private Item beginItem, endItem;
 
 	@BeforeEach
-	void setUp() {
+	void setUp(RandomGenerator rng) {
 		items = mockItems(rng.random(10, 20));
 		beginItem = items[0];
 		endItem = items[items.length-1];

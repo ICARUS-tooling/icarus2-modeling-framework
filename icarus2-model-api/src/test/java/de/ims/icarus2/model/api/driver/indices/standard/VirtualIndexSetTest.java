@@ -84,7 +84,10 @@ class VirtualIndexSetTest implements RandomAccessIndexSetTest<VirtualIndexSet> {
 	@Override
 	public Stream<Config> configurations() {
 		return Stream.of(IndexValueType.values())
-				.map(type -> new Config().valueType(type).defaultFeatures())
+				.map(type -> new Config()
+						.valueType(type)
+						.defaultFeatures()
+						.rand(rand))
 				.flatMap(this::variate);
 	}
 

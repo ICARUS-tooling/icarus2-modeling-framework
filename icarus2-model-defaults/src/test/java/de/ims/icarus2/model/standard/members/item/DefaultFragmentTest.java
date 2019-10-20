@@ -32,7 +32,6 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.npeAsserter;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,6 +46,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -57,8 +57,6 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.driver.id.IdManager;
@@ -186,17 +184,12 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 
 		@Nested
 		class WithItem {
-			Item item;
 
-			@BeforeEach
-			void setUp() {
-				item = mockItem();
-				instance.setItem(item);
-			}
-
-			@AfterEach
-			void tearDown() {
-				item = null;
+			LongStream offsets(RandomGenerator rng) {
+				return LongStream.concat(
+						LongStream.of(),
+						rng.longs(10, 2, Long.MAX_VALUE)
+				);
 			}
 
 			/**
@@ -204,12 +197,15 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 			 */
 			@SuppressWarnings("boxing")
 			@ParameterizedTest
-			@ValueSource(longs = {UNSET_LONG, 0, 1, Long.MAX_VALUE})
-			@MethodSource("de.ims.icarus2.model.api.ModelTestUtils#randomIndices")
-			void testGetBeginOffset(long value) {
-				when(item.getBeginOffset()).thenReturn(value);
-				assertEquals(value, instance.getBeginOffset());
-				verify(item).getBeginOffset();
+			@RandomizedTest
+			Stream<DynamicTest> testGetBeginOffset(RandomGenerator rng) {
+				return offsets(rng).mapToObj(value -> dynamicTest(String.valueOf(value), () -> {
+					Item item = mockItem();
+					instance.setItem(item);
+					when(item.getBeginOffset()).thenReturn(value);
+					assertEquals(value, instance.getBeginOffset());
+					verify(item).getBeginOffset();
+				}));
 			}
 
 			/**
@@ -217,12 +213,15 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 			 */
 			@SuppressWarnings("boxing")
 			@ParameterizedTest
-			@ValueSource(longs = {UNSET_LONG, 0, 1, Long.MAX_VALUE})
-			@MethodSource("de.ims.icarus2.model.api.ModelTestUtils#randomIndices")
-			void testGetEndOffset(long value) {
-				when(item.getEndOffset()).thenReturn(value);
-				assertEquals(value, instance.getEndOffset());
-				verify(item).getEndOffset();
+			@RandomizedTest
+			Stream<DynamicTest> testGetEndOffset(RandomGenerator rng) {
+				return offsets(rng).mapToObj(value -> dynamicTest(String.valueOf(value), () -> {
+					Item item = mockItem();
+					instance.setItem(item);
+					when(item.getEndOffset()).thenReturn(value);
+					assertEquals(value, instance.getEndOffset());
+					verify(item).getEndOffset();
+				}));
 			}
 		}
 	}
@@ -235,8 +234,6 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 	@RandomizedTest
 	@Nested
 	class WithComplexEnvironment {
-
-		RandomGenerator rng;
 
 		private IdManager idManager;
 		private FragmentLayer layer;
@@ -253,7 +250,7 @@ class DefaultFragmentTest implements ItemTest<Fragment> {
 
 		@SuppressWarnings("boxing")
 		@BeforeEach
-		void setUp() {
+		void setUp(RandomGenerator rng) {
 			idManager = mock(IdManager.class);
 			layer = mock(FragmentLayer.class);
 			container = mockContainer();

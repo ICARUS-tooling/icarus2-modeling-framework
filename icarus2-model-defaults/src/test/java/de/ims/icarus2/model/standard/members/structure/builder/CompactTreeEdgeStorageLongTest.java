@@ -25,17 +25,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.standard.members.structure.builder.ChainsAndTrees.TreeConfig;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage.CompactTreeEdgeStorageLong;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class CompactTreeEdgeStorageLongTest implements StaticTreeEdgeStorageTest<CompactTreeEdgeStorageLong> {
+
+	RandomGenerator rng;
 
 	/**
 	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
@@ -53,15 +61,32 @@ class CompactTreeEdgeStorageLongTest implements StaticTreeEdgeStorageTest<Compac
 		return CompactTreeEdgeStorageLong.fromBuilder(builder);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorageTest#createTestConfigurations()
+	 */
+	@Override
+	public Stream<TreeConfig> createTestConfigurations() {
+		return StaticTreeEdgeStorageTest.defaultCreateRandomTestConfigurations(rng);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorageTest#createDefaultTestConfiguration(int)
+	 */
+	@Override
+	public TreeConfig createDefaultTestConfiguration(int size) {
+		return StaticTreeEdgeStorageTest.defaultCreateRandomTestConfiguration(rng, size);
+	}
+
 
 	@Nested
 	class EdgeCases {
 
 		@Test
 		@DisabledOnCi
-		void testMaxChainSize() {
+		@RandomizedTest
+		void testMaxChainSize(RandomGenerator rng) {
 			int size = CompactTreeEdgeStorageLong.MAX_NODE_COUNT;
-			ChainsAndTrees.TreeConfig treeConfig = ChainsAndTrees.singleTree(size, 1.0,
+			ChainsAndTrees.TreeConfig treeConfig = ChainsAndTrees.singleTree(rng, size, 1.0,
 					CompactTreeEdgeStorageLong.MAX_HEIGHT, UNSET_INT);
 			CompactTreeEdgeStorageLong tree = createFromBuilder(toBuilder(treeConfig));
 			assertEquals(size, tree.getEdgeCount(treeConfig.structure));

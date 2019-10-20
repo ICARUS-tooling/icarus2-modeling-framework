@@ -26,7 +26,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.stubId;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubIndex;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.displayString;
-import static de.ims.icarus2.test.TestUtils.random;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
@@ -56,7 +55,7 @@ import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.RootItem;
-import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.strings.BracketStyle;
 import de.ims.icarus2.util.tree.Tree;
@@ -70,13 +69,13 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 public class ChainsAndTrees {
 
 	/** Produce a random value for total size of a structure */
-	static int randomSize() {
-		return random(50, 100);
+	static int randomSize(RandomGenerator rng) {
+		return rng.random(50, 100);
 	}
 
-	/** Produce a suitable random value for number of parallel structrues */
-	static int randomMulti(int size) {
-		return size <=2 ? 1 : random(2, Math.min(size, 6));
+	/** Produce a suitable random value for number of parallel structures */
+	static int randomMulti(RandomGenerator rng, int size) {
+		return size <=2 ? 1 : rng.random(2, Math.min(size, 6));
 	}
 
 	private static void fillChain(ChainConfig config, PrimitiveIterator.OfInt nodes,
@@ -110,7 +109,7 @@ public class ChainsAndTrees {
 	}
 
 	@SuppressWarnings("boxing")
-	static ChainConfig singleChain(int size, double fraction) {
+	static ChainConfig singleChain(RandomGenerator rng, int size, double fraction) {
 		checkArgument(fraction<=1.0);
 		int part = (int) (size * fraction);
 
@@ -118,16 +117,16 @@ public class ChainsAndTrees {
 		chainConfig.label = String.format("single chain - %.0f%% full", fraction*100);
 		chainConfig.defaultStructure();
 
-		fillChain(chainConfig, TestUtils.randomIndices(size, part), 0, part, 0);
+		fillChain(chainConfig, rng.randomIndices(size, part), 0, part, 0);
 
 		return chainConfig;
 	}
 
 	@SuppressWarnings("boxing")
-	static ChainConfig multiChain(int size, double fraction) {
+	static ChainConfig multiChain(RandomGenerator rng, int size, double fraction) {
 		checkArgument(fraction<=1.0);
 		int part = (int) (size * fraction);
-		int chainCount = randomMulti(part);
+		int chainCount = randomMulti(rng, part);
 
 		ChainConfig chainConfig = ChainConfig.basic(size, part, chainCount);
 		chainConfig.label = String.format("multi chain - %.0f%% full", fraction*100);
@@ -136,11 +135,11 @@ public class ChainsAndTrees {
 		chainConfig.defaultStructure();
 		chainConfig.multiRoot = true;
 
-		PrimitiveIterator.OfInt nodes = TestUtils.randomIndices(size, part);
+		PrimitiveIterator.OfInt nodes = rng.randomIndices(size, part);
 
 		int remaining = part;
 		for (int i = 0; i < chainCount; i++) {
-			int chainSize = i==chainCount-1 ? remaining : random(1, remaining-chainCount+i+1);
+			int chainSize = i==chainCount-1 ? remaining : rng.random(1, remaining-chainCount+i+1);
 			fillChain(chainConfig, nodes, part-remaining, chainSize, i);
 			remaining -= chainSize;
 		}
@@ -170,7 +169,7 @@ public class ChainsAndTrees {
 	 * -
 	 */
 
-	private static void fillTree(TreeConfig config, PrimitiveIterator.OfInt nodes,
+	private static void fillTree(RandomGenerator rng, TreeConfig config, PrimitiveIterator.OfInt nodes,
 			int offset, int nodeCount, int rootIndex,
 			int maxHeight, int maxBranching) {
 		assertTrue(nodeCount>0);
@@ -188,7 +187,7 @@ public class ChainsAndTrees {
 			Item item = config.nodes[nodes.nextInt()];
 
 			// Pick random parent
-			int parentIndex = random(0, legalParents.size());
+			int parentIndex = rng.random(0, legalParents.size());
 			Tree<Payload> parent = legalParents.get(parentIndex);
 
 			// Attach new node to parent
@@ -248,7 +247,7 @@ public class ChainsAndTrees {
 	}
 
 	@SuppressWarnings("boxing")
-	static TreeConfig singleTree(int size, double fraction, int maxHeight,
+	static TreeConfig singleTree(RandomGenerator rng, int size, double fraction, int maxHeight,
 			int maxBranching) {
 		checkArgument(fraction<=1.0);
 		int part = (int) (size * fraction);
@@ -258,7 +257,7 @@ public class ChainsAndTrees {
 				displayString(size), displayString(part), fraction*100);
 		treeConfig.defaultStructure();
 
-		fillTree(treeConfig, TestUtils.randomIndices(size, part), 0, part, 0,
+		fillTree(rng, treeConfig, rng.randomIndices(size, part), 0, part, 0,
 				maxHeight, maxBranching);
 
 		return treeConfig;

@@ -175,7 +175,7 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 		@ParameterizedTest
 		@ValueSource(ints = {0, -1, Integer.MAX_VALUE})
 		@RandomizedTest
-		void testIndexBufferIndexValueTypeInt(RandomGenerator rand, int capacity) {
+		void testIndexBufferIndexValueTypeInt(int capacity, RandomGenerator rand) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
 					() -> new IndexBuffer(rand.random(IndexValueType.values()), capacity));
 		}
@@ -235,6 +235,7 @@ class IndexBufferTest implements RandomAccessIndexSetTest<IndexBuffer> {
 					.map(type -> new Config()
 							.valueType(type)
 							.defaultFeatures()
+							.rand(rand)
 							.set(createEmpty))
 					.flatMap(config -> Stream.of(
 							config.clone()

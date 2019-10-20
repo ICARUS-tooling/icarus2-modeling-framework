@@ -21,14 +21,21 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
+import java.util.stream.Stream;
+
 import de.ims.icarus2.model.standard.members.structure.builder.ChainsAndTrees.TreeConfig;
 import de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorage.LargeTreeEdgeStorage;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class LargeTreeEdgeStorageTest implements StaticTreeEdgeStorageTest<LargeTreeEdgeStorage> {
+
+	RandomGenerator rng;
 
 	/**
 	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
@@ -43,7 +50,15 @@ class LargeTreeEdgeStorageTest implements StaticTreeEdgeStorageTest<LargeTreeEdg
 	 */
 	@Override
 	public TreeConfig createDefaultTestConfiguration(int size) {
-		return ChainsAndTrees.singleTree(size, 1.0, size/3, UNSET_INT);
+		return ChainsAndTrees.singleTree(rng, size, 1.0, size/3, UNSET_INT);
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.standard.members.structure.builder.StaticTreeEdgeStorageTest#createTestConfigurations()
+	 */
+	@Override
+	public Stream<TreeConfig> createTestConfigurations() {
+		return StaticTreeEdgeStorageTest.defaultCreateRandomTestConfigurations(rng);
 	}
 
 	/**

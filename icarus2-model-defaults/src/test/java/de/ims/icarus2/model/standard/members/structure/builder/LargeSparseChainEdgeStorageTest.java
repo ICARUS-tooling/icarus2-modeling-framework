@@ -22,12 +22,17 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.model.standard.members.structure.builder.StaticChainEdgeStorage.LargeSparseChainEdgeStorage;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 
 /**
  * @author Markus Gärtner
  *
  */
+@RandomizedTest
 class LargeSparseChainEdgeStorageTest implements StaticChainEdgeStorageTest<LargeSparseChainEdgeStorage> {
+
+	RandomGenerator rng;
 
 	/**
 	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
@@ -42,7 +47,7 @@ class LargeSparseChainEdgeStorageTest implements StaticChainEdgeStorageTest<Larg
 	 */
 	@Override
 	public ChainsAndTrees.ChainConfig createDefaultTestConfiguration(int size) {
-		return ChainsAndTrees.singleChain(size, 0.2);
+		return ChainsAndTrees.singleChain(rng, size, 0.2);
 	}
 
 	/**
@@ -51,10 +56,10 @@ class LargeSparseChainEdgeStorageTest implements StaticChainEdgeStorageTest<Larg
 	@Override
 	public Stream<ChainsAndTrees.ChainConfig> createTestConfigurations() {
 		return Stream.of(
-				ChainsAndTrees.singleChain(ChainsAndTrees.randomSize(), 1.0),
-				ChainsAndTrees.multiChain(ChainsAndTrees.randomSize(), 1.0),
-				ChainsAndTrees.singleChain(ChainsAndTrees.randomSize(), 0.20),
-				ChainsAndTrees.multiChain(ChainsAndTrees.randomSize(), 0.20)
+				ChainsAndTrees.singleChain(rng, ChainsAndTrees.randomSize(rng), 1.0),
+				ChainsAndTrees.multiChain(rng, ChainsAndTrees.randomSize(rng), 1.0),
+				ChainsAndTrees.singleChain(rng, ChainsAndTrees.randomSize(rng), 0.20),
+				ChainsAndTrees.multiChain(rng, ChainsAndTrees.randomSize(rng), 0.20)
 				);
 	}
 

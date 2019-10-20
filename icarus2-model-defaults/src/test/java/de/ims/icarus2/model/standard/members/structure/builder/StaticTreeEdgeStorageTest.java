@@ -56,6 +56,7 @@ import de.ims.icarus2.model.standard.members.structure.ImmutableEdgeStorageTest;
 import de.ims.icarus2.model.standard.members.structure.builder.ChainsAndTrees.Payload;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.tree.Tree;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -69,21 +70,26 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 	 * Create a configurations for testing the basic
 	 * structure methods common to all tree implementations.
 	 */
-	default ChainsAndTrees.TreeConfig createDefaultTestConfiguration(int size) {
-		return ChainsAndTrees.singleTree(size, 1.0, size/3, UNSET_INT);
+	ChainsAndTrees.TreeConfig createDefaultTestConfiguration(int size);
+
+	public static ChainsAndTrees.TreeConfig defaultCreateRandomTestConfiguration(RandomGenerator rng, int size) {
+		return ChainsAndTrees.singleTree(rng, size, 1.0, size/3, UNSET_INT);
 	}
 
 	/**
 	 * Creates a variety of configurations to be tested.
-	 * Returned stream must not be empty. Default implementation
-	 * returns {@link #createDefaultTestConfiguration()}.
+	 * Returned stream must not be empty.
+	 *
+	 * @see #defaultCreateRandomTestConfigurations(RandomGenerator)
 	 */
-	default Stream<ChainsAndTrees.TreeConfig> createTestConfigurations() {
+	Stream<ChainsAndTrees.TreeConfig> createTestConfigurations();
+
+	public static Stream<ChainsAndTrees.TreeConfig> defaultCreateRandomTestConfigurations(RandomGenerator rng) {
 		return Stream.of(
-				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 1.0, 1, UNSET_INT), // full chain
-				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 1.0, 2, UNSET_INT), // binary tree
-				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 1.0, UNSET_INT, UNSET_INT), // full random tree
-				ChainsAndTrees.singleTree(ChainsAndTrees.randomSize(), 0.5, UNSET_INT, UNSET_INT) // sparse random tree
+				ChainsAndTrees.singleTree(rng, ChainsAndTrees.randomSize(rng), 1.0, 1, UNSET_INT), // full chain
+				ChainsAndTrees.singleTree(rng, ChainsAndTrees.randomSize(rng), 1.0, 2, UNSET_INT), // binary tree
+				ChainsAndTrees.singleTree(rng, ChainsAndTrees.randomSize(rng), 1.0, UNSET_INT, UNSET_INT), // full random tree
+				ChainsAndTrees.singleTree(rng, ChainsAndTrees.randomSize(rng), 0.5, UNSET_INT, UNSET_INT) // sparse random tree
 		);
 	}
 

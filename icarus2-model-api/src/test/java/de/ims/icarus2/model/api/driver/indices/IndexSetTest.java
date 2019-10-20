@@ -665,8 +665,8 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		/** Produce random indices outside the next smaller type's value space */
 		public Config randomIndices(int size) {
 			assertNotNull(valueType, "Value type missing");
-			indices = IndexSetTest.randomIndices(rand, valueType, size);
-			indices[rand.random(0, indices.length)] = valueType.maxValue();
+			indices = IndexSetTest.randomIndices(rand(), valueType, size);
+			indices[rand().random(0, indices.length)] = valueType.maxValue();
 			return this;
 		}
 		/** Create sorted indices outside the next smaller type's value space */

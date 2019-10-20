@@ -1,4 +1,5 @@
 /*
+
  * ICARUS2 Corpus Modeling Framework
  * Copyright (C) 2014-2019 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
@@ -691,6 +692,7 @@ class DefaultContainerTest implements ContainerTest<Container> {
 			 */
 			@SuppressWarnings({ "unchecked", "boxing" })
 			@Test
+			@RandomizedTest
 			void testRemoveItems(RandomGenerator rng) {
 				@SuppressWarnings("rawtypes")
 				Pair[] indices = {
