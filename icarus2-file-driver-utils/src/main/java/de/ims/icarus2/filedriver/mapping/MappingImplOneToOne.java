@@ -84,10 +84,6 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		return blockPower;
 	}
 
-	public int getBlockMask() {
-		return blockMask;
-	}
-
 	public int getEntriesPerBlock() {
 		return entriesPerBlock;
 	}

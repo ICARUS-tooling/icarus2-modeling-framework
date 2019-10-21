@@ -924,7 +924,7 @@ public class BufferedIOResource implements Flushable {
 			checkState("Missing block cache", blockCache!=null);
 			checkState("Missing payload converter", payloadConverter!=null);
 			checkState("Negative cache size", cacheSize>=0);
-			checkState("Bytes per block too small: "+bytesPerBlock, bytesPerBlock>=MIN_BLOCK_SIZE);
+			checkState("Bytes per block too small: "+bytesPerBlock+" minimum: "+MIN_BLOCK_SIZE, bytesPerBlock>=MIN_BLOCK_SIZE);
 		}
 
 		/**

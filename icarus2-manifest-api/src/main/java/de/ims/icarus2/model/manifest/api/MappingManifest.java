@@ -110,7 +110,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 		 * corresponding {@code Coverage} is {@link Coverage#TOTAL_MONOTONIC} this
 		 * equals the identity function.
 		 */
-		ONE_TO_ONE("one-to-one"), //$NON-NLS-1$
+		ONE_TO_ONE("one-to-one"),
 
 		/**
 		 * A single element in the source layer may hold an arbitrary number of elements from
@@ -123,7 +123,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 		 * map source elements to their respective sublist in a data block.
 		 * The corresponding index function is injective.
 		 */
-		ONE_TO_MANY("one-to-many"), //$NON-NLS-1$
+		ONE_TO_MANY("one-to-many"),
 
 		/**
 		 * An arbitrary number of (not necessarily monotonic) elements in the source layer map to
@@ -143,7 +143,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 		 * the above technique fails and it might be required to store a dedicated target index value for
 		 * each source element.
 		 */
-		MANY_TO_ONE("many-to-one"), //$NON-NLS-1$
+		MANY_TO_ONE("many-to-one"),
 
 		/**
 		 * As the most complex relation version, this one maps an arbitrary number of source elements to
@@ -164,7 +164,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 		 *
 		 * For non-monotonic target elements the rules for the {@link #ONE_TO_MANY} relation apply.
 		 */
-		MANY_TO_MANY("many-to-many"); //$NON-NLS-1$
+		MANY_TO_MANY("many-to-many");
 
 		private final String xmlForm;
 
@@ -219,6 +219,7 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 	 * the index implementation describes a surjective function). Note however that this does
 	 * <b>not</b> equate to a full coverage of the source index space! There might still be
 	 * source indices without matching elements in the target layer.
+	 * {@code ∀t∈Target ∃ s∈Source: (s,t)∈Mapping}
 	 * <p>
 	 * <i>Monotonicity</i> of a mapping is given, when for any two distinct source indices the
 	 * respective collections of target indices are also distinct (i.e. the index describes
@@ -236,24 +237,32 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 
 		/**
 		 * The entire target index space is covered, but the mapped areas might overlap or be
-		 * in a somewhat "random" fashion.
+		 * in a somewhat "random" fashion (surjective function):
+		 * <p>
+		 * {@code ∀t∈Target ∃ s∈Source: (s,t)∈Mapping}
 		 */
-		TOTAL("total", true, false), //$NON-NLS-1$
+		TOTAL("total", true, false),
 
 		/**
 		 * No exploitable patterns available in the way of index mapping.
 		 */
-		PARTIAL("partial", false, false), //$NON-NLS-1$
+		PARTIAL("partial", false, false),
 
 		/**
-		 *
+		 * Mapped elements follow the same order as their respective source counterparts
+		 * (strictly monotonic function):
+		 * <p>
+		 * {@code ∀s1,s2∈Source: m(s1)=m(s2) ⇒ s1=s2} <br>
+		 * {@code ∀s1,s2∈Source, s1<s2: m(s1) < m(s2)}
 		 */
-		MONOTONIC("monotonic", false, true), //$NON-NLS-1$
+		MONOTONIC("monotonic", false, true),
 
 		/**
-		 *
+		 * Entire target space is covered and mapping is following the monotonicity rule:
+		 * <p>
+		 * {@code ∀t1,t2∈Target, t1<t2  ∃ s1,s2∈Source: t1=m(s1) ∧ t2=m(s2) ∧  s1<s2}
 		 */
-		TOTAL_MONOTONIC("total-monotonic", true, true), //$NON-NLS-1$
+		TOTAL_MONOTONIC("total-monotonic", true, true),
 		;
 
 		private final boolean total, monotonic;

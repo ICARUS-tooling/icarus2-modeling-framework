@@ -276,7 +276,8 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 	 * @param <B>
 	 * @param <M>
 	 */
-	public static abstract class AbstractStoredMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping> extends AbstractMappingBuilder<B, M> {
+	public static abstract class AbstractStoredMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping>
+			extends AbstractMappingBuilder<B, M> {
 		private Integer cacheSize;
 		private IOResource resource;
 		private BlockCache blockCache;

@@ -21,7 +21,7 @@ import de.ims.icarus2.test.func.ThrowingBiConsumer;
  * @author Markus Gärtner
  *
  */
-interface MappingTest<M extends Mapping> {
+public interface MappingTest<M extends Mapping> {
 
 	Stream<Config<M>> configurations();
 
@@ -113,6 +113,6 @@ interface MappingTest<M extends Mapping> {
 		public ItemLayerManifestBase<?> sourceLayer;
 		public ItemLayerManifestBase<?> targetLayer;
 
-		abstract M create();
+		public abstract M create();
 	}
 }

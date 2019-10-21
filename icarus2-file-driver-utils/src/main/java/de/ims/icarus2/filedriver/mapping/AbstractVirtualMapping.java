@@ -128,7 +128,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	 * @param <B>
 	 * @param <M>
 	 */
-	public static abstract class AbstractMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping> extends AbstractBuilder<B, M> {
+	public static abstract class AbstractMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping>
+			extends AbstractBuilder<B, M> {
 		private Driver driver;
 		private MappingManifest manifest;
 		private ItemLayerManifestBase<?> sourceLayer, targetLayer;
