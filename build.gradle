@@ -89,6 +89,7 @@ subprojects {
 		slf4jTest // allows to add slf4j bindings only used during testing
 		mockito
 		uuid
+		assertj
 		
 		// BENCHMARK ENVIRONMENT (JMH)
 		benchmark
@@ -157,6 +158,8 @@ subprojects {
 	  
 		// https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator
 		uuid "com.fasterxml.uuid:java-uuid-generator:${versions.uuid}"
+		
+		assertj "org.assertj:assertj-core:${versions.assertj}"
 		
 		// BENCHMARK ENVIRONMENT (JMH)
 		

@@ -8,5 +8,5 @@ dependencies {
 configurations {
 	// external dependencies managed by root build.gradle	
 	
-	implementation.extendsFrom(javapoet, junit, mockito, fastutil, benchmark)
+	implementation.extendsFrom(javapoet, junit, mockito, fastutil, benchmark, assertj)
 }

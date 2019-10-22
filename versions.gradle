@@ -20,4 +20,5 @@ ext {
 	versions.jsr305 = '3.0.2'
 	versions.jmh = '1.21'
 	versions.jmhAp = '1.20'
+	versions.assertj = '3.11.1'
 }
