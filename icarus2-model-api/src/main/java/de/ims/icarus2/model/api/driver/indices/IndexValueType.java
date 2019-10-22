@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.util.lang.Primitives.strictToByte;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+import static de.ims.icarus2.util.lang.Primitives.strictToShort;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.IntToLongFunction;
@@ -53,7 +57,7 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void set(Object array, int index, long value) {
-			((byte[])array)[index] = (byte) value;
+			((byte[])array)[index] = strictToByte(value);
 		}
 
 		@Override
@@ -138,13 +142,13 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void fill(Object array, long value, int fromIndex, int toIndex) {
-			Arrays.fill((byte[])array, fromIndex, toIndex, (byte) value);
+			Arrays.fill((byte[])array, fromIndex, toIndex, strictToByte(value));
 		}
 
 		@Override
 		public int binarySearch(Object array, long value, int fromIndex,
 				int toIndex) {
-			return Arrays.binarySearch((byte[])array, fromIndex, toIndex, (byte) value);
+			return Arrays.binarySearch((byte[])array, fromIndex, toIndex, strictToByte(value));
 		}
 
 		@Override
@@ -154,7 +158,7 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void set(ByteBuffer buffer, long value) {
-			buffer.put((byte)value);
+			buffer.put(strictToByte(value));
 		}
 
 		@Override
@@ -175,7 +179,7 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void set(Object array, int index, long value) {
-			((short[])array)[index] = (short) value;
+			((short[])array)[index] = strictToShort(value);
 		}
 
 		@Override
@@ -260,13 +264,13 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void fill(Object array, long value, int fromIndex, int toIndex) {
-			Arrays.fill((short[])array, fromIndex, toIndex, (short) value);
+			Arrays.fill((short[])array, fromIndex, toIndex, strictToShort(value));
 		}
 
 		@Override
 		public int binarySearch(Object array, long value, int fromIndex,
 				int toIndex) {
-			return Arrays.binarySearch((short[])array, fromIndex, toIndex, (short) value);
+			return Arrays.binarySearch((short[])array, fromIndex, toIndex, strictToShort(value));
 		}
 
 		@Override
@@ -276,7 +280,7 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void set(ByteBuffer buffer, long value) {
-			buffer.putShort((short)value);
+			buffer.putShort(strictToShort(value));
 		}
 
 		@Override
@@ -298,7 +302,7 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void set(Object array, int index, long value) {
-			((int[])array)[index] = (int) value;
+			((int[])array)[index] = strictToInt(value);
 		}
 
 		@Override
@@ -383,13 +387,13 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void fill(Object array, long value, int fromIndex, int toIndex) {
-			Arrays.fill((int[])array, fromIndex, toIndex, (int) value);
+			Arrays.fill((int[])array, fromIndex, toIndex, strictToInt(value));
 		}
 
 		@Override
 		public int binarySearch(Object array, long value, int fromIndex,
 				int toIndex) {
-			return Arrays.binarySearch((int[])array, fromIndex, toIndex, (int) value);
+			return Arrays.binarySearch((int[])array, fromIndex, toIndex, strictToInt(value));
 		}
 
 		@Override
@@ -399,7 +403,7 @@ public enum IndexValueType implements StringResource {
 
 		@Override
 		public void set(ByteBuffer buffer, long value) {
-			buffer.putInt((int)value);
+			buffer.putInt(strictToInt(value));
 		}
 
 		@Override
@@ -574,7 +578,7 @@ public enum IndexValueType implements StringResource {
 
 	public void checkBuffer(Object buffer) {
 		if(!isValidBuffer(buffer))
-			throw new IllegalArgumentException("Not a valid array type for "+this+": "+buffer.getClass());
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Not a valid array type for "+this+": "+buffer.getClass());
 	}
 
 	public abstract long maxValue();
@@ -582,7 +586,7 @@ public enum IndexValueType implements StringResource {
 	public long checkValue(long value) {
 		if(value<0L)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, name()+" - Value is negative: "+value);
-		if(value>=maxValue())
+		if(value>maxValue())
 			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW, name()+" - Value exceeds max value: "+value);
 		return value;
 	}
