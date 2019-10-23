@@ -176,10 +176,10 @@ class RUBlockCacheTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.io.RUBlockCache#addBlock(de.ims.icarus2.filedriver.io.BufferedIOResource.Block, int)}.
 		 */
-		@Test
-		default void testAddBlockOverflow() {
+		@ParameterizedTest
+		@ValueSource(ints = {BlockCache.MIN_CAPACITY, BlockCache.MIN_CAPACITY*2, 1024})
+		default void testAddBlockOverflow(int capacty) {
 			try(RUBlockCache cache = create()) {
-				int capacty = BlockCache.MIN_CAPACITY;
 				cache.open(capacty);
 				Block[] blocks = new Block[capacty];
 				for (int i = 0; i < capacty; i++) {
@@ -199,10 +199,10 @@ class RUBlockCacheTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.io.RUBlockCache#addBlock(de.ims.icarus2.filedriver.io.BufferedIOResource.Block, int)}.
 		 */
-		@Test
-		default void testAddBlockLockedOverflow() {
+		@ParameterizedTest
+		@ValueSource(ints = {BlockCache.MIN_CAPACITY, BlockCache.MIN_CAPACITY*2, 1024})
+		default void testAddBlockLockedOverflow(int capacty) {
 			try(RUBlockCache cache = create()) {
-				int capacty = BlockCache.MIN_CAPACITY;
 				cache.open(capacty);
 				Block[] blocks = new Block[capacty];
 				for (int i = 0; i < capacty; i++) {
@@ -222,10 +222,10 @@ class RUBlockCacheTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.io.RUBlockCache#addBlock(de.ims.icarus2.filedriver.io.BufferedIOResource.Block, int)}.
 		 */
-		@Test
-		default void testReshash() {
+		@ParameterizedTest
+		@ValueSource(ints = {BlockCache.MIN_CAPACITY*2, 1024})
+		default void testReshash(int capacty) {
 			try(RUBlockCache cache = create()) {
-				int capacty = BlockCache.MIN_CAPACITY*3;
 				cache.open(capacty);
 				Block[] blocks = new Block[capacty];
 				for (int i = 0; i < capacty; i++) {

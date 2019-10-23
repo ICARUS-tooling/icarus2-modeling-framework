@@ -289,6 +289,7 @@ public class RUBlockCache implements BlockCache {
 		int n = HashCommon.arraySize(MIN_CAPACITY, LOAD_FACTOR);
 
 		table = new Entry[n];
+		mask = n-1;
 		threshold = (int) (n*LOAD_FACTOR);
 	}
 
@@ -300,6 +301,7 @@ public class RUBlockCache implements BlockCache {
 		table = null;
 		count = 0;
 		threshold = 0;
+		mask = 0;
 		root._next = root._previous = root;
 	}
 
