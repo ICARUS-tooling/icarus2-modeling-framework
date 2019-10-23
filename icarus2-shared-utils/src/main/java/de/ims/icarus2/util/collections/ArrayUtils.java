@@ -452,13 +452,13 @@ public class ArrayUtils {
 
 	public static void arrayCopy(byte[] src, int srcPos, IntBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsInt(destPos, src[srcPos+i]);
+			dest.applyAsInt(destPos+i, src[srcPos+i]);
 		}
 	}
 
 	public static void arrayCopy(byte[] src, int srcPos, LongBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsLong(destPos, src[srcPos+i]);
+			dest.applyAsLong(destPos+i, src[srcPos+i]);
 		}
 	}
 
@@ -484,13 +484,13 @@ public class ArrayUtils {
 
 	public static void arrayCopy(short[] src, int srcPos, IntBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsInt(destPos, src[srcPos+i]);
+			dest.applyAsInt(destPos+i, src[srcPos+i]);
 		}
 	}
 
 	public static void arrayCopy(short[] src, int srcPos, LongBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsLong(destPos, src[srcPos+i]);
+			dest.applyAsLong(destPos+i, src[srcPos+i]);
 		}
 	}
 
@@ -516,13 +516,13 @@ public class ArrayUtils {
 
 	public static void arrayCopy(int[] src, int srcPos, IntBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsInt(destPos, src[srcPos+i]);
+			dest.applyAsInt(destPos+i, src[srcPos+i]);
 		}
 	}
 
 	public static void arrayCopy(int[] src, int srcPos, LongBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsLong(destPos, src[srcPos+i]);
+			dest.applyAsLong(destPos+i, src[srcPos+i]);
 		}
 	}
 
@@ -548,7 +548,7 @@ public class ArrayUtils {
 
 	public static void arrayCopy(long[] src, int srcPos, LongBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsLong(destPos, src[srcPos+i]);
+			dest.applyAsLong(destPos+i, src[srcPos+i]);
 		}
 	}
 
@@ -574,7 +574,7 @@ public class ArrayUtils {
 
 	public static void arrayCopy(IntUnaryOperator src, int srcPos, IntBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsInt(destPos, src.applyAsInt(srcPos+i));
+			dest.applyAsInt(destPos+i, src.applyAsInt(srcPos+i));
 		}
 	}
 
@@ -606,7 +606,7 @@ public class ArrayUtils {
 
 	public static void arrayCopy(IntToLongFunction src, int srcPos, LongBinaryOperator dest, int destPos, int length) {
 		for(int i=0; i<length; i++) {
-			dest.applyAsLong(destPos, src.applyAsLong(srcPos+i));
+			dest.applyAsLong(destPos+i, src.applyAsLong(srcPos+i));
 		}
 	}
 
