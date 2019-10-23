@@ -122,8 +122,10 @@ public enum IndexBlockStorage {
 
 	private final IndexValueType valueType;
 
+	/** Read from buffer into designated target */
 	public abstract void read(Object target, ByteBuffer buffer, int offset, int length);
 
+	/** Write from designated source into buffer */
 	public abstract void write(Object source, ByteBuffer buffer, int offset, int length);
 
 	/**
@@ -230,6 +232,9 @@ public enum IndexBlockStorage {
 	 * {@link #find(Object, int, int, long) search} method this one assumes that
 	 * the array contains span definitions, i.e. its content is arranged as
 	 * 2-tupels, each denoting begin and end of a span.
+	 * <p>
+	 * Note that this method requires disjoint spans to be stored in the array
+	 * in order to work properly!!
 	 *
 	 * @param source
 	 * @param from first index to check (inclusive)
@@ -263,6 +268,9 @@ public enum IndexBlockStorage {
 	 * {@link #find(Object, int, int, long) search} method this one assumes that
 	 * the array contains span definitions, i.e. its content is arranged as
 	 * 2-tupels, each denoting begin and end of a span.
+	 * <p>
+	 * This method naively iterates the spans in the backing array and returns the
+	 * first one that actually covers the specified value.
 	 *
 	 * @param source
 	 * @param from first index to check (inclusive)
