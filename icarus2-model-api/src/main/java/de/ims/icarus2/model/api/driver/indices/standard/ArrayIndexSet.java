@@ -96,7 +96,7 @@ public class ArrayIndexSet implements IndexSet {
 		this.indices = indices;
 		this.fromIndex = fromIndex;
 		this.toIndex = toIndex;
-		this.sorted = isSorted;
+		this.sorted = isSorted || toIndex==fromIndex;
 	}
 
 	/** Package-private access to the internal indices array for testing */

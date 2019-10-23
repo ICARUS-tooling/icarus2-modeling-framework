@@ -98,6 +98,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 						config.clone()
 							.label(config.getValueType()+" random")
 							.randomIndices(randomSize())
+							.determineSorted()
 				));
 	}
 
@@ -216,20 +217,24 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 								.mapToObj(Integer::valueOf)
 								.flatMap(size -> Stream.of(
 										dynamicTest(String.valueOf(size), () -> {
-										Object array = type.newArray(size);
-										int from = rand.random(0, size);
-										int to = rand.random(from, size);
-										ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, true);
-										assertIndexSet(set, array, to-from+1, type);
-										assertTrue(set.isSorted());
+											Object array = type.newArray(size);
+											int from = rand.random(0, size);
+											int to = rand.random(from, size);
+											ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, true);
+											assertIndexSet(set, array, to-from+1, type);
+											assertTrue(set.isSorted());
 										}),
 										dynamicTest(String.valueOf(size), () -> {
-										Object array = type.newArray(size);
-										int from = rand.random(0, size);
-										int to = rand.random(from, size);
-										ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, false);
-										assertIndexSet(set, array, to-from+1, type);
-										assertFalse(set.isSorted());
+											Object array = type.newArray(size);
+											int from = rand.random(0, size);
+											int to = rand.random(from, size);
+											ArrayIndexSet set = new ArrayIndexSet(type, array, from, to, false);
+											assertIndexSet(set, array, to-from+1, type);
+											if(from==to) {
+												assertTrue(set.isSorted());
+											} else {
+												assertFalse(set.isSorted());
+											}
 										})
 								))));
 		}
