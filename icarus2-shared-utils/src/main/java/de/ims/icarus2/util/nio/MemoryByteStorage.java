@@ -17,6 +17,7 @@
 package de.ims.icarus2.util.nio;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -57,7 +58,7 @@ public class MemoryByteStorage implements AutoCloseable {
 
 	public MemoryByteStorage(int size) {
 		if(size<0)
-			throw new IllegalArgumentException("Negative buffer size"); //$NON-NLS-1$
+			throw new IllegalArgumentException("Negative buffer size");
 
 		buffer = new byte[size];
 	}
@@ -107,7 +108,7 @@ public class MemoryByteStorage implements AutoCloseable {
 			}
 
 			if(position>=size || position<0)
-				throw new IndexOutOfBoundsException("Position out of bounds(0 to "+(size-1)+": "+position); //$NON-NLS-1$ //$NON-NLS-2$
+				throw new IndexOutOfBoundsException("Position out of bounds(0 to "+(size-1)+": "+position);  //$NON-NLS-2$
 
 			int bytesToRead = Math.min(dst.remaining(), size-position);
 
@@ -157,7 +158,7 @@ public class MemoryByteStorage implements AutoCloseable {
 
 	public void truncate(int size) {
 		if(size<0)
-			throw new IllegalArgumentException("Negative size: "+size); //$NON-NLS-1$
+			throw new IllegalArgumentException("Negative size: "+size);
 
 		synchronized (bufferLock) {
 			int currentSize = size();
@@ -259,7 +260,7 @@ public class MemoryByteStorage implements AutoCloseable {
 
 			checkOpen();
 
-			position.set((int) newPosition);
+			position.set(strictToInt(newPosition));
 
 			return this;
 		}
@@ -279,7 +280,7 @@ public class MemoryByteStorage implements AutoCloseable {
 		public SeekableByteChannel truncate(long size) throws IOException {
 			checkArgument("Size exceeds integer limit of buffer array: "+size, size<INT_LIMIT);
 
-			MemoryByteStorage.this.truncate((int) size);
+			MemoryByteStorage.this.truncate(strictToInt(size));
 
 			return this;
 		}
