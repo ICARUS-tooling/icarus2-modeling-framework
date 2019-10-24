@@ -25,8 +25,11 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
+ *
+ *
  * @author Markus Gärtner
  *
  */
@@ -36,19 +39,6 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	private final MappingManifest manifest;
 	private final ItemLayerManifestBase<?> sourceLayer;
 	private final ItemLayerManifestBase<?> targetLayer;
-
-	protected AbstractVirtualMapping(Driver driver, MappingManifest manifest,
-			ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer) {
-		requireNonNull(driver);
-		requireNonNull(manifest);
-		requireNonNull(sourceLayer);
-		requireNonNull(targetLayer);
-
-		this.driver = driver;
-		this.manifest = manifest;
-		this.sourceLayer = sourceLayer;
-		this.targetLayer = targetLayer;
-	}
 
 	protected AbstractVirtualMapping(AbstractMappingBuilder<?, ?> builder) {
 		requireNonNull(builder);
@@ -64,18 +54,15 @@ public abstract class AbstractVirtualMapping implements Mapping {
 	 */
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder()
-		.append(getClass().getName()).append('[');
-		sb.append("id=").append(manifest.getId());
-		sb.append(" sourceLayer=").append(sourceLayer.getId());
-		sb.append(" targetLayer=").append(targetLayer.getId());
-
-		toString(sb);
-
-		return sb.append(']').toString();
+		ToStringBuilder builder = ToStringBuilder.create(this)
+				.add("id", manifest.getId())
+				.add("sourceLayer", sourceLayer.getId())
+				.add("targetLayer", targetLayer.getId());
+		toString(builder);
+		return builder.build();
 	}
 
-	protected void toString(StringBuilder sb) {
+	protected void toString(ToStringBuilder builder) {
 		// for subclasses
 	}
 

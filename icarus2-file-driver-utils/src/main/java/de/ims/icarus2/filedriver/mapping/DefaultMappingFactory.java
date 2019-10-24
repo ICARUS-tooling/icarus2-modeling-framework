@@ -211,7 +211,12 @@ public class DefaultMappingFactory implements MappingFactory {
 				.flatMap(id -> contextManifest.<ItemLayerManifestBase<?>>getLayerManifest(id))
 				.orElseThrow(ManifestException.error("Failed to obtain target layer"));
 
-		return new MappingImplIdentity(driver, manifest, sourceLayer, targetLayer);
+		return MappingImplIdentity.builder()
+				.driver(driver)
+				.manifest(manifest)
+				.sourceLayer(sourceLayer)
+				.targetLayer(targetLayer)
+				.build();
 	}
 
 	protected <B extends AbstractVirtualMapping.AbstractMappingBuilder<B, ?>> B initMappingBuilder(B builder, MappingManifest manifest, Options options) {

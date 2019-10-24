@@ -28,14 +28,10 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
-import de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.AbstractMappingBuilder;
-import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
-import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
@@ -45,22 +41,14 @@ import de.ims.icarus2.util.io.resource.IOResource;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractStoredMapping implements WritableMapping {
+public abstract class AbstractStoredMapping extends AbstractVirtualMapping implements WritableMapping {
 
 	public static final int DEFAULT_CACHE_SIZE = 100;
 
-	private final Driver driver;
-	private final MappingManifest manifest;
-	private final ItemLayerManifestBase<?> sourceLayer;
-	private final ItemLayerManifestBase<?> targetLayer;
 	private final BufferedIOResource resource;
 
 	protected AbstractStoredMapping(AbstractStoredMappingBuilder<?,?> builder) {
-
-		driver = builder.getDriver();
-		manifest = builder.getManifest();
-		sourceLayer = builder.getSourceLayer();
-		targetLayer = builder.getTargetLayer();
+		super(builder);
 
 		resource = requireNonNull(builder.createBufferedIOResource());
 	}
@@ -69,62 +57,9 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		return resource;
 	}
 
-	/**
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder(100);
-
-		sb.append(getClass().getName()).append('@');
-		sb.append("[id=").append(manifest.getId());
-		sb.append(" sourceLayer=").append(sourceLayer.getId());
-		sb.append(" targetLayer=").append(targetLayer.getId());
-
-		toString(sb);
-
-		sb.append(']');
-
-		return sb.toString();
-	}
-
-	protected abstract void toString(StringBuilder sb);
-
 	protected static void checkInterrupted() throws InterruptedException {
 		if(Thread.interrupted())
 			throw new InterruptedException();
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getDriver()
-	 */
-	@Override
-	public Driver getDriver() {
-		return driver;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getSourceLayer()
-	 */
-	@Override
-	public ItemLayerManifestBase<?> getSourceLayer() {
-		return sourceLayer;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getTargetLayer()
-	 */
-	@Override
-	public ItemLayerManifestBase<?> getTargetLayer() {
-		return targetLayer;
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#getManifest()
-	 */
-	@Override
-	public MappingManifest getManifest() {
-		return manifest;
 	}
 
 	/**
@@ -134,16 +69,6 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 	 */
 	@Override
 	public abstract MappingWriter newWriter();
-
-	/**
-	 * The default implementation does nothing.
-	 *
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#close()
-	 */
-	@Override
-	public void close() {
-		// no-op
-	}
 
 	public void delete() throws IOException {
 		resource.delete();
@@ -233,14 +158,14 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		}
 	}
 
-	public static class PayloadConverterImpl implements PayloadConverter {
+	public static class SpanConverter implements PayloadConverter {
 
 		private final IndexBlockStorage blockStorage;
 
 		/**
 		 * @param blockStorage
 		 */
-		public PayloadConverterImpl(IndexBlockStorage blockStorage) {
+		public SpanConverter(IndexBlockStorage blockStorage) {
 			requireNonNull(blockStorage);
 
 			this.blockStorage = blockStorage;
@@ -255,6 +180,42 @@ public abstract class AbstractStoredMapping implements WritableMapping {
 		@Override
 		public int read(Object target, ByteBuffer buffer) throws IOException {
 			int length = buffer.remaining()/blockStorage.spanSize();
+			blockStorage.read(target, buffer, 0, length);
+			return length;
+		}
+
+		@Override
+		public Object newBlockData(int bytesPerBlock) {
+			return blockStorage.createBuffer(bytesPerBlock);
+		}
+
+		public IndexBlockStorage getBlockStorage() {
+			return blockStorage;
+		}
+	}
+
+	public static class ValueConverter implements PayloadConverter {
+
+		private final IndexBlockStorage blockStorage;
+
+		/**
+		 * @param blockStorage
+		 */
+		public ValueConverter(IndexBlockStorage blockStorage) {
+			requireNonNull(blockStorage);
+
+			this.blockStorage = blockStorage;
+		}
+
+		@Override
+		public void write(Object source, ByteBuffer buffer, int length)
+				throws IOException {
+			blockStorage.write(source, buffer, 0, length);
+		}
+
+		@Override
+		public int read(Object target, ByteBuffer buffer) throws IOException {
+			int length = buffer.remaining()/blockStorage.entrySize();
 			blockStorage.read(target, buffer, 0, length);
 			return length;
 		}
