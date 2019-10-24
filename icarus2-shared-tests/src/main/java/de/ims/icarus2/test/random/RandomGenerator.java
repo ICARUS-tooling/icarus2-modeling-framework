@@ -276,7 +276,7 @@ public class RandomGenerator implements Cloneable {
 	public short[] randomShorts(int size, short min, short max) {
 		short[] array = new short[size];
 		for (int i = 0; i < array.length; i++) {
-			array[i] = (short) (nextInt(min+max)-min);
+			array[i] = (short) (nextInt(max-min)-min);
 		}
 		return array;
 	}
@@ -284,7 +284,7 @@ public class RandomGenerator implements Cloneable {
 	public byte[] randomBytes(int size, byte min, byte max) {
 		byte[] array = new byte[size];
 		for (int i = 0; i < array.length; i++) {
-			array[i] = (byte) (nextInt(min+max)-min);
+			array[i] = (byte) (nextInt(max-min)-min);
 		}
 		return array;
 	}
