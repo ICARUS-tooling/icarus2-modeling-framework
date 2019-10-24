@@ -22,6 +22,7 @@ package de.ims.icarus2.util.strings;
 import static java.util.Objects.requireNonNull;
 
 import java.text.DecimalFormat;
+import java.util.Optional;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -134,7 +135,17 @@ public class ToStringBuilder {
 		return this;
 	}
 
+	/**
+	 * Automatically extracts the value of {@link Optional} if given.
+	 *
+	 * @param name
+	 * @param value
+	 * @return
+	 */
 	public ToStringBuilder add(String name, Object value) {
+		while(value instanceof Optional) {
+			value = ((Optional<?>)value).orElse(null);
+		}
 		return add(name, value==null ? null : value.toString());
 	}
 
