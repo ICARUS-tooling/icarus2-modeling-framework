@@ -19,6 +19,7 @@ package de.ims.icarus2.filedriver.io;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
@@ -34,6 +35,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Stats;
@@ -164,6 +166,8 @@ public class BufferedIOResource implements Flushable {
 
 	private final Stats<StatField> stats;
 
+	private final int headerSize;
+
 	private BufferedIOResource(Builder builder) {
 		builder.validate();
 
@@ -171,6 +175,7 @@ public class BufferedIOResource implements Flushable {
 		this.payloadConverter = builder.getPayloadConverter();
 		this.cache = builder.getBlockCache();
 		this.cacheSize = builder.getCacheSize();
+		this.headerSize = builder.getHeaderSize();
 		this.bytesPerBlock = builder.getBytesPerBlock();
 		stats = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
 	}
@@ -301,6 +306,38 @@ public class BufferedIOResource implements Flushable {
 		}
 	}
 
+	private void checkHeader() {
+		if(headerSize==0)
+			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No header reserved");
+	}
+
+	private void writeHeaderUnsafe(byte[] header) throws IOException {
+		checkHeader();
+		requireNonNull(header);
+		if(header.length>headerSize)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					Messages.mismatch("Header size exceeded", _int(headerSize), _int(header.length)));
+
+		ByteBuffer bb = ByteBuffer.wrap(header);
+		try(SeekableByteChannel channel = resource.getReadChannel()) {
+			channel.position(0L);
+			channel.write(bb);
+		}
+	}
+
+	private byte[] readHeaderUnsafe() throws IOException {
+		checkHeader();
+
+		byte[] header = new byte[headerSize];
+		ByteBuffer bb = ByteBuffer.wrap(header);
+		try(SeekableByteChannel channel = resource.getReadChannel()) {
+			channel.position(0L);
+			channel.read(bb);
+		}
+
+		return header;
+	}
+
 	/**
 	 * Returns whether or not there are blocks marked for serialization that haven't
 	 * yet been flushed. This method is mainly intended as an additional tool to verify
@@ -341,7 +378,7 @@ public class BufferedIOResource implements Flushable {
 					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 							"Missing block previously marked as locked: "+id);
 
-				long offset = id*(long)bytesPerBlock;
+				long offset = offsetForBlock(id);
 
 				writeBlockUnsafe(block, offset);
 
@@ -417,6 +454,52 @@ public class BufferedIOResource implements Flushable {
 		}
 	}
 
+	private long offsetForBlock(int id) {
+		return id*(long)bytesPerBlock + headerSize;
+	}
+
+	/**
+	 * Marks the given {@code block} as changed so that its content will be
+	 * persisted when {@link BufferedIOResource#flush() flushing} the surrounding
+	 * resource or when enough blocks get marked to warrant automatic flushing.
+	 * <p>
+	 * This method must be called inside a {@link #begin()} ... {@link #end()} code
+	 * block and requires an accessor with write access!
+	 * @param block the {@link Block} that was modified and should be marked for flushing
+	 * @param size the portion of the block that has been modified. This information is
+	 * used to update the internal {@link Block#getSize() size} information of the block.
+	 */
+	private void lockBlockUnsafe(Block block, int size) {
+		int id = block.getId();
+		if(id<0)
+			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
+					"Cannot mark block for serialization - invalid id: "+id);
+
+		record(StatField.BLOCK_MARK);
+
+		if(block.isLocked()) {
+			block.updateSize(size);
+			return;
+		}
+
+		// Automatic flushing if cache gets crowded with locked blocks
+		if(changedBlocks.size()>(cacheSize>>1)) {
+			try {
+				flushUnsafe();
+			} catch (IOException e) {
+				throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
+						"Failed to automatically flush index changes", e);
+			}
+		}
+
+		block.lock();
+		block.updateSize(size);
+
+		// Ensure we have the block in cache (locking it will keep it there).
+		cache.addBlock(block);
+		changedBlocks.add(id);
+	}
+
 	/**
 	 * Returns a new accessor for managing synchronization with this resource.
 	 * Depending on the {@code readOnly} parameter the returned accessor will
@@ -470,6 +553,11 @@ public class BufferedIOResource implements Flushable {
 		 * Read the content of the given {@link ByteBuffer buffer} into provided
 		 * payload {@code target} and return the number of units that got stored
 		 * in payload object as a result of this method call.
+		 * <p>
+		 * Note that the meaning of "unit" here is implementation specific:
+		 * An index that stores spans as tuples of values might consider a single
+		 * span as unit, whereas an implementation that stores a huge list of
+		 * parameter values will treat every single value as a separate unit!
 		 *
 		 * @param target
 		 * @param buffer
@@ -655,6 +743,12 @@ public class BufferedIOResource implements Flushable {
 			return readOnly;
 		}
 
+		private void checkWriteAccess() {
+			if(isReadOnly())
+				throw new ModelException(GlobalErrorCode.NO_WRITE_ACCESS,
+						"Accessor is read-only, cannot structurally modify underlying buffer!");
+		}
+
 		/**
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
@@ -695,6 +789,15 @@ public class BufferedIOResource implements Flushable {
 			decrementUseCount();
 		}
 
+		public void writeHeader(byte[] header) throws IOException {
+			checkWriteAccess();
+			writeHeaderUnsafe(header);
+		}
+
+		public byte[] readHeader() throws IOException {
+			return readHeaderUnsafe();
+		}
+
 		/**
 		 * Same as {@link BufferedIOResource#flush()} but safe to call from inside a
 		 * {@link #begin()} ... {@link #end()} code block.
@@ -717,37 +820,8 @@ public class BufferedIOResource implements Flushable {
 		 * used to update the internal {@link Block#getSize() size} information of the block.
 		 */
 		public void lockBlock(Block block, int size) {
-			if(isReadOnly())
-				throw new ModelException(GlobalErrorCode.NO_WRITE_ACCESS,
-						"Accessor is read-only, cannot structurally modify underlying buffer!");
-
-			int id = block.getId();
-			if(id<0)
-				throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
-						"Cannot mark block for serialization - invalid id: "+id);
-
-			record(StatField.BLOCK_MARK);
-
-			if(block.isLocked()) {
-				return;
-			}
-
-			// Automatic flushing if cache gets crowded with locked blocks
-			if(changedBlocks.size()>(cacheSize>>1)) {
-				try {
-					flushUnsafe();
-				} catch (IOException e) {
-					throw new ModelException(ModelErrorCode.DRIVER_INDEX_IO,
-							"Failed to automatically flush index changes", e);
-				}
-			}
-
-			block.lock();
-			block.updateSize(size);
-
-			// Ensure we have the block in cache (locking it will keep it there).
-			cache.addBlock(block);
-			changedBlocks.add(id);
+			checkWriteAccess();
+			lockBlockUnsafe(block, size);
 		}
 
 		/**
@@ -779,7 +853,7 @@ public class BufferedIOResource implements Flushable {
 				stamp = getLock().tryConvertToWriteLock(stamp);
 				try {
 					// Byte offset of the beginning of the block to be read
-					long offset = id*(long)bytesPerBlock;
+					long offset = offsetForBlock(id);
 
 					try {
 						boolean exists = resource.size()>offset;
@@ -829,8 +903,9 @@ public class BufferedIOResource implements Flushable {
 	 * @param <B>
 	 */
 	public static class Builder extends AbstractBuilder<Builder, BufferedIOResource> {
-		private int cacheSize;
-		private int bytesPerBlock;
+		private int cacheSize = 0;
+		private int bytesPerBlock = 0;
+		private int headerSize = 0;
 		private IOResource resource;
 		private BlockCache blockCache;
 		private PayloadConverter payloadConverter;
@@ -846,6 +921,15 @@ public class BufferedIOResource implements Flushable {
 			checkState(this.cacheSize==0);
 
 			this.cacheSize = cacheSize;
+
+			return thisAsCast();
+		}
+
+		public Builder headerSize(int headerSize) {
+			checkArgument(headerSize>=0);
+			checkState(this.headerSize==0);
+
+			this.headerSize = headerSize;
 
 			return thisAsCast();
 		}
@@ -896,6 +980,10 @@ public class BufferedIOResource implements Flushable {
 
 		public int getCacheSize() {
 			return cacheSize;
+		}
+
+		public int getHeaderSize() {
+			return headerSize;
 		}
 
 		public int getBytesPerBlock() {

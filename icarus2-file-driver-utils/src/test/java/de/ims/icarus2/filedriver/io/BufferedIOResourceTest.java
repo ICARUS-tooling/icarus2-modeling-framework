@@ -8,6 +8,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives.strictToByte;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -101,33 +102,36 @@ class BufferedIOResourceTest {
 		for(int bytesPerBlock : new int[]{BufferedIOResource.MIN_BLOCK_SIZE, BufferedIOResource.MIN_BLOCK_SIZE*2, 128}) {
 			for(int cacheSize : new int[]{BlockCache.MIN_CAPACITY, BlockCache.MIN_CAPACITY*2, 1024}) {
 				for(int entries : new int[]{BlockCache.MIN_CAPACITY*2, 10_000}) {
-					Config config = new Config();
-					config.bytesPerBlock = bytesPerBlock;
-					config.cacheSize = cacheSize;
-					config.cache = RUBlockCache.newLeastRecentlyUsedCache();
-					config.entries = entries;
-					config.resource = new VirtualIOResource(bytesPerBlock * config.entries);
-					config.converter = new PayloadConverter() {
-						@Override
-						public void write(Object source, ByteBuffer buffer, int length) throws IOException {
-							buffer.put((byte[]) source, 0, length);
-						}
-						@Override
-						public int read(Object target, ByteBuffer buffer) throws IOException {
-							int length = buffer.remaining();
-							if(length>0)
-								buffer.get((byte[])target);
-							return length;
-						}
-						@Override
-						public Object newBlockData(int bytesPerBlock) {
-							return new byte[bytesPerBlock];
-						}
-						};
-					config.label = String.format("cache=LRU entries=%d bytesPerBlock=%d cacheSize=%d",
-							_int(entries), _int(bytesPerBlock), _int(cacheSize));
+					for(int headerSize : new int[]{0, Long.BYTES, 512}) {
+						Config config = new Config();
+						config.bytesPerBlock = bytesPerBlock;
+						config.cacheSize = cacheSize;
+						config.headerSize = headerSize;
+						config.cache = RUBlockCache.newLeastRecentlyUsedCache();
+						config.entries = entries;
+						config.resource = new VirtualIOResource(bytesPerBlock * config.entries + headerSize);
+						config.converter = new PayloadConverter() {
+							@Override
+							public void write(Object source, ByteBuffer buffer, int length) throws IOException {
+								buffer.put((byte[]) source, 0, length);
+							}
+							@Override
+							public int read(Object target, ByteBuffer buffer) throws IOException {
+								int length = buffer.remaining();
+								if(length>0)
+									buffer.get((byte[])target);
+								return length;
+							}
+							@Override
+							public Object newBlockData(int bytesPerBlock) {
+								return new byte[bytesPerBlock];
+							}
+							};
+						config.label = String.format("cache=LRU entries=%d bytesPerBlock=%d headerSize=%d cacheSize=%d",
+								_int(entries), _int(bytesPerBlock), _int(headerSize), _int(cacheSize));
 
-					buffer.add(config);
+						buffer.add(config);
+					}
 				}
 			}
 		}
@@ -304,7 +308,7 @@ class BufferedIOResourceTest {
 				for (int id : ids) {
 					bb.clear();
 					Arrays.fill(b, strictToByte(id+1));
-					channel.position(id * config.bytesPerBlock);
+					channel.position(config.offsetFOrBlock(id));
 					channel.write(bb);
 				}
 			}
@@ -322,6 +326,80 @@ class BufferedIOResourceTest {
 			for (int i = 0; i < b.length; i++) {
 				assertEquals(val, b[i]);
 			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#writeHeader(byte[])}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testWriteHeaderReadOnly() {
+			return accessorTests(true, (config, accessor) -> {
+				assertModelException(GlobalErrorCode.NO_WRITE_ACCESS,
+							() -> accessor.writeHeader(new byte[1]));
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#readHeader()}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testWriteHeaderReadable() {
+			return accessorTests(true, (config, accessor) -> {
+				if(config.headerSize==0) {
+					assertModelException(GlobalErrorCode.ILLEGAL_STATE,
+							() -> accessor.readHeader());
+				} else {
+					assertNotNull(accessor.readHeader());
+				}
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#writeHeader(byte[])}.
+		 */
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testWriteHeaderRandom(RandomGenerator rng) {
+			return accessorTests(false, (config, accessor) -> {
+				if(config.headerSize==0) {
+					assertModelException(GlobalErrorCode.ILLEGAL_STATE,
+							() -> accessor.writeHeader(new byte[1]));
+				} else {
+					int size = rng.random(1, config.headerSize+1);
+					byte[] header = rng.randomBytes(size, Byte.MIN_VALUE, Byte.MAX_VALUE);
+					accessor.writeHeader(header);
+
+					try(SeekableByteChannel channel = config.resource.getReadChannel()) {
+						ByteBuffer bb = ByteBuffer.allocate(size);
+						channel.position(0L);
+						channel.read(bb);
+						assertThat(bb.array()).isEqualTo(header);
+					}
+				}
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#readHeader()}
+		 */
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testReadHeaderRandom(RandomGenerator rng) {
+			return accessorTests(true, (config, accessor) -> {
+				if(config.headerSize==0) {
+					assertModelException(GlobalErrorCode.ILLEGAL_STATE,
+							() -> accessor.readHeader());
+				} else {
+					byte[] header = rng.randomBytes(config.headerSize, Byte.MIN_VALUE, Byte.MAX_VALUE);
+
+					try(SeekableByteChannel channel = config.resource.getReadChannel()) {
+						ByteBuffer bb = ByteBuffer.wrap(header);
+						channel.position(0L);
+						channel.write(bb);
+					}
+					assertThat(accessor.readHeader()).isEqualTo(header);
+				}
+			});
 		}
 
 		/**
@@ -586,7 +664,7 @@ class BufferedIOResourceTest {
 
 					for (int id : ids) {
 						bb.clear();
-						channel.position(id * config.bytesPerBlock);
+						channel.position(config.offsetFOrBlock(id));
 						channel.read(bb);
 						assertEquals(0, bb.remaining());
 
@@ -608,6 +686,11 @@ class BufferedIOResourceTest {
 		int entries;
 		int cacheSize;
 		int bytesPerBlock;
+		int headerSize;
+
+		long offsetFOrBlock(int id) {
+			return id* (long) bytesPerBlock + headerSize;
+		}
 
 		BufferedIOResource create() {
 			resourceMock = mock(IOResource.class, invoc -> {
@@ -625,6 +708,7 @@ class BufferedIOResourceTest {
 					.resource(resourceMock)
 					.cacheSize(cacheSize)
 					.bytesPerBlock(bytesPerBlock)
+					.headerSize(headerSize)
 					.blockCache(cacheMock)
 					.payloadConverter(converterMock)
 					.collectStats(true)
