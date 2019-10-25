@@ -697,6 +697,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		public Config features(Set<Feature> features) { this.features.addAll(features); return this; }
 		public Config features(Feature...features) { Collections.addAll(this.features, features); return this; }
 		public Config sorted(boolean sorted) { this.sorted = sorted; return this; }
+		public Config determineSorted() { this.sorted = ArrayUtils.isSorted(indices, 0, indices.length); return this; }
 		public Config valueType(IndexValueType valueType) { this.valueType = valueType; return this; }
 
 		public Config limit(IndexValueType type) {
@@ -754,7 +755,8 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 						clone()
 						.label(label+" sub ["+from+"-"+to+"]")
 						.indices(subs)
-						.set(subSet));
+						.set(subSet)
+						.determineSorted());
 			}
 
 			return Stream.of(this);
