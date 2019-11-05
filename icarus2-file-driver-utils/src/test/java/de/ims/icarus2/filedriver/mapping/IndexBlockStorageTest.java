@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -45,15 +46,16 @@ class IndexBlockStorageTest {
 	}
 
 	static long rand(RandomGenerator rng, IndexBlockStorage storage) {
-		return rng.random(0, storage.getValueType().maxValue());
+		return rng.random(0, storage.maxValue());
 	}
 
+	/** Creates random size in [5, 100) */
 	static int randSize(RandomGenerator rng) {
 		return rng.random(5, 100);
 	}
 
 	static long[] randData(RandomGenerator rng, IndexBlockStorage storage, int size) {
-		return rng.randomLongs(size, 0L, storage.getValueType().maxValue());
+		return rng.randomLongs(size, 0L, storage.maxValue());
 	}
 
 	static Pair<Long, Long> randSpan(RandomGenerator rng, IndexBlockStorage storage) {
@@ -66,11 +68,15 @@ class IndexBlockStorageTest {
 				.toArray(Pair[]::new);
 	}
 
+	static final Pair<Long, Long> NO_SPAN = null;
+
 	@SafeVarargs
 	static void writeSpans(IndexBlockStorage storage, Object array, Pair<Long, Long>...spans) {
 		for (int i = 0; i < spans.length; i++) {
-			storage.getValueType().set(array, i*2, spans[i].first.longValue());
-			storage.getValueType().set(array, i*2 + 1, spans[i].second.longValue());
+			if(spans[i]!=NO_SPAN) {
+				storage.setSpanBegin(array, i, spans[i].first.longValue());
+				storage.setSpanEnd(array, i, spans[i].second.longValue());
+			}
 		}
 	}
 
@@ -118,7 +124,7 @@ class IndexBlockStorageTest {
 
 				assertThat(Array.getLength(array)).isEqualTo(size);
 				for (int i = 0; i < size; i++) {
-					assertThat(storage.getValueType().get(array, i)).isEqualTo(-1L);
+					assertThat(storage.getEntry(array, i)).isEqualTo(-1L);
 				}
 			});
 		}
@@ -312,7 +318,7 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				Object array = array(storage, 1);
 				long expected = rand(rng, storage);
-				storage.getValueType().set(array, 0, expected);
+				storage.setEntry(array, 0, expected);
 				// Read
 				long actual = storage.getEntry(array, 0);
 				// Verify
@@ -332,7 +338,7 @@ class IndexBlockStorageTest {
 				// Prepare
 				long[] data = randData(rng, storage, size);
 				for (int i = 0; i < data.length; i++) {
-					storage.getValueType().set(array, i, data[i]);
+					storage.setEntry(array, i, data[i]);
 				}
 				// Verify
 				for (int i = 0; i < data.length; i++) {
@@ -432,7 +438,7 @@ class IndexBlockStorageTest {
 				}
 				// Verify
 				for (int i = 0; i < data.length; i++) {
-					long actual = storage.getValueType().get(array, i);
+					long actual = storage.getEntry(array, i);
 					assertThat(actual).isEqualTo(data[i]);
 				}
 			});
@@ -454,11 +460,11 @@ class IndexBlockStorageTest {
 				}
 				// Verify
 				for (int i = 0; i < spans.length; i++) {
-					long actual = storage.getValueType().get(array, i*2);
+					long actual = storage.getSpanBegin(array, i);
 					assertThat(actual).as("Mismatch at index %d", _int(i))
 						.isEqualTo(spans[i].first.longValue());
 
-					assertThat(storage.getValueType().get(array, i*2 + 1))
+					assertThat(storage.getSpanEnd(array, i))
 						.as("Illegal write at %d", _int(i))
 						.isEqualTo(-1L);
 				}
@@ -481,11 +487,11 @@ class IndexBlockStorageTest {
 				}
 				// Verify
 				for (int i = 0; i < spans.length; i++) {
-					long actual = storage.getValueType().get(array, i*2 + 1);
+					long actual = storage.getSpanEnd(array, i);
 					assertThat(actual).as("Mismatch at index %d", _int(i))
 						.isEqualTo(spans[i].second.longValue());
 
-					assertThat(storage.getValueType().get(array, i*2))
+					assertThat(storage.getSpanBegin(array, i))
 						.as("Illegal write at %d", _int(i))
 						.isEqualTo(-1L);
 				}
@@ -507,7 +513,7 @@ class IndexBlockStorageTest {
 				Object array = array(storage, sequence.length);
 				// Prepare
 				for (int i = 0; i < sequence.length; i++) {
-					storage.getValueType().set(array, i, i);
+					storage.setEntry(array, i, i);
 				}
 				// Verify
 				for (int i = 0; i < sequence.length; i++) {
@@ -527,6 +533,41 @@ class IndexBlockStorageTest {
 		}
 
 		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.mapping.IndexBlockStorage#sparseFindSorted(Object, int, int, long)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testSparseFindSortedFixed() {
+			return baseTests(storage -> {
+				long[] sequence = LongStream.range(0, 10).toArray();
+				Object array = array(storage, sequence.length);
+				// Prepare
+				for (int i = 1; i < sequence.length; i++) {
+					if(i%2==1)
+						storage.setEntry(array, i, i);
+				}
+				// Verify
+				for (int i = 0; i < sequence.length; i++) {
+					if(i%2==0) {
+						assertThat(storage.sparseFindSorted(array, 0, sequence.length, i))
+							.as("Found empty %d", _int(i)).isEqualTo(-1L);
+					} else {
+						// Global search -> hit
+						assertThat(storage.sparseFindSorted(array, 0, sequence.length, i))
+							.as("Not found (Global) %d", _int(i)).isEqualTo(i);
+						// Single search -> hit
+						assertThat(storage.sparseFindSorted(array, i, sequence.length, i))
+							.as("Not found (limited) %d", _int(i)).isEqualTo(i);
+						// Exclude value by window -> miss
+						assertThat(storage.sparseFindSorted(array, i>0 ? 0 : i+1, i>0 ? i : sequence.length, i))
+							.as("Not found (limited) %d", _int(i)).isEqualTo(-1L);
+					}
+				}
+				assertThat(storage.sparseFindSorted(array, 0, sequence.length, 100))
+					.as("Found foreign %d", _int(100)).isEqualTo(-1L);
+			});
+		}
+
+		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.mapping.IndexBlockStorage#findSorted(java.lang.Object, int, int, long)}.
 		 */
 		@TestFactory
@@ -534,7 +575,7 @@ class IndexBlockStorageTest {
 		Stream<DynamicNode> testFindSortedRandom(RandomGenerator rng) {
 			return baseTests(storage -> {
 				int size = randSize(rng);
-				long[] sequence = rng.longs(0, storage.getValueType().maxValue())
+				long[] sequence = rng.longs(0, storage.maxValue())
 						.distinct()
 						.limit(size)
 						.sorted()
@@ -542,7 +583,7 @@ class IndexBlockStorageTest {
 				Object array = array(storage, sequence.length);
 				// Prepare
 				for (int i = 0; i < sequence.length; i++) {
-					storage.getValueType().set(array, i, sequence[i]);
+					storage.setEntry(array, i, sequence[i]);
 				}
 				// Verify
 				for (int i = 0; i < sequence.length; i++) {
@@ -557,8 +598,52 @@ class IndexBlockStorageTest {
 						.as("Not found (limited) %d", _int(i)).isEqualTo(-1L);
 				}
 				// The way we generate the random data excludes type.maxValue()
-				long notPresent = storage.getValueType().maxValue();
+				long notPresent = storage.maxValue();
 				assertThat(storage.findSorted(array, 0, sequence.length, notPresent))
+					.as("Found foreign %d", _long(notPresent)).isEqualTo(-1L);
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.mapping.IndexBlockStorage#sparseFindSorted(Object, int, int, long)}.
+		 */
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testSparseFindSortedRandom(RandomGenerator rng) {
+			return baseTests(storage -> {
+				int size = randSize(rng);
+				long[] sequence = rng.longs(0, storage.maxValue())
+						.distinct()
+						.limit(size)
+						.sorted()
+						.toArray();
+				BitSet used = BitSet.valueOf(rng.longs(2).toArray());
+				Object array = array(storage, sequence.length);
+				// Prepare
+				for (int i = 0; i < sequence.length; i++) {
+					if(used.get(i))
+						storage.setEntry(array, i, sequence[i]);
+				}
+				// Verify
+				for (int i = 0; i < sequence.length; i++) {
+					if(!used.get(i)) {
+						assertThat(storage.sparseFindSorted(array, 0, sequence.length, sequence[i]))
+						.as("Found unused %d", _long(sequence[i])).isEqualTo(-1L);
+					} else {
+						// Global search -> hit
+						assertThat(storage.sparseFindSorted(array, 0, sequence.length, sequence[i]))
+							.as("Not found (Global) %d", _int(i)).isEqualTo(i);
+						// Single search -> hit
+						assertThat(storage.sparseFindSorted(array, i, sequence.length, sequence[i]))
+							.as("Not found (limited) %d", _int(i)).isEqualTo(i);
+						// Exclude value by window -> miss
+						assertThat(storage.sparseFindSorted(array, i>0 ? 0 : i+1, i>0 ? i : sequence.length, sequence[i]))
+							.as("Not found (limited) %d", _int(i)).isEqualTo(-1L);
+					}
+				}
+				// The way we generate the random data excludes type.maxValue()
+				long notPresent = storage.maxValue();
+				assertThat(storage.sparseFindSorted(array, 0, sequence.length, notPresent))
 					.as("Found foreign %d", _long(notPresent)).isEqualTo(-1L);
 			});
 		}
@@ -573,7 +658,7 @@ class IndexBlockStorageTest {
 				Object array = array(storage, sequence.length);
 				// Prepare
 				for (int i = 0; i < sequence.length; i++) {
-					storage.getValueType().set(array, i, sequence[i]);
+					storage.setEntry(array, i, sequence[i]);
 				}
 				// Verify
 				for (int i = 0; i < sequence.length; i++) {
@@ -600,14 +685,14 @@ class IndexBlockStorageTest {
 		Stream<DynamicNode> testFindRandom(RandomGenerator rng) {
 			return baseTests(storage -> {
 				int size = randSize(rng);
-				long[] sequence = rng.longs(0, storage.getValueType().maxValue())
+				long[] sequence = rng.longs(0, storage.maxValue())
 						.distinct()
 						.limit(size)
 						.toArray();
 				Object array = array(storage, sequence.length);
 				// Prepare
 				for (int i = 0; i < sequence.length; i++) {
-					storage.getValueType().set(array, i, sequence[i]);
+					storage.setEntry(array, i, sequence[i]);
 				}
 				// Verify
 				for (int i = 0; i < sequence.length; i++) {
@@ -650,12 +735,56 @@ class IndexBlockStorageTest {
 					assertThat(storage.findSortedSpan(array, 0, spans.length, span.second.longValue()))
 						.as("Not found span end %d", _int(i)).isEqualTo(i);
 
-					// verify we don't find them in excluded spans
+					// Verify we don't find them in excluded spans
 					assertThat(storage.findSortedSpan(array, i>0 ? 0 : i+1, i>0 ? i : spans.length, span.second.longValue()))
 						.as("Found excluded %d", _int(i)).isEqualTo(-1L);
 				}
 				assertThat(storage.findSortedSpan(array, 0, spans.length, 100))
 					.as("Found foreign").isEqualTo(-1L);
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.mapping.IndexBlockStorage#sparseFindSortedSpan(Object, int, int, long)}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testSparseFindSortedSpanFixed() {
+			return baseTests(storage -> {
+				@SuppressWarnings("unchecked")
+				Pair<Long, Long>[] spans = new Pair[]{
+						longPair(1, 3),
+						null,
+						longPair(4, 5),
+						longPair(7, 8),
+						null,
+						null,
+						longPair(10, 20),
+						null
+				};
+				long[] unused = {0, 6, 9, 21, 100};
+				Object array = array(storage, spans.length*2);
+				writeSpans(storage, array, spans);
+				// Verify
+				for (int i = 0; i < spans.length; i++) {
+					Pair<Long, Long> span = spans[i];
+					if(span==NO_SPAN) {
+						continue;
+					}
+					// Ensure we find our actual spans
+					assertThat(storage.sparseFindSortedSpan(array, 0, spans.length, span.first.longValue()))
+						.as("Not found span begin %d", _int(i)).isEqualTo(i);
+					assertThat(storage.sparseFindSortedSpan(array, 0, spans.length, span.second.longValue()))
+						.as("Not found span end %d", _int(i)).isEqualTo(i);
+
+					// Verify we don't find them in excluded spans
+					assertThat(storage.sparseFindSortedSpan(array, i>0 ? 0 : i+1, i>0 ? i : spans.length, span.second.longValue()))
+						.as("Found excluded %d", _int(i)).isEqualTo(-1L);
+				}
+				// Verify some unused values aren't found
+				for(long value : unused) {
+				assertThat(storage.sparseFindSortedSpan(array, 0, spans.length, value))
+					.as("Found foreign %d", _long(value)).isEqualTo(-1L);
+				}
 			});
 		}
 

@@ -630,11 +630,12 @@ public enum IndexValueType implements StringResource {
 	/**
 	 * Runs a binary search on the backing array
 	 *
-	 * @param array
-	 * @param value
+	 * @param array the array to search (expected to be fully filled and sorted)
+	 * @param value the value to search for, may or may not be a member of the array
 	 * @param fromIndex first index to search (inclusive)
 	 * @param toIndex last index to search (exclusive)
-	 * @return
+	 * @return the index {@code i} of the given {@code value} or {@code -i-1} if the
+	 * {@code value} was not found in the sorted array.
 	 *
 	 * @see Arrays#binarySearch(byte[], int, int, byte)
 	 */

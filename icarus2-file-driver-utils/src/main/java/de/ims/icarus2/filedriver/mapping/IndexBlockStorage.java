@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -116,6 +117,9 @@ public enum IndexBlockStorage {
 
 	private static final int NOT_FOUND = -1;
 
+	/** The official {@code noEntryValue} to signal unused slots in the storage */
+	public static final long UNUSED = 0;
+
 	private IndexBlockStorage(IndexValueType valueType) {
 		this.valueType = valueType;
 	}
@@ -184,9 +188,29 @@ public enum IndexBlockStorage {
 	public Object createBuffer(int byteCount) {
 		int size = byteCount/valueType.bytesPerValue();
 		Object buffer = valueType.newArray(size);
-		valueType.fill(buffer, -1, 0, size);
+//		valueType.fill(buffer, -1, 0, size);
+
+		assert Array.getLength(buffer)==size;
 
 		return buffer;
+	}
+
+	public long maxValue() {
+		return valueType.maxValue()-1;
+	}
+
+	// TRANSLATION
+
+	public long valueToStorage(long value) {
+		assert value>=0;
+		assert value<=maxValue();
+		return value + 1;
+	}
+
+	public long storageToValue(long storedValue) {
+		assert storedValue>=0;
+		assert storedValue<=maxValue()+1;
+		return storedValue - 1;
 	}
 
 	/**
@@ -203,7 +227,53 @@ public enum IndexBlockStorage {
 	 * @return
 	 */
 	public int findSorted(Object source, int from, int to, long value) {
+		value = valueToStorage(value);
 		return Math.max(NOT_FOUND, valueType.binarySearch(source, value, from, to));
+	}
+
+	/**
+	 * Searches the given storage data for a specified {@code value}, using a modified
+	 * binary search strategy to navigate the partially filled {@code source} array.
+	 * <p>
+	 * If the given {@code value} is not found this method will return {@code -1}
+	 *
+	 * @param source
+	 * @param from first index to search (inclusive)
+	 * @param to last index to search (exclusive)
+	 * @param value
+	 * @return
+	 */
+	public int sparseFindSorted(Object source, int from, int to, long value) {
+
+		value = valueToStorage(value);
+
+        int low = from;
+        int high = to-1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+			long midVal = valueType.get(source, mid);
+
+			if (midVal==UNUSED) {
+				// Unused mid
+				long lowVal = valueType.get(source, low);
+				if(lowVal==UNUSED || lowVal<value)
+					low++;
+				else if(lowVal>value)
+					return NOT_FOUND;
+				else
+					return low;
+			} else if (midVal>value)
+            	// Continue on left area
+            	high = mid - 1;
+            else if (midVal<value)
+            	// Continue on right area
+            	low = mid + 1;
+            else
+                return mid; // span found
+        }
+
+        return NOT_FOUND;  // span not found.
 	}
 
 	/**
@@ -217,6 +287,8 @@ public enum IndexBlockStorage {
 	 * @return
 	 */
 	public int find(Object source, int from, int to, long value) {
+
+		value = valueToStorage(value);
 
         for(int i=from; i<to; i++) {
         	if(valueType.get(source, i)==value) {
@@ -244,6 +316,8 @@ public enum IndexBlockStorage {
 	 */
 	public int findSortedSpan(Object source, int from, int to, long value) {
 
+		value = valueToStorage(value);
+
         int low = from;
         int high = to-1;
 
@@ -251,6 +325,57 @@ public enum IndexBlockStorage {
             int mid = (low + high) >>> 1;
 
             if (valueType.get(source, mid<<1)>value)
+            	// Continue on left area
+            	high = mid - 1;
+            else if (valueType.get(source, (mid<<1)+1)<value)
+            	// Continue on right area
+            	low = mid + 1;
+            else
+                return mid; // span found
+        }
+
+        return NOT_FOUND;  // span not found.
+	}
+
+	/**
+	 * Searches the backing span array for a given {@code value}. This method behaves
+	 * similar to {@link #sparseFindSorted(Object, int, int, long)} but also assumes
+	 * the array to ontain span definitions.
+	 * <p>
+	 * Note that this method requires disjoint spans to be stored in the array
+	 * in order to work properly!!
+	 *
+	 * @param source
+	 * @param from first index to check (inclusive)
+	 * @param to last index to check (exclusive)
+	 * @param value
+	 * @return
+	 *
+	 * @see #findSortedSpan(Object, int, int, long)
+	 * @see #sparseFindSorted(Object, int, int, long)
+	 */
+	public int sparseFindSortedSpan(Object source, int from, int to, long value) {
+
+		value = valueToStorage(value);
+
+        int low = from;
+        int high = to-1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+        	long spanLow = valueType.get(source, mid<<1);
+
+	        if (spanLow==UNUSED) {
+				// Unused span
+				long left = valueType.get(source, low<<1);
+				long right = valueType.get(source, (low<<1)+1);
+				if(left==UNUSED || right<value)
+					low++;
+				else if(left>value)
+					return NOT_FOUND;
+				else
+					return low;
+			} else if (spanLow>value)
             	// Continue on left area
             	high = mid - 1;
             else if (valueType.get(source, (mid<<1)+1)<value)
@@ -280,6 +405,8 @@ public enum IndexBlockStorage {
 	 */
 	public int findSpan(Object source, int from, int to, long value) {
 
+		value = valueToStorage(value);
+
         for(int i=from; i<to; i++) {
         	int pos = i<<1;
         	if(valueType.get(source, pos)<=value && valueType.get(source, pos+1)>=value) {
@@ -290,35 +417,39 @@ public enum IndexBlockStorage {
         return NOT_FOUND;
 	}
 
+	// READ
+
 	public long getEntry(Object source, int index) {
-		return valueType.get(source, index);
+		return storageToValue(valueType.get(source, index));
 	}
 
 	public long getSpanBegin(Object source, int index) {
-		return valueType.get(source, index<<1);
+		return storageToValue(valueType.get(source, index<<1));
 	}
 
 	public long getSpanEnd(Object source, int index) {
-		return valueType.get(source, (index<<1)+1);
+		return storageToValue(valueType.get(source, (index<<1)+1));
 	}
 
+	// WRITE
+
 	public long setEntry(Object source, int index, long value) {
-		long current = valueType.get(source, index);
-		valueType.set(source, index, value);
+		long current = storageToValue(valueType.get(source, index));
+		valueType.set(source, index, valueToStorage(value));
 		return current;
 	}
 
 	public long setSpanBegin(Object source, int index, long value) {
 		index = index<<1;
-		long current = valueType.get(source, index);
-		valueType.set(source, index, value);
+		long current = storageToValue(valueType.get(source, index));
+		valueType.set(source, index, valueToStorage(value));
 		return current;
 	}
 
 	public long setSpanEnd(Object source, int index, long value) {
 		index = (index<<1)+1;
-		long current = valueType.get(source, index);
-		valueType.set(source, index, value);
+		long current = storageToValue(valueType.get(source, index));
+		valueType.set(source, index, valueToStorage(value));
 		return current;
 	}
 
