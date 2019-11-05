@@ -42,6 +42,7 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Header;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
@@ -106,7 +107,7 @@ class BufferedIOResourceTest {
 						Config config = new Config();
 						config.bytesPerBlock = bytesPerBlock;
 						config.cacheSize = cacheSize;
-						config.headerSize = headerSize;
+						config.header = headerSize==0 ? null : new DummyHeader(headerSize);
 						config.cache = RUBlockCache.newLeastRecentlyUsedCache();
 						config.entries = entries;
 						config.resource = new VirtualIOResource(bytesPerBlock * config.entries + headerSize);
@@ -238,6 +239,87 @@ class BufferedIOResourceTest {
 				for(Block block : blocks) {
 					assertFalse(block.isLocked());
 				}
+
+				if(config.header!=null) {
+					verify(config.headerMock).save(any());
+				}
+			}
+		});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.Header#save(ByteBuffer)}.
+	 */
+	@TestFactory
+	@RandomizedTest
+	Stream<DynamicNode> testHeaderSave(RandomGenerator rng) {
+		return basicTests((config, instance) -> {
+			DummyHeader header = config.header;
+			if(header!=null) {
+				config.resource.prepare();
+				rng.nextBytes(header.data);
+
+				instance.flush();
+
+				verify(header).save(any());
+
+				try(SeekableByteChannel channel = config.resource.getReadChannel()) {
+					ByteBuffer bb = ByteBuffer.allocate(header.sizeInBytes());
+					channel.read(bb);
+					assertThat(bb.array()).isEqualTo(header.data);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.Header#save(ByteBuffer)}.
+	 */
+	@TestFactory
+	@RandomizedTest
+	Stream<DynamicNode> testHeaderLoadOnReadOnlyAccessor(RandomGenerator rng) {
+		return basicTests((config, instance) -> {
+			DummyHeader header = config.header;
+			if(header!=null) {
+				config.resource.prepare();
+				ByteBuffer bb = ByteBuffer.allocate(header.sizeInBytes());
+				rng.nextBytes(bb.array());
+
+				try(SeekableByteChannel channel = config.resource.getWriteChannel()) {
+					channel.write(bb);
+				}
+
+				// Test read-only
+				try(ReadWriteAccessor accessor = instance.newAccessor(true)) {
+					verify(config.headerMock).load(any());
+					assertThat(header.data).isEqualTo(bb.array());
+				}
+			}
+		});
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.Header#save(ByteBuffer)}.
+	 */
+	@TestFactory
+	@RandomizedTest
+	Stream<DynamicNode> testHeaderLoadOnWritableAccessor(RandomGenerator rng) {
+		return basicTests((config, instance) -> {
+			DummyHeader header = config.header;
+			if(header!=null) {
+				config.resource.prepare();
+				ByteBuffer bb = ByteBuffer.allocate(header.sizeInBytes());
+				rng.nextBytes(bb.array());
+
+				try(SeekableByteChannel channel = config.resource.getWriteChannel()) {
+					channel.write(bb);
+				}
+
+				// Test write access
+				try(ReadWriteAccessor accessor = instance.newAccessor(false)) {
+					verify(config.headerMock).load(any());
+					assertThat(header.data).isEqualTo(bb.array());
+				}
 			}
 		});
 	}
@@ -329,80 +411,6 @@ class BufferedIOResourceTest {
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#writeHeader(byte[])}.
-		 */
-		@TestFactory
-		Stream<DynamicNode> testWriteHeaderReadOnly() {
-			return accessorTests(true, (config, accessor) -> {
-				assertModelException(GlobalErrorCode.NO_WRITE_ACCESS,
-							() -> accessor.writeHeader(new byte[1]));
-			});
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#readHeader()}.
-		 */
-		@TestFactory
-		Stream<DynamicNode> testWriteHeaderReadable() {
-			return accessorTests(true, (config, accessor) -> {
-				if(config.headerSize==0) {
-					assertModelException(GlobalErrorCode.ILLEGAL_STATE,
-							() -> accessor.readHeader());
-				} else {
-					assertNotNull(accessor.readHeader());
-				}
-			});
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#writeHeader(byte[])}.
-		 */
-		@TestFactory
-		@RandomizedTest
-		Stream<DynamicNode> testWriteHeaderRandom(RandomGenerator rng) {
-			return accessorTests(false, (config, accessor) -> {
-				if(config.headerSize==0) {
-					assertModelException(GlobalErrorCode.ILLEGAL_STATE,
-							() -> accessor.writeHeader(new byte[1]));
-				} else {
-					int size = rng.random(1, config.headerSize+1);
-					byte[] header = rng.randomBytes(size, Byte.MIN_VALUE, Byte.MAX_VALUE);
-					accessor.writeHeader(header);
-
-					try(SeekableByteChannel channel = config.resource.getReadChannel()) {
-						ByteBuffer bb = ByteBuffer.allocate(size);
-						channel.position(0L);
-						channel.read(bb);
-						assertThat(bb.array()).isEqualTo(header);
-					}
-				}
-			});
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor#readHeader()}
-		 */
-		@TestFactory
-		@RandomizedTest
-		Stream<DynamicNode> testReadHeaderRandom(RandomGenerator rng) {
-			return accessorTests(true, (config, accessor) -> {
-				if(config.headerSize==0) {
-					assertModelException(GlobalErrorCode.ILLEGAL_STATE,
-							() -> accessor.readHeader());
-				} else {
-					byte[] header = rng.randomBytes(config.headerSize, Byte.MIN_VALUE, Byte.MAX_VALUE);
-
-					try(SeekableByteChannel channel = config.resource.getReadChannel()) {
-						ByteBuffer bb = ByteBuffer.wrap(header);
-						channel.position(0L);
-						channel.write(bb);
-					}
-					assertThat(accessor.readHeader()).isEqualTo(header);
-				}
-			});
-		}
-
-		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.io.BufferedIOResource#lockBlock(int, de.ims.icarus2.filedriver.io.BufferedIOResource.Block)}.
 		 */
 		@TestFactory
@@ -468,6 +476,10 @@ class BufferedIOResourceTest {
 				}
 
 				assertEquals(1, accessor.getSource().getStats().getCount(StatField.FLUSH));
+
+				if(config.header!=null) {
+					verify(config.headerMock).save(any());
+				}
 			});
 		}
 
@@ -683,13 +695,14 @@ class BufferedIOResourceTest {
 		BlockCache cacheMock;
 		PayloadConverter converter;
 		PayloadConverter converterMock;
+		DummyHeader header;
+		Header headerMock;
 		int entries;
 		int cacheSize;
 		int bytesPerBlock;
-		int headerSize;
 
 		long offsetFOrBlock(int id) {
-			return id* (long) bytesPerBlock + headerSize;
+			return id* (long) bytesPerBlock + (header==null ? 0 : header.sizeInBytes());
 		}
 
 		BufferedIOResource create() {
@@ -704,15 +717,42 @@ class BufferedIOResourceTest {
 			});
 
 			// Use the builder, as this way we can activate stats tracking
-			return BufferedIOResource.builder()
+			BufferedIOResource.Builder builder = BufferedIOResource.builder()
 					.resource(resourceMock)
 					.cacheSize(cacheSize)
 					.bytesPerBlock(bytesPerBlock)
-					.headerSize(headerSize)
 					.blockCache(cacheMock)
 					.payloadConverter(converterMock)
-					.collectStats(true)
-					.build();
+					.collectStats(true);
+
+			if(header!=null) {
+				headerMock = mock(Header.class, invoc -> {
+					return invoc.getMethod().invoke(header, invoc.getArguments());
+				});
+				builder.header(headerMock);
+			}
+
+			return builder.build();
+		}
+	}
+
+	public static class DummyHeader extends Header {
+
+		public final byte[] data;
+
+		public DummyHeader(int size) {
+			super(size);
+			data = new byte[size];
+		}
+
+		@Override
+		protected void load(ByteBuffer source) {
+			source.get(data);
+		}
+
+		@Override
+		protected void save(ByteBuffer target) {
+			target.put(data);
 		}
 	}
 }

@@ -19,7 +19,7 @@ package de.ims.icarus2.filedriver.io;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
-import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._byte;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
@@ -31,11 +31,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
-import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Stats;
@@ -50,7 +52,9 @@ import it.unimi.dsi.fastutil.ints.IntSet;
  * accessors for both read and write operations. Data is read in blocks of a fixed
  * size, the value of which is determined at construction time by the respective
  * subclass. Blocks are then cached in a cache implementation also provided at
- * construction time.
+ * construction time. The data source may also contain an optional header section of fixed
+ * length that can be read from and written to by the {@link #newAccessor(boolean) accessors}
+ * of the resource.
  * <p>
  * Synchronization in this class is not performed on a <i>per method</i> basis,
  * but rather as batches of operations surrounded by the appropriate synchronization
@@ -88,6 +92,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
  *
  */
 public class BufferedIOResource implements Flushable {
+
+	private static final Logger log = LoggerFactory.getLogger(BufferedIOResource.class);
 
 	public static Builder builder() {
 		return new Builder();
@@ -166,7 +172,7 @@ public class BufferedIOResource implements Flushable {
 
 	private final Stats<StatField> stats;
 
-	private final int headerSize;
+	private final Header header;
 
 	private BufferedIOResource(Builder builder) {
 		builder.validate();
@@ -175,7 +181,7 @@ public class BufferedIOResource implements Flushable {
 		this.payloadConverter = builder.getPayloadConverter();
 		this.cache = builder.getBlockCache();
 		this.cacheSize = builder.getCacheSize();
-		this.headerSize = builder.getHeaderSize();
+		this.header = builder.getHeader();
 		this.bytesPerBlock = builder.getBytesPerBlock();
 		stats = builder.isCollectStats() ? new Stats<>(StatField.class) : null;
 	}
@@ -289,53 +295,40 @@ public class BufferedIOResource implements Flushable {
 		}
 	}
 
-	/** Must be called under write lock */
-	private boolean writeBlockUnsafe(Block block, long offset) throws IOException {
-		try(SeekableByteChannel channel = resource.getWriteChannel()) {
+	public Header getHeader() {
+		return header;
+	}
 
-			// Write data to buffer
-			buffer.clear();
-			payloadConverter.write(block.getData(), buffer, block.getSize());
-			buffer.flip();
-
-			// Copy buffer to channel
-			channel.position(offset);
-			channel.write(buffer);
-
-			return true;
+	private void writeHeaderUnsafe() throws IOException {
+		if(header==null) {
+			return;
 		}
-	}
 
-	private void checkHeader() {
-		if(headerSize==0)
-			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "No header reserved");
-	}
-
-	private void writeHeaderUnsafe(byte[] header) throws IOException {
-		checkHeader();
-		requireNonNull(header);
-		if(header.length>headerSize)
-			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					Messages.mismatch("Header size exceeded", _int(headerSize), _int(header.length)));
-
-		ByteBuffer bb = ByteBuffer.wrap(header);
+		ByteBuffer bb = ByteBuffer.allocate(headerBytes());
 		try(SeekableByteChannel channel = resource.getReadChannel()) {
+			header.save(bb);
+			bb.flip();
 			channel.position(0L);
 			channel.write(bb);
 		}
 	}
 
-	private byte[] readHeaderUnsafe() throws IOException {
-		checkHeader();
+	private void readHeaderUnsafe() throws IOException {
+		if(header==null) {
+			return;
+		}
 
-		byte[] header = new byte[headerSize];
-		ByteBuffer bb = ByteBuffer.wrap(header);
+		ByteBuffer bb = ByteBuffer.allocate(headerBytes());
 		try(SeekableByteChannel channel = resource.getReadChannel()) {
 			channel.position(0L);
 			channel.read(bb);
-		}
+			bb.flip();
 
-		return header;
+			// Only attempt to load if there is data available
+			if(bb.hasRemaining()) {
+				header.load(bb);
+			}
+		}
 	}
 
 	/**
@@ -370,22 +363,35 @@ public class BufferedIOResource implements Flushable {
 	private void flushUnsafe() throws IOException {
 		if(!changedBlocks.isEmpty()) {
 			record(StatField.FLUSH);
-			for(IntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
-				int id = it.nextInt();
+			try(SeekableByteChannel channel = resource.getWriteChannel()) {
 
-				Block block = cache.getBlock(id);
-				if(block==null)
-					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-							"Missing block previously marked as locked: "+id);
+				for(IntIterator it = changedBlocks.iterator(); it.hasNext(); ) {
+					int id = it.nextInt();
 
-				long offset = offsetForBlock(id);
+					Block block = cache.getBlock(id);
+					if(block==null)
+						throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+								"Missing block previously marked as locked: "+id);
 
-				writeBlockUnsafe(block, offset);
+					long offset = offsetForBlock(id);
 
-				it.remove();
-				block.unlock();
+
+					// Write data to buffer
+					buffer.clear();
+					payloadConverter.write(block.getData(), buffer, block.getSize());
+					buffer.flip();
+
+					// Copy buffer to channel
+					channel.position(offset);
+					channel.write(buffer);
+
+					it.remove();
+					block.unlock();
+				}
 			}
 		}
+
+		writeHeaderUnsafe();
 	}
 
 	/**
@@ -422,6 +428,8 @@ public class BufferedIOResource implements Flushable {
 
 		cache.open(cacheSize);
 		resource.prepare();
+
+		readHeaderUnsafe();
 	}
 
 	private void decrementUseCount() {
@@ -454,8 +462,12 @@ public class BufferedIOResource implements Flushable {
 		}
 	}
 
+	private int headerBytes() {
+		return header==null ? 0 : header.sizeInBytes();
+	}
+
 	private long offsetForBlock(int id) {
-		return id*(long)bytesPerBlock + headerSize;
+		return id*(long)bytesPerBlock + headerBytes();
 	}
 
 	/**
@@ -789,15 +801,6 @@ public class BufferedIOResource implements Flushable {
 			decrementUseCount();
 		}
 
-		public void writeHeader(byte[] header) throws IOException {
-			checkWriteAccess();
-			writeHeaderUnsafe(header);
-		}
-
-		public byte[] readHeader() throws IOException {
-			return readHeaderUnsafe();
-		}
-
 		/**
 		 * Same as {@link BufferedIOResource#flush()} but safe to call from inside a
 		 * {@link #begin()} ... {@link #end()} code block.
@@ -805,6 +808,7 @@ public class BufferedIOResource implements Flushable {
 		 */
 		@Override
 		public void flush() throws IOException {
+			checkWriteAccess();
 			flushUnsafe();
 		}
 
@@ -897,6 +901,107 @@ public class BufferedIOResource implements Flushable {
 	}
 
 	/**
+	 * Models interaction with the optional header section.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static abstract class Header {
+
+		private final int sizeInBytes;
+
+		public Header(int size) {
+			checkArgument("Header size must be positive", size>0);
+			this.sizeInBytes = size;
+		}
+
+		/** Returns the total size in bytes reserved by the header */
+		public int sizeInBytes() {
+			return sizeInBytes;
+		}
+
+		//TODO serialization
+
+		protected abstract void load(ByteBuffer source);
+		protected abstract void save(ByteBuffer target);
+	}
+
+	public static class SimpleHeader extends Header {
+
+		/** We reserve slightly more space than needed to keep it extensible */
+		public static final int RESERVED_SIZE = 64;
+
+		private static final byte VERSION = 1;
+
+		@SuppressWarnings("unused")
+		private static final int USED_SIZE = Byte.BYTES+5*Long.BYTES;
+
+		/** Number of entries */
+		private long size = 0;
+		private final Range used = new Range();
+		private final Range target = new Range();
+
+		public SimpleHeader() {
+			super(RESERVED_SIZE);
+		}
+
+		protected byte version() {
+			return VERSION;
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.io.BufferedIOResource.Header#load(java.nio.ByteBuffer)
+		 */
+		@Override
+		protected void load(ByteBuffer source) {
+			byte version = source.get();
+			// We're supposed to be backwards compatible, so only check if the stored data is too new
+			if(version>version()) {
+				log.warn("Incompatible header version detected: current version is %d, stored version %d",
+						_byte(version()), _byte(version));
+			}
+			size = source.getLong();
+			used.set(source.getLong(), source.getLong());
+			target.set(source.getLong(), source.getLong());
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.io.BufferedIOResource.Header#save(java.nio.ByteBuffer)
+		 */
+		@Override
+		protected void save(ByteBuffer dest) {
+			dest.put(VERSION);
+			dest.putLong(size);
+			dest.putLong(used.getMin());
+			dest.putLong(used.getMax());
+			dest.putLong(target.getMin());
+			dest.putLong(target.getMax());
+		}
+
+		// LOOKUP BORDERS
+		public long getSmallestUsedIndex() { return used.getMin(); }
+		public long getLargestUsedIndex() { return used.getMax(); }
+		public long getSmallestTargetIndex() { return target.getMin(); }
+		public long getLargestTargetIndex() { return target.getMax(); }
+
+		// UPDATE RANGES
+		public void updateUsedIndex(long value) { used.update(value); }
+		public void updateTargetIndex(long value) { target.update(value); }
+		public void growSize() { size++; }
+
+		// CHECK USAGE
+		public boolean isUsedIndex(long value) { return used.contains(value); }
+		public boolean isUsedTarget(long value) { return target.contains(value); }
+
+		// FETCH LIMITED RANGES
+		public Range getUsedIndices(long fromIndex, long toIndex) {
+			Range range = new Range().set(fromIndex, toIndex);
+			range.limit(used);
+			return range;
+		}
+	}
+
+	/**
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -905,10 +1010,10 @@ public class BufferedIOResource implements Flushable {
 	public static class Builder extends AbstractBuilder<Builder, BufferedIOResource> {
 		private int cacheSize = 0;
 		private int bytesPerBlock = 0;
-		private int headerSize = 0;
 		private IOResource resource;
 		private BlockCache blockCache;
 		private PayloadConverter payloadConverter;
+		private Header header;
 
 		private Boolean collectStats;
 
@@ -925,20 +1030,20 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
-		public Builder headerSize(int headerSize) {
-			checkArgument(headerSize>=0);
-			checkState(this.headerSize==0);
-
-			this.headerSize = headerSize;
-
-			return thisAsCast();
-		}
-
 		public Builder bytesPerBlock(int bytesPerBlock) {
 			checkArgument(bytesPerBlock>=0);
 			checkState(this.bytesPerBlock==0);
 
 			this.bytesPerBlock = bytesPerBlock;
+
+			return thisAsCast();
+		}
+
+		public Builder header(Header header) {
+			requireNonNull(header);
+			checkState(this.header==null);
+
+			this.header = header;
 
 			return thisAsCast();
 		}
@@ -982,10 +1087,6 @@ public class BufferedIOResource implements Flushable {
 			return cacheSize;
 		}
 
-		public int getHeaderSize() {
-			return headerSize;
-		}
-
 		public int getBytesPerBlock() {
 			return bytesPerBlock;
 		}
@@ -1000,6 +1101,10 @@ public class BufferedIOResource implements Flushable {
 
 		public PayloadConverter getPayloadConverter() {
 			return payloadConverter;
+		}
+
+		public Header getHeader() {
+			return header;
 		}
 
 		public boolean isCollectStats() {
