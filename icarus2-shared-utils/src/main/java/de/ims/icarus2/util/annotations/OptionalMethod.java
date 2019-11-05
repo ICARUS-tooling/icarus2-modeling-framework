@@ -22,10 +22,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import de.ims.icarus2.util.OptionalMethodNotSupported;
+
 /**
  * Empty marker interface to signal that implementing a method
  * is optional and the implementing class is free to throw an
- * {@link UnsupportedOperationException} or similar exception
+ * {@link OptionalMethodNotSupported} or similar exception
  * legally.
  *
  * @author Markus Gärtner
