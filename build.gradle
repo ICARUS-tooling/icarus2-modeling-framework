@@ -95,7 +95,7 @@ subprojects {
 		benchmark
 		
 		// default testing functionality
-		testImplementation.extendsFrom(junit, slf4jTest, mockito)
+		testImplementation.extendsFrom(junit, slf4jTest, mockito, assertj)
 	
 		// configuration for the test code artifact
 		tests.extendsFrom(testImplementation)
