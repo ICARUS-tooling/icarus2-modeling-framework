@@ -38,6 +38,7 @@ import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.TestReporter;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
@@ -46,7 +47,6 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Header;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
-import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
 import de.ims.icarus2.test.random.RandomGenerator;
@@ -144,8 +144,12 @@ class BufferedIOResourceTest {
 	private Stream<DynamicNode> basicTests(ThrowingBiConsumer<Config, BufferedIOResource> task) {
 		return configurations()
 				.map(config -> dynamicTest(config.label, () -> {
-					BufferedIOResource instance = config.create();
-					task.accept(config, instance);
+					try {
+						BufferedIOResource instance = config.create();
+						task.accept(config, instance);
+					} finally {
+						config.close();
+					}
 				}));
 
 	}
@@ -358,10 +362,12 @@ class BufferedIOResourceTest {
 
 			assertModelException(GlobalErrorCode.NO_WRITE_ACCESS,
 					() -> instance.newAccessor(false));
+
+			config.close();
 		}));
 	}
 
-	@PostponedTest("broken when executing via gradle")
+//	@PostponedTest("broken when executing via gradle")
 	@Nested
 	class ForAccessor {
 
@@ -379,6 +385,7 @@ class BufferedIOResourceTest {
 								accessor.end();
 							}
 						}
+						config.close();
 					}));
 
 		}
@@ -392,7 +399,7 @@ class BufferedIOResourceTest {
 				for (int id : ids) {
 					bb.clear();
 					Arrays.fill(b, strictToByte(id+1));
-					channel.position(config.offsetFOrBlock(id));
+					channel.position(config.offsetForBlock(id));
 					channel.write(bb);
 				}
 			}
@@ -461,7 +468,7 @@ class BufferedIOResourceTest {
 
 		@TestFactory
 		@RandomizedTest
-		Stream<DynamicNode> testAutoFlushing(RandomGenerator rand) {
+		Stream<DynamicNode> testAutoFlushing(RandomGenerator rand, TestReporter reporter) {
 			return accessorTests(false, (config, accessor) -> {
 				// Locking cacheSize number of blocks should cause exactly 1 flush
 				int count = config.cacheSize;
@@ -678,7 +685,7 @@ class BufferedIOResourceTest {
 
 					for (int id : ids) {
 						bb.clear();
-						channel.position(config.offsetFOrBlock(id));
+						channel.position(config.offsetForBlock(id));
 						channel.read(bb);
 						assertEquals(0, bb.remaining());
 
@@ -703,7 +710,7 @@ class BufferedIOResourceTest {
 		int cacheSize;
 		int bytesPerBlock;
 
-		long offsetFOrBlock(int id) {
+		long offsetForBlock(int id) {
 			return id* (long) bytesPerBlock + (header==null ? 0 : header.sizeInBytes());
 		}
 
@@ -735,6 +742,23 @@ class BufferedIOResourceTest {
 			}
 
 			return builder.build();
+		}
+
+		void close() {
+			label = null;
+
+			resource = null;
+			resourceMock = null;
+
+			cache.close();
+			cache = null;
+			cacheMock = null;
+
+			converter = null;
+			converterMock = null;
+
+			header = null;
+			headerMock = null;
 		}
 	}
 
