@@ -5,14 +5,19 @@ package de.ims.icarus2.model.api.driver.mapping;
 
 import static de.ims.icarus2.test.util.Pair.longPair;
 import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
@@ -41,6 +46,18 @@ public class MappingTestUtils {
 		return rng.random(range.first.longValue(), range.second.longValue());
 	}
 
+	private static LongStream rands(RandomGenerator rng, Pair<Long, Long> range, int size) {
+		return LongStream.generate(() -> rand(rng, range)).distinct().limit(size);
+	}
+
+	private static Stream<Pair<Long, Long>> join(LongStream source, LongStream target) {
+		return Streams.zip(source.boxed(), target.boxed(), Pair::pair);
+	}
+
+	private static List<Pair<Long, Long>> toList(Stream<Pair<Long, Long>> stream) {
+		return stream.collect(Collectors.toList());
+	}
+
 	/** Picks a random index inside the size of the given {@code range} */
 	private static int randIdx(RandomGenerator rng, Pair<Long, Long>  range) {
 		return rng.random(0, strictToInt(range.second.longValue()-range.first.longValue()));
@@ -48,7 +65,8 @@ public class MappingTestUtils {
 
 	/** Picks a random value between 25% and 100% of the given count */
 	private static int fraction(RandomGenerator rng, int count) {
-		return rng.random(count>>2, count);
+		assert count>0;
+		return Math.max(1, rng.random(count>>2, count));
 	}
 
 	private static int range(Pair<Long, Long>  range) {
@@ -57,11 +75,57 @@ public class MappingTestUtils {
 		return strictToInt(dif);
 	}
 
-	public static final int TEST_LIMIT = 1_000_000;
+	public static final int TEST_LIMIT = 1000;
 
-	public static Pair<Long, Long> randRange(RandomGenerator rng, int count, int multiplier) {
-		long end = rng.random(count*multiplier, TEST_LIMIT);
-		return longPair(end- count*multiplier, end);
+	public static Pair<Long, Long> randRange(RandomGenerator rng, IndexValueType valueType,
+			int count, int multiplier) {
+		long max = Math.min(TEST_LIMIT, valueType.maxValue()+1);
+		if(max<0) max = TEST_LIMIT; // overflow
+		long range = Math.min(count*multiplier, valueType.maxValue());
+		long min = Math.max(0, range);
+		assert min<max;
+		long end = rng.random(min, max);
+		long begin = Math.max(0, end - range);
+		assert end-begin+1 >= count;
+		return longPair(begin, end);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static List<Pair<Long, Long>> fixed1to1Mappings(Coverage coverage) {
+
+		switch (coverage) {
+		case PARTIAL: return list(
+				longPair(1, 4),
+				longPair(11, 2),
+				longPair(99, 33),
+				longPair(66, 4),
+				longPair(2, 0)
+			);
+		case TOTAL: return list(
+				longPair(0, 1),
+				longPair(1, 3),
+				longPair(3, 0),
+				longPair(10, 4),
+				longPair(12, 2)
+			);
+		case MONOTONIC: return list(
+				longPair(0, 1),
+				longPair(1, 3),
+				longPair(3, 4),
+				longPair(10, 10),
+				longPair(12, 99)
+			);
+		case TOTAL_MONOTONIC: return list(
+				longPair(0, 0),
+				longPair(1, 1),
+				longPair(3, 2),
+				longPair(10, 3),
+				longPair(12, 4)
+			);
+
+		default:
+			throw new InternalError("Coverage type not handled: "+coverage);
+		}
 	}
 
 	/**
@@ -73,59 +137,46 @@ public class MappingTestUtils {
 	 * @param target the target index space (inclusive, exclusive)
 	 * @return
 	 */
-	public static Stream<Pair<String,Stream<Pair<Long, Long>>>> create1to1Mappings(RandomGenerator rng,
+	public static Stream<Pair<String,List<Pair<Long, Long>>>> random1to1Mappings(RandomGenerator rng,
 			Coverage coverage, int count, Pair<Long, Long> source, Pair<Long, Long> target) {
 
 		int rs = range(source);
 		int rt = range(target);
 		assertTrue(rs>=count, "Source range too small");
 
+		long sourceBegin = source.first.longValue();
+		long targetBegin = target.first.longValue();
+
 		switch (coverage) {
 
 		case PARTIAL: {
+			int part = fraction(rng, count);
 			// (random, random)
 			return Stream.of(
-					pair("random full", Stream.generate(() -> longPair(rand(rng, source), rand(rng, target)))
-							.limit(count)),
-					pair("random partial", Stream.generate(() -> longPair(rand(rng, source), rand(rng, target)))
-							.limit(fraction(rng, count)))
+					pair("random full", toList(join(rands(rng, source, count), rands(rng, target, count)))),
+					pair("random partial", toList(join(rands(rng, source, part), rands(rng, target, part))))
 			);
 		}
 
 		case TOTAL_MONOTONIC: {
-			// (source[i], target[i])
-//			assertEquals(count, rs, "Count mismatch");
-//			assertEquals(rs, rt, "Range mismatch");
-			return Stream.of(pair("full", IntStream.range(0, count)
+			return Stream.of(pair("full", toList(IntStream.range(0, count)
 					.mapToObj(offset -> longPair(
-							source.first.longValue()+offset,
-							target.first.longValue()+offset))));
+							sourceBegin+offset,
+							targetBegin+offset)))));
 		}
 
 		case MONOTONIC: {
 			assertTrue(rt>=rs, "Target range too small");
-			return Stream.of(pair("random equally sized", Streams.zip(
-					IntStream.generate(() -> randIdx(rng, source))
-						.distinct()
-						.limit(count)
-						.sorted()
-						.boxed(),
-					IntStream.generate(() -> randIdx(rng, target))
-						.limit(count)
-						.sorted()
-						.boxed(),
-					(s, t) -> longPair(
-							source.first.longValue()+s.intValue(),
-							target.first.longValue()+t.intValue())
-			)));
+			return Stream.of(pair("random equally sized", toList(join(
+					rands(rng, source, count).sorted(),
+					rands(rng, target, count).sorted()))));
 		}
 
 		case TOTAL: {
 			assertTrue(rt>=count, "Target range too small");
-			return Stream.of(pair("random", IntStream.range(0, count)
-					.mapToObj(offset -> longPair(
-							rand(rng, source),
-							target.first.longValue()+offset))));
+			return Stream.of(pair("random", toList(join(
+					rands(rng, source, count),
+					LongStream.range(0, count)))));
 		}
 
 		default:
@@ -134,4 +185,11 @@ public class MappingTestUtils {
 	}
 
 	//TODO produce mapping sequences and verifications
+
+	public void extractMapping(List<Pair<Long, Long>> entries, long[] sources, long[] targets) {
+		for (int i = 0; i < sources.length; i++) {
+			sources[i] = entries.get(i).first.longValue();
+			targets[i] = entries.get(i).second.longValue();
+		}
+	}
 }

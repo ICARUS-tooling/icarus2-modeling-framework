@@ -20,9 +20,7 @@
 package de.ims.icarus2.test.guard;
 
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.lang.annotation.Annotation;
@@ -39,6 +37,7 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestReporter;
@@ -179,11 +178,10 @@ abstract class Guardian<T> {
 						() -> executor.accept(config.params)));
 	}
 
-	static void assertReflectionNPE(org.junit.jupiter.api.function.Executable executable) {
-		InvocationTargetException exp = assertThrows(InvocationTargetException.class, executable);
-		Throwable cause = exp.getCause();
-		assertNotNull(cause);
-		assertTrue(cause instanceof NullPointerException, "unexpected exception: "+cause);
+	static void assertReflectionNPE(ThrowingCallable callable) {
+		assertThatExceptionOfType(InvocationTargetException.class)
+			.isThrownBy(callable)
+			.withCauseExactlyInstanceOf(NullPointerException.class);
 	}
 
 	static class ParamConfig {

@@ -40,6 +40,7 @@ import static org.mockito.Mockito.withSettings;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
 import java.util.function.LongConsumer;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.internal.stubbing.answers.CallsRealMethods;
@@ -512,6 +513,20 @@ public class ModelTestUtils {
 		for (int i = 0; i < expected.size(); i++) {
 			assertEquals(expected.indexAt(i), actual.indexAt(i), "Mismatch at index "+i);
 		}
+	}
+
+	public static Predicate<? super IndexSet> matcher(long...indices) {
+		return set -> {
+			if(set.size()!=indices.length) {
+				return false;
+			}
+			for (int i = 0; i < indices.length; i++) {
+				if(set.indexAt(i)!=indices[i]) {
+					return false;
+				}
+			}
+			return true;
+		};
 	}
 
 	private static final IndexValueType defaultType = IndexValueType.LONG;
