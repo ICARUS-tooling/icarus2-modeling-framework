@@ -28,7 +28,7 @@ import de.ims.icarus2.model.api.io.SynchronizedAccessor;
  * @author Markus Gärtner
  *
  */
-public interface MappingWriter extends SynchronizedAccessor<Mapping> {
+public interface MappingWriter extends SynchronizedAccessor<WritableMapping> {
 
 	/**
 	 * Maps the given {@code sourceIndex} to a single {@code targetIndex}.

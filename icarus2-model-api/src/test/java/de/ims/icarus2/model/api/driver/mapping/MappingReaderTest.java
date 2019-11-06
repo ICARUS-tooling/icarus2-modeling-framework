@@ -9,13 +9,12 @@ import de.ims.icarus2.model.api.io.SynchronizedAccessorTest;
  * @author Markus Gärtner
  *
  */
-public interface MappingWriterTest extends SynchronizedAccessorTest<WritableMapping, MappingWriter> {
-
+public interface MappingReaderTest extends SynchronizedAccessorTest<Mapping, MappingReader> {
 	/**
 	 * @see de.ims.icarus2.model.api.io.SynchronizedAccessorTest#createAccessor(java.lang.Object)
 	 */
 	@Override
-	default MappingWriter createAccessor(WritableMapping source) {
-		return source.newWriter();
+	default MappingReader createAccessor(Mapping source) {
+		return source.newReader();
 	}
 }

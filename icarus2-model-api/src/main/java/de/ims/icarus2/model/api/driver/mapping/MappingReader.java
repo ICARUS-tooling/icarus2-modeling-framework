@@ -16,6 +16,10 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -69,10 +73,11 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	 * @throws ModelException
 	 * @throws InterruptedException
 	 */
-	boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings) throws InterruptedException;
+	boolean lookup(long sourceIndex, IndexCollector collector,
+			@Nullable RequestSettings settings) throws InterruptedException;
 
 	/**
-	 * Returns the number of indices that are mapped to the given {@code sourceIndex}.
+	 * Returns the (estimated or maximum) number of indices that are mapped to the given {@code sourceIndex}.
 	 * This is equal to the {@link IndexSet#size() size} of an {@link IndexSet} that would
 	 * be returned for a call to {@link #lookup(long, RequestSettings)} when provided
 	 * with the same {@code sourceIndex} argument but allows for a much more efficient
@@ -80,6 +85,10 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	 * <p>
 	 * If the implementation is unable to efficiently determine to the number of mapped indices
 	 * without actually loading them it can return {@code -1} to signal an "unknown" size.
+	 * <p>
+	 * For implementations that map to a constant sized amount of target indices, this method
+	 * is allowed to return that constant number, even if the given {@code sourceIndex} doesn't
+	 * actually map to any target indices.
 	 *
 	 * @param sourceIndex
 	 * @param settings
@@ -88,16 +97,17 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	 * @throws InterruptedException
 	 */
 	@OptionalMethod
-	long getIndicesCount(long sourceIndex, RequestSettings settings) throws InterruptedException;
+	long getIndicesCount(long sourceIndex, @Nullable RequestSettings settings) throws InterruptedException;
 
-	IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws InterruptedException;
+	IndexSet[] lookup(long sourceIndex, @Nullable RequestSettings settings) throws InterruptedException;
 
-	long getBeginIndex(long sourceIndex, RequestSettings settings) throws InterruptedException;
-	long getEndIndex(long sourceIndex, RequestSettings settings) throws InterruptedException;
+	long getBeginIndex(long sourceIndex, @Nullable RequestSettings settings) throws InterruptedException;
+	long getEndIndex(long sourceIndex, @Nullable RequestSettings settings) throws InterruptedException;
 
 	// Bulk index lookups
 
-	default IndexSet[] lookup(IndexSet[] sourceIndices, RequestSettings settings) throws InterruptedException {
+	default IndexSet[] lookup(IndexSet[] sourceIndices, @Nullable RequestSettings settings) throws InterruptedException {
+		requireNonNull(sourceIndices);
 
 		IndexSetBuilder builder = new IndexCollectorFactory().chunkSizeLimit(IndexUtils.maxSize(sourceIndices)).create();
 
@@ -106,10 +116,10 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 		return builder.build();
 	}
 
-	boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings) throws InterruptedException;
+	boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, @Nullable RequestSettings settings) throws InterruptedException;
 
-	long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings) throws InterruptedException;
-	long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings) throws InterruptedException;
+	long getBeginIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings) throws InterruptedException;
+	long getEndIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings) throws InterruptedException;
 
 	// Utility method for efficient reverse lookups
 
@@ -129,7 +139,8 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	 * @throws InterruptedException
 	 */
 	@OptionalMethod
-	long find(long fromSource, long toSource, long targetIndex, RequestSettings settings) throws InterruptedException;
+	long find(long fromSource, long toSource, long targetIndex,
+			@Nullable RequestSettings settings) throws InterruptedException;
 
 	/**
 	 * Performs a reverse lookup for a collection of target indices. Note that the {@code targetIndices}
@@ -146,7 +157,9 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	 * @throws InterruptedException
 	 */
 	@OptionalMethod
-	default IndexSet[] find(long fromSource, long toSource, IndexSet[] targetIndices, RequestSettings settings) throws InterruptedException {
+	default IndexSet[] find(long fromSource, long toSource, IndexSet[] targetIndices,
+			@Nullable RequestSettings settings) throws InterruptedException {
+		requireNonNull(targetIndices);
 
 		IndexSetBuilder builder = new IndexCollectorFactory().chunkSizeLimit(IndexUtils.maxSize(targetIndices)).create();
 
@@ -156,5 +169,6 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	}
 
 	@OptionalMethod
-	boolean find(long fromSource, long toSource, IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings) throws InterruptedException;
+	boolean find(long fromSource, long toSource, IndexSet[] targetIndices, IndexCollector collector,
+			@Nullable RequestSettings settings) throws InterruptedException;
 }
