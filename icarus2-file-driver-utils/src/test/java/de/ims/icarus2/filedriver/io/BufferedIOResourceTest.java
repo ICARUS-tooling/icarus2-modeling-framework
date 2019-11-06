@@ -46,6 +46,7 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.Header;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
+import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
 import de.ims.icarus2.test.random.RandomGenerator;
@@ -261,7 +262,7 @@ class BufferedIOResourceTest {
 
 				instance.flush();
 
-				verify(header).save(any());
+				verify(config.headerMock).save(any());
 
 				try(SeekableByteChannel channel = config.resource.getReadChannel()) {
 					ByteBuffer bb = ByteBuffer.allocate(header.sizeInBytes());
@@ -360,6 +361,7 @@ class BufferedIOResourceTest {
 		}));
 	}
 
+	@PostponedTest("broken when executing via gradle")
 	@Nested
 	class ForAccessor {
 

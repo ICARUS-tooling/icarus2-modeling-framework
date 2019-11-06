@@ -17,7 +17,7 @@ import de.ims.icarus2.util.io.resource.IOResource;
  * @author Markus Gärtner
  *
  */
-class AbstractStoredMappingTest {
+abstract class AbstractStoredMappingTest {
 
 	interface BuilderTests {
 
