@@ -80,7 +80,8 @@ class DelegatingSpanIndexSetTest implements RandomAccessIndexSetTest<DelegatingS
 	public Stream<Config> configurations() {
 		Config base = new Config()
 				.rand(rand)
-				.defaultFeatures();
+				.defaultFeatures()
+				.autoDetectSorted(false);
 
 		return Stream.of(IndexValueType.values())
 				.map(type -> base.clone().valueType(type))

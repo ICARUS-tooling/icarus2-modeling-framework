@@ -64,7 +64,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testSize() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.INDETERMINATE_SIZE)) {
 						assertEquals(UNSET_LONG, config.set.size());
@@ -82,7 +82,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testIsEmpty() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.indices.length==0) {
 						assertTrue(config.set.isEmpty(), "Expecting to be empty");
@@ -100,7 +100,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testGetIndexValueType() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertEquals(config.valueType, config.set.getIndexValueType());
 				}));
@@ -114,7 +114,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testIsSorted() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.sorted) {
 						assertTrue(config.set.isSorted(), "Expected to be sorted");
@@ -132,7 +132,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testSort() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.SORTABLE)
 							&& !config.sorted) {
@@ -461,7 +461,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testExternalize() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.INDETERMINATE_SIZE)) {
 						assertModelException(GlobalErrorCode.NOT_IMPLEMENTED,
@@ -485,7 +485,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testGetFeatures() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertCollectionEquals(config.features, config.set.getFeatures());
 				}));
@@ -499,7 +499,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testHasFeatures() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					assertTrue(config.set.hasFeatures(config.features.toArray(new Feature[0])));
 
@@ -518,7 +518,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testHasFeature() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					for(Feature feature : Feature.values()) {
 						if(config.features.contains(feature)) {
@@ -538,7 +538,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 	default Stream<DynamicTest> testCheckHasFeatures() {
 		return configurations()
 				.map(Config::validate)
-				.flatMap(Config::withSubSet)
+				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					config.set.checkHasFeatures(config.features.toArray(new Feature[0]));
 
@@ -643,6 +643,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		boolean sorted;
 		IndexValueType valueType;
 		RandomGenerator rand;
+		boolean autoDetectSorted;
 
 		public RandomGenerator rand() {
 			assertNotNull(rand, "No random generator defined");
@@ -697,7 +698,13 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 		public Config features(Set<Feature> features) { this.features.addAll(features); return this; }
 		public Config features(Feature...features) { Collections.addAll(this.features, features); return this; }
 		public Config sorted(boolean sorted) { this.sorted = sorted; return this; }
-		public Config determineSorted() { this.sorted = ArrayUtils.isSorted(indices, 0, indices.length); return this; }
+		public Config autoDetectSorted(boolean autoDetectSorted) { this.autoDetectSorted = autoDetectSorted; return this; }
+		public Config determineSorted() {
+			if(autoDetectSorted) {
+				this.sorted = ArrayUtils.isSorted(indices, 0, indices.length);
+			}
+			return this;
+		}
 		public Config valueType(IndexValueType valueType) { this.valueType = valueType; return this; }
 
 		public Config limit(IndexValueType type) {
@@ -744,14 +751,29 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 			return this;
 		}
 
-		public Stream<Config> withSubSet() {
+		public Stream<Config> withSubSets() {
 			if(getIndices().length>0 && features.contains(Feature.EXPORTABLE)) {
 				long[] indices = getIndices();
+
+				int slot = rand.random(0, indices.length);
+				long[] single = new long[] {indices[slot]};
+				IndexSet singleSub = getSet().subSet(slot, slot);
+
 				int from = rand.random(0, indices.length);
 				int to = rand.random(from, indices.length);
 				long[] subs = Arrays.copyOfRange(indices, from, to+1);
 				IndexSet subSet = getSet().subSet(from, to);
-				return Stream.of(this,
+
+				return Stream.of(
+						// Raw full set
+						this,
+						// Random sub with size==1
+						clone()
+						.label(label+" sub ["+slot+"]")
+						.indices(single)
+						.set(singleSub)
+						.sorted(true),
+						// Random sub with size>1
 						clone()
 						.label(label+" sub ["+from+"-"+to+"]")
 						.indices(subs)

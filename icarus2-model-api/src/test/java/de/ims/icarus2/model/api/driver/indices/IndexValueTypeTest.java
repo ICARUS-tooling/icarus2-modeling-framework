@@ -261,7 +261,7 @@ class IndexValueTypeTest {
 		@TestFactory
 		@RandomizedTest
 		Stream<DynamicNode> testCheckValueSuccess(RandomGenerator rng) {
-			return valueTests(null, IndexValueTypeTest::legal,
+			return valueTests(rng, IndexValueTypeTest::legal,
 					(type, value) -> type.checkValue(value));
 		}
 

@@ -161,7 +161,7 @@ public class DelegatingFilteredIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean isSorted() {
-		return source.isSorted() && filterSorted;
+		return (source.isSorted() && filterSorted) || (filter!=null && filter.length==1);
 	}
 
 	/**

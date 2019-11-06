@@ -133,7 +133,8 @@ class DelegatingFilteredIndexSetTest implements RandomAccessIndexSetTest<Delegat
 	public Stream<Config> configurations() {
 		Config base = new Config()
 				.rand(rand)
-				.defaultFeatures();
+				.defaultFeatures()
+				.autoDetectSorted(true);
 
 		return Stream.of(IndexValueType.values())
 				.map(type -> base.clone().valueType(type))

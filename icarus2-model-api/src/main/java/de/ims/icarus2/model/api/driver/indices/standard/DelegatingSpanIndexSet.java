@@ -175,7 +175,7 @@ public class DelegatingSpanIndexSet implements IndexSet {
 	 */
 	@Override
 	public boolean isSorted() {
-		return source.isSorted();
+		return size()==1 || source.isSorted();
 	}
 
 	/**
