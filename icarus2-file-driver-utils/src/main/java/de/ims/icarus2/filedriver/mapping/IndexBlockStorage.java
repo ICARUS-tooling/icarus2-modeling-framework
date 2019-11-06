@@ -19,6 +19,8 @@ package de.ims.icarus2.filedriver.mapping;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 
 /**
@@ -137,6 +139,14 @@ public enum IndexBlockStorage {
 	 */
 	public IndexValueType getValueType() {
 		return valueType;
+	}
+
+	public long checkValue(long value) {
+		if(value<0L)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, name()+" - Value is negative: "+value);
+		if(value>maxValue())
+			throw new ModelException(GlobalErrorCode.VALUE_OVERFLOW, name()+" - Value exceeds max value: "+value);
+		return value;
 	}
 
 	/**
