@@ -20,6 +20,9 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.LongBinaryOperator;
 
@@ -27,25 +30,33 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.SimpleHeader;
+import de.ims.icarus2.filedriver.io.Range;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
- * Implements a one-to-one mapping
+ * Implements a one-to-one mapping.
+ * <p>
+ * Storage is managed in a way that for any item {@code i} the mapped value
+ * is also stored at index {@code i} of the underlying virtual array.
  *
  * @author Markus Gärtner
  *
  */
-public class MappingImplOneToOne extends AbstractStoredMapping {
+public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 
 	public static Builder builder() {
 		return new Builder();
@@ -73,11 +84,11 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 	}
 
 	@Override
-	protected void toString(StringBuilder sb) {
-		sb.append(" blockPower=").append(blockPower)
-		.append(" blockMask=").append(blockMask)
-		.append(" entriesPerBlock=").append(entriesPerBlock)
-		.append(" blockStorage=").append(blockStorage);
+	protected void toString(ToStringBuilder sb) {
+		sb.add("blockPower", blockPower)
+		.add("blockMask", blockMask)
+		.add("entriesPerBlock", entriesPerBlock)
+		.add("blockStorage", blockStorage);
 	}
 
 	public int getBlockPower() {
@@ -94,6 +105,15 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 
 	private int localIndex(long index) {
 		return (int)(index & blockMask);
+	}
+
+	private void checkTargetIndex(long value) {
+		blockStorage.checkValue(value);
+	}
+
+	private void checkSourceIndex(long value) {
+		if(value<0L)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Value is negative: "+value);
 	}
 
 	/**
@@ -117,7 +137,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ResourceAccessor implements MappingReader {
+	public class Reader extends ResourceAccessor<Mapping> implements MappingReader {
 
 		private final Coverage coverage = ManifestUtils.require(
 				getManifest(), MappingManifest::getCoverage, "coverage");
@@ -136,6 +156,12 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		}
 
 		private long lookup0(long sourceIndex) {
+			// Query header first (does not involve I/O)
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return UNSET_LONG;
+			}
+
+			// Now query actual index
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
@@ -153,6 +179,9 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		 */
 		@Override
 		public boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings) throws ModelException {
+			checkSourceIndex(sourceIndex);
+			requireNonNull(collector);
+
 			long targetIndex = lookup0(sourceIndex);
 
 			if(targetIndex==IcarusUtils.UNSET_LONG) {
@@ -168,6 +197,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		 */
 		@Override
 		public IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws ModelException {
+			checkSourceIndex(sourceIndex);
 			return IndexUtils.wrap(lookup0(sourceIndex));
 		}
 
@@ -176,6 +206,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		 */
 		@Override
 		public long getBeginIndex(long sourceIndex, RequestSettings settings) throws ModelException {
+			checkSourceIndex(sourceIndex);
 			return lookup0(sourceIndex);
 		}
 
@@ -184,6 +215,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		 */
 		@Override
 		public long getEndIndex(long sourceIndex, RequestSettings settings) throws ModelException {
+			checkSourceIndex(sourceIndex);
 			return lookup0(sourceIndex);
 		}
 
@@ -196,6 +228,10 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		@Override
 		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+			requireNonNull(collector);
+
+			IndexUtils.checkSorted(sourceIndices);
 
 			boolean result = false;
 
@@ -203,7 +239,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 				if(coverage.isTotal() && IndexUtils.isContinuous(sourceIndices)) {
 					// Special case of a single big span -> result is again a span
 					long beginIndex = getBeginIndex(firstIndex(sourceIndices), null);
-					long endIndex = getEndIndex(firstIndex(sourceIndices), null);
+					long endIndex = getEndIndex(lastIndex(sourceIndices), null);
 					if(beginIndex!=IcarusUtils.UNSET_LONG && endIndex!=IcarusUtils.UNSET_LONG) {
 						collector.add(beginIndex, endIndex);
 						result = true;
@@ -270,6 +306,9 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		@Override
 		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+
+			IndexUtils.checkSorted(sourceIndices);
 
 			// Optimized handling of monotonic coverage: use only first source index
 			if(coverage.isMonotonic()) {
@@ -300,6 +339,9 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		@Override
 		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+
+			IndexUtils.checkSorted(sourceIndices);
 
 			// Optimized handling of monotonic coverage: use only last source index
 			if(coverage.isMonotonic()) {
@@ -322,73 +364,30 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		}
 
 		/**
-		 * Translate the position {@code localIndex} in block with given {@code id}
-		 * into a global index value.
-		 */
-		private long translate(int id, int localIndex) {
-			return localIndex==-1 ? IcarusUtils.UNSET_LONG : id*entriesPerBlock + localIndex;
-		}
-
-		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, long, RequestSettings)
 		 */
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings) throws ModelException {
-			int idFrom = id(fromSource);
-			int idTo = id(toSource);
-			int localFrom = localIndex(fromSource);
-			int localTo = localIndex(toSource)+1;
-
-			return find(idFrom, idTo, localFrom, localTo, targetIndex);
-		}
-
-		private long find(int idFrom, int idTo, int localFrom, int localTo, long targetIndex) {
-			// Special case of a single block search
-			if(idFrom==idTo) {
-				return find0(idFrom, localFrom, localTo, targetIndex);
+			checkSourceIndex(fromSource);
+			checkSourceIndex(toSource);
+			checkTargetIndex(targetIndex);
+			// Skip unused target indices
+			if(!getHeader().isUsedTarget(targetIndex)) {
+				return UNSET_LONG;
 			}
 
-			// Check first block
-			long result = find0(idFrom, localFrom, entriesPerBlock, targetIndex);
-			if(result!=IcarusUtils.UNSET_LONG) {
-				return result;
+			// Restrict source range with header information
+			Range sourceRange = getHeader().getUsedIndices(fromSource, toSource);
+			if(sourceRange.isUnset()) {
+				return UNSET_LONG;
 			}
 
-			// Check last block
-			result = find0(idTo, 0, localTo, targetIndex);
-			if(result!=IcarusUtils.UNSET_LONG) {
-				return result;
-			}
+			int idFrom = id(sourceRange.getMin());
+			int idTo = id(sourceRange.getMax());
+			int localFrom = localIndex(sourceRange.getMin());
+			int localTo = localIndex(sourceRange.getMax())+1; // need +1 due to internal methods using exclusive end index
 
-			// Iterate intermediate blocks
-			for(int id=idFrom+1; id<idTo; id++) {
-				// Now always include the entire block to search
-				result = find0(id, 0, entriesPerBlock, targetIndex);
-				if(result!=IcarusUtils.UNSET_LONG) {
-					return result;
-				}
-			}
-
-			return IcarusUtils.UNSET_LONG;
-		}
-
-		private long find0(int id, int localFrom, int localTo, long targetIndex) {
-
-			Block block = getBlock(id);
-
-			if(block==null) {
-				return IcarusUtils.UNSET_LONG;
-			}
-
-			int localIndex = -1;
-
-			if(coverage.isMonotonic()) {
-				localIndex = blockStorage.findSorted(block.getData(), localFrom, localTo, targetIndex);
-			} else {
-				localIndex = blockStorage.find(block.getData(), localFrom, localTo, targetIndex);
-			}
-
-			return translate(id, localIndex);
+			return findSingle(idFrom, idTo, localFrom, localTo, targetIndex);
 		}
 
 		/**
@@ -399,8 +398,176 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		public boolean find(final long fromSource, final long toSource,
 				final IndexSet[] targetIndices, final IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
+			checkSourceIndex(fromSource);
+			checkSourceIndex(toSource);
+			requireNonNull(targetIndices);
+			requireNonNull(collector);
 
-			throw new UnsupportedOperationException();
+			IndexUtils.checkSorted(targetIndices);
+
+			// Restrict source range with header information
+			Range sourceRange = getHeader().getUsedIndices(fromSource, toSource);
+			if(sourceRange.isUnset()) {
+				// No overlap of estimated range and our actually mapped sources
+				return false;
+			}
+
+			boolean result = false;
+
+			int idFrom = id(sourceRange.getMin());
+			int idTo = id(sourceRange.getMax());
+			int localFrom = localIndex(sourceRange.getMin());
+			int localTo = localIndex(sourceRange.getMax())+1; // need +1 due to internal methods using exclusive end index
+
+			if(coverage.isMonotonic()) {
+				if(coverage.isTotal() && IndexUtils.isContinuous(targetIndices)) {
+					// Single big span -> grab begin and end indices and report as span
+					result = findSpan(idFrom, idTo, localFrom, localTo,
+							firstIndex(targetIndices), lastIndex(targetIndices), collector);
+				} else {
+					// Check for all given IndexSet instances separately
+					for(IndexSet indices : targetIndices) {
+						checkInterrupted();
+						if(coverage.isTotal() && IndexUtils.isContinuous(indices)) {
+							// Single big span -> grab begin and end indices and report as span
+							result |= findSpan(idFrom, idTo, localFrom, localTo,
+									indices.firstIndex(), indices.lastIndex(), collector);
+						} else {
+							result |= findMulti(idFrom, idTo, localFrom, localTo, indices, collector);
+						}
+					}
+				}
+			} else {
+				// Expensive traversal without chance of optimization
+				for(IndexSet indices : targetIndices) {
+					result |= findMulti(idFrom, idTo, localFrom, localTo, indices, collector);
+				}
+			}
+
+			// All happy-path (not early exit) variants lead here
+			return result;
+		}
+
+		private boolean findSpan(int idFrom, int idTo, int localFrom, int localTo, long spanBegin, long spanEnd, IndexCollector collector) {
+			long sourceBegin = findSingle(idFrom, idTo, localFrom, localTo, spanBegin);
+			if(sourceBegin==UNSET_LONG) {
+				return false;
+			}
+			long sourceEnd = findSingle(idFrom, idTo, localFrom, localTo, spanEnd);
+			assert sourceEnd>=sourceBegin;
+			if (sourceEnd==UNSET_LONG) {
+				return false;
+			}
+
+			// Give collector the chance to optimize and just throw him a big span
+			collector.add(sourceBegin, sourceEnd);
+			return true;
+		}
+
+		private long findSingle(int idFrom, int idTo, int localFrom, int localTo, long targetIndex) {
+			// Special case of a single block search
+			if(idFrom==idTo) {
+				return find0(idFrom, localFrom, localTo, targetIndex);
+			}
+
+			long result;
+			// Check first block
+			if((result = find0(idFrom, localFrom, entriesPerBlock, targetIndex))!=UNSET_LONG) {
+				return result;
+			}
+
+			// Check last block
+			if((result = find0(idTo, 0, localTo, targetIndex))!=UNSET_LONG) {
+				return result;
+			}
+
+			// Iterate intermediate blocks
+			for(int id=idFrom+1; id<idTo; id++) {
+				// Now always include the entire block to search
+				if((result = find0(id, 0, entriesPerBlock, targetIndex))!=UNSET_LONG) {
+					return result;
+				}
+			}
+
+			return IcarusUtils.UNSET_LONG;
+		}
+
+		private boolean findMulti(int idFrom, int idTo, int localFrom, int localTo,
+				IndexSet indices, IndexCollector collector) {
+			boolean result = false;
+			for (int i = 0; i < indices.size(); i++) {
+				long targetIndex = indices.indexAt(i);
+				long sourceIndex = UNSET_LONG;
+
+				// Special case of a single block search
+				if(idFrom==idTo && (sourceIndex = find0(idFrom, localFrom, localTo, targetIndex))!=UNSET_LONG) {
+					collector.accept(sourceIndex);
+					result = true;
+					continue;
+				}
+
+				// Check first block
+				if((sourceIndex = find0(idFrom, localFrom, entriesPerBlock, targetIndex))!=UNSET_LONG) {
+					collector.accept(sourceIndex);
+					result = true;
+					continue;
+				}
+
+				// Check last block
+				if((sourceIndex = find0(idTo, 0, localTo, targetIndex))!=UNSET_LONG) {
+					collector.accept(sourceIndex);
+					result = true;
+					continue;
+				}
+
+				// Iterate intermediate blocks
+				intermediate : for(int id=idFrom+1; id<idTo; id++) {
+					// Now always include the entire block to search
+					if((sourceIndex = find0(id, 0, entriesPerBlock, targetIndex))!=UNSET_LONG) {
+						collector.accept(sourceIndex);
+						result = true;
+						continue intermediate;
+					}
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * Search for specified {@code targetIndex} in block specified by {@code id},
+		 * limiting the range to {@code localFrom} - {@code localTo}.
+		 *
+		 * @param id
+		 * @param localFrom
+		 * @param localTo
+		 * @param targetIndex
+		 * @return
+		 */
+		private long find0(int id, int localFrom, int localTo, long targetIndex) {
+
+			Block block = getBlock(id);
+
+			if(block==null) {
+				return IcarusUtils.UNSET_LONG;
+			}
+
+			int localIndex = UNSET_INT;
+
+			if(coverage.isMonotonic()) {
+				localIndex = blockStorage.sparseFindSorted(block.getData(), localFrom, localTo, targetIndex);
+			} else {
+				localIndex = blockStorage.find(block.getData(), localFrom, localTo, targetIndex);
+			}
+
+			return translate(id, localIndex);
+		}
+
+		/**
+		 * Translate the position {@code localIndex} in block with given {@code id}
+		 * into a global index value.
+		 */
+		private long translate(int id, int localIndex) {
+			return localIndex==UNSET_INT ? UNSET_LONG : id*entriesPerBlock + localIndex;
 		}
 
 	}
@@ -410,7 +577,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends ResourceAccessor implements MappingWriter {
+	public class Writer extends ResourceAccessor<WritableMapping> implements MappingWriter {
 
 		protected Writer() {
 			super(false);
@@ -444,8 +611,19 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 			int localIndex = localIndex(sourceIndex);
 
 			Block block = getBlock(id);
-			blockStorage.setEntry(block.getData(), localIndex, targetIndex);
+			assert block!=null : "missing block for id "+id;
+			long oldValue = blockStorage.setEntry(block.getData(), localIndex, targetIndex);
+			if(oldValue==targetIndex) {
+				return;
+			}
 			lockBlock(block, localIndex);
+
+			SimpleHeader header = getHeader();
+			if(oldValue==UNSET_LONG) {
+				header.growSize();
+			}
+			header.updateUsedIndex(sourceIndex);
+			header.updateTargetIndex(targetIndex);
 		}
 
 		/**
@@ -518,12 +696,13 @@ public class MappingImplOneToOne extends AbstractStoredMapping {
 		public BufferedIOResource createBufferedIOResource() {
 			IndexBlockStorage blockStorage = getBlockStorage();
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
-			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
+			PayloadConverter payloadConverter = new ValueConverter(blockStorage);
 
 			return BufferedIOResource.builder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())
+				.header(new SimpleHeader())
 				.bytesPerBlock(bytesPerBlock)
 				.payloadConverter(payloadConverter)
 				.build();

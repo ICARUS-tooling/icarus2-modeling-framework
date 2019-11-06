@@ -111,7 +111,7 @@ public class IndexCollectorFactory {
 	}
 
 	public IndexCollectorFactory chunkSizeLimit(int chunkSizeLimit) {
-		checkArgument("Chunk createdBuckets limit must be positive: "+chunkSizeLimit, chunkSizeLimit>0);
+		checkArgument("Chunk size limit must be positive: "+chunkSizeLimit, chunkSizeLimit>0);
 		checkState(this.chunkSizeLimit == null);
 
 		this.chunkSizeLimit = Integer.valueOf(chunkSizeLimit);
@@ -253,7 +253,7 @@ public class IndexCollectorFactory {
 	private static void checkChunkSize(int chunkSize) {
 		if(chunkSize!=UNDEFINED_CHUNK_SIZE && chunkSize<1)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"Chunk createdBuckets must not be negative (unless -1 as UNDEFINED marker): "+chunkSize);
+					"Chunk size must not be negative (unless -1 as UNDEFINED marker): "+chunkSize);
 	}
 
 	private static void checkCapacity(int capacity) {
@@ -638,7 +638,7 @@ public class IndexCollectorFactory {
 	 */
 	public static class BucketSetBuilder implements IndexSetBuilder {
 		private final IndexValueType valueType;
-		/** Size of individual chunks, used as buffer createdBuckets of buckets */
+		/** Size of individual chunks, used as buffer size of buckets */
 		private final int chunkSize;
 		/** Root node to make rotations easier */
 		private final Bucket virtualRoot = new Bucket(){

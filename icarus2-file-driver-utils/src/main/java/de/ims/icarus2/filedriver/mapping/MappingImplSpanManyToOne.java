@@ -30,6 +30,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.SimpleHeader;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -37,10 +38,13 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.OptionalMethodNotSupported;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
  * Mapping implementation that relies on another reverse mapping to map contents of spans to
@@ -53,7 +57,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class MappingImplSpanManyToOne extends AbstractStoredMapping {
+public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader> {
 
 	public static Builder builder() {
 		return new Builder();
@@ -91,12 +95,12 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	}
 
 	@Override
-	protected void toString(StringBuilder sb) {
-		sb.append(" groupPower=").append(groupPower)
-		.append(" blockPower=").append(blockPower)
-		.append(" blockMask=").append(blockMask)
-		.append(" entriesPerBlock=").append(entriesPerBlock)
-		.append(" blockStorage=").append(blockStorage);
+	protected void toString(ToStringBuilder sb) {
+		sb.add("groupPower", groupPower)
+		.add("blockPower", blockPower)
+		.add("blockMask", blockMask)
+		.add("entriesPerBlock", entriesPerBlock)
+		.add("blockStorage", blockStorage);
 	}
 
 	public int getBlockPower() {
@@ -167,7 +171,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ResourceAccessor implements MappingReader {
+	public class Reader extends ResourceAccessor<Mapping> implements MappingReader {
 
 		protected Reader() {
 			super(true);
@@ -406,7 +410,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
 				throws InterruptedException {
-			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+			throw new OptionalMethodNotSupported(
 					"FIND operation not supported since inverse reader is used");
 
 //			long spanBegin = inverseReader.getBeginIndex(targetIndex);
@@ -429,7 +433,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		public boolean find(long fromSource, long toSource,
 				IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings)
 				throws InterruptedException {
-			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+			throw new OptionalMethodNotSupported(
 					"FIND operation not supported since inverse reader is used");
 
 //			boolean result = false;
@@ -474,7 +478,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends ResourceAccessor implements MappingWriter {
+	public class Writer extends ResourceAccessor<WritableMapping> implements MappingWriter {
 
 		protected Writer() {
 			super(false);
@@ -643,12 +647,13 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping {
 		public BufferedIOResource createBufferedIOResource() {
 			IndexBlockStorage blockStorage = getBlockStorage();
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
-			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
+			PayloadConverter payloadConverter = new SpanConverter(blockStorage);
 
 			return BufferedIOResource.builder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())
+				.header(new SimpleHeader())
 				.bytesPerBlock(bytesPerBlock)
 				.payloadConverter(payloadConverter)
 				.build();

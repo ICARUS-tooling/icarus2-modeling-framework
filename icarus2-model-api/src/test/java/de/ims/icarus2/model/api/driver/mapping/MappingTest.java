@@ -3,18 +3,24 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
+import static de.ims.icarus2.test.TestUtils.assertMock;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
 
 /**
@@ -112,7 +118,14 @@ public interface MappingTest<M extends Mapping> {
 		public Driver driver;
 		public ItemLayerManifestBase<?> sourceLayer;
 		public ItemLayerManifestBase<?> targetLayer;
+		public IndexValueType valueType;
 
 		public abstract M create();
+
+		public void prepareManifest(Coverage coverage, Relation relation) {
+			assertMock(manifest);
+			when(manifest.getCoverage()).thenReturn(Optional.of(coverage));
+			when(manifest.getRelation()).thenReturn(Optional.of(relation));
+		}
 	}
 }

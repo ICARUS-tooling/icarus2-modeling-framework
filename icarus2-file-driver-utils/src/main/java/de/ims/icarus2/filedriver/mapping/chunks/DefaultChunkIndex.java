@@ -325,7 +325,7 @@ public class DefaultChunkIndex implements ChunkIndex {
 
 		private void checkWriteAccess() {
 			if(isReadOnly())
-				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+				throw new ModelException(GlobalErrorCode.NO_WRITE_ACCESS,
 						"Write operations not supported on read-only cursor");
 		}
 

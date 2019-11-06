@@ -75,6 +75,18 @@ public class MappingTestUtils {
 		return strictToInt(dif);
 	}
 
+	public static long[] extractSources(List<Pair<Long, Long>> list) {
+		return list.stream()
+				.mapToLong(p -> p.first.longValue())
+				.toArray();
+	}
+
+	public static long[] extractTargets(List<Pair<Long, Long>> list) {
+		return list.stream()
+				.mapToLong(p -> p.second.longValue())
+				.toArray();
+	}
+
 	public static final int TEST_LIMIT = 1000;
 
 	public static Pair<Long, Long> randRange(RandomGenerator rng, IndexValueType valueType,

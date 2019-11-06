@@ -5,6 +5,8 @@ package de.ims.icarus2.filedriver.mapping;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.function.Supplier;
+
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
@@ -78,8 +80,8 @@ class AbstractStoredMappingTest {
 	}
 
 	public abstract static class AbstractConfig<M extends AbstractStoredMapping> extends Config<M> {
-		public BlockCache blockCache;
+		public Supplier<BlockCache> blockCacheGen;
 		public int cacheSize;
-		public IOResource resource;
+		public Supplier<IOResource> resourceGen;
 	}
 }

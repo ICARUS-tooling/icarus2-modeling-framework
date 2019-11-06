@@ -491,6 +491,10 @@ public class IndexUtils {
 		return result;
 	}
 
+	public static long[] asArray(IndexSet source) {
+		return asLongStream(source).toArray();
+	}
+
 	/**
 	 * Wraps a single index value into an array of {@link IndexSet} instances.
 	 * The result will be an empty array iff the given {@code index} is {@code -1}
@@ -782,7 +786,7 @@ public class IndexUtils {
 		int indexA = 0;
 		int indexB = 0;
 
-		while(setIndexA<indicesACount && setIndexB<indicesBCount) {
+		while(setIndexA<indicesA.length && setIndexB<indicesB.length) {
 			IndexSet setA = indicesA[setIndexA];
 			IndexSet setB = indicesB[setIndexB];
 

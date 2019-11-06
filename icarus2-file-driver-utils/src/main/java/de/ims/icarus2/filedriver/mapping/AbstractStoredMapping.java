@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Header;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -41,16 +42,20 @@ import de.ims.icarus2.util.io.resource.IOResource;
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractStoredMapping extends AbstractVirtualMapping implements WritableMapping {
+public abstract class AbstractStoredMapping<H extends Header>
+		extends AbstractVirtualMapping implements WritableMapping {
 
 	public static final int DEFAULT_CACHE_SIZE = 100;
 
 	private final BufferedIOResource resource;
+	private final H header;
 
+	@SuppressWarnings("unchecked")
 	protected AbstractStoredMapping(AbstractStoredMappingBuilder<?,?> builder) {
 		super(builder);
 
 		resource = requireNonNull(builder.createBufferedIOResource());
+		header = (H) requireNonNull(resource.getHeader());
 	}
 
 	public BufferedIOResource getBufferedResource() {
@@ -91,7 +96,11 @@ public abstract class AbstractStoredMapping extends AbstractVirtualMapping imple
 		// for subclasses
 	}
 
-	protected class ResourceAccessor implements SynchronizedAccessor<Mapping> {
+	protected final H getHeader() {
+		return header;
+	}
+
+	protected class ResourceAccessor<M extends Mapping> implements SynchronizedAccessor<M> {
 
 		protected final ReadWriteAccessor delegateAccessor;
 
@@ -114,22 +123,23 @@ public abstract class AbstractStoredMapping extends AbstractVirtualMapping imple
 		 * @param readOnly
 		 */
 		protected ResourceAccessor(BufferedIOResource resource, boolean readOnly) {
-			delegateAccessor = resource.newAccessor(readOnly);
+			delegateAccessor = requireNonNull(resource.newAccessor(readOnly));
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
+		@SuppressWarnings("unchecked")
 		@Override
-		public Mapping getSource() {
-			return AbstractStoredMapping.this;
+		public M getSource() {
+			return (M) AbstractStoredMapping.this;
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
 		 */
 		@Override
-		public void begin() {
+		public final void begin() {
 			delegateAccessor.begin();
 		}
 
@@ -137,7 +147,7 @@ public abstract class AbstractStoredMapping extends AbstractVirtualMapping imple
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
 		 */
 		@Override
-		public void end() {
+		public final void end() {
 			delegateAccessor.end();
 		}
 
@@ -145,16 +155,20 @@ public abstract class AbstractStoredMapping extends AbstractVirtualMapping imple
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
 		 */
 		@Override
-		public void close() {
+		public final void close() {
 			delegateAccessor.close();
 		}
 
-		Block getBlock(int id) {
+		protected final Block getBlock(int id) {
 			return delegateAccessor.getBlock(id);
 		}
 
-		void lockBlock(Block block, int index) {
+		protected final void lockBlock(Block block, int index) {
 			delegateAccessor.lockBlock(block, index+1);
+		}
+
+		protected final H getHeader() {
+			return header;
 		}
 	}
 
@@ -237,7 +251,8 @@ public abstract class AbstractStoredMapping extends AbstractVirtualMapping imple
 	 * @param <B>
 	 * @param <M>
 	 */
-	public static abstract class AbstractStoredMappingBuilder<B extends AbstractMappingBuilder<B, M>, M extends Mapping>
+	public static abstract class AbstractStoredMappingBuilder<B extends AbstractStoredMappingBuilder<B, M>,
+				M extends AbstractStoredMapping<?>>
 			extends AbstractMappingBuilder<B, M> {
 		private Integer cacheSize;
 		private IOResource resource;
@@ -286,6 +301,7 @@ public abstract class AbstractStoredMapping extends AbstractVirtualMapping imple
 			return blockCache;
 		}
 
+		/** Create a backing resource for the mapping, never {@code null} */
 		public abstract BufferedIOResource createBufferedIOResource();
 
 		@Override

@@ -30,18 +30,22 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.SimpleHeader;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils.SpanProcedure;
+import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
  * Implements a one-to-many mapping for containers of type {@link ContainerType#SPAN}.
@@ -66,7 +70,7 @@ import de.ims.icarus2.util.IcarusUtils;
  * @author Markus Gärtner
  *
  */
-public class MappingImplSpanOneToMany extends AbstractStoredMapping {
+public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader> {
 
 	public static Builder builder() {
 		return new Builder();
@@ -94,11 +98,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 	}
 
 	@Override
-	protected void toString(StringBuilder sb) {
-		sb.append(" blockPower=").append(blockPower)
-		.append(" blockMask=").append(Integer.toBinaryString(blockMask))
-		.append(" entriesPerBlock=").append(entriesPerBlock)
-		.append(" blockStorage=").append(blockStorage);
+	protected void toString(ToStringBuilder sb) {
+		sb.add("blockPower", blockPower)
+		.add("blockMask", Integer.toBinaryString(blockMask))
+		.add("entriesPerBlock", entriesPerBlock)
+		.add("blockStorage", blockStorage);
 	}
 
 	public IndexBlockStorage getBlockStorage() {
@@ -146,7 +150,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Reader extends ResourceAccessor implements MappingReader {
+	public class Reader extends ResourceAccessor<Mapping> implements MappingReader {
 
 		protected Reader() {
 			super(true);
@@ -606,7 +610,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class Writer extends ResourceAccessor implements MappingWriter {
+	public class Writer extends ResourceAccessor<WritableMapping> implements MappingWriter {
 
 		protected Writer() {
 			super(false);
@@ -707,12 +711,13 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping {
 		public BufferedIOResource createBufferedIOResource() {
 			IndexBlockStorage blockStorage = getBlockStorage();
 			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
-			PayloadConverter payloadConverter = new PayloadConverterImpl(blockStorage);
+			PayloadConverter payloadConverter = new SpanConverter(blockStorage);
 
 			return BufferedIOResource.builder()
 				.resource(getResource())
 				.blockCache(getBlockCache())
 				.cacheSize(getCacheSize())
+				.header(new SimpleHeader())
 				.bytesPerBlock(bytesPerBlock)
 				.payloadConverter(payloadConverter)
 				.build();

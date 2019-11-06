@@ -20,15 +20,12 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
-import de.ims.icarus2.model.manifest.api.MappingManifest;
 
 /**
  * Implements a total index of type {@code one-to-one} which maps
@@ -41,6 +38,10 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
  */
 public class MappingImplIdentity extends AbstractVirtualMapping {
 
+	public static Builder builder() {
+		return new Builder();
+	}
+
 	/**
 	 * Creates a new {@code identity mapping} that maps between the two
 	 * specified layers.
@@ -50,9 +51,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 	 * @param sourceLayer
 	 * @param targetLayer
 	 */
-	public MappingImplIdentity(Driver driver, MappingManifest manifest,
-			ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer) {
-		super(driver, manifest, sourceLayer, targetLayer);
+	private MappingImplIdentity(Builder builder) {
+		super(builder);
 	}
 
 	/**
@@ -215,6 +215,22 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 				throws InterruptedException {
 			collector.add(targetIndices);
 			return true;
+		}
+
+	}
+
+	public static class Builder extends AbstractVirtualMapping.AbstractMappingBuilder<Builder, MappingImplIdentity> {
+
+		private Builder() {
+			// private to only be available via factory method
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#create()
+		 */
+		@Override
+		protected MappingImplIdentity create() {
+			return new MappingImplIdentity(this);
 		}
 
 	}
