@@ -50,6 +50,7 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.util.TestConfig;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
@@ -696,7 +697,7 @@ class BufferedIOResourceTest {
 		}
 	}
 
-	private static class Config {
+	private static class Config implements TestConfig {
 		String label;
 		VirtualIOResource resource;
 		IOResource resourceMock;
@@ -744,7 +745,8 @@ class BufferedIOResourceTest {
 			return builder.build();
 		}
 
-		void close() {
+		@Override
+		public void close() {
 			label = null;
 
 			resource = null;

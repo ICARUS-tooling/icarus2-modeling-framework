@@ -22,6 +22,7 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
+import de.ims.icarus2.test.util.TestConfig;
 
 /**
  * @author Markus Gärtner
@@ -112,7 +113,7 @@ public interface MappingTest<M extends Mapping> {
 		}));
 	}
 
-	public static abstract class Config<M extends Mapping> {
+	public static abstract class Config<M extends Mapping> implements TestConfig {
 		public String label;
 		public MappingManifest manifest;
 		public Driver driver;
@@ -126,6 +127,15 @@ public interface MappingTest<M extends Mapping> {
 			assertMock(manifest);
 			when(manifest.getCoverage()).thenReturn(Optional.of(coverage));
 			when(manifest.getRelation()).thenReturn(Optional.of(relation));
+		}
+
+		@Override
+		public void close() {
+			label = null;
+			manifest = null;
+			driver = null;
+			sourceLayer = targetLayer = null;
+			valueType = null;
 		}
 	}
 }
