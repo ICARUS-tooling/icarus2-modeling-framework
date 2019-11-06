@@ -106,7 +106,7 @@ public class VirtualIOResource extends ReadWriteResource {
 	 * @see de.ims.icarus2.util.io.resource.IOResource#delete()
 	 */
 	@Override
-	public void delete() throws IOException {
+	public void delete() {
 		checkWriteAccess();
 
 		if(buffer!=null) {

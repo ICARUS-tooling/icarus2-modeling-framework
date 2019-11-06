@@ -39,9 +39,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.annotations.TestableImplementation;
@@ -52,8 +49,6 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
  */
 @TestableImplementation(ResourceProvider.class)
 public class VirtualResourceProvider implements ResourceProvider {
-
-	private static final Logger log = LoggerFactory.getLogger(VirtualResourceProvider.class);
 
 	private final Map<Path, VirtualIOResource> resources = new HashMap<>();
 
@@ -98,13 +93,7 @@ public class VirtualResourceProvider implements ResourceProvider {
 
 	public void clear() {
 		directories.clear();
-		resources.forEach((path, resource) -> {
-			try {
-				resource.delete();
-			} catch (IOException e) {
-				log.warn("Failed to delete virtual resource for: {}", path, e);
-			}
-		});
+		resources.forEach((path, resource) -> resource.delete());
 	}
 
 	public void addDirectory(Path path) {
