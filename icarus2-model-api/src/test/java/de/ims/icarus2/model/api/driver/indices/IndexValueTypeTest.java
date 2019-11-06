@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -339,9 +338,23 @@ class IndexValueTypeTest {
 		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.IndexValueType#binarySearch(java.lang.Object, long, int, int)}.
 		 */
 		@TestFactory
-		Stream<DynamicNode> testBinarySearch() {
-			fail("Not yet implemented"); // TODO
-			return null;
+		@RandomizedTest
+		Stream<DynamicNode> testBinarySearch(RandomGenerator rng) {
+			return typeTests(type -> {
+				int size = rng.random(10, 100);
+				Object array = type.newArray(size);
+				// Fill array
+				for (int i = 0; i < size; i++) {
+					type.set(array, i, i);
+				}
+				// Search array
+				for (int i = 0; i < size; i++) {
+					assertThat(type.binarySearch(array, i, 0, size)).isEqualTo(i);
+				}
+
+				assertThat(type.binarySearch(array, -1, 0, size)).isLessThan(0);
+				assertThat(type.binarySearch(array, size, 0, size)).isLessThan(0);
+			});
 		}
 
 		/**
