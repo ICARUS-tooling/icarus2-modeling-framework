@@ -19,6 +19,8 @@ import de.ims.icarus2.util.io.resource.IOResource;
  */
 abstract class AbstractStoredMappingTest {
 
+	//TODO use this class as actual base template for stored mapping tests
+
 	interface BuilderTests {
 
 		/**
@@ -79,7 +81,7 @@ abstract class AbstractStoredMappingTest {
 		fail("Not yet implemented"); // TODO
 	}
 
-	public abstract static class AbstractConfig<M extends AbstractStoredMapping> extends Config<M> {
+	public abstract static class AbstractConfig<M extends AbstractStoredMapping<?>> extends Config<M> {
 		public Supplier<BlockCache> blockCacheGen;
 		public int cacheSize;
 		public Supplier<IOResource> resourceGen;

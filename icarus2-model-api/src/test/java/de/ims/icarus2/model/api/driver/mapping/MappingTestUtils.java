@@ -7,7 +7,7 @@ import static de.ims.icarus2.test.util.Pair.longPair;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,13 +43,18 @@ public class MappingTestUtils {
 
 	/** Picks a random value inside the specified range (inclusive, exclusive) */
 	private static long rand(RandomGenerator rng, Pair<Long, Long>  range) {
-		return rng.random(range.first.longValue(), range.second.longValue());
+		assertThat(range.second.longValue()).isLessThan(Long.MAX_VALUE);
+		return rng.random(range.first.longValue(), range.second.longValue()+1);
 	}
 
 	private static LongStream rands(RandomGenerator rng, Pair<Long, Long> range, int size) {
-		return LongStream.generate(() -> rand(rng, range)).distinct().limit(size);
+		assertThat(range(range)).isGreaterThanOrEqualTo(size);
+		return LongStream.generate(() -> rand(rng, range))
+				.distinct()
+				.limit(size);
 	}
 
+	/** Do a pairwise join of 2 long streams into a single stream containing Pair objects */
 	private static Stream<Pair<Long, Long>> join(LongStream source, LongStream target) {
 		return Streams.zip(source.boxed(), target.boxed(), Pair::pair);
 	}
@@ -70,9 +75,14 @@ public class MappingTestUtils {
 	}
 
 	private static int range(Pair<Long, Long>  range) {
-		long dif = range.second.longValue() - range.first.longValue();
-		assertTrue(dif>0, "Difference must be positive "+ dif);
+		long dif = range.second.longValue() - range.first.longValue() + 1;
+		assertThat(dif).as("Difference must be positive").isGreaterThan(0);
 		return strictToInt(dif);
+	}
+
+	public static IntStream testableSizes(IndexValueType valueType) {
+		return IntStream.of(1, 100, 1000)
+				.filter(count -> count<valueType.maxValue());
 	}
 
 	public static long[] extractSources(List<Pair<Long, Long>> list) {
@@ -91,14 +101,21 @@ public class MappingTestUtils {
 
 	public static Pair<Long, Long> randRange(RandomGenerator rng, IndexValueType valueType,
 			int count, int multiplier) {
-		long max = Math.min(TEST_LIMIT, valueType.maxValue()+1);
-		if(max<0) max = TEST_LIMIT; // overflow
-		long range = Math.min(count*multiplier, valueType.maxValue());
-		long min = Math.max(0, range);
-		assert min<max;
-		long end = rng.random(min, max);
+//		count = Math.min(count, TEST_LIMIT);
+//		assertThat((long)count).isLessThan(valueType.maxValue());
+//		long max = valueType.maxValue()-1-count;
+//		assertThat(max).isGreaterThan(0L);
+//		long begin = rng.random(0, max);
+//		long end = begin+count;
+//		assertThat(end-begin+1).isGreaterThan(count);
+//		return longPair(begin, end);
+		long max = Math.min(TEST_LIMIT, valueType.maxValue());
+		long range = Math.min(count*multiplier, max);
+		assertThat(range).isGreaterThanOrEqualTo(count);
+		long end = rng.random(count-1, max);
 		long begin = Math.max(0, end - range);
-		assert end-begin+1 >= count;
+		assertThat(end-begin+1).isGreaterThanOrEqualTo(count);
+		assertThat(end-begin+1).isLessThanOrEqualTo(TEST_LIMIT);
 		return longPair(begin, end);
 	}
 
@@ -154,7 +171,7 @@ public class MappingTestUtils {
 
 		int rs = range(source);
 		int rt = range(target);
-		assertTrue(rs>=count, "Source range too small");
+		assertThat(rs).as("Source range too small").isGreaterThanOrEqualTo(count);
 
 		long sourceBegin = source.first.longValue();
 		long targetBegin = target.first.longValue();
@@ -178,17 +195,18 @@ public class MappingTestUtils {
 		}
 
 		case MONOTONIC: {
-			assertTrue(rt>=rs, "Target range too small");
+			assertThat(rt).as("Target range too small").isGreaterThanOrEqualTo(count);
 			return Stream.of(pair("random equally sized", toList(join(
 					rands(rng, source, count).sorted(),
 					rands(rng, target, count).sorted()))));
 		}
 
 		case TOTAL: {
-			assertTrue(rt>=count, "Target range too small");
-			return Stream.of(pair("random", toList(join(
-					rands(rng, source, count),
-					LongStream.range(0, count)))));
+			assertThat(rt).as("Target range too small").isGreaterThanOrEqualTo(count);
+			return Stream.of(
+					pair("random", toList(join(rands(rng, source, count), LongStream.range(0, count)))),
+					pair("identity", toList(join(LongStream.range(0, count), LongStream.range(0, count))))
+			);
 		}
 
 		default:

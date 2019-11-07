@@ -66,10 +66,6 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 
 	public static final int DEFAULT_BLOCK_POWER = 14;
 
-//	public static final int DEFAULT_BLOCK_MASK = (1<<DEFAULT_BLOCK_POWER)-1;
-//
-//	public static final int DEFAULT_ENTRIES_PER_BLOCK = 1<<DEFAULT_BLOCK_POWER;
-
 	private final int blockPower;
 	private final int blockMask;
 	private final int entriesPerBlock;

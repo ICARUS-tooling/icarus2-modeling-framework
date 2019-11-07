@@ -30,7 +30,7 @@ import de.ims.icarus2.test.util.TestConfig;
  */
 public interface MappingTest<M extends Mapping> {
 
-	Stream<Config<M>> configurations();
+	Stream<? extends Config<M>> configurations();
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getDriver()}.

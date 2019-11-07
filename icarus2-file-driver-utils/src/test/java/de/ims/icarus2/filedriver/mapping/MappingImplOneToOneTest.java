@@ -72,7 +72,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	}
 
 	@Override
-	public Stream<Config<MappingImplOneToOne>> configurations() {
+	public Stream<ConfigImpl> configurations() {
 		return
 			Stream.of(IndexValueType.values()).flatMap(valueType ->
 			IntStream.of(3, 6, 10).boxed().flatMap(blockPower ->
@@ -129,7 +129,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 		return configurations().map(config -> dynamicContainer(config.label,
 				// grab a couple values for every test variable (reasonably exhaust value space)
 				coverages().flatMap(coverage ->
-				IntStream.of(1, 10).boxed().flatMap(count ->  //1, 10, 100
+				MappingTestUtils.testableSizes(config.valueType).boxed().flatMap(count ->  //1, 10, min(1000,type.max)
 				IntStream.of(1).boxed().flatMap(multiplier ->  //1, 2, 4
 				// create randomized sequences of mappings
 				MappingTestUtils.random1to1Mappings(rng, coverage, count.intValue(),
