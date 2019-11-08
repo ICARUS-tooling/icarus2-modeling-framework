@@ -663,25 +663,31 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		return id>UNSET_INT;
 	}
 
-	private void recordWrite() {
-		if(stats!=null) stats.count(StatField.WRITE);
+	private void record(StatField field) {
+		if(stats!=null) {
+			stats.count(field);
+		}
 	}
 
-	private void recordOptimisticRead() {
-		if(stats!=null) stats.count(StatField.READ_OPTIMISTIC);
-	}
-
-	private void recordCompromisedRead() {
-		if(stats!=null) stats.count(StatField.READ_COMPROMISED);
-	}
-
-	private void recordLockedRead() {
-		if(stats!=null) stats.count(StatField.READ);
-	}
-
-	private void recordReadMiss() {
-		if(stats!=null) stats.count(StatField.READ_MISS);
-	}
+//	private void recordWrite() {
+//		if(stats!=null) stats.count(StatField.WRITE);
+//	}
+//
+//	private void recordOptimisticRead() {
+//		if(stats!=null) stats.count(StatField.READ_OPTIMISTIC);
+//	}
+//
+//	private void recordCompromisedRead() {
+//		if(stats!=null) stats.count(StatField.READ_COMPROMISED);
+//	}
+//
+//	private void recordLockedRead() {
+//		if(stats!=null) stats.count(StatField.READ_LOCKED);
+//	}
+//
+//	private void recordReadMiss() {
+//		if(stats!=null) stats.count(StatField.READ_MISS);
+//	}
 
 	private void handleUnwritten(E item) {
 		if(failForUnwritten) {
@@ -689,7 +695,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 					"Given item has not been written to before: "+item);
 		}
 
-		recordReadMiss();
+		record(StatField.READ_MISS);
 	}
 
 	// GetXXX methods
@@ -1115,7 +1121,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			proxy.cursor.moveTo(id);
 			task.execute(handle, proxy);
 			markUsed(item, id);
-			recordWrite();
+			record(StatField.WRITE);
 		} finally {
 			lock.unlockWrite(stamp);
 		}
@@ -1143,7 +1149,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 						proxy.cursor.moveTo(id);
 						task.execute(handle, proxy);
 						proxy.opSuccess = true;
-						recordOptimisticRead();
+						record(StatField.READ_OPTIMISTIC);
 					} else {
 						handleUnwritten(item);
 					}
@@ -1152,7 +1158,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 						return proxy;
 					}
 				} catch(RuntimeException e) {
-					recordCompromisedRead();
+					record(StatField.READ_COMPROMISED);
 					// ignore exception, but switch to non-optimistic locking
 					break;
 				}
@@ -1169,7 +1175,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				proxy.cursor.moveTo(id);
 				task.execute(handle, proxy);
 				proxy.opSuccess = true;
-				recordLockedRead();
+				record(StatField.READ_LOCKED);
 			} else {
 				handleUnwritten(item);
 			}
@@ -1195,13 +1201,13 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 				try {
 					task.execute(item, chunkAddressForRead(item), proxy);
 					proxy.opSuccess = true;
-					recordOptimisticRead();
+					record(StatField.READ_OPTIMISTIC);
 					if(lock.validate(stamp)) {
 						// All good, we got valid data, so exit out
 						return proxy;
 					}
 				} catch(RuntimeException e) {
-					recordCompromisedRead();
+					record(StatField.READ_COMPROMISED);
 					// ignore exception, but switch to non-optimistic locking
 					break;
 				}
@@ -1215,7 +1221,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		try {
 			task.execute(item, chunkAddressForRead(item), proxy);
 			proxy.opSuccess = true;
-			recordLockedRead();
+			record(StatField.READ_LOCKED);
 			return proxy;
 		} finally {
 			lock.unlockRead(stamp);
@@ -1256,7 +1262,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 		/** Read operation with optimistic locking */
 		READ_OPTIMISTIC,
 		/** Read operation with full read lock */
-		READ,
+		READ_LOCKED,
 		/** Fail of an optimistic read due to error in underlying system */
 		READ_COMPROMISED,
 		/** Item not registered or not written */
