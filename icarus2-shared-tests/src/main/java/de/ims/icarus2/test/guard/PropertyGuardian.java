@@ -512,7 +512,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 				// Fetch property name
 				String property = extractConsistentValue(Guarded.class,
-						methodCache, Guarded::name);
+						methodCache, Guarded::value);
 
 				if(property.isEmpty()) {
 					property = extractPropertyName(method, type);

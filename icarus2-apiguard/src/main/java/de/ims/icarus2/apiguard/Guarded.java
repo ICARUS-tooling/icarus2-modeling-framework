@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * of the form {@code getProperty} and {@code setProperty}. For boolean
  * properties the getter method can be named {@code isProperty}. For
  * cases where there is no direct relation between the naming of getter
- * and setter for a given property, the {@link #name() value} of this
+ * and setter for a given property, the {@link #value() value} of this
  * annotation can be used to link methods by assigning them the same
  * property name.
  *
@@ -52,7 +52,7 @@ public @interface Guarded {
 	 *
 	 * @return
 	 */
-	String name() default "";
+	String value() default "";
 
 	/**
 	 * Signals that the method should not be called more than once with
