@@ -425,7 +425,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 					for(IndexSet indices : targetIndices) {
 						checkInterrupted();
 						if(coverage.isTotal() && IndexUtils.isContinuous(indices)) {
-							// Single big span -> grab begin and end indices and report as span
+							// Set is a span -> grab begin and end indices and report as span
 							result |= findSpan(idFrom, idTo, localFrom, localTo,
 									indices.firstIndex(), indices.lastIndex(), collector);
 						} else {

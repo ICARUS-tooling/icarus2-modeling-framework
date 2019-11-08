@@ -3,11 +3,13 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -23,10 +25,13 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
@@ -34,8 +39,11 @@ import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.mapping.AbstractStoredMappingTest.AbstractConfig;
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
@@ -79,23 +87,30 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 			Stream.<Pair<String,Supplier<BlockCache>>>of(pair("unlimited", UnlimitedBlockCache::new),
 					pair("LRU", RUBlockCache::newLeastRecentlyUsedCache)).flatMap(pCache ->
 			IntStream.of(BlockCache.MIN_CAPACITY, 1024).boxed().map(cacheSize -> {
-				ConfigImpl config = new ConfigImpl();
-				config.label = String.format("type=%s blockPower=%d cache=%s cacheSize=%d",
-						valueType, blockPower, pCache.first, cacheSize);
-
-				config.blockCacheGen = pCache.second;
-				config.blockPower = blockPower.intValue();
-				config.cacheSize = cacheSize.intValue();
-				config.valueType = valueType;
-				config.resourceGen = VirtualIOResource::new;
-
-				config.driver = mock(Driver.class);
-				config.sourceLayer = mock(ItemLayerManifestBase.class);
-				config.targetLayer = mock(ItemLayerManifestBase.class);
-				config.manifest = mock(MappingManifest.class);
-
-				return config;
+				return config(valueType, blockPower.intValue(),
+						pCache.second, pCache.first, cacheSize.intValue());
 			}))));
+	}
+
+	private static ConfigImpl config(IndexValueType valueType, int blockPower,
+			Supplier<BlockCache> cacheGen,
+			String cacheLabel, int cacheSize) {
+		ConfigImpl config = new ConfigImpl();
+		config.label = String.format("type=%s blockPower=%d cache=%s cacheSize=%d",
+				valueType, _int(blockPower), cacheLabel, _int(cacheSize));
+
+		config.blockCacheGen = cacheGen;
+		config.blockPower = blockPower;
+		config.cacheSize = cacheSize;
+		config.valueType = valueType;
+		config.resourceGen = VirtualIOResource::new;
+
+		config.driver = mock(Driver.class);
+		config.sourceLayer = mock(ItemLayerManifestBase.class);
+		config.targetLayer = mock(ItemLayerManifestBase.class);
+		config.manifest = mock(MappingManifest.class);
+
+		return config;
 	}
 
 	//READER TESTS
@@ -400,6 +415,133 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 
 			} finally {
 				reader.end();
+			}
+		}
+	}
+
+	private static ConfigImpl basicMultiBlockConfig() {
+		return config(IndexValueType.INTEGER, 4,
+				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"1000, 0",
+		"1000, 999",
+		"1000, 499"
+	})
+	void testMultiBlockSearchSingle(int size, int index) throws Exception {
+		for(Coverage coverage : Coverage.values()) {
+			ConfigImpl config = basicMultiBlockConfig();
+			config.prepareManifest(coverage, Relation.ONE_TO_ONE);
+
+			try(MappingImplOneToOne mapping = config.create()) {
+				try(MappingWriter writer = mapping.newWriter()) {
+					writer.begin();
+					try {
+						for (int i = 0; i < size; i++) {
+							writer.map(i, i);
+						}
+					} finally {
+						writer.end();
+					}
+				}
+
+				try(MappingReader reader = mapping.newReader()) {
+					reader.begin();
+					try {
+						assertThat(reader.find(0, Long.MAX_VALUE, index, RequestSettings.none()))
+							.isEqualTo(index);
+					} finally {
+						reader.end();
+					}
+				}
+			}
+		}
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"1000,   0,  1", // 1 block
+		"1000,   0,  10", // some blocks at the front
+		"1000, 976, 999", // some blocks at the very end
+		"1000, 472, 721" // intermediate blocks
+	})
+	@DisplayName("test the find() method for multiple target values")
+	void testMultiBlockSearchMulti(int size, int from, int to) throws Exception {
+		for(Coverage coverage : Coverage.values()) {
+			ConfigImpl config = basicMultiBlockConfig();
+			config.prepareManifest(coverage, Relation.ONE_TO_ONE);
+
+			try(MappingImplOneToOne mapping = config.create()) {
+				try(MappingWriter writer = mapping.newWriter()) {
+					writer.begin();
+					try {
+						for (int i = 0; i < size; i++) {
+							writer.map(i, i);
+						}
+					} finally {
+						writer.end();
+					}
+				}
+
+				try(MappingReader reader = mapping.newReader()) {
+					reader.begin();
+					try {
+						int span = to-from+1;
+						IndexSet[] target = wrap(IndexUtils.span(from, to));
+						IndexBuffer buffer = new IndexBuffer(config.valueType, size);
+						assertThat(reader.find(0, Long.MAX_VALUE, target, buffer, RequestSettings.none())).isTrue();
+						assertThat(buffer.size()).isEqualTo(span);
+						assertIndicesEquals(target[0], buffer);
+					} finally {
+						reader.end();
+					}
+				}
+			}
+		}
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"1000,   0,   1,   3,   5", // 1 block
+		"1000,   0,  10,  22,  87", // some blocks at the front
+		"1000, 976, 979, 985, 999", // some blocks at the very end
+		"1000, 472, 521, 599, 721" // intermediate blocks
+	})
+	@DisplayName("test the find() method for multiple sets of target values")
+	void testMultiBlockSearchMultiSets(int size, int from1, int to1, int from2, int to2) throws Exception {
+		for(Coverage coverage : Coverage.values()) {
+			ConfigImpl config = basicMultiBlockConfig();
+			config.prepareManifest(coverage, Relation.ONE_TO_ONE);
+
+			try(MappingImplOneToOne mapping = config.create()) {
+				try(MappingWriter writer = mapping.newWriter()) {
+					writer.begin();
+					try {
+						for (int i = 0; i < size; i++) {
+							writer.map(i, i);
+						}
+					} finally {
+						writer.end();
+					}
+				}
+
+				try(MappingReader reader = mapping.newReader()) {
+					reader.begin();
+					try {
+						int span1 = to1-from1+1;
+						int span2 = to2-from2+1;
+						IndexSet[] target = new IndexSet[] {
+								IndexUtils.span(from1, to1), IndexUtils.span(from2, to2)};
+						IndexBuffer buffer = new IndexBuffer(config.valueType, size);
+						assertThat(reader.find(0, Long.MAX_VALUE, target, buffer, RequestSettings.none())).isTrue();
+						assertThat(buffer.size()).isEqualTo(span1 + span2);
+						assertIndicesEquals(target, wrap(buffer));
+					} finally {
+						reader.end();
+					}
+				}
 			}
 		}
 	}
