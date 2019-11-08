@@ -111,7 +111,7 @@ public class NullGuardian<T> extends Guardian<T> {
 				.sorted((m1, m2) -> m1.getMethod().getName().compareTo(m2.getMethod().getName()))
 				.map(this::createTestsForMethod)
 				.collect(Collectors.toCollection(ArrayList::new));
-		String displayName = String.format("Parameter-Guard [%d/%d]",
+		String displayName = String.format("Null-Guard [%d/%d]",
 				Integer.valueOf(tests.size()),
 				Integer.valueOf(methodCaches.size()));
 

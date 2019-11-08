@@ -364,7 +364,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		return dynamicContainer(
 				displayName(config),
-				null,
+				sourceUriFor(config.getter),
 				Stream.of(getterTest, setterTest));
 	}
 

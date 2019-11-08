@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.function.ThrowingConsumer;
+import org.junit.platform.commons.util.ReflectionUtils;
 
 import de.ims.icarus2.test.reflect.MethodCache;
 import de.ims.icarus2.test.util.DummyCache;
@@ -159,13 +161,16 @@ abstract class Guardian<T> {
 		return result;
 	}
 
+	@SuppressWarnings("unused")
+	private static String toFQMN(Method method) {
+		return ReflectionUtils.getFullyQualifiedMethodName(method.getDeclaringClass(), method)
+				.replace(" ", "");
+	}
+
 	URI sourceUriFor(Executable executable) {
-//		try {
-//			String s = "classpath:///";
-//			s += executable.getDeclaringClass().getSimpleName().replace('.', '/');
-//			return new URI(s);
-//		} catch (URISyntaxException e) {
-//			throw new TestAbortedException("Failed to create test source URI", e);
+		// Currently not properly supported by eclipse and overwriting our display names
+//		if(executable instanceof Method) {
+//			return URI.create("method:"+toFQMN((Method) executable));
 //		}
 		return null;
 	}
