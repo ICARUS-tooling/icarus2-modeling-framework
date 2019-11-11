@@ -34,9 +34,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.io.IOUtil;
 
@@ -334,6 +340,12 @@ public abstract class ManifestLocation {
 		return new Builder();
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, ManifestLocation> {
 
 		private boolean template = false;
@@ -350,6 +362,56 @@ public abstract class ManifestLocation {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
+		public boolean isTemplate() {
+			return template;
+		}
+
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
+		public boolean isReadOnly() {
+			return readOnly;
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public URL getUrl() {
+			return url;
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public Path getFile() {
+			return file;
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public Charset getCharset() {
+			return charset;
+		}
+
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
+		public boolean isVirtual() {
+			return virtual;
+		}
+
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
+		public boolean isInput() {
+			return input;
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public String getContent() {
+			return content;
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		public ClassLoader getClassLoader() {
+			return classLoader==null ? getClass().getClassLoader() : classLoader;
+		}
+
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder file(Path file) {
 			requireNonNull(file);
 			checkState("File already set", this.file==null);
@@ -361,6 +423,7 @@ public abstract class ManifestLocation {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder url(URL url) {
 			requireNonNull(url);
 			checkState("URL already set", this.url==null);
@@ -372,6 +435,7 @@ public abstract class ManifestLocation {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder charset(Charset charset) {
 			requireNonNull(charset);
 			checkState("Charset already set", this.charset==null);
@@ -382,10 +446,7 @@ public abstract class ManifestLocation {
 			return thisAsCast();
 		}
 
-		public Builder utf8() {
-			return charset(StandardCharsets.UTF_8);
-		}
-
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder template() {
 			checkState("Already template", !template);
 			checkState("Already virtual", !virtual);
@@ -396,16 +457,17 @@ public abstract class ManifestLocation {
 
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder content(String content) {
 			requireNonNull(content);
 			checkState("Content already set", this.content==null);
-			checkState("Not virtual", virtual);
 
 			this.content = content;
 
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder readOnly() {
 			checkState("Already read-only", !readOnly);
 			checkState("Already virtual", !virtual);
@@ -415,6 +477,7 @@ public abstract class ManifestLocation {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder virtual() {
 			checkState("Already virtual", !virtual);
 			checkState("URL already set", url==null);
@@ -426,9 +489,9 @@ public abstract class ManifestLocation {
 
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder input() {
 			checkState("Already input", !input);
-			checkState("Not virtual", virtual);
 
 			input = true;
 
@@ -436,6 +499,7 @@ public abstract class ManifestLocation {
 
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder classLoader(ClassLoader classLoader) {
 			requireNonNull(classLoader);
 			checkState("Classloader already set", this.classLoader==null);
@@ -443,6 +507,10 @@ public abstract class ManifestLocation {
 			this.classLoader = classLoader;
 
 			return thisAsCast();
+		}
+
+		public Builder utf8() {
+			return charset(StandardCharsets.UTF_8);
 		}
 
 		/**
@@ -459,13 +527,9 @@ public abstract class ManifestLocation {
 				checkState("Must define content if declaring as virtual input", content!=null);
 			}
 
-			if(input) {
-				checkState("Can't define content if declaring as input", content==null);
+			if(!input) {
+				checkState("Can't define content if not declaring as input", content==null);
 			}
-		}
-
-		private ClassLoader getClassLoader() {
-			return classLoader==null ? getClass().getClassLoader() : classLoader;
 		}
 
 		/**

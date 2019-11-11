@@ -1114,6 +1114,10 @@ public class TestUtils {
 		setter.accept(instance, Boolean.FALSE);
 	}
 
+	public static <T extends Object> void assertSwitchSetter(T instance, Consumer<T> setter) {
+		setter.accept(instance);
+	}
+
 	public static <T extends Object, K extends Object> void assertAccumulativeAdd(
 			T instance, BiConsumer<T, K> adder,
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE,
@@ -1204,6 +1208,15 @@ public class TestUtils {
 			setter.accept(instance, value2);
 			assertEquals(value2, getter.apply(instance), "not honoring second value change");
 		}
+	}
+
+	public static <T extends Object> void assertGetterSwitch(
+			T instance, boolean defaultValue,
+			Function<T, Boolean> getter, Consumer<T> setter) {
+		assertEquals(Boolean.valueOf(defaultValue), getter.apply(instance), "unexpected default value");
+
+		setter.accept(instance);
+		assertEquals(Boolean.valueOf(!defaultValue), getter.apply(instance), "not honoring switch");
 	}
 
 	public static <T extends Object, K extends Object> void assertRestrictedGetter(

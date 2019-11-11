@@ -21,7 +21,6 @@ package de.ims.icarus2.model.standard.registry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URL;
 import java.nio.file.Paths;
 import java.util.function.BiFunction;
 
@@ -37,8 +36,6 @@ import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager.Builder;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.test.TestSettings;
-import de.ims.icarus2.test.TestUtils;
-import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.util.BuilderTest;
 import de.ims.icarus2.util.io.resource.VirtualResourceProvider;
 
@@ -101,16 +98,6 @@ class DefaultCorpusManagerTest implements CorpusManagerTest<DefaultCorpusManager
 		@Override
 		public Builder createTestInstance(TestSettings settings) {
 			return settings.process(DefaultCorpusManager.builder());
-		}
-
-		/**
-		 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
-		 */
-		@Override
-		public void configureApiGuard(ApiGuard<Builder> apiGuard) {
-			BuilderTest.super.configureApiGuard(apiGuard);
-
-			apiGuard.parameterResolver(URL.class, b -> TestUtils.TEST_URL);
 		}
 
 		@Test

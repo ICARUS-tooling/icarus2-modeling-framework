@@ -133,7 +133,8 @@ public class MethodCache {
 
 	public boolean hasParameterAnnotation(
 			Class<? extends Annotation> annotationClass, int paramIndex) {
-		return parameterAnnotations.get(paramIndex).containsKey(annotationClass);
+		return paramIndex<parameterAnnotations.size()
+				&& parameterAnnotations.get(paramIndex).containsKey(annotationClass);
 	}
 
 	public List<Method> getMethodsForAnnotation(

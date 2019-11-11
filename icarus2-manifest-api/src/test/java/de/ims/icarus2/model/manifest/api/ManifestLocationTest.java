@@ -19,68 +19,141 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
+import static de.ims.icarus2.test.TestUtils.TEST_URL;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import de.ims.icarus2.model.manifest.api.ManifestLocation.Builder;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.test.util.Triple;
+import de.ims.icarus2.util.BuilderTest;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface ManifestLocationTest {
+class ManifestLocationTest {
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getUrl()}.
-	 */
-	@Test
-	default void testGetUrl() {
-		fail("Not yet implemented");
-		//TODO
+	//TODO
+	class Tmp {
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getUrl()}.
+		 */
+		@Test
+		void testGetUrl() {
+			fail("Not yet implemented");
+			//TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getInput()}.
+		 */
+		@Test
+		void testGetInput() {
+			fail("Not yet implemented");
+			//TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getOutput()}.
+		 */
+		@Test
+		void testGetOutput() {
+			fail("Not yet implemented");
+			//TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#isReadOnly()}.
+		 */
+		@Test
+		void testIsReadOnly() {
+			fail("Not yet implemented");
+			//TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#isTemplate()}.
+		 */
+		@Test
+		void testIsTemplate() {
+			fail("Not yet implemented");
+			//TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getClassLoader()}.
+		 */
+		@Test
+		void testGetClassLoader() {
+			fail("Not yet implemented");
+			//TODO
+		}
+
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getInput()}.
-	 */
-	@Test
-	default void testGetInput() {
-		fail("Not yet implemented");
-		//TODO
-	}
+	@Nested
+	class ForBuilder implements BuilderTest<ManifestLocation, ManifestLocation.Builder> {
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getOutput()}.
-	 */
-	@Test
-	default void testGetOutput() {
-		fail("Not yet implemented");
-		//TODO
-	}
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#isReadOnly()}.
-	 */
-	@Test
-	default void testIsReadOnly() {
-		fail("Not yet implemented");
-		//TODO
-	}
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(ManifestLocation.builder());
+		}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#isTemplate()}.
-	 */
-	@Test
-	default void testIsTemplate() {
-		fail("Not yet implemented");
-		//TODO
-	}
+		@Test
+		void testUtf8() {
+			Builder builder = create();
+			builder.utf8();
+			assertThat(builder.getCharset()).isSameAs(StandardCharsets.UTF_8);
+		}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ManifestLocation#getClassLoader()}.
-	 */
-	@Test
-	default void testGetClassLoader() {
-		fail("Not yet implemented");
-		//TODO
-	}
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidOps()
+		 */
+		@Override
+		public List<Triple<String, Class<? extends Throwable>, Consumer<? super Builder>>> invalidOps() {
+			return list(
+					Triple.triple("file after virtual", IllegalStateException.class, b -> b.virtual().file(Paths.get("."))),
+					Triple.triple("file after url", IllegalStateException.class, b -> b.url(TEST_URL).file(Paths.get("."))),
+					Triple.triple("url after virtual", IllegalStateException.class, b -> b.virtual().url(TEST_URL)),
+					Triple.triple("url after file", IllegalStateException.class, b -> b.url(TEST_URL).url(TEST_URL)),
+					Triple.triple("virtual after url", IllegalStateException.class, b -> b.url(TEST_URL).virtual()),
+					Triple.triple("virtual after file", IllegalStateException.class, b -> b.file(Paths.get(".")).virtual())
+			);
+		}
 
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidConfigurations()
+		 */
+		@Override
+		public List<Pair<String, Consumer<? super Builder>>> invalidConfigurations() {
+			return list(
+					Pair.pair("missing url/file/virtual", b -> b.template().input().content("test")),
+					Pair.pair("virtual input without content", b -> b.template().input().virtual()),
+					Pair.pair("content without input flag", b -> b.template().content("test").url(TEST_URL))
+			);
+		}
+	}
 }

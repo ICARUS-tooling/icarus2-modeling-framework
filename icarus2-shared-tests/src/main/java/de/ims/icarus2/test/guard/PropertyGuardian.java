@@ -24,9 +24,11 @@ import static de.ims.icarus2.test.TestUtils.NO_CHECK;
 import static de.ims.icarus2.test.TestUtils.NO_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.UNKNOWN_DEFAULT;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
+import static de.ims.icarus2.test.TestUtils.assertGetterSwitch;
 import static de.ims.icarus2.test.TestUtils.assertOptGetter;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
+import static de.ims.icarus2.test.TestUtils.assertSwitchSetter;
 import static de.ims.icarus2.test.TestUtils.failTest;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +53,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -206,20 +209,21 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		Api api = targetClass.getAnnotation(Api.class);
 		if(api!=null && api.type()==ApiType.BUILDER) {
-			List<PropertyConfig> builderProperties = extractBuilderConfigs();
-			assertThat(builderProperties).as("No designated builder methods found").isNotEmpty();
+			List<PropertyConfig> builderProperties = extractMandatoryBuilderConfigs();
 
-			Map<String, ThrowingConsumer<? super T>> builderCalls = createBuilderCalls(builderProperties);
+			if(!builderProperties.isEmpty()) {
+				Map<String, ThrowingConsumer<? super T>> builderCalls = createBuilderCalls(builderProperties);
 
-			containers.add(dynamicContainer("Builder",
-					builderProperties.stream()
-					.map(config -> createBuilderIntegrityTest(config, builderCalls))));
+				containers.add(dynamicContainer("Builder",
+						builderProperties.stream()
+						.map(config -> createBuilderIntegrityTest(config, builderCalls))));
+			}
 		}
 
 		return containers.stream();
 	}
 
-	private List<PropertyConfig> extractBuilderConfigs() {
+	private List<PropertyConfig> extractMandatoryBuilderConfigs() {
 		return propertyMethods.stream()
 				.filter(c -> c.builder)
 				.filter(c -> classCache.getMethodCache(c.setter)
@@ -328,14 +332,14 @@ class PropertyGuardian<T> extends Guardian<T> {
 		MethodCache setterMethodCache = classCache.getMethodCache(config.setter);
 
 		boolean allowNullParam = setterMethodCache.hasParameterAnnotation(Nullable.class, 0);
-		boolean isPrimitive = setterMethodCache.getParameterType(0).isPrimitive();
+		boolean isPrimitive = config.getter.getReturnType().isPrimitive();
 
 		// Nullability of return value can be defined in two ways
 		boolean allowNullReturn = getterMethodCache.hasAnnotation(Nullable.class)
 				|| getterMethodCache.hasResultAnnotation(Nullable.class);
 
 		// If return value is declared to be nullable but is a primitive type, we have to abort
-		if(allowNullReturn && config.getter.getReturnType().isPrimitive())
+		if(allowNullReturn && isPrimitive)
 			return dynamicTest(
 					displayName(config),
 					failTest(String.format("Getter declares nullable primitive: %s", config.getter)));
@@ -349,16 +353,27 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		final Supplier<Object> DEFAULT = createDefault(config.property, getterMethodCache, allowNullReturn);
 
-		final Class<?> paramClass = config.setter.getParameterTypes()[0];
+		Class<?>[] parameterTypes = config.setter.getParameterTypes();
+		final Class<?> paramClass = parameterTypes.length==0 ? null : parameterTypes[0];
 
 		// Wrap setter to handle the reflection-related exceptions internally
 		BiConsumer<T, Object> setter = (instance, value) -> {
+				try {
+					config.setter.invoke(instance, value);
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					if(e.getCause() instanceof RuntimeException)
+						throw (RuntimeException) e.getCause();
+					fail("Failed to invoke setter", e);
+				}
+			};
+
+		Consumer<T> setterSwitch = (instance) ->  {
 			try {
-				config.setter.invoke(instance, value);
+				config.setter.invoke(instance);
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				if(e.getCause() instanceof RuntimeException)
 					throw (RuntimeException) e.getCause();
-				fail("Failed to invoke setter", e);
+				fail("Failed to invoke switch setter", e);
 			}
 		};
 
@@ -375,7 +390,14 @@ class PropertyGuardian<T> extends Guardian<T> {
 		};
 
 		DynamicTest getterTest;
-		if(isOptionalReturn) {
+		if(paramClass==null) {
+			getterTest = dynamicTest("getter[switch]",
+					() -> {
+						T instance = createInstance();
+						boolean d = DEFAULT==null ? false : ((Boolean)DEFAULT.get()).booleanValue();
+						assertGetterSwitch(instance, d, obj -> (Boolean)getter.apply(obj), setterSwitch);
+					});
+		} else if(isOptionalReturn) {
 			getterTest = dynamicTest("getter[optionalReturn]",
 					() -> {
 						T instance = createInstance();
@@ -400,7 +422,13 @@ class PropertyGuardian<T> extends Guardian<T> {
 		}
 
 		DynamicTest setterTest;
-		if(isRestrictedSetter) {
+		if(paramClass==null) {
+			setterTest = dynamicTest("setter[switch]",
+					() -> {
+						T instance = createInstance();
+						assertSwitchSetter(instance, setterSwitch);
+					});
+		} else if(isRestrictedSetter) {
 			// Restricted setter means we expect an exception after the first invocation
 			String restriction = config.builder ? "builder" : "restricted";
 			setterTest = dynamicTest("setter["+restriction+"]",
@@ -472,7 +500,15 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 			// Make sure getter and setter use compatible types
 			Class<?> getterResult = unwrapReturnType(config.getter);
-			Class<?> setterParam = config.setter.getParameterTypes()[0];
+			Class<?>[] parameterTypes = config.setter.getParameterTypes();
+
+			// For builder methods, allow zero-argument setters for boolean properties
+			if(parameterTypes.length==0 && config.builder
+					&& boolean.class.isAssignableFrom(getterResult)) {
+				continue;
+			}
+
+			Class<?> setterParam = parameterTypes[0];
 
 			// In case of mismatch report it and remove mapping from buffer
 			if(!setterParam.isAssignableFrom(getterResult)) {

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.function.Function;
 import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.apiguard.EnumType;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.guard.GuardException;
 
 /**
@@ -78,6 +80,7 @@ public class DummyCache<C extends DummyCache<C, T>, T> {
 		// Known final classes
 
 		map.put(String.class, "test");
+		map.put(URL.class, TestUtils.TEST_URL);
 
 		sharedDummies = Collections.unmodifiableMap(map);
 	}
