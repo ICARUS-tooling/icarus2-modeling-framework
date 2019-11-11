@@ -6,6 +6,8 @@ package de.ims.icarus2.filedriver.io;
 import static de.ims.icarus2.filedriver.io.FileDriverTestUtils.block;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
+import static de.ims.icarus2.test.util.Triple.triple;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives.strictToByte;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +32,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -43,15 +46,19 @@ import org.junit.jupiter.api.TestReporter;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.filedriver.io.BufferedIOResource.Builder;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Header;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.ReadWriteAccessor;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.StatField;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.TestConfig;
+import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.BuilderTest;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
 
@@ -61,14 +68,43 @@ import de.ims.icarus2.util.io.resource.VirtualIOResource;
  */
 class BufferedIOResourceTest {
 
-	//TODO enable
-	@Disabled
 	@Nested
-	class ForBuilder {
-		//TODO test the builder methods
+	class ForBuilder implements BuilderTest<BufferedIOResource, Builder> {
+
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(BufferedIOResource.builder());
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidOps()
+		 */
+		@Override
+		public List<Triple<String, Class<? extends Throwable>, Consumer<? super Builder>>> invalidOps() {
+			return list(
+					triple("zero cacheSize", IllegalArgumentException.class, b -> b.cacheSize(0)),
+					triple("negative cacheSize", IllegalArgumentException.class, b -> b.cacheSize(-987654)),
+
+					triple("zero bytesPerBlock", IllegalArgumentException.class, b -> b.bytesPerBlock(0)),
+					triple("negative bytesPerBlock", IllegalArgumentException.class, b -> b.bytesPerBlock(-12345)),
+					triple("bytesPerBlock too small", IllegalArgumentException.class,
+							b -> b.bytesPerBlock(BufferedIOResource.MIN_BLOCK_SIZE-1))
+			);
+		}
 	}
 
-	@Disabled
+	@Disabled("Not sure if we actually need to expose those itnernals to test methods")
 	//TODO enable
 	@Nested
 	class Internals {

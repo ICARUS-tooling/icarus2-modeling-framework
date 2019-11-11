@@ -22,6 +22,13 @@ import static java.util.Objects.requireNonNull;
 import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -245,6 +252,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractMappingBuilder<Builder, MappingImplFunctionOneToOne> {
 
 		private LongUnaryOperator unaryFunction;
@@ -254,10 +262,14 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public LongUnaryOperator getUnaryFunction() {
 			return unaryFunction;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder unaryFunction(LongUnaryOperator unaryFunction) {
 			requireNonNull(unaryFunction);
 			checkState(this.unaryFunction==null);
@@ -267,10 +279,13 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public UnaryOperator<IndexSet> getBatchFunction() {
 			return batchFunction;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder batchFunction(UnaryOperator<IndexSet> batchFunction) {
 			requireNonNull(batchFunction);
 			checkState(this.batchFunction==null);

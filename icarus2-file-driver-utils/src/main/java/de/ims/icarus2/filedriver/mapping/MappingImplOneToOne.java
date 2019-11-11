@@ -27,6 +27,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.function.LongBinaryOperator;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
@@ -656,6 +660,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractStoredMappingBuilder<Builder, MappingImplOneToOne> {
 
 		private Integer blockPower;
@@ -664,10 +669,12 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="14")
 		public int getBlockPower() {
 			return blockPower==null ? DEFAULT_BLOCK_POWER : blockPower.intValue();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder blockPower(int blockPower) {
 			checkArgument(blockPower>0);
 			checkState(this.blockPower==null);

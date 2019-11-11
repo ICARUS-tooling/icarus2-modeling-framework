@@ -23,6 +23,11 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
@@ -262,6 +267,7 @@ public abstract class AbstractStoredMapping<H extends Header>
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public B cacheSize(int cacheSize) {
 			checkArgument(cacheSize>0);
 			checkState(this.cacheSize==null);
@@ -271,6 +277,8 @@ public abstract class AbstractStoredMapping<H extends Header>
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B resource(IOResource resource) {
 			requireNonNull(resource);
 			checkState(this.resource==null);
@@ -280,6 +288,8 @@ public abstract class AbstractStoredMapping<H extends Header>
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B blockCache(BlockCache blockCache) {
 			requireNonNull(blockCache);
 			checkState(this.blockCache==null);
@@ -289,14 +299,19 @@ public abstract class AbstractStoredMapping<H extends Header>
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="100")
 		public int getCacheSize() {
 			return cacheSize==null ? DEFAULT_CACHE_SIZE : cacheSize.intValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public IOResource getResource() {
 			return resource;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public BlockCache getBlockCache() {
 			return blockCache;
 		}

@@ -28,9 +28,9 @@ import de.ims.icarus2.test.util.TestConfig;
  * @author Markus Gärtner
  *
  */
-public interface MappingTest<M extends Mapping> {
+public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>> {
 
-	Stream<? extends Config<M>> configurations();
+	Stream<C> configurations();
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getDriver()}.

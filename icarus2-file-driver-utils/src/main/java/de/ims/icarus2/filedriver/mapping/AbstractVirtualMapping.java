@@ -19,6 +19,11 @@ package de.ims.icarus2.filedriver.mapping;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -126,6 +131,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B driver(Driver driver) {
 			requireNonNull(driver);
 			checkState(this.driver==null);
@@ -135,6 +142,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B manifest(MappingManifest manifest) {
 			requireNonNull(manifest);
 			checkState(this.manifest==null);
@@ -144,6 +153,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B sourceLayer(ItemLayerManifestBase<?> sourceLayer) {
 			requireNonNull(sourceLayer);
 			checkState(this.sourceLayer==null);
@@ -153,6 +164,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B targetLayer(ItemLayerManifestBase<?> targetLayer) {
 			requireNonNull(targetLayer);
 			checkState(this.targetLayer==null);
@@ -162,6 +175,8 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B valueType(IndexValueType valueType) {
 			requireNonNull(valueType);
 			checkState(this.valueType==null);
@@ -171,27 +186,37 @@ public abstract class AbstractVirtualMapping implements Mapping {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Driver getDriver() {
 			return driver;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public MappingManifest getManifest() {
 			return manifest;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayerManifestBase<?> getSourceLayer() {
 			return sourceLayer;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayerManifestBase<?> getTargetLayer() {
 			return targetLayer;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public IndexValueType getValueType() {
 			return valueType;
 		}
 
-		public IndexBlockStorage getBlockStorage() {
+		protected IndexBlockStorage getBlockStorage() {
 			return IndexBlockStorage.forValueType(getValueType());
 		}
 

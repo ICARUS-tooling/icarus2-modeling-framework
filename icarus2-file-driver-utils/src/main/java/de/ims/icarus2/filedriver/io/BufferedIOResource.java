@@ -31,10 +31,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
@@ -1007,6 +1014,7 @@ public class BufferedIOResource implements Flushable {
 	 *
 	 * @param <B>
 	 */
+	@Api(type = ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, BufferedIOResource> {
 		private int cacheSize = 0;
 		private int bytesPerBlock = 0;
@@ -1021,8 +1029,10 @@ public class BufferedIOResource implements Flushable {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder cacheSize(int cacheSize) {
-			checkArgument(cacheSize>=0);
+			checkArgument("Cache size msut be positive", cacheSize>0);
 			checkState(this.cacheSize==0);
 
 			this.cacheSize = cacheSize;
@@ -1030,8 +1040,12 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder bytesPerBlock(int bytesPerBlock) {
-			checkArgument(bytesPerBlock>=0);
+			checkArgument("Bytes per block must be positive", bytesPerBlock>=0);
+			checkArgument("Bytes per block too small: "+bytesPerBlock+" minimum: "+MIN_BLOCK_SIZE,
+					bytesPerBlock>=MIN_BLOCK_SIZE);
 			checkState(this.bytesPerBlock==0);
 
 			this.bytesPerBlock = bytesPerBlock;
@@ -1039,6 +1053,7 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder header(Header header) {
 			requireNonNull(header);
 			checkState(this.header==null);
@@ -1048,6 +1063,8 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder resource(IOResource resource) {
 			requireNonNull(resource);
 			checkState(this.resource==null);
@@ -1057,6 +1074,8 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder blockCache(BlockCache blockCache) {
 			requireNonNull(blockCache);
 			checkState(this.blockCache==null);
@@ -1066,6 +1085,8 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder payloadConverter(PayloadConverter payloadConverter) {
 			requireNonNull(payloadConverter);
 			checkState(this.payloadConverter==null);
@@ -1075,6 +1096,7 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder collectStats(boolean collectStats) {
 			checkState("Flag 'collectStats' already set", this.collectStats==null);
 
@@ -1083,30 +1105,41 @@ public class BufferedIOResource implements Flushable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="0")
 		public int getCacheSize() {
 			return cacheSize;
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="0")
 		public int getBytesPerBlock() {
 			return bytesPerBlock;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public IOResource getResource() {
 			return resource;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public BlockCache getBlockCache() {
 			return blockCache;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public PayloadConverter getPayloadConverter() {
 			return payloadConverter;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Header getHeader() {
 			return header;
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isCollectStats() {
 			return collectStats==null ? false : collectStats.booleanValue();
 		}
@@ -1116,8 +1149,8 @@ public class BufferedIOResource implements Flushable {
 			checkState("Missing resource", resource!=null);
 			checkState("Missing block cache", blockCache!=null);
 			checkState("Missing payload converter", payloadConverter!=null);
-			checkState("Negative cache size", cacheSize>=0);
-			checkState("Bytes per block too small: "+bytesPerBlock+" minimum: "+MIN_BLOCK_SIZE, bytesPerBlock>=MIN_BLOCK_SIZE);
+			checkState("Missing cache size", cacheSize>0);
+			checkState("Missing bytes per block value", bytesPerBlock>0);
 		}
 
 		/**

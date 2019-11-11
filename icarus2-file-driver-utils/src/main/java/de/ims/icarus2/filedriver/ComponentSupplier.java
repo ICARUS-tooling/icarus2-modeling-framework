@@ -24,7 +24,14 @@ import java.util.function.LongSupplier;
 import java.util.function.LongUnaryOperator;
 import java.util.function.ObjLongConsumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
@@ -588,6 +595,7 @@ public interface ComponentSupplier extends AutoCloseable {
 
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, ComponentSupplier> {
 
 		/**
@@ -656,10 +664,12 @@ public interface ComponentSupplier extends AutoCloseable {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="0")
 		public int getBufferSize() {
 			return bufferSize==null ? 0 : bufferSize.intValue();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder bufferSize(int bufferSize) {
 			checkArgument(bufferSize>0);
 			checkState(this.bufferSize==null);
@@ -669,10 +679,12 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="-1")
 		public long getFirstIndex() {
 			return firstIndex==null ? IcarusUtils.UNSET_LONG : firstIndex.longValue();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder firstIndex(long firstIndex) {
 			checkArgument(firstIndex>=0L);
 			checkState(this.firstIndex==null);
@@ -682,10 +694,12 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="-1")
 		public long getLastIndex() {
 			return lastIndex==null ? IcarusUtils.UNSET_LONG : lastIndex.longValue();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder lastIndex(long lastIndex) {
 			checkArgument(lastIndex>=0L);
 			checkState(this.lastIndex==null);
@@ -695,10 +709,13 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public MemberType getComponentType() {
 			return componentType;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder componentType(MemberType componentType) {
 			requireNonNull(componentType);
 			checkState(this.componentType==null);
@@ -711,10 +728,14 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public LayerMemberFactory getMemberFactory() {
 			return memberFactory;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder memberFactory(LayerMemberFactory memberFactory) {
 			requireNonNull(memberFactory);
 			checkState(this.memberFactory==null);
@@ -724,10 +745,13 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayer getSourceLayer() {
 			return sourceLayer;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder sourceLayer(ItemLayer sourceLayer) {
 			requireNonNull(sourceLayer);
 			checkState(this.sourceLayer==null);
@@ -737,10 +761,14 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayer getComponentLayer() {
 			return componentLayer;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder componentLayer(ItemLayer componentLayer) {
 			requireNonNull(componentLayer);
 			checkState(this.componentLayer==null);
@@ -750,10 +778,13 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public LongSupplier getIndexSupplier() {
 			return indexSupplier;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder indexSupplier(LongSupplier indexSupplier) {
 			requireNonNull(indexSupplier);
 			checkState(this.indexSupplier==null);
@@ -763,10 +794,13 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public LongUnaryOperator getIndex2IdMapper() {
 			return index2IdMapper;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder index2IdMapper(LongUnaryOperator index2IdMapper) {
 			requireNonNull(index2IdMapper);
 			checkState(this.index2IdMapper==null);
@@ -776,10 +810,13 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Mapping getMapping() {
 			return mapping;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder mapping(Mapping mapping) {
 			requireNonNull(mapping);
 			checkState(this.mapping==null);
@@ -789,10 +826,13 @@ public interface ComponentSupplier extends AutoCloseable {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ObjLongConsumer<Item> getComponentConsumer() {
 			return componentConsumer;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder componentConsumer(ObjLongConsumer<Item> componentConsumer) {
 			requireNonNull(componentConsumer);
 			checkState(this.componentConsumer==null);

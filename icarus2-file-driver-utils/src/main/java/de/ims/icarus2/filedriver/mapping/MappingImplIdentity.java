@@ -19,6 +19,8 @@ package de.ims.icarus2.filedriver.mapping;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -219,6 +221,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractVirtualMapping.AbstractMappingBuilder<Builder, MappingImplIdentity> {
 
 		private Builder() {

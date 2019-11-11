@@ -20,7 +20,7 @@ import de.ims.icarus2.test.func.ThrowingBiConsumer;
  * @author Markus Gärtner
  *
  */
-public interface WritableMappingTest<M extends WritableMapping> extends MappingTest<M> {
+public interface WritableMappingTest<M extends WritableMapping, C extends MappingTest.Config<M>> extends MappingTest<M, C> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.WritableMapping#newWriter()}.

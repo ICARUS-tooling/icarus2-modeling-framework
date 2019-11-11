@@ -22,6 +22,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
@@ -187,6 +189,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 
 		private D driver;
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public B driver(D driver) {
 			requireNonNull(driver);
 			checkState(this.driver==null);
@@ -196,6 +199,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
 		public D getDriver() {
 			return driver;
 		}

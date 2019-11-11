@@ -27,6 +27,10 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
@@ -583,6 +587,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractStoredMappingBuilder<Builder, MappingImplSpanManyToOne> {
 
 		private Integer blockPower;
@@ -593,6 +598,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder blockPower(int blockPower) {
 			checkArgument(blockPower>0);
 			checkState(this.blockPower==null);
@@ -602,6 +608,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder groupPower(int groupPower) {
 			checkArgument(groupPower>0);
 			checkState(this.groupPower==null);
@@ -611,6 +618,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder inverseMapping(Mapping inverseMapping) {
 			requireNonNull(inverseMapping);
 			checkState(this.inverseMapping==null);
@@ -620,10 +628,12 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.SETTER, defaultValue="14")
 		public int getBlockPower() {
 			return blockPower==null ? DEFAULT_BLOCK_POWER : blockPower.intValue();
 		}
 
+		@Guarded(methodType=MethodType.SETTER, defaultValue="8")
 		public int getGroupPower() {
 			return groupPower==null ? DEFAULT_GROUP_POWER : groupPower.intValue();
 		}

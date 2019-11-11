@@ -8,11 +8,13 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
+import static de.ims.icarus2.test.TestUtils.mockDelegate;
 import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.test.util.Triple.triple;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
@@ -20,11 +22,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
@@ -37,7 +39,8 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
-import de.ims.icarus2.filedriver.mapping.AbstractStoredMappingTest.AbstractConfig;
+import de.ims.icarus2.filedriver.mapping.MappingImplOneToOne.Builder;
+import de.ims.icarus2.filedriver.mapping.StoredMappingTest.AbstractConfig;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
@@ -57,10 +60,12 @@ import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
-import de.ims.icarus2.test.annotations.PostponedTest;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.test.util.Triple;
+import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
@@ -69,7 +74,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
  * @author Markus Gärtner
  *
  */
-class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne> {
+class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne, MappingImplOneToOneTest.ConfigImpl> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplOneToOne#builder()}.
@@ -547,34 +552,37 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	}
 
 	@Nested
-	@PostponedTest("need to revise strategy for efficiently testing builder behavior in general")
-	class ForBuilder {
-
-		MappingImplOneToOne.Builder builder;
-
-		@BeforeEach
-		void setUp() {
-			builder = MappingImplOneToOne.builder();
-		}
-
-		//TODO verify builder methods and check below 2 methods for consistency
+	class ForBuilder implements StoredMappingBuilderTest<MappingImplOneToOne, MappingImplOneToOne.Builder> {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplOneToOne#getBlockPower()}.
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
 		 */
-		@Test
-		void testGetBlockPower() {
-			fail("Not yet implemented"); // TODO
+		@Override
+		public Class<?> getTestTargetClass() {
+			return MappingImplOneToOne.Builder.class;
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplOneToOne#getEntriesPerBlock()}.
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 		 */
-		@Test
-		void testGetEntriesPerBlock() {
-			fail("Not yet implemented"); // TODO
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(MappingImplOneToOne.builder());
 		}
 
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidOps()
+		 */
+		@Override
+		public List<Triple<String, Class<? extends Throwable>, Consumer<? super Builder>>> invalidOps() {
+			return list(
+					triple("zero cacheSize", IllegalArgumentException.class, b -> b.cacheSize(0)),
+					triple("negative cacheSize ", IllegalArgumentException.class, b -> b.cacheSize(-12345)),
+
+					triple("zero blockPower", IllegalArgumentException.class, b -> b.blockPower(0)),
+					triple("negative blockPower", IllegalArgumentException.class, b -> b.blockPower(-12367))
+			);
+		}
 	}
 
 	private MappingImplOneToOne createMapping() {
@@ -582,6 +590,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 		when(manifest.getCoverage()).thenReturn(Optional.of(Coverage.PARTIAL));
 		return MappingImplOneToOne.builder()
 				.blockCache(new UnlimitedBlockCache())
+				.blockPower(4)
 				.driver(mock(Driver.class))
 				.sourceLayer(mock(ItemLayerManifestBase.class))
 				.targetLayer(mock(ItemLayerManifestBase.class))
@@ -650,7 +659,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 					.targetLayer(targetLayer)
 					.valueType(valueType)
 					// Dynamic "per invocation" fields
-					.resource(resourceGen.get())
+					.resource(mockDelegate(IOResource.class, resourceGen.get()))
 					.blockCache(blockCacheGen.get())
 					.build();
 		}

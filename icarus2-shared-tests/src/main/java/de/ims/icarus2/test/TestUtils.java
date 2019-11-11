@@ -18,6 +18,7 @@ package de.ims.icarus2.test;
 
 import static de.ims.icarus2.test.util.Pair.pair;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,10 +39,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -817,6 +819,75 @@ public class TestUtils {
 		fail(message);
 	}
 
+	private static final Map<Class<?>, Class<?>> primitiveWrapperLookup = new IdentityHashMap<>(9);
+	private static final Map<Class<?>, Class<?>> primitiveWrappers = new IdentityHashMap<>(9);
+
+	static {
+		primitiveWrapperLookup.put(Boolean.class, boolean.class);
+		primitiveWrapperLookup.put(Character.class, char.class);
+		primitiveWrapperLookup.put(Byte.class, byte.class);
+		primitiveWrapperLookup.put(Short.class, short.class);
+		primitiveWrapperLookup.put(Integer.class, int.class);
+		primitiveWrapperLookup.put(Long.class, long.class);
+		primitiveWrapperLookup.put(Float.class, float.class);
+		primitiveWrapperLookup.put(Double.class, double.class);
+		primitiveWrapperLookup.put(Void.class, void.class);
+	}
+
+	static {
+		primitiveWrappers.put(boolean.class, Boolean.class);
+		primitiveWrappers.put(char.class, Character.class);
+		primitiveWrappers.put(byte.class, Byte.class);
+		primitiveWrappers.put(short.class, Short.class);
+		primitiveWrappers.put(int.class, Integer.class);
+		primitiveWrappers.put(long.class, Long.class);
+		primitiveWrappers.put(float.class, Float.class);
+		primitiveWrappers.put(double.class, Double.class);
+		primitiveWrappers.put(void.class, Void.class);
+	}
+
+	/**
+	 * Unwraps wrapper types to their primitive type definition.
+	 *
+	 * @param clazz
+	 * @return
+	 */
+	public static Class<?> unwrap(Class<?> clazz) {
+		Class<?> primitiveClass = primitiveWrapperLookup.get(clazz);
+		return primitiveClass==null ? clazz : primitiveClass;
+	}
+
+	/**
+	 * Returns the wrapper type for a given class if it is a primitive type.
+	 *
+	 * @param clazz
+	 * @return
+	 */
+	public static Class<?> wrap(Class<?> clazz) {
+		return clazz.isPrimitive() ? primitiveWrappers.get(clazz) : clazz;
+	}
+
+	/**
+	 * Returns whether or not the given class is one of the wrapper classes for
+	 * primitives like {@link Integer}, etc...
+	 *
+	 * @param clazz
+	 * @return
+	 */
+	public static <T extends Object> boolean isPrimitiveWrapperClass(Class<T> clazz) {
+		return clazz==Long.class || clazz==Integer.class
+				|| clazz==Short.class || clazz==Byte.class
+				|| clazz==Float.class || clazz==Double.class
+				|| clazz==Void.class || clazz==Character.class
+				|| clazz==Boolean.class;
+	}
+
+	private static <K> boolean isPrimitive(K value) {
+		assertThat(value).isNotNull();
+		Class<?> clazz = value.getClass();
+		return clazz.isPrimitive() || isPrimitiveWrapperClass(clazz);
+	}
+
 	private static class Dummy {
 		/**
 		 * @see java.lang.Object#toString()
@@ -965,7 +1036,7 @@ public class TestUtils {
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			assertNPE(() -> setter.accept(instance, null));
-		} else {
+		} else if(!isPrimitive(value)) {
 			setter.accept(instance, null);
 		}
 
@@ -999,7 +1070,7 @@ public class TestUtils {
 			BiConsumer<Executable, String> restrictionCheck) {
 		if(checkNPE) {
 			assertNPE(() -> setter.accept(instance, null));
-		} else {
+		} else if(!isPrimitive(value1)) {
 			setter.accept(instance, null);
 		}
 
@@ -1013,7 +1084,7 @@ public class TestUtils {
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			assertNPE(() -> setter.accept(instance, null));
-		} else {
+		} else if(!isPrimitive(values[0])) {
 			setter.accept(instance, null);
 		}
 
@@ -1709,7 +1780,11 @@ public class TestUtils {
 		return array;
 	}
 
-
+	public static <T> T mockDelegate(Class<T> clazz, T origin) {
+		return mock(clazz, invoc -> {
+			return invoc.getMethod().invoke(origin, invoc.getArguments());
+		});
+	}
 
 	// JMH SUPPORT
 
