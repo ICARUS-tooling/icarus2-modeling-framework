@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.annotation.Nullable;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -46,6 +47,11 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -130,8 +136,8 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		builder.validate();
 
 		this.registry = builder.getRegistry();
-		this.namespacePrefix = builder.getPrefix();
-		this.namespaceUri = builder.getUri();
+		this.namespacePrefix = builder.getNamespacePrefix();
+		this.namespaceUri = builder.getNamespaceUri();
 
 		List<ManifestLocation> sources = builder.getSources();
 		sources.forEach(this::addSource);
@@ -648,6 +654,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, ManifestXmlReader> {
 
 		/**
@@ -676,26 +683,37 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ManifestRegistry getRegistry() {
 			return registry;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ManifestXmlDelegateFactory getDelegateFactory() {
 			return delegateFactory;
 		}
 
-		public String getUri() {
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public String getNamespaceUri() {
 			return uri;
 		}
 
-		public String getPrefix() {
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public String getNamespacePrefix() {
 			return prefix;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
 		public List<ManifestLocation> getSources() {
 			return Collections.unmodifiableList(sources);
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder registry(ManifestRegistry registry) {
 			requireNonNull(registry);
 			checkState("Registry already set", this.registry==null);
@@ -705,6 +723,8 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder delegateFactory(ManifestXmlDelegateFactory delegateFactory ) {
 			requireNonNull(delegateFactory);
 			checkState("Delegate factory already set", this.delegateFactory==null);
@@ -714,8 +734,11 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder namespacePrefix(String namespacePrefix) {
 			requireNonNull(namespacePrefix);
+			checkArgument(!namespacePrefix.isEmpty());
 			checkState("Registry already set", this.prefix==null);
 
 			this.prefix = namespacePrefix;
@@ -723,8 +746,11 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder namespaceUri(String namespaceUri) {
 			requireNonNull(namespaceUri);
+			checkArgument(!namespaceUri.isEmpty());
 			checkState("Namespace URI already set", this.uri==null);
 
 			this.uri = namespaceUri;
@@ -732,6 +758,7 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder source(ManifestLocation...locations) {
 			requireNonNull(locations);
 			checkArgument(locations.length>0);

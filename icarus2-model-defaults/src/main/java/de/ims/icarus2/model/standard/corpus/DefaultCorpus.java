@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -1394,6 +1396,7 @@ public class DefaultCorpus implements Corpus {
 		}
 	}
 
+	@Api(type=ApiType.BUILDER) //TODO add builder annotations and edge case tests
 	public static class Builder extends AbstractBuilder<Builder, Corpus> {
 		private CorpusManager manager;
 		private CorpusManifest manifest;
