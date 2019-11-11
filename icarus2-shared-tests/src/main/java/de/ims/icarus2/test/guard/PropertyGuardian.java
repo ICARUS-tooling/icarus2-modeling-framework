@@ -29,6 +29,8 @@ import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.failTest;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
@@ -45,6 +47,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -59,10 +62,13 @@ import javax.annotation.Nullable;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestReporter;
-import org.opentest4j.TestAbortedException;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.apiguard.Guarded;
 import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.test.func.TriConsumer;
 import de.ims.icarus2.test.reflect.ClassCache;
@@ -177,7 +183,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 	 * @see de.ims.icarus2.test.guard.Guardian#createTests(org.junit.jupiter.api.TestReporter)
 	 */
 	@Override
-	DynamicNode createTests(TestReporter testReporter) {
+	Stream<DynamicNode> createTests(TestReporter testReporter) {
 		this.testReporter = requireNonNull(testReporter);
 
 		//TODO maybe allow pre-filtering?
@@ -189,14 +195,75 @@ class PropertyGuardian<T> extends Guardian<T> {
 		validatePropertyMappings();
 
 		@SuppressWarnings("boxing")
-		String displayName = String.format("%s (%d)",
-				"Properties", propertyMethods.size());
+		String displayName = String.format("%s (%d)", "Properties", propertyMethods.size());
+
+		List<DynamicNode> containers = new ArrayList<>();
 
 		// Turn method mapping into tests
-		return dynamicContainer(displayName,
+		containers.add(dynamicContainer(displayName,
 				propertyMethods.stream()
-				.map(this::createTestsForProperty)
-				.collect(Collectors.toList()));
+				.map(this::createTestsForProperty)));
+
+		Api api = targetClass.getAnnotation(Api.class);
+		if(api!=null && api.type()==ApiType.BUILDER) {
+			List<PropertyConfig> builderProperties = extractBuilderConfigs();
+			assertThat(builderProperties).as("No designated builder methods found").isNotEmpty();
+
+			Map<String, ThrowingConsumer<? super T>> builderCalls = createBuilderCalls(builderProperties);
+
+			containers.add(dynamicContainer("Builder",
+					builderProperties.stream()
+					.map(config -> createBuilderIntegrityTest(config, builderCalls))));
+		}
+
+		return containers.stream();
+	}
+
+	private List<PropertyConfig> extractBuilderConfigs() {
+		return propertyMethods.stream()
+				.filter(c -> c.builder)
+				.filter(c -> classCache.getMethodCache(c.setter)
+						.hasAnnotation(Mandatory.class))
+				.collect(Collectors.toList());
+	}
+
+	private Map<String, ThrowingConsumer<? super T>> createBuilderCalls(List<PropertyConfig> builderProperties) {
+		Map<String, ThrowingConsumer<? super T>> result = new HashMap<>();
+		for(PropertyConfig config : builderProperties) {
+			assertThat(result).doesNotContainKey(config.property);
+			result.put(config.property, builder -> {
+				Object value = resolveParameter(builder, config.setter.getParameterTypes()[0]);
+				config.setter.invoke(builder, value);
+			});
+		}
+		return result;
+	}
+
+	private DynamicNode createBuilderIntegrityTest(PropertyConfig config,
+			Map<String, ThrowingConsumer<? super T>> builderCalls) {
+
+		Method buildMethod;
+		try {
+			buildMethod = targetClass.getMethod("build");
+		} catch (NoSuchMethodException | SecurityException e) {
+			return fail("No build() method found for builder class: %s", targetClass.getName());
+		}
+
+		return dynamicTest("missing "+config.property, () -> {
+			T builder = createInstance();
+
+			// Fill in all properties except the one under test
+			for(Entry<String, ThrowingConsumer<? super T>> e : builderCalls.entrySet()) {
+				if(!config.property.equals(e.getKey())) {
+					e.getValue().accept(builder);
+				}
+			}
+
+			// Verify that the builder validation fails
+			assertThatExceptionOfType(InvocationTargetException.class)
+				.isThrownBy(() -> buildMethod.invoke(builder))
+				.withCauseInstanceOf(IllegalStateException.class);
+		});
 	}
 
 	private Object tryParseDefaultGetterValue(MethodCache methodCache) {
@@ -378,7 +445,6 @@ class PropertyGuardian<T> extends Guardian<T> {
 		return creator.get();
 	}
 
-	//TODO unwrap return type from Optional
 	private Class<?> unwrapReturnType(Method method) {
 		Type returnType = method.getGenericReturnType();
 		Class<?> expectedClass = method.getReturnType();
@@ -491,7 +557,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 				break;
 
 			default:
-				throw new TestAbortedException("Not a recognized setter/getter method: "+method);
+				fail("Not a recognized setter/getter method: "+method);
 			}
 		};
 
@@ -525,17 +591,13 @@ class PropertyGuardian<T> extends Guardian<T> {
 				}
 
 				mapByType.accept(type, property, method);
-				continue;
-			} //TODO shouldn't there be an 'else' here to chain to the check below?
-
-			// Experimental: if desired try to find potential getters and setters
-			if(detectUnmarkedMethods) {
+			} else if(detectUnmarkedMethods) {
+				// Experimental: if desired try to find potential getters and setters
 				MethodType type = getMethodType(method);
 				if(type!=null) {
 					String property = extractPropertyName(method, type);
 					mapByType.accept(type, property, method);
 				}
-				continue;
 			}
 		}
 

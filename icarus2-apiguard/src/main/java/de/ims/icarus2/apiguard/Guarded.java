@@ -58,7 +58,9 @@ public @interface Guarded {
 	 * Signals that the method should not be called more than once with
 	 * valid parameters.
 	 * <p>
-	 * Only relevant if {@link #methodType()} is {@link Type#SETTER}.
+	 * Only relevant if {@link #methodType()} is {@link MethodType#SETTER}
+	 * (methods marked as {@link MethodType#BUILDER} are automatically expected
+	 * to behave that way).
 	 * @return
 	 */
 	boolean restricted() default false;
@@ -68,7 +70,7 @@ public @interface Guarded {
 	 * Only applicable if the return type of the annotated method is
 	 * primitive.
 	 * <p>
-	 * Only relevant if {@link #methodType()} is {@link Type#GETTER}.
+	 * Only relevant if {@link #methodType()} is {@link MethodType#GETTER}.
 	 *
 	 * @return
 	 */

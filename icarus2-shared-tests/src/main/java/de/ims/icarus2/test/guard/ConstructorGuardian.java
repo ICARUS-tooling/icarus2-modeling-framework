@@ -48,7 +48,7 @@ class ConstructorGuardian<T> extends Guardian<T> {
 	 * @see de.ims.icarus2.test.guard.Guardian#createTests()
 	 */
 	@Override
-	DynamicNode createTests(TestReporter testReporter) {
+	Stream<DynamicNode> createTests(TestReporter testReporter) {
 		Constructor<?>[] constructors = targetClass.getConstructors();
 		List<DynamicNode> tests = Stream.of(constructors)
 				.filter(c -> c.getParameterCount()>0)
@@ -58,7 +58,7 @@ class ConstructorGuardian<T> extends Guardian<T> {
 				Integer.valueOf(tests.size()),
 				Integer.valueOf(constructors.length));
 
-		return dynamicContainer(displayName, tests);
+		return Stream.of(dynamicContainer(displayName, tests));
 	}
 
 	private DynamicNode createTestsForConstructor(Constructor<?> constructor) {

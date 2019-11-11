@@ -439,13 +439,15 @@ public final class CollectionUtils {
 		return (Iterator<T>) EMPTY_ITERATOR;
 	}
 
-	public static <E extends Object> List<E> list(@SuppressWarnings("unchecked") E...items) {
+	@SafeVarargs
+	public static <E extends Object> List<E> list(E...items) {
 		ArrayList<E> list = new ArrayList<>();
 		feedItems(list, items);
 		return list;
 	}
 
-	public static <E extends Object> Set<E> set(@SuppressWarnings("unchecked") E...items) {
+	@SafeVarargs
+	public static <E extends Object> Set<E> set(E...items) {
 		Set<E> set = new ObjectOpenHashSet<>();
 		Collections.addAll(set, items);
 		return set;

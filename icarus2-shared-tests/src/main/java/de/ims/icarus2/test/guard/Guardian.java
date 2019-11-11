@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -175,7 +176,7 @@ abstract class Guardian<T> {
 		return null;
 	}
 
-	abstract DynamicNode createTests(TestReporter testReporter);
+	abstract Stream<DynamicNode> createTests(TestReporter testReporter);
 
 	static DynamicTest createNullTest(ParamConfig config, ThrowingConsumer<Object[]> executor) {
 		return DynamicTest.dynamicTest(config.displayName(), null,

@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestReporter;
@@ -101,7 +102,7 @@ public class NullGuardian<T> extends Guardian<T> {
 	 * @see de.ims.icarus2.test.guard.Guardian#createTests(org.junit.jupiter.api.TestReporter)
 	 */
 	@Override
-	DynamicNode createTests(TestReporter testReporter) {
+	Stream<DynamicNode> createTests(TestReporter testReporter) {
 		Collection<MethodCache> methodCaches = classCache.getMethodCaches();
 		List<DynamicNode> tests = methodCaches.stream()
 				.filter(c -> !c.hasAnnotation(Unguarded.class))
@@ -112,7 +113,7 @@ public class NullGuardian<T> extends Guardian<T> {
 				Integer.valueOf(tests.size()),
 				Integer.valueOf(methodCaches.size()));
 
-		return dynamicContainer(displayName, tests);
+		return Stream.of(dynamicContainer(displayName, tests));
 	}
 
 	private DynamicNode createTestsForMethod(MethodCache methodCache) {

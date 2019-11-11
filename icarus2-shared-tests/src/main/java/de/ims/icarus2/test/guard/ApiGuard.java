@@ -290,6 +290,6 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 		}
 
 		return guardians.stream()
-				.map(guardian -> guardian.createTests(testReporter));
+				.flatMap(guardian -> guardian.createTests(testReporter));
 	}
 }

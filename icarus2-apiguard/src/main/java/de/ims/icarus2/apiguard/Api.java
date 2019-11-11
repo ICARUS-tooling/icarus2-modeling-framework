@@ -41,5 +41,12 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Api {
-	// marker annotation
+
+	ApiType type() default ApiType.GENERAL;
+
+	public enum ApiType {
+		GENERAL,
+		BUILDER,
+		;
+	}
 }
