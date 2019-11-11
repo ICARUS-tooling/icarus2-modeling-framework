@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
+import javax.annotation.Nullable;
 import javax.swing.event.ChangeListener;
 
 import org.slf4j.Logger;
@@ -33,6 +34,11 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -1335,6 +1341,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		}
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, DefaultCorpusModel> {
 
 		private AccessMode accessMode;
@@ -1361,6 +1368,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 		 * @param changeHandler
 		 * @return
 		 */
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder changeHandler(Consumer<AtomicChange> changeHandler) {
 			requireNonNull(changeHandler);
 			checkState(this.changeHandler==null);
@@ -1370,11 +1378,14 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Consumer<AtomicChange> getChangeHandler() {
 			return changeHandler;
 		}
 
-
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder accessMode(AccessMode accessMode) {
 			requireNonNull(accessMode);
 			checkState(this.accessMode==null);
@@ -1384,10 +1395,14 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public AccessMode getAccessMode() {
 			return accessMode;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
 			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
@@ -1397,6 +1412,8 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayerManager getItemLayerManager() {
 			return itemLayerManager;
 		}

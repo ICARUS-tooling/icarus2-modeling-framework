@@ -26,6 +26,8 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.Nested;
+
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -45,7 +47,10 @@ import de.ims.icarus2.model.standard.driver.virtual.VirtualDriver;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusMemberFactory;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
+import de.ims.icarus2.model.standard.view.paged.DefaultCorpusModel.Builder;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.BuilderTest;
 
 /**
  * @author Markus Gärtner
@@ -162,5 +167,26 @@ class DefaultCorpusModelTest implements CorpusModelTest<DefaultCorpusModel> {
 				.accessMode(AccessMode.READ_WRITE)
 				.itemLayerManager(mock(ItemLayerManager.class))
 				.build();
+	}
+
+	@Nested
+	class ForBuilder implements BuilderTest<DefaultCorpusModel, DefaultCorpusModel.Builder> {
+
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(DefaultCorpusModel.builder());
+		}
+
 	}
 }
