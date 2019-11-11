@@ -20,9 +20,16 @@
 package de.ims.icarus2.model.standard.view.paged;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.test.TestUtils.filledArray;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.junit.jupiter.api.Nested;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
@@ -33,6 +40,12 @@ import de.ims.icarus2.model.api.view.paged.PageControlTest;
 import de.ims.icarus2.model.api.view.paged.PagedCorpusView;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualItemLayerManager;
+import de.ims.icarus2.model.standard.view.paged.DefaultPageControl.Builder;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.test.util.Triple;
+import de.ims.icarus2.util.BuilderTest;
 
 /**
  * @author Markus Gärtner
@@ -98,5 +111,65 @@ class DefaultPageControlTest implements PageControlTest<DefaultPageControl> {
 				.indices(DEFAULT_INDICES)
 				.itemLayerManager(mock(ItemLayerManager.class))
 				.build();
+	}
+
+	@Nested
+	class ForBuilder implements BuilderTest<DefaultPageControl, DefaultPageControl.Builder> {
+
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(DefaultPageControl.builder());
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+		 */
+		@Override
+		public void configureApiGuard(ApiGuard<Builder> apiGuard) {
+			BuilderTest.super.configureApiGuard(apiGuard);
+
+			apiGuard.parameterResolver(IndexSet[].class, b -> new IndexSet[2]);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidOps()
+		 */
+		@Override
+		public List<Triple<String, Class<? extends Throwable>, Consumer<? super Builder>>> invalidOps() {
+			return list(
+					Triple.triple("zero pageSize", IllegalArgumentException.class, b -> b.pageSize(0)),
+					Triple.triple("negative pageSize", IllegalArgumentException.class, b -> b.pageSize(-1244)),
+
+					Triple.triple("zero indexCacheSize", IllegalArgumentException.class, b -> b.indexCacheSize(0)),
+					Triple.triple("negative indexCacheSize", IllegalArgumentException.class, b -> b.indexCacheSize(-1244)),
+
+					Triple.triple("empty indices", IllegalArgumentException.class, b -> b.indices(new IndexSet[0]))
+			);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidConfigurations()
+		 */
+		@Override
+		public List<Pair<String, Consumer<? super Builder>>> invalidConfigurations() {
+			return list(
+					Pair.pair("missing pageIndexBuffer and indices+pageSize", b -> b.itemLayerManager(mock(ItemLayerManager.class))),
+					Pair.pair("missing pageIndexBuffer or pageSize",
+							b -> b.itemLayerManager(mock(ItemLayerManager.class)).indices(filledArray(4, IndexSet.class))),
+					Pair.pair("missing pageIndexBuffer or indices",
+							b -> b.itemLayerManager(mock(ItemLayerManager.class)).pageSize(10))
+			);
+		}
 	}
 }

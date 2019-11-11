@@ -29,6 +29,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.annotation.Nullable;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -36,6 +38,11 @@ import com.google.common.cache.LoadingCache;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -586,6 +593,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 		}
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, DefaultPageControl> {
 		private PageIndexBuffer pageIndexBuffer;
 		private IndexSet[] indices;
@@ -598,6 +606,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder pageIndexBuffer(PageIndexBuffer pageIndexBuffer) {
 			requireNonNull(pageIndexBuffer);
 			checkState(this.pageIndexBuffer==null);
@@ -607,12 +616,16 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public PageIndexBuffer getPageIndexBuffer() {
 			return pageIndexBuffer;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder indices(IndexSet[] indices) {
 			requireNonNull(indices);
+			checkArgument(indices.length>0);
 			checkState(this.indices==null);
 
 			this.indices = indices;
@@ -620,10 +633,14 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public IndexSet[] getIndices() {
 			return indices;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
 			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
@@ -633,10 +650,13 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayerManager getItemLayerManager() {
 			return itemLayerManager;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder indexSetCache(Cache<Integer, IndexSet> indexSetCache) {
 			requireNonNull(indexSetCache);
 			checkState(this.indexSetCache==null);
@@ -646,10 +666,13 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Cache<Integer, IndexSet> getIndexSetCache() {
 			return indexSetCache;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder indexCacheSize(int indexCacheSize) {
 			checkArgument(indexCacheSize>0);
 			checkState(this.indexCacheSize==0);
@@ -659,10 +682,12 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="0")
 		public int getIndexCacheSize() {
 			return indexCacheSize;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder pageSize(int pageSize) {
 			checkArgument(pageSize>0);
 			checkState(this.pageSize==0);
@@ -672,6 +697,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="0")
 		public int getPageSize() {
 			return pageSize;
 		}

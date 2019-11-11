@@ -29,6 +29,7 @@ import de.ims.icarus2.apiguard.Guarded;
 import de.ims.icarus2.apiguard.Guarded.MethodType;
 
 /**
+ * Base class of any chainable builder implementations.
  *
  * @param <B> the class of the derived builder, used to cast the results of appendable method calls
  * @param <O> class of the object the builder is constructing
