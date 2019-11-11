@@ -31,6 +31,8 @@ import java.util.function.LongConsumer;
 import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -526,6 +528,7 @@ public class BufferedItemManager {
 		}
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, BufferedItemManager> {
 
 		private final Int2ObjectMap<LayerBuffer> layerBuffers = new Int2ObjectOpenHashMap<>();
