@@ -27,8 +27,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -655,6 +660,8 @@ public abstract class AbstractDriver implements Driver {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B manifest(DriverManifest manifest) {
 			requireNonNull(manifest);
 			checkState(this.manifest==null);
@@ -664,6 +671,8 @@ public abstract class AbstractDriver implements Driver {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public DriverManifest getManifest() {
 			return manifest;
 		}

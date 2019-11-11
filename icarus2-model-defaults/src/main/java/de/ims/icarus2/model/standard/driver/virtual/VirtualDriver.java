@@ -29,6 +29,8 @@ import java.util.function.Supplier;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -318,6 +320,7 @@ public class VirtualDriver extends AbstractDriver {
 		return getItemLayerManager().load(indices, layer, compoundAction);
 	}
 
+	@Api(type=ApiType.BUILDER) //TODO add builder test annotations
 	public static class Builder extends DriverBuilder<Builder, VirtualDriver> {
 
 		private ItemLayerManager itemLayerManager;

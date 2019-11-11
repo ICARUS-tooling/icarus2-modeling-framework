@@ -40,6 +40,8 @@ import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +50,11 @@ import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.filedriver.Converter.ConverterProperty;
 import de.ims.icarus2.filedriver.Converter.LoadResult;
 import de.ims.icarus2.filedriver.FileDataStates.ElementInfo;
@@ -1665,6 +1672,7 @@ public class FileDriver extends AbstractDriver {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends DriverBuilder<Builder, FileDriver> {
 		private ResourceSet dataFiles;
 		private MetadataRegistry metadataRegistry;
@@ -1674,6 +1682,8 @@ public class FileDriver extends AbstractDriver {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder resourceProvider(ResourceProvider resourceProvider) {
 			requireNonNull(resourceProvider);
 			checkState(this.resourceProvider==null);
@@ -1683,10 +1693,14 @@ public class FileDriver extends AbstractDriver {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ResourceProvider getResourceProvider() {
 			return resourceProvider;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
 			requireNonNull(metadataRegistry);
 			checkState(this.metadataRegistry==null);
@@ -1696,10 +1710,14 @@ public class FileDriver extends AbstractDriver {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public MetadataRegistry getMetadataRegistry() {
 			return metadataRegistry;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder dataFiles(ResourceSet dataFiles) {
 			requireNonNull(dataFiles);
 			checkState(this.dataFiles==null);
@@ -1709,6 +1727,8 @@ public class FileDriver extends AbstractDriver {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ResourceSet getDataFiles() {
 			return dataFiles;
 		}
