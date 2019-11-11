@@ -21,15 +21,25 @@ package de.ims.icarus2.model.standard.view.streamed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
+import static de.ims.icarus2.test.util.Triple.triple;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.when;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -52,7 +62,11 @@ import de.ims.icarus2.model.standard.driver.virtual.VirtualItemLayerManager;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusMemberFactory;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
+import de.ims.icarus2.model.standard.view.streamed.DefaultStreamedCorpusView.Builder;
+import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.BuilderTest;
 
 /**
  * @author Markus Gärtner
@@ -191,5 +205,68 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 	@Override
 	public ItemLayerManager getItemLayerManager() {
 		return itemLayerManager;
+	}
+
+	@Nested
+	class ForBuilder implements BuilderTest<DefaultStreamedCorpusView, DefaultStreamedCorpusView.Builder> {
+
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(DefaultStreamedCorpusView.builder());
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidOps()
+		 */
+		@Override
+		public List<Triple<String, Class<? extends Throwable>, Consumer<? super Builder>>> invalidOps() {
+			return list(
+					triple("zero buffer capacity", IllegalArgumentException.class, b -> b.bufferCapacity(0)),
+					triple("negative buffer capacity", IllegalArgumentException.class, b -> b.bufferCapacity(-1234)),
+					triple("empty options array", IllegalArgumentException.class, b -> b.streamOptions())
+			);
+		}
+
+		@Test
+		void testWithAllOptions() {
+			Builder builder = create();
+			StreamOption[] options = StreamOption.values();
+
+			builder.withAllOptions();
+			Set<StreamOption> actual = builder.getStreamOptions();
+
+			for (StreamOption option : options) {
+				if(builder.isOptionSupported(option)) {
+					assertThat(actual).as("Missing supported option").contains(option);
+				} else {
+					assertThat(actual).as("Option not supposed to be supported").doesNotContain(option);
+				}
+			}
+		}
+
+		@TestFactory
+		Stream<DynamicTest> testStreamOptions() {
+			return Stream.of(StreamOption.values())
+					.map(option -> dynamicTest(option.name(), () -> {
+						Builder builder = create();
+						builder.streamOptions(option);
+						if(builder.isOptionSupported(option)) {
+							assertThat(builder.getStreamOptions()).as("Missing supported option").containsOnly(option);
+						} else {
+							assertThat(builder.getStreamOptions()).as("Option not supposed to be supported").doesNotContain(option);
+						}
+					}));
+		}
 	}
 }

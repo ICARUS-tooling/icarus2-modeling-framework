@@ -27,9 +27,16 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -198,6 +205,7 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 		buffer.close();
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractCorpusView.Builder<Builder, DefaultStreamedCorpusView> {
 		private ItemLayerManager itemLayerManager;
 		private final Set<StreamOption> streamOptions = EnumSet.noneOf(StreamOption.class);
@@ -207,6 +215,8 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
 			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
@@ -216,10 +226,13 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayerManager getItemLayerManager() {
 			return itemLayerManager;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder bufferCapacity(int bufferCapacity) {
 			checkArgument(bufferCapacity>0);
 			checkState(this.bufferCapacity==null);
@@ -229,6 +242,7 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="10000")
 		public int getBufferCapacity() {
 			return bufferCapacity==null ? DEFAULT_BUFFER_CAPACITY : bufferCapacity.intValue();
 		}
