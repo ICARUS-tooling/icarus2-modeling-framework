@@ -25,6 +25,13 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -314,6 +321,7 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, DefaultGenerationControl> {
 		private Corpus corpus;
 		private Supplier<UUID> uuidGenerator;
@@ -330,6 +338,8 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 		 * @param corpus
 		 * @return
 		 */
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder corpus(Corpus corpus) {
 			requireNonNull(corpus);
 			checkState("Corpus alread set", this.corpus == null);
@@ -343,6 +353,8 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 		/**
 		 * @return the corpus
 		 */
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Corpus getCorpus() {
 			return corpus;
 		}
@@ -355,6 +367,8 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 		 * @param uuidGenerator
 		 * @return
 		 */
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder uuidGenerator(Supplier<UUID> uuidGenerator) {
 			requireNonNull(uuidGenerator);
 			checkState("UUID generator alread set", this.uuidGenerator == null);
@@ -367,6 +381,8 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 		/**
 		 * @return the uuidGenerator
 		 */
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Supplier<UUID> getUuidGenerator() {
 			return uuidGenerator;
 		}
@@ -384,6 +400,8 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 		 * @param storage
 		 * @return
 		 */
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder storage(Stack<String> storage) {
 			requireNonNull(storage);
 			checkState("UUID storage alread set", this.storage == null);
@@ -396,6 +414,8 @@ public class DefaultGenerationControl implements GenerationControl, SimpleEventL
 		/**
 		 * @return the storage
 		 */
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Stack<String> getStorage() {
 			return storage;
 		}
