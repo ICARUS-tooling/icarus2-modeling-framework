@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.test.guard;
 
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 
 import java.lang.reflect.Constructor;
@@ -41,11 +40,8 @@ import de.ims.icarus2.test.reflect.RefUtils;
  */
 class ConstructorGuardian<T> extends Guardian<T> {
 
-	private final Class<?> targetClass;
-
 	public ConstructorGuardian(ApiGuard<T> apiGuard) {
 		super(apiGuard);
-		this.targetClass = requireNonNull(apiGuard.getTargetClass());
 	}
 
 	/**

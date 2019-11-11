@@ -47,8 +47,6 @@ import de.ims.icarus2.test.reflect.RefUtils;
  */
 public class NullGuardian<T> extends Guardian<T> {
 
-	private final Class<T> targetClass;
-
 	private final ClassCache<T> classCache;
 
 	private Supplier<? extends T> creator;
@@ -90,7 +88,6 @@ public class NullGuardian<T> extends Guardian<T> {
 	public NullGuardian(ApiGuard<T> apiGuard) {
 		super(apiGuard);
 
-		targetClass = apiGuard.getTargetClass();
 		creator = apiGuard.instanceCreator(false);
 
 		classCache = ClassCache.<T>builder()

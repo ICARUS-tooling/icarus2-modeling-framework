@@ -29,6 +29,7 @@ import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.test.TestUtils.failTest;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -45,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -65,14 +67,13 @@ import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.test.func.TriConsumer;
 import de.ims.icarus2.test.reflect.ClassCache;
 import de.ims.icarus2.test.reflect.MethodCache;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
  *
  */
 class PropertyGuardian<T> extends Guardian<T> {
-
-	private final Class<T> targetClass;
 
 	/**
 	 * Final pairing of setter and getter methods for each property.
@@ -85,7 +86,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 	 * If set to {@code true} we're allowed to consider every method with
 	 * a single argument that follows the naming scheme as a property method.
 	 */
-	private boolean detectUnmarkedMethods = false;
+	private final boolean detectUnmarkedMethods;
 
 	private TestReporter testReporter;
 
@@ -135,7 +136,6 @@ class PropertyGuardian<T> extends Guardian<T> {
 	public PropertyGuardian(ApiGuard<T> apiGuard) {
 		super(apiGuard);
 
-		targetClass = apiGuard.getTargetClass();
 		detectUnmarkedMethods = apiGuard.isDetectUnmarkedMethods();
 		creator = apiGuard.instanceCreator(true);
 
@@ -261,6 +261,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 		MethodCache setterMethodCache = classCache.getMethodCache(config.setter);
 
 		boolean allowNullParam = setterMethodCache.hasParameterAnnotation(Nullable.class, 0);
+		boolean isPrimitive = setterMethodCache.getParameterType(0).isPrimitive();
 
 		// Nullability of return value can be defined in two ways
 		boolean allowNullReturn = getterMethodCache.hasAnnotation(Nullable.class)
@@ -275,8 +276,9 @@ class PropertyGuardian<T> extends Guardian<T> {
 		// Need to handle getter methods that wrap values into an Optional
 		boolean isOptionalReturn = config.getter.getReturnType()==Optional.class;
 
-		boolean isRestrictedSetter = setterMethodCache.hasAnnotation(Guarded.class)
-				&& extractConsistentValue(Guarded.class, setterMethodCache, Guarded::restricted).booleanValue();
+		boolean isRestrictedSetter = config.builder ||
+				(setterMethodCache.hasAnnotation(Guarded.class) &&
+						extractConsistentValue(Guarded.class, setterMethodCache, Guarded::restricted).booleanValue());
 
 		final Supplier<Object> DEFAULT = createDefault(config.property, getterMethodCache, allowNullReturn);
 
@@ -289,8 +291,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				if(e.getCause() instanceof RuntimeException)
 					throw (RuntimeException) e.getCause();
-
-				throw new TestAbortedException("Failed to invoke setter", e);
+				fail("Failed to invoke setter", e);
 			}
 		};
 
@@ -302,7 +303,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 				if(e.getCause() instanceof RuntimeException)
 					throw (RuntimeException) e.getCause();
 
-				throw new TestAbortedException("Failed to invoke getter", e);
+				return fail("Failed to invoke getter", e);
 			}
 		};
 
@@ -333,15 +334,16 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 		DynamicTest setterTest;
 		if(isRestrictedSetter) {
-			// Restricted setter means we expect an exception after the first invokation
-			setterTest = dynamicTest("setter[restricted]",
+			// Restricted setter means we expect an exception after the first invocation
+			String restriction = config.builder ? "builder" : "restricted";
+			setterTest = dynamicTest("setter["+restriction+"]",
 					() -> {
 						T instance = createInstance();
 						assertRestrictedSetter(instance,
 								setter,
 								resolveParameter(instance, paramClass),
 								resolveParameter(instance, paramClass),
-								!allowNullParam,
+								!allowNullParam && !isPrimitive,
 								(executable, msg) -> assertThrows(Throwable.class, executable, msg));
 					});
 		} else {
@@ -357,7 +359,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 						} else {
 							assertSetter(instance, setter,
 									resolveParameter(instance, paramClass),
-									!allowNullParam, NO_CHECK);
+									!allowNullParam && !isPrimitive, NO_CHECK);
 						}
 					});
 		}
@@ -449,6 +451,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 	private void collectPropertyMethods() {
 		Map<String, Method> getters = new HashMap<>();
 		Map<String, Method> setters = new HashMap<>();
+		Set<Method> builders = new ObjectOpenHashSet<>();
 
 		BiConsumer<String, Method> mapGetter = (property, method) -> {
 			if(getters.containsKey(property)) {
@@ -480,6 +483,9 @@ class PropertyGuardian<T> extends Guardian<T> {
 				mapGetter.accept(property, method);
 				break;
 
+			case BUILDER: // BUILDER is also a SETTER!
+				builders.add(method);
+				//$FALL-THROUGH$
 			case SETTER:
 				mapSetter.accept(property, method);
 				break;
@@ -520,7 +526,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 				mapByType.accept(type, property, method);
 				continue;
-			}
+			} //TODO shouldn't there be an 'else' here to chain to the check below?
 
 			// Experimental: if desired try to find potential getters and setters
 			if(detectUnmarkedMethods) {
@@ -546,7 +552,9 @@ class PropertyGuardian<T> extends Guardian<T> {
 				continue;
 			}
 
-			propertyMethods.add(new PropertyConfig(property, setter, getter));
+			boolean isBuilder = builders.contains(setter);
+
+			propertyMethods.add(new PropertyConfig(property, isBuilder, setter, getter));
 		}
 
 		// Report all leftover unassigned setters
@@ -559,6 +567,10 @@ class PropertyGuardian<T> extends Guardian<T> {
 
 	private String extractPropertyName(Method method, MethodType type) {
 		String name = method.getName();
+		if(type==MethodType.BUILDER) {
+			return name;
+		}
+
 		int begin = type==MethodType.GETTER ? "get".length() : "set".length();
 		if(name.startsWith("is")) {
 			begin = "is".length();
@@ -578,6 +590,9 @@ class PropertyGuardian<T> extends Guardian<T> {
 	private MethodType getMethodType(Method method) {
 		String name = method.getName();
 
+		boolean chainable = method.getReturnType().isAssignableFrom(targetClass);
+
+		// Try established patterns first
 		for(Map.Entry<String, MethodType> e : prefixToTypeMap.entrySet()) {
 			String prefix = e.getKey();
 			MethodType type = e.getValue();
@@ -598,14 +613,18 @@ class PropertyGuardian<T> extends Guardian<T> {
 				} else if(!isGetter && method.getParameterCount()==0) {
 					testReporter.publishEntry("inconsistentSetter",
 							"Setter method does not take arguments: "+method);
-				} else if(!isGetter && method.getReturnType()!=void.class
-						&& !method.getReturnType().isAssignableFrom(targetClass)) {
+				} else if(!isGetter && method.getReturnType()!=void.class && !chainable) {
 					testReporter.publishEntry("inconsistentSetter",
-							"Setter method declares return (non-chainable) type: "+method);
+							"Setter method declares (non-chainable) return type: "+method);
 				} else {
 					return type;
 				}
 			}
+		}
+
+		// No default getter/setter, check builder
+		if(chainable && method.getParameterCount()==1) {
+			return MethodType.BUILDER;
 		}
 
 		return null;
@@ -614,9 +633,11 @@ class PropertyGuardian<T> extends Guardian<T> {
 	static class PropertyConfig {
 		final String property;
 		final Method getter, setter;
+		final boolean builder;
 
-		public PropertyConfig(String property, Method setter, Method getter) {
+		public PropertyConfig(String property, boolean builder, Method setter, Method getter) {
 			this.property = requireNonNull(property);
+			this.builder = builder;
 			this.setter = requireNonNull(setter);
 			this.getter = requireNonNull(getter);
 		}

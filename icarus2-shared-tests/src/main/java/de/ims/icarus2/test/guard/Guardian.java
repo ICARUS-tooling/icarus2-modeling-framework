@@ -58,11 +58,11 @@ abstract class Guardian<T> {
 
 	private final Map<String, Object> defaultReturnValues;
 	private final DummyCache<?, T> dummyCache;
+	protected final Class<T> targetClass;
 
 	protected Guardian(ApiGuard<T> apiGuard) {
-		requireNonNull(apiGuard);
-
-		dummyCache = apiGuard;
+		dummyCache = requireNonNull(apiGuard);
+		targetClass = requireNonNull(apiGuard.getTargetClass());
 		defaultReturnValues = requireNonNull(apiGuard.getDefaultReturnValues());
 	}
 

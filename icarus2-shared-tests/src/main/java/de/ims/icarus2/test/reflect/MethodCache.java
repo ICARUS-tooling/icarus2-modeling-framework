@@ -55,6 +55,8 @@ public class MethodCache {
 
 	final Map<Class<? extends Annotation>, List<Method>> resultAnnotations = new HashMap<>();
 
+	final Class<?>[] parameterTypes;
+
 	//TODO disabled for now, needs better data structrue that maps from exception types
 //	final Map<Annotation, List<Method>> exceptionAnnotations = new HashMap<>();
 
@@ -65,6 +67,8 @@ public class MethodCache {
 	MethodCache(Method method, Set<Method> overridden, Consumer<String> log) {
 		this.method = requireNonNull(method);
 		this.log = log;
+
+		parameterTypes = method.getParameterTypes();
 
 		for (int i = 0; i < method.getParameterCount(); i++) {
 			parameterAnnotations.add(new HashMap<>());
@@ -149,5 +153,9 @@ public class MethodCache {
 				.flatMap(List::stream)
 				.distinct()
 				.collect(Collectors.toList());
+	}
+
+	public Class<?> getParameterType(int index) {
+		return parameterTypes[index];
 	}
 }

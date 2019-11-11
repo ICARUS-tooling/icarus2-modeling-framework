@@ -83,11 +83,26 @@ public @interface Guarded {
 	 */
 	enum MethodType {
 		/**
-		 * Annotated method is intended to act as a setter
+		 * Annotated method is intended to act as a setter.
 		 */
 		SETTER,
 		/**
-		 * Annotated method is intended to act as a getter
+		 * Annotated method is a special setter for chained builder calls and following very
+		 * specific conventions:
+		 * <ul>
+		 * <li>It can be chained, i.e. its return value is the exact object it was invoked on.</li>
+		 * <li>It takes a single argument.</li>
+		 * <li>It does not accept a {@code null} argument.</li>
+		 * <li>Invoking a builder method more than once will result in an {@link IllegalStateException}
+		 * being thrown.</li>
+		 * <li>Every builder method is supposed to have a matching getter method that either returns
+		 * the value specified in a previous builder call or a property-specific default value. This
+		 * getter method must be named {@code [is|get]Xxxxx} for a builder {@code xxxxx}.</li>
+		 * </ul>
+		 */
+		BUILDER,
+		/**
+		 * Annotated method is intended to act as a getter.
 		 */
 		GETTER,
 
