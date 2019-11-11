@@ -34,6 +34,8 @@ import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -146,6 +148,15 @@ public class TestUtils {
 		    		+ "策中。";
 
 	public static final String EMOJI = "👍"; // thumbs-up emoji
+
+	public static final URL TEST_URL;
+	static {
+		try {
+			TEST_URL = new URL("http://www.google.com");
+		} catch (MalformedURLException e) {
+			throw new InternalError("Failed to create test URL", e);
+		}
+	}
 
 	private static final PrintStream out = null; //TODO need a facility to change this dynamically
 

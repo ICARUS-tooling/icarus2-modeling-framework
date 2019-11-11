@@ -42,7 +42,14 @@ import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.events.CorpusLifecycleListener;
@@ -869,6 +876,12 @@ public class DefaultCorpusManager implements CorpusManager {
 		}
 	}
 
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, DefaultCorpusManager> {
 
 		private MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy;
@@ -890,46 +903,68 @@ public class DefaultCorpusManager implements CorpusManager {
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public MetadataStoragePolicy<CorpusManifest> getCorpusMetadataPolicy() {
 			return corpusMetadataPolicy;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public MetadataStoragePolicy<ContextManifest> getContextMetadataPolicy() {
 			return contextMetadataPolicy;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ManifestRegistry getManifestRegistry() {
 			return manifestRegistry;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public MetadataRegistry getMetadataRegistry() {
 			return metadataRegistry;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public FileManager getFileManager() {
 			return fileManager;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public BiFunction<CorpusManager, CorpusManifest, Corpus> getCorpusProducer() {
 			return corpusProducer;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Map<String, String> getProperties() {
 			return properties;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public URL getPropertiesUrl() {
 			return propertiesUrl;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Path getPropertiesFile() {
 			return propertiesFile;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ResourceProvider getResourceProvider() {
 			return resourceProvider;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder resourceProvider(ResourceProvider resourceProvider) {
 			requireNonNull(resourceProvider);
 			checkState(this.resourceProvider==null);
@@ -939,6 +974,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder corpusMetadataPolicy(
 				MetadataStoragePolicy<CorpusManifest> corpusMetadataPolicy) {
 			requireNonNull(corpusMetadataPolicy);
@@ -949,6 +985,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder contextMetadataPolicy(
 				MetadataStoragePolicy<ContextManifest> contextMetadataPolicy) {
 			requireNonNull(contextMetadataPolicy);
@@ -959,6 +996,8 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder manifestRegistry(ManifestRegistry manifestRegistry) {
 			requireNonNull(manifestRegistry);
 			checkState("Manifest registry already set", this.manifestRegistry==null);
@@ -968,6 +1007,8 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder metadataRegistry(MetadataRegistry metadataRegistry) {
 			requireNonNull(metadataRegistry);
 			checkState("Metadata registry already set", this.metadataRegistry==null);
@@ -977,6 +1018,8 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder fileManager(FileManager fileManager) {
 			requireNonNull(fileManager);
 			checkState("File manager already set", this.fileManager==null);
@@ -986,6 +1029,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder corpusProducer(
 				BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer) {
 			requireNonNull(corpusProducer);
@@ -996,6 +1040,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder properties(Map<String, String> properties) {
 			requireNonNull(properties);
 			checkState("Properties already set", this.properties==null);
@@ -1005,6 +1050,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder propertiesUrl(URL propertiesUrl) {
 			requireNonNull(propertiesUrl);
 			checkState("Properties URL already set", this.propertiesUrl==null);
@@ -1014,6 +1060,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder propertiesFile(Path propertiesFile) {
 			requireNonNull(propertiesFile);
 			checkState("Properties file already set", this.propertiesFile==null);

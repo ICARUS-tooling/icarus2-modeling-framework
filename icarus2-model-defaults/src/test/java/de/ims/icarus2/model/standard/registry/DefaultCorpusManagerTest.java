@@ -19,8 +19,14 @@
  */
 package de.ims.icarus2.model.standard.registry;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.function.BiFunction;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.registry.CorpusManager;
@@ -28,8 +34,12 @@ import de.ims.icarus2.model.api.registry.CorpusManagerTest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.standard.io.DefaultFileManager;
+import de.ims.icarus2.model.standard.registry.DefaultCorpusManager.Builder;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.TestUtils;
+import de.ims.icarus2.test.guard.ApiGuard;
+import de.ims.icarus2.util.BuilderTest;
 import de.ims.icarus2.util.io.resource.VirtualResourceProvider;
 
 /**
@@ -63,7 +73,8 @@ class DefaultCorpusManagerTest implements CorpusManagerTest<DefaultCorpusManager
 	 * @see de.ims.icarus2.model.api.registry.CorpusManagerTest#createWithCustomProducer(java.util.function.Function)
 	 */
 	@Override
-	public DefaultCorpusManager createCustomManager(BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer, TestSettings settings) {
+	public DefaultCorpusManager createCustomManager(BiFunction<CorpusManager, CorpusManifest,
+			Corpus> corpusProducer, TestSettings settings) {
 		return settings.process(DefaultCorpusManager.builder()
 				.fileManager(new DefaultFileManager(Paths.get(".")))
 				.resourceProvider(new VirtualResourceProvider())
@@ -73,4 +84,44 @@ class DefaultCorpusManagerTest implements CorpusManagerTest<DefaultCorpusManager
 				.build());
 	}
 
+	@Nested
+	class ForBuilder implements BuilderTest<DefaultCorpusManager, DefaultCorpusManager.Builder> {
+
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder createTestInstance(TestSettings settings) {
+			return settings.process(DefaultCorpusManager.builder());
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+		 */
+		@Override
+		public void configureApiGuard(ApiGuard<Builder> apiGuard) {
+			BuilderTest.super.configureApiGuard(apiGuard);
+
+			apiGuard.parameterResolver(URL.class, b -> TestUtils.TEST_URL);
+		}
+
+		@Test
+		void testDefaultEnvironment() {
+			Builder builder = create();
+			builder.defaultEnvironment();
+
+			assertThat(builder.getFileManager()).isNotNull();
+			assertThat(builder.getResourceProvider()).isNotNull();
+			assertThat(builder.getManifestRegistry()).isNotNull();
+			assertThat(builder.getMetadataRegistry()).isNotNull();
+		}
+	}
 }
