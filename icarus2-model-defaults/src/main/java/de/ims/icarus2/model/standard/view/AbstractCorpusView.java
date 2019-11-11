@@ -27,12 +27,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import javax.annotation.Nullable;
 import javax.swing.event.ChangeListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -271,10 +275,11 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 	 */
 	protected abstract static class Builder<B extends Builder<B, V>, V extends AbstractCorpusView> extends AbstractBuilder<B, V> {
 
-
 		private Scope scope;
 		private AccessMode accessMode;
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B scope(Scope scope) {
 			requireNonNull(scope);
 			checkState(this.scope==null);
@@ -284,10 +289,14 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public Scope getScope() {
 			return scope;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public B accessMode(AccessMode accessMode) {
 			requireNonNull(accessMode);
 			checkState(this.accessMode==null);
@@ -305,6 +314,8 @@ public abstract class AbstractCorpusView extends AbstractPart<Corpus> implements
 			return true;
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public AccessMode getAccessMode() {
 			return accessMode;
 		}

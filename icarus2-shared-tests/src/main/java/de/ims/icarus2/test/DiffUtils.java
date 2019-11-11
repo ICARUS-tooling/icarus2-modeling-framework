@@ -439,6 +439,10 @@ public final class DiffUtils {
 			}
 		}
 
+		/**
+		 * @throws IllegalAccessException if an access issue arises while using reflection to
+		 * check for equality in subclass implementations
+		 */
 		protected boolean equals(Trace trace, Object value1, Object value2) throws IllegalArgumentException, IllegalAccessException {
 			return value1.equals(value2);
 		}

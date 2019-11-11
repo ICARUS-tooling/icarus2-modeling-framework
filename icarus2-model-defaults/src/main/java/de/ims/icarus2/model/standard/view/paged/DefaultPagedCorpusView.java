@@ -20,6 +20,13 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
@@ -134,6 +141,7 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 		return model.value();
 	}
 
+	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractCorpusView.Builder<Builder, DefaultPagedCorpusView> {
 		private ItemLayerManager itemLayerManager;
 		private IndexSet[] indices;
@@ -143,6 +151,8 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 			// no-op
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder indices(IndexSet[] indices) {
 			requireNonNull(indices);
 			checkState(this.indices==null);
@@ -152,10 +162,14 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public IndexSet[] getIndices() {
 			return indices;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder itemLayerManager(ItemLayerManager itemLayerManager) {
 			requireNonNull(itemLayerManager);
 			checkState(this.itemLayerManager==null);
@@ -165,10 +179,14 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public ItemLayerManager getItemLayerManager() {
 			return itemLayerManager;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder pageSize(int pageSize) {
 			checkArgument(pageSize>0);
 			checkState(this.pageSize==0);
@@ -178,6 +196,7 @@ public class DefaultPagedCorpusView extends AbstractCorpusView implements PagedC
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="0")
 		public int getPageSize() {
 			return pageSize;
 		}
