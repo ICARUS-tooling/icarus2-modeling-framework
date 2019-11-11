@@ -21,8 +21,12 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
 
 /**
  *
@@ -41,6 +45,7 @@ public abstract class AbstractBuilder<B extends AbstractBuilder<B, O>, O extends
 		return (B)this;
 	}
 
+	@Guarded(methodType=MethodType.BUILDER)
 	public B constructor(Function<B, O> constructor) {
 		requireNonNull(constructor);
 		checkState(this.constructor==null);
@@ -50,6 +55,8 @@ public abstract class AbstractBuilder<B extends AbstractBuilder<B, O>, O extends
 		return thisAsCast();
 	}
 
+	@Guarded(methodType=MethodType.GETTER)
+	@Nullable
 	public Function<B, O> getConstructor() {
 		return constructor;
 	}
