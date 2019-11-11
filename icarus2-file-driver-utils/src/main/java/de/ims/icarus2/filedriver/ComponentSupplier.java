@@ -595,7 +595,7 @@ public interface ComponentSupplier extends AutoCloseable {
 
 	}
 
-	@Api(type=ApiType.BUILDER)
+	@Api(type=ApiType.BUILDER) //TODO add builder annotations and implement edge case tests
 	public static class Builder extends AbstractBuilder<Builder, ComponentSupplier> {
 
 		/**

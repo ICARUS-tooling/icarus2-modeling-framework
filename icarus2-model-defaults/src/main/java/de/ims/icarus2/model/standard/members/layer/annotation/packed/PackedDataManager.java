@@ -40,6 +40,11 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.apiguard.Api;
+import de.ims.icarus2.apiguard.Api.ApiType;
+import de.ims.icarus2.apiguard.Guarded;
+import de.ims.icarus2.apiguard.Guarded.MethodType;
+import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -1276,7 +1281,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 	 *
 	 * @param <E>
 	 */
-	public static class Builder<E extends Object, O extends Object> extends AbstractBuilder<Builder<E,O>, PackedDataManager<E,O>> {
+	@Api(type=ApiType.BUILDER)
+	public static class Builder<E, O> extends AbstractBuilder<Builder<E,O>, PackedDataManager<E,O>> {
 
 		private IntFunction<ByteAllocator> storageSource;
 
@@ -1296,6 +1302,8 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 
 		private Set<PackageHandle> handles = new ObjectOpenHashSet<>();
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder<E,O> storageSource(IntFunction<ByteAllocator> storageSource) {
 			requireNonNull(storageSource);
 			checkState("Storage source already set", this.storageSource==null);
@@ -1305,10 +1313,14 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
 		public IntFunction<ByteAllocator> getStorageSource() {
 			return storageSource;
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
+		@Mandatory
 		public Builder<E,O> initialCapacity(int initialCapacity) {
 			checkArgument("Initial capacity must be greater than 0", initialCapacity>0);
 			checkState("Initial capacity already set", this.initialCapacity==null);
@@ -1318,6 +1330,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder<E,O> allowBitPacking(boolean allowBitPacking) {
 			checkState("Flag 'allowBitPacking' already set", this.allowBitPacking==null);
 
@@ -1326,6 +1339,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder<E,O> allowDynamicChunkComposition(boolean allowDynamicChunkComposition) {
 			checkState("Flag 'allowDynamicChunkComposition' already set", this.allowDynamicChunkComposition==null);
 
@@ -1334,6 +1348,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder<E,O> weakKeys(boolean weakKeys) {
 			checkState("Flag 'weakKeys' already set", this.weakKeys==null);
 
@@ -1342,6 +1357,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder<E,O> autoRegister(boolean autoRegister) {
 			checkState("Flag 'autoRegister' already set", this.autoRegister==null);
 
@@ -1350,6 +1366,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder<E,O> collectStats(boolean collectStats) {
 			checkState("Flag 'collectStats' already set", this.collectStats==null);
 
@@ -1358,6 +1375,7 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.BUILDER)
 		public Builder<E,O> failForUnwritten(boolean failForUnwritten) {
 			checkState("Flag 'failForUnwritten' already set", this.failForUnwritten==null);
 
@@ -1366,30 +1384,37 @@ public class PackedDataManager<E extends Object, O extends Object> implements Pa
 			return thisAsCast();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="-1")
 		public int getInitialCapacity() {
-			return initialCapacity==null ? 0 : initialCapacity.intValue();
+			return initialCapacity==null ? UNSET_INT : initialCapacity.intValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isAllowBitPacking() {
 			return allowBitPacking==null ? false : allowBitPacking.booleanValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isAllowDynamicChunkComposition() {
 			return allowDynamicChunkComposition==null ? false : allowDynamicChunkComposition.booleanValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isWeakKeys() {
 			return weakKeys==null ? false : weakKeys.booleanValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isAutoRegister() {
 			return autoRegister==null ? false : autoRegister.booleanValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isCollectStats() {
 			return collectStats==null ? false : collectStats.booleanValue();
 		}
 
+		@Guarded(methodType=MethodType.GETTER, defaultValue="false")
 		public boolean isFailForUnwritten() {
 			return failForUnwritten==null ? false : failForUnwritten.booleanValue();
 		}

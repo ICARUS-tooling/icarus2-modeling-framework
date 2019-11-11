@@ -19,13 +19,17 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertUnsupportedType;
 import static de.ims.icarus2.test.TestTags.CONCURRENT;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
+import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.util.Triple.nullableTriple;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -36,9 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashSet;
@@ -51,6 +57,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,7 +79,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.opentest4j.AssertionFailedError;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataManager.Builder;
 import de.ims.icarus2.model.standard.members.layer.annotation.packed.PackedDataUtils.Substitutor;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
@@ -82,6 +91,7 @@ import de.ims.icarus2.test.concurrent.Circuit;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
+import de.ims.icarus2.util.BuilderTest;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.mem.ByteAllocator;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -177,6 +187,99 @@ class PackedDataManagerTest {
 
 	private static Object item() {
 		return new Object();
+	}
+
+	@Nested
+	class ForBuilder implements BuilderTest<PackedDataManager<Object,Object>, PackedDataManager.Builder<Object,Object>> {
+
+		/**
+		 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
+		 */
+		@Override
+		public Class<?> getTestTargetClass() {
+			return Builder.class;
+		}
+
+		/**
+		 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
+		 */
+		@Override
+		public Builder<Object, Object> createTestInstance(TestSettings settings) {
+			return settings.process(PackedDataManager.builder());
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidOps()
+		 */
+		@Override
+		public List<Triple<String, Class<? extends Throwable>, Consumer<? super Builder<Object, Object>>>> invalidOps() {
+			return list(
+					Triple.triple("zero initialCapacity", IllegalArgumentException.class, b -> b.initialCapacity(0)),
+					Triple.triple("negative initialCapacity", IllegalArgumentException.class, b -> b.initialCapacity(-1234))
+			);
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.BuilderTest#invalidConfigurations()
+		 */
+		@Override
+		public List<Pair<String, Consumer<? super Builder<Object, Object>>>> invalidConfigurations() {
+			return list(
+					Pair.pair("missing handles and no dynamic registration",
+							b -> b.storageSource(mock(IntFunction.class)).initialCapacity(100))
+			);
+		}
+
+		@Test
+		void testAddHandlesArray() {
+			PackageHandle[] handles = filledArray(10, PackageHandle.class);
+			Builder<Object, Object> builder = create();
+
+			for (int i = 0; i < handles.length; i++) {
+				builder.addHandles(handles[i]);
+
+				assertThat(builder.getHandles()).containsExactlyInAnyOrder(Arrays.copyOfRange(handles, 0, i+1));
+			}
+		}
+
+		@Test
+		void testAddDuplicateHandlesArray() {
+			PackageHandle[] handles = filledArray(10, PackageHandle.class);
+			Builder<Object, Object> builder = create();
+			builder.addHandles(handles);
+
+			Stream.of(handles).forEach(handle -> assertModelException(GlobalErrorCode.INVALID_INPUT,
+					() -> builder.addHandles(handle)));
+		}
+
+		@Test
+		void testAddHandlesCollection() {
+			PackageHandle[] handles = filledArray(10, PackageHandle.class);
+			Builder<Object, Object> builder = create();
+
+			for (int i = 0; i < handles.length; i++) {
+				builder.addHandles(set(handles[i]));
+
+				assertThat(builder.getHandles()).containsExactlyInAnyOrder(Arrays.copyOfRange(handles, 0, i+1));
+			}
+		}
+
+		@Test
+		void testAddDuplicateHandlesCollection() {
+			PackageHandle[] handles = filledArray(10, PackageHandle.class);
+			Builder<Object, Object> builder = create();
+			builder.addHandles(handles);
+
+			Stream.of(handles).forEach(handle -> assertModelException(GlobalErrorCode.INVALID_INPUT,
+					() -> builder.addHandles(set(handle))));
+		}
+
+		@Test
+		void testDefaultStorageSource() {
+			Builder<Object, Object> builder = create();
+			builder.defaultStorageSource();
+			assertThat(builder.getStorageSource()).isNotNull();
+		}
 	}
 
 	@Nested
