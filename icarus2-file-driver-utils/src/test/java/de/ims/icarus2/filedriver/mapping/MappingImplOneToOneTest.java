@@ -5,7 +5,6 @@ package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.TestUtils.mockDelegate;
@@ -67,14 +66,12 @@ import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
 
 /**
  * @author Markus Gärtner
  *
  */
-class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne, MappingImplOneToOneTest.ConfigImpl> {
+public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne, MappingImplOneToOneTest.ConfigImpl> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplOneToOne#builder()}.
@@ -115,6 +112,8 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 		config.targetLayer = mock(ItemLayerManifestBase.class);
 		config.manifest = mock(MappingManifest.class);
 
+		config.prepareManifest(Coverage.PARTIAL);
+
 		return config;
 	}
 
@@ -129,11 +128,11 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	Stream<DynamicNode> testRead1To1Fixed() {
 		return configurations().map(config -> dynamicContainer(config.label,
 				coverages().map(coverage -> dynamicTest(coverage.name(), () -> {
-					config.prepareManifest(coverage, Relation.ONE_TO_ONE);
-					List<Pair<Long, Long>> entries = MappingTestUtils.fixed1to1Mappings(coverage);
+					config.prepareManifest(coverage);
+					List<Pair<Integer, Integer>> entries = MappingTestUtils.fixed1to1Mappings(coverage);
 
 					try(MappingImplOneToOne mapping = config.create()) {
-						assert1to1Mapping(mapping, entries, null);
+						MappingTestUtils.assert1to1Mapping(mapping, entries, null);
 					}
 				}))));
 	}
@@ -158,11 +157,11 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 						// test each sequence in isolation
 						dynamicTest(String.format("cov=%s count=%d mult=%d mode=%s",
 								coverage, count, multiplier, data.first), () -> {
-									config.prepareManifest(coverage, Relation.ONE_TO_ONE);
-									List<Pair<Long, Long>> entries = data.second;
+									config.prepareManifest(coverage);
+									List<Pair<Integer, Integer>> entries = data.second;
 
 									try(MappingImplOneToOne mapping = config.create()) {
-										assert1to1Mapping(mapping, entries, rng);
+										MappingTestUtils.assert1to1Mapping(mapping, entries, rng);
 									}
 						})))))));
 	}
@@ -328,102 +327,6 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 						})))))));
 	}
 
-	static <M extends WritableMapping> void assert1to1Mapping(M mapping,
-			List<Pair<Long, Long>> entries, RandomGenerator rng) throws Exception	{
-		assert !entries.isEmpty() : "test data is empty";
-
-		try(MappingWriter writer = mapping.newWriter()) {
-			writer.begin();
-			try {
-				// write all mappings
-				entries.forEach(p -> writer.map(
-						p.first.longValue(), p.second.longValue()));
-			} finally {
-				writer.end();
-			}
-		}
-
-		// DEBUG
-//		System.out.println(entries);
-
-		try(MappingReader reader = mapping.newReader()) {
-			reader.begin();
-			try {
-				// run sequential read and assert (source -> target)
-				for(Pair<Long, Long> entry : entries) {
-					RequestSettings settings = RequestSettings.none();
-					long source = entry.first.longValue();
-					long target = entry.second.longValue();
-
-					// Size queries
-					assertThat(reader.getIndicesCount(source, settings))
-						.as("Indices count").isEqualTo(1);
-
-					// Single-value lookups
-					assertThat(reader.getBeginIndex(source, settings))
-						.as("Begin index").isEqualTo(target);
-					assertThat(reader.getEndIndex(source, settings))
-						.as("End index").isEqualTo(target);
-
-					// Bulk lookups
-					assertThat(reader.lookup(source, settings))
-						.as("Bulk lookup (single source)")
-						.hasSize(1).doesNotContainNull()
-						.allMatch(set -> set.size()==1, "Size mismatch")
-						.allMatch(set -> set.firstIndex()==target, "Target mismatch");
-					assertThat(reader.lookup(wrap(source), settings))
-						.as("Bulk lookup")
-						.hasSize(1).doesNotContainNull()
-						.allMatch(set -> set.size()==1, "Size mismatch")
-						.allMatch(set -> set.firstIndex()==target, "Target mismatch");
-
-					// Collector tests
-					LongList valueBuffer1 = new LongArrayList();
-					assertThat(reader.lookup(source, valueBuffer1::add, settings))
-						.as("Collector lookup (single source)").isTrue();
-					assertThat(valueBuffer1.toLongArray())
-						.as("Target mismatch").containsExactly(target);
-
-					LongList valueBuffer2 = new LongArrayList();
-					assertThat(reader.lookup(wrap(source), valueBuffer2::add, settings))
-						.as("Collector lookup (bulk source)").isTrue();
-					assertThat(valueBuffer2.toLongArray())
-						.as("Target mismatch").containsExactly(target);
-
-					// Bulk span boundaries
-					assertThat(reader.getBeginIndex(wrap(source), settings))
-						.as("Span begin (bulk source)").isEqualTo(target);
-					assertThat(reader.getEndIndex(wrap(source), settings))
-						.as("Span end (bulk source)").isEqualTo(target);
-
-					// Reverse lookup
-					assertThat(reader.find(source, source, target, settings))
-						.as("Single reverse lookup (explicit)").isEqualTo(source);
-					assertThat(reader.find(source, source, wrap(target), settings))
-						.as("Bulk reverse lookup (explicit)")
-						.hasSize(1).allMatch(matcher(source));
-
-					// Reverse lookup
-					assertThat(reader.find(Math.max(0, source-1), source, target, settings))
-						.as("Single reverse lookup (open begin)").isEqualTo(source);
-					assertThat(reader.find(Math.max(0, source-1), source, wrap(target), settings))
-						.as("Bulk reverse lookup (open begin)")
-						.hasSize(1).allMatch(matcher(source));
-					assertThat(reader.find(source, Long.MAX_VALUE, target, settings))
-						.as("Single reverse lookup (open end)").isEqualTo(source);
-					assertThat(reader.find(source, Long.MAX_VALUE, wrap(target), settings))
-						.as("Bulk reverse lookup (open end)")
-						.hasSize(1).allMatch(matcher(source));
-				}
-
-				// do some real bulk lookups and searches
-
-			} finally {
-				reader.end();
-			}
-		}
-	}
-
 	private static ConfigImpl basicMultiBlockConfig() {
 		return config(IndexValueType.INTEGER, 4,
 				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
@@ -438,7 +341,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	void testMultiBlockSearchSingle(int size, int index) throws Exception {
 		for(Coverage coverage : Coverage.values()) {
 			ConfigImpl config = basicMultiBlockConfig();
-			config.prepareManifest(coverage, Relation.ONE_TO_ONE);
+			config.prepareManifest(coverage);
 
 			try(MappingImplOneToOne mapping = config.create()) {
 				try(MappingWriter writer = mapping.newWriter()) {
@@ -476,7 +379,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	void testMultiBlockSearchMulti(int size, int from, int to) throws Exception {
 		for(Coverage coverage : Coverage.values()) {
 			ConfigImpl config = basicMultiBlockConfig();
-			config.prepareManifest(coverage, Relation.ONE_TO_ONE);
+			config.prepareManifest(coverage);
 
 			try(MappingImplOneToOne mapping = config.create()) {
 				try(MappingWriter writer = mapping.newWriter()) {
@@ -518,7 +421,7 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	void testMultiBlockSearchMultiSets(int size, int from1, int to1, int from2, int to2) throws Exception {
 		for(Coverage coverage : Coverage.values()) {
 			ConfigImpl config = basicMultiBlockConfig();
-			config.prepareManifest(coverage, Relation.ONE_TO_ONE);
+			config.prepareManifest(coverage);
 
 			try(MappingImplOneToOne mapping = config.create()) {
 				try(MappingWriter writer = mapping.newWriter()) {
@@ -644,6 +547,9 @@ class MappingImplOneToOneTest implements WritableMappingTest<MappingImplOneToOne
 	static class ConfigImpl extends AbstractConfig<MappingImplOneToOne> {
 
 		public int blockPower;
+
+		@Override
+		protected Relation relation() { return Relation.ONE_TO_ONE; }
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingTest.Config#create()

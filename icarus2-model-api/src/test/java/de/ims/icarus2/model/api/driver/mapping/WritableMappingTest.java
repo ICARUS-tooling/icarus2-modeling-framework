@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
@@ -25,7 +25,7 @@ public interface WritableMappingTest<M extends WritableMapping, C extends Mappin
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.WritableMapping#newWriter()}.
 	 */
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testNewWriter() {
 		return basicTests((config, instance) -> {
 			MappingWriter writer = instance.newWriter();

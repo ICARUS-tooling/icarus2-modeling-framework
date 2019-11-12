@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.ensureSorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.util.Conditions.checkArgument;
@@ -230,8 +231,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 				throws InterruptedException {
 			requireNonNull(sourceIndices);
 			requireNonNull(collector);
-
-			IndexUtils.checkSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			boolean result = false;
 
@@ -307,8 +307,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
 				throws InterruptedException {
 			requireNonNull(sourceIndices);
-
-			IndexUtils.checkSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic coverage: use only first source index
 			if(coverage.isMonotonic()) {
@@ -340,8 +339,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
 				throws InterruptedException {
 			requireNonNull(sourceIndices);
-
-			IndexUtils.checkSorted(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic coverage: use only last source index
 			if(coverage.isMonotonic()) {
@@ -402,8 +400,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 			checkSourceIndex(toSource);
 			requireNonNull(targetIndices);
 			requireNonNull(collector);
-
-			IndexUtils.checkSorted(targetIndices);
+			ensureSorted(targetIndices, settings);
 
 			// Restrict source range with header information
 			Range sourceRange = getHeader().getUsedIndices(fromSource, toSource);
@@ -489,7 +486,7 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 				}
 			}
 
-			return IcarusUtils.UNSET_LONG;
+			return UNSET_LONG;
 		}
 
 		private boolean findMulti(int idFrom, int idTo, int localFrom, int localTo,
@@ -553,6 +550,10 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 
 			int localIndex = UNSET_INT;
 
+			//TODO unless the entire mapping is already written, this check will lead us to a fail
+//			if(coverage.isMonotonic() && coverage.isTotal()) {
+//				localIndex = blockStorage.findSorted(block.getData(), localFrom, localTo, targetIndex);
+//			} else
 			if(coverage.isMonotonic()) {
 				localIndex = blockStorage.sparseFindSorted(block.getData(), localFrom, localTo, targetIndex);
 			} else {

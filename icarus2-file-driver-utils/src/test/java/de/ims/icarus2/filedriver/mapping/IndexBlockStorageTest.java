@@ -3,7 +3,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +59,7 @@ class IndexBlockStorageTest {
 	}
 
 	static Pair<Long, Long> randSpan(RandomGenerator rng, IndexBlockStorage storage) {
-		return longPair(rand(rng, storage), rand(rng, storage));
+		return pair(rand(rng, storage), rand(rng, storage));
 	}
 
 	static Pair<Long, Long>[] randSpans(RandomGenerator rng, IndexBlockStorage storage, int size) {
@@ -719,10 +719,10 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				@SuppressWarnings("unchecked")
 				Pair<Long, Long>[] spans = new Pair[]{
-						longPair(0, 1),
-						longPair(2, 4),
-						longPair(5, 8),
-						longPair(10, 20)
+						pair(0, 1),
+						pair(2, 4),
+						pair(5, 8),
+						pair(10, 20)
 				};
 				Object array = array(storage, spans.length*2);
 				writeSpans(storage, array, spans);
@@ -752,13 +752,13 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				@SuppressWarnings("unchecked")
 				Pair<Long, Long>[] spans = new Pair[]{
-						longPair(1, 3),
+						pair(1, 3),
 						null,
-						longPair(4, 5),
-						longPair(7, 8),
+						pair(4, 5),
+						pair(7, 8),
 						null,
 						null,
-						longPair(10, 20),
+						pair(10, 20),
 						null
 				};
 				long[] unused = {0, 6, 9, 21, 100};
@@ -796,10 +796,10 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				@SuppressWarnings("unchecked")
 				Pair<Long, Long>[] spans = new Pair[]{
-						longPair(4, 7),
-						longPair(2, 4),
-						longPair(5, 6),
-						longPair(10, 12)
+						pair(4, 7),
+						pair(2, 4),
+						pair(5, 6),
+						pair(10, 12)
 				};
 				Object array = array(storage, spans.length*2);
 				writeSpans(storage, array, spans);

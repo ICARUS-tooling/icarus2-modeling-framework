@@ -193,13 +193,13 @@ public abstract class AbstractStoredMapping<H extends Header>
 		@Override
 		public void write(Object source, ByteBuffer buffer, int length)
 				throws IOException {
-			blockStorage.write(source, buffer, 0, length);
+			blockStorage.write(source, buffer, 0, length<<1);
 		}
 
 		@Override
 		public int read(Object target, ByteBuffer buffer) throws IOException {
 			int length = buffer.remaining()/blockStorage.spanSize();
-			blockStorage.read(target, buffer, 0, length);
+			blockStorage.read(target, buffer, 0, length<<1);
 			return length;
 		}
 

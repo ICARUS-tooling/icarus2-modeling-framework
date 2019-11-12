@@ -109,7 +109,9 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 	default IndexSet[] lookup(IndexSet[] sourceIndices, @Nullable RequestSettings settings) throws InterruptedException {
 		requireNonNull(sourceIndices);
 
-		IndexSetBuilder builder = new IndexCollectorFactory().chunkSizeLimit(IndexUtils.maxSize(sourceIndices)).create();
+		int chunkSizeLimit = Math.max(1000, IndexUtils.maxSize(sourceIndices));
+
+		IndexSetBuilder builder = new IndexCollectorFactory().chunkSizeLimit(chunkSizeLimit).create();
 
 		lookup(sourceIndices, builder, settings);
 

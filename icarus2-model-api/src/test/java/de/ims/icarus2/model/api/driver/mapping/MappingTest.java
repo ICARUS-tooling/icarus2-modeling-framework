@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
@@ -35,7 +35,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getDriver()}.
 	 */
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testGetDriver() {
 		return basicTests((config, instance) -> assertSame(config.driver, instance.getDriver()));
 	}
@@ -43,7 +43,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getSourceLayer()}.
 	 */
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testGetSourceLayer() {
 		return basicTests((config, instance) -> assertSame(config.sourceLayer, instance.getSourceLayer()));
 	}
@@ -51,7 +51,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getTargetLayer()}.
 	 */
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testGetTargetLayer() {
 		return basicTests((config, instance) -> assertSame(config.targetLayer, instance.getTargetLayer()));
 	}
@@ -59,7 +59,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getManifest()}.
 	 */
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testGetManifest() {
 		return basicTests((config, instance) -> assertSame(config.manifest, instance.getManifest()));
 	}
@@ -67,7 +67,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#newReader()}.
 	 */
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testNewReader() {
 		return basicTests((config, instance) -> {
 			MappingReader reader = instance.newReader();
@@ -80,7 +80,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#close()}.
 	 */
 	@SuppressWarnings("resource")
-	@Test
+	@TestFactory
 	default Stream<DynamicNode> testClose() {
 		return configurations().map(config -> dynamicTest(config.label, () -> {
 			M mapping = config.create();
@@ -123,10 +123,13 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 
 		public abstract M create();
 
-		public void prepareManifest(Coverage coverage, Relation relation) {
+		protected abstract Relation relation();
+
+		public Config<M> prepareManifest(Coverage coverage) {
 			assertMock(manifest);
 			when(manifest.getCoverage()).thenReturn(Optional.of(coverage));
-			when(manifest.getRelation()).thenReturn(Optional.of(relation));
+			when(manifest.getRelation()).thenReturn(Optional.of(relation()));
+			return this;
 		}
 
 		@Override
