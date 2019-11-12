@@ -18,10 +18,12 @@ package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.apiguard.Api;
 import de.ims.icarus2.apiguard.Api.ApiType;
-import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
@@ -72,6 +74,10 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 	 */
 	public class Reader implements MappingReader {
 
+		private Reader() {
+			// no-op
+		}
+
 		/**
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
@@ -100,7 +106,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#close()
 		 */
 		@Override
-		public void close() throws ModelException {
+		public void close() {
 			// no-op
 		}
 
@@ -108,8 +114,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)
 		 */
 		@Override
-		public long getIndicesCount(long sourceIndex, RequestSettings settings)
-				throws InterruptedException {
+		public long getIndicesCount(long sourceIndex, @Nullable RequestSettings settings) {
 			return 1L;
 		}
 
@@ -118,8 +123,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings)
-				throws InterruptedException {
+		public boolean lookup(long sourceIndex, IndexCollector collector, @Nullable RequestSettings settings) {
 			collector.add(sourceIndex);
 			return true;
 		}
@@ -128,8 +132,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, RequestSettings)
 		 */
 		@Override
-		public IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws ModelException,
-				InterruptedException {
+		public IndexSet[] lookup(long sourceIndex, @Nullable RequestSettings settings) {
 			return IndexUtils.wrap(sourceIndex);
 		}
 
@@ -137,8 +140,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(long sourceIndex, RequestSettings settings) throws ModelException,
-				InterruptedException {
+		public long getBeginIndex(long sourceIndex, @Nullable RequestSettings settings) {
 			return sourceIndex;
 		}
 
@@ -146,8 +148,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(long sourceIndex, RequestSettings settings) throws ModelException,
-				InterruptedException {
+		public long getEndIndex(long sourceIndex, @Nullable RequestSettings settings){
 			return sourceIndex;
 		}
 
@@ -155,8 +156,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public IndexSet[] lookup(IndexSet[] sourceIndices, RequestSettings settings)
-				throws InterruptedException {
+		public IndexSet[] lookup(IndexSet[] sourceIndices, @Nullable RequestSettings settings) {
+			requireNonNull(sourceIndices);
 			return sourceIndices;
 		}
 
@@ -165,8 +166,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
-				throws InterruptedException {
+		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, @Nullable RequestSettings settings) {
+			requireNonNull(sourceIndices);
 			collector.add(sourceIndices);
 			return true;
 		}
@@ -175,8 +176,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
-				throws InterruptedException {
+		public long getBeginIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings) {
+			requireNonNull(sourceIndices);
 			return firstIndex(sourceIndices);
 		}
 
@@ -184,8 +185,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
-				throws InterruptedException {
+		public long getEndIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings) {
+			requireNonNull(sourceIndices);
 			return lastIndex(sourceIndices);
 		}
 
@@ -193,8 +194,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, long, RequestSettings)
 		 */
 		@Override
-		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
-				throws InterruptedException {
+		public long find(long fromSource, long toSource, long targetIndex, @Nullable RequestSettings settings) {
 			return targetIndex;
 		}
 
@@ -203,8 +203,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 */
 		@Override
 		public IndexSet[] find(long fromSource, long toSource,
-				IndexSet[] targetIndices, RequestSettings settings) throws ModelException,
-				InterruptedException {
+				IndexSet[] targetIndices, @Nullable RequestSettings settings) {
+			requireNonNull(targetIndices);
 			return targetIndices;
 		}
 
@@ -213,8 +213,8 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 		 */
 		@Override
 		public boolean find(long fromSource, long toSource,
-				IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings)
-				throws InterruptedException {
+				IndexSet[] targetIndices, IndexCollector collector, @Nullable RequestSettings settings) {
+			requireNonNull(targetIndices);
 			collector.add(targetIndices);
 			return true;
 		}
