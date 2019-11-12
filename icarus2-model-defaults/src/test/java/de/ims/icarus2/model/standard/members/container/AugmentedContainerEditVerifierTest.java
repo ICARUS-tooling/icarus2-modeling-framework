@@ -20,7 +20,7 @@
 package de.ims.icarus2.model.standard.members.container;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -114,8 +114,8 @@ class AugmentedContainerEditVerifierTest {
 			.addBatchLegal(0)
 			.addBatchIllegal(-1, 1)
 			.removeSingleIllegal(-1, 0, 1)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.removeBatchIllegal(pair(0, 0), pair(1, 1), pair(0, 1))
+			.swapSingleIllegal(pair(0, 0), pair(1, 1))
 			.createTests();
 	}
 
@@ -132,12 +132,12 @@ class AugmentedContainerEditVerifierTest {
 			.addBatchIllegal(-1, 0, 1, 4)
 			.removeSingleLegal(5, 7, 9)
 			.removeSingleIllegal(-1, 0, 1, 4, 10)
-			.removeBatchLegal(longPair(5, 5), longPair(9, 9), longPair(5, 9), longPair(7, 8))
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 4),
-					longPair(0, 4), longPair(0, 1), longPair(4, 9), longPair(10, 10))
-			.swapSingleLegal(longPair(5, 9), longPair(9, 7))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 4),
-					longPair(4, 9))
+			.removeBatchLegal(pair(5, 5), pair(9, 9), pair(5, 9), pair(7, 8))
+			.removeBatchIllegal(pair(0, 0), pair(1, 1), pair(4, 4),
+					pair(0, 4), pair(0, 1), pair(4, 9), pair(10, 10))
+			.swapSingleLegal(pair(5, 9), pair(9, 7))
+			.swapSingleIllegal(pair(0, 0), pair(1, 1), pair(4, 4),
+					pair(4, 9))
 			.createTests();
 	}
 
@@ -153,8 +153,8 @@ class AugmentedContainerEditVerifierTest {
 			.addBatchLegal(10)
 			.addBatchIllegal(-1, 0, 9)
 			.removeSingleIllegal(-1, 0, 1, 9, 10)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(10, 10))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(4, 9), longPair(9, 10))
+			.removeBatchIllegal(pair(0, 0), pair(1, 1), pair(4, 9), pair(10, 10))
+			.swapSingleIllegal(pair(0, 0), pair(1, 1), pair(4, 9), pair(9, 10))
 			.createTests();
 	}
 
@@ -177,12 +177,12 @@ class AugmentedContainerEditVerifierTest {
 			.addBatchIllegal(-1, 0, WS-1, WS+AS+1, Long.MAX_VALUE)
 			.removeSingleLegal(WS, WS+AS/2, WS+AS-1)
 			.removeSingleIllegal(-1, 0, WS-1, WS+AS, Long.MAX_VALUE)
-			.removeBatchLegal(longPair(WS, WS), longPair(WS+AS-1, WS+AS-1), longPair(WS, WS+AS-1), longPair(WS+AS/2, WS+AS-2))
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(WS-1, WS-1),
-					longPair(0, 1000), longPair(0, WS), longPair(4, WS+AS), longPair(WS+AS, WS+AS))
-			.swapSingleLegal(longPair(WS, WS+AS-1), longPair(WS+AS-1, WS+1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(WS/2, 4),
-					longPair(WS/2, WS+AS-1))
+			.removeBatchLegal(pair(WS, WS), pair(WS+AS-1, WS+AS-1), pair(WS, WS+AS-1), pair(WS+AS/2, WS+AS-2))
+			.removeBatchIllegal(pair(0L, 0L), pair(1L, 1L), pair(WS-1, WS-1),
+					pair(0L, 1000L), pair(0, WS), pair(4, WS+AS), pair(WS+AS, WS+AS))
+			.swapSingleLegal(pair(WS, WS+AS-1), pair(WS+AS-1, WS+1))
+			.swapSingleIllegal(pair(0L, 0L), pair(1L, 1L), pair(WS/2, 4),
+					pair(WS/2, WS+AS-1))
 			.createTests();
 	}
 }

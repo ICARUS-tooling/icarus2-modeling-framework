@@ -34,13 +34,17 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 		return new Pair<>(first, second);
 	}
 
+//	public static Pair<Integer, Integer> pair(int first, int second) {
+//		return new Pair<>(Integer.valueOf(first), Integer.valueOf(second));
+//	}
+
 	public static <E_1, E_2> Pair<E_1, E_2> nullablePair(
 			@Nullable E_1 first, @Nullable E_2 second) {
 		return new Pair<>(first, second, true);
 	}
 
 	@SuppressWarnings("boxing")
-	public static Pair<Integer, Integer> intPair(int first, int second) {
+	public static Pair<Integer, Integer> pair(int first, int second) {
 		return new Pair<>(first, second);
 	}
 
@@ -49,7 +53,7 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 		Pair<Integer, Integer>[] array = new Pair[to-from];
 
 		for(int idx = 0; idx<array.length; idx++) {
-			array[idx] = intPair(from+idx, from+idx+1);
+			array[idx] = pair(from+idx, from+idx+1);
 		}
 
 		return array;
@@ -63,14 +67,14 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 		Pair<Long, Long>[] array = new Pair[(int)diff];
 
 		for(int idx = 0; idx<array.length; idx++) {
-			array[idx] = longPair(from+idx, from+idx+1);
+			array[idx] = pair(from+idx, from+idx+1);
 		}
 
 		return array;
 	}
 
 	@SuppressWarnings("boxing")
-	public static Pair<Long, Long> longPair(long first, long second) {
+	public static Pair<Long, Long> pair(long first, long second) {
 		return new Pair<>(first, second);
 	}
 

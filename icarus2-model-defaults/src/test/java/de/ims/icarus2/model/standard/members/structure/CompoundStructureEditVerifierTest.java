@@ -24,7 +24,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.stubEdgeCount;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubEdges;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubItemCount;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubItems;
-import static de.ims.icarus2.test.util.Pair.intPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -90,7 +90,7 @@ class CompoundStructureEditVerifierTest {
 		stubItemCount(structure, 4);
 		stubItems(structure);
 		stubEdgeCount(structure, 1);
-		stubEdges(structure, intPair(0, 1));
+		stubEdges(structure, pair(0, 1));
 
 		verifier = new CompoundStructureEditVerifier(
 				new UnrestrictedContainerEditVerifier(structure));

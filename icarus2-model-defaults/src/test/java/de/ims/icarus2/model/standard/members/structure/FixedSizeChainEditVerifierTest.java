@@ -24,9 +24,9 @@ import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.fillItems;
 import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.makeStructure;
 import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.util.Pair.intChain;
-import static de.ims.icarus2.test.util.Pair.intPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Pair.longChain;
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -121,7 +121,7 @@ class FixedSizeChainEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	public Stream<DynamicTest> testIllegalMemberArguments() {
-		prepareStructureAndStorage(2, intPair(0, 1));
+		prepareStructureAndStorage(2, pair(0, 1));
 		return new StructureEditVerifierTestBuilder(verifier)
 				.failForIllegalMembers()
 				.createTests();
@@ -159,8 +159,8 @@ class FixedSizeChainEditVerifierTest {
 		 */
 		return new StructureEditVerifierTestBuilder(verifier)
 				.removeSingleIllegal(longRange(-1, 1))
-				.removeBatchIllegal(longPair(0, 0), longPair(0,  1))
-				.swapSingleIllegal(longPair(0,  0), longPair(0,  1))
+				.removeBatchIllegal(pair(0, 0), pair(0,  1))
+				.swapSingleIllegal(pair(0,  0), pair(0,  1))
 				.createTests();
 	}
 
@@ -181,13 +181,13 @@ class FixedSizeChainEditVerifierTest {
 
 		return new StructureEditVerifierTestBuilder(verifier)
 				// no legal single edges to add
-				.addSingleIllegal(intPair(0,2), intPair(ROOT, 2))
+				.addSingleIllegal(pair(0,2), pair(ROOT, 2))
 				// no legal batches of edges to add
-				.addBatchIllegalIndirect(intPair(0, 2), intPair(ROOT, 1))
+				.addBatchIllegalIndirect(pair(0, 2), pair(ROOT, 1))
 				.removeSingleLegal(0, 1, 2)
 				.removeSingleIllegal(-1, 3)
-				.removeBatchLegal(intPair(0, 0), intPair(0, 1), intPair(1, 2), intPair(0, 2))
-				.removeBatchIllegal(intPair(-1, 0), intPair(1, 3))
+				.removeBatchLegal(pair(0, 0), pair(0, 1), pair(1, 2), pair(0, 2))
+				.removeBatchIllegal(pair(-1, 0), pair(1, 3))
 				// no legal swap indices
 				.swapSingleIllegal(longChain(-1, 2))
 				.setTerminalLegalIndirect(triple(1, ROOT, true), triple(2, ROOT, true)) // legal to split chains into subchains
@@ -196,9 +196,9 @@ class FixedSizeChainEditVerifierTest {
 						triple(0, 1, true), triple(1, 1, true), triple(2, 0, true), // edgeCount(source)>1
 						triple(0, ROOT, false), triple(1, 0, false), triple(2, 1, false)) // loops
 				.createEdgeLegalIndirect(
-						intPair(ROOT, 0), intPair(0, 1), intPair(1, 2), // single-step edges
-						intPair(ROOT, 1), intPair(ROOT, 2), intPair(0, 2)) // long-distance edges
-				.createEdgeIllegalIndirect(intPair(0, ROOT), intPair(1, ROOT), intPair(2, ROOT)) // no edges towards root
+						pair(ROOT, 0), pair(0, 1), pair(1, 2), // single-step edges
+						pair(ROOT, 1), pair(ROOT, 2), pair(0, 2)) // long-distance edges
+				.createEdgeIllegalIndirect(pair(0, ROOT), pair(1, ROOT), pair(2, ROOT)) // no edges towards root
 				.createTests();
 	}
 
@@ -215,19 +215,19 @@ class FixedSizeChainEditVerifierTest {
 	@TestFactory
 	@DisplayName("partial [↷_↷]")
 	public Stream<DynamicTest> testPartialStructure() {
-		prepareStructureAndStorage(3, intPair(ROOT, 0), intPair(1, 2));
+		prepareStructureAndStorage(3, pair(ROOT, 0), pair(1, 2));
 
 		return new StructureEditVerifierTestBuilder(verifier)
-				.addSingleLegal(intPair(0, 1), intPair(ROOT, 1))
-				.addSingleIllegal(intPair(0,2), intPair(ROOT, 2))
-				.addBatchLegalIndirect(intPair(0, 1))
-					.addBatchLegalIndirect(intPair(ROOT, 1))
-					.addBatchLegalIndirect(intPair(ROOT, 1), intPair(0, 1))
-				.addBatchIllegalIndirect(intPair(0, 2), intPair(ROOT, 1))
+				.addSingleLegal(pair(0, 1), pair(ROOT, 1))
+				.addSingleIllegal(pair(0,2), pair(ROOT, 2))
+				.addBatchLegalIndirect(pair(0, 1))
+					.addBatchLegalIndirect(pair(ROOT, 1))
+					.addBatchLegalIndirect(pair(ROOT, 1), pair(0, 1))
+				.addBatchIllegalIndirect(pair(0, 2), pair(ROOT, 1))
 				.removeSingleLegal(0, 1)
 				.removeSingleIllegal(-1, 2)
-				.removeBatchLegal(intPair(0, 0), intPair(0, 1), intPair(1, 1))
-				.removeBatchIllegal(intPair(-1, 0), intPair(-1, 1), intPair(1, 2))
+				.removeBatchLegal(pair(0, 0), pair(0, 1), pair(1, 1))
+				.removeBatchIllegal(pair(-1, 0), pair(-1, 1), pair(1, 2))
 				// no legal swap indices
 				.swapSingleIllegal(longChain(-1, 2))
 				.setTerminalLegalIndirect(
@@ -242,9 +242,9 @@ class FixedSizeChainEditVerifierTest {
 						triple(0, 1, true), // edgeCount(source)>1
 						triple(0, ROOT, false), triple(1, 1, false)) // loops
 				.createEdgeLegalIndirect(
-						intPair(ROOT, 0), intPair(0, 1), intPair(1, 2), // single-step edges
-						intPair(ROOT, 1), intPair(ROOT, 2), intPair(0, 2)) // long-distance edges
-				.createEdgeIllegalIndirect(intPair(0, ROOT), intPair(1, ROOT), intPair(2, ROOT)) // no edges towards root
+						pair(ROOT, 0), pair(0, 1), pair(1, 2), // single-step edges
+						pair(ROOT, 1), pair(ROOT, 2), pair(0, 2)) // long-distance edges
+				.createEdgeIllegalIndirect(pair(0, ROOT), pair(1, ROOT), pair(2, ROOT)) // no edges towards root
 				.createTests();
 	}
 
@@ -261,20 +261,20 @@ class FixedSizeChainEditVerifierTest {
 	@TestFactory
 	@DisplayName("partial [_↷_]")
 	public Stream<DynamicTest> testPartialStructure2() {
-		prepareStructureAndStorage(3, intPair(0, 1));
+		prepareStructureAndStorage(3, pair(0, 1));
 
 		return new StructureEditVerifierTestBuilder(verifier)
-				.addSingleLegal(intPair(ROOT, 0), intPair(ROOT, 2), intPair(1, 2))
-				.addSingleIllegal(intPair(0, 1), intPair(ROOT, 1))
-				.addBatchLegalIndirect(intPair(ROOT, 0))
-					.addBatchLegalIndirect(intPair(ROOT, 2))
-					.addBatchLegalIndirect(intPair(1, 2))
-					.addBatchLegalIndirect(intPair(ROOT, 0), intPair(1, 2), intPair(ROOT, 2))
-				.addBatchIllegalIndirect(intPair(0, 2), intPair(ROOT, 1))
+				.addSingleLegal(pair(ROOT, 0), pair(ROOT, 2), pair(1, 2))
+				.addSingleIllegal(pair(0, 1), pair(ROOT, 1))
+				.addBatchLegalIndirect(pair(ROOT, 0))
+					.addBatchLegalIndirect(pair(ROOT, 2))
+					.addBatchLegalIndirect(pair(1, 2))
+					.addBatchLegalIndirect(pair(ROOT, 0), pair(1, 2), pair(ROOT, 2))
+				.addBatchIllegalIndirect(pair(0, 2), pair(ROOT, 1))
 				.removeSingleLegal(0)
 				.removeSingleIllegal(-1, 1)
-				.removeBatchLegal(intPair(0, 0))
-				.removeBatchIllegal(intPair(-1, 0), intPair(-1, 1), intPair(1, 1))
+				.removeBatchLegal(pair(0, 0))
+				.removeBatchIllegal(pair(-1, 0), pair(-1, 1), pair(1, 1))
 				// no legal swap indices
 				.swapSingleIllegal(longChain(-1, 1))
 				.setTerminalLegalIndirect(
@@ -285,9 +285,9 @@ class FixedSizeChainEditVerifierTest {
 				.setTerminalIllegalIndirect(
 						triple(0, ROOT, false), triple(0, 0, false)) // loops+ROOT target
 				.createEdgeLegalIndirect(
-						intPair(ROOT, 0), intPair(0, 1), intPair(1, 2), // single-step edges
-						intPair(ROOT, 1), intPair(ROOT, 2), intPair(0, 2)) // long-distance edges
-				.createEdgeIllegalIndirect(intPair(0, ROOT), intPair(1, ROOT), intPair(2, ROOT)) // no edges towards root
+						pair(ROOT, 0), pair(0, 1), pair(1, 2), // single-step edges
+						pair(ROOT, 1), pair(ROOT, 2), pair(0, 2)) // long-distance edges
+				.createEdgeIllegalIndirect(pair(0, ROOT), pair(1, ROOT), pair(2, ROOT)) // no edges towards root
 				.createTests();
 	}
 }

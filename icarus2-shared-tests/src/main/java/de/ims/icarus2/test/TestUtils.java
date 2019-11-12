@@ -91,6 +91,10 @@ public class TestUtils {
 		// no-op
 	}
 
+	public static final Executable NO_OP = () -> {
+		// no-op
+	};
+
 	// Number apreviations
 
 	public static final int  K1   =           1_000;

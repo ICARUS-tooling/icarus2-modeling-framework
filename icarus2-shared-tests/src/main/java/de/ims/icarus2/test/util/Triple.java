@@ -34,6 +34,12 @@ public final class Triple<E_1, E_2, E_3> {
 	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> triple(E_1 first, E_2 second, E_3 third) {
 		return new Triple<>(first, second, third, false);
 	}
+
+	@SuppressWarnings("boxing")
+	public static Triple<Integer, Integer, Integer> triple(int first, int second, int third) {
+		return new Triple<>(first, second, third, false);
+	}
+
 	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> nullableTriple(E_1 first, E_2 second, E_3 third) {
 		return new Triple<>(first, second, third, true);
 	}

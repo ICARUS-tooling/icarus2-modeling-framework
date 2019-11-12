@@ -3,9 +3,9 @@
  */
 package de.ims.icarus2.util;
 
+import static de.ims.icarus2.test.TestUtils.NO_OP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.Collections;
@@ -59,7 +59,7 @@ public interface BuilderTest<T, B extends AbstractBuilder<B, T>> extends ApiGuar
 	default Stream<DynamicNode> testInvalidInput() {
 		List<Triple<String, Class<? extends Throwable>, Consumer<? super B>>> ops = invalidOps();
 		if(ops.isEmpty()) {
-			return Stream.of(dynamicContainer("No info for invalid builder calls", Stream.empty()));
+			return Stream.of(dynamicTest("No info for invalid builder calls", NO_OP));
 		}
 
 		return ops.stream().map(config -> dynamicTest(config.first, () ->
@@ -84,7 +84,7 @@ public interface BuilderTest<T, B extends AbstractBuilder<B, T>> extends ApiGuar
 	default Stream<DynamicNode> testInvalidConfigurations() {
 		List<Pair<String, Consumer<? super B>>> configs = invalidConfigurations();
 		if(configs.isEmpty()) {
-			return Stream.of(dynamicContainer("No invalid configurations", Stream.empty()));
+			return Stream.of(dynamicTest("No invalid configurations", NO_OP));
 		}
 		return configs.stream().map(config -> dynamicTest(config.first, () -> {
 			B builder = create();

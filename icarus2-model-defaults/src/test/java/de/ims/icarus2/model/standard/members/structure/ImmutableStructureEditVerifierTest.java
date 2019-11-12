@@ -22,7 +22,7 @@ package de.ims.icarus2.model.standard.members.structure;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.util.Pair.intChain;
-import static de.ims.icarus2.test.util.Pair.intPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,7 +67,7 @@ class ImmutableStructureEditVerifierTest {
 	@SuppressWarnings("unchecked")
 	@TestFactory
 	Stream<DynamicTest> testIllegalMemberArguments() {
-		Structure structure = mockStructure(10, intPair(1, 2));
+		Structure structure = mockStructure(10, pair(1, 2));
 		ImmutableStructureEditVerifier verifier = new ImmutableStructureEditVerifier(structure);
 
 		return new StructureEditVerifierTestBuilder(verifier)
@@ -111,14 +111,14 @@ class ImmutableStructureEditVerifierTest {
 
 		return builder
 				.removeSingleIllegal(longRange(-1, 1))
-				.removeBatchIllegal(intPair(0, 0), intPair(0, 1))
-				.swapSingleIllegal(intPair(0, 0), intPair(0, 1));
+				.removeBatchIllegal(pair(0, 0), pair(0, 1))
+				.swapSingleIllegal(pair(0, 0), pair(0, 1));
 	}
 
 	@TestFactory
 	Stream<DynamicTest> testStructureEditVerifierFull() {
 		@SuppressWarnings("unchecked")
-		Structure structure = mockStructure(10, intPair(0, 1));
+		Structure structure = mockStructure(10, pair(0, 1));
 		ImmutableStructureEditVerifier verifier = new ImmutableStructureEditVerifier(structure);
 
 		return configureBuilder(new StructureEditVerifierTestBuilder(verifier))
@@ -134,13 +134,13 @@ class ImmutableStructureEditVerifierTest {
 		assertTrue(structure.getEdgeCount()>0);
 
 		return builder
-				.addSingleIllegal(intPair(1, 2), intPair(2, ROOT))
-				.addBatchIllegalIndirect(intPair(1, 2))
-					.addBatchIllegalIndirect(intPair(1, 2), intPair(2, ROOT))
+				.addSingleIllegal(pair(1, 2), pair(2, ROOT))
+				.addBatchIllegalIndirect(pair(1, 2))
+					.addBatchIllegalIndirect(pair(1, 2), pair(2, ROOT))
 				.removeSingleIllegal(longRange(-1, 1))
-				.removeBatchIllegal(intPair(0, 0), intPair(0, 1))
-				.swapSingleIllegal(intPair(0,  0), intPair(0, 1))
+				.removeBatchIllegal(pair(0, 0), pair(0, 1))
+				.swapSingleIllegal(pair(0,  0), pair(0, 1))
 				.setTerminalIllegalIndirect(triple(0, 2, true), triple(0, ROOT, false))
-				.createEdgeIllegalIndirect(intPair(ROOT, 1), intPair(1, 2));
+				.createEdgeIllegalIndirect(pair(ROOT, 1), pair(1, 2));
 	}
 }

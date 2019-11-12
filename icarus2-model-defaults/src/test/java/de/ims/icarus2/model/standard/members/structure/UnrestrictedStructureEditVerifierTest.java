@@ -23,8 +23,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubDefaultLazyEdges;
 import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.util.Pair.intChain;
-import static de.ims.icarus2.test.util.Pair.intPair;
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -69,7 +68,7 @@ public class UnrestrictedStructureEditVerifierTest {
 	@TestFactory
 	Stream<DynamicTest> testStructureVerifierIllegalMemberArguments() {
 		@SuppressWarnings("unchecked")
-		Structure structure = mockStructure(4, intPair(0, 1));
+		Structure structure = mockStructure(4, pair(0, 1));
 		UnrestrictedStructureEditVerifier verifier = new UnrestrictedStructureEditVerifier(structure);
 
 		return new StructureEditVerifierTestBuilder(verifier)
@@ -133,8 +132,8 @@ public class UnrestrictedStructureEditVerifierTest {
 
 		return builder
 				.removeSingleIllegal(longRange(-1, 1))
-				.removeBatchIllegal(intPair(0, 0), intPair(0, 1))
-				.swapSingleIllegal(intPair(0, 0), intPair(0, 1));
+				.removeBatchIllegal(pair(0, 0), pair(0, 1))
+				.swapSingleIllegal(pair(0, 0), pair(0, 1));
 	}
 
 	private static final int ROOT = ModelTestUtils.ROOT;
@@ -185,26 +184,26 @@ public class UnrestrictedStructureEditVerifierTest {
 
 
 		return builder
-				.addSingleLegal(longPair(0, 1), longPair(1, midI), longPair(midI, midI), longPair(midI, items-1))
-				.addSingleIllegal(longPair(0, ROOT), longPair(midI, ROOT), longPair(items-1, ROOT))
+				.addSingleLegal(pair(0L, 1L), pair(1, midI), pair(midI, midI), pair(midI, items-1))
+				.addSingleIllegal(pair(0L, ROOT), pair(midI, ROOT), pair(items-1, ROOT))
 
-				.addBatchLegalIndirect(longPair(ROOT, 0), longPair(0, 1), longPair(1, midI), longPair(midI, items-1))
-				.addBatchLegalIndirect(longPair(0, 1), longPair(midI, items-1))
-				.addBatchLegalIndirect(longPair(ROOT, 0), longPair(0, 1), longPair(1, midI), longPair(midI, items-1))
-				.addBatchLegalIndirect(longPair(ROOT, midI), longPair(ROOT, 1), longPair(1, midI), longPair(ROOT, items-1))
+				.addBatchLegalIndirect(pair(ROOT, 0L), pair(0L, 1L), pair(1, midI), pair(midI, items-1))
+				.addBatchLegalIndirect(pair(0L, 1L), pair(midI, items-1))
+				.addBatchLegalIndirect(pair(ROOT, 0L), pair(0L, 1), pair(1, midI), pair(midI, items-1))
+				.addBatchLegalIndirect(pair(ROOT, midI), pair(ROOT, 1L), pair(1, midI), pair(ROOT, items-1))
 
-				.addBatchIllegalIndirect(longPair(0, ROOT))
-				.addBatchIllegalIndirect(longPair(0, ROOT), longPair(midI, ROOT))
-				.addBatchIllegalIndirect(longPair(0, ROOT), longPair(midI, ROOT), longPair(items-1, ROOT))
+				.addBatchIllegalIndirect(pair(0, ROOT))
+				.addBatchIllegalIndirect(pair(0L, ROOT), pair(midI, ROOT))
+				.addBatchIllegalIndirect(pair(0L, ROOT), pair(midI, ROOT), pair(items-1, ROOT))
 
 				.removeSingleLegal(0, 1, midE, edges-1)
 				.removeSingleIllegal(-1, edges, edges+1)
-				.removeBatchLegal(longPair(0, 0), longPair(0, 1), longPair(0, midE),
-						longPair(1, edges-1), longPair(midE, edges-1))
-				.removeBatchIllegal(longPair(-1, 0), longPair(-1, edges), longPair(edges, edges), longPair(midE, edges+1))
-				.swapSingleLegal(longPair(0, 0), longPair(1, 1), longPair(midE, midE),
-						longPair(edges-1, edges-1), longPair(midE, 0), longPair(edges-1, 1))
-				.swapSingleIllegal(longPair(-1, 0), longPair(0, edges), longPair(edges, midE))
+				.removeBatchLegal(pair(0L, 0L), pair(0L, 1L), pair(0, midE),
+						pair(1, edges-1), pair(midE, edges-1))
+				.removeBatchIllegal(pair(-1L, 0L), pair(-1, edges), pair(edges, edges), pair(midE, edges+1))
+				.swapSingleLegal(pair(0L, 0L), pair(1L, 1L), pair(midE, midE),
+						pair(edges-1, edges-1), pair(midE, 0), pair(edges-1, 1))
+				.swapSingleIllegal(pair(-1L, 0L), pair(0, edges), pair(edges, midE))
 
 				// For each of the picked edges try to set both its terminals to 2 "random" other spots
 				.setTerminalLegalIndirect(

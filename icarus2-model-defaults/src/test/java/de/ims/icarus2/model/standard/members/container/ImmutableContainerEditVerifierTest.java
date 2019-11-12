@@ -20,7 +20,7 @@
 package de.ims.icarus2.model.standard.members.container;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -86,8 +86,8 @@ public class ImmutableContainerEditVerifierTest {
 			.addSingleIllegal(0, 1, Long.MAX_VALUE)
 			.addBatchIllegal(0, 3, 9, Long.MAX_VALUE)
 			.removeSingleIllegal(-1, 0, 5, 9, Long.MAX_VALUE)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1), longPair(9, 1));
+			.removeBatchIllegal(pair(0, 0), pair(1, 1), pair(0, 1))
+			.swapSingleIllegal(pair(0, 0), pair(1, 1), pair(9, 1));
 	}
 
 	@TestFactory
@@ -116,7 +116,7 @@ public class ImmutableContainerEditVerifierTest {
 			.addSingleIllegal(0, 1, size)
 			.addBatchIllegal(0, mid, size-1, size)
 			.removeSingleIllegal(-1, 0, mid, size-1, size)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, size), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, size), longPair(size, 1));
+			.removeBatchIllegal(pair(0L, 0L), pair(1, size), pair(0L, 1L))
+			.swapSingleIllegal(pair(0L, 0L), pair(1, size), pair(size, 1));
 	}
 }

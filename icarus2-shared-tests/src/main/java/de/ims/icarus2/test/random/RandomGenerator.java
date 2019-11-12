@@ -107,7 +107,7 @@ public class RandomGenerator implements Cloneable {
 
 	public Pair<Long, Long> randomLongPair(long lowerInc, long upperEx) {
 		long[] vals = longs(2, lowerInc, upperEx).toArray();
-		return Pair.longPair(vals[0], vals[1]);
+		return Pair.pair(vals[0], vals[1]);
 	}
 
 	public Stream<Pair<Long, Long>> randomPairs(long lowerInc, long upperEx) {
@@ -221,7 +221,7 @@ public class RandomGenerator implements Cloneable {
 		assertTrue(min!=Integer.MAX_VALUE);
 		assertTrue(max!=Integer.MIN_VALUE);
 
-		return Pair.intPair(min, max);
+		return Pair.pair(min, max);
 	}
 
 	@SuppressWarnings("boxing")
@@ -238,7 +238,7 @@ public class RandomGenerator implements Cloneable {
 		int part = Math.max(1, (int) (source.size() * fraction));
 
 		return IntStream.generate(() -> random(0, bounds.first+1))
-				.mapToObj(i -> Pair.intPair(i, random(bounds.second, source.size())))
+				.mapToObj(i -> Pair.pair(i, random(bounds.second, source.size())))
 				.distinct()
 				.limit(part)
 				.map(b -> source.subList(b.first, b.second+1));
@@ -387,6 +387,16 @@ public class RandomGenerator implements Cloneable {
 			T item1 = array[j];
 			array[i] = item1;
 			array[j] = item0;
+		}
+	}
+
+	public <T> void shuffle(List<T> list) {
+		for (int i = 0; i < list.size(); i++) {
+			int j = nextInt(list.size());
+			T item0 = list.get(i);
+			T item1 = list.get(j);
+			list.set(i, item1);
+			list.set(j, item0);
 		}
 	}
 

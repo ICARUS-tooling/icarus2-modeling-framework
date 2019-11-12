@@ -20,7 +20,7 @@
 package de.ims.icarus2.model.standard.members.container;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -69,8 +69,8 @@ class SingletonContainerEditVerifierTest {
 			.addBatchLegal(0)
 			.addBatchIllegal(-1, 1)
 			.removeSingleIllegal(-1, 0, 1)
-			.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.removeBatchIllegal(pair(0, 0), pair(1, 1), pair(0, 1))
+			.swapSingleIllegal(pair(0, 0), pair(1, 1))
 			.createTests();
 	}
 
@@ -83,9 +83,9 @@ class SingletonContainerEditVerifierTest {
 			.addBatchIllegal(-1, 0, 1)
 			.removeSingleLegal(0)
 			.removeSingleIllegal(-1, 1)
-			.removeBatchLegal(longPair(0, 0))
-			.removeBatchIllegal(longPair(1, 1), longPair(0, 1))
-			.swapSingleIllegal(longPair(0, 0), longPair(1, 1))
+			.removeBatchLegal(pair(0, 0))
+			.removeBatchIllegal(pair(1, 1), pair(0, 1))
+			.swapSingleIllegal(pair(0, 0), pair(1, 1))
 			.createTests();
 	}
 

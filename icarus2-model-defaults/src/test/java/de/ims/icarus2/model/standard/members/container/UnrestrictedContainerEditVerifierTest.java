@@ -20,7 +20,7 @@
 package de.ims.icarus2.model.standard.members.container;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
-import static de.ims.icarus2.test.util.Pair.longPair;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,8 +86,8 @@ public class UnrestrictedContainerEditVerifierTest {
 				.addBatchLegal(0)
 				.addBatchIllegal(-1, 1)
 				.removeSingleIllegal(-1, 0, 1)
-				.removeBatchIllegal(longPair(0, 0), longPair(1, 1), longPair(0, 1))
-				.swapSingleIllegal(longPair(0, 0), longPair(-1, 0), longPair(0, 1));
+				.removeBatchIllegal(pair(0, 0), pair(1, 1), pair(0, 1))
+				.swapSingleIllegal(pair(0, 0), pair(-1, 0), pair(0, 1));
 	}
 
 	@TestFactory
@@ -128,10 +128,10 @@ public class UnrestrictedContainerEditVerifierTest {
 				.addBatchIllegal(-1, size+1)
 				.removeSingleLegal(0, 1, mid, size-2, size-1)
 				.removeSingleIllegal(-1, size, size+1)
-				.removeBatchLegal(longPair(0, 0), longPair(size-1, size-1),
-						longPair(0, size-1), longPair(1, mid), longPair(mid, size-1))
-				.removeBatchIllegal(longPair(0, size), longPair(1, size+1), longPair(-1, mid), longPair(mid, 1))
-				.swapSingleLegal(longPair(0, 0), longPair(size-1, size-1), longPair(size-1, 0), longPair(1, mid))
-				.swapSingleIllegal(longPair(-1, 1), longPair(size-2, size), longPair(0, size+1));
+				.removeBatchLegal(pair(0L, 0L), pair(size-1, size-1),
+						pair(0, size-1), pair(1, mid), pair(mid, size-1))
+				.removeBatchIllegal(pair(0, size), pair(1, size+1), pair(-1, mid), pair(mid, 1))
+				.swapSingleLegal(pair(0L, 0L), pair(size-1, size-1), pair(size-1, 0), pair(1, mid))
+				.swapSingleIllegal(pair(-1L, 1L), pair(size-2, size), pair(0, size+1));
 	}
 }
