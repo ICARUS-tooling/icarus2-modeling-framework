@@ -19,12 +19,16 @@ package de.ims.icarus2.filedriver.mapping;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.EMPTY;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.ensureSorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.forEachSpan;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.isContinuous;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrapSpan;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Api;
@@ -35,9 +39,11 @@ import de.ims.icarus2.filedriver.io.BufferedIOResource;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.Block;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.PayloadConverter;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.SimpleHeader;
+import de.ims.icarus2.filedriver.io.Range;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils.SpanProcedure;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
@@ -68,7 +74,7 @@ import de.ims.icarus2.util.strings.ToStringBuilder;
  * For reverse lookups the two {@code find} methods of the {@code MappingReader} interface are
  * implemented to use binary search in order to pin down source spans in a predefined range.
  * <p>
- * The file based storage is organized in blocks with {@value #DEFAULT_ENTRIES_PER_BLOCK} (<tt>2^14</tt>)
+ * The file based storage is organized in blocks with <tt>2^{@value #DEFAULT_BLOCK_POWER}</tt>
  * entries each.
  *
  * @author Markus Gärtner
@@ -133,6 +139,15 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		return (int)(index & blockMask);
 	}
 
+	private void checkTargetIndex(long value) {
+		blockStorage.checkValue(value);
+	}
+
+	private void checkSourceIndex(long value) {
+		if(value<0L)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Value is negative: "+value);
+	}
+
 	/**
 	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#newReader()
 	 */
@@ -167,20 +182,26 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)
 		 */
 		@Override
-		public long getIndicesCount(long sourceIndex, RequestSettings settings)
+		public long getIndicesCount(long sourceIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
+
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return UNSET_LONG;
+			}
+
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
 			Block block = getBlock(id);
 			if(block==null) {
-				return IcarusUtils.UNSET_LONG;
+				return UNSET_LONG;
 			}
 
-			long begin = blockStorage.getSpanBegin(block.getData(), localIndex);
-			long end = blockStorage.getSpanEnd(block.getData(), localIndex);
+			Object data = block.getData();
+			long begin = blockStorage.getSpanBegin(data, localIndex);
+			long end = blockStorage.getSpanEnd(data, localIndex);
 
-			return end<begin ? IcarusUtils.UNSET_LONG : (end-begin+1);
+			return end<begin || begin==UNSET_LONG ? UNSET_LONG : (end-begin+1);
 		}
 
 		/**
@@ -188,7 +209,14 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings) throws ModelException {
+		public boolean lookup(long sourceIndex, IndexCollector collector,
+				@Nullable RequestSettings settings) throws ModelException {
+			requireNonNull(collector);
+
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return false;
+			}
+
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
@@ -197,9 +225,15 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 				return false;
 			}
 
+			long targetBegin = blockStorage.getSpanBegin(block.getData(), localIndex);
+			long targetEnd = blockStorage.getSpanEnd(block.getData(), localIndex);
+
+			if(targetBegin==UNSET_LONG) {
+				return false;
+			}
+
 			// Use direct span collection method to avoid object creation!
-			collector.add(blockStorage.getSpanBegin(block.getData(), localIndex),
-					blockStorage.getSpanEnd(block.getData(), localIndex));
+			collector.add(targetBegin, targetEnd);
 
 			return true;
 		}
@@ -208,7 +242,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, RequestSettings)
 		 */
 		@Override
-		public IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws ModelException {
+		public IndexSet[] lookup(long sourceIndex, @Nullable RequestSettings settings) throws ModelException {
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
@@ -217,33 +251,46 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 				return EMPTY;
 			}
 
-			return wrapSpan(
-					blockStorage.getSpanBegin(block.getData(), localIndex),
-					blockStorage.getSpanEnd(block.getData(), localIndex));
+			long targetBegin = blockStorage.getSpanBegin(block.getData(), localIndex);
+			long targetEnd = blockStorage.getSpanEnd(block.getData(), localIndex);
+
+			if(targetBegin==UNSET_LONG) {
+				return EMPTY;
+			}
+
+			return wrapSpan(targetBegin, targetEnd);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(long sourceIndex, RequestSettings settings) throws ModelException {
+		public long getBeginIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException {
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return UNSET_LONG;
+			}
+
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
 			Block block = getBlock(id);
-			return block==null ? IcarusUtils.UNSET_LONG : blockStorage.getSpanBegin(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : blockStorage.getSpanBegin(block.getData(), localIndex);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(long sourceIndex, RequestSettings settings) throws ModelException {
+		public long getEndIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException {
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return UNSET_LONG;
+			}
+
 			int id = id(sourceIndex);
 			int localIndex = localIndex(sourceIndex);
 
 			Block block = getBlock(id);
-			return block==null ? IcarusUtils.UNSET_LONG : blockStorage.getSpanEnd(block.getData(), localIndex);
+			return block==null ? UNSET_LONG : blockStorage.getSpanEnd(block.getData(), localIndex);
 		}
 
 		/**
@@ -253,8 +300,11 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
+		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector,
+				@Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+			requireNonNull(collector);
 			ensureSorted(sourceIndices, settings);
 
 			boolean result = false;
@@ -264,25 +314,25 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 					// Special case of a single big span
 					long beginIndex = getBeginIndex(firstIndex(sourceIndices), null);
 					long endIndex = getEndIndex(firstIndex(sourceIndices), null);
-					if(beginIndex!=IcarusUtils.UNSET_LONG && endIndex!=IcarusUtils.UNSET_LONG) {
+					if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 						collector.add(beginIndex, endIndex);
 						result = true;
 					}
 				} else {
 					// Requires checks on all individual index sets
 					for(IndexSet indices : sourceIndices) {
-						if(isContinuous(indices)) {
+						checkInterrupted();
+
+						if(coverage.isTotal() && isContinuous(indices)) {
 							// Spans get projected on other spans
 							collector.add(getBeginIndex(indices.firstIndex(), null), getEndIndex(indices.lastIndex(), null));
 						} else {
-							checkInterrupted();
-
 							// Expensive version: traverse values and add individual target spans
 							for(int i=0; i<indices.size(); i++) {
 								long sourceIndex = indices.indexAt(i);
 								long beginIndex = getBeginIndex(sourceIndex, null);
 								long endIndex = getEndIndex(sourceIndex, null);
-								if(beginIndex!=IcarusUtils.UNSET_LONG && endIndex!=IcarusUtils.UNSET_LONG) {
+								if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 									collector.add(beginIndex, endIndex);
 									result = true;
 								}
@@ -303,7 +353,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 						long sourceIndex = indices.indexAt(i);
 						long beginIndex = getBeginIndex(sourceIndex, null);
 						long endIndex = getEndIndex(sourceIndex, null);
-						if(beginIndex!=IcarusUtils.UNSET_LONG && endIndex!=IcarusUtils.UNSET_LONG) {
+						if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 							collector.add(beginIndex, endIndex);
 							result = true;
 						}
@@ -323,8 +373,9 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
+		public long getBeginIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
 			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic coverage: use only first source index
@@ -354,8 +405,10 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
+		public long getEndIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic coverage: use only last source index
 			if(coverage.isMonotonic()) {
@@ -363,14 +416,14 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 			}
 
 			// Expensive alternative: traverse all indices
-			long result = Long.MIN_VALUE;
+			long result = UNSET_LONG;
 
 			for(IndexSet indices : sourceIndices) {
 				checkInterrupted();
 
 				for(int i=0; i<indices.size(); i++) {
 					long sourceIndex = indices.indexAt(i);
-					result = Math.max(result, getBeginIndex(sourceIndex, null));
+					result = Math.max(result, getEndIndex(sourceIndex, null));
 				}
 			}
 
@@ -382,7 +435,7 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 * into a global index value.
 		 */
 		private long translate(int id, int localIndex) {
-			return localIndex==-1 ? IcarusUtils.UNSET_LONG : id*entriesPerBlock + localIndex;
+			return localIndex==UNSET_INT ? UNSET_LONG : id*entriesPerBlock + localIndex;
 		}
 
 		/**
@@ -390,37 +443,49 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 */
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings) throws ModelException {
-			int idFrom = id(fromSource);
-			int idTo = id(toSource);
-			int localFrom = localIndex(fromSource);
-			int localTo = localIndex(toSource)+1;
+			checkSourceIndex(fromSource);
+			checkSourceIndex(toSource);
+			checkTargetIndex(targetIndex);
+			// Skip unused target indices
+			if(!getHeader().isUsedTarget(targetIndex)) {
+				return UNSET_LONG;
+			}
 
-			return find(idFrom, idTo, localFrom, localTo, targetIndex);
+			// Restrict source range with header information
+			Range sourceRange = getHeader().getUsedIndices(fromSource, toSource);
+			if(sourceRange.isUnset()) {
+				return UNSET_LONG;
+			}
+
+			int idFrom = id(sourceRange.getMin());
+			int idTo = id(sourceRange.getMax());
+			int localFrom = localIndex(sourceRange.getMin());
+			int localTo = localIndex(sourceRange.getMax())+1; // need +1 due to internal methods using exclusive end index
+
+			return findSingle(idFrom, idTo, localFrom, localTo, targetIndex);
 		}
 
-		private long find(int idFrom, int idTo, int localFrom, int localTo, long targetIndex) {
+		private long findSingle(int idFrom, int idTo, int localFrom, int localTo, long targetIndex) {
 			// Special case of a single block search
 			if(idFrom==idTo) {
 				return find0(idFrom, localFrom, localTo, targetIndex);
 			}
 
+			long result;
 			// Check first block
-			long result = find0(idFrom, localFrom, entriesPerBlock, targetIndex);
-			if(result!=IcarusUtils.UNSET_LONG) {
+			if((result = find0(idFrom, localFrom, entriesPerBlock, targetIndex))!=UNSET_LONG) {
 				return result;
 			}
 
 			// Check last block
-			result = find0(idTo, 0, localTo, targetIndex);
-			if(result!=IcarusUtils.UNSET_LONG) {
+			if((result = find0(idTo, 0, localTo, targetIndex))!=UNSET_LONG) {
 				return result;
 			}
 
 			// Iterate intermediate blocks
 			for(int id=idFrom+1; id<idTo; id++) {
 				// Now always include the entire block to search
-				result = find0(id, 0, entriesPerBlock, targetIndex);
-				if(result!=IcarusUtils.UNSET_LONG) {
+				if((result = find0(id, 0, entriesPerBlock, targetIndex))!=UNSET_LONG) {
 					return result;
 				}
 			}
@@ -433,13 +498,17 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 			Block block = getBlock(id);
 
 			if(block==null) {
-				return IcarusUtils.UNSET_LONG;
+				return UNSET_LONG;
 			}
 
 			int localIndex = -1;
 
+			//TODO unless the entire mapping is already written, this check will lead us to a fail
+//			if(coverage.isMonotonic() && coverage.isTotal()) {
+//				localIndex = blockStorage.findSortedSpan(block.getData(), localFrom, localTo, targetIndex);
+//			} else
 			if(coverage.isMonotonic()) {
-				localIndex = blockStorage.findSortedSpan(block.getData(), localFrom, localTo, targetIndex);
+				localIndex = blockStorage.sparseFindSortedSpan(block.getData(), localFrom, localTo, targetIndex);
 			} else {
 				localIndex = blockStorage.findSpan(block.getData(), localFrom, localTo, targetIndex);
 			}
@@ -451,10 +520,10 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 				long targetBegin, long targetEnd, IndexCollector collector) {
 
 			// Find first span covering the targetBegin
-			long sourceBegin = find(idFrom, idTo, localFrom, localTo, targetBegin);
+			long sourceBegin = findSingle(idFrom, idTo, localFrom, localTo, targetBegin);
 
-			if(sourceBegin==IcarusUtils.UNSET_LONG) {
-				return IcarusUtils.UNSET_LONG;
+			if(sourceBegin==UNSET_LONG) {
+				return UNSET_LONG;
 			}
 
 			// Refresh left end of search interval
@@ -462,15 +531,155 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 			localFrom = localIndex(sourceBegin);
 
 			// Find last span covering targetEnd
-			long sourceEnd = find(idFrom, idTo, localFrom, localTo, targetEnd);
+			long sourceEnd = findSingle(idFrom, idTo, localFrom, localTo, targetEnd);
 
-			if(sourceEnd==IcarusUtils.UNSET_LONG) {
-				return IcarusUtils.UNSET_LONG;
+			if(sourceEnd==UNSET_LONG) {
+				return UNSET_LONG;
 			}
 
 			collector.add(sourceBegin, sourceEnd);
 
 			return sourceEnd;
+		}
+
+		/** Helper class to carry search state for find() methods */
+		private abstract class SpanSearch implements SpanProcedure {
+			boolean found = false;
+
+			int idFrom, idTo, localFrom, localTo;
+
+			final IndexCollector collector;
+
+			SpanSearch(Range sourceRange, IndexCollector collector) {
+				this.collector = requireNonNull(collector);
+
+				idFrom = id(sourceRange.getMin());
+				idTo = id(sourceRange.getMax());
+				localFrom = localIndex(sourceRange.getMin());
+				localTo = localIndex(sourceRange.getMax())+1; // need +1 due to internal methods using exclusive end index
+			}
+		}
+
+		/**
+		 * In case of monotonic index we can adjust our search interval for
+		 * the source index space whenever we successfully resolve some
+		 * source indices. In addition the first miss is bound to cause the
+		 * entire search to fail.
+		 */
+		private class MonotonicSpanSearch extends SpanSearch {
+
+			final long targetEnd;
+			final long sourceEnd;
+
+			MonotonicSpanSearch(Range sourceRange, IndexCollector collector,
+					long targetEnd, long sourceEnd) {
+				super(sourceRange, collector);
+
+				this.targetEnd = targetEnd;
+				this.sourceEnd = sourceEnd;
+			}
+
+			@Override
+			public boolean process(long from, long to) throws InterruptedException {
+				long sourceIndex;
+
+				if(from==to) {
+					sourceIndex = findSingle(idFrom, idTo, localFrom, localTo, from);
+					if(sourceIndex==UNSET_LONG) {
+						return false;
+					}
+
+					// Manually add mapped source index
+					collector.add(sourceIndex);
+					found = true;
+				} else {
+					// The mapped span will already be added inside the findContinuous method
+					sourceIndex = findContinuous(idFrom, idTo,
+							localFrom, localTo, from, to, collector);
+
+					// Here sourceIndex is the index of the last span that was found
+					if(sourceIndex==UNSET_LONG) {
+						return false;
+					}
+					found = true;
+				}
+
+				if(sourceIndex>=sourceEnd || getEndIndex(sourceIndex, null)>=targetEnd) {
+					return false;
+				}
+
+				// There has to be space left to map the remaining target indices, so
+				// reset interval begin to the next span after the current
+
+				idFrom = id(sourceIndex+1);
+				localFrom = localIndex(sourceIndex+1);
+
+				return true;
+			}
+
+		}
+
+		/**
+		 * Non-monotonic mapping means the only way of optimizing the search
+		 * is to shrink the source interval whenever we encounter spans that
+		 * overlap with the current end of the interval.
+		 */
+		private class PoorSpanSearch extends SpanSearch {
+
+			long _fromSource, _toSource;
+
+			PoorSpanSearch(Range sourceRange, IndexCollector collector) {
+				super(sourceRange, collector);
+
+				_fromSource = sourceRange.getMin();
+				_toSource = sourceRange.getMax();
+			}
+
+			@Override
+			public boolean process(long from, long to) throws InterruptedException {
+
+				while(from<=to) {
+					long sourceIndex = findSingle(idFrom, idTo, localFrom, localTo, from);
+
+					if(sourceIndex==UNSET_LONG) {
+						// Continue through the search space when no match was found
+						from++;
+					} else {
+						// Add found source index and start pruning search space
+						collector.add(sourceIndex);
+						found = true;
+
+						// Fetch end of span to prune some target indices
+						long spanEnd = getEndIndex(sourceIndex, null);
+
+						// Step forward to either the next target index or after
+						// the end of the found span, whichever is greater
+						from = Math.max(spanEnd, from)+1;
+
+						// Shrink search interval if possible
+						if(sourceIndex==_fromSource) {
+							_fromSource++;
+							idFrom = id(_fromSource);
+							localFrom = localIndex(_fromSource);
+						}
+						if(sourceIndex==_toSource) {
+							_toSource--;
+							idTo  = id(_toSource);
+							localTo = localIndex(_toSource)+1;
+						}
+					}
+
+					// Global state check of the search window
+					if(_toSource<_fromSource) {
+						// Search space exhausted, abort future processing
+						return false;
+					}
+				}
+
+				// Only way of finishing search is exhaustion of search space,
+				// so always allow to continue here
+				return true;
+			}
 		}
 
 		/**
@@ -479,132 +688,27 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		 */
 		@Override
 		public boolean find(final long fromSource, final long toSource,
-				final IndexSet[] targetIndices, final IndexCollector collector, RequestSettings settings)
+				final IndexSet[] targetIndices, final IndexCollector collector,
+				@Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(targetIndices);
+			requireNonNull(collector);
 			ensureSorted(targetIndices, settings);
 
-			if(coverage.isMonotonic()) {
-
-				/*
-				 * In case of monotonic index we can adjust our search interval for
-				 * the source index space whenever we successfully resolve some
-				 * source indices. In addition the first miss is bound to cause the
-				 * entire search to fail.
-				 * each
-				 */
-
-				SpanProcedure proc = new SpanProcedure() {
-
-					int idFrom = id(fromSource);
-					int idTo = id(toSource);
-					int localFrom = localIndex(fromSource);
-					int localTo = localIndex(toSource)+1;
-
-					long targetEnd = lastIndex(targetIndices);
-
-					@Override
-					public boolean process(long from, long to) {
-						long sourceIndex;
-
-						if(from==to) {
-							sourceIndex = find(idFrom, idTo, localFrom, localTo, from);
-							if(sourceIndex==IcarusUtils.UNSET_LONG) {
-								return false;
-							}
-
-							// Manually add mapped source index
-							collector.add(sourceIndex);
-						} else {
-							// The mapped span will already be added inside the findContinuous method
-							sourceIndex = findContinuous(idFrom, idTo,
-									localFrom, localTo, from, to, collector);
-
-							// Here sourceIndex is the index of the last span that was found
-							if(sourceIndex==IcarusUtils.UNSET_LONG) {
-								return false;
-							}
-						}
-
-						if(sourceIndex>=toSource || getEndIndex(sourceIndex, null)>=targetEnd) {
-							return false;
-						}
-
-						// There has to be space left to map the remaining target indices, so
-						// reset interval begin to the next span after the current
-
-						idFrom = id(sourceIndex+1);
-						localFrom = localIndex(sourceIndex+1);
-
-						return true;
-					}
-				};
-
-				return forEachSpan(targetIndices, proc);
+			// Restrict source range with header information
+			Range sourceRange = getHeader().getUsedIndices(fromSource, toSource);
+			if(sourceRange.isUnset()) {
+				// No overlap of estimated range and our actually mapped sources
+				return false;
 			}
 
-			/*
-			 * Non-monotonic mapping means the only way of optimizing the search
-			 * is to shrink the source interval whenever we encounter spans that
-			 * overlap with the current end of the interval.
-			 */
+			SpanSearch search = coverage.isMonotonic() ?
+					new MonotonicSpanSearch(sourceRange, collector, lastIndex(targetIndices), toSource)
+					: new PoorSpanSearch(sourceRange, collector);
 
-			SpanProcedure proc = new SpanProcedure() {
+			IndexUtils.forEachSpan(targetIndices, search);
 
-				int idFrom = id(fromSource);
-				int idTo = id(toSource);
-				int localFrom = localIndex(fromSource);
-				int localTo = localIndex(toSource)+1;
-
-				long _fromSource = fromSource;
-				long _toSource = toSource;
-
-				@Override
-				public boolean process(long from, long to) {
-
-					while(from<=to) {
-						long sourceIndex = find(idFrom, idTo, localFrom, localTo, from);
-
-						if(sourceIndex==IcarusUtils.UNSET_LONG) {
-							// Continue through the search space when no match was found
-							from++;
-						} else {
-
-							collector.add(sourceIndex);
-
-							// Fetch end of span to prune some target indices
-							long spanEnd = getEndIndex(sourceIndex, null);
-
-							// Step forward to either the next target index or after
-							// the end of the found span, whichever is greater
-							from = Math.max(spanEnd, from)+1;
-
-							// Shrink search interval if possible
-							if(sourceIndex==_fromSource) {
-								_fromSource++;
-								idFrom = id(_fromSource);
-								localFrom = localIndex(_fromSource);
-							}
-							if(sourceIndex==_toSource) {
-								_toSource--;
-								idTo  = id(_toSource);
-								localTo = localIndex(_toSource)+1;
-							}
-						}
-
-						// Global state check of the search window
-						if(_toSource<_fromSource) {
-							// Search space exhausted, abort future processing
-							return false;
-						}
-					}
-
-					// Only way of finishing search is exhaustion of search space,
-					// so always allow to continue here
-					return true;
-				}
-			};
-
-			return forEachSpan(targetIndices, proc);
+			return search.found;
 		}
 
 	}
@@ -633,10 +737,25 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 			int localIndex = localIndex(sourceFrom);
 
 			Block block = getBlock(id);
+			assert block!=null : "missing block for id "+id;
 			Object buffer = block.getData();
-			blockStorage.setSpanBegin(buffer, localIndex, targetFrom);
-			blockStorage.setSpanEnd(buffer, localIndex, targetTo);
+
+			long oldBegin = blockStorage.setSpanBegin(buffer, localIndex, targetFrom);
+			long oldEnd = blockStorage.setSpanEnd(buffer, localIndex, targetTo);
+
+			if(oldBegin==targetFrom && oldEnd==targetTo) {
+				return;
+			}
+
 			lockBlock(block, localIndex);
+
+			SimpleHeader header = getHeader();
+			if(oldBegin==UNSET_LONG) {
+				header.growSize();
+			}
+			header.updateUsedIndex(sourceFrom);
+			header.updateTargetIndex(targetFrom);
+			header.updateTargetIndex(targetTo);
 		}
 
 		/**
@@ -652,6 +771,8 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 
 		@Override
 		public void map(IndexSet sourceIndices, IndexSet targetIndices) {
+			requireNonNull(sourceIndices);
+			requireNonNull(targetIndices);
 			if(sourceIndices.size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from single index values");
 			if(!isContinuous(targetIndices))
@@ -663,6 +784,8 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 
 		@Override
 		public void map(IndexSet[] sourceIndices, IndexSet[] targetIndices) {
+			requireNonNull(sourceIndices);
+			requireNonNull(targetIndices);
 			if(sourceIndices.length>1 || sourceIndices[0].size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from single index values");
 			if(!isContinuous(targetIndices))
