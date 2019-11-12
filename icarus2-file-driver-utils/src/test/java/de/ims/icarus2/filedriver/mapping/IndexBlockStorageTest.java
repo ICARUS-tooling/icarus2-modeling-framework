@@ -719,10 +719,10 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				@SuppressWarnings("unchecked")
 				Pair<Long, Long>[] spans = new Pair[]{
-						pair(0, 1),
-						pair(2, 4),
-						pair(5, 8),
-						pair(10, 20)
+						pair(0L, 1L),
+						pair(2L, 4L),
+						pair(5L, 8L),
+						pair(10L, 20L)
 				};
 				Object array = array(storage, spans.length*2);
 				writeSpans(storage, array, spans);
@@ -752,13 +752,13 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				@SuppressWarnings("unchecked")
 				Pair<Long, Long>[] spans = new Pair[]{
-						pair(1, 3),
+						pair(1L, 3L),
 						null,
-						pair(4, 5),
-						pair(7, 8),
+						pair(4L, 5L),
+						pair(7L, 8L),
 						null,
 						null,
-						pair(10, 20),
+						pair(10L, 20L),
 						null
 				};
 				long[] unused = {0, 6, 9, 21, 100};
@@ -796,10 +796,10 @@ class IndexBlockStorageTest {
 			return baseTests(storage -> {
 				@SuppressWarnings("unchecked")
 				Pair<Long, Long>[] spans = new Pair[]{
-						pair(4, 7),
-						pair(2, 4),
-						pair(5, 6),
-						pair(10, 12)
+						pair(4L, 7L),
+						pair(2L, 4L),
+						pair(5L, 6L),
+						pair(10L, 12L)
 				};
 				Object array = array(storage, spans.length*2);
 				writeSpans(storage, array, spans);
