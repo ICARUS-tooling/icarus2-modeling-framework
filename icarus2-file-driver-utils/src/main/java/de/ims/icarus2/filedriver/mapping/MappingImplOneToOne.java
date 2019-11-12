@@ -92,12 +92,12 @@ public class MappingImplOneToOne extends AbstractStoredMapping<SimpleHeader> {
 		.add("blockStorage", blockStorage);
 	}
 
-	public int getBlockPower() {
-		return blockPower;
-	}
-
 	public int getEntriesPerBlock() {
 		return entriesPerBlock;
+	}
+
+	public IndexBlockStorage getBlockStorage() {
+		return blockStorage;
 	}
 
 	private int id(long index) {

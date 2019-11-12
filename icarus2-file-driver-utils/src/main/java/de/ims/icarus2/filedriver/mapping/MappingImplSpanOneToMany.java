@@ -119,14 +119,6 @@ public class MappingImplSpanOneToMany extends AbstractStoredMapping<SimpleHeader
 		return blockStorage;
 	}
 
-	public int getBlockPower() {
-		return blockPower;
-	}
-
-	public int getBlockMask() {
-		return blockMask;
-	}
-
 	public int getEntriesPerBlock() {
 		return entriesPerBlock;
 	}

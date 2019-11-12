@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
@@ -115,6 +116,11 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 		config.prepareManifest(Coverage.PARTIAL);
 
 		return config;
+	}
+
+	private static ConfigImpl basicConfig() {
+		return config(IndexValueType.INTEGER, 4,
+				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
 	}
 
 	//READER TESTS
@@ -451,6 +457,35 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 					}
 				}
 			}
+		}
+	}
+
+	@Nested
+	class Internals {
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#getBlockStorage()}.
+		 */
+		@TestFactory
+		Stream<DynamicNode> testGetBlockStorage() {
+			return Stream.of(IndexValueType.values()).map(type -> dynamicTest(type.name(), () -> {
+				ConfigImpl config = basicConfig();
+				config.valueType = type;
+				MappingImplOneToOne mapping = config.create();
+				assertThat(mapping.getBlockStorage()).isSameAs(IndexBlockStorage.forValueType(type));
+			}));
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#getEntriesPerBlock()}.
+		 */
+		@ParameterizedTest
+		@ValueSource(ints = {3, 10, MappingImplSpanOneToMany.DEFAULT_BLOCK_POWER, 24})
+		void testGetEntriesPerBlock(int blockPower) {
+			ConfigImpl config = basicConfig();
+			config.blockPower = blockPower;
+			MappingImplOneToOne mapping = config.create();
+			assertThat(mapping.getEntriesPerBlock()).isEqualTo(1<<blockPower);
 		}
 	}
 

@@ -617,8 +617,13 @@ public class ModelTestUtils {
 		assertEquals(IndexUtils.count(expected),
 				IndexUtils.count(actual), "Size mismatch");
 
-		OfLong itExp = IndexUtils.asIterator(expected);
 		OfLong itAct = IndexUtils.asIterator(actual);
+		assertIndicesEquals(expected, itAct);
+	}
+
+	public static void assertIndicesEquals(IndexSet[] expected, OfLong actual) {
+		OfLong itExp = IndexUtils.asIterator(expected);
+		OfLong itAct = actual;
 
 		int idx = 0;
 		while(itExp.hasNext() && itAct.hasNext()) {

@@ -11,7 +11,6 @@ import static de.ims.icarus2.test.util.Triple.triple;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
@@ -31,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
@@ -461,39 +461,32 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 		}
 	}
 
-	//TODO complete and activate
-	class Tmp {
+	@Nested
+	class Internals {
 
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#getBlockStorage()}.
 		 */
-		@Test
-		void testGetBlockStorage() {
-			fail("Not yet implemented"); // TODO
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#getBlockPower()}.
-		 */
-		@Test
-		void testGetBlockPower() {
-			fail("Not yet implemented"); // TODO
-		}
-
-		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#getBlockMask()}.
-		 */
-		@Test
-		void testGetBlockMask() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicNode> testGetBlockStorage() {
+			return Stream.of(IndexValueType.values()).map(type -> dynamicTest(type.name(), () -> {
+				ConfigImpl config = basicConfig();
+				config.valueType = type;
+				MappingImplSpanOneToMany mapping = config.create();
+				assertThat(mapping.getBlockStorage()).isSameAs(IndexBlockStorage.forValueType(type));
+			}));
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#getEntriesPerBlock()}.
 		 */
-		@Test
-		void testGetEntriesPerBlock() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@ValueSource(ints = {3, 10, MappingImplSpanOneToMany.DEFAULT_BLOCK_POWER, 24})
+		void testGetEntriesPerBlock(int blockPower) {
+			ConfigImpl config = basicConfig();
+			config.blockPower = blockPower;
+			MappingImplSpanOneToMany mapping = config.create();
+			assertThat(mapping.getEntriesPerBlock()).isEqualTo(1<<blockPower);
 		}
 	}
 
