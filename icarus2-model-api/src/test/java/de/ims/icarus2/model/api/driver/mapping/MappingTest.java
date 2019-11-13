@@ -32,6 +32,14 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 
 	Stream<C> configurations();
 
+	default Stream<Coverage> coverages() {
+		return Stream.of(Coverage.values());
+	}
+
+	default Stream<Relation> relations() {
+		return Stream.of(Relation.values());
+	}
+
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getDriver()}.
 	 */

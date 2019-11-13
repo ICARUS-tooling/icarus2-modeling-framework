@@ -12,8 +12,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestFactory;
 
-import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
-import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.test.func.ThrowingBiConsumer;
 
 /**
@@ -41,13 +39,5 @@ public interface WritableMappingTest<M extends WritableMapping, C extends Mappin
 				task.accept(config, writer);
 			}
 		}));
-	}
-
-	default Stream<Coverage> coverages() {
-		return Stream.of(Coverage.values());
-	}
-
-	default Stream<Relation> relations() {
-		return Stream.of(Relation.values());
 	}
 }
