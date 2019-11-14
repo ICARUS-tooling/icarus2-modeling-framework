@@ -20,7 +20,10 @@
 package de.ims.icarus2.test.guard;
 
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.lang.annotation.Annotation;
@@ -46,6 +49,8 @@ import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.platform.commons.util.ReflectionUtils;
 
+import de.ims.icarus2.apiguard.OptionalMethod;
+import de.ims.icarus2.apiguard.OptionalMethodNotSupported;
 import de.ims.icarus2.test.reflect.MethodCache;
 import de.ims.icarus2.test.util.DummyCache;
 
@@ -121,6 +126,8 @@ abstract class Guardian<T> {
 			return Collections.emptyList();
 		}
 
+		final boolean optional = methodCache!=null && methodCache.hasAnnotation(OptionalMethod.class);
+
 		final Object[] original = new Object[paramCount];
 		final String[] labels = new String[paramCount];
 
@@ -156,7 +163,7 @@ abstract class Guardian<T> {
 			tmp[i] = "<null>"+tmp[i];
 			String label = "("+String.join(", ", tmp)+")";
 
-			result.add(new ParamConfig(params, i, types[i], label));
+			result.add(new ParamConfig(params, i, types[i], label, optional));
 		}
 
 		return result;
@@ -179,9 +186,19 @@ abstract class Guardian<T> {
 	abstract Stream<DynamicNode> createTests(TestReporter testReporter);
 
 	static DynamicTest createNullTest(ParamConfig config, ThrowingConsumer<Object[]> executor) {
-		return DynamicTest.dynamicTest(config.displayName(), null,
-				() -> assertReflectionNPE(
-						() -> executor.accept(config.params)));
+		return DynamicTest.dynamicTest(config.displayName(), null, () -> {
+					InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+						() -> executor.accept(config.params));
+					Throwable cause = ex.getCause();
+					assertNotNull(cause);
+
+					// If method marked as optional we allow specific kind of fail
+					if(config.optional && cause instanceof OptionalMethodNotSupported) {
+						return;
+					}
+
+					assertThat(cause).isInstanceOf(NullPointerException.class);
+				});
 	}
 
 	static void assertReflectionNPE(ThrowingCallable callable) {
@@ -195,18 +212,19 @@ abstract class Guardian<T> {
 		public final int nullIndex;
 		public final Class<?> paramClass;
 		public final String label;
+		public final boolean optional;
 
-		public ParamConfig(Object[] params, int nullIndex, Class<?> paramClass, String label) {
+		public ParamConfig(Object[] params, int nullIndex, Class<?> paramClass, String label, boolean optional) {
 			this.params = requireNonNull(params);
 			this.nullIndex = nullIndex;
 			this.paramClass = requireNonNull(paramClass);
 			this.label = requireNonNull(label);
+			this.optional = optional;
 		}
 
 		public String displayName() {
-			return String.format("[%d] %s",
-					Integer.valueOf(nullIndex),
-					label);
+			return String.format("[%d] %s %s", Integer.valueOf(nullIndex),
+					label, optional ? "[optional]" : "");
 		}
 	}
 }

@@ -1,7 +1,7 @@
 /**
  *
  */
-package de.ims.icarus2.util;
+package de.ims.icarus2.apiguard;
 
 /**
  * @author Markus Gärtner
@@ -26,7 +26,6 @@ public class OptionalMethodNotSupported extends RuntimeException {
 	 */
 	public OptionalMethodNotSupported(String message) {
 		super(message);
-		// TODO Auto-generated constructor stub
 	}
 
 }

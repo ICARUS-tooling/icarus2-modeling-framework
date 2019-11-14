@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.apiguard.OptionalMethodNotSupported;
 import de.ims.icarus2.util.Mutable.MutableObject;
 
 /**

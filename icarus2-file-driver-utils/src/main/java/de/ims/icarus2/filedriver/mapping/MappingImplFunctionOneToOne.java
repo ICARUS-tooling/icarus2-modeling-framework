@@ -86,6 +86,10 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		private final Coverage coverage = ManifestUtils.require(
 				getManifest(), MappingManifest::getCoverage, "coverage");
 
+		protected Reader() {
+			// no-op
+		}
+
 		/**
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#getSource()
 		 */
