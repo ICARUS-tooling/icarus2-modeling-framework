@@ -18,6 +18,8 @@ package de.ims.icarus2.model.api.driver.indices.standard;
 
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNotNegative;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkSorted;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.ensureSorted;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.isSorted;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -77,9 +79,9 @@ public class IndexCollectorFactory {
 					IndexValueType.class.getName()));
 	}
 
-	private Boolean inputSorted; // FIXME add flag for sorted output, since that
-									// would affect the way indices are stored
-									// in the collector implementation!!!
+	private Boolean inputSorted;
+	private Boolean outputSorted;
+
 	private Long totalSizeLimit;
 	private Integer chunkSizeLimit;
 	private IndexValueType valueType;
@@ -92,8 +94,20 @@ public class IndexCollectorFactory {
 		return this;
 	}
 
+	public IndexCollectorFactory outputSorted(boolean outputSorted) {
+		checkState(this.outputSorted == null);
+
+		this.outputSorted = Boolean.valueOf(outputSorted);
+
+		return this;
+	}
+
 	public boolean isInputSorted() {
 		return inputSorted == null ? false : inputSorted.booleanValue();
+	}
+
+	public boolean isOutputSorted() {
+		return outputSorted == null ? false : outputSorted.booleanValue();
 	}
 
 	public IndexCollectorFactory totalSizeLimit(long totalSizeLimit) {
@@ -148,6 +162,7 @@ public class IndexCollectorFactory {
 
 		final IndexValueType valueType = getValueType();
 		final boolean inputSorted = isInputSorted();
+		final boolean outputSorted = isOutputSorted();
 		final long totalLimit = getTotalSizeLimit();
 		final int chunkLimit = getChunkSizeLimit();
 
@@ -171,15 +186,15 @@ public class IndexCollectorFactory {
 				// No reason to have a special case for BYTE
 				case BYTE:
 				case SHORT:
-					builder = new LimitedUnsortedSetBuilderShort(capacity, chunkLimit);
+					builder = new LimitedUnsortedSetBuilderShort(capacity, chunkLimit, outputSorted);
 					break;
 
 				case INTEGER:
-					builder = new LimitedUnsortedSetBuilderInt(capacity, chunkLimit);
+					builder = new LimitedUnsortedSetBuilderInt(capacity, chunkLimit, outputSorted);
 					break;
 
 				case LONG:
-					builder = new LimitedUnsortedSetBuilderLong(capacity, chunkLimit);
+					builder = new LimitedUnsortedSetBuilderLong(capacity, chunkLimit, outputSorted);
 					break;
 
 				default:
@@ -188,7 +203,7 @@ public class IndexCollectorFactory {
 
 				}
 			} else {
-				builder = new BucketSetBuilder(valueType, chunkLimit);
+				builder = new BucketSetBuilder(valueType, chunkLimit, outputSorted);
 			}
 		}
 
@@ -363,10 +378,8 @@ public class IndexCollectorFactory {
 
 				buffer.add(indices, cursor, cursor+chunkSize);
 				lastIndex = buffer.lastIndex();
-				if(buffer.remaining()==0) {
-					chunks.add(buffer.snapshot());
-					buffer.clear();
-				}
+
+				maybeWrapupChunk();
 
 				cursor += chunkSize;
 			}
@@ -383,10 +396,18 @@ public class IndexCollectorFactory {
 			buffer.add(index);
 			lastIndex = index;
 
+			maybeWrapupChunk();
+		}
+
+		private void maybeWrapupChunk() {
 			if (buffer.remaining() == 0) {
-				chunks.add(buffer.snapshot());
-				buffer.clear();
+				wrapupChunk();
 			}
+		}
+
+		private void wrapupChunk() {
+			chunks.add(buffer.snapshot());
+			buffer.clear();
 		}
 
 		/**
@@ -396,11 +417,13 @@ public class IndexCollectorFactory {
 		public IndexSet[] build() {
 			// Consume remaining data
 			if (!buffer.isEmpty()) {
-				chunks.add(buffer.snapshot());
+				wrapupChunk();
 			}
 
 			IndexSet[] result = new IndexSet[chunks.size()];
 			chunks.toArray(result);
+
+			assert isSorted(result);
 
 			return result;
 		}
@@ -419,15 +442,17 @@ public class IndexCollectorFactory {
 			IndexSetBuilder, IndexStorage {
 		private final LongSet buffer;
 		private final int chunkSize;
+		private final boolean sortResult;
 
 		private static final IndexValueType TYPE = IndexValueType.LONG;
 
-		public LimitedUnsortedSetBuilderLong(int capacity, int chunkSize) {
+		public LimitedUnsortedSetBuilderLong(int capacity, int chunkSize, boolean sortResult) {
 			checkCapacity(capacity);
 			checkChunkSize(chunkSize);
 			buffer = new LongOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
+			this.sortResult = sortResult;
 		}
 
 		/**
@@ -474,7 +499,11 @@ public class IndexCollectorFactory {
 
 		@Override
 		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toLongArray());
+			IndexSet indices = new ArrayIndexSet(TYPE, buffer.toLongArray());
+			if(sortResult) {
+				ensureSorted(indices);
+			}
+			return indices;
 		}
 	}
 
@@ -491,15 +520,17 @@ public class IndexCollectorFactory {
 			IndexSetBuilder, IndexStorage {
 		private final IntSet buffer;
 		private final int chunkSize;
+		private final boolean sortResult;
 
 		private static final IndexValueType TYPE = IndexValueType.INTEGER;
 
-		public LimitedUnsortedSetBuilderInt(int capacity, int chunkSize) {
+		public LimitedUnsortedSetBuilderInt(int capacity, int chunkSize, boolean sortResult) {
 			checkCapacity(capacity);
 			checkChunkSize(chunkSize);
 			buffer = new IntOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
+			this.sortResult = sortResult;
 		}
 
 		/**
@@ -546,7 +577,11 @@ public class IndexCollectorFactory {
 
 		@Override
 		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toIntArray());
+			IndexSet indices = new ArrayIndexSet(TYPE, buffer.toIntArray());
+			if(sortResult) {
+				ensureSorted(indices);
+			}
+			return indices;
 		}
 	}
 
@@ -563,15 +598,17 @@ public class IndexCollectorFactory {
 			IndexSetBuilder, IndexStorage {
 		private final ShortSet buffer;
 		private final int chunkSize;
+		private final boolean sortResult;
 
 		private static final IndexValueType TYPE = IndexValueType.SHORT;
 
-		public LimitedUnsortedSetBuilderShort(int capacity, int chunkSize) {
+		public LimitedUnsortedSetBuilderShort(int capacity, int chunkSize, boolean sortResult) {
 			checkCapacity(capacity);
 			checkChunkSize(chunkSize);
 			buffer = new ShortOpenHashSet(capacity);
 
 			this.chunkSize = chunkSize;
+			this.sortResult = sortResult;
 		}
 
 		/**
@@ -618,7 +655,11 @@ public class IndexCollectorFactory {
 
 		@Override
 		public IndexSet asSet() {
-			return new ArrayIndexSet(TYPE, buffer.toShortArray());
+			IndexSet indices = new ArrayIndexSet(TYPE, buffer.toShortArray());
+			if(sortResult) {
+				ensureSorted(indices);
+			}
+			return indices;
 		}
 	}
 
@@ -640,6 +681,7 @@ public class IndexCollectorFactory {
 		private final IndexValueType valueType;
 		/** Size of individual chunks, used as buffer size of buckets */
 		private final int chunkSize;
+		private final boolean sortResult;
 		/** Root node to make rotations easier */
 		private final Bucket virtualRoot = new Bucket(){
 			@Override
@@ -694,11 +736,11 @@ public class IndexCollectorFactory {
 		private double minSplitRatio = 1D;
 		private double maxSplitRation = 0D;
 
-		public BucketSetBuilder(IndexValueType valueType, int chunkSize) {
-			this(valueType, chunkSize, false);
+		public BucketSetBuilder(IndexValueType valueType, int chunkSize, boolean sortResult) {
+			this(valueType, chunkSize, sortResult, false);
 		}
 
-		public BucketSetBuilder(IndexValueType valueType, int chunkSize, boolean useLastHitCache) {
+		public BucketSetBuilder(IndexValueType valueType, int chunkSize, boolean sortResult, boolean useLastHitCache) {
 			requireNonNull(valueType);
 			checkChunkSize(chunkSize);
 
@@ -706,6 +748,7 @@ public class IndexCollectorFactory {
 
 			this.valueType = valueType;
 			this.chunkSize = chunkSize;
+			this.sortResult = sortResult;
 			this.useLastHitCache = useLastHitCache;
 
 			virtualRoot.insert(createBucket(UNSET_INT));
@@ -779,15 +822,15 @@ public class IndexCollectorFactory {
 			// No special case for BYTE
 			case BYTE:
 			case SHORT:
-				storage = new LimitedUnsortedSetBuilderShort(capacity, UNDEFINED_CHUNK_SIZE);
+				storage = new LimitedUnsortedSetBuilderShort(capacity, UNDEFINED_CHUNK_SIZE, sortResult);
 				break;
 
 			case LONG:
-				storage = new LimitedUnsortedSetBuilderLong(capacity, UNDEFINED_CHUNK_SIZE);
+				storage = new LimitedUnsortedSetBuilderLong(capacity, UNDEFINED_CHUNK_SIZE, sortResult);
 				break;
 
 			case INTEGER:
-				storage = new LimitedUnsortedSetBuilderInt(capacity, UNDEFINED_CHUNK_SIZE);
+				storage = new LimitedUnsortedSetBuilderInt(capacity, UNDEFINED_CHUNK_SIZE, sortResult);
 				break;
 
 			default:
@@ -851,6 +894,8 @@ public class IndexCollectorFactory {
 		public IndexSet[] build() {
 			IndexSet[] result = new IndexSet[usedBuckets];
 
+//			printStats(System.out);
+
 			collectSets(root(), result, 0);
 
 			return result;
@@ -872,6 +917,11 @@ public class IndexCollectorFactory {
 
 			if(b.storage.size()>0) {
 				buffer[index++] = b.storage.asSet();
+				if(sortResult) {
+					assert buffer[index-1].isSorted();
+					if(index>1)
+					assert buffer[index-1].firstIndex()>=buffer[index-2].lastIndex();
+				}
 			}
 
 			if (b.getLarger() != null) {
