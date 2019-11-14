@@ -4,6 +4,7 @@
 package de.ims.icarus2.model.api.driver.mapping;
 
 import static de.ims.icarus2.test.TestUtils.assertMock;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.model.api.driver.Driver;
@@ -32,6 +34,8 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 
 	Stream<C> configurations();
 
+	C basicConfiguration();
+
 	default Stream<Coverage> coverages() {
 		return Stream.of(Coverage.values());
 	}
@@ -43,33 +47,37 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getDriver()}.
 	 */
-	@TestFactory
-	default Stream<DynamicNode> testGetDriver() {
-		return basicTests((config, instance) -> assertSame(config.driver, instance.getDriver()));
+	@Test
+	default void testGetDriver() {
+		C config = basicConfiguration();
+		assertThat(config.create().getDriver()).isSameAs(config.driver);
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getSourceLayer()}.
 	 */
-	@TestFactory
-	default Stream<DynamicNode> testGetSourceLayer() {
-		return basicTests((config, instance) -> assertSame(config.sourceLayer, instance.getSourceLayer()));
+	@Test
+	default void testGetSourceLayer() {
+		C config = basicConfiguration();
+		assertThat(config.create().getSourceLayer()).isSameAs(config.sourceLayer);
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getTargetLayer()}.
 	 */
-	@TestFactory
-	default Stream<DynamicNode> testGetTargetLayer() {
-		return basicTests((config, instance) -> assertSame(config.targetLayer, instance.getTargetLayer()));
+	@Test
+	default void testGetTargetLayer() {
+		C config = basicConfiguration();
+		assertThat(config.create().getTargetLayer()).isSameAs(config.targetLayer);
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#getManifest()}.
 	 */
-	@TestFactory
-	default Stream<DynamicNode> testGetManifest() {
-		return basicTests((config, instance) -> assertSame(config.manifest, instance.getManifest()));
+	@Test
+	default void testGetManifest() {
+		C config = basicConfiguration();
+		assertThat(config.create().getManifest()).isSameAs(config.manifest);
 	}
 
 	/**
@@ -88,12 +96,11 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 	 * Test method for {@link de.ims.icarus2.model.api.driver.mapping.Mapping#close()}.
 	 */
 	@SuppressWarnings("resource")
-	@TestFactory
-	default Stream<DynamicNode> testClose() {
-		return configurations().map(config -> dynamicTest(config.label, () -> {
-			M mapping = config.create();
-			mapping.close();
-		}));
+	@Test
+	default void testClose() {
+		C config = basicConfiguration();
+		M mapping = config.create();
+		mapping.close();
 	}
 
 	default Stream<DynamicNode> basicTests(ThrowingBiConsumer<C, M> task) {

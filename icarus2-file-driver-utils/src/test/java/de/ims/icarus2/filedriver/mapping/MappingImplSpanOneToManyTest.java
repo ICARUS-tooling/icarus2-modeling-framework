@@ -81,13 +81,21 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 	public Stream<ConfigImpl> configurations() {
 		return
 			Stream.of(IndexValueType.values()).flatMap(valueType ->
-			IntStream.of(3, 6, 10).boxed().flatMap(blockPower ->
+			IntStream.of(3, 10).boxed().flatMap(blockPower ->
 			Stream.<Pair<String,Supplier<BlockCache>>>of(pair("unlimited", UnlimitedBlockCache::new),
 					pair("LRU", RUBlockCache::newLeastRecentlyUsedCache)).flatMap(pCache ->
 			IntStream.of(BlockCache.MIN_CAPACITY, 1024).boxed().map(cacheSize -> {
 				return config(valueType, blockPower.intValue(),
 						pCache.second, pCache.first, cacheSize.intValue());
 			}))));
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mapping.MappingTest#basicConfiguration()
+	 */
+	@Override
+	public ConfigImpl basicConfiguration() {
+		return config(IndexValueType.INTEGER, 4, RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
 	}
 
 	private static ConfigImpl config(IndexValueType valueType, int blockPower,
@@ -112,9 +120,6 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 
 		return config;
 	}
-
-	//TODO add 1to1 mapping tests
-	//TODO add 1toN mapping tests
 
 	//READER TESTS
 

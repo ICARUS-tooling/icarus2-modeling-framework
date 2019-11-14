@@ -555,6 +555,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 		Map<String, Method> setters = new HashMap<>();
 		Set<Method> builders = new ObjectOpenHashSet<>();
 
+		//TODO rework reporting to not mention getters as duplicate builder setters (e.g. blockPower(int) vs getBlockPower())
+
 		BiConsumer<String, Method> mapGetter = (property, method) -> {
 			if(getters.containsKey(property)) {
 				testReporter.publishEntry("duplicate getter",

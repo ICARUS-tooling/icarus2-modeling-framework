@@ -57,22 +57,32 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 
 	@Override
 	public Stream<ConfigImpl> configurations() {
-		return Stream.of(IndexValueType.values()).map(valueType -> {
-			ConfigImpl config = new ConfigImpl();
+		return Stream.of(IndexValueType.values()).map(valueType -> config(valueType));
+	}
 
-			config.label = String.format("valueType=%s", valueType);
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mapping.MappingTest#basicConfiguration()
+	 */
+	@Override
+	public ConfigImpl basicConfiguration() {
+		return config(IndexValueType.INTEGER);
+	}
 
-			config.valueType = valueType;
+	private static ConfigImpl config(IndexValueType valueType) {
+		ConfigImpl config = new ConfigImpl();
 
-			config.driver = mock(Driver.class);
-			config.sourceLayer = mock(ItemLayerManifestBase.class);
-			config.targetLayer = mock(ItemLayerManifestBase.class);
-			config.manifest = mock(MappingManifest.class);
+		config.label = String.format("valueType=%s", valueType);
 
-			config.prepareManifest(Coverage.PARTIAL);
+		config.valueType = valueType;
 
-			return config;
-		});
+		config.driver = mock(Driver.class);
+		config.sourceLayer = mock(ItemLayerManifestBase.class);
+		config.targetLayer = mock(ItemLayerManifestBase.class);
+		config.manifest = mock(MappingManifest.class);
+
+		config.prepareManifest(Coverage.PARTIAL);
+
+		return config;
 	}
 
 	@SuppressWarnings("boxing")

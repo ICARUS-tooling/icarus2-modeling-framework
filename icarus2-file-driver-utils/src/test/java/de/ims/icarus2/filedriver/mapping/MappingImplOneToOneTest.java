@@ -95,6 +95,15 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 			}))));
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mapping.MappingTest#basicConfiguration()
+	 */
+	@Override
+	public ConfigImpl basicConfiguration() {
+		return config(IndexValueType.INTEGER, 4,
+				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
+	}
+
 	private static ConfigImpl config(IndexValueType valueType, int blockPower,
 			Supplier<BlockCache> cacheGen,
 			String cacheLabel, int cacheSize) {

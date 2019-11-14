@@ -71,12 +71,12 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 
 	private final IndexBlockStorage blockStorage;
 
-	private static final int DEFAULT_GROUP_POWER = 8;
+	public static final int DEFAULT_GROUP_POWER = 8;
 
 //	@SuppressWarnings("unused")
 //	private static final int INDICES_PER_GROUP = 1<<GROUP_POWER;
 
-	private static final int DEFAULT_BLOCK_POWER = 14;
+	public static final int DEFAULT_BLOCK_POWER = 14;
 
 //	private static final int BLOCK_MASK = (1<<DEFAULT_BLOCK_POWER)-1;
 //
@@ -119,7 +119,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		return inverseMapping;
 	}
 
-	public int getEntriesPerBlock() {
+	public int getGroupsPerBlock() {
 		return groupsPerBlock;
 	}
 

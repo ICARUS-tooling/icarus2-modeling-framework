@@ -84,6 +84,16 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 					config(coverage, valueType, pUnary, pBatch)))));
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mapping.MappingTest#basicConfiguration()
+	 */
+	@Override
+	public ConfigImpl basicConfiguration() {
+		// TODO Auto-generated method stub
+		return config(Coverage.TOTAL_MONOTONIC, IndexValueType.INTEGER,
+				pair("identity", IDENTITY), nullablePair("no batch", null));
+	}
+
 	private static ConfigImpl config(Coverage coverage, IndexValueType valueType,
 			Pair<String, LongUnaryOperator> pFunc, Pair<String, UnaryOperator<IndexSet>> pBatchFunc) {
 		ConfigImpl config = new ConfigImpl();

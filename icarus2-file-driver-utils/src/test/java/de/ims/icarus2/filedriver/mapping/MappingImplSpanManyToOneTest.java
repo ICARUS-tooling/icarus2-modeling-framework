@@ -4,10 +4,12 @@
 package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.test.TestUtils.mockDelegate;
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -15,10 +17,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
+import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne.Builder;
 import de.ims.icarus2.filedriver.mapping.StoredMappingTest.AbstractConfig;
@@ -28,11 +38,13 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriterTest;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
+import de.ims.icarus2.model.api.driver.mapping.WritableMappingTest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
@@ -41,7 +53,7 @@ import de.ims.icarus2.util.io.resource.VirtualIOResource;
  * @author Markus Gärtner
  *
  */
-class MappingImplSpanManyToOneTest {
+class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpanManyToOne, MappingImplSpanManyToOneTest.ConfigImpl> {
 
 	/**
 	 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne#builder()}.
@@ -49,6 +61,72 @@ class MappingImplSpanManyToOneTest {
 	@Test
 	void testBuilder() {
 		assertThat(MappingImplSpanManyToOne.builder()).isNotNull();
+	}
+
+	@Override
+	public Stream<ConfigImpl> configurations() {
+		return
+			Stream.of(IndexValueType.values()).flatMap(valueType ->
+			IntStream.of(3, 10).boxed().flatMap(blockPower ->
+			IntStream.of(3, 10).boxed().flatMap(groupPower ->
+			Stream.<Pair<String,Supplier<BlockCache>>>of(pair("unlimited", UnlimitedBlockCache::new),
+					pair("LRU", RUBlockCache::newLeastRecentlyUsedCache)).flatMap(pCache ->
+			IntStream.of(BlockCache.MIN_CAPACITY, 1024).boxed().map(cacheSize -> {
+				return config(valueType, blockPower.intValue(), groupPower.intValue(),
+						pCache.second, pCache.first, cacheSize.intValue());
+			})))));
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mapping.MappingTest#basicConfiguration()
+	 */
+	@Override
+	public ConfigImpl basicConfiguration() {
+		return config(IndexValueType.INTEGER, 4, 4, RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
+	}
+
+	private static ConfigImpl config(IndexValueType valueType,
+			int blockPower, int groupPower,
+			Supplier<BlockCache> cacheGen,
+			String cacheLabel, int cacheSize) {
+		ConfigImpl config = new ConfigImpl();
+		config.label = String.format("type=%s blockPower=%d cache=%s cacheSize=%d",
+				valueType, _int(blockPower), cacheLabel, _int(cacheSize));
+
+		config.blockCacheGen = cacheGen;
+		config.blockPower = blockPower;
+		config.groupPower = groupPower;
+		config.cacheSize = cacheSize;
+		config.valueType = valueType;
+		config.resourceGen = VirtualIOResource::new;
+
+		config.driver = mock(Driver.class);
+		config.sourceLayer = mock(ItemLayerManifestBase.class);
+		config.targetLayer = mock(ItemLayerManifestBase.class);
+		config.manifest = mock(MappingManifest.class);
+
+		config.inverseMappingGen = () -> {
+			Optional<Coverage> coverage = config.manifest.getCoverage();
+			MappingManifest manifest = mock(MappingManifest.class);
+			when(manifest.getCoverage()).thenReturn(coverage);
+			when(manifest.getRelation()).thenReturn(Optional.of(Relation.ONE_TO_MANY));
+
+			return MappingImplSpanOneToMany.builder()
+				.cacheSize(cacheSize)
+				.blockPower(blockPower)
+				.resource(new VirtualIOResource())
+				.blockCache(cacheGen.get())
+				.valueType(valueType)
+				.sourceLayer(mock(ItemLayerManifestBase.class))
+				.targetLayer(mock(ItemLayerManifestBase.class))
+				.driver(mock(Driver.class))
+				.manifest(manifest)
+				.build();
+		};
+
+		config.prepareManifest(Coverage.PARTIAL);
+
+		return config;
 	}
 
 	private MappingImplSpanOneToMany createInverseMapping() {
@@ -87,14 +165,25 @@ class MappingImplSpanManyToOneTest {
 				.build();
 	}
 
+	private static ConfigImpl basicConfig() {
+		return config(IndexValueType.INTEGER, 4, 4,
+				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
+	}
+
+	@Nested
 	class Internals {
 
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne#getBlockStorage()}.
 		 */
-		@Test
-		void testGetBlockStorage() {
-			fail("Not yet implemented"); // TODO
+		@TestFactory
+		Stream<DynamicNode> testGetBlockStorage() {
+			return Stream.of(IndexValueType.values()).map(type -> dynamicTest(type.name(), () -> {
+				ConfigImpl config = basicConfig();
+				config.valueType = type;
+				MappingImplSpanManyToOne mapping = config.create();
+				assertThat(mapping.getBlockStorage()).isSameAs(IndexBlockStorage.forValueType(type));
+			}));
 		}
 
 		/**
@@ -102,23 +191,35 @@ class MappingImplSpanManyToOneTest {
 		 */
 		@Test
 		void testGetInverseMapping() {
-			fail("Not yet implemented"); // TODO
+			ConfigImpl config = basicConfig();
+			Mapping inverseMapping = mock(Mapping.class);
+			config.inverseMappingGen = () -> inverseMapping;
+			MappingImplSpanManyToOne mapping = config.create();
+			assertThat(mapping.getInverseMapping()).isSameAs(inverseMapping);
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne#getEntriesPerBlock()}.
+		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne#getGroupsPerBlock()}.
 		 */
-		@Test
-		void testGetEntriesPerBlock() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@ValueSource(ints = {3, 10, MappingImplSpanManyToOne.DEFAULT_BLOCK_POWER, 24})
+		void testGetEntriesPerBlock(int blockPower) {
+			ConfigImpl config = basicConfig();
+			config.blockPower = blockPower;
+			MappingImplSpanManyToOne mapping = config.create();
+			assertThat(mapping.getGroupsPerBlock()).isEqualTo(1<<blockPower);
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne#getEntriesPerGroup()}.
 		 */
-		@Test
-		void testGetEntriesPerGroup() {
-			fail("Not yet implemented"); // TODO
+		@ParameterizedTest
+		@ValueSource(ints = {3, 10, MappingImplSpanOneToMany.DEFAULT_BLOCK_POWER, 24})
+		void testGetEntriesPerGroup(int groupPower) {
+			ConfigImpl config = basicConfig();
+			config.groupPower = groupPower;
+			MappingImplSpanManyToOne mapping = config.create();
+			assertThat(mapping.getEntriesPerGroup()).isEqualTo(1<<groupPower);
 		}
 
 	}
