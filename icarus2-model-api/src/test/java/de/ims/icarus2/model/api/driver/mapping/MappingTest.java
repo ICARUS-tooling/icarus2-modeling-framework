@@ -96,7 +96,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 		}));
 	}
 
-	default Stream<DynamicNode> basicTests(ThrowingBiConsumer<Config<M>, M> task) {
+	default Stream<DynamicNode> basicTests(ThrowingBiConsumer<C, M> task) {
 		return configurations().map(config -> dynamicTest(config.label, () -> {
 			try(M mapping = config.create()) {
 				task.accept(config, mapping);
@@ -104,7 +104,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 		}));
 	}
 
-	default Stream<DynamicNode> readerTests(ThrowingBiConsumer<Config<M>, MappingReader> task) {
+	default Stream<DynamicNode> readerTests(ThrowingBiConsumer<C, MappingReader> task) {
 		return configurations().map(config -> dynamicTest(config.label, () -> {
 			try(M mapping = config.create();
 					MappingReader reader = mapping.newReader()) {
@@ -113,7 +113,7 @@ public interface MappingTest<M extends Mapping, C extends MappingTest.Config<M>>
 		}));
 	}
 
-	default Stream<DynamicNode> batchTests(ThrowingBiConsumer<Config<M>, M> task) { //TODO
+	default Stream<DynamicNode> batchTests(ThrowingBiConsumer<C, M> task) { //TODO
 		return configurations().map(config -> dynamicTest(config.label, () -> {
 			try(M mapping = config.create()) {
 				task.accept(config, mapping);

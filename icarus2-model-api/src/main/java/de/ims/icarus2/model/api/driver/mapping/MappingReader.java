@@ -27,6 +27,9 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
+import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
@@ -49,15 +52,6 @@ import de.ims.icarus2.util.annotations.OptionalMethod;
  *
  */
 public interface MappingReader extends SynchronizedAccessor<Mapping> {
-
-//	/**
-//	 * Returns the number of mapping entries currently accessible by this reader.
-//	 * If the reader has no information about stored data of in case it does not
-//	 * rely on stored data at all, this method should return {@code -1}.
-//	 *
-//	 * @return
-//	 */
-//	long getEntryCount();
 
 	// Single index lookups
 
@@ -111,7 +105,13 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 
 		int chunkSizeLimit = Math.max(1000, IndexUtils.maxSize(sourceIndices));
 
-		IndexSetBuilder builder = new IndexCollectorFactory().chunkSizeLimit(chunkSizeLimit).create();
+		Coverage coverage = ManifestUtils.require(
+				getSource().getManifest(), MappingManifest::getCoverage, "coverage");
+
+		IndexSetBuilder builder = new IndexCollectorFactory()
+				.chunkSizeLimit(chunkSizeLimit)
+				.outputSorted(!coverage.isMonotonic())
+				.create();
 
 		lookup(sourceIndices, builder, settings);
 
@@ -163,7 +163,13 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 			@Nullable RequestSettings settings) throws InterruptedException {
 		requireNonNull(targetIndices);
 
-		IndexSetBuilder builder = new IndexCollectorFactory().chunkSizeLimit(IndexUtils.maxSize(targetIndices)).create();
+		Coverage coverage = ManifestUtils.require(
+				getSource().getManifest(), MappingManifest::getCoverage, "coverage");
+
+		IndexSetBuilder builder = new IndexCollectorFactory()
+				.chunkSizeLimit(IndexUtils.maxSize(targetIndices))
+				.outputSorted(!coverage.isMonotonic())
+				.create();
 
 		find(fromSource, toSource, targetIndices, builder, settings);
 

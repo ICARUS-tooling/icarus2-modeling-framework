@@ -86,6 +86,11 @@ public class IndexBuffer implements IndexSet, IndexCollector {
 	}
 
 	@Override
+	public String toString() {
+		return IndexUtils.toString(this);
+	}
+
+	@Override
 	public IndexValueType getIndexValueType() {
 		return valueType;
 	}

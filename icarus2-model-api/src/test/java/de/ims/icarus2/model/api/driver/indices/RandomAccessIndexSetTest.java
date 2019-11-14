@@ -21,7 +21,7 @@ package de.ims.icarus2.model.api.driver.indices;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.alternateIoobAsserter;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertAlternateIOOB;
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertOverflow;
 import static de.ims.icarus2.model.api.ModelTestUtils.overflowAsserter;
@@ -1003,7 +1003,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 						tests.add(dynamicTest("complete", () -> {
 							IndexSet[] splits = config.set.split(size);
 							assertEquals(1, splits.length);
-							assertIndicesEquals(config.set, splits[0]);
+							assertIndicesEqualsExact(config.set, splits[0]);
 						}));
 
 						tests.add(dynamicTest("singletons", () -> {
@@ -1020,7 +1020,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 							if(chunkSize>1 && size>1) {
 								assertTrue(splits.length>1);
 							}
-							assertIndicesEquals(wrap(config.set), splits);
+							assertIndicesEqualsExact(wrap(config.set), splits);
 						}));
 					} else {
 						tests.add(dynamicTest("not supported", () ->
@@ -1049,7 +1049,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else if(config.features.contains(Feature.EXPORTABLE)) {
 
 						tests.add(dynamicTest("complete", () ->
-								assertIndicesEquals(config.set,
+								assertIndicesEqualsExact(config.set,
 										config.set.subSet(0, size-1))));
 
 						tests.add(dynamicTest("singleton", () -> {

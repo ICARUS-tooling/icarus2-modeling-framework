@@ -19,7 +19,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
@@ -472,7 +472,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 						IndexSet set = config.set.externalize();
 						assertNotNull(set);
 						assertFalse(set.hasFeature(Feature.INDETERMINATE_SIZE));
-						assertIndicesEquals(config.set, set);
+						assertIndicesEqualsExact(config.set, set);
 					}
 				}));
 	}

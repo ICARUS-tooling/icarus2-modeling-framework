@@ -3,7 +3,7 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.util.Pair.pair;
@@ -533,13 +533,13 @@ public class MappingTestUtils {
 		assertThat(indices1)
 			.as("Bulk lookup (single source) of %s", entry)
 			.hasSize(1).doesNotContainNull();
-		assertIndicesEquals(indices, indices1[0]);
+		assertIndicesEqualsExact(indices, indices1[0]);
 
 		IndexSet[] indices2 = reader.lookup(wrap(source), settings);
 		assertThat(indices2)
 			.as("Bulk lookup of %s", entry)
 			.hasSize(1).doesNotContainNull();
-		assertIndicesEquals(indices, indices2[0]);
+		assertIndicesEqualsExact(indices, indices2[0]);
 
 		// Collector tests
 		LongList valueBuffer1 = new LongArrayList();

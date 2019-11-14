@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.function.LongBinaryOperator;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.util.function.LongIntOperator;
 
@@ -139,5 +140,13 @@ public class VirtualIndexSet implements IndexSet {
 	@Override
 	public IndexSet externalize() {
 		return this;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return IndexUtils.toString(this);
 	}
 }

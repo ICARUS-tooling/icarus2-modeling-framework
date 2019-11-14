@@ -79,10 +79,12 @@ import de.ims.icarus2.test.util.Pair;
  */
 public class TestUtils {
 
+	/** Abort the current test with a {@link TestAbortedException} */
 	public static void abort() {
 		throw new TestAbortedException();
 	}
 
+	/** Abort the current test with a {@link TestAbortedException} using the specified message */
 	public static void abort(String msg) {
 		throw new TestAbortedException(msg);
 	}

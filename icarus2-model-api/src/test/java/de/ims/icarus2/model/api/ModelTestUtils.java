@@ -68,6 +68,7 @@ import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArraySet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
@@ -507,14 +508,6 @@ public class ModelTestUtils {
 		return new ArrayIndexSet(indexValueType, randomArray(indexValueType, size, rand));
 	}
 
-	public static void assertIndicesEqualsExact(IndexSet expected, IndexSet actual) {
-		assertEquals(expected.size(), actual.size(), "Size mismatch");
-
-		for (int i = 0; i < expected.size(); i++) {
-			assertEquals(expected.indexAt(i), actual.indexAt(i), "Mismatch at index "+i);
-		}
-	}
-
 	public static Predicate<? super IndexSet> matcher(long...indices) {
 		return set -> {
 			if(set.size()!=indices.length) {
@@ -603,6 +596,14 @@ public class ModelTestUtils {
 		return set;
 	}
 
+	public static void assertIndicesEqualsExact(IndexSet expected, IndexSet actual) {
+		assertEquals(expected.size(), actual.size(), "Size mismatch");
+
+		for (int i = 0; i < expected.size(); i++) {
+			assertEquals(expected.indexAt(i), actual.indexAt(i), "Mismatch at index "+i);
+		}
+	}
+
 	public static void assertIndicesEquals(IndexSet expected, IndexSet actual) {
 		assertEquals(expected.size(), actual.size(), "Size mismatch");
 
@@ -611,6 +612,28 @@ public class ModelTestUtils {
 
 		setExp.removeAll(setAct);
 		assertTrue(setExp.isEmpty(), "Total leftover indices: "+setExp.size());
+	}
+
+	public static void assertIndicesEqualsExact(IndexSet[] expected, IndexSet[] actual) {
+		assertEquals(IndexUtils.count(expected),
+				IndexUtils.count(actual), "Size mismatch");
+
+		OfLong itAct = IndexUtils.asIterator(actual);
+		assertIndicesEqualsExact(expected, itAct);
+	}
+
+	public static void assertIndicesEqualsExact(IndexSet[] expected, OfLong actual) {
+		OfLong itExp = IndexUtils.asIterator(expected);
+		OfLong itAct = actual;
+
+		int idx = 0;
+		while(itExp.hasNext() && itAct.hasNext()) {
+			assertEquals(itExp.nextLong(), itAct.nextLong(), "Mismatch at index "+idx);
+			idx++;
+		}
+
+		assertFalse(itExp.hasNext());
+		assertFalse(itAct.hasNext());
 	}
 
 	public static void assertIndicesEquals(IndexSet[] expected, IndexSet[] actual) {
@@ -625,14 +648,13 @@ public class ModelTestUtils {
 		OfLong itExp = IndexUtils.asIterator(expected);
 		OfLong itAct = actual;
 
-		int idx = 0;
-		while(itExp.hasNext() && itAct.hasNext()) {
-			assertEquals(itExp.nextLong(), itAct.nextLong(), "Mismatch at index "+idx);
-			idx++;
-		}
+		LongSet setExp = new LongArraySet(expected.length);
+		itExp.forEachRemaining((LongConsumer)setExp::add);
+		LongSet setAct = new LongArraySet();
+		itAct.forEachRemaining((LongConsumer)setAct::add);
 
-		assertFalse(itExp.hasNext());
-		assertFalse(itAct.hasNext());
+		setExp.removeAll(setAct);
+		assertTrue(setExp.isEmpty(), "Total leftover indices: "+setExp.size());
 	}
 
 	public static <T extends ModelException> Executable meAsserter(
