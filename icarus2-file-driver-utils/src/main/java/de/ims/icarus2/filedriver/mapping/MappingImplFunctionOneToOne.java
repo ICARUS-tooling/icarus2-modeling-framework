@@ -16,12 +16,14 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.ensureSorted;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.IcarusUtils.signalUnsupportedMethod;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -57,6 +59,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 	private final LongUnaryOperator unaryFunction;
 	private final UnaryOperator<IndexSet> batchFunction;
+	//TODO add reverse functions?
 
 	protected MappingImplFunctionOneToOne(Builder builder) {
 		super(builder);
@@ -216,10 +219,10 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 				return lookup0(IndexUtils.firstIndex(sourceIndices));
 			}
 
-			// Extremely inefficient!!!
-			IndexSet[] targetIndices = lookup(sourceIndices, null);
-			ensureSorted(targetIndices);
-			return IndexUtils.firstIndex(targetIndices);
+			return Stream.of(sourceIndices)
+					.mapToLong(set -> IndexUtils.min(lookup0(set)))
+					.min()
+					.orElse(UNSET_LONG);
 		}
 
 		/**
@@ -234,31 +237,44 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 				return lookup0(IndexUtils.lastIndex(sourceIndices));
 			}
 
-			// Extremely inefficient!!!
-			IndexSet[] targetIndices = lookup(sourceIndices, null);
-			ensureSorted(targetIndices);
-			return IndexUtils.lastIndex(targetIndices);
+			return Stream.of(sourceIndices)
+					.mapToLong(set -> IndexUtils.max(lookup0(set)))
+					.max()
+					.orElse(UNSET_LONG);
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, long, RequestSettings)
 		 */
+		@SuppressWarnings("boxing")
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
-			return IcarusUtils.UNSET_LONG;
+			return signalUnsupportedMethod("No reverse lookup provided");
 		}
 
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
+		@SuppressWarnings("boxing")
 		@Override
 		public boolean find(long fromSource, long toSource,
 				IndexSet[] targetIndices, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
 			requireNonNull(targetIndices);
 			requireNonNull(collector);
-			return false;
+
+			return signalUnsupportedMethod("No reverse lookup provided");
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.mapping.RequestSettings)
+		 */
+		@Override
+		public IndexSet[] find(long fromSource, long toSource, IndexSet[] targetIndices, @Nullable RequestSettings settings)
+				throws InterruptedException {
+			requireNonNull(targetIndices);
+			return signalUnsupportedMethod("No reverse lookup provided");
 		}
 	}
 

@@ -5,16 +5,21 @@ package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
-import static de.ims.icarus2.model.api.ModelTestUtils.set;
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
+import static de.ims.icarus2.model.api.ModelTestUtils.sorted;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.count;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.merge;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
 import static de.ims.icarus2.test.TestUtils.mockDelegate;
 import static de.ims.icarus2.test.util.Pair.nullablePair;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -30,8 +35,10 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.filedriver.mapping.MappingImplFunctionOneToOne.Builder;
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
@@ -46,8 +53,11 @@ import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.BuilderTest;
+import de.ims.icarus2.util.OptionalMethodNotSupported;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 /**
  * @author Markus Gärtner
@@ -130,8 +140,9 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 				assertThat(list1.toLongArray()).containsExactly(expected);
 
 				// Reverse lookup
-				assertThat(reader.find(value, value, value, settings))
-					.as("Single reverse lookup for %d", value).isEqualTo(expected);
+				// Batch reverse lookup
+				assertThatExceptionOfType(OptionalMethodNotSupported.class)
+					.isThrownBy(() -> reader.find(value, value, value, settings));
 			}
 		}));
 	}
@@ -145,10 +156,19 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 							MappingReader reader = mapping.newReader()) {
 						RequestSettings settings = RequestSettings.none();
 
-						IndexSet set1 = set(0, 1, 2, 3, 4);
-						IndexSet set2 = set(10, 100, 999, 999_999_999);
-						IndexSet set3 = span(1000, 1300);
-						IndexSet set4 = set(rng.randomLongs(10, 0, config.valueType.maxValue()));
+						IndexSet set1 = sorted(0, 1, 2, 3, 4);
+						IndexSet set2 = sorted(10, 100, 999, 999_999_999);
+						IndexSet set3 = span(1000, 1013);
+
+						LongSet filter = new LongOpenHashSet();
+						new IndexSetMerger().add(set1, set2, set3).mergeAll(filter::add);
+
+						IndexSet set4 = sorted(rng.longs(0, config.valueType.maxValue())
+								.filter(v -> !filter.contains(v))
+								.distinct()
+								.limit(10)
+								.sorted()
+								.toArray());
 
 						IndexSet[] indices = {set1, set2, set3, set4};
 
@@ -160,12 +180,18 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 								batchFunc.apply(set4)
 						};
 
+						assertThat(count(expected)).isEqualTo(count(indices));
+
+						IndexSet merged = merge(expected);
+
+						assertThat(merged.size()).isEqualTo(count(indices));
+
 						// Batch lookup
 						assertIndicesEquals(expected, reader.lookup(indices, settings));
 
 						// Batch begin/end
-						assertThat(reader.getBeginIndex(indices, settings)).isEqualTo(firstIndex(expected));
-						assertThat(reader.getEndIndex(indices, settings)).isEqualTo(lastIndex(expected));
+						assertThat(reader.getBeginIndex(indices, settings)).isEqualTo(merged.firstIndex());
+						assertThat(reader.getEndIndex(indices, settings)).isEqualTo(merged.lastIndex());
 
 						// Batch collector
 						LongList list1 = new LongArrayList();
@@ -173,12 +199,14 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 						assertIndicesEquals(expected, list1.iterator());
 
 						// Batch reverse lookup
-						assertIndicesEquals(expected, reader.find(0, Long.MAX_VALUE, indices, settings));
+						assertThatExceptionOfType(OptionalMethodNotSupported.class)
+							.isThrownBy(() -> reader.find(0, Long.MAX_VALUE, indices, settings));
 
 						// Batch reverse collector
-						LongList list2 = new LongArrayList();
-						reader.find(0, Long.MAX_VALUE, indices, list2::add, settings);
-						assertIndicesEquals(expected, list2.iterator());
+						IndexCollector collector = mock(IndexCollector.class, CALLS_REAL_METHODS);
+						assertThatExceptionOfType(OptionalMethodNotSupported.class)
+							.isThrownBy(() -> reader.find(0, Long.MAX_VALUE, indices, collector, settings));
+						verify(collector, never()).accept(anyLong());
 					}
 
 		}));

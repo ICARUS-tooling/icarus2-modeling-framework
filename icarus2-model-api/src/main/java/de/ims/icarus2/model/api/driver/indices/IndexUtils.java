@@ -521,20 +521,36 @@ public class IndexUtils {
 		return new IndexSet[]{span(from, to)};
 	}
 
+	public static IndexSet wrapSingle(long...indices) {
+		return new ArrayIndexSet(IndexValueType.LONG, indices);
+	}
+
+	public static IndexSet wrapSingle(int...indices) {
+		return new ArrayIndexSet(IndexValueType.INTEGER, indices);
+	}
+
+	public static IndexSet wrapSingle(short...indices) {
+		return new ArrayIndexSet(IndexValueType.SHORT, indices);
+	}
+
+	public static IndexSet wrapSingle(byte...indices) {
+		return new ArrayIndexSet(IndexValueType.BYTE, indices);
+	}
+
 	public static IndexSet[] wrap(long...indices) {
-		return new IndexSet[]{new ArrayIndexSet(IndexValueType.LONG, indices)};
+		return new IndexSet[]{wrapSingle(indices)};
 	}
 
 	public static IndexSet[] wrap(int...indices) {
-		return new IndexSet[]{new ArrayIndexSet(IndexValueType.INTEGER, indices)};
+		return new IndexSet[]{wrapSingle(indices)};
 	}
 
 	public static IndexSet[] wrap(short...indices) {
-		return new IndexSet[]{new ArrayIndexSet(IndexValueType.SHORT, indices)};
+		return new IndexSet[]{wrapSingle(indices)};
 	}
 
 	public static IndexSet[] wrap(byte...indices) {
-		return new IndexSet[]{new ArrayIndexSet(IndexValueType.BYTE, indices)};
+		return new IndexSet[]{wrapSingle(indices)};
 	}
 
 	public static IndexSet[] wrap(IndexSet indices) {

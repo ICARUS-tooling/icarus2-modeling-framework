@@ -67,19 +67,14 @@ public class IndexSetMerger extends AbstractIndexSetProcessor<IndexSetMerger> {
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					"Estimated size of merged indices exceeds array limit: "+estimatedResultSize);
 
-		// Create merged stream of all the sources
-		OfLong mergedRawIterator = mergedIterator();
-
 		IndexValueType valueType = IndexUtils.getDominantType(buffer);
 
 		// Ensure enough buffer space for the case of disjoint sets
 		IndexBuffer result = new IndexBuffer(valueType, (int) estimatedResultSize);
 
-		// Filters merged input stream against duplicates
-		LongConsumer filter = filteredConsumer(result);
+		mergeAll(result);
 
-		// Collect all distinct values
-		mergedRawIterator.forEachRemaining(filter);
+		assert result.isSorted();
 
 		return result;
 	}
@@ -98,9 +93,6 @@ public class IndexSetMerger extends AbstractIndexSetProcessor<IndexSetMerger> {
 			return IndexUtils.wrap(mergeAllToSingle());
 		}
 
-		// Create merged stream of all the sources
-		OfLong mergedRawIterator = mergedIterator();
-
 		/*
 		 *  Little bit of cheap optimization here. Picking
 		 *  a small value type here can drastically reduce
@@ -114,13 +106,22 @@ public class IndexSetMerger extends AbstractIndexSetProcessor<IndexSetMerger> {
 				.inputSorted(true)
 				.create();
 
+		mergeAll(builder);
+
+		return builder.build();
+	}
+
+	public void mergeAll(LongConsumer consumer) {
+
 		// Filters merged input stream against duplicates
-		LongConsumer filter = filteredConsumer(builder);
+		LongConsumer filter = filteredConsumer(consumer);
+
+		// Create merged stream of all the sources
+		OfLong mergedRawIterator = mergedIterator();
 
 		// Collect all distinct values
 		mergedRawIterator.forEachRemaining(filter);
 
-		return builder.build();
 	}
 
 	/**

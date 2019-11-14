@@ -27,9 +27,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
-import de.ims.icarus2.model.manifest.api.MappingManifest;
-import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
-import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
@@ -105,12 +102,9 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 
 		int chunkSizeLimit = Math.max(1000, IndexUtils.maxSize(sourceIndices));
 
-		Coverage coverage = ManifestUtils.require(
-				getSource().getManifest(), MappingManifest::getCoverage, "coverage");
-
 		IndexSetBuilder builder = new IndexCollectorFactory()
 				.chunkSizeLimit(chunkSizeLimit)
-				.outputSorted(!coverage.isMonotonic())
+				.outputSorted(RequestSettings.fallback(settings).isHintSet(RequestHint.OUTPUT_ORDER_SORTED))
 				.create();
 
 		lookup(sourceIndices, builder, settings);
@@ -163,12 +157,9 @@ public interface MappingReader extends SynchronizedAccessor<Mapping> {
 			@Nullable RequestSettings settings) throws InterruptedException {
 		requireNonNull(targetIndices);
 
-		Coverage coverage = ManifestUtils.require(
-				getSource().getManifest(), MappingManifest::getCoverage, "coverage");
-
 		IndexSetBuilder builder = new IndexCollectorFactory()
 				.chunkSizeLimit(IndexUtils.maxSize(targetIndices))
-				.outputSorted(!coverage.isMonotonic())
+				.outputSorted(RequestSettings.fallback(settings).isHintSet(RequestHint.OUTPUT_ORDER_SORTED))
 				.create();
 
 		find(fromSource, toSource, targetIndices, builder, settings);
