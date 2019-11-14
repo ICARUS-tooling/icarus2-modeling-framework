@@ -182,6 +182,10 @@ public final class IcarusUtils {
 		return (int) Math.min(MAX_INTEGER_INDEX, value);
 	}
 
+	public static <T> T signalUnsupportedMethod(String message) {
+		throw new OptionalMethodNotSupported(message);
+	}
+
 	public static void close(Object obj) throws Exception {
 		if(obj instanceof Closeable) {
 			((Closeable)obj).close();
