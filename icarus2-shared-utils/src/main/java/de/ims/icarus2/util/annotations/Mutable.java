@@ -29,7 +29,7 @@ import java.util.HashMap;
 
 /**
  * Marker annotation to signal that a class implements the
- * {@link #hashCode()} and {@link Mutable#equals(Object)}
+ * {@link #hashCode()} and {@link Object#equals(Object)}
  * methods in a way that they rely on mutable internal data.
  * This makes instances of that class unsuitable for being
  * used in hash-based data structures such as {@link HashMap}

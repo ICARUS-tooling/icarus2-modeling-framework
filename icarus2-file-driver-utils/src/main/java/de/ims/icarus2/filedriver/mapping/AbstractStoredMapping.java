@@ -141,19 +141,49 @@ public abstract class AbstractStoredMapping<H extends Header>
 		}
 
 		/**
+		 * Allows subclasses to perform actions or acquire resources before the
+		 * actual {@link #begin()} work is done.
+		 */
+		protected void beginHook() {
+			//no -op
+		}
+
+		/**
+		 * Calls {@link #beginHook()} and then uses the associated {@link ReadWriteAccessor}
+		 * to acquire the actual lock. Note that in case the {@link #beginHook()} calls fails
+		 * the lock will never be acquired!
+		 *
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#begin()
 		 */
 		@Override
 		public final void begin() {
+			beginHook();
 			delegateAccessor.begin();
 		}
 
 		/**
+		 * Allows subclasses to perform actions or release resources after the
+		 * actual {@link #end()} work is done.
+		 */
+		protected void endHook() {
+			//no -op
+		}
+
+		/**
+		 * Releases the lock held by the associated {@link ReadWriteAccessor} and then
+		 * allows subclasses to perform cleanup work in the {@link #endHook()} method.
+		 * Note that {@link #endHook()} will be called even if the internal lock release
+		 * fails, potentially suppressing an exception.
+		 *
 		 * @see de.ims.icarus2.model.api.io.SynchronizedAccessor#end()
 		 */
 		@Override
 		public final void end() {
-			delegateAccessor.end();
+			try {
+				delegateAccessor.end();
+			} finally {
+				endHook();
+			}
 		}
 
 		/**

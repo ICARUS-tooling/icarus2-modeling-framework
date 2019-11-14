@@ -27,9 +27,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Documented
-@Retention(SOURCE)
-@Target({METHOD,TYPE})
 /**
  * Marks types or methods that are mainly intended for use by the
  * ICARUS2 framework itself, but which are publicly available.
@@ -42,6 +39,9 @@ import java.lang.annotation.Target;
  * @author Markus Gärtner
  *
  */
+@Documented
+@Retention(SOURCE)
+@Target({METHOD,TYPE})
 public @interface Internal {
 
 	// marker annotation

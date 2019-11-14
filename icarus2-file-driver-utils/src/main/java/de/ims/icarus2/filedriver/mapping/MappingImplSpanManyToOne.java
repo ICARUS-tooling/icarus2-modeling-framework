@@ -24,7 +24,10 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.signalUnsupportedMethod;
 import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Api;
@@ -47,7 +50,6 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.OptionalMethodNotSupported;
 import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
@@ -83,7 +85,8 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 	private final int groupPower;
 	private final int blockPower;
 	private final int blockMask;
-	private final int entriesPerBlock;
+	private final int entriesPerGroup;
+	private final int groupsPerBlock;
 
 	private final Mapping inverseMapping;
 
@@ -92,8 +95,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 
 		blockPower = builder.getBlockPower();
 		blockMask = builder.getBlockMask();
-		entriesPerBlock = builder.getEntriesPerBlock();
+		groupsPerBlock = builder.getGroupsPerBlock();
 		groupPower = builder.getGroupPower();
+		entriesPerGroup = builder.getEntriesPerGroup();
 		inverseMapping = builder.getInverseMapping();
 		blockStorage = builder.getBlockStorage();
 	}
@@ -103,32 +107,24 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		sb.add("groupPower", groupPower)
 		.add("blockPower", blockPower)
 		.add("blockMask", blockMask)
-		.add("entriesPerBlock", entriesPerBlock)
+		.add("groupsPerBlock", groupsPerBlock)
 		.add("blockStorage", blockStorage);
-	}
-
-	public int getBlockPower() {
-		return blockPower;
 	}
 
 	public IndexBlockStorage getBlockStorage() {
 		return blockStorage;
 	}
 
-	public int getGroupPower() {
-		return groupPower;
-	}
-
 	public Mapping getInverseMapping() {
 		return inverseMapping;
 	}
 
-	public int getBlockMask() {
-		return blockMask;
+	public int getEntriesPerBlock() {
+		return groupsPerBlock;
 	}
 
-	public int getEntriesPerBlock() {
-		return entriesPerBlock;
+	public int getEntriesPerGroup() {
+		return entriesPerGroup;
 	}
 
 	/**
@@ -188,10 +184,26 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 				inverseMapping.getManifest(), MappingManifest::getCoverage, "coverage");
 
 		/**
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.ResourceAccessor#beginHook()
+		 */
+		@Override
+		protected void beginHook() {
+			inverseReader.begin();
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractStoredMapping.ResourceAccessor#endHook()
+		 */
+		@Override
+		protected void endHook() {
+			inverseReader.end();
+		}
+
+		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getIndicesCount(long, de.ims.icarus2.model.api.driver.mapping.RequestSettings)
 		 */
 		@Override
-		public long getIndicesCount(long sourceIndex, RequestSettings settings)
+		public long getIndicesCount(long sourceIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
 			return 1L;
 		}
@@ -219,7 +231,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			long toTarget = blockStorage.getSpanEnd(block.getData(), localIndex);
 
 			// Delegate to inverse reader for interval search
-			return inverseReader.find(fromTarget, toTarget, sourceIndex, null);
+			return inverseReader.find(fromTarget, toTarget, sourceIndex, RequestSettings.none());
 		}
 
 		/**
@@ -227,8 +239,10 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings)
+		public boolean lookup(long sourceIndex, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(collector);
+
 			long result = lookup0(sourceIndex);
 
 			if(result!=IcarusUtils.UNSET_LONG) {
@@ -242,7 +256,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, RequestSettings)
 		 */
 		@Override
-		public IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws ModelException,
+		public IndexSet[] lookup(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
 			return wrap(lookup0(sourceIndex));
 		}
@@ -251,7 +265,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(long sourceIndex, RequestSettings settings) throws ModelException,
+		public long getBeginIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
 			return lookup0(sourceIndex);
 		}
@@ -260,7 +274,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(long sourceIndex, RequestSettings settings) throws ModelException,
+		public long getEndIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
 			return lookup0(sourceIndex);
 		}
@@ -270,8 +284,10 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
+		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+			requireNonNull(collector);
 			ensureSorted(sourceIndices, settings);
 
 			boolean result = false;
@@ -361,8 +377,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
+		public long getBeginIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
 
 			// Optimized handling of monotonic inverseCoverage: use only first source index
 			if(inverseCoverage.isMonotonic()) {
@@ -386,8 +403,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
+		public long getEndIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
 			ensureSorted(sourceIndices, settings);
 
 			// Optimized handling of monotonic inverseCoverage: use only last source index
@@ -411,68 +429,23 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		/**
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, long, RequestSettings)
 		 */
+		@SuppressWarnings("boxing")
 		@Override
-		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
+		public long find(long fromSource, long toSource, long targetIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
-			throw new OptionalMethodNotSupported(
-					"FIND operation not supported since inverse reader is used");
-
-//			long spanBegin = inverseReader.getBeginIndex(targetIndex);
-//			long spanEnd = inverseReader.getEndIndex(targetIndex);
-//
-//			// If span is outside our window, treat it as UNSET_LONG result
-//			if(spanBegin==UNSET_LONG || spanEnd==UNSET_LONG
-//					|| spanBegin>toSource || spanEnd<fromSource) {
-//				return UNSET_LONG;
-//			}
-//
-//			return spanBegin;
+			return signalUnsupportedMethod("FIND operation not supported since inverse reader is used");
 		}
 
 		/**
 		 * @return
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
+		@SuppressWarnings("boxing")
 		@Override
 		public boolean find(long fromSource, long toSource,
-				IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings)
+				IndexSet[] targetIndices, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
-			throw new OptionalMethodNotSupported(
-					"FIND operation not supported since inverse reader is used");
-
-//			boolean result = false;
-//
-//			if(inverseCoverage.isMonotonic()) {
-//				/*
-//				 * Fetch the area covered by targetIndices and shrink it
-//				 * to be inside the defined search space (fromSource, toSource).
-//				 * If the remaining span is non-empty, report it to the collector.
-//				 *
-//				 * FIXME: this could potentially lead to an overestimate of index values
-//				 * being reported, since we have no direct way to check whether the original
-//				 * source indices formed a continuous collection of spans!
-//				 *
-//				 * EDIT: above warning only applies to source index collections that are
-//				 * not 'total'
-//				 */
-//
-//				long spanBegin = inverseReader.getBeginIndex(firstIndex(targetIndices));
-//				long spanEnd = inverseReader.getEndIndex(lastIndex(targetIndices));
-//
-//				if(spanBegin!=UNSET_LONG && spanEnd!=UNSET_LONG) {
-//					fromSource = Math.max(fromSource, spanBegin);
-//					toSource = Math.min(toSource, spanEnd);
-//
-//					if(fromSource<=toSource) {
-//						collector.add(fromSource, toSource);
-//						result = true;
-//					}
-//				}
-//			} else {
-//				//TODO expensive iterating!!!
-//			}
-//
-//			return result;
+			return signalUnsupportedMethod("FIND operation not supported since inverse reader is used");
 		}
 
 	}
@@ -560,6 +533,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 
 		@Override
 		public void map(IndexSet sourceIndices, IndexSet targetIndices) {
+			requireNonNull(sourceIndices);
+			requireNonNull(targetIndices);
+
 			if(targetIndices.size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to single index values");
 			if(!isContinuous(sourceIndices))
@@ -571,6 +547,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 
 		@Override
 		public void map(IndexSet[] sourceIndices, IndexSet[] targetIndices) {
+			requireNonNull(sourceIndices);
+			requireNonNull(targetIndices);
+
 			if(targetIndices.length>1 || targetIndices[0].size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to single index values");
 			if(!isContinuous(sourceIndices))
@@ -646,8 +625,12 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			return (1<<getBlockPower())-1;
 		}
 
-		public int getEntriesPerBlock() {
+		public int getGroupsPerBlock() {
 			return (1<<getBlockPower());
+		}
+
+		public int getEntriesPerGroup() {
+			return (1<<getGroupPower());
 		}
 
 		/**
@@ -656,7 +639,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		@Override
 		public BufferedIOResource createBufferedIOResource() {
 			IndexBlockStorage blockStorage = getBlockStorage();
-			int bytesPerBlock = getEntriesPerBlock()*blockStorage.spanSize();
+			int bytesPerBlock = getGroupsPerBlock()*blockStorage.spanSize();
 			PayloadConverter payloadConverter = new SpanConverter(blockStorage);
 
 			return BufferedIOResource.builder()

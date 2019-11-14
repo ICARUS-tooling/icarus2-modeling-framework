@@ -30,15 +30,15 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Documented
-@Retention(SOURCE)
-@Target({ TYPE, FIELD, METHOD, PARAMETER, LOCAL_VARIABLE })
 /**
  *  Marker annotation to signal that something is not (currently) in use
  *
  * @author Markus Gärtner
  *
  */
+@Documented
+@Retention(SOURCE)
+@Target({ TYPE, FIELD, METHOD, PARAMETER, LOCAL_VARIABLE })
 public @interface Unused {
 	// Marker annotation
 }
