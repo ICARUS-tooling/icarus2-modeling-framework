@@ -105,7 +105,7 @@ class IndexCollectorFactoryTest {
 	 *
 	 * Set to {@code ~131 k}
 	 */
-	private static final int MAX_TEST_SIZE = 1<<6; // 1<<17
+	private static final int MAX_TEST_SIZE = 1<<17; // 1<<17
 
 	private static final int CYCLES = RUNS;
 
