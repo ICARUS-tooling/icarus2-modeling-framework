@@ -32,6 +32,7 @@ import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.apiguard.Guarded;
 import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.apiguard.Mandatory;
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
@@ -51,7 +52,6 @@ import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
  *

@@ -23,8 +23,8 @@ import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.util.AccessMode;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
  * Models abstract access to an arbitrary byte storage that can be connected to

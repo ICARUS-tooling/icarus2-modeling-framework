@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 import javax.swing.event.ChangeListener;
 
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -45,7 +46,6 @@ import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.access.AccessControl;
 import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 

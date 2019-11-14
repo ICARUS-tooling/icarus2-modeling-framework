@@ -14,15 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.util.annotations;
+package de.ims.icarus2.apiguard;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import de.ims.icarus2.util.OptionalMethodNotSupported;
 
 /**
  * Empty marker interface to signal that implementing a method

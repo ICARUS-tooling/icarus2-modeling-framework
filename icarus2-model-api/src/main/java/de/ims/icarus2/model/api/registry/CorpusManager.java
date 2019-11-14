@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -32,7 +33,6 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.util.AccumulatingException;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.io.resource.ResourceProvider;
 

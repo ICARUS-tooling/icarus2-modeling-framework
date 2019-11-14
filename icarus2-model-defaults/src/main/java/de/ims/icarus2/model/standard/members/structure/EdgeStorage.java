@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -23,7 +24,6 @@ import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.members.structure.StructureEditVerifier;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.util.Recyclable;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**

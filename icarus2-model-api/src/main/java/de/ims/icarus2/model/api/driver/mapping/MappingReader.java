@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import javax.annotation.Nullable;
 
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
@@ -27,7 +28,6 @@ import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
 import de.ims.icarus2.model.api.io.SynchronizedAccessor;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
  * Models the read access to an {@link Mapping} implementation. Note that all

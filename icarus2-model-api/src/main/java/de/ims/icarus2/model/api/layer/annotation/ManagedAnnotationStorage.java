@@ -16,10 +16,10 @@
  */
 package de.ims.icarus2.model.api.layer.annotation;
 
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.util.Part;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 
 /**
  * Extends the basic {@code AnnotationStorage} by means of managing the

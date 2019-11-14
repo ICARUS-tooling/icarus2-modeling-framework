@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -34,7 +35,6 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.util.stream.ModelStreams;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.annotations.Internal;
-import de.ims.icarus2.util.annotations.OptionalMethod;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 
 /**
