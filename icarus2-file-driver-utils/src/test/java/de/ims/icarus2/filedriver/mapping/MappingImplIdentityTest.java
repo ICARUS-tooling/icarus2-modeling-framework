@@ -3,7 +3,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
+import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
@@ -86,6 +86,9 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			LongStream random = rng.longs(10, 0, config.valueType.maxValue());
 
 			for(long value : LongStream.concat(fixed, random).toArray()) {
+				assertThat(reader.getIndicesCount(value, settings))
+					.as("Single map size for %d", value).isEqualTo(1);
+
 				IndexSet[] indices = reader.lookup(value, settings);
 				// Single lookup
 				assertThat(indices).hasSize(1)
@@ -123,7 +126,7 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			IndexSet[] indices = {set1, set2, set3};
 
 			// Batch lookup
-			assertIndicesEquals(indices, reader.lookup(indices, settings));
+			assertIndicesEqualsExact(indices, reader.lookup(indices, settings));
 
 			// Batch begin/end
 			assertThat(reader.getBeginIndex(indices, settings)).isEqualTo(firstIndex(indices));
@@ -132,15 +135,15 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			// Batch collector
 			LongList list1 = new LongArrayList();
 			reader.lookup(indices, list1::add, settings);
-			assertIndicesEquals(indices, list1.iterator());
+			assertIndicesEqualsExact(indices, list1.iterator());
 
 			// Batch reverse lookup
-			assertIndicesEquals(indices, reader.find(0, Long.MAX_VALUE, indices, settings));
+			assertIndicesEqualsExact(indices, reader.find(0, Long.MAX_VALUE, indices, settings));
 
 			// Batch reverse collector
 			LongList list2 = new LongArrayList();
 			reader.find(0, Long.MAX_VALUE, indices, list2::add, settings);
-			assertIndicesEquals(indices, list2.iterator());
+			assertIndicesEqualsExact(indices, list2.iterator());
 		});
 	}
 
