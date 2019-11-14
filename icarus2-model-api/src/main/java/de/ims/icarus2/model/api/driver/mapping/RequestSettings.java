@@ -16,7 +16,10 @@
  */
 package de.ims.icarus2.model.api.driver.mapping;
 
+import java.util.Collections;
 import java.util.EnumSet;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.util.Options;
 
@@ -45,13 +48,13 @@ public class RequestSettings extends Options {
 		}
 
 		@Override
-		public void setHint(RequestHint hint) {
-			// no-op
+		public RequestSettings setHint(RequestHint hint) {
+			return this;
 		}
 
 		@Override
-		public void removeHint(RequestHint hint) {
-			// no-op
+		public RequestSettings removeHint(RequestHint hint) {
+			return this;
 		}
 	};
 
@@ -59,18 +62,43 @@ public class RequestSettings extends Options {
 		return emptySettings;
 	}
 
-	public void setHint(RequestHint hint) {
+	public static RequestSettings fallback(@Nullable RequestSettings settings) {
+		return settings==null ? emptySettings : settings;
+	}
+
+	public static RequestSettings settings() {
+		return new RequestSettings();
+	}
+
+	public static RequestSettings withHints(RequestHint...hints) {
+		return settings().setHints(hints);
+	}
+
+	public RequestSettings setHint(RequestHint hint) {
 		if(hints==null) {
 			hints = EnumSet.noneOf(RequestHint.class);
 		}
 
 		hints.add(hint);
+
+		return this;
 	}
 
-	public void removeHint(RequestHint hint) {
+	public RequestSettings setHints(RequestHint...newHints) {
+		if(hints==null) {
+			hints = EnumSet.noneOf(RequestHint.class);
+		}
+
+		Collections.addAll(hints, newHints);
+
+		return this;
+	}
+
+	public RequestSettings removeHint(RequestHint hint) {
 		if(hints!=null) {
 			hints.remove(hint);
 		}
+		return this;
 	}
 
 	public boolean isHintSet(RequestHint hint) {

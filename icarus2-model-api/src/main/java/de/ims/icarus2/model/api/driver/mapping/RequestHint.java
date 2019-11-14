@@ -50,8 +50,13 @@ public enum RequestHint implements Flag {
 	INPUT_ORDER_SORTED,
 
 	/**
+	 * Signals that the output data is expected to be sorted.
+	 */
+	OUTPUT_ORDER_SORTED,
+
+	/**
 	 * Signals that a mapping should not throw an exception when encountering
-	 * indices that it has no entries for, but instead simply omitt them.
+	 * indices that it has no entries for, but instead simply omit them.
 	 */
 	IGNORE_UNKNOWN_INDICES,
 	;
