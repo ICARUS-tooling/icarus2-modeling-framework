@@ -50,7 +50,10 @@ public class ArrayIndexSet implements IndexSet {
 
 	private final Object indices;
 	private final IndexValueType valueType;
-	private final int fromIndex, toIndex;
+	/** Begin of the section to be used for this set, inclusive */
+	private final int fromIndex;
+	/** Begin of the section to be used for this set, inclusive */
+	private final int toIndex;
 
 	private boolean sorted = false;
 
@@ -117,7 +120,7 @@ public class ArrayIndexSet implements IndexSet {
 	@Override
 	public boolean sort() {
 		if(!sorted) {
-			valueType.sort(indices, fromIndex, toIndex);
+			valueType.sort(indices, fromIndex, toIndex+1);
 			sorted = true;
 		}
 		return true;
