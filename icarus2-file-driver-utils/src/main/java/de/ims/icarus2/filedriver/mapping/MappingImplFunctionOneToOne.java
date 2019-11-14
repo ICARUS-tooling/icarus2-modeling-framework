@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.ensureSorted;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -64,9 +65,14 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		batchFunction = builder.getBatchFunction();
 	}
 
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mapping.Mapping#newReader()
-	 */
+	public UnaryOperator<IndexSet> getBatchFunction() {
+		return batchFunction;
+	}
+
+	public LongUnaryOperator getUnaryFunction() {
+		return unaryFunction;
+	}
+
 	@Override
 	public MappingReader newReader() {
 		return this.new Reader();
@@ -141,8 +147,10 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(long sourceIndex, IndexCollector collector, RequestSettings settings)
+		public boolean lookup(long sourceIndex, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(collector);
+
 			long index = lookup0(sourceIndex);
 
 			if(index==IcarusUtils.UNSET_LONG) {
@@ -157,7 +165,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(long, RequestSettings)
 		 */
 		@Override
-		public IndexSet[] lookup(long sourceIndex, RequestSettings settings) throws ModelException,
+		public IndexSet[] lookup(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
 			return IndexUtils.wrap(lookup0(sourceIndex));
 		}
@@ -166,7 +174,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(long sourceIndex, RequestSettings settings) throws ModelException,
+		public long getBeginIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
 			return lookup0(sourceIndex);
 		}
@@ -175,7 +183,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(long, RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(long sourceIndex, RequestSettings settings) throws ModelException,
+		public long getEndIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
 			return lookup0(sourceIndex);
 		}
@@ -184,8 +192,10 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#lookup(de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.indices.IndexCollector, RequestSettings)
 		 */
 		@Override
-		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, RequestSettings settings)
+		public boolean lookup(IndexSet[] sourceIndices, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
+			requireNonNull(collector);
 
 			for(IndexSet set : sourceIndices) {
 				collector.add(lookup0(set));
@@ -198,8 +208,9 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getBeginIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getBeginIndex(IndexSet[] sourceIndices, RequestSettings settings)
+		public long getBeginIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
 
 			if(coverage.isMonotonic()) {
 				return lookup0(IndexUtils.firstIndex(sourceIndices));
@@ -207,6 +218,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 			// Extremely inefficient!!!
 			IndexSet[] targetIndices = lookup(sourceIndices, null);
+			ensureSorted(targetIndices);
 			return IndexUtils.firstIndex(targetIndices);
 		}
 
@@ -214,8 +226,9 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#getEndIndex(de.ims.icarus2.model.api.driver.indices.IndexSet[], RequestSettings)
 		 */
 		@Override
-		public long getEndIndex(IndexSet[] sourceIndices, RequestSettings settings)
+		public long getEndIndex(IndexSet[] sourceIndices, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(sourceIndices);
 
 			if(coverage.isMonotonic()) {
 				return lookup0(IndexUtils.lastIndex(sourceIndices));
@@ -223,6 +236,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 
 			// Extremely inefficient!!!
 			IndexSet[] targetIndices = lookup(sourceIndices, null);
+			ensureSorted(targetIndices);
 			return IndexUtils.lastIndex(targetIndices);
 		}
 
@@ -230,7 +244,7 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, long, RequestSettings)
 		 */
 		@Override
-		public long find(long fromSource, long toSource, long targetIndex, RequestSettings settings)
+		public long find(long fromSource, long toSource, long targetIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
 			return IcarusUtils.UNSET_LONG;
 		}
@@ -240,11 +254,12 @@ public class MappingImplFunctionOneToOne extends AbstractVirtualMapping {
 		 */
 		@Override
 		public boolean find(long fromSource, long toSource,
-				IndexSet[] targetIndices, IndexCollector collector, RequestSettings settings)
+				IndexSet[] targetIndices, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
+			requireNonNull(targetIndices);
+			requireNonNull(collector);
 			return false;
 		}
-
 	}
 
 	/**
