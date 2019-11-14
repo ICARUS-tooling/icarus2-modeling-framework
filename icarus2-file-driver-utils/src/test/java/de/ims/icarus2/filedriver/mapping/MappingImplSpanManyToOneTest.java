@@ -3,12 +3,14 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.EMPTY;
 import static de.ims.icarus2.test.TestUtils.mockDelegate;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,18 +27,24 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.apiguard.OptionalMethodNotSupported;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
 import de.ims.icarus2.filedriver.io.RUBlockCache;
 import de.ims.icarus2.filedriver.io.UnlimitedBlockCache;
 import de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne.Builder;
 import de.ims.icarus2.filedriver.mapping.StoredMappingTest.AbstractConfig;
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
+import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
+import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriterTest;
+import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.driver.mapping.WritableMappingTest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
@@ -168,6 +176,109 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 	private static ConfigImpl basicConfig() {
 		return config(IndexValueType.INTEGER, 4, 4,
 				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
+	}
+
+	private void writeMapping(MappingImplSpanManyToOne mapping,
+			int sourceFrom, int sourceTo, int targetIndex) {
+		// Our mapping
+		try(MappingWriter writer = mapping.newWriter()) {
+			writer.begin();
+			try {
+				writer.map(sourceFrom, sourceTo, targetIndex, targetIndex);
+			} finally {
+				writer.end();
+			}
+		}
+
+		// Inverse mapping
+		try(MappingWriter writer = ((WritableMapping)mapping.getInverseMapping()).newWriter()) {
+			writer.begin();
+			try {
+				writer.map(targetIndex, targetIndex, sourceFrom, sourceTo);
+			} finally {
+				writer.end();
+			}
+		}
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"0, 0,  0",
+		"0, 1,  0",
+		"4, 20, 1",
+		"2,  5, 6",
+		"12345678, 234567890, 10",
+	})
+	void testSingleSpan(int sourceFrom, int sourceTo, int targetIndex) throws Exception {
+		for(Coverage coverage : Coverage.values()) {
+			ConfigImpl config = basicConfig();
+			config.prepareManifest(coverage);
+
+			try(MappingImplSpanManyToOne mapping = config.create()) {
+				writeMapping(mapping, sourceFrom, sourceTo, targetIndex);
+
+				try(MappingReader reader = mapping.newReader()) {
+					reader.begin();
+					try {
+						RequestSettings settings = RequestSettings.none();
+
+						assertThat(reader.getIndicesCount(sourceFrom, settings))
+							.as("Span length for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+							.isEqualTo(1);
+						assertThat(reader.getIndicesCount(sourceFrom, settings))
+							.as("Span length for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+							.isEqualTo(1);
+
+						assertThat(reader.getBeginIndex(sourceFrom, settings))
+							.as("Begin index for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+							.isEqualTo(targetIndex);
+						assertThat(reader.getBeginIndex(sourceFrom, settings))
+							.as("Begin index for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+							.isEqualTo(targetIndex);
+
+						assertThat(reader.getEndIndex(sourceFrom, settings))
+							.as("End index for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+							.isEqualTo(targetIndex);
+						assertThat(reader.getEndIndex(sourceFrom, settings))
+							.as("End index for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+							.isEqualTo(targetIndex);
+					} finally {
+						reader.end();
+					}
+				}
+			}
+		}
+	}
+
+	@Test
+	void testSearch() throws Exception {
+		for(Coverage coverage : Coverage.values()) {
+			ConfigImpl config = basicConfig();
+			config.prepareManifest(coverage);
+
+			try(MappingImplSpanManyToOne mapping = config.create()) {
+				try(MappingReader reader = mapping.newReader()) {
+					RequestSettings settings = RequestSettings.none();
+
+					reader.begin();
+					try {
+						assertThatExceptionOfType(OptionalMethodNotSupported.class)
+							.as("Single lookup")
+							.isThrownBy(() -> reader.find(0, Integer.MAX_VALUE, 0, settings));
+
+						assertThatExceptionOfType(OptionalMethodNotSupported.class)
+							.as("Batch lookup")
+							.isThrownBy(() -> reader.find(0, Integer.MAX_VALUE, EMPTY, settings));
+
+						assertThatExceptionOfType(OptionalMethodNotSupported.class)
+							.as("Batch collect")
+							.isThrownBy(() -> reader.find(0, Integer.MAX_VALUE, EMPTY, mock(IndexCollector.class), settings));
+					} finally {
+						reader.end();
+					}
+				}
+			}
+		}
 	}
 
 	@Nested

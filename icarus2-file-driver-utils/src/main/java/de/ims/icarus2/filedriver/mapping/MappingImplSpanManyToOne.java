@@ -166,6 +166,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		return this.new Writer();
 	}
 
+	private static final String FIND_NOT_SUPPORTED_MESSAGE =
+			"FIND operation not supported since inverse reader is used";
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -433,7 +436,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		@Override
 		public long find(long fromSource, long toSource, long targetIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
-			return signalUnsupportedMethod("FIND operation not supported since inverse reader is used");
+			return signalUnsupportedMethod(FIND_NOT_SUPPORTED_MESSAGE);
 		}
 
 		/**
@@ -445,7 +448,16 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		public boolean find(long fromSource, long toSource,
 				IndexSet[] targetIndices, IndexCollector collector, @Nullable RequestSettings settings)
 				throws InterruptedException {
-			return signalUnsupportedMethod("FIND operation not supported since inverse reader is used");
+			return signalUnsupportedMethod(FIND_NOT_SUPPORTED_MESSAGE);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.api.driver.mapping.MappingReader#find(long, long, de.ims.icarus2.model.api.driver.indices.IndexSet[], de.ims.icarus2.model.api.driver.mapping.RequestSettings)
+		 */
+		@Override
+		public IndexSet[] find(long fromSource, long toSource, IndexSet[] targetIndices, RequestSettings settings)
+				throws InterruptedException {
+			return signalUnsupportedMethod(FIND_NOT_SUPPORTED_MESSAGE);
 		}
 
 	}
