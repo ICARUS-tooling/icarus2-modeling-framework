@@ -2,6 +2,7 @@
 plugins {
 	id 'java-library'
 	id 'jacoco'
+//    id 'maven-publish' apply false
 	id 'com.github.kt3k.coveralls' version '2.8.4'
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
@@ -46,7 +47,7 @@ buildScan {
 
 subprojects {
   	apply plugin: 'java-library'
-  	//apply plugin: 'maven-publish'
+  	apply plugin: 'maven-publish'
   	apply plugin: 'checkstyle'
   	apply plugin: 'com.github.spotbugs'  		
 	apply plugin: 'com.github.hierynomus.license'
@@ -82,7 +83,7 @@ subprojects {
 		lucene
 		apiguardian
 		// default logging functionality
-		implementation.extendsFrom(slf4j, apiguardian)
+//		implementation.extendsFrom(slf4j, apiguardian)
 			
 		// TEST ENVIRONMENT
 		junit
@@ -372,6 +373,14 @@ subprojects {
 	        html.enabled true
 	    }
 	}
+	
+	// Insert license file into every Jar
+	tasks.withType(Jar) {
+		from(rootProject.projectDir) {
+			include 'LICENSE'
+			into 'META-INF'
+		}
+	}
     
 	// Bundle test classes into a jar usable for other projects
 	task testJar(type: Jar, dependsOn: testClasses) {
@@ -391,6 +400,50 @@ subprojects {
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
+	
+    publishing {
+        repositories {
+			mavenLocal()
+//            maven {
+//                name = "GitHubPackages"
+//                url = uri("https://maven.pkg.github.com/icarus-tooling/icarus2-modeling-framework")
+//                credentials {	
+//	                username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
+//	                password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
+//                }
+//            }
+        }
+        publications {
+            mavenJava(MavenPublication) {  //gpr for GitHubPackages
+                from(components.java)
+				
+				pom {
+					licenses {
+						license {
+							name = 'The Apache License, Version 2.0'
+							url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+						}
+	                }
+					developers {
+						developer {
+							id = 'mcgaerty'
+							name = 'Markus Gärtner'
+							email = 'markus.gaertner@ims.uni-stuttgart.de'
+						}
+					}
+					scm {
+						connection = 'scm:git:git://example.com/my-library.git'
+						developerConnection = 'scm:git:ssh://github.com/ICARUS-tooling/icarus2-modeling-framework.git'
+						url = 'https://github.com/ICARUS-tooling/icarus2-modeling-framework'
+					}
+					issueManagement {
+						system = 'GitHub'
+						url = 'https://github.com/ICARUS-tooling/icarus2-modeling-framework/issues'
+					}
+                }
+            }
+        }
+    }
 	
 	artifacts {
 	    tests jar, testJar, javadocJar, sourcesJar

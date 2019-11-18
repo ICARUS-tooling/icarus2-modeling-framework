@@ -9,7 +9,7 @@ dependencies {
 
 configurations {
 	// external dependencies managed by root build.gradle
-	api.extendsFrom(guava, fastutil)
+	api.extendsFrom(guava, fastutil, slf4j, apiguardian)
 	
 	implementation.extendsFrom(javapoet)
 }
