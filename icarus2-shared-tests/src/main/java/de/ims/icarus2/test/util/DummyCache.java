@@ -81,6 +81,7 @@ public class DummyCache<C extends DummyCache<C, T>, T> {
 
 		map.put(String.class, "test");
 		map.put(URL.class, TestUtils.TEST_URL);
+		map.put(Class.class, TestUtils.class);
 
 		sharedDummies = Collections.unmodifiableMap(map);
 	}

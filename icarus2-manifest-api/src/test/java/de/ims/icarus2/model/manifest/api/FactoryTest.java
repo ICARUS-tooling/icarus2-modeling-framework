@@ -19,22 +19,49 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 
+import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
+import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.GenericTest;
+import de.ims.icarus2.test.TestSettings;
+
 /**
+ * @param <F> type of the factory implementation under test
+ * @param <T> type of the result of {@link Factory#create(Class, ImplementationManifest, ImplementationLoader)}
+ *
  * @author Markus Gärtner
  *
  */
-public interface FactoryTest {
+public interface FactoryTest<F extends Factory, T> extends ApiGuardedTest<F>, GenericTest<F> {
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory#create(java.lang.Class, de.ims.icarus2.model.manifest.api.ImplementationManifest, de.ims.icarus2.model.manifest.api.ImplementationLoader)}.
+	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
-	@Test
-	default void testCreate() {
-		fail("Not yet implemented");
+	@Override
+	default F createTestInstance(TestSettings settings) {
+		return createNoArgs();
 	}
 
+
+	@Override
+	public default void testMandatoryConstructors() throws Exception {
+		// Factory MUST have working no-args constructor!
+		getTestTargetClass().newInstance();
+	}
+
+	@Test
+	default void testIncompatibleResultClass() {
+		assertThatExceptionOfType(ClassCastException.class)
+			.isThrownBy(() -> create().create(Dummy.class,
+					mock(ImplementationManifest.class),
+					mock(ImplementationLoader.class)));
+	}
+
+	class Dummy {
+		// just a dummy class for testing
+	}
 }

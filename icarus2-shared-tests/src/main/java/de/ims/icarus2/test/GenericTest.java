@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.lang.reflect.Constructor;
 
 import org.junit.jupiter.api.Test;
-import org.opentest4j.TestAbortedException;
 
 import de.ims.icarus2.test.annotations.Provider;
 
@@ -48,7 +47,7 @@ public interface GenericTest<T extends Object> extends TargetedTest<T> {
 		try {
 			return (T) getTestTargetClass().newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
-			throw new TestAbortedException("Unable to call default no-args constructor", e);
+			throw new IllegalStateException("Unable to call default no-args constructor", e);
 		}
 	}
 

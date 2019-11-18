@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.filedriver.schema;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,7 +37,6 @@ import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.schema.tabular.TableConverter;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
 import de.ims.icarus2.filedriver.schema.tabular.xml.TableSchemaXmlReader;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
@@ -60,10 +61,13 @@ public class DefaultSchemaConverterFactory implements Factory {
 	@Override
 	public <T> T create(Class<T> resultClass, ImplementationManifest manifest, ImplementationLoader<?> environment)
 			throws ClassNotFoundException, IllegalAccessException, InstantiationException, ClassCastException {
+		requireNonNull(resultClass);
+		requireNonNull(manifest);
+		requireNonNull(environment);
 
 		if(!Converter.class.isAssignableFrom(resultClass))
-			throw new ModelException(ModelErrorCode.MODEL_TYPE_MISMATCH, Messages.mismatch(
-					"Requested result class is not compatible with "+Converter.class.getName(),
+			throw new ClassCastException(Messages.mismatch(
+					"Requested result class is not compatible",
 					Converter.class, resultClass));
 
 		String schemaType = ManifestUtils.require(

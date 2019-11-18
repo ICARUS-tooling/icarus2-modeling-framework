@@ -191,6 +191,9 @@ public interface ImplementationManifest extends MemberManifest<ImplementationMan
 	 * Helper interface to delegate instantiation of new objects to a dedicated factory.
 	 * Unlike the default instantiation process, the factory way gives access to the surrounding
 	 * {@link ImplementationManifest manifest} and the active {@link ImplementationLoader loader}.
+	 * In cases where the actual implementation of an object described by an {@link ImplementationManifest}
+	 * relies on a builder as the construction process, there typically is no no-args constructor
+	 * available and a dedicated factory implementation is required to wrap the builder process.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -206,10 +209,12 @@ public interface ImplementationManifest extends MemberManifest<ImplementationMan
 		 * @param environment the currently active loader that manages the loading process and which can
 		 * provide additional information about the environment or corpus being used.
 		 * @return
-		 * @throws ClassNotFoundException
-		 * @throws IllegalAccessException
-		 * @throws InstantiationException
-		 * @throws ClassCastException
+		 * @throws ClassNotFoundException if this factory is unable to locate and/or load the desired implementation
+		 * @throws IllegalAccessException if this factory has no access to a suitable constructor of the target implementation
+		 * @throws InstantiationException if invoking the desired constructor failed
+		 * @throws ClassCastException if the specification in the supplied {@link ImplementationManifest}
+		 * yields an incompatible object or the given {@code resultClass} is not compatible with the
+		 * basic class and/or interface implied by the context.
 		 */
 		<T extends Object> T create(Class<T> resultClass, ImplementationManifest manifest, ImplementationLoader<?> environment) throws
 				ClassNotFoundException, IllegalAccessException, InstantiationException, ClassCastException;

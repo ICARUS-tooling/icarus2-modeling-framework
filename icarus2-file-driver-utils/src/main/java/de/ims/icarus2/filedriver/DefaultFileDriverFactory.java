@@ -45,6 +45,7 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.util.DefaultImplementationLoader;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.ReadOnlyStringResource;
@@ -98,6 +99,14 @@ public class DefaultFileDriverFactory implements Factory {
 	public <T> T create(Class<T> resultClass, ImplementationManifest manifest,
 			ImplementationLoader<?> loader) throws ClassNotFoundException,
 			IllegalAccessException, InstantiationException, ClassCastException {
+		requireNonNull(resultClass);
+		requireNonNull(manifest);
+		requireNonNull(loader);
+
+		if(!FileDriver.class.isAssignableFrom(resultClass))
+			throw new ClassCastException(Messages.mismatch(
+					"Requested result class is not compatible",
+					FileDriver.class, resultClass));
 
 		final DriverManifest driverManifest = ManifestUtils.requireHost(manifest);
 		final Corpus corpus = getCorpus(loader);
