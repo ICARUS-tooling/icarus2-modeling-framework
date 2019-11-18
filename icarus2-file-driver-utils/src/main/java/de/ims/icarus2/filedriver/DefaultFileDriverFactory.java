@@ -31,6 +31,7 @@ import de.ims.icarus2.filedriver.io.sets.SingletonResourceSet;
 import de.ims.icarus2.filedriver.resolver.DirectPathResolver;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
@@ -103,7 +104,7 @@ public class DefaultFileDriverFactory implements Factory {
 		requireNonNull(manifest);
 		requireNonNull(loader);
 
-		if(!FileDriver.class.isAssignableFrom(resultClass))
+		if(!Driver.class.isAssignableFrom(resultClass))
 			throw new ClassCastException(Messages.mismatch(
 					"Requested result class is not compatible",
 					FileDriver.class, resultClass));
