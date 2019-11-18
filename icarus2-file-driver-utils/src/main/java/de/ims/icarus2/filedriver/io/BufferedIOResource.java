@@ -940,8 +940,11 @@ public class BufferedIOResource implements Flushable {
 
 		private static final byte VERSION = 1;
 
-		@SuppressWarnings("unused")
 		private static final int USED_SIZE = Byte.BYTES+5*Long.BYTES;
+
+		static {
+			assert USED_SIZE<=RESERVED_SIZE;
+		}
 
 		/** Number of entries */
 		private long size = 0;
@@ -992,8 +995,11 @@ public class BufferedIOResource implements Flushable {
 		public long getLargestTargetIndex() { return target.getMax(); }
 
 		// UPDATE RANGES
+		/** Update range of used source indices */
 		public void updateUsedIndex(long value) { used.update(value); }
+		/** Update range of used target indices */
 		public void updateTargetIndex(long value) { target.update(value); }
+		/** Increase size by {@code 1} */
 		public void growSize() { size++; }
 
 		// CHECK USAGE
@@ -1001,6 +1007,7 @@ public class BufferedIOResource implements Flushable {
 		public boolean isUsedTarget(long value) { return target.contains(value); }
 
 		// FETCH LIMITED RANGES
+		/** Calculates and returns the intersection of given span and stored range of soruce indices */
 		public Range getUsedIndices(long fromIndex, long toIndex) {
 			Range range = new Range().set(fromIndex, toIndex);
 			range.limit(used);

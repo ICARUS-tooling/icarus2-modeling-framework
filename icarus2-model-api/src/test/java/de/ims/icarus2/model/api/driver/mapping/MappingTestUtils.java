@@ -271,11 +271,11 @@ public class MappingTestUtils {
 
 		switch (coverage) {
 		case PARTIAL: return list(
-				triple(1, 4, 7),
+				triple(1, 6, 7),
 				triple(11, 2, 5),
 				triple(99, 33, 66),
-				triple(66, 4, 6),
-				triple(2, 0, 99)
+				triple(66, 14, 16),
+				triple(2, 67, 99)
 			);
 		case TOTAL: return list(
 				triple(0, 2, 6),
@@ -360,11 +360,167 @@ public class MappingTestUtils {
 		}
 	}
 
-	public void extractMapping(List<Pair<Integer, Integer>> entries, int[] sources, int[] targets) {
+	//TODO produce mapping sequences and verifications
+
+	public static List<Triple<Integer, Integer, Integer>> fixedNto1SpanMappings(Coverage coverage) {
+		return revert1ToN(fixed1toNSpanMappings(coverage));
+	}
+
+	/**
+	 *
+	 * @param rng source of randomness
+	 * @param coverage type of mapping
+	 * @param count the size of the mapping
+	 * @param source the source index space (inclusive, exclusive)
+	 * @param target the target index space (inclusive, exclusive)
+	 * @return
+	 */
+	public static Stream<Pair<String,List<Triple<Integer, Integer, Integer>>>> randomNto1SpanMappings(
+			RandomGenerator rng, Coverage coverage, int count,
+			Pair<Integer, Integer> source, Pair<Integer, Integer> target) {
+		return random1toNSpanMappings(rng, coverage, count, source, target)
+				.map(pEntries -> pair(pEntries.first, revert1ToN(pEntries.second)));
+	}
+
+	public static void extractMapping(List<Pair<Integer, Integer>> entries, int[] sources, int[] targets) {
 		for (int i = 0; i < sources.length; i++) {
 			sources[i] = entries.get(i).first.intValue();
 			targets[i] = entries.get(i).second.intValue();
 		}
+	}
+
+	public static List<Triple<Integer, Integer, Integer>> revert1ToN(List<Triple<Integer, Integer, Integer>> entries) {
+		return entries.stream()
+				.map(t -> triple(t.second, t.third, t.first))
+				.collect(Collectors.toList());
+	}
+
+	public static <M extends WritableMapping, N extends Number> void assert1toNSpanMapping(M mapping,
+					List<Triple<N, N, N>> entries) throws Exception	{
+			assert !entries.isEmpty() : "test data is empty";
+
+			try(MappingWriter writer = mapping.newWriter()) {
+				writer.begin();
+				try {
+					// write all mappings
+					entries.forEach(p -> writer.map(
+							p.first.intValue(), p.first.intValue(),
+							p.second.intValue(), p.third.intValue()));
+				} finally {
+					writer.end();
+				}
+			}
+
+			// DEBUG
+	//		System.out.println(entries);
+
+			try(MappingReader reader = mapping.newReader()) {
+				reader.begin();
+				try {
+					assert1toNSpanMappings(reader, entries);
+				} finally {
+					reader.end();
+				}
+			}
+		}
+
+	static <N extends Number> void assert1toNSpanMappings(MappingReader reader, List<Triple<N, N, N>> entries) throws InterruptedException {
+		// run sequential read and assert (source -> target)
+		for(Triple<N, N, N> entry : entries) {
+			assert1toNSpanMapping(reader, entry);
+		}
+
+		// do some real bulk lookups and searches
+
+	}
+
+	static <N extends Number> void assert1toNSpanMapping(MappingReader reader, Triple<N, N, N> entry) throws InterruptedException {
+		RequestSettings settings = RequestSettings.none();
+		int source = entry.first.intValue();
+		int targetFrom = entry.second.intValue();
+		int targetTo = entry.third.intValue();
+		int span = strictToInt(targetTo-targetFrom+1);
+		long[] values = LongStream.rangeClosed(targetFrom, targetTo).toArray();
+		IndexSet indices = IndexUtils.span(targetFrom, targetTo);
+
+		// Size queries
+		assertThat(reader.getIndicesCount(source, settings))
+			.as("Indices count of %s", entry).isEqualTo(span);
+
+		// Single-value lookups
+		assertThat(reader.getBeginIndex(source, settings))
+			.as("Begin index of %s", entry).isEqualTo(targetFrom);
+		assertThat(reader.getEndIndex(source, settings))
+			.as("End index of %s", entry).isEqualTo(targetTo);
+
+		// Bulk lookups
+		IndexSet[] indices1 = reader.lookup(source, settings);
+		assertThat(indices1)
+			.as("Bulk lookup (single source) of %s", entry)
+			.hasSize(1).doesNotContainNull();
+		assertIndicesEquals(indices, indices1[0]);
+
+		IndexSet[] indices2 = reader.lookup(wrap(source), settings);
+		assertThat(indices2)
+			.as("Bulk lookup of %s", entry)
+			.hasSize(1).doesNotContainNull();
+		assertIndicesEquals(indices, indices2[0]);
+
+		// Collector tests
+		LongList valueBuffer1 = new LongArrayList();
+		assertThat(reader.lookup(source, valueBuffer1::add, settings))
+			.as("Collector lookup (single source) of %s", entry).isTrue();
+		assertThat(valueBuffer1.toLongArray())
+			.as("Target mismatch of %s", entry)
+			.hasSize(span).containsExactly(values);
+
+		LongList valueBuffer2 = new LongArrayList();
+		assertThat(reader.lookup(wrap(source), valueBuffer2::add, settings))
+			.as("Collector lookup (bulk source) of %s", entry).isTrue();
+		assertThat(valueBuffer2.toLongArray())
+			.as("Target mismatch of %s", entry)
+			.hasSize(span).containsExactly(values);
+
+		// Bulk span boundaries
+		assertThat(reader.getBeginIndex(wrap(source), settings))
+			.as("Span begin (bulk source) of %s", entry).isEqualTo(targetFrom);
+		assertThat(reader.getEndIndex(wrap(source), settings))
+			.as("Span end (bulk source) of %s", entry).isEqualTo(targetTo);
+
+		// Reverse lookup (explicit source range)
+		assertThat(reader.find(source, source, targetFrom, settings))
+			.as("Single reverse lookup (explicit, begin) of %s", entry).isEqualTo(source);
+		assertThat(reader.find(source, source, wrap(targetFrom), settings))
+			.as("Bulk reverse lookup (explicit, begin) of %s", entry)
+			.hasSize(1).allMatch(matcher(source));
+		assertThat(reader.find(source, source, targetTo, settings))
+			.as("Single reverse lookup (explicit, end) of %s", entry).isEqualTo(source);
+		assertThat(reader.find(source, source, wrap(targetTo), settings))
+			.as("Bulk reverse lookup (explicit, end) of %s", entry)
+			.hasSize(1).allMatch(matcher(source));
+
+		// Reverse lookup (unbounded source range)
+		assertThat(reader.find(Math.max(0, source-1), source, targetFrom, settings))
+			.as("Single reverse lookup (open, begin) of %s", entry).isEqualTo(source);
+		assertThat(reader.find(Math.max(0, source-1), source, wrap(targetFrom), settings))
+			.as("Bulk reverse lookup (open, begin) of %s", entry)
+			.hasSize(1).allMatch(matcher(source));
+		assertThat(reader.find(Math.max(0, source-1), source, targetTo, settings))
+			.as("Single reverse lookup (open, end) of %s", entry).isEqualTo(source);
+		assertThat(reader.find(Math.max(0, source-1), source, wrap(targetTo), settings))
+			.as("Bulk reverse lookup (open, end) of %s", entry)
+			.hasSize(1).allMatch(matcher(source));
+
+		assertThat(reader.find(source, Integer.MAX_VALUE, targetFrom, settings))
+			.as("Single reverse lookup (unbounded, begin) of %s", entry).isEqualTo(source);
+		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(targetFrom), settings))
+			.as("Bulk reverse lookup (unbounded, begin) of %s", entry)
+			.hasSize(1).allMatch(matcher(source));
+		assertThat(reader.find(source, Integer.MAX_VALUE, targetTo, settings))
+			.as("Single reverse lookup (unbounded, end) of %s", entry).isEqualTo(source);
+		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(targetTo), settings))
+			.as("Bulk reverse lookup (unbounded, end) of %s", entry)
+			.hasSize(1).allMatch(matcher(source));
 	}
 
 	public static <M extends WritableMapping, N extends Number> void assert1to1Mapping(M mapping,
@@ -470,131 +626,173 @@ public class MappingTestUtils {
 			.hasSize(1).allMatch(matcher(source));
 	}
 
-	public static <M extends WritableMapping, N extends Number> void assert1toNSpanMapping(M mapping,
-					List<Triple<N, N, N>> entries, RandomGenerator rng) throws Exception	{
-			assert !entries.isEmpty() : "test data is empty";
+	public static <M extends WritableMapping, N extends Number> void assertNto1SpanMapping(M mapping,
+				List<Triple<N, N, N>> entries) throws Exception	{
+		assert !entries.isEmpty() : "test data is empty";
 
-			try(MappingWriter writer = mapping.newWriter()) {
-				writer.begin();
-				try {
-					// write all mappings
-					entries.forEach(p -> writer.map(
-							p.first.intValue(), p.first.intValue(),
-							p.second.intValue(), p.third.intValue()));
-				} finally {
-					writer.end();
-				}
+		writeNto1Mappings(mapping, entries);
+
+		// DEBUG
+//		System.out.println(entries);
+
+		try(MappingReader reader = mapping.newReader()) {
+			reader.begin();
+			try {
+				assertNto1SpanMappings(reader, entries);
+			} finally {
+				reader.end();
 			}
+		}
+	}
 
-			// DEBUG
-	//		System.out.println(entries);
-
-			try(MappingReader reader = mapping.newReader()) {
-				reader.begin();
-				try {
-					assert1tNSpanMappings(reader, entries);
-				} finally {
-					reader.end();
-				}
+	public static <N extends Number> void writeNto1Mapping(
+			WritableMapping mapping, int sourceFrom, int sourceTo, int targetIndex) {
+		// Our mapping
+		try(MappingWriter writer = mapping.newWriter()) {
+			writer.begin();
+			try {
+				writer.map(sourceFrom, sourceTo, targetIndex, targetIndex);
+			} finally {
+				writer.end();
 			}
 		}
 
-	static <N extends Number> void assert1tNSpanMappings(MappingReader reader, List<Triple<N, N, N>> entries) throws InterruptedException {
+		if(!(mapping instanceof ReverseMapping)) {
+			return;
+		}
+
+		Mapping inverseMapping = ((ReverseMapping)mapping).getInverseMapping();
+		assertThat(inverseMapping)
+			.isNotNull()
+			.isInstanceOf(WritableMapping.class);
+
+		// Inverse mapping
+		try(MappingWriter writer = ((WritableMapping)inverseMapping).newWriter()) {
+			writer.begin();
+			try {
+				writer.map(targetIndex, targetIndex, sourceFrom, sourceTo);
+			} finally {
+				writer.end();
+			}
+		}
+	}
+
+	public static <N extends Number> void writeNto1Mappings(
+			WritableMapping mapping, List<Triple<N, N, N>> entries) {
+		// Our mapping
+		try(MappingWriter writer = mapping.newWriter()) {
+			writer.begin();
+			try {
+				entries.forEach(p -> writer.map(
+						p.first.intValue(), p.second.intValue(),
+						p.third.intValue(), p.third.intValue()));
+			} finally {
+				writer.end();
+			}
+		}
+
+		if(!(mapping instanceof ReverseMapping)) {
+			return;
+		}
+
+		Mapping inverseMapping = ((ReverseMapping)mapping).getInverseMapping();
+		assertThat(inverseMapping)
+			.isNotNull()
+			.isInstanceOf(WritableMapping.class);
+
+		// Inverse mapping
+		try(MappingWriter writer = ((WritableMapping)inverseMapping).newWriter()) {
+			writer.begin();
+			try {
+				entries.forEach(p -> writer.map(
+						p.third.intValue(), p.third.intValue(),
+						p.first.intValue(), p.second.intValue()));
+			} finally {
+				writer.end();
+			}
+		}
+	}
+
+	static <N extends Number> void assertNto1SpanMappings(MappingReader reader, List<Triple<N, N, N>> entries) throws InterruptedException {
 		// run sequential read and assert (source -> target)
 		for(Triple<N, N, N> entry : entries) {
-			assert1toNSpanMapping(reader, entry);
+			assertNto1SpanMapping(reader, entry);
 		}
 
 		// do some real bulk lookups and searches
 
 	}
 
-	static <N extends Number> void assert1toNSpanMapping(MappingReader reader, Triple<N, N, N> entry) throws InterruptedException {
+	static <N extends Number> void assertNto1SpanMapping(MappingReader reader, Triple<N, N, N> entry) throws InterruptedException {
 		RequestSettings settings = RequestSettings.none();
-		int source = entry.first.intValue();
-		int targetFrom = entry.second.intValue();
-		int targetTo = entry.third.intValue();
-		int span = strictToInt(targetTo-targetFrom+1);
-		long[] values = LongStream.rangeClosed(targetFrom, targetTo).toArray();
-		IndexSet indices = IndexUtils.span(targetFrom, targetTo);
+		int sourceFrom = entry.first.intValue();
+		int sourceTo = entry.second.intValue();
+		int target = entry.third.intValue();
 
 		// Size queries
-		assertThat(reader.getIndicesCount(source, settings))
-			.as("Indices count of %s", entry).isEqualTo(span);
+		assertThat(reader.getIndicesCount(sourceFrom, settings))
+			.as("Indices count of begin of %s", entry).isEqualTo(1);
+		assertThat(reader.getIndicesCount(sourceTo, settings))
+			.as("Indices count of end of %s", entry).isEqualTo(1);
 
 		// Single-value lookups
-		assertThat(reader.getBeginIndex(source, settings))
-			.as("Begin index of %s", entry).isEqualTo(targetFrom);
-		assertThat(reader.getEndIndex(source, settings))
-			.as("End index of %s", entry).isEqualTo(targetTo);
+		assertThat(reader.getBeginIndex(sourceFrom, settings))
+			.as("Begin index of begin of %s", entry).isEqualTo(target);
+		assertThat(reader.getEndIndex(sourceFrom, settings))
+			.as("End index of begin of %s", entry).isEqualTo(target);
+		assertThat(reader.getBeginIndex(sourceTo, settings))
+			.as("Begin index of end of %s", entry).isEqualTo(target);
+		assertThat(reader.getEndIndex(sourceTo, settings))
+			.as("End index of end of %s", entry).isEqualTo(target);
 
 		// Bulk lookups
-		IndexSet[] indices1 = reader.lookup(source, settings);
-		assertThat(indices1)
-			.as("Bulk lookup (single source) of %s", entry)
-			.hasSize(1).doesNotContainNull();
-		assertIndicesEquals(indices, indices1[0]);
-
-		IndexSet[] indices2 = reader.lookup(wrap(source), settings);
-		assertThat(indices2)
-			.as("Bulk lookup of %s", entry)
-			.hasSize(1).doesNotContainNull();
-		assertIndicesEquals(indices, indices2[0]);
+		assertThat(reader.lookup(sourceFrom, settings))
+			.as("Bulk lookup (single source) of begin of %s", entry)
+			.hasSize(1)
+			.allMatch(matcher(target));
+		assertThat(reader.lookup(sourceTo, settings))
+			.as("Bulk lookup (single source) of end of %s", entry)
+			.hasSize(1)
+			.allMatch(matcher(target));
 
 		// Collector tests
-		LongList valueBuffer1 = new LongArrayList();
-		assertThat(reader.lookup(source, valueBuffer1::add, settings))
-			.as("Collector lookup (single source) of %s", entry).isTrue();
-		assertThat(valueBuffer1.toLongArray())
-			.hasSize(span)
-			.as("Target mismatch of %s", entry).containsExactly(values);
+		List<Long> valueBuffer1 = new LongArrayList();
+		assertThat(reader.lookup(sourceFrom, valueBuffer1::add, settings))
+			.as("Collector lookup (single source) of begin of %s", entry).isTrue();
+		assertThat(valueBuffer1)
+			.as("Target mismatch of begin of %s", entry)
+			.hasSize(1).containsExactly(Long.valueOf(target));
 
-		LongList valueBuffer2 = new LongArrayList();
-		assertThat(reader.lookup(wrap(source), valueBuffer2::add, settings))
-			.as("Collector lookup (bulk source) of %s", entry).isTrue();
-		assertThat(valueBuffer2.toLongArray())
-			.hasSize(span)
-			.as("Target mismatch of %s", entry).containsExactly(values);
+		List<Long> valueBuffer2 = new LongArrayList();
+		assertThat(reader.lookup(sourceTo, valueBuffer2::add, settings))
+			.as("Collector lookup (single source) of end of %s", entry).isTrue();
+		assertThat(valueBuffer2)
+			.as("Target mismatch of end of %s", entry)
+			.hasSize(1).containsExactly(Long.valueOf(target));
+
+		List<Long> valueBuffer3 = new LongArrayList();
+		assertThat(reader.lookup(wrap(sourceFrom), valueBuffer3::add, settings))
+			.as("Collector lookup (bulk source) of begin of %s", entry).isTrue();
+		assertThat(valueBuffer3)
+			.as("Target mismatch of begin of %s", entry)
+			.hasSize(1).containsExactly(Long.valueOf(target));
+
+		List<Long> valueBuffer4 = new LongArrayList();
+		assertThat(reader.lookup(wrap(sourceTo), valueBuffer4::add, settings))
+			.as("Collector lookup (bulk source) of end of %s", entry).isTrue();
+		assertThat(valueBuffer4)
+			.as("Target mismatch of end of %s", entry)
+			.hasSize(1).containsExactly(Long.valueOf(target));
 
 		// Bulk span boundaries
-		assertThat(reader.getBeginIndex(wrap(source), settings))
-			.as("Span begin (bulk source) of %s", entry).isEqualTo(targetFrom);
-		assertThat(reader.getEndIndex(wrap(source), settings))
-			.as("Span end (bulk source) of %s", entry).isEqualTo(targetTo);
+		assertThat(reader.getBeginIndex(wrap(sourceFrom), settings))
+			.as("Span begin (bulk source) of begin of %s", entry).isEqualTo(target);
+		assertThat(reader.getEndIndex(wrap(sourceFrom), settings))
+			.as("Span end (bulk source) of begin of %s", entry).isEqualTo(target);
 
-		// Reverse lookup (explicit source range)
-		assertThat(reader.find(source, source, targetFrom, settings))
-			.as("Single reverse lookup (explicit, begin) of %s", entry).isEqualTo(source);
-		assertThat(reader.find(source, source, wrap(targetFrom), settings))
-			.as("Bulk reverse lookup (explicit, begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
-		assertThat(reader.find(source, source, targetTo, settings))
-			.as("Single reverse lookup (explicit, end) of %s", entry).isEqualTo(source);
-		assertThat(reader.find(source, source, wrap(targetTo), settings))
-			.as("Bulk reverse lookup (explicit, end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
-
-		// Reverse lookup (unbounded source range)
-		assertThat(reader.find(Math.max(0, source-1), source, targetFrom, settings))
-			.as("Single reverse lookup (open, begin) of %s", entry).isEqualTo(source);
-		assertThat(reader.find(Math.max(0, source-1), source, wrap(targetFrom), settings))
-			.as("Bulk reverse lookup (open, begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
-		assertThat(reader.find(Math.max(0, source-1), source, targetTo, settings))
-			.as("Single reverse lookup (open, end) of %s", entry).isEqualTo(source);
-		assertThat(reader.find(Math.max(0, source-1), source, wrap(targetTo), settings))
-			.as("Bulk reverse lookup (open, end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
-
-		assertThat(reader.find(source, Integer.MAX_VALUE, targetFrom, settings))
-			.as("Single reverse lookup (unbounded, begin) of %s", entry).isEqualTo(source);
-		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(targetFrom), settings))
-			.as("Bulk reverse lookup (unbounded, begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
-		assertThat(reader.find(source, Integer.MAX_VALUE, targetTo, settings))
-			.as("Single reverse lookup (unbounded, end) of %s", entry).isEqualTo(source);
-		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(targetTo), settings))
-			.as("Bulk reverse lookup (unbounded, end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+		assertThat(reader.getBeginIndex(wrap(sourceTo), settings))
+			.as("Span begin (bulk source) of end of %s", entry).isEqualTo(target);
+		assertThat(reader.getEndIndex(wrap(sourceTo), settings))
+			.as("Span end (bulk source) of end of %s", entry).isEqualTo(target);
 	}
 }

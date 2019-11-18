@@ -3,7 +3,9 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.EMPTY;
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.TestUtils.mockDelegate;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
@@ -11,6 +13,7 @@ import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,11 +41,14 @@ import de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne.Builder;
 import de.ims.icarus2.filedriver.mapping.StoredMappingTest.AbstractConfig;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
-import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
+import de.ims.icarus2.model.api.driver.mapping.MappingTestUtils;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriterTest;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
@@ -52,10 +58,13 @@ import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 /**
  * @author Markus Gärtner
@@ -173,32 +182,135 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 				.build();
 	}
 
+	@TestFactory
+	Stream<DynamicNode> testReadNTo1SpanFixed() {
+		return configurations().map(config -> dynamicContainer(config.label,
+				coverages().map(coverage -> dynamicTest(coverage.name(), () -> {
+					config.prepareManifest(coverage);
+					List<Triple<Integer, Integer, Integer>> entries = MappingTestUtils.fixedNto1SpanMappings(coverage);
+
+					try(MappingImplSpanManyToOne mapping = config.create()) {
+						MappingTestUtils.assertNto1SpanMapping(mapping, entries);
+					}
+				}))));
+	}
+
+	@TestFactory
+	@RandomizedTest
+	Stream<DynamicNode> testReadNTo1SpanRandom(RandomGenerator rng) {
+		return configurations().map(config -> dynamicContainer(config.label,
+				// grab a couple values for every test variable (reasonably exhaust value space)
+				coverages().flatMap(coverage ->
+				MappingTestUtils.testableSizes(config.valueType).boxed().flatMap(count ->  //1, 10, min(1000,type.max)
+				IntStream.of(1).boxed().flatMap(multiplier ->  //1, 2, 4
+				// create randomized sequences of mappings
+				MappingTestUtils.randomNto1SpanMappings(rng, coverage, count.intValue(),
+						MappingTestUtils.randRange(rng, config.valueType, count.intValue(), multiplier.intValue()),
+						MappingTestUtils.randSpanRange(rng, config.valueType, count.intValue(), multiplier.intValue())).map(data ->
+						// test each sequence in isolation
+						dynamicTest(String.format("cov=%s count=%d mult=%d mode=%s",
+								coverage, count, multiplier, data.first), () -> {
+									config.prepareManifest(coverage);
+									List<Triple<Integer, Integer, Integer>> entries = data.second;
+
+									try(MappingImplSpanManyToOne mapping = config.create()) {
+										MappingTestUtils.assertNto1SpanMapping(mapping, entries);
+									}
+						})))))));
+	}
+
+	/** Create a config for LRU cache and INTEGER type */
 	private static ConfigImpl basicConfig() {
 		return config(IndexValueType.INTEGER, 4, 4,
 				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
 	}
 
-	private void writeMapping(MappingImplSpanManyToOne mapping,
-			int sourceFrom, int sourceTo, int targetIndex) {
-		// Our mapping
-		try(MappingWriter writer = mapping.newWriter()) {
-			writer.begin();
-			try {
-				writer.map(sourceFrom, sourceTo, targetIndex, targetIndex);
-			} finally {
-				writer.end();
-			}
-		}
+//	private void writeMapping(MappingImplSpanManyToOne mapping,
+//			int sourceFrom, int sourceTo, int targetIndex) {
+//		// Our mapping
+//		try(MappingWriter writer = mapping.newWriter()) {
+//			writer.begin();
+//			try {
+//				writer.map(sourceFrom, sourceTo, targetIndex, targetIndex);
+//			} finally {
+//				writer.end();
+//			}
+//		}
+//
+//		// Inverse mapping
+//		try(MappingWriter writer = ((WritableMapping)mapping.getInverseMapping()).newWriter()) {
+//			writer.begin();
+//			try {
+//				writer.map(targetIndex, targetIndex, sourceFrom, sourceTo);
+//			} finally {
+//				writer.end();
+//			}
+//		}
+//	}
 
-		// Inverse mapping
-		try(MappingWriter writer = ((WritableMapping)mapping.getInverseMapping()).newWriter()) {
-			writer.begin();
-			try {
-				writer.map(targetIndex, targetIndex, sourceFrom, sourceTo);
-			} finally {
-				writer.end();
-			}
-		}
+	private void assertSpan(MappingReader reader, int sourceFrom, int sourceTo, int targetIndex) throws  Exception{
+		RequestSettings settings = RequestSettings.none();
+
+		assertThat(reader.getIndicesCount(sourceFrom, settings))
+			.as("Span length for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isEqualTo(1);
+		assertThat(reader.getIndicesCount(sourceFrom, settings))
+			.as("Span length for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isEqualTo(1);
+
+		assertThat(reader.getBeginIndex(sourceFrom, settings))
+			.as("Begin index for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isEqualTo(targetIndex);
+		assertThat(reader.getBeginIndex(sourceFrom, settings))
+			.as("Begin index for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isEqualTo(targetIndex);
+
+		assertThat(reader.getEndIndex(sourceFrom, settings))
+			.as("End index for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isEqualTo(targetIndex);
+		assertThat(reader.getEndIndex(sourceFrom, settings))
+			.as("End index for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isEqualTo(targetIndex);
+
+		assertThat(reader.lookup(sourceFrom, settings))
+			.as("Lookup for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.hasSize(1)
+			.allMatch(matcher(targetIndex));
+		List<Long> collector1 = new LongArrayList();
+		assertThat(reader.lookup(sourceFrom, collector1::add, settings))
+			.as("Collector for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isTrue();
+		assertThat(collector1).hasSize(1).containsExactly(Long.valueOf(targetIndex));
+
+		assertThat(reader.lookup(sourceTo, settings))
+			.as("Lookup for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.hasSize(1)
+			.allMatch(matcher(targetIndex));
+		List<Long> collector2 = new LongArrayList();
+		assertThat(reader.lookup(sourceTo, collector2::add, settings))
+			.as("Collector for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isTrue();
+		assertThat(collector2).hasSize(1).containsExactly(Long.valueOf(targetIndex));
+
+		assertThat(reader.lookup(wrap(sourceFrom), settings))
+			.as("Batch lookup for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.hasSize(1)
+			.allMatch(matcher(targetIndex));
+		List<Long> collector3 = new LongArrayList();
+		assertThat(reader.lookup(wrap(sourceFrom), collector3::add, settings))
+			.as("Batch collector for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isTrue();
+		assertThat(collector3).hasSize(1).containsExactly(Long.valueOf(targetIndex));
+
+		assertThat(reader.lookup(wrap(sourceTo), settings))
+			.as("Batch lookup for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.hasSize(1)
+			.allMatch(matcher(targetIndex));
+		List<Long> collector4 = new LongArrayList();
+		assertThat(reader.lookup(wrap(sourceTo), collector4::add, settings))
+			.as("Batch collector for end of %s", triple(sourceFrom, sourceTo, targetIndex))
+			.isTrue();
+		assertThat(collector4).hasSize(1).containsExactly(Long.valueOf(targetIndex));
 	}
 
 	@ParameterizedTest
@@ -215,33 +327,12 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 			config.prepareManifest(coverage);
 
 			try(MappingImplSpanManyToOne mapping = config.create()) {
-				writeMapping(mapping, sourceFrom, sourceTo, targetIndex);
+				MappingTestUtils.writeNto1Mapping(mapping, sourceFrom, sourceTo, targetIndex);
 
 				try(MappingReader reader = mapping.newReader()) {
 					reader.begin();
 					try {
-						RequestSettings settings = RequestSettings.none();
-
-						assertThat(reader.getIndicesCount(sourceFrom, settings))
-							.as("Span length for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
-							.isEqualTo(1);
-						assertThat(reader.getIndicesCount(sourceFrom, settings))
-							.as("Span length for end of %s", triple(sourceFrom, sourceTo, targetIndex))
-							.isEqualTo(1);
-
-						assertThat(reader.getBeginIndex(sourceFrom, settings))
-							.as("Begin index for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
-							.isEqualTo(targetIndex);
-						assertThat(reader.getBeginIndex(sourceFrom, settings))
-							.as("Begin index for end of %s", triple(sourceFrom, sourceTo, targetIndex))
-							.isEqualTo(targetIndex);
-
-						assertThat(reader.getEndIndex(sourceFrom, settings))
-							.as("End index for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
-							.isEqualTo(targetIndex);
-						assertThat(reader.getEndIndex(sourceFrom, settings))
-							.as("End index for end of %s", triple(sourceFrom, sourceTo, targetIndex))
-							.isEqualTo(targetIndex);
+						assertSpan(reader, sourceFrom, sourceTo, targetIndex);
 					} finally {
 						reader.end();
 					}
@@ -250,8 +341,45 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 		}
 	}
 
+	//TODO
+
+	@ParameterizedTest
+	@CsvSource({
+		"MONOTONIC,   0,   0,   1,   1,   3,   5", // 1 block
+		"PARTIAL,    20,   0,  10,   4,  22,  87", // some blocks at the front
+		"MONOTONIC, 500, 976, 979, 505, 985, 999", // some blocks at the very end
+		"PARTIAL,   111, 472, 521,  10, 599, 721" // intermediate blocks
+	})
+	void testMultiSpanLookup(Coverage coverage, int target1, int from1, int to1, int target2, int from2, int to2) throws Exception {
+
+		ConfigImpl config = basicConfig();
+		config.prepareManifest(coverage);
+
+		try(MappingImplSpanManyToOne mapping = config.create()) {
+			MappingTestUtils.writeNto1Mapping(mapping, from1, to1, target1);
+			MappingTestUtils.writeNto1Mapping(mapping, from2, to2, target2);
+
+			try(MappingReader reader = mapping.newReader()) {
+				reader.begin();
+				try {
+					RequestSettings settings = RequestSettings.none();
+					int span1 = to1-from1+1;
+					int span2 = to2-from2+1;
+					IndexSet[] target = new IndexSet[] {
+							IndexUtils.span(from1, to1), IndexUtils.span(from2, to2)};
+					IndexBuffer buffer = new IndexBuffer(config.valueType, span1+span2);
+
+					assertSpan(reader, from1, to1, target1);
+					assertSpan(reader, from2, to2, target2);
+				} finally {
+					reader.end();
+				}
+			}
+		}
+	}
+
 	@Test
-	void testSearch() throws Exception {
+	void testSearchNotSupported() throws Exception {
 		for(Coverage coverage : Coverage.values()) {
 			ConfigImpl config = basicConfig();
 			config.prepareManifest(coverage);

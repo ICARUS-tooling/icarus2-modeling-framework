@@ -54,6 +54,14 @@ public class SingletonIndexSet implements IndexSet {
 	}
 
 	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return IndexUtils.toString(this);
+	}
+
+	/**
 	 * @see de.ims.icarus2.model.api.driver.indices.IndexSet#size()
 	 */
 	@Override

@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
+import static de.ims.icarus2.model.api.driver.indices.IndexUtils.EMPTY;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.binarySearch;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.ensureSorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
@@ -24,6 +25,8 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.IcarusUtils.signalUnsupportedMethod;
 import static java.util.Objects.requireNonNull;
 
@@ -45,6 +48,7 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
+import de.ims.icarus2.model.api.driver.mapping.ReverseMapping;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
@@ -63,7 +67,7 @@ import de.ims.icarus2.util.strings.ToStringBuilder;
  * @author Markus Gärtner
  *
  */
-public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader> {
+public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader> implements ReverseMapping {
 
 	public static Builder builder() {
 		return new Builder();
@@ -108,6 +112,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		.add("blockPower", blockPower)
 		.add("blockMask", blockMask)
 		.add("groupsPerBlock", groupsPerBlock)
+		.add("entriesPerGroup", entriesPerGroup)
 		.add("blockStorage", blockStorage);
 	}
 
@@ -115,6 +120,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		return blockStorage;
 	}
 
+	@Override
 	public Mapping getInverseMapping() {
 		return inverseMapping;
 	}
@@ -208,7 +214,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		@Override
 		public long getIndicesCount(long sourceIndex, @Nullable RequestSettings settings)
 				throws InterruptedException {
-			return 1L;
+			return getHeader().isUsedIndex(sourceIndex) ? 1L : 0L;
 		}
 
 		/**
@@ -246,6 +252,10 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 				throws InterruptedException {
 			requireNonNull(collector);
 
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return false;
+			}
+
 			long result = lookup0(sourceIndex);
 
 			if(result!=IcarusUtils.UNSET_LONG) {
@@ -261,6 +271,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		@Override
 		public IndexSet[] lookup(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return EMPTY;
+			}
 			return wrap(lookup0(sourceIndex));
 		}
 
@@ -270,6 +283,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		@Override
 		public long getBeginIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return UNSET_LONG;
+			}
 			return lookup0(sourceIndex);
 		}
 
@@ -279,6 +295,9 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 		@Override
 		public long getEndIndex(long sourceIndex, @Nullable RequestSettings settings) throws ModelException,
 				InterruptedException {
+			if(!getHeader().isUsedIndex(sourceIndex)) {
+				return UNSET_LONG;
+			}
 			return lookup0(sourceIndex);
 		}
 
@@ -300,7 +319,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 				long beginIndex = lookup0(firstIndex(sourceIndices));
 				long endIndex = lookup0(lastIndex(sourceIndices));
 
-				if(beginIndex!=IcarusUtils.UNSET_LONG && endIndex!=IcarusUtils.UNSET_LONG) {
+				if(beginIndex!=UNSET_LONG && endIndex!=UNSET_LONG) {
 					if(beginIndex==endIndex) {
 						collector.add(beginIndex);
 					} else {
@@ -310,7 +329,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 				}
 			} else {
 				// Current source index to be resolved
-				long sourceIndex = IcarusUtils.UNSET_LONG;
+				long sourceIndex = UNSET_LONG;
 
 				long sourceLimit = lastIndex(sourceIndices);
 
@@ -326,7 +345,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 						if(doScan) {
 							index = binarySearch(set, index, size, sourceIndex);
 
-							if(index==-1) {
+							if(index==UNSET_INT) {
 								break set_loop;
 							} else if(index<0) {
 								index = -(index+1);
@@ -345,9 +364,10 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 						sourceIndex = set.indexAt(index);
 
 						long targetIndex = lookup0(sourceIndex);
-						if(targetIndex!=IcarusUtils.UNSET_LONG) {
+						if(targetIndex!=UNSET_LONG) {
 							// Report to collector
 							collector.add(targetIndex);
+							result = true;
 							/*
 							 * Skip over to next sourceIndex not covered by the span
 							 * mapped to 'targetIndex'. This is the end index of that span +1.
@@ -488,6 +508,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			if(currentFrom==-1) {
 				// New entry
 				currentFrom = currentTo = targetIndex;
+				getHeader().growSize();
 			} else {
 				// Old entry => update bounds
 				currentFrom = Math.min(currentFrom, targetIndex);
@@ -508,6 +529,10 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 						"Can only map to single index values");
 
+			SimpleHeader header = getHeader();
+			header.updateUsedIndex(sourceFrom);
+			header.updateTargetIndex(targetFrom);
+
 			long targetIndex = targetFrom;
 
 			// Source group of index
@@ -520,6 +545,8 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			if(sourceFrom==sourceTo) {
 				return;
 			}
+
+			header.updateUsedIndex(sourceTo);
 
 			// Source group of index
 			long group2 = group(sourceTo);
@@ -551,7 +578,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			if(targetIndices.size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to single index values");
 			if(!isContinuous(sourceIndices))
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans");
 
 			map(sourceIndices.firstIndex(), sourceIndices.firstIndex(),
 					targetIndices.firstIndex(), targetIndices.lastIndex());
@@ -565,7 +592,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			if(targetIndices.length>1 || targetIndices[0].size()>1)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map to single index values");
 			if(!isContinuous(sourceIndices))
-				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans"); //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans");
 
 			long targetIndex = firstIndex(targetIndices);
 			map(firstIndex(sourceIndices), lastIndex(sourceIndices), targetIndex, targetIndex);

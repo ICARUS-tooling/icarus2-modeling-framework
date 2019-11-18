@@ -121,8 +121,6 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 		return config;
 	}
 
-	//READER TESTS
-
 	@TestFactory
 	Stream<DynamicNode> testRead1To1Fixed() {
 		return configurations().map(config -> dynamicContainer(config.label,
@@ -160,8 +158,6 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 						})))))));
 	}
 
-	// WRITER TESTS
-
 	@TestFactory
 	Stream<DynamicNode> testRead1ToNSpanFixed() {
 		return configurations().map(config -> dynamicContainer(config.label,
@@ -170,7 +166,7 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 					List<Triple<Integer, Integer, Integer>> entries = MappingTestUtils.fixed1toNSpanMappings(coverage);
 
 					try(MappingImplSpanOneToMany mapping = config.create()) {
-						MappingTestUtils.assert1toNSpanMapping(mapping, entries, null);
+						MappingTestUtils.assert1toNSpanMapping(mapping, entries);
 					}
 				}))));
 	}
@@ -194,7 +190,7 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 									List<Triple<Integer, Integer, Integer>> entries = data.second;
 
 									try(MappingImplSpanOneToMany mapping = config.create()) {
-										MappingTestUtils.assert1toNSpanMapping(mapping, entries, rng);
+										MappingTestUtils.assert1toNSpanMapping(mapping, entries);
 									}
 						})))))));
 	}
