@@ -55,7 +55,7 @@ public final class SingletonResourceSet implements ResourceSet {
 
 	private void checkIndex(int resourceIndex) {
 		if(resourceIndex!=0)
-			throw new IllegalArgumentException("Invalid resource index: "+resourceIndex+" - only legal value is 0"); //$NON-NLS-1$ //$NON-NLS-2$
+			throw new IllegalArgumentException("Invalid resource index: "+resourceIndex+" - only legal value is 0");
 	}
 
 	/**
