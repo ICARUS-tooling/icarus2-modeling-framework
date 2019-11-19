@@ -1112,7 +1112,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @author Markus Gärtner
 	 *
 	 */
-	protected static class InputResolverContext implements ResolverContext, AutoCloseable {
+	public static class InputResolverContext implements ResolverContext, AutoCloseable {
 
 		private Container container;
 		private long index;

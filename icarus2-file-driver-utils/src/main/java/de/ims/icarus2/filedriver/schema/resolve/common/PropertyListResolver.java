@@ -16,9 +16,14 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve.common;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static java.util.Objects.requireNonNull;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+
+import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
@@ -76,16 +81,47 @@ public class PropertyListResolver implements Resolver {
 
 
 	/**
+	 * Used to forward the "original" request with a replacement "data" value
+	 */
+	private final ProxyContext proxyContext = new ProxyContext();
+
+
+	/**
+	 * Used as cursor when parsing the raw data sequence
+	 */
+	private final FlexibleSubSequence subSequence = new FlexibleSubSequence();
+
+	@VisibleForTesting
+	AnnotationLayer getAnnotationLayer() {
+		return annotationLayer;
+	}
+
+	@VisibleForTesting
+	String getSeparator() {
+		return separator;
+	}
+
+	@VisibleForTesting
+	char getAssignmentSymbol() {
+		return assignmentSymbol;
+	}
+
+	/**
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
+		requireNonNull(converter);
+		requireNonNull(mode);
+		requireNonNull(caches);
+		requireNonNull(options);
+
 		annotationLayer = (AnnotationLayer) options.get(ResolverOptions.LAYER);
 		if(annotationLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "No layer assigned to this resolver "+getClass());
 
 		separator = options.get(OPTION_SEPARATOR, DEFAULT_SEPARATOR);
-		separator = options.get(OPTION_ASSIGNMENT_SYMBOL, DEFAULT_ASSIGNMENT_SYMBOL);
+		assignmentSymbol = options.get(OPTION_ASSIGNMENT_SYMBOL, DEFAULT_ASSIGNMENT_SYMBOL).charAt(0);
 
 		Set<String> availableKeys = annotationLayer.getManifest().getAvailableKeys();
 		if(!availableKeys.isEmpty()) {
@@ -102,11 +138,6 @@ public class PropertyListResolver implements Resolver {
 
 		allowUnknownKeys = annotationLayer.getManifest().isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS);
 	}
-
-	/**
-	 * Used to forward the "original" request with a replacement "data" value
-	 */
-	private final ProxyContext proxyContext = new ProxyContext();
 
 	/**
 	 * Tries to get a nested {@link Resolver} for the property specified by {@code key}
@@ -132,14 +163,9 @@ public class PropertyListResolver implements Resolver {
 					"Unknown key '"+key+"' for layer "+ModelUtils.getUniqueId(annotationLayer));
 	}
 
-	/**
-	 * Used as cursor when parsing the raw data sequence
-	 */
-	private final FlexibleSubSequence subSequence = new FlexibleSubSequence();
-
 	private void parseAssignment(ResolverContext context, CharSequence data, int begin, int end) throws IcarusApiException {
 
-		int assignmentIndex = -1;
+		int assignmentIndex = UNSET_INT;
 		for(int i=begin+1; i<end;i++) {
 			if(data.charAt(i)==assignmentSymbol) {
 				assignmentIndex = i;
@@ -147,14 +173,13 @@ public class PropertyListResolver implements Resolver {
 			}
 		}
 
-		if(assignmentIndex==-1)
+		if(assignmentIndex==UNSET_INT)
 			throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
-					"Not a valid property assignment expression: "+data.toString());
+					"Not a valid property assignment expression: "+data.subSequence(begin, end+1).toString());
 
-		String key = StringUtil.toString(data, begin, assignmentIndex-1);
+		String key = StringUtil.toString(data, begin, assignmentIndex);
 		subSequence.setSource(data);
-		subSequence.setOffset(assignmentIndex+1);
-		subSequence.setLength(data.length()-assignmentIndex-1);
+		subSequence.setRange(assignmentIndex+1, end);
 
 		saveAnnotation(context, key, subSequence);
 	}
@@ -170,8 +195,8 @@ public class PropertyListResolver implements Resolver {
 
 		int begin = 0;
 		int end;
-		while((end = StringUtil.indexOf(data, separator))!=-1) {
-			parseAssignment(context, data, begin, end);
+		while((end = StringUtil.indexOf(data, separator, begin))!=-1) {
+			parseAssignment(context, data, begin, end-1);
 			begin = end+separator.length();
 		}
 
@@ -195,8 +220,10 @@ public class PropertyListResolver implements Resolver {
 		proxyContext.reset(null, null);
 		subSequence.close();
 
-		fixedPropertyResolvers.values().forEach(Resolver::close);
-		fixedPropertyResolvers.clear();
+		if(fixedPropertyResolvers!=null) {
+			fixedPropertyResolvers.values().forEach(Resolver::close);
+			fixedPropertyResolvers.clear();
+		}
 	}
 
 	private static class ProxyContext implements ResolverContext {

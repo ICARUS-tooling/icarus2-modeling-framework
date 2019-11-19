@@ -106,8 +106,6 @@ public interface AnnotationStorage {
 	 * {@code Item} and {@code key}, replacing any previously defined value.
 	 * If the {@code value} argument is {@code null} any stored annotation
 	 * for the combination of {@code item} and {@code key} will be deleted.
-	 * <p>
-	 * This is an optional method
 	 *
 	 * @param item The {@code Item} to change the annotation value for
 	 * @param key the key for which the annotation should be changed
