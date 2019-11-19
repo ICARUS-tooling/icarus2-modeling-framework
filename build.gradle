@@ -19,7 +19,7 @@ allprojects {
 	apply plugin: 'eclipse'
     apply plugin: 'jacoco'
 	
-  	group = 'icarus2'
+  	group = 'de.unistuttgart.ims.icarus2'
 	  
 	// For now all projects follow the global pre-release version (this will change with 1.0.0 !!)
   	version = '0.1.0'
