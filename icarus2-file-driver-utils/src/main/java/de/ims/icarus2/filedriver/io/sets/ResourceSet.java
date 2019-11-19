@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.filedriver.io.sets;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.ObjIntConsumer;
@@ -45,6 +47,7 @@ public interface ResourceSet {
 	IOResource getResourceAt(int resourceIndex);
 
 	default int indexOfResource(IOResource file) {
+		requireNonNull(file);
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
@@ -57,6 +60,7 @@ public interface ResourceSet {
 	}
 
 	default void forEachResource(IntConsumer action) {
+		requireNonNull(action);
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
@@ -65,6 +69,7 @@ public interface ResourceSet {
 	}
 
 	default void forEachResource(ObjIntConsumer<IOResource> action) {
+		requireNonNull(action);
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
@@ -73,6 +78,7 @@ public interface ResourceSet {
 	}
 
 	default void forEachResource(Consumer<IOResource> action) {
+		requireNonNull(action);
 		int resourceCount = getResourceCount();
 
 		for(int i=0; i<resourceCount; i++) {
