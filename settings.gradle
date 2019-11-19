@@ -15,3 +15,5 @@ include 'icarus2-model-compression'
 include 'icarus2-common-formats'
 include 'icarus2-experiments'
 include 'icarus2-examples'
+
+include 'icarus2-query-api'
