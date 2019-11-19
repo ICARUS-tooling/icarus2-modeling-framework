@@ -71,8 +71,8 @@ public class TableSchemaSerializationTest {
 			serializedForm = sw.toString();
 		}
 
-		System.out.println("--------------------------------------------");
-		System.out.println(serializedForm); //DEBUG
+//		System.out.println("--------------------------------------------");
+//		System.out.println(serializedForm); //DEBUG
 
 		try(TableSchemaXmlReader reader = new TableSchemaXmlReader()) {
 			StringReader sr = new StringReader(serializedForm);
