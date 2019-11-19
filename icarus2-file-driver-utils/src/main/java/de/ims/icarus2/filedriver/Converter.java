@@ -45,8 +45,11 @@ import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 public interface Converter extends DriverModule {
 
 	public enum ReadMode {
+		/** Input data only needs to be analyzed once, no actual in-memory storage required */
 		SCAN,
+		/** An individual chunk of data from within a single file is to be loaded */
 		CHUNK,
+		/** Reading of an entire file is desired */
 		FILE,
 		;
 	}
@@ -107,14 +110,6 @@ public interface Converter extends DriverModule {
 		return property.getDefaultValue();
 	}
 
-//	/**
-//	 * Called by the {@link FileDriver} that uses this converter.
-//	 * Meant to perform setup work and initialize internal resources.
-//	 *
-//	 * @param driver
-//	 */
-//	void init(FileDriver driver);
-
 	@Override
 	FileDriver getDriver();
 
@@ -152,15 +147,6 @@ public interface Converter extends DriverModule {
 	 * @throws IOException
 	 */
 	Cursor<?> getCursor(int fileIndex, ItemLayer layer) throws IOException, IcarusApiException;
-
-//	/**
-//	 * Releases any internal resources and most importantly disconnects from the
-//	 * {@link FileDriver driver} supplied by the previous call to {@link #init(FileDriver)}.
-//	 *
-//	 * @see java.lang.AutoCloseable#close()
-//	 */
-//	@Override
-//	public void close() throws AccumulatingException;
 
 	/**
 	 * Allows a converter implementation to decide upon what chunk indices to use.

@@ -61,6 +61,10 @@ public class Options extends HashMap<String, Object> {
 		}
 	};
 
+	public static Options none() {
+		return NONE;
+	}
+
 	public static Options of(String key, Object value) {
 		return new Options().set(key, value);
 	}
