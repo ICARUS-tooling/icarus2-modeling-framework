@@ -27,9 +27,11 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.io.resource.FileResource;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.ReadOnlyURLResource;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -43,6 +45,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ResourceSet.class)
 public class LazyResourceSet implements ResourceSet {
 
 	private final Int2ObjectMap<IOResource> resources = new Int2ObjectOpenHashMap<>();
@@ -58,9 +61,13 @@ public class LazyResourceSet implements ResourceSet {
 		this.pathResolver = pathResolver;
 	}
 
+	public PathResolver getPathResolver() {
+		return pathResolver;
+	}
+
 	@Override
 	public String toString() {
-		return getClass().getName()+"["+getResourceCount()+" resources]";
+		return ToStringBuilder.create(this).add("resources", getResourceCount()).build();
 	}
 
 	/**
@@ -81,7 +88,7 @@ public class LazyResourceSet implements ResourceSet {
 			ResourcePath resourcePath = pathResolver.getPath(resourceIndex);
 			if(resourcePath==null)
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-						"No resource available for index: "+resourceIndex); //$NON-NLS-1$
+						"No resource available for index: "+resourceIndex);
 
 			switch (resourcePath.getType()) {
 			case LOCAL:
@@ -98,8 +105,8 @@ public class LazyResourceSet implements ResourceSet {
 				break;
 
 			default:
-				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-						"Resolver returned unsupported path type: "+resourcePath);//TODO more info in exception //$NON-NLS-1$
+				throw new ModelException(GlobalErrorCode.DELEGATION_FAILED,
+						"Resolver returned unsupported path type: "+resourcePath);//TODO more info in exception
 			}
 
 			resources.put(resourceIndex, resource);

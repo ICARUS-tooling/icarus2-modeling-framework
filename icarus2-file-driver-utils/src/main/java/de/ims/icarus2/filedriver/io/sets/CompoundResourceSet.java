@@ -22,12 +22,14 @@ import static java.util.Objects.requireNonNull;
 import java.util.Arrays;
 import java.util.List;
 
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ResourceSet.class)
 public final class CompoundResourceSet implements ResourceSet {
 
 	private final ResourceSet[] resourceSets;

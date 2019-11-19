@@ -18,12 +18,14 @@ package de.ims.icarus2.filedriver.io.sets;
 
 import static java.util.Objects.requireNonNull;
 
+import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner
  *
  */
+@TestableImplementation(ResourceSet.class)
 public final class SingletonResourceSet implements ResourceSet {
 
 	private final IOResource resource;
