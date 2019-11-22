@@ -7,7 +7,8 @@ plugins {
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
 	id 'com.github.spotbugs' version '2.0.1' apply false
-	id 'net.ltgt.apt-eclipse' version "0.21"
+	id 'net.ltgt.apt-eclipse' version '0.21'
+	id 'nebula.lint' version '16.0.2'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -18,6 +19,7 @@ description = 'ICARUS 2 framework root'
 allprojects {
 	apply plugin: 'eclipse'
 	apply plugin: 'jacoco'
+	apply plugin: 'nebula.lint'
 
 	group = 'de.unistuttgart.ims.icarus2'
 
@@ -39,6 +41,11 @@ buildScan {
 	termsOfServiceAgree = 'yes'
 
 	publishAlways()
+}
+
+gradleLint {
+	// https://github.com/nebula-plugins/gradle-lint-plugin/wiki
+	rules  = ['all-dependency', 'duplicate-dependency-class']
 }
 
 subprojects {
@@ -63,9 +70,6 @@ subprojects {
 	configurations {
 	
 		// COMPILE ENVIRONMENT
-		spotbugs {
-			exclude group:'com.google.code.findbugs', module:'findbugs'
-		}
 		// default bug detection functionality
 		//TODO due to continuing bug of slf4j-api disappearing from compileClasspath when spotbugs is used we rely on the eclipse plugin instead
 		//compileOnly.extendsFrom(spotbugs)
