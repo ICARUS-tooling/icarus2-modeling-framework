@@ -1,0 +1,6 @@
+"input","description"
+"1","single digit"
+"99","multi digits"
+"123..345","range"
+"123-","upper bound"
+"123+","lower bound"

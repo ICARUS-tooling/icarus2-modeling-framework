@@ -1,0 +1,7 @@
+"input","description"
+0,"zero"
+1,"single digit"
+999,"multiple digits"
+"1_1","single intermediate underscore"
+"1__1","multiple intermediate underscores"
+"9_000_999","multiple underscores"

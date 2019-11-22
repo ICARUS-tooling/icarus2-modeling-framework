@@ -1,0 +1,5 @@
+"input","description"
+"xx","simple name"
+"@xx","variable"
+"this.is.some.loooooong.path","long path"
+"@this.is.some.loooooong.path","long path with variable start"

@@ -1,0 +1,5 @@
+"input","description"
+"-1","negative signed"
+"+1","positive signed"
+"-99_999_999","negative signed and multiple underscores"
+"+99_999_999","positive signed and multiple underscores"
