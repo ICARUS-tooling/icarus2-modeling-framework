@@ -24,7 +24,6 @@ import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.fillItems;
 import static de.ims.icarus2.model.standard.ModelDefaultsTestUtils.makeStructure;
 import static de.ims.icarus2.test.TestUtils.longRange;
 import static de.ims.icarus2.test.util.Pair.intChain;
-import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Pair.longChain;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;

@@ -39,7 +39,6 @@ import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.util.AccessMode;
-import de.ims.icarus2.util.io.resource.IOResource;
 
 /**
  * @author Markus Gärtner

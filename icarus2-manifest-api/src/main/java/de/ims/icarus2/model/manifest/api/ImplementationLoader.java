@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Constructor;
 
+import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.util.Options;
 
 /**
