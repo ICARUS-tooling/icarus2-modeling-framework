@@ -6,7 +6,7 @@ plugins {
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
-	id 'com.github.spotbugs' version '2.0.0' apply false
+	id 'com.github.spotbugs' version '2.0.1' apply false
 	id 'net.ltgt.apt-eclipse' version "0.21"
 }
 
@@ -178,7 +178,7 @@ subprojects {
 	eclipse {
 		classpath {
 			// Ensure the JMH configuration is on the eclipse classpath
-			plusConfigurations += [ project.configurations.jmhImplementation ]
+			plusConfigurations += [ configurations.jmhCompileClasspath ]
 
 			// Mark source folders in eclipse as "contains test files"
 			containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
@@ -302,16 +302,17 @@ subprojects {
 		
 		header = rootProject.file('LICENSE_HEADER')
 		
-		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml", "**/*.xsd"])
+		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml", "**/*.xsd", "**/*.g4"])
 		
 		// pakage-info.java already has a documentation header, don't need conflicts here!
 		excludes(["**/package-info.java"])
 		
 		mapping {
-			// Per default the plugin uses full javadoc style for license headers.
+			// Per default the plugin uses full 'JAVADOC_STYLE' for license headers.
 			// We prefer normal multiline comment style to distinguish it from the
 			// documentation after package and import statements.
 			java = 'SLASHSTAR_STYLE'
+			g4 = 'JAVADOC_STYLE'
 		}
 		
 	    ignoreFailures = true
@@ -327,7 +328,7 @@ subprojects {
 		logging.captureStandardOutput LogLevel.INFO // suppress "## warnings" message
 	}
     
-    // Switch checkstyle reporting to be html only
+    // Silence javadoc spam a bit
     tasks.withType(Javadoc) {
 	    classpath = sourceSets.main.compileClasspath
 		options.addBooleanOption('Xdoclint:none', true)
@@ -335,7 +336,7 @@ subprojects {
 	}
 	
 	spotbugs {
-	    toolVersion = "3.1.12"
+	    toolVersion = "4.0.0-beta4"
 	    ignoreFailures = true
 	    effort = "min"
 	    showProgress = false
