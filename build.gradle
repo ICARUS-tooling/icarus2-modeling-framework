@@ -6,7 +6,7 @@ plugins {
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
-	id 'com.github.spotbugs' version '2.0.1' apply false
+//	id 'com.github.spotbugs' version '2.0.1' apply false
 	id 'net.ltgt.apt-eclipse' version '0.21'
 	id 'nebula.lint' version '16.0.2'
 }
@@ -52,7 +52,7 @@ subprojects {
   	apply plugin: 'java-library'
   	apply plugin: 'maven-publish'
   	apply plugin: 'checkstyle'
-  	apply plugin: 'com.github.spotbugs'  		
+//  	apply plugin: 'com.github.spotbugs'  		
 	apply plugin: 'com.github.hierynomus.license'
 	apply plugin: 'com.github.johnrengelman.shadow'
 	apply plugin: 'net.ltgt.apt-eclipse'
@@ -109,9 +109,9 @@ subprojects {
 	
 		// COMPILE ENVIRONMENT
 		
-		spotbugs "net.jcip:jcip-annotations:${versions.jcip}"
-  		spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
-		spotbugs "com.github.spotbugs:spotbugs-annotations:${versions.spotbugs}"
+//		spotbugs "net.jcip:jcip-annotations:${versions.jcip}"
+//  		spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
+//		spotbugs "com.github.spotbugs:spotbugs-annotations:${versions.spotbugs}"
 		
 		// RUNTIME ENVIRONMENT
 	
@@ -339,22 +339,22 @@ subprojects {
 //		options.addStringOption('Xdoclint:none', '-quiet')
 	}
 	
-	spotbugs {
-	    toolVersion = "4.0.0-beta4"
-	    ignoreFailures = true
-	    effort = "min"
-	    showProgress = false
-	    reportLevel = "medium"
-		sourceSets = [sourceSets.main]
-	}
+//	spotbugs {
+//	    toolVersion = "4.0.0-beta4"
+//	    ignoreFailures = true
+//	    effort = "min"
+//	    showProgress = false
+//	    reportLevel = "medium"
+//		sourceSets = [sourceSets.main]
+//	}
 	
 	// Switch spotbugs reporting to be html only
-	tasks.withType(com.github.spotbugs.SpotBugsTask) {
-	    reports {
-	        xml.enabled false
-	        html.enabled true
-	    }
-	}
+//	tasks.withType(com.github.spotbugs.SpotBugsTask) {
+//	    reports {
+//	        xml.enabled false
+//	        html.enabled true
+//	    }
+//	}
 	
 	// For when we need new subprojects
     task createProjectStructure {
