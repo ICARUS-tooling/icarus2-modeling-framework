@@ -2,39 +2,35 @@
 plugins {
 	id 'java-library'
 	id 'jacoco'
-//    id 'maven-publish' apply false
 	id 'com.github.kt3k.coveralls' version '2.8.4'
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
 	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.14.0' apply false
 	id 'com.github.spotbugs' version '2.0.0' apply false
-	id 'com.gradle.build-scan' version '2.4.2'
 	id 'net.ltgt.apt-eclipse' version "0.21"
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
 apply from: 'versions.gradle'
 
+description = 'ICARUS 2 framework root'
+
 allprojects {
 	apply plugin: 'eclipse'
-    apply plugin: 'jacoco'
-	
-  	group = 'de.unistuttgart.ims.icarus2'
-	  
+	apply plugin: 'jacoco'
+
+	group = 'de.unistuttgart.ims.icarus2'
+
 	// For now all projects follow the global pre-release version (this will change with 1.0.0 !!)
-  	version = '0.1.0'
+	version = '0.1.0'
 
-  	repositories {
-    	mavenCentral()
-  	}
+	repositories { mavenCentral() }
 }
-
-description = 'ICARUS 2 framework root'
 	
 // Gradle Wrapper
 wrapper { 
 	// to upgrade wrapper: ./gradlew wrapper --distribution-type bin --gradle-version <version>
-	gradleVersion = "5.6.2" 
+	gradleVersion = "6.0.1" 
 }
 
 // Build Scan publishing
@@ -81,9 +77,9 @@ subprojects {
 		javapoet
 		xerces
 		lucene
+		antlrRuntime
 		apiguardian
 		// default logging functionality
-//		implementation.extendsFrom(slf4j, apiguardian)
 			
 		// TEST ENVIRONMENT
 		junit
@@ -102,7 +98,7 @@ subprojects {
 		tests.extendsFrom(testImplementation)
 		
 		// ensure that benchmarking has access to all needed classes
-		jmhCompile.extendsFrom(implementation, testImplementation, benchmark)
+		jmhImplementation.extendsFrom(implementation, testImplementation, benchmark)
 	}
 	  	
 	dependencies {
@@ -132,6 +128,9 @@ subprojects {
 	  
 	  	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-core
 		lucene "org.apache.lucene:lucene-core:${versions.lucene}"
+		
+		// https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
+		antlrRuntime "org.antlr:antlr4-runtime:${versions.antlr}"
 		
 		// https://github.com/apiguardian-team/apiguardian
 		apiguardian "org.apiguardian:apiguardian-api:${versions.apiguardian}"		
@@ -164,7 +163,7 @@ subprojects {
 		
 		// BENCHMARK ENVIRONMENT (JMH)
 		
-		jmhCompile project
+		jmhImplementation project
 		benchmark "org.openjdk.jmh:jmh-core:${versions.jmh}"
 		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
 		jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
@@ -179,7 +178,7 @@ subprojects {
 	eclipse {
 		classpath {
 			// Ensure the JMH configuration is on the eclipse classpath
-			plusConfigurations += [ project.configurations.jmhCompile ]
+			plusConfigurations += [ project.configurations.jmhImplementation ]
 
 			// Mark source folders in eclipse as "contains test files"
 			containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
@@ -384,7 +383,7 @@ subprojects {
     
 	// Bundle test classes into a jar usable for other projects
 	task testJar(type: Jar, dependsOn: testClasses) {
-		baseName = project.archivesBaseName
+		archiveBaseName = project.archivesBaseName
 		archiveClassifier = "test"
 	    from sourceSets.test.output
 	}
@@ -446,7 +445,8 @@ subprojects {
     }
 	
 	artifacts {
-	    tests jar, testJar, javadocJar, sourcesJar
+	    tests testJar
+	    archives jar, testJar, javadocJar, sourcesJar
 	}
 }
 

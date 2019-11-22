@@ -1,10 +1,33 @@
 
 description = 'API for querying arbitrary corpora via the ICARUS2 modeling framework'
 
+apply plugin: 'antlr'
+
 // internal dependencies
 dependencies {
  	api(project(':icarus2-model-api'))
  	
  	testImplementation(project(':icarus2-shared-tests'))
 	testImplementation project(path: ':icarus2-model-api', configuration: 'tests')
+	
+	// https://mvnrepository.com/artifact/org.antlr/antlr4
+	antlr "org.antlr:antlr4:${versions.antlr}"
+}
+
+configurations {
+	// external dependencies managed by root build.gradle
+	implementation.extendsFrom(antlrRuntime)
+}
+
+sourceSets {
+	main {
+		antlr {
+			srcDirs = ["src/main/antlr"]
+		}
+	}
+	test {
+		antlr {
+			srcDirs = ["src/test/antlr"]
+		}
+	}
 }

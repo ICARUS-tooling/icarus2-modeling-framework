@@ -21,4 +21,5 @@ ext {
 	versions.jmh = '1.21'
 	versions.jmhAp = '1.20'
 	versions.assertj = '3.11.1'
+	versions.antlr = '4.7.2'
 }
