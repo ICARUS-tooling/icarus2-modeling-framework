@@ -305,7 +305,7 @@ subprojects {
 		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml", "**/*.xsd", "**/*.g4"])
 		
 		// pakage-info.java already has a documentation header, don't need conflicts here!
-		excludes(["**/package-info.java"])
+		excludes(["**/package-info.java", "**/generated-src/*"])
 		
 		mapping {
 			// Per default the plugin uses full 'JAVADOC_STYLE' for license headers.

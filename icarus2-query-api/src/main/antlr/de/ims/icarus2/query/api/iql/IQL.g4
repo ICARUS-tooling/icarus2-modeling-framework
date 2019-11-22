@@ -25,7 +25,7 @@ grammar IQL;
  */
 
 query
-	: preambel? statement
+	: preambel? statement 
 	;
 	
 preambel
@@ -37,7 +37,7 @@ importStatement
 	;
 
 statement
- 	: selectStatement; 
+ 	: selectStatement;
 
 selectStatement
 	: FROM corpusSelection SELECT layerSelection
@@ -47,7 +47,7 @@ corpusSelection
 	: corpusSelector (COMMA corpusSelector)*
 	;
 	
-//TODO needs support for namespaces since we can't assume all corpus ids to be unique	
+//TODO needs support for namespaces since we can't assume all corpus ids to be unique
 corpusSelector
 	: Identifier identifierAssignment?
 	| StringLiteral identifierAssignment
