@@ -24,7 +24,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.util.function.Function;
 
-import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -76,7 +75,7 @@ class IQLParserTest {
 		}
 
 		parser.addErrorListener(reporter);
-		parser.setErrorHandler(new BailErrorStrategy());
+//		parser.setErrorHandler(new BailErrorStrategy());
 
 		return parser;
 	}
@@ -105,7 +104,7 @@ class IQLParserTest {
 		String matchedText = ctx.getText();
 		if(!matchedText.equals(text.trim())) {
 			reporter.offendingToken = text.substring(matchedText.length());
-			throw new RecognitionException("Some inut was ignored", parser, parser.getInputStream(), ctx);
+			throw new RecognitionException("Some input was ignored", parser, parser.getInputStream(), ctx);
 		}
 	}
 
@@ -132,13 +131,13 @@ class IQLParserTest {
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier.csv"}, numLinesToSkip=1)
-	void testSpecificQuantifer(String text, String description) {
+	void testUnsignedQuantifer(String text, String description) {
 		assertValidParse(text, description, IQLParser::unsignedQuantifier);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier_invalid.csv"}, numLinesToSkip=1)
-	void testInvalidSpecificQuantifer(String text, String offendingToken, String description) {
+	void testInvalidUnsignedQuantifer(String text, String offendingToken, String description) {
 		assertInvalidParse(text, description, offendingToken, IQLParser::unsignedQuantifier);
 	}
 
@@ -165,5 +164,11 @@ class IQLParserTest {
 	@CsvFileSource(resources={"parserTests_call.csv"}, numLinesToSkip=1)
 	void testCall(String text, String description) {
 		assertValidParse(text, description, IQLParser::call);
+	}
+
+	@ParameterizedTest(name="{1}: {0}")
+	@CsvFileSource(resources={"parserTests_versionDeclaration.csv"}, numLinesToSkip=1)
+	void testVersionDeclaration(String text, String description) {
+		assertValidParse(text, description, IQLParser::versionDeclaration);
 	}
 }

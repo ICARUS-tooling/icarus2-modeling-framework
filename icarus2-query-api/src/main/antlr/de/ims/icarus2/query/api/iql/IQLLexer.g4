@@ -14,289 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-grammar IQL;
+lexer grammar IQLLexer;
 
 @header {
 	package de.ims.icarus2.query.api.iql;
 }
-
-/**
- * Parser Rules
- */
-
-query
-	: preambel? statement 
-	;
-	
-preambel
-	: dialectDefinition? importStatement+ // here goes configuration stuff, namespace declarations, etc...
-	;
-	
-/** Primarily for future use: specify the exact IQL dialect to use */
-dialectDefinition
-	: DIALECT versionDeclaration
-	;
-	
-/** Import external extensions or script definitions, optionally renaming their namespace */
-importStatement
-	: IMPORT StringLiteral (AS Identifier)?
-	;
-
-/** Core of every query: specify what to extract */
-statement
- 	: sourceStatement selectStatement;
- 	
-sourceStatement
-	: FROM corpusSelection
-	;
-
-selectStatement
-	: SELECT layerSelection
-	;
-
-corpusSelection
-	: corpusSelector (COMMA corpusSelector)*
-	;
-	
-//TODO needs support for namespaces since we can't assume all corpus ids to be unique
-corpusSelector
-	: Identifier identifierAssignment?
-	| StringLiteral identifierAssignment
-	;
-	
-layerSelection
-	: layerSelector (COMMA layerSelector)*
-	;
-	
-layerSelector 
-	: qualifiedIdentifier (identifierAssignment | scopeDefinition)? //TODO AS PRIMARY assignment?
-	;
-	
-scopeDefinition
-	: AS SCOPE Identifier //TODO
-	;
-
-/** Allows to reassign a previously resolved (qualified) identifier to a new (shorter?) identifier */
-identifierAssignment
-	: AS Identifier
-	;
-	
-/** Addressing a layer/context or other embedded member via the identifiers of its environment */
-qualifiedIdentifier
-	: Identifier (COLONCOLON Identifier)*
-	;
-	
-/** dot-style path definition for referencing methods or attributes */
-path
-	: (variable | anyName) (DOT pathElement)*
-	;
-
-pathElement
-	: name
-	| arrayElement
-	;
-	
-arrayElement
-	: name LBRACK (arrayIndex | integerFunction ) RBRACK
-	;
-	
-variable
-	: AT name
-	;
-
-anyName
-	: prefixedName
-	| name
-	;
-	
-prefixedName
-	: DOLLAR name
-	;
-	
-name
-	: Identifier
-	;
-	
-call
-	: path LPAREN arguments? RPAREN
-	;
-	
-arguments
-	: expression ( COMMA expression )*
-	;
-	
-annotation
-	: path LBRACK StringLiteral RBRACK
-	;
-	
-valueSource
-	: literal
-	| call
-	| path
-	| annotation
-	;
-	
-relativeExpression
-	: UnsignedIntegerLiteral
-	| UnsignedFloatingPointLiteral
-	| numericalFunction
-	;
-	
-omitExpression
-	: UnsignedIntegerLiteral
-	| UnsignedFloatingPointLiteral
-	| numericalFunction
-	| StringLiteral // denoting the identifier of a random number list, to be resolved by the environment
-	;
-	
-numericalFunction
-	: call //TODO needs some tagging to ensure numerical return value
-	;
-	
-integerFunction
-	: call //TODO needs some tagging to ensure integer return value
-	;
-	
-booleanFunction
-	: call //TODO needs some tagging to ensure boolean return value
-	;
-	
-iteratorFunction
-	: call //TODO needs some tagging to ensure boolean return value
-	;
-	
-constraint
-	: (NOT | EXMARK ) constraint
-	| predicate
-	| groupAssignment
-	| loopConstraint
-	| LPAREN constraint RPAREN
-	| constraint OR constraint
-	| constraint AND constraint
-	;
-	
-loopConstraint
-	: FOREACH iterator AS variable loopControl counterList? 
-	;
-	
-loopControl
-	: ( EVEN | ODD )? ( OMIT constraint )? ( RANGE boundedRange )? ( STEP boundedRange )? loopBody
-	;
-
-loopBody
-	: DO constraint END
-	| END
-	;
-	
-boundedRange
-	: LPAREN relativeExpression COMMA relativeExpression RPAREN
-	;
-	
-counterList
-	: counter ( AND counter )*
-	;
-	
-counter
-	: COUNT constraint AS variable
-	;
-	
-iterator
-	: iteratorFunction
-	| LPAREN iteratorFunction ( COMMA iteratorFunction )* RPAREN
-	;
-	
-predicate
-	: booleanFunction
-	| binaryComparison
-	| setPredicate
-	;
-	
-binaryComparison
-	: expression binaryComparator expression
-	;
-	
-binaryComparator
-	: EQ # equals
-	| LT # less
-	| LT_EQ # lessOrEqual
-	| GT # greater
-	| GT_EQ # greatherOrEqual
-	| quantifiedBinaryComparator # quantified
-	| quantifiedBinaryComparator STAR # universal
-	;
-	
-quantifiedBinaryComparator
-	: NOT_EQ # equalsNot
-	| TILDE # matches
-	| NOT_MATCHES # matchesNot
-	| HASH # contains
-	| NOT_CONTAINS # containsNot
-	;
-	
-setPredicate
-	: expression ( NOT | EXMARK ) IN STAR? LBRACE arguments RBRACE
-	;
-
-groupAssignment
-	: expression groupSelector (LABEL StringLiteral)? (DEFAULT StringLiteral)?
-	;
-	
-groupSelector
-	: GROUPING IntegerLiteral
-	| GROUP IntegerLiteral
-	;	
-	
-expression
-	: valueSource
-	| LPAREN expression RPAREN
-	| expression expressionOperator expression
-	;
-	
-expressionOperator
-	: PLUS
-	| MINUS
-	| DIV
-	| MOD
-	| SLASH
-	| PERCENT
-	| STAR
-	| AMP
-	| CARET
-	;
-	
-literal
-	: IntegerLiteral
-	| UnsignedIntegerLiteral
-	| FloatingPointLiteral
-	| UnsignedFloatingPointLiteral
-	| StringLiteral
-	| BooleanLiteral
-	;
-	
-arrayIndex
-	: STAR
-	| signedQuantifier
-	;
-	
-quantifier
-	: STAR
-	| unsignedQuantifier ( PIPE unsignedQuantifier )*
-	| LT unsignedQuantifier ( PIPE unsignedQuantifier )* GT
-	;
-	
-unsignedQuantifier
-	: UnsignedIntegerLiteral Sign?
-	| UnsignedIntegerLiteral DOTDOT UnsignedIntegerLiteral
-	;
-	
-signedQuantifier
-	: IntegerLiteral Sign?
-	| IntegerLiteral DOTDOT IntegerLiteral
-	;
-	
-versionDeclaration
-	: 'v'? UnsignedIntegerLiteral (DOT UnsignedIntegerLiteral)? (DOT UnsignedIntegerLiteral)? Identifier? 
-	;
 
 /** 
  * Lexer Rules
@@ -319,7 +41,7 @@ LIMIT : 'LIMIT' | 'limit' ;
 ALL : 'ALL' | 'all' ;
 NOT : 'NOT' | 'not' ;
 MOD : 'MOD' | 'mod' ;
-DIV : 'DIV' | 'div' ;
+//DIV : 'DIV' | 'div' ;
 IMPORT : 'IMPORT' | 'import' ;
 LABEL : 'LABEL' | 'label' ;
 DEFAULT : 'DEFAULT' | 'default' ;
@@ -334,6 +56,56 @@ DO : 'DO' | 'do' ;
 END : 'END' | 'end' ;
 COUNT : 'COUNT' | 'count' ;
 DIALECT : 'DIALECT' | 'dialect' ;
+
+// Separators
+SCOL : ';';
+COL : ':';
+DOT : '.';
+LPAREN : '(';
+RPAREN : ')';
+LBRACE : '{';
+RBRACE : '}';
+LBRACK : '[';
+RBRACK : ']';
+COMMA : ',';
+ 
+// Operator symbols
+ASSIGN : '=';
+STAR : '*';
+PLUS : '+';
+MINUS : '-';
+TILDE : '~';
+PIPE2 : '||';
+SLASH : '/';
+PERCENT : '%';
+AMP : '&';
+CARET : '^';
+PIPE : '|';
+LT : '<';
+LT_EQ : '<=';
+GT : '>';
+GT_EQ : '>=';
+EQ : '==';
+NOT_EQ : '!=';
+NOT_MATCHES : '!~';
+NOT_CONTAINS : '!#';
+
+// Helper symbols
+AT : '@';
+DOLLAR : '$';
+HASH : '#';
+QMARK : '?';
+EXMARK : '!';
+ARROW : '=>';
+COLONCOLON : '::';
+DOTDOT : '..';
+UNDERSCORE : '_';
+//X : 'x' ;
+GROUPING : '<*>';
+
+VersionPrefix
+	: 'v'
+	;
 
 // Identifiers
 Identifier
@@ -377,7 +149,7 @@ DecimalPart
 
 fragment
 ExponentPart
-	:	ExponentIndicator SignedInteger
+	:	ExponentIndicator Sign? Digits
 	;
 
 fragment
@@ -390,15 +162,15 @@ UnsignedIntegerLiteral
 	|	NonZeroDigit (Digits? | Underscores Digits)
 	;
  
-IntegerLiteral
-	:	UnsignedIntegerLiteral
-	| 	SignedInteger
-	;
+//IntegerLiteral
+//	:	UnsignedIntegerLiteral
+//	| 	SignedInteger
+//	;
 
-fragment
-SignedInteger
-	:	Sign? Digits
-	;
+//fragment
+//SignedInteger
+//	:	Sign? Digits
+//	;
 
 Sign
 	:	[+-]
@@ -463,52 +235,6 @@ EscapeSequence
 // Ignored content
 WS : [ \t\r\n\u000C\u000B]+ -> skip;
 
-// Separators
-SCOL : ';';
-COL : ':';
-DOT : '.';
-LPAREN : '(';
-RPAREN : ')';
-LBRACE : '{';
-RBRACE : '}';
-LBRACK : '[';
-RBRACK : ']';
-COMMA : ',';
- 
-// Operator symbols
-ASSIGN : '=';
-STAR : '*';
-PLUS : '+';
-MINUS : '-';
-TILDE : '~';
-PIPE2 : '||';
-SLASH : '/';
-PERCENT : '%';
-AMP : '&';
-CARET : '^';
-PIPE : '|';
-LT : '<';
-LT_EQ : '<=';
-GT : '>';
-GT_EQ : '>=';
-EQ : '==';
-NOT_EQ : '!=';
-NOT_MATCHES : '!~';
-NOT_CONTAINS : '!#';
-
-// Helper symbols
-AT : '@';
-DOLLAR : '$';
-HASH : '#';
-QMARK : '?';
-EXMARK : '!';
-ARROW : '=>';
-COLONCOLON : '::';
-DOTDOT : '..';
-UNDERSCORE : '_';
-//X : 'x' ;
-GROUPING : '<*>';
-
 // Basic alnum symbols
 fragment LOWERCASE  : [a-z] ;
 fragment UPPERCASE  : [A-Z] ;
@@ -539,3 +265,5 @@ fragment UPPERCASE  : [A-Z] ;
 //fragment X : [xX];
 //fragment Y : [yY];
 //fragment Z : [zZ];
+
+ErrorCharacter : . ;

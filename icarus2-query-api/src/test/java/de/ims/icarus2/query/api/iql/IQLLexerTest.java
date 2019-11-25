@@ -56,11 +56,11 @@ class IQLLexerTest {
 		assertToken(text, description, IQLLexer.StringLiteral);
 	}
 
-	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"lexerTests_integerLiteral.csv"}, numLinesToSkip=1)
-	void testIntegerListerals(String text, String description) {
-		assertToken(text, description, IQLLexer.IntegerLiteral);
-	}
+//	@ParameterizedTest(name="{1}: {0}")
+//	@CsvFileSource(resources={"lexerTests_integerLiteral.csv"}, numLinesToSkip=1)
+//	void testIntegerListerals(String text, String description) {
+//		assertToken(text, description, IQLLexer.IntegerLiteral);
+//	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"lexerTests_unsignedIntegerLiteral.csv"}, numLinesToSkip=1)
