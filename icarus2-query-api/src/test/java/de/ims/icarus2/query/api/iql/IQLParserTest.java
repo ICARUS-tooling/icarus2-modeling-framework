@@ -20,22 +20,23 @@
 package de.ims.icarus2.query.api.iql;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.util.function.Function;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.ConsoleErrorListener;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
-
-import de.ims.icarus2.test.annotations.PostponedTest;
 
 /**
  * @author Markus Gärtner
@@ -75,43 +76,70 @@ class IQLParserTest {
 		}
 
 		parser.addErrorListener(reporter);
+		parser.setErrorHandler(new BailErrorStrategy());
 
 		return parser;
 	}
 
+	/**
+	 * Verifies that specified parse rule matches the given input and consumes it all.
+	 * Note that the parser skips whitespases, so do NOT test the freedom of defining
+	 * multiline queries and such with this method!!
+	 */
 	private static <C extends RuleContext> void assertValidParse(String text, String description,
 			Function<IQLParser, C> rule) {
 		IQLParser parser = parser(text, description, null);
-		assertThat(rule.apply(parser))
+		C ctx = rule.apply(parser);
+		assertThat(ctx)
 			.as("Unable to parse '%s'", text)
 			.isNotNull();
+		assertThat(ctx.getText())
+			.as("Premature end of rule for %s in '%s'", description, text)
+			.isEqualTo(text.trim());
 	}
 
-	private static <C extends RuleContext> void assertInvalidParse(
+	private static <C extends ParserRuleContext> void parseAll(String text, IQLParser parser,
+			SyntaxErrorReporter reporter, Function<IQLParser, C> rule) {
+		C ctx = rule.apply(parser); // this should/might fail
+
+		String matchedText = ctx.getText();
+		if(!matchedText.equals(text.trim())) {
+			reporter.offendingToken = text.substring(matchedText.length());
+			throw new RecognitionException("Some inut was ignored", parser, parser.getInputStream(), ctx);
+		}
+	}
+
+	private static <C extends ParserRuleContext> void assertInvalidParse(
 			String text, String description, String offendingToken,
 			Function<IQLParser, C> rule) {
 		SyntaxErrorReporter reporter = new SyntaxErrorReporter();
 		IQLParser parser = parser(text, description, reporter);
-		assertThatExceptionOfType(RecognitionException.class)
+
+		Throwable throwable = catchThrowable(() -> parseAll(text, parser, reporter, rule));
+		assertThat(throwable)
 			.as("Expected parse error for input %s", text)
-			.isThrownBy(() -> rule.apply(parser));
-		assertThat(reporter.offendingToken)
-			.as("Unexpected offending symbol")
-			.isEqualTo(offendingToken);
+			.isNotNull()
+			.isInstanceOfAny(RecognitionException.class, ParseCancellationException.class);
+
+		if(throwable instanceof RecognitionException) {
+			assertThat(reporter.offendingToken)
+				.as("Unexpected offending symbol")
+				.startsWith(offendingToken);
+		}
 	}
 
 	// ACTUAL TESTS
 
 	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"parserTests_specificQuantifier.csv"}, numLinesToSkip=1)
+	@CsvFileSource(resources={"parserTests_unsignedQuantifier.csv"}, numLinesToSkip=1)
 	void testSpecificQuantifer(String text, String description) {
-		assertValidParse(text, description, IQLParser::specificQuantifier);
+		assertValidParse(text, description, IQLParser::unsignedQuantifier);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
-	@CsvFileSource(resources={"parserTests_invalidSpecificQuantifier.csv"}, numLinesToSkip=1)
+	@CsvFileSource(resources={"parserTests_unsignedQuantifier_invalid.csv"}, numLinesToSkip=1)
 	void testInvalidSpecificQuantifer(String text, String offendingToken, String description) {
-		assertInvalidParse(text, description, offendingToken, IQLParser::specificQuantifier);
+		assertInvalidParse(text, description, offendingToken, IQLParser::unsignedQuantifier);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
@@ -126,10 +154,16 @@ class IQLParserTest {
 		assertValidParse(text, description, IQLParser::path);
 	}
 
-	@PostponedTest //TODO
+//	@PostponedTest //TODO
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
-	@CsvFileSource(resources={"parserTests_invalidPath.csv"}, numLinesToSkip=1)
+	@CsvFileSource(resources={"parserTests_path_invalid.csv"}, numLinesToSkip=1)
 	void testInvalidPath(String text, String offendingToken, String description) {
 		assertInvalidParse(text, description, offendingToken, IQLParser::path);
+	}
+
+	@ParameterizedTest(name="{1}: {0}")
+	@CsvFileSource(resources={"parserTests_call.csv"}, numLinesToSkip=1)
+	void testCall(String text, String description) {
+		assertValidParse(text, description, IQLParser::call);
 	}
 }

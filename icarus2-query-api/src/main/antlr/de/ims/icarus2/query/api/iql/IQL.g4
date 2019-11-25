@@ -29,18 +29,29 @@ query
 	;
 	
 preambel
-	: importStatement+ // here goes configuration stuff, namespace declarations, etc...
+	: dialectDefinition? importStatement+ // here goes configuration stuff, namespace declarations, etc...
 	;
 	
+/** Primarily for future use: specify the exact IQL dialect to use */
+dialectDefinition
+	: DIALECT versionDeclaration
+	;
+	
+/** Import external extensions or script definitions, optionally renaming their namespace */
 importStatement
-	: IMPORT //TODO
+	: IMPORT StringLiteral (AS Identifier)?
 	;
 
+/** Core of every query: specify what to extract */
 statement
- 	: selectStatement;
+ 	: sourceStatement selectStatement;
+ 	
+sourceStatement
+	: FROM corpusSelection
+	;
 
 selectStatement
-	: FROM corpusSelection SELECT layerSelection
+	: SELECT layerSelection
 	;
 
 corpusSelection
@@ -58,30 +69,35 @@ layerSelection
 	;
 	
 layerSelector 
-	: qualifiedIdentifier (identifierAssignment | scopeDefinition)?
+	: qualifiedIdentifier (identifierAssignment | scopeDefinition)? //TODO AS PRIMARY assignment?
 	;
 	
 scopeDefinition
-	: AS SCOPE Identifier
+	: AS SCOPE Identifier //TODO
 	;
 
-// Allows to reassign a previously resolved (qualified) identifier to a new (shorter?) identifier
+/** Allows to reassign a previously resolved (qualified) identifier to a new (shorter?) identifier */
 identifierAssignment
 	: AS Identifier
 	;
 	
-// Addressing a layer/context or other embedded member via the identifiers of its environment
+/** Addressing a layer/context or other embedded member via the identifiers of its environment */
 qualifiedIdentifier
 	: Identifier (COLONCOLON Identifier)*
 	;
 	
-// dot-style path definition for referencing methods
+/** dot-style path definition for referencing methods or attributes */
 path
 	: (variable | anyName) (DOT pathElement)*
 	;
 
 pathElement
 	: name
+	| arrayElement
+	;
+	
+arrayElement
+	: name LBRACK (arrayIndex | integerFunction ) RBRACK
 	;
 	
 variable
@@ -90,7 +106,7 @@ variable
 
 anyName
 	: prefixedName
-	| name 
+	| name
 	;
 	
 prefixedName
@@ -102,7 +118,7 @@ name
 	;
 	
 call
-	: path LPAREN arguments RPAREN
+	: path LPAREN arguments? RPAREN
 	;
 	
 arguments
@@ -150,8 +166,7 @@ iteratorFunction
 	;
 	
 constraint
-	: NOT constraint
-	| EXMARK constraint
+	: (NOT | EXMARK ) constraint
 	| predicate
 	| groupAssignment
 	| loopConstraint
@@ -165,7 +180,7 @@ loopConstraint
 	;
 	
 loopControl
-	: ( EVEN | ODD )? ( OMIT constraint )? ( RANGE range )? ( STEP range )? loopBody
+	: ( EVEN | ODD )? ( OMIT constraint )? ( RANGE boundedRange )? ( STEP boundedRange )? loopBody
 	;
 
 loopBody
@@ -173,7 +188,7 @@ loopBody
 	| END
 	;
 	
-range
+boundedRange
 	: LPAREN relativeExpression COMMA relativeExpression RPAREN
 	;
 	
@@ -258,20 +273,29 @@ literal
 	| BooleanLiteral
 	;
 	
-indexRange
-	: specificQuantifier
+arrayIndex
+	: STAR
+	| signedQuantifier
 	;
 	
 quantifier
 	: STAR
-	| specificQuantifier ( PIPE specificQuantifier )*
+	| unsignedQuantifier ( PIPE unsignedQuantifier )*
+	| LT unsignedQuantifier ( PIPE unsignedQuantifier )* GT
 	;
 	
-specificQuantifier
-	: UnsignedIntegerLiteral
-	| UnsignedIntegerLiteral PLUS
-	| UnsignedIntegerLiteral MINUS
+unsignedQuantifier
+	: UnsignedIntegerLiteral Sign?
 	| UnsignedIntegerLiteral DOTDOT UnsignedIntegerLiteral
+	;
+	
+signedQuantifier
+	: IntegerLiteral Sign?
+	| IntegerLiteral DOTDOT IntegerLiteral
+	;
+	
+versionDeclaration
+	: 'v'? UnsignedIntegerLiteral (DOT UnsignedIntegerLiteral)? (DOT UnsignedIntegerLiteral)? Identifier? 
 	;
 
 /** 
@@ -309,6 +333,7 @@ STEP : 'STEP' | 'step' ;
 DO : 'DO' | 'do' ;
 END : 'END' | 'end' ;
 COUNT : 'COUNT' | 'count' ;
+DIALECT : 'DIALECT' | 'dialect' ;
 
 // Identifiers
 Identifier
@@ -477,7 +502,7 @@ DOLLAR : '$';
 HASH : '#';
 QMARK : '?';
 EXMARK : '!';
-ARROW : '->';
+ARROW : '=>';
 COLONCOLON : '::';
 DOTDOT : '..';
 UNDERSCORE : '_';
