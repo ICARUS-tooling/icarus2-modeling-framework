@@ -1,6 +1,6 @@
 "input","invalidSymbol","description"
-"-1","-1","negative sign"
-"+1","+1","positive sign"
+"-1","-","negative sign"
+"+1","+","positive sign"
 "1..-2","-2","negative sign on range end"
 "1..+2","+2","positive sign on range end"
 "1..x","x","range end mismatch"
