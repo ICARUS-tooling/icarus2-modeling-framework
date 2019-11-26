@@ -1,0 +1,6 @@
+"input","description"
+"1","major version"
+"2.23","major.minor"
+"2.23.456","major.minor.build"
+"2.23.456alpha","major.minor.build wihth suffix"
+"2.23.456-SNAPSHOT","major.minor.build wihth linked suffix"

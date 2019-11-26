@@ -24,15 +24,18 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.util.function.Function;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.ConsoleErrorListener;
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
@@ -42,6 +45,10 @@ import org.junit.jupiter.params.provider.CsvFileSource;
  *
  */
 class IQLParserTest {
+
+	/*
+	 * gradlew.bat icarus2-query-api:generateTestGrammarSource
+	 */
 
 	/** Helper class that always throws an exception on syntax errors */
 	static class SyntaxErrorReporter extends BaseErrorListener {
@@ -59,15 +66,20 @@ class IQLParserTest {
 				throw e;
 			}
 
+			this.offendingToken = ((Token)offendingSymbol).getText();
+
+			throw new RecognitionException(msg, recognizer, recognizer.getInputStream(), ((Parser)recognizer).getContext());
+
+//			System.out.printf("%s pos=[%d,%d] offending=%s%n", msg, line, charPositionInLine, offendingSymbol);
 			// Do not throw exception if parser managed to recover
 		}
 	}
 
-	private static IQLParser parser(String text, String description, SyntaxErrorReporter reporter) {
+	private static IQL_TestParser testParser(String text, String description, SyntaxErrorReporter reporter) {
 		IQLLexer lexer = new IQLLexer(CharStreams.fromString(text, description));
 		lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
-		IQLParser parser = new IQLParser(new BufferedTokenStream(lexer));
+		IQL_TestParser parser = new IQL_TestParser(new BufferedTokenStream(lexer));
 		parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
 		if(reporter==null) {
@@ -75,19 +87,22 @@ class IQLParserTest {
 		}
 
 		parser.addErrorListener(reporter);
-//		parser.setErrorHandler(new BailErrorStrategy());
+		parser.setErrorHandler(new BailErrorStrategy());
+		parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+		parser.setProfile(true);
+		parser.setTrace(true);
 
 		return parser;
 	}
 
 	/**
 	 * Verifies that specified parse rule matches the given input and consumes it all.
-	 * Note that the parser skips whitespases, so do NOT test the freedom of defining
+	 * Note that the parser skips whitespaces, so do NOT test the freedom of defining
 	 * multiline queries and such with this method!!
 	 */
 	private static <C extends RuleContext> void assertValidParse(String text, String description,
-			Function<IQLParser, C> rule) {
-		IQLParser parser = parser(text, description, null);
+			Function<IQL_TestParser, C> rule) {
+		IQL_TestParser parser = testParser(text, description, null);
 		C ctx = rule.apply(parser);
 		assertThat(ctx)
 			.as("Unable to parse '%s'", text)
@@ -97,11 +112,13 @@ class IQLParserTest {
 			.isEqualTo(text.trim());
 	}
 
-	private static <C extends ParserRuleContext> void parseAll(String text, IQLParser parser,
-			SyntaxErrorReporter reporter, Function<IQLParser, C> rule) {
+	private static <C extends ParserRuleContext, P extends Parser> void parseAll(
+			String text, P parser,
+			SyntaxErrorReporter reporter, Function<P, C> rule) {
 		C ctx = rule.apply(parser); // this should/might fail
 
 		String matchedText = ctx.getText();
+		//TODO remove '<EOF>' from matchedText
 		if(!matchedText.equals(text.trim())) {
 			reporter.offendingToken = text.substring(matchedText.length());
 			throw new RecognitionException("Some input was ignored", parser, parser.getInputStream(), ctx);
@@ -110,9 +127,9 @@ class IQLParserTest {
 
 	private static <C extends ParserRuleContext> void assertInvalidParse(
 			String text, String description, String offendingToken,
-			Function<IQLParser, C> rule) {
+			Function<IQL_TestParser, C> rule) {
 		SyntaxErrorReporter reporter = new SyntaxErrorReporter();
-		IQLParser parser = parser(text, description, reporter);
+		IQL_TestParser parser = testParser(text, description, reporter);
 
 		Throwable throwable = catchThrowable(() -> parseAll(text, parser, reporter, rule));
 		assertThat(throwable)
@@ -130,45 +147,62 @@ class IQLParserTest {
 	// ACTUAL TESTS
 
 	@ParameterizedTest(name="{1}: {0}")
+	@CsvFileSource(resources={"parserTests_unsignedFloatingPointLiteral.csv"}, numLinesToSkip=1)
+	void testUnsignedFloatingPointLiteral(String text, String description) {
+		assertValidParse(text, description, IQL_TestParser::unsignedFloatingPointLiteralTest);
+	}
+
+	@ParameterizedTest(name="{1}: {0}")
+	@CsvFileSource(resources={"parserTests_unsignedIntegerLiteral.csv"}, numLinesToSkip=1)
+	void testUnsignedIntegerLiteral(String text, String description) {
+		assertValidParse(text, description, IQL_TestParser::unsignedIntegerLiteralTest);
+	}
+
+	@ParameterizedTest(name="{1}: {0}")
+	@CsvFileSource(resources={"parserTests_floatingPointLiteral.csv"}, numLinesToSkip=1)
+	void testFloatingPointLiteral(String text, String description) {
+		assertValidParse(text, description, IQL_TestParser::floatingPointLiteralTest);
+	}
+
+	@ParameterizedTest(name="{1}: {0}")
+	@CsvFileSource(resources={"parserTests_integerLiteral.csv"}, numLinesToSkip=1)
+	void testIntegerLiteral(String text, String description) {
+		assertValidParse(text, description, IQL_TestParser::integerLiteralTest);
+	}
+
+	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier.csv"}, numLinesToSkip=1)
 	void testUnsignedQuantifer(String text, String description) {
-		assertValidParse(text, description, IQLParser::unsignedQuantifier);
+		assertValidParse(text, description, IQL_TestParser::unsignedSimpleQuantifierTest);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier_invalid.csv"}, numLinesToSkip=1)
 	void testInvalidUnsignedQuantifer(String text, String offendingToken, String description) {
-		assertInvalidParse(text, description, offendingToken, IQLParser::unsignedQuantifier);
+		assertInvalidParse(text, description, offendingToken, IQL_TestParser::unsignedSimpleQuantifierTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_quantifier.csv"}, numLinesToSkip=1)
 	void testQuantifer(String text, String description) {
-		assertValidParse(text, description, IQLParser::quantifier);
+		assertValidParse(text, description, IQL_TestParser::quantifierTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"parserTests_path.csv"}, numLinesToSkip=1)
-	void testPath(String text, String description) {
-		assertValidParse(text, description, IQLParser::path);
+	@CsvFileSource(resources={"parserTests_expression.csv"}, numLinesToSkip=1)
+	void testExpression(String text, String description) {
+		assertValidParse(text, description, IQL_TestParser::expressionTest);
 	}
 
-//	@PostponedTest //TODO
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
-	@CsvFileSource(resources={"parserTests_path_invalid.csv"}, numLinesToSkip=1)
-	void testInvalidPath(String text, String offendingToken, String description) {
-		assertInvalidParse(text, description, offendingToken, IQLParser::path);
-	}
-
-	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"parserTests_call.csv"}, numLinesToSkip=1)
-	void testCall(String text, String description) {
-		assertValidParse(text, description, IQLParser::call);
+	@CsvFileSource(resources={"parserTests_expression_invalid.csv"}, numLinesToSkip=1)
+	void testInvalidExpression(String text, String offendingToken, String description) {
+		assertInvalidParse(text, description, offendingToken, IQL_TestParser::expressionTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_versionDeclaration.csv"}, numLinesToSkip=1)
 	void testVersionDeclaration(String text, String description) {
-		assertValidParse(text, description, IQLParser::versionDeclaration);
+		assertValidParse(text, description, IQL_TestParser::versionDeclarationTest);
 	}
 }

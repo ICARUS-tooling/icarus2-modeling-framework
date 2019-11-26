@@ -31,3 +31,10 @@ sourceSets {
 		}
 	}
 }
+
+generateTestGrammarSource {
+	doFirst {
+		println "${buildDir}/generated-src/antlr/main/de/ims/icarus2/query/api/iql".toString()
+	}
+	arguments += ["-lib", "src/main/antlr/de/ims/icarus2/query/api/iql"]
+}

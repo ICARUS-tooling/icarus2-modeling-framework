@@ -49,7 +49,7 @@ class IQLLexerTest {
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"lexerTests_stringLiteral.csv"}, numLinesToSkip=1)
-	void testStringListerals(String text, String description) {
+	void testStringListeral(String text, String description) {
 		// To keep our csv file readable, we artificially add the surrounding quotation marks here
 		text = "\""+text+"\"";
 
@@ -62,23 +62,23 @@ class IQLLexerTest {
 //		assertToken(text, description, IQLLexer.IntegerLiteral);
 //	}
 
-	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"lexerTests_unsignedIntegerLiteral.csv"}, numLinesToSkip=1)
-	void testUnsignedIntegerListerals(String text, String description) {
-		assertToken(text, description, IQLLexer.UnsignedIntegerLiteral);
-	}
-
-	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"lexerTests_floatingPointLiteral.csv"}, numLinesToSkip=1)
-	void testFloatingPointListerals(String text, String description) {
-		assertToken(text, description, IQLLexer.FloatingPointLiteral);
-	}
-
-	@ParameterizedTest(name="{1}: {0}")
-	@CsvFileSource(resources={"lexerTests_unsignedFloatingPointLiteral.csv"}, numLinesToSkip=1)
-	void testUnsignedFloatingPointListerals(String text, String description) {
-		assertToken(text, description, IQLLexer.UnsignedFloatingPointLiteral);
-	}
+//	@ParameterizedTest(name="{1}: {0}")
+//	@CsvFileSource(resources={"lexerTests_unsignedIntegerLiteral.csv"}, numLinesToSkip=1)
+//	void testUnsignedIntegerListerals(String text, String description) {
+//		assertToken(text, description, IQLLexer.UnsignedIntegerLiteral);
+//	}
+//
+//	@ParameterizedTest(name="{1}: {0}")
+//	@CsvFileSource(resources={"lexerTests_floatingPointLiteral.csv"}, numLinesToSkip=1)
+//	void testFloatingPointListerals(String text, String description) {
+//		assertToken(text, description, IQLLexer.FloatingPointLiteral);
+//	}
+//
+//	@ParameterizedTest(name="{1}: {0}")
+//	@CsvFileSource(resources={"lexerTests_unsignedFloatingPointLiteral.csv"}, numLinesToSkip=1)
+//	void testUnsignedFloatingPointListerals(String text, String description) {
+//		assertToken(text, description, IQLLexer.UnsignedFloatingPointLiteral);
+//	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"lexerTests_identifier.csv"}, numLinesToSkip=1)
