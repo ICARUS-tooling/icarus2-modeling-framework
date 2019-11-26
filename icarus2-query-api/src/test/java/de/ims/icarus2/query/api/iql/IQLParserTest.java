@@ -33,7 +33,6 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -75,7 +74,8 @@ class IQLParserTest {
 		}
 	}
 
-	private static IQL_TestParser testParser(String text, String description, SyntaxErrorReporter reporter) {
+	private static IQL_TestParser testParser(String text, String description,
+			SyntaxErrorReporter reporter, boolean strict) {
 		IQLLexer lexer = new IQLLexer(CharStreams.fromString(text, description));
 		lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
@@ -86,8 +86,11 @@ class IQLParserTest {
 			reporter = new SyntaxErrorReporter();
 		}
 
+		if(strict) {
+			parser.setErrorHandler(new BailErrorStrategy());
+		}
+
 		parser.addErrorListener(reporter);
-		parser.setErrorHandler(new BailErrorStrategy());
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL);
 		parser.setProfile(true);
 		parser.setTrace(true);
@@ -95,19 +98,27 @@ class IQLParserTest {
 		return parser;
 	}
 
+	private static String parseToString(ParserRuleContext ctx) {
+		String s = ctx.getText();
+		if(ctx.getStop().getType()==Recognizer.EOF) {
+			s = s.substring(0, s.length()-5);
+		}
+		return s;
+	}
+
 	/**
 	 * Verifies that specified parse rule matches the given input and consumes it all.
 	 * Note that the parser skips whitespaces, so do NOT test the freedom of defining
 	 * multiline queries and such with this method!!
 	 */
-	private static <C extends RuleContext> void assertValidParse(String text, String description,
+	private static <C extends ParserRuleContext> void assertValidParse(String text, String description,
 			Function<IQL_TestParser, C> rule) {
-		IQL_TestParser parser = testParser(text, description, null);
+		IQL_TestParser parser = testParser(text, description, null, false);
 		C ctx = rule.apply(parser);
 		assertThat(ctx)
 			.as("Unable to parse '%s'", text)
 			.isNotNull();
-		assertThat(ctx.getText())
+		assertThat(parseToString(ctx))
 			.as("Premature end of rule for %s in '%s'", description, text)
 			.isEqualTo(text.trim());
 	}
@@ -117,7 +128,8 @@ class IQLParserTest {
 			SyntaxErrorReporter reporter, Function<P, C> rule) {
 		C ctx = rule.apply(parser); // this should/might fail
 
-		String matchedText = ctx.getText();
+		String matchedText = parseToString(ctx);
+
 		//TODO remove '<EOF>' from matchedText
 		if(!matchedText.equals(text.trim())) {
 			reporter.offendingToken = text.substring(matchedText.length());
@@ -129,7 +141,7 @@ class IQLParserTest {
 			String text, String description, String offendingToken,
 			Function<IQL_TestParser, C> rule) {
 		SyntaxErrorReporter reporter = new SyntaxErrorReporter();
-		IQL_TestParser parser = testParser(text, description, reporter);
+		IQL_TestParser parser = testParser(text, description, reporter, true);
 
 		Throwable throwable = catchThrowable(() -> parseAll(text, parser, reporter, rule));
 		assertThat(throwable)

@@ -1,6 +1,6 @@
 "input","description"
 "12.","12","numeric start"
-"@x%x","%","illegal symbol in variable"
+"@x§x","%","illegal symbol in variable"
 "this.is.some.loooo//oong.path","//","long path with illegal symbols"
 "@this.is.some.looo//ooong.path","//","long path with illegal symbols and variable start"
 "this.is.some.123loooooong.path","123","long path with numeric symbols"
