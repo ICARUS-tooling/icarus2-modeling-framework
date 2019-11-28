@@ -21,8 +21,10 @@ package de.ims.icarus2.query.api.iql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -37,7 +39,9 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvFileSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @author Markus Gärtner
@@ -46,7 +50,7 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 class IQLParserTest {
 
 	/*
-	 * gradlew.bat icarus2-query-api:generateTestGrammarSource
+	 * gradlew.bat icarus2-query-api:generateGrammarSource icarus2-query-api:generateTestGrammarSource
 	 */
 
 	/** Helper class that always throws an exception on syntax errors */
@@ -67,7 +71,8 @@ class IQLParserTest {
 
 			this.offendingToken = ((Token)offendingSymbol).getText();
 
-			throw new RecognitionException(msg, recognizer, recognizer.getInputStream(), ((Parser)recognizer).getContext());
+			throw new RecognitionException(msg, recognizer,
+					recognizer.getInputStream(), ((Parser)recognizer).getContext());
 
 //			System.out.printf("%s pos=[%d,%d] offending=%s%n", msg, line, charPositionInLine, offendingSymbol);
 			// Do not throw exception if parser managed to recover
@@ -111,8 +116,13 @@ class IQLParserTest {
 	 * Note that the parser skips whitespaces, so do NOT test the freedom of defining
 	 * multiline queries and such with this method!!
 	 */
-	private static <C extends ParserRuleContext> void assertValidParse(String text, String description,
+	private static <C extends ParserRuleContext> void assertValidParse(
+			String text, String expected, String description,
 			Function<IQL_TestParser, C> rule) {
+		if(expected==null || expected.isEmpty()) {
+			expected = text.trim();
+		}
+
 		IQL_TestParser parser = testParser(text, description, null, false);
 		C ctx = rule.apply(parser);
 		assertThat(ctx)
@@ -120,7 +130,7 @@ class IQLParserTest {
 			.isNotNull();
 		assertThat(parseToString(ctx))
 			.as("Premature end of rule for %s in '%s'", description, text)
-			.isEqualTo(text.trim());
+			.isEqualTo(expected);
 	}
 
 	private static <C extends ParserRuleContext, P extends Parser> void parseAll(
@@ -133,7 +143,8 @@ class IQLParserTest {
 		//TODO remove '<EOF>' from matchedText
 		if(!matchedText.equals(text.trim())) {
 			reporter.offendingToken = text.substring(matchedText.length());
-			throw new RecognitionException("Some input was ignored", parser, parser.getInputStream(), ctx);
+			throw new RecognitionException(
+					"Some input was ignored", parser, parser.getInputStream(), ctx);
 		}
 	}
 
@@ -161,31 +172,31 @@ class IQLParserTest {
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedFloatingPointLiteral.csv"}, numLinesToSkip=1)
 	void testUnsignedFloatingPointLiteral(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::unsignedFloatingPointLiteralTest);
+		assertValidParse(text, null, description, IQL_TestParser::unsignedFloatingPointLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedIntegerLiteral.csv"}, numLinesToSkip=1)
 	void testUnsignedIntegerLiteral(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::unsignedIntegerLiteralTest);
+		assertValidParse(text, null, description, IQL_TestParser::unsignedIntegerLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_floatingPointLiteral.csv"}, numLinesToSkip=1)
 	void testFloatingPointLiteral(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::floatingPointLiteralTest);
+		assertValidParse(text, null, description, IQL_TestParser::floatingPointLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_integerLiteral.csv"}, numLinesToSkip=1)
 	void testIntegerLiteral(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::integerLiteralTest);
+		assertValidParse(text, null, description, IQL_TestParser::integerLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier.csv"}, numLinesToSkip=1)
 	void testUnsignedQuantifer(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::unsignedSimpleQuantifierTest);
+		assertValidParse(text, null, description, IQL_TestParser::unsignedSimpleQuantifierTest);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
@@ -197,13 +208,21 @@ class IQLParserTest {
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_quantifier.csv"}, numLinesToSkip=1)
 	void testQuantifer(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::quantifierTest);
+		assertValidParse(text, null, description, IQL_TestParser::quantifierTest);
 	}
 
-	@ParameterizedTest(name="{1}: {0}")
+	public static Stream<Arguments> createExpressions() {
+		return Stream.of(
+				arguments("\"random text stuff...\nnot really ending soonish\"",
+						"\"randomtextstuff...notreallyendingsoonish\"", "string literal with linebreak")
+		);
+	}
+
+	@ParameterizedTest(name="{2}: {0}")
 	@CsvFileSource(resources={"parserTests_expression.csv"}, numLinesToSkip=1)
-	void testExpression(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::expressionTest);
+	@MethodSource("createExpressions")
+	void testExpression(String text, String expected, String description) {
+		assertValidParse(text, expected, description, IQL_TestParser::expressionTest);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
@@ -215,6 +234,6 @@ class IQLParserTest {
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_versionDeclaration.csv"}, numLinesToSkip=1)
 	void testVersionDeclaration(String text, String description) {
-		assertValidParse(text, description, IQL_TestParser::versionDeclarationTest);
+		assertValidParse(text, null, description, IQL_TestParser::versionDeclarationTest);
 	}
 }

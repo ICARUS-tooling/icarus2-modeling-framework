@@ -29,6 +29,25 @@ package de.ims.icarus2.query.api.iql;
 	public static final int COMMENTS = 2;
 }
 
+@parser::members {
+private static boolean isAny(int type, int...set) {
+	for(int i=0; i<set.length; i++) {
+		if(set[i]==type) {
+			return true;
+		}
+	}
+	return false;
+}
+private static boolean isNone(int type, int...set) {
+	for(int i=0; i<set.length; i++) {
+		if(set[i]==type) {
+			return false;
+		}
+	}
+	return true;
+}
+}
+
 /**
  * Parser Rules
  */
@@ -48,7 +67,7 @@ importStatement
 
 /** Core of every query: specify what to extract */
 statement
- 	: sourceStatement selectStatement;
+ 	: sourceStatement selectStatement constraintStatement;
  	
 sourceStatement
 	: FROM corpusSelector (COMMA corpusSelector)*
@@ -56,8 +75,8 @@ sourceStatement
 	
 //TODO needs support for namespaces since we can't assume all corpus ids to be unique
 corpusSelector
-	: Identifier identifierAssignment?
-	| StringLiteral identifierAssignment
+	: id=qualifiedIdentifier AS renamed=name? # corpusIdReference
+	| id=StringLiteral AS renamed=name # corpusNameReference
 	;
 
 selectStatement
@@ -65,16 +84,11 @@ selectStatement
 	;
 	
 layerSelector 
-	: qualifiedIdentifier (identifierAssignment | scopeDefinition)? //TODO AS PRIMARY assignment?
-	;
-	
-scopeDefinition
-	: AS SCOPE id=Identifier LPAREN qualifiedIdentifier (COMMA qualifiedIdentifier)* RPAREN
+	: id=qualifiedIdentifier (AS PRIMARY? layerAlias=name | AS PRIMARY? SCOPE scopeAlias=Identifier LPAREN scopeElementList RPAREN)?
 	;
 
-/** Allows to reassign a previously resolved (qualified) identifier to a new (shorter?) identifier */
-identifierAssignment
-	: AS Identifier
+scopeElementList
+	: qualifiedIdentifier STAR? (COMMA qualifiedIdentifier STAR?)*
 	;
 	
 /** Addressing a layer/context or other embedded member via the identifiers of its environment */
@@ -82,26 +96,13 @@ qualifiedIdentifier
 	: Identifier (DOUBLE_COLON Identifier)*
 	;
 	
-variableName
-	: AT name
-	;
-
-anyName
-	: prefixedName
-	| name
-	;
-	
-prefixedName
-	: DOLLAR name
-	;
-	
-name
-	: Identifier
+constraintStatement
+	: //TODO different types of query bodies: nodes, edges, alignments, embedded foreign QL, ...
 	;
 	
 constraint
 	: (NOT | EXMARK) constraint # negation
-	| expression # predicate
+	| source=expression # predicate // must evaluate to boolean or equivalent
 	| left=expression EQ all? right=expression # equals
 	| left=expression LT all? right=expression # less
 	| left=expression LT_EQ all? right=expression # lessOrEqual
@@ -114,19 +115,14 @@ constraint
 	| left=expression NOT_CONTAINS all? right=expression # containsNot
 	| source=expression (NOT | EXMARK)? IN STAR? LBRACE expressionList RBRACE # setPredicate
 	| source=expression (GROUPING | GROUP) group=PureDigits (LABEL label=StringLiteral)? (DEFAULT defaultValue=StringLiteral)? # groupAssignment
-	| FOREACH source=expression AS variableName loopControl counterList? # loopConstraint
+	| FOREACH source=expression AS renamed=variableName loopControl counters=counterList? # loopConstraint
 	| LPAREN source=constraint RPAREN # wrappedConstraint
 	| left=constraint (AND | DOUBLE_AMP) right=constraint # logicalAnd
 	| left=constraint (OR | DOUBLE_PIPE) right=constraint # logicalOr
 	;
 	
 loopControl
-	: ( EVEN | ODD )? ( OMIT omit=constraint )? ( RANGE range=boundedRange )? ( STEP step=boundedRange )? loopBody
-	;
-
-loopBody
-	: DO constraint END
-	| END
+	: (EVEN | ODD)? (OMIT omit=constraint)? (RANGE range=boundedRange)? (STEP step=boundedRange)? (DO body=constraint)? END
 	;
 	
 boundedRange
@@ -134,7 +130,7 @@ boundedRange
 	;
 	
 counterList
-	: counter ( AND counter )*
+	: counter (AND counter)*
 	;
 	
 counter
@@ -148,7 +144,7 @@ expressionList
 expression
 	: MINUS expression # unaryMinus
 	| PLUS expression # unaryPlus
-	| source=expression LPAREN arguments=expressionList RPAREN # call
+	| source=expression {isNone(_input.LA(-1),RPAREN,RBRACK,RBRACE)}? LPAREN arguments=expressionList? RPAREN # call
 	| source=expression LBRACK index=expression RBRACK # array
 	| source=expression LBRACE key=StringLiteral RBRACE # annotation
 	| expression (DOT expression)+ # path
@@ -158,7 +154,7 @@ expression
 	| StringLiteral # stringLliteral
 	| BooleanLiteral # booleanLiteral
 	| variableName # variable
-	| anyName # reference
+	| name # reference
 	| left=expression PLUS right=expression # binaryAdd
 	| left=expression MINUS right=expression # binaryMinus
 	| left=expression (MOD | PERCENT) right=expression # binaryMod
@@ -182,6 +178,14 @@ unsignedSimpleQuantifier
 all 
 	: STAR 
 	| ALL
+	;
+	
+variableName
+	: AT name
+	;
+	
+name
+	: DOLLAR? Identifier
 	;
 	
 //signedSimpleQuantifier
@@ -210,13 +214,13 @@ versionDeclaration
  	;
  	
 decimalPart
-	:	unsignedIntegerLiteral exponentPart?
-	|	exponentPart
+	:	unsignedIntegerLiteral ExponentPart?
+	|	ExponentPart
 	;
 
-exponentPart
-	:	Identifier sign? unsignedIntegerLiteral
-	;
+//exponentPart
+//	:	Identifier sign? unsignedIntegerLiteral
+//	;
  
 integerLiteral
  	: signedIntegerLiteral
@@ -273,6 +277,7 @@ DO : 'DO' | 'do' ;
 END : 'END' | 'end' ;
 COUNT : 'COUNT' | 'count' ;
 DIALECT : 'DIALECT' | 'dialect' ;
+PRIMARY : 'PRIMARY' | 'primary' ;
 
 // Separators
 SCOL : ';';
@@ -350,48 +355,9 @@ IdentifierBegin
 
 // Literals
 
-//UnsignedFloatingPointLiteral
-//	:	Digits '.' DecimalPart 
-//	;
-//
-//FloatingPointLiteral
-//	:	Sign? UnsignedFloatingPointLiteral
-//	;
-//
-//fragment
-//DecimalPart
-//	:	Digits
-//	|	Digits ExponentPart
-//	|	ExponentPart
-//	;
-//
-//fragment
-//ExponentPart
-//	:	ExponentIndicator Sign? Digits
-//	;
-
 ExponentPart
 	:	[eE] [+-]? (Digits | PureDigits) 
 	;
- 
-//UnsignedIntegerLiteral
-//	:	Zero
-//	|	NonZeroDigit (Digits? | Underscores Digits)
-//	;
- 
-//IntegerLiteral
-//	:	UnsignedIntegerLiteral
-//	| 	SignedInteger
-//	;
-
-//fragment
-//SignedInteger
-//	:	Sign? Digits
-//	;
-
-//Sign
-//	:	[+-]
-//	;
 
 PureDigits
 	: Digit+
@@ -429,6 +395,8 @@ Underscores
 BooleanLiteral
 	:	'true'
 	|	'false'
+	|	'TRUE'
+	|	'FALSE'
 	;
 	
 StringLiteral
@@ -442,51 +410,23 @@ StringCharacters
 	
 fragment
 StringCharacter
-	:	~["\\\r\n]
+	:	~["\\\r\n\f\b\t]
 	|	EscapeSequence
 	;
 	
 fragment
 EscapeSequence
-	:	'\\' [btnfr"\\]
+	:	'\\' [rnfbt"\\]
 	;
 	
+
+// Basic alnum symbols
+fragment LOWERCASE  : [a-z] ;
+fragment UPPERCASE  : [A-Z] ;
 
 // Ignored content
 WS : [ \t\r\n\u000C\u000B]+ -> skip;
 
 SL_COMMENT : '//' .*? '\n' -> skip;
 
-// Basic alnum symbols
-fragment LOWERCASE  : [a-z] ;
-fragment UPPERCASE  : [A-Z] ;
-
-//fragment A : [aA];
-//fragment B : [bB];
-//fragment C : [cC];
-//fragment D : [dD];
-//fragment E : [eE];
-//fragment F : [fF];
-//fragment G : [gG];
-//fragment H : [hH];
-//fragment I : [iI];
-//fragment J : [jJ];
-//fragment K : [kK];
-//fragment L : [lL];
-//fragment M : [mM];
-//fragment N : [nN];
-//fragment O : [oO];
-//fragment P : [pP];
-//fragment Q : [qQ];
-//fragment R : [rR];
-//fragment S : [sS];
-//fragment T : [tT];
-//fragment U : [uU];
-//fragment V : [vV];
-//fragment W : [wW];
-//fragment X : [xX];
-//fragment Y : [yY];
-//fragment Z : [zZ];
-
 ErrorCharacter : . ;
-
