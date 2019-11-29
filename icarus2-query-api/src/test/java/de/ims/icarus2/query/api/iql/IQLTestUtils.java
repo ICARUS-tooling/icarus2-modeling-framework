@@ -6,10 +6,8 @@ package de.ims.icarus2.query.api.iql;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
-import java.util.BitSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -23,9 +21,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestFactory;
@@ -65,14 +61,14 @@ public class IQLTestUtils {
 			// Do not throw exception if parser managed to recover
 		}
 
-		/**
-		 * @see org.antlr.v4.runtime.BaseErrorListener#reportAmbiguity(org.antlr.v4.runtime.Parser, org.antlr.v4.runtime.dfa.DFA, int, int, boolean, java.util.BitSet, org.antlr.v4.runtime.atn.ATNConfigSet)
-		 */
-		@Override
-		public void reportAmbiguity(Parser recognizer, DFA dfa, int startIndex, int stopIndex, boolean exact,
-				BitSet ambigAlts, ATNConfigSet configs) {
-			fail();
-		}
+//		/**
+//		 * @see org.antlr.v4.runtime.BaseErrorListener#reportAmbiguity(org.antlr.v4.runtime.Parser, org.antlr.v4.runtime.dfa.DFA, int, int, boolean, java.util.BitSet, org.antlr.v4.runtime.atn.ATNConfigSet)
+//		 */
+//		@Override
+//		public void reportAmbiguity(Parser recognizer, DFA dfa, int startIndex, int stopIndex, boolean exact,
+//				BitSet ambigAlts, ATNConfigSet configs) {
+//			fail();
+//		}
 	}
 
 	static IQL_TestParser createParser(String text, String description,

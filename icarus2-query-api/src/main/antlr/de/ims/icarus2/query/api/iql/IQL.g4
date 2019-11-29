@@ -30,7 +30,12 @@ package de.ims.icarus2.query.api.iql;
 }
 
 @parser::members {
-private static boolean isAny(int type, int...set) {
+	
+/** Test that type of token at given lookahead position is IN the specified set */
+private boolean isAny(int pos, int...set) {
+	Token t = _input.LT(pos);
+	if(t==null) return false;
+	int type = t.getType();
 	for(int i=0; i<set.length; i++) {
 		if(set[i]==type) {
 			return true;
@@ -38,7 +43,12 @@ private static boolean isAny(int type, int...set) {
 	}
 	return false;
 }
-private static boolean isNone(int type, int...set) {
+
+/** Test that type of token at given lookahead position is NOT in the specified set */
+private boolean isNone(int pos, int...set) {
+	Token t = _input.LT(pos);
+	if(t==null) return true;
+	int type = t.getType();
 	for(int i=0; i<set.length; i++) {
 		if(set[i]==type) {
 			return false;
@@ -57,12 +67,25 @@ query
 	;
 	
 preambel
-	: (DIALECT version=versionDeclaration)? importStatement+ // here goes configuration stuff, namespace declarations, etc...
+	: (DIALECT version=versionDeclaration)? importStatement+ setupStatement? // here goes configuration stuff, namespace declarations, etc...
 	;
 	
 /** Import external extensions or script definitions, optionally renaming their namespace */
 importStatement
 	: IMPORT StringLiteral (AS Identifier)?
+	;
+	
+/** Allows to do a general setup of query parameters */
+setupStatement
+	: SETUP property (COMMA property)*
+	;
+	
+property
+	: key=qualifiedIdentifier # flagProperty
+	| key=qualifiedIdentifier ASSIGN value=integerLiteral # intProperty
+	| key=qualifiedIdentifier ASSIGN value=floatingPointLiteral # floatProperty
+	| key=qualifiedIdentifier ASSIGN value=booleanLiteral # booleanProperty
+	| key=qualifiedIdentifier ASSIGN value=StringLiteral # stringProperty
 	;
 
 /** Core of every query: specify what to extract */
@@ -101,24 +124,9 @@ constraintStatement
 	;
 	
 constraint
-	: (NOT | EXMARK) constraint # negation
-	| source=expression # predicate // must evaluate to boolean or equivalent
-	| left=expression EQ all? right=expression # equals
-	| left=expression LT all? right=expression # less
-	| left=expression LT_EQ all? right=expression # lessOrEqual
-	| left=expression GT STAR? right=expression # greater
-	| left=expression GT_EQ all? right=expression # greaterOrEqual
-	| left=expression NOT_EQ all? right=expression # equalsNot
-	| left=expression TILDE all? right=expression # matches
-	| left=expression NOT_MATCHES all? right=expression # matchesNot
-	| left=expression HASH all? right=expression # contains
-	| left=expression NOT_CONTAINS all? right=expression # containsNot
-	| source=expression (NOT | EXMARK)? IN STAR? LBRACE expressionList RBRACE # setPredicate
+	: source=expression # predicate // must evaluate to boolean or equivalent
 	| source=expression (GROUPING | GROUP) group=PureDigits (LABEL label=StringLiteral)? (DEFAULT defaultValue=StringLiteral)? # groupAssignment
 	| FOREACH source=expression AS renamed=variableName loopControl counters=counterList? # loopConstraint
-	| LPAREN source=constraint RPAREN # wrappedConstraint
-	| left=constraint (AND | DOUBLE_AMP) right=constraint # logicalAnd
-	| left=constraint (OR | DOUBLE_PIPE) right=constraint # logicalOr
 	;
 	
 loopControl
@@ -141,27 +149,101 @@ expressionList
 	: expression (COMMA expression)*
 	;
 	
+//expression
+//	: LPAREN source=expression RPAREN # wrapping
+//	| booleanLiteral # boolean
+//	| floatingPointLiteral # float
+//	| integerLiteral # integer
+//	| StringLiteral # string
+//	| variableName # variable
+//	| name # reference
+//	| (NOT | EXMARK) expression # negation
+//	| left=expression (AND | DOUBLE_AMP) right=expression # logicalAnd
+//	| left=expression (OR | DOUBLE_PIPE) right=expression # logicalOr
+//	| left=expression comparator=binaryComparator all? right=expression # binaryComparison
+//	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE # setPredicate
+//	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
+//	| left=expression operator=binaryOperator right=expression # binaryOp
+//	| MINUS expression # unaryMinus
+//	// function calls can only occur after direct references
+//	| source=expression {isAny(-1,Identifier)}? LPAREN arguments=expressionList? RPAREN # call
+//	// array indices can only occur after direct references, function calls or annotations
+//	| source=expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK index=expression RBRACK # array
+//	// annotation can only occur after direct references, function calls or annotations
+//	| source=expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE key=StringLiteral RBRACE # annotation
+//	| expression (DOT expression)+ # path
+//	;	
+	
 expression
-	: MINUS expression # unaryMinus
-	| PLUS expression # unaryPlus
-	| source=expression {isNone(_input.LA(-1),RPAREN,RBRACK,RBRACE)}? LPAREN arguments=expressionList? RPAREN # call
-	| source=expression LBRACK index=expression RBRACK # array
-	| source=expression LBRACE key=StringLiteral RBRACE # annotation
-	| expression (DOT expression)+ # path
-	| LPAREN source=expression RPAREN # wrapping
-	| integerLiteral # intLiteral
-	| floatingPointLiteral # floatLiteral
-	| StringLiteral # stringLliteral
-	| BooleanLiteral # booleanLiteral
-	| variableName # variable
-	| name # reference
-	| left=expression PLUS right=expression # binaryAdd
-	| left=expression MINUS right=expression # binaryMinus
-	| left=expression (MOD | PERCENT) right=expression # binaryMod
-	| left=expression SLASH right=expression # binaryDiv
-	| left=expression STAR right=expression # binaryMult
-	| left=expression AMP right=expression # binaryAnd
-	| left=expression CARET right=expression # binaryPow
+	: LPAREN source=expression RPAREN # wrapping
+	| literal # constant
+	| (variableName | name) callArrayAnnotation? # extraction
+	| (NOT | EXMARK) expression # negation
+	| left=expression comparator=binaryComparator all? right=expression # binaryComparison
+	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE # setPredicate
+	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
+	| left=expression operator=binaryOperator right=expression # binaryOp
+	| MINUS expression # unaryMinus
+	| pathElements #path
+	;
+	
+literal
+	: booleanLiteral
+	| floatingPointLiteral
+	| integerLiteral
+	| StringLiteral
+	;	
+	
+pathElements
+	: start=pathBeginn (DOT pathElement)+
+	;
+	
+pathBeginn
+	: StringLiteral
+	| variableName
+	| name
+	| pathElement
+	;
+	
+pathElement
+	: Identifier callArrayAnnotation?
+	;
+	
+callArrayAnnotation
+	// function calls can only occur after direct references
+	: {isAny(-1,Identifier)}? LPAREN arguments=expressionList? RPAREN 
+	// array indices can only occur after direct references, function calls or annotations
+	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK index=expression RBRACK
+	// annotation can only occur after direct references, function calls or annotations
+	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE key=StringLiteral RBRACE
+	| callArrayAnnotation callArrayAnnotation+
+	;
+	
+binaryComparator
+	: (AND | DOUBLE_AMP)
+	| (OR | DOUBLE_PIPE)
+	| EQ
+	| NOT_EQ
+	| LT
+	| LT_EQ
+	| GT
+	| GT_EQ
+	| NOT_EQ
+	| TILDE
+	| NOT_MATCHES
+	| HASH
+	| NOT_CONTAINS
+	;
+	
+binaryOperator
+	: PLUS
+	| MINUS
+	| SLASH
+	| PERCENT
+	| STAR
+	| AMP
+	| PIPE
+	| CARET
 	;
 	
 quantifier
@@ -201,33 +283,29 @@ versionDeclaration
  * Low-level literals 
  */	
  
- floatingPointLiteral
+floatingPointLiteral
  	: signedFloatingPointLiteral
  	;
  
- signedFloatingPointLiteral
+signedFloatingPointLiteral
  	: sign? unsignedFloatingPointLiteral
  	;
  
- unsignedFloatingPointLiteral
- 	: unsignedIntegerLiteral DOT decimalPart
+unsignedFloatingPointLiteral
+ 	: unsignedIntegerLiteral DOT unsignedIntegerLiteral
  	;
- 	
-decimalPart
-	:	unsignedIntegerLiteral ExponentPart?
-	|	ExponentPart
+ 
+booleanLiteral
+	:	TRUE
+	|	FALSE
 	;
-
-//exponentPart
-//	:	Identifier sign? unsignedIntegerLiteral
-//	;
  
 integerLiteral
  	: signedIntegerLiteral
  	;
  
 signedIntegerLiteral
-	: sign? unsignedIntegerLiteral
+	: sign? unsignedIntegerLiteral //{isNone(-1,PLUS,MINUS,Digits,PureDigits)}?
 	;
 
 unsignedIntegerLiteral
@@ -246,7 +324,10 @@ sign
  */
 
 // Keywords
+TRUE : 'TRUE' | 'true' ;
+FALSE : 'FALSE' | 'false' ;
 FROM : 'FROM' | 'from' ;
+SETUP : 'SETUP' | 'setup' ;
 SELECT : 'SELECT' | 'select' ;
 AS : 'AS' | 'as' ;
 SCOPE : 'SCOPE' | 'scope' ;
@@ -261,8 +342,6 @@ RANGE : 'RANGE' | 'range' ;
 LIMIT : 'LIMIT' | 'limit' ;
 ALL : 'ALL' | 'all' ;
 NOT : 'NOT' | 'not' ;
-MOD : 'MOD' | 'mod' ;
-//DIV : 'DIV' | 'div' ;
 IMPORT : 'IMPORT' | 'import' ;
 LABEL : 'LABEL' | 'label' ;
 DEFAULT : 'DEFAULT' | 'default' ;
@@ -280,8 +359,8 @@ DIALECT : 'DIALECT' | 'dialect' ;
 PRIMARY : 'PRIMARY' | 'primary' ;
 
 // Separators
-SCOL : ';';
-COL : ':';
+SCOLON : ';';
+COLON : ':';
 DOT : '.';
 LPAREN : '(';
 RPAREN : ')';
@@ -330,34 +409,11 @@ VersionPrefix
 	: 'v'
 	;
 
-// Identifiers
-Identifier
- 	: 	IdentifierBegin IdentifierPart* IdentifierEnd?
- 	;
-
-fragment
-IdentifierPart
- 	: 	IdentifierEnd
- 	| 	UNDERSCORE
-	;
-
-fragment
-IdentifierEnd
- 	: 	IdentifierBegin
- 	| 	Digit
- 	;
-
-fragment
-IdentifierBegin
- 	: 	LOWERCASE 
- 	| 	UPPERCASE
- 	;
-
 // Literals
 
-ExponentPart
-	:	[eE] [+-]? (Digits | PureDigits) 
-	;
+//ExponentPart
+//	:	[eE] [+-]? (Digits | PureDigits) 
+//	;
 
 PureDigits
 	: Digit+
@@ -391,13 +447,6 @@ fragment
 Underscores
 	:	UNDERSCORE+
 	;
- 
-BooleanLiteral
-	:	'true'
-	|	'false'
-	|	'TRUE'
-	|	'FALSE'
-	;
 	
 StringLiteral
 	:	'"' StringCharacters? '"'
@@ -418,6 +467,29 @@ fragment
 EscapeSequence
 	:	'\\' [rnfbt"\\]
 	;
+
+// Identifiers
+Identifier
+ 	: 	IdentifierBegin IdentifierPart* IdentifierEnd?
+ 	;
+
+fragment
+IdentifierPart
+ 	: 	IdentifierEnd
+ 	| 	UNDERSCORE
+	;
+
+fragment
+IdentifierEnd
+ 	: 	IdentifierBegin
+ 	| 	Digit
+ 	;
+
+fragment
+IdentifierBegin
+ 	: 	LOWERCASE 
+ 	| 	UPPERCASE
+ 	;
 	
 
 // Basic alnum symbols
