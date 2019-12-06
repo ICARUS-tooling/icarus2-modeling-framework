@@ -3,6 +3,7 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.createParser;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.simplify;
 import static de.ims.icarus2.test.util.Pair.pair;
@@ -16,6 +17,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import de.ims.icarus2.query.api.iql.IQL_TestParser.ExpressionTestContext;
 import de.ims.icarus2.test.util.Pair;
@@ -237,5 +241,22 @@ public class IQLExpressionTest {
 								.as("%s: failed to parse second operand",text)
 								.isIn(dummy,simplify(pArg.first));
 						}))))));
+	}
+
+	public static Stream<Arguments> createNestedExpressions() {
+		return Stream.of(
+				Arguments.of("123-456+789",     "[[[123][-][456]][+][789]]", "SUB in ADD"),
+				Arguments.of("123 - 456 + 789", "[[[123][-][456]][+][789]]", "SUB in ADD with spaces"),
+				Arguments.of("(123 - 456) + 789", "[[(123-456)][+][789]]", "SUB in ADD with brackets"),
+				Arguments.of("123 - (456 + 789)", "[[123][-][(456+789)]]", "ADD in SUB with brackets")
+				//TODO maybe move this to csv file?
+				//TODO add more expressions to test
+		);
+	}
+
+	@ParameterizedTest
+	@MethodSource("createNestedExpressions")
+	void testNestedSubInAdd(String text, String expected, String description) {
+		assertParsedTree(text, expected, description, IQL_TestParser::expressionTest, true);
 	}
 }

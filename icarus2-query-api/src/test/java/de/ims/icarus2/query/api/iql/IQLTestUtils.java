@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.util.Stack;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -23,8 +24,13 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestFactory;
+
+import de.ims.icarus2.util.strings.BracketStyle;
+import de.ims.icarus2.util.tree.Tree;
+import de.ims.icarus2.util.tree.TreeParser;
 
 /**
  * @author Markus Gärtner
@@ -95,6 +101,92 @@ public class IQLTestUtils {
 		return parser;
 	}
 
+	static <C extends ParserRuleContext> void assertParsedTree(String text, String expected,
+			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
+		C ctx = assertValidParse0(text, description, rule);
+
+		ParseTree root = ctx;
+		if(expectEOF) {
+			// If we expect EOF, it has to be the right child of the root node
+			assertThat(ctx.getChildCount())
+				.as("test rule is expected to have 1 main child plus EOF marker")
+				.isEqualTo(2);
+			assertThat(ctx.getChild(1).getText())
+				.as("expected second node of root to be EOF marker")
+				.isEqualTo("<EOF>");
+			root = ctx.getChild(0);
+		}
+
+		Tree<String> expectedTree = TreeParser.forStringPayload(BracketStyle.SQUARE).parseTree(expected);
+
+		matchParseNodePlain(expectedTree, root, new Stack<>());
+	}
+
+	private static void matchParseNodePlain(Tree<String> expected, ParseTree actual,
+			Stack<String> trace) {
+		String text = expected.getData();
+
+		/*
+		 *  If we have a designated text, we know that this is either a terminal or
+		 *  that the structure below this node doesn't matter
+		 */
+		if(text!=null) {
+			assertThat(actual.getText())
+				.as("parsed text mismatch: %s", trace)
+				.isEqualTo(text);
+			return;
+		}
+
+		// Continue structural check
+		assertThat(actual.getChildCount())
+			.as("rule subtree mismatch: %s", trace)
+			.isEqualTo(expected.childCount());
+
+		// If needed go down the tree
+		for (int i = 0; i < expected.childCount(); i++) {
+			Tree<String> child = expected.childAt(i);
+			trace.push(child.getData());
+			matchParseNodePlain(child, actual.getChild(i), trace);
+			trace.pop();
+		}
+	}
+
+	static <C extends ParserRuleContext> void assertParsedTree(String text, Tree<NodeExpectation> expected,
+			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
+		C ctx = assertValidParse0(text, description, rule);
+
+		ParseTree root = ctx;
+		if(expectEOF) {
+			// If we expect EOF, it has to be the right child of the root node
+			assertThat(ctx.getChildCount())
+				.as("test rule is expected to have 1 main child plus EOF marker")
+				.isEqualTo(2);
+			assertThat(ctx.getChild(1).getText())
+				.as("expected second node of root to be EOF marker")
+				.isEqualTo("<EOF>");
+			root = ctx.getChild(0);
+		}
+
+		matchParseRule(expected, root, new Stack<>());
+	}
+
+	private static void matchParseRule(Tree<NodeExpectation> expected, ParseTree actual,
+			Stack<NodeExpectation> trace) {
+		assertThat(actual)
+			.as("parse rule mismatch: %s", trace)
+			.isInstanceOf(expected.getData().nodeClass);
+		assertThat(actual.getChildCount())
+			.as("rule subtree mismatch: %s", trace)
+			.isEqualTo(expected.childCount());
+
+		for (int i = 0; i < expected.childCount(); i++) {
+			Tree<NodeExpectation> child = expected.childAt(i);
+			trace.push(child.getData());
+			matchParseRule(child, actual.getChild(i), trace);
+			trace.pop();
+		}
+	}
+
 	static String parseToString(ParserRuleContext ctx) {
 		String s = ctx.getText();
 		if(ctx.getStop().getType()==Recognizer.EOF) {
@@ -114,15 +206,20 @@ public class IQLTestUtils {
 		if(expected==null || expected.isEmpty()) {
 			expected = text.trim();
 		}
+		C ctx = assertValidParse0(text, description, rule);
+		assertThat(parseToString(ctx))
+			.as("Premature end of rule for %s in '%s'", description, text)
+			.isEqualTo(expected);
+	}
 
+	private static <C extends ParserRuleContext> C assertValidParse0(
+			String text, String description, Function<IQL_TestParser, C> rule) {
 		IQL_TestParser parser = createParser(text, description, null, false);
 		C ctx = rule.apply(parser);
 		assertThat(ctx)
 			.as("Unable to parse '%s'", text)
 			.isNotNull();
-		assertThat(parseToString(ctx))
-			.as("Premature end of rule for %s in '%s'", description, text)
-			.isEqualTo(expected);
+		return ctx;
 	}
 
 	static <C extends ParserRuleContext, P extends Parser> void parseAll(
