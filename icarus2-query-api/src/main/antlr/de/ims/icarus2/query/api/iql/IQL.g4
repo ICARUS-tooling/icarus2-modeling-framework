@@ -16,6 +16,8 @@
  */
 grammar IQL;
 
+//TODO wanna label it Query Programming 
+
 //options {
 //    tokenVocab=IQLLexer;
 //}
@@ -90,7 +92,12 @@ property
 
 /** Core of every query: specify what to extract */
 statement
- 	: sourceStatement selectStatement constraintStatement;
+ 	: sourceStatement selectStatement constraintStatement
+	//TODO add result statement
+	//TODO add payload section to embed encoded binary data
+ 	;
+ 	
+//TODO add hex literals for encoded data
  	
 sourceStatement
 	: FROM corpusSelector (COMMA corpusSelector)*
@@ -121,6 +128,7 @@ qualifiedIdentifier
 	
 constraintStatement
 	: //TODO different types of query bodies: nodes, edges, alignments, embedded foreign QL, ...
+	//TODO special markers for elements: DISTINCT to force (quantified) elements to be unique matches (e.g. when matching subgraphs)
 	;
 	
 constraint
@@ -185,6 +193,7 @@ expression
 	| left=expression operator=binaryOperator right=expression # binaryOp
 	| MINUS expression # unaryMinus
 	| pathElements #path
+	//TODO add 'cast' expression: (type) expression
 	;
 	
 literal
