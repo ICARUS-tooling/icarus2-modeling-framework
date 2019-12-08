@@ -229,9 +229,7 @@ callArrayAnnotation
 	;
 	
 binaryComparator
-	: (AND | DOUBLE_AMP)
-	| (OR | DOUBLE_PIPE)
-	| EQ
+	: EQ
 	| NOT_EQ
 	| LT
 	| LT_EQ
@@ -242,17 +240,19 @@ binaryComparator
 	| NOT_MATCHES
 	| HASH
 	| NOT_CONTAINS
+	| (AND | DOUBLE_AMP)
+	| (OR | DOUBLE_PIPE)
 	;
 	
 binaryOperator
-	: PLUS
-	| MINUS
+	: CARET
+	| STAR
 	| SLASH
 	| PERCENT
-	| STAR
+	| PLUS
+	| MINUS
 	| AMP
 	| PIPE
-	| CARET
 	;
 	
 quantifier

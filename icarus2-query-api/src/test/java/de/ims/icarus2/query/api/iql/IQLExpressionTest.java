@@ -243,6 +243,9 @@ public class IQLExpressionTest {
 						}))))));
 	}
 
+	/**
+	 * Order of operands:  ^, *, /, %, +, -, %, |
+	 */
 	public static Stream<Arguments> createNestedExpressions() {
 		return Stream.of(
 				Arguments.of("123-456+789",     "[[[123][-][456]][+][789]]", "SUB in ADD"),
