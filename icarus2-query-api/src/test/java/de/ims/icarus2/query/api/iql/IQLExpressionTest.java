@@ -7,19 +7,23 @@ import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.createParser;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.simplify;
 import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.util.IcarusUtils.notEq;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import de.ims.icarus2.query.api.iql.IQL_TestParser.ExpressionTestContext;
 import de.ims.icarus2.test.util.Pair;
@@ -30,17 +34,35 @@ import de.ims.icarus2.test.util.Pair;
  */
 public class IQLExpressionTest {
 
-	private Stream<Pair<String, String>> binaryOps() {
-		return Stream.of(
-				pair("+", "addition"),
-				pair("-", "subtraction"),
-				pair("*", "multiplication"),
-				pair("/", "division"),
-				pair("%", "modulo"),
-				pair("&", "bitwise and"),
-				pair("|", "bitwise or"),
-				pair("^", "power")
+	/**
+	 * Returns the entire binary operatir hierarchy from highest to lowest in respective groups.
+	 * <pre>
+	 *  IQL binary operators, in order from highest to lowest precedence:
+	 *  *    /    %
+	 *  +    -
+	 *  <<   >>   &    |    ^
+	 *  <    <=   >    >=
+	 *  ~   !~   #   !#
+	 *  ==   !=
+	 *  &&   AND
+	 *  ||   OR
+	 * </pre>
+	 */
+	private List<List<Pair<String, String>>> binaryOpsHierarchy() {
+		return list(
+				list(pair("*", "multiplication"), pair("/", "division"), pair("%", "modulo")),
+				list(pair("+", "addition"), pair("-", "subtraction")),
+				list(pair("<<", "shift left"), pair(">>", "shift right"), pair("&", "bitwise and"), pair("|", "bitwise or"), pair("^", "bitwise xor")),
+				list(pair("<", "less than"), pair("<=", "less than or equal"), pair(">", "greater than"), pair(">=", "greater than or equal")),
+				list(pair("~", "matches"), pair("!~", "matches not"), pair("#", "contains"), pair("!#", "contains not")),
+				list(pair("==", "equals"), pair("!=", "not equal")),
+				list(pair("&&", "and"), pair("and", "and (keyword)")),
+				list(pair("||", "or"), pair("or", "or (keyword)"))
 		);
+	}
+
+	private Stream<Pair<String, String>> binaryOps() {
+		return binaryOpsHierarchy().stream().flatMap(l -> l.stream());
 	}
 
 	private Stream<Pair<String, String>> comparisons() {
@@ -132,7 +154,7 @@ public class IQLExpressionTest {
 	}
 
 	/** Combine a bunch of values to produce argument lists */
-	private Pair<String, String> list(Pair<String, String> ...elements) {
+	private Pair<String, String> arguments(Pair<String, String> ...elements) {
 		StringBuilder sbContent = new StringBuilder();
 		StringBuilder sbDesc = new StringBuilder();
 		for (int i = 0; i < elements.length; i++) {
@@ -244,22 +266,110 @@ public class IQLExpressionTest {
 	}
 
 	/**
-	 * Order of operands:  ^, *, /, %, +, -, %, |
+	 * Order of operands:  ^, *, /, %, +, -, &, |
 	 */
 	public static Stream<Arguments> createNestedExpressions() {
 		return Stream.of(
+				// SUB nested in ADD
 				Arguments.of("123-456+789",     "[[[123][-][456]][+][789]]", "SUB in ADD"),
 				Arguments.of("123 - 456 + 789", "[[[123][-][456]][+][789]]", "SUB in ADD with spaces"),
 				Arguments.of("(123 - 456) + 789", "[[(123-456)][+][789]]", "SUB in ADD with brackets"),
+				// ADD nested in sub
 				Arguments.of("123 - (456 + 789)", "[[123][-][(456+789)]]", "ADD in SUB with brackets")
 				//TODO maybe move this to csv file?
 				//TODO add more expressions to test
 		);
 	}
 
-	@ParameterizedTest
-	@MethodSource("createNestedExpressions")
-	void testNestedSubInAdd(String text, String expected, String description) {
-		assertParsedTree(text, expected, description, IQL_TestParser::expressionTest, true);
+	private static String f(String format, Object...args) {
+		return String.format(format, args);
+	}
+
+	private static boolean isKeywordOp(Pair<String, String> op) {
+		return Character.isLetter(op.first.charAt(0));
+	}
+
+	private static DynamicTest testNestedOp(String expression, String expected, String desc) {
+		return dynamicTest(desc+": "+expression+"  ->  "+expected, () ->
+			assertParsedTree(expression, expected, desc, IQL_TestParser::expressionTest, true));
+	}
+
+	private static DynamicNode testPrivilegedNestedOp(Pair<String, String> op, Pair<String, String> nested) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		// Only skip whitespace if we have no keyword-based operators
+		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
+			// No brackets and no whitespaces
+			tests.add(testNestedOp(f("123%s456%s789", nested.first, op.first),
+						f("[[123][%s][[456][%s][789]]]", nested.first, op.first),
+						f("'%s' in '%s' without spaces", nested.second, op.second)));
+
+			// Brackets to promote the nested op
+			tests.add(testNestedOp(f("(123%s456)%s789", nested.first, op.first),
+						f("[[(123%s456)][%s][789]]", nested.first, op.first),
+						f("'%s' in '%s' with brackets and no spaces", nested.second, op.second)));
+		}
+
+		// Whitespace variant is always expected to work!
+		tests.add(testNestedOp(f("123 %s 456 %s 789", nested.first, op.first),
+					f("[[123][%s][[456][%s][789]]]", nested.first, op.first),
+					f("'%s' in '%s' with spaces", nested.second, op.second)));
+
+		// Brackets to promote the nested op
+		tests.add(testNestedOp(f("(123 %s 456) %s 789", nested.first, op.first),
+					f("[[(123%s456)][%s][789]]", nested.first, op.first),
+					f("'%s' in '%s' with brackets and spaces", nested.second, op.second)));
+
+		return dynamicContainer(f("%s in %s", nested.second, op.second), tests);
+	}
+
+	private static DynamicNode testEqualNestedOp(Pair<String, String> op, Pair<String, String> nested) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		// Only skip whitespace if we have no keyword-based operators
+		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
+			tests.add(testNestedOp(f("123%s456%s789", nested.first, op.first),
+						f("[[[123][%s][456]][%s][789]]", nested.first, op.first),
+						f("'%s' in '%s' without spaces", nested.second, op.second)));
+		}
+
+		// Whitespace variant is always expected to work!
+		tests.add(testNestedOp(f("123 %s 456 %s 789", nested.first, op.first),
+					f("[[[123][%s][456]][%s][789]]", nested.first, op.first),
+					f("'%s' in '%s' with spaces", nested.second, op.second)));
+
+		return dynamicContainer(f("'%s' in '%s'", nested.second, op.second), tests);
+	}
+
+	@TestFactory
+	@DisplayName("test direct nesting of binary operators according to their priorities")
+	List<DynamicNode> testOpNesting() {
+		List<List<Pair<String, String>>> hierarchy = binaryOpsHierarchy();
+		int levels = hierarchy.size();
+
+		List<DynamicNode> tests = new ArrayList<>();
+
+		for (int level = 0; level < levels; level++) {
+			List<Pair<String, String>> ops = hierarchy.get(level);
+			int opCount = ops.size();
+
+			for (int opIndex = 0; opIndex < opCount; opIndex++) {
+				Pair<String, String> op = ops.get(opIndex);
+
+				tests.add(dynamicContainer(op.second+" <equal level>",
+						ops.stream().filter(notEq(op)).map(eqOp -> testEqualNestedOp(op, eqOp))));
+
+				// If we have a privileged op, verify against all ops of lower precedence
+				if(level<levels-1) {
+					tests.add(dynamicContainer(op.second+" <lower levels>",
+							IntStream.range(level+1, levels) // all lower levels
+							.mapToObj(l -> hierarchy.get(l)) // fetch group for elvel
+							.flatMap(group -> group.stream()) // expand all groups
+							.map(lesserOp -> testPrivilegedNestedOp(op, lesserOp))));
+				}
+			}
+		}
+
+		return tests;
 	}
 }

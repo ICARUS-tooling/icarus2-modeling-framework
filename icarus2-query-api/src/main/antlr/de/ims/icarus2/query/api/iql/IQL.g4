@@ -182,77 +182,57 @@ expressionList
 //	| expression (DOT expression)+ # path
 //	;	
 	
+/*
+    IQL binary operators, in order from highest to lowest precedence:
+    *    /    %
+    +    -
+    <<   >>   &    |   ^
+    <    <=   >    >=   
+    ~   !~   #   !#
+    ==   != 
+    &&   AND
+    ||   OR
+*/
 expression
-	: LPAREN source=expression RPAREN # wrapping
-	| literal # constant
-	| (variableName | name) callArrayAnnotation? # extraction
-	| (NOT | EXMARK) expression # negation
-	| left=expression comparator=binaryComparator all? right=expression # binaryComparison
-	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE # setPredicate
+	: primary																		# primaryExpression
+	| expression DOT Identifier														# pathAccess
+	| LPAREN type RPAREN expression													# castExpression
+	| LPAREN expression RPAREN 														# wrappingExpression
+	// function calls can only occur after direct references
+	| {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 						# methodInvocation
+	// array indices can only occur after direct references, function calls or annotations
+	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK expression RBRACK				# arrayAccess
+	// annotation can only occur after direct references, function calls or annotations
+	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE StringLiteral RBRACE				# annotationAccess
+	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
-	| left=expression operator=binaryOperator right=expression # binaryOp
-	| MINUS expression # unaryMinus
-	| pathElements #path
-	//TODO add 'cast' expression: (type) expression
+	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE 	# setPredicate
+	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
+	| left=expression (PLUS | MINUS) right=expression 								# additiveOp
+	| left=expression (SHIFT_LEFT | SHIFT_RIGHT | PIPE | AMP | CARET) right=expression 		# bitwiseOp
+	| left=expression (LT | LT_EQ | GT | GT_EQ) right=expression 					# comparisonOp
+	| left=expression (TILDE | NOT_MATCHES | HASH | NOT_CONTAINS) right=expression 	# stringOp
+	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
+	| left=expression (DOUBLE_AMP | AND) right=expression 							# conjunction
+	| left=expression (DOUBLE_PIPE | OR) right=expression 							# disjunction
 	;
 	
-literal
+primary
 	: booleanLiteral
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
-	;	
-	
-pathElements
-	: start=pathBeginn (DOT pathElement)+
-	;
-	
-pathBeginn
-	: StringLiteral
 	| variableName
-	| name
-	| pathElement
+	| name	
 	;
 	
-pathElement
-	: Identifier callArrayAnnotation?
-	;
-	
-callArrayAnnotation
-	// function calls can only occur after direct references
-	: {isAny(-1,Identifier)}? LPAREN arguments=expressionList? RPAREN 
-	// array indices can only occur after direct references, function calls or annotations
-	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK index=expression RBRACK
-	// annotation can only occur after direct references, function calls or annotations
-	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE key=StringLiteral RBRACE
-	| callArrayAnnotation callArrayAnnotation+
-	;
-	
-binaryComparator
-	: EQ
-	| NOT_EQ
-	| LT
-	| LT_EQ
-	| GT
-	| GT_EQ
-	| NOT_EQ
-	| TILDE
-	| NOT_MATCHES
-	| HASH
-	| NOT_CONTAINS
-	| (AND | DOUBLE_AMP)
-	| (OR | DOUBLE_PIPE)
-	;
-	
-binaryOperator
-	: CARET
-	| STAR
-	| SLASH
-	| PERCENT
-	| PLUS
-	| MINUS
-	| AMP
-	| PIPE
+type
+	: BOOLEAN
+	| STRING
+	| INT
+	| LONG
+	| FLOAT
+	| DOUBLE
 	;
 	
 quantifier
@@ -367,6 +347,14 @@ COUNT : 'COUNT' | 'count' ;
 DIALECT : 'DIALECT' | 'dialect' ;
 PRIMARY : 'PRIMARY' | 'primary' ;
 
+// Types
+INT : 'int' ;
+LONG : 'long' ;
+FLOAT : 'float' ;
+DOUBLE : 'double' ;
+BOOLEAN : 'boolean' ;
+STRING : 'string' ;
+
 // Separators
 SCOLON : ';';
 COLON : ':';
@@ -392,6 +380,8 @@ DOUBLE_AMP : '&&';
 CARET : '^';
 PIPE : '|';
 DOUBLE_PIPE : '||';
+SHIFT_LEFT : '<<';
+SHIFT_RIGHT : '>>';
 LT : '<';
 LT_EQ : '<=';
 GT : '>';
