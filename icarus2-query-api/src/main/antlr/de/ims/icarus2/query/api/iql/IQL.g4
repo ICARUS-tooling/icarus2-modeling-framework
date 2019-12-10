@@ -196,15 +196,15 @@ expressionList
 expression
 	: primary																		# primaryExpression
 	| expression DOT Identifier														# pathAccess
-	| LPAREN type RPAREN expression													# castExpression
-	| LPAREN expression RPAREN 														# wrappingExpression
 	// function calls can only occur after direct references
-	| {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 						# methodInvocation
+	| expression {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 				# methodInvocation
 	// array indices can only occur after direct references, function calls or annotations
-	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK expression RBRACK				# arrayAccess
+	| expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK expression RBRACK		# arrayAccess
 	// annotation can only occur after direct references, function calls or annotations
-	| {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE StringLiteral RBRACE				# annotationAccess
+	| expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE StringLiteral RBRACE	# annotationAccess
+	| LPAREN expression RPAREN 														# wrappingExpression
 	| (NOT | EXMARK | MINUS) expression 											# unaryOp
+	| LPAREN type RPAREN expression													# castExpression
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE 	# setPredicate
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp

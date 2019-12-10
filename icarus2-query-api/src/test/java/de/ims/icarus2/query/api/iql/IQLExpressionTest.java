@@ -186,10 +186,13 @@ public class IQLExpressionTest {
 
 	Stream<Pair<String, String>> variateBinary(Pair<String, String> op,
 			Pair<String, String> arg) {
+		//TODO if op is a keyword operator, add whitespaces!!!
+
+		String padding = isKeywordOp(op) ? " " : "";
 		return Stream.of(
-				pair(arg.first+op.first+dummy, "left "+op.second+" of "+arg.second),
-				pair(dummy+op.first+arg.first, "right "+op.second+" of "+arg.second),
-				pair(arg.first+op.first+arg.first, "dual "+op.second+" of "+arg.second)
+				pair(arg.first+padding+op.first+padding+dummy, "left "+op.second+" of "+arg.second),
+				pair(dummy+padding+op.first+padding+arg.first, "right "+op.second+" of "+arg.second),
+				pair(arg.first+padding+op.first+padding+arg.first, "dual "+op.second+" of "+arg.second)
 		);
 	}
 
