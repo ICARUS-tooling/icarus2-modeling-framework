@@ -22,6 +22,7 @@ package de.ims.icarus2.test.random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -122,6 +123,21 @@ class RandomizedTest {
 		@Test
 		void verifyFieldInjections() {
 			assertEquals(123456789, rs.getSeed());
+		}
+	}
+
+	@Nested
+	class ForFieldInjectionWithSeedViaProperty {
+		private static final long seed = 123456789;
+
+		@BeforeEach
+		void setUp() {
+			System.setProperty(Randomized.SEED_PROPERTY, String.valueOf(seed));
+		}
+
+		@Test
+		void verifyFieldInjections(RandomGenerator rs) {
+			assertEquals(seed, rs.getSeed());
 		}
 	}
 }

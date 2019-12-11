@@ -50,8 +50,15 @@ import de.ims.icarus2.test.annotations.Seed;
  */
 public class Randomized implements BeforeAllCallback, BeforeEachCallback, ParameterResolver {
 
+	public static final String SEED_PROPERTY = "de.ims.icarus2.seed";
+
 	/** Test seed derived from this class' name */
 	static final long TEST_SEED = RandomGenerator.forClass(Randomized.class).getSeed();
+
+	private static Long tryResolveSeed() {
+		String seed = System.getProperty(SEED_PROPERTY);
+		return seed==null ? null : Long.valueOf(seed);
+	}
 
 	/**
 	 * @see org.junit.jupiter.api.extension.ParameterResolver#supportsParameter(org.junit.jupiter.api.extension.ParameterContext, org.junit.jupiter.api.extension.ExtensionContext)
@@ -89,6 +96,11 @@ public class Randomized implements BeforeAllCallback, BeforeEachCallback, Parame
 	}
 
 	private static RandomGenerator createRandom(ExtensionContext context, Seed seed) {
+		Long sharedSeed = tryResolveSeed();
+		if(sharedSeed!=null) {
+			return RandomGenerator.forSeed(sharedSeed.longValue());
+		}
+
 		if(seed!=null) {
 			long s = seed.value();
 			if(s!=-1L) {
