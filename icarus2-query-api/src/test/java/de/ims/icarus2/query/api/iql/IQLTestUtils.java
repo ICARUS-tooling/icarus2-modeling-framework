@@ -145,7 +145,8 @@ public class IQLTestUtils {
 		// If needed go down the tree
 		for (int i = 0; i < expected.childCount(); i++) {
 			Tree<String> child = expected.childAt(i);
-			trace.push(child.getData());
+			String payload = child.getData();
+			trace.push(payload==null ? child.toString() : payload);
 			matchParseNodePlain(child, actual.getChild(i), trace);
 			trace.pop();
 		}

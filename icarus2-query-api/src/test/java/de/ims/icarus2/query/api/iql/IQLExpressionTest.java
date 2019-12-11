@@ -422,15 +422,16 @@ public class IQLExpressionTest {
 
 			// Bracketed
 
-			//TODO make bracketed test cases!!!
 			// [a([b([c])])]
-//			tests.add(testNestedOp(f1("12{1}(34{2}(56{3}78))", op1, op2, op3),
-//						f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
-//						f2("'{1}' in '{2}' in '{3}' without spaces", op1, op2, op3)));
+			tests.add(testNestedOp(f1("12{1}(34{2}(56{3}78))", op1, op2, op3),
+						f1("[[12][{1}][[(][[34][{2}][(56{3}78)]][)]]]", op1, op2, op3),
+						f2("'{1}' ('{2}' ('{3}')) without spaces", op1, op2, op3)));
 
+			//TODO make more bracketed test cases!!!
 		}
 
 		// Whitespace variant is always expected to work!
+
 		// [c[b[a]]]
 		tests.add(testNestedOp(f1("12 {3} 34 {2} 56 {1} 78", op1, op2, op3),
 					f1("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
@@ -447,6 +448,13 @@ public class IQLExpressionTest {
 		tests.add(testNestedOp(f1("12 {1} 34 {2} 56 {3} 78", op1, op2, op3),
 					f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
 					f2("'{1}' in '{2}' in '{3}' with spaces", op1, op2, op3)));
+
+		// Bracketed
+
+		// [a([b([c])])]
+		tests.add(testNestedOp(f1("12 {1} (34 {2} (56 {3} 78))", op1, op2, op3),
+					f1("[[12][{1}][[(][[34][{2}][(56{3}78)]][)]]]", op1, op2, op3),
+					f2("'{1}' ('{2}' ('{3}')) without spaces", op1, op2, op3)));
 
 		return dynamicContainer(header, tests);
 	}

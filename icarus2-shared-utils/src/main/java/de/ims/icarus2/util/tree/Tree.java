@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.ims.icarus2.util.strings.BracketStyle;
+
 /**
  *  Simple tree class that can store arbitrary user payload.
  *
@@ -137,6 +139,6 @@ public class Tree<T> {
 	 */
 	@Override
 	public String toString() {
-		return "Tree@"+hashCode()+ (data==null ? "" : "["+data+"]");
+		return TreeUtils.toString(this, BracketStyle.SQUARE, String::valueOf);
 	}
 }
