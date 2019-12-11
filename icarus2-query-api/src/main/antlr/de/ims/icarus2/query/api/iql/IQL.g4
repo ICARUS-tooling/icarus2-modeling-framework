@@ -58,11 +58,21 @@ private boolean isNone(int pos, int...set) {
 	}
 	return true;
 }
+
 }
 
 /**
  * Parser Rules
  */
+
+/** Standalone rules */
+
+standaloneExpression : expression EOF ;
+
+standaloneVersionDeclaration : versionDeclaration EOF ;
+
+
+/** Basic Rules */
 
 query
 	: preambel? statement EOF
@@ -157,31 +167,6 @@ expressionList
 	: expression (COMMA expression)*
 	;
 	
-//expression
-//	: LPAREN source=expression RPAREN # wrapping
-//	| booleanLiteral # boolean
-//	| floatingPointLiteral # float
-//	| integerLiteral # integer
-//	| StringLiteral # string
-//	| variableName # variable
-//	| name # reference
-//	| (NOT | EXMARK) expression # negation
-//	| left=expression (AND | DOUBLE_AMP) right=expression # logicalAnd
-//	| left=expression (OR | DOUBLE_PIPE) right=expression # logicalOr
-//	| left=expression comparator=binaryComparator all? right=expression # binaryComparison
-//	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE # setPredicate
-//	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
-//	| left=expression operator=binaryOperator right=expression # binaryOp
-//	| MINUS expression # unaryMinus
-//	// function calls can only occur after direct references
-//	| source=expression {isAny(-1,Identifier)}? LPAREN arguments=expressionList? RPAREN # call
-//	// array indices can only occur after direct references, function calls or annotations
-//	| source=expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK index=expression RBRACK # array
-//	// annotation can only occur after direct references, function calls or annotations
-//	| source=expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE key=StringLiteral RBRACE # annotation
-//	| expression (DOT expression)+ # path
-//	;	
-	
 /*
     IQL binary operators, in order from highest to lowest precedence:
     *    /    %
@@ -203,7 +188,6 @@ expression
 	// annotation can only occur after direct references, function calls or annotations
 	| expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE StringLiteral RBRACE	# annotationAccess
 	| LPAREN expression RPAREN 														# wrappingExpression
-	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	| LPAREN type RPAREN expression													# castExpression
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE 	# setPredicate
@@ -215,6 +199,7 @@ expression
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
 	| left=expression (DOUBLE_AMP | AND) right=expression 							# conjunction
 	| left=expression (DOUBLE_PIPE | OR) right=expression 							# disjunction
+	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	;
 	
 primary

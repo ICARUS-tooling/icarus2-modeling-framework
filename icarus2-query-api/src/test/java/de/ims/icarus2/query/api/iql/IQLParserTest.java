@@ -91,13 +91,13 @@ class IQLParserTest {
 	@CsvFileSource(resources={"parserTests_expression.csv"}, numLinesToSkip=1)
 	@MethodSource("createExpressions")
 	void testExpression(String text, String expected, String description) {
-		IQLTestUtils.assertValidParse(text, expected, description, IQL_TestParser::expressionTest);
+		IQLTestUtils.assertValidParse(text, expected, description, IQL_TestParser::standaloneExpression);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
 	@CsvFileSource(resources={"parserTests_expression_invalid.csv"}, numLinesToSkip=1)
 	void testInvalidExpression(String text, String offendingToken, String description) {
-		IQLTestUtils.assertInvalidParse(text, description, offendingToken, IQL_TestParser::expressionTest);
+		IQLTestUtils.assertInvalidParse(text, description, offendingToken, IQL_TestParser::standaloneExpression);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")

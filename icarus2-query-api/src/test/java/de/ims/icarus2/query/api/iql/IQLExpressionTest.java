@@ -23,10 +23,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.params.provider.Arguments;
 
-import de.ims.icarus2.query.api.iql.IQL_TestParser.ExpressionTestContext;
+import de.ims.icarus2.query.api.iql.IQL_TestParser.StandaloneExpressionContext;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * @author Markus Gärtner
@@ -197,7 +199,7 @@ public class IQLExpressionTest {
 	}
 
 	@TestFactory
-	@DisplayName("test binary operations: <left><op><right>")
+	@DisplayName("binary operations: <left><op><right>")
 	Stream<DynamicNode> testBinaryOps() {
 		return binaryOps()
 				.map(pOp -> dynamicContainer(pOp.second, elements()
@@ -206,7 +208,7 @@ public class IQLExpressionTest {
 							String text = pTest.first;
 							String description = pTest.second;
 							IQL_TestParser parser = createParser(text, description, null, false);
-							ExpressionTestContext ctx = parser.expressionTest();
+							StandaloneExpressionContext ctx = parser.standaloneExpression();
 							assertThat(ctx.getChildCount())
 								.as("%s: expecting <expression><EOF> construct",text)
 								.isEqualTo(2);
@@ -233,7 +235,7 @@ public class IQLExpressionTest {
 	}
 
 	@TestFactory
-	@DisplayName("test binary comparisons: <left><comp><right>")
+	@DisplayName("binary comparisons: <left><comp><right>")
 	Stream<DynamicNode> testBinaryComparisons() {
 		return comparisons()
 				.map(pComp -> dynamicContainer(pComp.second, elements()
@@ -242,7 +244,7 @@ public class IQLExpressionTest {
 							String text = pTest.first;
 							String description = pTest.second;
 							IQL_TestParser parser = createParser(text, description, null, false);
-							ExpressionTestContext ctx = parser.expressionTest();
+							StandaloneExpressionContext ctx = parser.standaloneExpression();
 							assertThat(ctx.getChildCount())
 								.as("%s: expecting <expression><EOF> construct",text)
 								.isEqualTo(2);
@@ -268,24 +270,17 @@ public class IQLExpressionTest {
 						}))))));
 	}
 
-	/**
-	 * Order of operands:  ^, *, /, %, +, -, &, |
-	 */
-	public static Stream<Arguments> createNestedExpressions() {
-		return Stream.of(
-				// SUB nested in ADD
-				Arguments.of("123-456+789",     "[[[123][-][456]][+][789]]", "SUB in ADD"),
-				Arguments.of("123 - 456 + 789", "[[[123][-][456]][+][789]]", "SUB in ADD with spaces"),
-				Arguments.of("(123 - 456) + 789", "[[(123-456)][+][789]]", "SUB in ADD with brackets"),
-				// ADD nested in sub
-				Arguments.of("123 - (456 + 789)", "[[123][-][(456+789)]]", "ADD in SUB with brackets")
-				//TODO maybe move this to csv file?
-				//TODO add more expressions to test
-		);
+	private static String f(String format, Object...args) {
+		return StringUtil.format(format, args);
+//		return String.format(format, args);
 	}
 
-	private static String f(String format, Object...args) {
-		return String.format(format, args);
+	private static String f1(String format, Pair<?, ?>...ops) {
+		return f(format, Stream.of(ops).map(p -> p.first).toArray());
+	}
+
+	private static String f2(String format, Pair<?, ?>...ops) {
+		return f(format, Stream.of(ops).map(p -> p.second).toArray());
 	}
 
 	private static boolean isKeywordOp(Pair<String, String> op) {
@@ -294,59 +289,67 @@ public class IQLExpressionTest {
 
 	private static DynamicTest testNestedOp(String expression, String expected, String desc) {
 		return dynamicTest(desc+": "+expression+"  ->  "+expected, () ->
-			assertParsedTree(expression, expected, desc, IQL_TestParser::expressionTest, true));
+			assertParsedTree(expression, expected, desc, IQL_TestParser::standaloneExpression, true));
 	}
 
+	/**
+	 * Create expression {@code <a> nested <b> op <c>}, assuming {@code op} has higher priority
+	 * compared to {@code nested} and verify that the parse tree is {@code [<a> nested [<b> op <c>]]}.
+	 */
 	private static DynamicNode testPrivilegedNestedOp(Pair<String, String> op, Pair<String, String> nested) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		// Only skip whitespace if we have no keyword-based operators
 		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
 			// No brackets and no whitespaces
-			tests.add(testNestedOp(f("123%s456%s789", nested.first, op.first),
-						f("[[123][%s][[456][%s][789]]]", nested.first, op.first),
-						f("'%s' in '%s' without spaces", nested.second, op.second)));
+			tests.add(testNestedOp(f1("123{1}456{2}789", nested, op),
+						f1("[[123][{1}][[456][{2}][789]]]", nested, op),
+						f2("'{1}' in '{2}' without spaces", nested, op)));
 
 			// Brackets to promote the nested op
-			tests.add(testNestedOp(f("(123%s456)%s789", nested.first, op.first),
-						f("[[(123%s456)][%s][789]]", nested.first, op.first),
-						f("'%s' in '%s' with brackets and no spaces", nested.second, op.second)));
+			tests.add(testNestedOp(f1("(123{1}456){2}789", nested, op),
+						f1("[[(123{1}456)][{2}][789]]", nested, op),
+						f2("'{1}' in '{2}' with brackets and no spaces", nested, op)));
 		}
 
 		// Whitespace variant is always expected to work!
-		tests.add(testNestedOp(f("123 %s 456 %s 789", nested.first, op.first),
-					f("[[123][%s][[456][%s][789]]]", nested.first, op.first),
-					f("'%s' in '%s' with spaces", nested.second, op.second)));
+		tests.add(testNestedOp(f1("123 {1} 456 {2} 789", nested, op),
+					f1("[[123][{1}][[456][{2}][789]]]", nested, op),
+					f2("'{1}' in '{2}' with spaces", nested, op)));
 
 		// Brackets to promote the nested op
-		tests.add(testNestedOp(f("(123 %s 456) %s 789", nested.first, op.first),
-					f("[[(123%s456)][%s][789]]", nested.first, op.first),
-					f("'%s' in '%s' with brackets and spaces", nested.second, op.second)));
+		tests.add(testNestedOp(f1("(123 {1} 456) {2} 789", nested, op),
+					f1("[[(123{1}456)][{2}][789]]", nested, op),
+					f2("'{1}' in '{2}' with brackets and spaces", nested, op)));
 
-		return dynamicContainer(f("%s in %s", nested.second, op.second), tests);
+		return dynamicContainer(f2("{1} in {2}", nested, op), tests);
 	}
 
+	/**
+	 * Create expression {@code <a> nested <b> op <c>}, assuming {@code op} has equal priority
+	 * compared to {@code nested} and verify that the parse tree is {@code [[<a> nested <b>] op <c>]]}.
+	 */
 	private static DynamicNode testEqualNestedOp(Pair<String, String> op, Pair<String, String> nested) {
 		List<DynamicTest> tests = new ArrayList<>();
 
 		// Only skip whitespace if we have no keyword-based operators
 		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
-			tests.add(testNestedOp(f("123%s456%s789", nested.first, op.first),
-						f("[[[123][%s][456]][%s][789]]", nested.first, op.first),
-						f("'%s' in '%s' without spaces", nested.second, op.second)));
+			tests.add(testNestedOp(f1("123{1}456{2}789", nested, op),
+						f1("[[[123][{1}][456]][{2}][789]]", nested, op),
+						f2("'{1}' in '{2}' without spaces", nested, op)));
 		}
 
 		// Whitespace variant is always expected to work!
-		tests.add(testNestedOp(f("123 %s 456 %s 789", nested.first, op.first),
-					f("[[[123][%s][456]][%s][789]]", nested.first, op.first),
-					f("'%s' in '%s' with spaces", nested.second, op.second)));
+		tests.add(testNestedOp(f1("123 {1} 456 {2} 789", nested, op),
+					f1("[[[123][{1}][456]][{2}][789]]", nested, op),
+					f2("'{1}' in '{2}' with spaces", nested, op)));
 
-		return dynamicContainer(f("'%s' in '%s'", nested.second, op.second), tests);
+		return dynamicContainer(f2("'{1}' in '{2}'", nested, op), tests);
 	}
 
 	@TestFactory
-	@DisplayName("test direct nesting of binary operators according to their priorities")
-	List<DynamicNode> testOpNesting() {
+	@DisplayName("direct nesting of two binary operators according to their priorities")
+	List<DynamicNode> testDualOpNesting() {
 		List<List<Pair<String, String>>> hierarchy = binaryOpsHierarchy();
 		int levels = hierarchy.size();
 
@@ -366,11 +369,118 @@ public class IQLExpressionTest {
 				if(level<levels-1) {
 					tests.add(dynamicContainer(op.second+" <lower levels>",
 							IntStream.range(level+1, levels) // all lower levels
-							.mapToObj(l -> hierarchy.get(l)) // fetch group for elvel
+							.mapToObj(l -> hierarchy.get(l)) // fetch group for level
 							.flatMap(group -> group.stream()) // expand all groups
 							.map(lesserOp -> testPrivilegedNestedOp(op, lesserOp))));
 				}
 			}
+		}
+
+		return tests;
+	}
+
+	/**
+	 * Create expression {@code <a> op1 <b> op2 <c> op3 <d>}, with operator priority
+	 * {@code op1 > op2 > op3}, additionally tests various other ways of nesting them
+	 * with and without bracketing.
+	 */
+	private static DynamicNode testPrivilegedTripleNestedOps(String header,
+			Pair<String, String> op1, Pair<String, String> op2, Pair<String, String> op3) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		/*
+		 * scenarios:
+		 * [c[b[a]]]
+		 * [[a]c[b]]
+		 * [[b]c[a]]
+		 * [[[a]b]c]
+		 *
+		 * bracketed:
+		 * [a([b([c])])]
+		 */
+
+		// Only skip whitespace if we have no keyword-based operators
+		if(!isKeywordOp(op1) && !isKeywordOp(op2) && !isKeywordOp(op3)) {
+			// General
+
+			// [c[b[a]]]
+			tests.add(testNestedOp(f1("12{3}34{2}56{1}78", op1, op2, op3),
+						f1("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
+						f2("'{3}' in '{2}' in '{1}' without spaces", op1, op2, op3)));
+			// [[a]c[b]]
+			tests.add(testNestedOp(f1("12{1}34{3}56{2}78", op1, op2, op3),
+						f1("[[[12][{1}][34]][{3}][[56][{2}][78]]]", op1, op2, op3),
+						f2("'{1}' and '{2}' in '{3}' without spaces", op1, op2, op3)));
+			// [[b]c[a]]
+			tests.add(testNestedOp(f1("12{2}34{3}56{1}78", op1, op2, op3),
+						f1("[[[12][{2}][34]][{3}][[56][{1}][78]]]", op1, op2, op3),
+						f2("'{2}' and '{1}' in '{3}' without spaces", op1, op2, op3)));
+			// [[[a]b]c]
+			tests.add(testNestedOp(f1("12{1}34{2}56{3}78", op1, op2, op3),
+						f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
+						f2("'{1}' in '{2}' in '{3}' without spaces", op1, op2, op3)));
+
+			// Bracketed
+
+			//TODO make bracketed test cases!!!
+			// [a([b([c])])]
+//			tests.add(testNestedOp(f1("12{1}(34{2}(56{3}78))", op1, op2, op3),
+//						f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
+//						f2("'{1}' in '{2}' in '{3}' without spaces", op1, op2, op3)));
+
+		}
+
+		// Whitespace variant is always expected to work!
+		// [c[b[a]]]
+		tests.add(testNestedOp(f1("12 {3} 34 {2} 56 {1} 78", op1, op2, op3),
+					f1("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
+					f2("'{3}' in '{2}' in '{1}' with spaces", op1, op2, op3)));
+		// [[a]c[b]]
+		tests.add(testNestedOp(f1("12 {1} 34 {3} 56 {2} 78", op1, op2, op3),
+					f1("[[[12][{1}][34]][{3}][[56][{2}][78]]]", op1, op2, op3),
+					f2("'{1}' and '{2}' in '{3}' with spaces", op1, op2, op3)));
+		// [[b]c[a]]
+		tests.add(testNestedOp(f1("12 {2} 34 {3} 56 {1} 78", op1, op2, op3),
+					f1("[[[12][{2}][34]][{3}][[56][{1}][78]]]", op1, op2, op3),
+					f2("'{2}' and '{1}' in '{3}' with spaces", op1, op2, op3)));
+		// [[[a]b]c]
+		tests.add(testNestedOp(f1("12 {1} 34 {2} 56 {3} 78", op1, op2, op3),
+					f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
+					f2("'{1}' in '{2}' in '{3}' with spaces", op1, op2, op3)));
+
+		return dynamicContainer(header, tests);
+	}
+
+	@SuppressWarnings("boxing")
+	@TestFactory
+	@RandomizedTest
+	@DisplayName("direct nesting of three binary operators according to their priorities")
+	List<DynamicNode> testTripleOpNesting(RandomGenerator rng) {
+		List<List<Pair<String, String>>> hierarchy = binaryOpsHierarchy();
+		int levels = hierarchy.size();
+
+		List<DynamicNode> tests = new ArrayList<>();
+
+		for (int level1 = 0; level1 < levels-2; level1++) {
+			int level2 = rng.random(level1+1, levels-1);
+			int level3 = rng.random(level2+1, levels);
+
+			Pair<String, String> op1 = rng.random(hierarchy.get(level1));
+			Pair<String, String> op2 = rng.random(hierarchy.get(level2));
+			Pair<String, String> op3 = rng.random(hierarchy.get(level3));
+
+			/*
+			 * scenarios:
+			 * [c[b[a]]]
+			 * [[a]c[b]]
+			 * [[b]c[a]]
+			 * [[[a]b]c]
+			 *
+			 * bracketed:
+			 * [a([b([c])])]
+			 */
+			tests.add(testPrivilegedTripleNestedOps(String.format("%d-%d-%d: '%s'",
+					level1+1, level2+1, level3+1, op1.second), op1, op2, op3));
 		}
 
 		return tests;

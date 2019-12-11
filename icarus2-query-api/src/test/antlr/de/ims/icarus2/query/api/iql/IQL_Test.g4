@@ -25,8 +25,6 @@ import IQL;
  * of the entire input sequence so we can properly test them in isolation.
  */
 
-expressionTest : expression EOF ;
-
 versionDeclarationTest : versionDeclaration EOF ;
 
 quantifierTest : quantifier EOF ;
