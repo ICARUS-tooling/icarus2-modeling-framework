@@ -70,6 +70,7 @@ import de.ims.icarus2.test.func.TriConsumer;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.IdentitySet;
 import de.ims.icarus2.test.util.Pair;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * Collection of useful testing methods.
@@ -692,6 +693,18 @@ public class TestUtils {
 	public static <E extends Object> void assertArrayNotEmpty(E[] array) {
 		assertNotNull(array);
 		assertTrue(array.length>0);
+	}
+
+	public static <T> Predicate<? super T> only(@SuppressWarnings("unchecked") T...items) {
+		Set<T> buffer = new ReferenceOpenHashSet<>();
+		Collections.addAll(buffer, items);
+		return buffer::contains;
+	}
+
+	public static <T> Predicate<? super T> noneOf(@SuppressWarnings("unchecked") T...items) {
+		Set<T> buffer = new ReferenceOpenHashSet<>();
+		Collections.addAll(buffer, items);
+		return item -> !buffer.contains(item);
 	}
 
 	@SuppressWarnings("unchecked")

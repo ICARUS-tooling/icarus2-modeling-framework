@@ -61,6 +61,10 @@ public final class TestTags {
 	 * test lifecycle. The associated {@link BeforeEach} and
 	 * {@link AfterEach} methods are expected to honor this and
 	 * to ignore the marked tests for initialization or cleanup.
+	 * <p>
+	 * In a way this is an anti-pattern for proper JUnit setup,
+	 * but in very rare cases can prevent overhead in larger
+	 * test classes. Use sparsely!!
 	 */
 	public static final String STANDALONE = "standalone";
 
@@ -75,6 +79,10 @@ public final class TestTags {
 	 * While it is impossible due to JVM threading to reliably guarantee
 	 * thread-safety based on runtime samples, simulating high concurrency
 	 * might at least help spot some more obvious concurrency flaws in the code.
+	 * <p>
+	 * Note that concurrency tests are likely to also qualify for the
+	 * {@link #SLOW} tag due to the necessity of creating substantial load.
+	 * As such they should <b>not</b> be included when running on CI environments.
 	 */
 	public static final String CONCURRENT = "concurrent";
 }

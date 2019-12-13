@@ -29,11 +29,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 /**
- * Marker interface to run a test only in the local
- * environment and not on the CI server.
+ * Declares a test method or class to only be enabled if the
+ * {@code de.ims.icarus2.test.exhaustive} property is defined and evaluates
+ * to {@code true}.
+ * This is intended to be used for every expensive tests that exhaustively
+ * explore a large value space and only need to be performed in case of
+ * substantial changes to their respective units under test.
  *
  * @author Markus Gärtner
  *
@@ -42,8 +46,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @Retention(RUNTIME)
 @Target({METHOD, TYPE})
 @Tag(LOCAL)
-@DisabledIfEnvironmentVariable(named = "CI", matches = "true")
-public @interface DisabledOnCi {
-	/** Reason given for documentation purposes */
-	String value() default "";
+@EnabledIfEnvironmentVariable(named="de.ims.icarus2.test.exhaustive", matches="true")
+public @interface EnabledForExhaustive {
+	// Marker annotation
 }
