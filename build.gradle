@@ -259,7 +259,7 @@ subprojects {
 
 	test {
 	    useJUnitPlatform {
-			excludeTags = ['concurrent', 'integration']
+			excludeTags = ['concurrent', 'integration', 'slow']
 		}
 		
 		minHeapSize = "256m"
@@ -273,6 +273,22 @@ subprojects {
 			events "failed" //, "passed", "skipped" 
 			exceptionFormat "full"
 		}
+	}
+	
+	task integrationTest(type: Test) {
+		useJUnitPlatform {
+			includeTags 'integration'
+		}
+		check.dependsOn it
+		shouldRunAfter test
+	}
+	
+	task exhaustiveTest(type: Test) {
+		useJUnitPlatform {
+			includeTags 'slow'
+		}
+		check.dependsOn it
+		shouldRunAfter test
 	}
 	
 	jacocoTestReport {
