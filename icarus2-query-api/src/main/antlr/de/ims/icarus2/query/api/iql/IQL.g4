@@ -189,8 +189,8 @@ expression
 	| expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE StringLiteral RBRACE	# annotationAccess
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| LPAREN type RPAREN expression													# castExpression
-	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE 	# setPredicate
+	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp
 	| left=expression (SHIFT_LEFT | SHIFT_RIGHT | PIPE | AMP | CARET) right=expression 		# bitwiseOp
@@ -199,7 +199,7 @@ expression
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
 	| left=expression (DOUBLE_AMP | AND) right=expression 							# conjunction
 	| left=expression (DOUBLE_PIPE | OR) right=expression 							# disjunction
-	| (NOT | EXMARK | MINUS) expression 											# unaryOp
+	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	;
 	
 primary
@@ -250,7 +250,7 @@ name
 //	;
 	
 versionDeclaration
-	: major=PureDigits (DOT minor=PureDigits)? (DOT build=PureDigits)? (MINUS | UNDERSCORE)? suffix=Identifier? 
+	: major=PureDigits (DOT minor=PureDigits)? (DOT build=PureDigits)? (MINUS | UNDERSCORE | COLON)? suffix=Identifier? 
 	;
 
 /**

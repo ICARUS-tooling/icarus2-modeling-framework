@@ -1,3 +1,19 @@
+/*
+ * ICARUS2 Corpus Modeling Framework
+ * Copyright (C) 2014-2019 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  *
  */
@@ -6,6 +22,7 @@ package de.ims.icarus2.query.api.iql;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.Stack;
@@ -96,14 +113,21 @@ public class IQLTestUtils {
 		parser.addErrorListener(reporter);
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL);
 		parser.setProfile(true);
-		parser.setTrace(true);
+		parser.setTrace(false);
 
 		return parser;
 	}
 
 	static <C extends ParserRuleContext> void assertParsedTree(String text, String expected,
 			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
-		C ctx = assertValidParse0(text, description, rule);
+		C ctx;
+
+		try {
+			ctx= assertValidParse0(text, description, rule);
+		} catch (RecognitionException e) {
+			fail(description+": "+text, e);
+			return;
+		}
 
 		ParseTree root = ctx;
 		if(expectEOF) {

@@ -1,3 +1,19 @@
+/*
+ * ICARUS2 Corpus Modeling Framework
+ * Copyright (C) 2014-2019 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  *
  */
@@ -6,25 +22,32 @@ package de.ims.icarus2.query.api.iql;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.createParser;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.simplify;
+import static de.ims.icarus2.test.TestTags.SLOW;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.IcarusUtils.notEq;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.query.api.iql.IQL_TestParser.StandaloneExpressionContext;
+import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
@@ -68,6 +91,7 @@ public class IQLExpressionTest {
 	}
 
 	private Stream<Pair<String, String>> comparisons() {
+		//TODO reduce duplication and use binaryOpsHierarchy()
 		return Stream.of(
 				pair("==", "equals"),
 				pair("<", "less than"),
@@ -135,14 +159,14 @@ public class IQLExpressionTest {
 
 	private Stream<Pair<String, String>> multiArgs() {
 		return Stream.of(
-				pair("123, 456, 789", "multi ints"),
-				pair("@var, \"test\", 4.5", "var, string, float"),
-				pair("-123, 765.89", "negative int, float"),
-				pair("123, -765.89", "int, negative float")
+				pair("123,456,789", "multi ints"),
+				pair("@var,\"test\",4.5", "var, string, float"),
+				pair("-123,765.89", "negative int, float"),
+				pair("123,-765.89", "int, negative float")
 		);
 	}
 
-	/** Literals, references, array lookups, calls and annotations */
+	/** Literals, references, array lookups, calls and annotations. Literally all available 'things' */
 	private Stream<Pair<String, String>> elements() {
 		return Stream.of(
 				literals(),
@@ -171,16 +195,19 @@ public class IQLExpressionTest {
 		return pair(sbContent.toString(), sbDesc.toString());
 	}
 
+	/** Make function call from a ref and arguments list */
 	private Pair<String, String> func(Pair<String, String> ref, Pair<String, String> args) {
 		return pair(ref.first+"("+args.first+")", "call on '"+ref.second+"' with '"+args.second+"' args");
 	}
 
+	/** Make array access from ref and singular index */
 	private Pair<String, String> array(Pair<String, String> ref, Pair<String, String> index) {
 		return pair(ref.first+"["+index.first+"]", "index of '"+ref.second+"' with "+index.second);
 	}
 
-	private Pair<String, String> annotation(Pair<String, String> ref, Pair<String, String> index) {
-		return pair(ref.first+"{"+index.first+"}", "annotation of '"+ref.second+"' with "+index.second);
+	/** Make annotation access from ref and key */
+	private Pair<String, String> annotation(Pair<String, String> ref, Pair<String, String>  key) {
+		return pair(ref.first+"{"+key.first+"}", "annotation of '"+ref.second+"' with "+key.second);
 	}
 
 	private static final String dummy = "123";
@@ -275,8 +302,27 @@ public class IQLExpressionTest {
 //		return String.format(format, args);
 	}
 
+	private static String treeEscape(String s) {
+		if(s.indexOf('[')!=-1) {
+			StringBuilder sb = new StringBuilder(s.length()*2);
+			for (int i = 0; i < s.length(); i++) {
+				char c = s.charAt(i);
+				if(c=='[' || c==']') {
+					sb.append('\\');
+				}
+				sb.append(c);
+			}
+			s = sb.toString();
+		}
+		return s;
+	}
+
 	private static String f1(String format, Pair<?, ?>...ops) {
 		return f(format, Stream.of(ops).map(p -> p.first).toArray());
+	}
+
+	private static String f1Tree(String format, Pair<?, ?>...ops) {
+		return f(format, Stream.of(ops).map(p -> treeEscape(p.first.toString())).toArray());
 	}
 
 	private static String f2(String format, Pair<?, ?>...ops) {
@@ -287,7 +333,7 @@ public class IQLExpressionTest {
 		return Character.isLetter(op.first.charAt(0));
 	}
 
-	private static DynamicTest testNestedOp(String expression, String expected, String desc) {
+	private static DynamicTest testExpressionTree(String expression, String expected, String desc) {
 		return dynamicTest(desc+": "+expression+"  ->  "+expected, () ->
 			assertParsedTree(expression, expected, desc, IQL_TestParser::standaloneExpression, true));
 	}
@@ -301,25 +347,25 @@ public class IQLExpressionTest {
 
 		// Only skip whitespace if we have no keyword-based operators
 		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
-			// No brackets and no whitespaces
-			tests.add(testNestedOp(f1("123{1}456{2}789", nested, op),
-						f1("[[123][{1}][[456][{2}][789]]]", nested, op),
+			// No brackets and no whitespace
+			tests.add(testExpressionTree(f1("123{1}456{2}789", nested, op),
+					f1Tree("[[123][{1}][[456][{2}][789]]]", nested, op),
 						f2("'{1}' in '{2}' without spaces", nested, op)));
 
 			// Brackets to promote the nested op
-			tests.add(testNestedOp(f1("(123{1}456){2}789", nested, op),
-						f1("[[(123{1}456)][{2}][789]]", nested, op),
+			tests.add(testExpressionTree(f1("(123{1}456){2}789", nested, op),
+					f1Tree("[[(123{1}456)][{2}][789]]", nested, op),
 						f2("'{1}' in '{2}' with brackets and no spaces", nested, op)));
 		}
 
 		// Whitespace variant is always expected to work!
-		tests.add(testNestedOp(f1("123 {1} 456 {2} 789", nested, op),
-					f1("[[123][{1}][[456][{2}][789]]]", nested, op),
+		tests.add(testExpressionTree(f1("123 {1} 456 {2} 789", nested, op),
+				f1Tree("[[123][{1}][[456][{2}][789]]]", nested, op),
 					f2("'{1}' in '{2}' with spaces", nested, op)));
 
 		// Brackets to promote the nested op
-		tests.add(testNestedOp(f1("(123 {1} 456) {2} 789", nested, op),
-					f1("[[(123{1}456)][{2}][789]]", nested, op),
+		tests.add(testExpressionTree(f1("(123 {1} 456) {2} 789", nested, op),
+				f1Tree("[[(123{1}456)][{2}][789]]", nested, op),
 					f2("'{1}' in '{2}' with brackets and spaces", nested, op)));
 
 		return dynamicContainer(f2("{1} in {2}", nested, op), tests);
@@ -334,14 +380,14 @@ public class IQLExpressionTest {
 
 		// Only skip whitespace if we have no keyword-based operators
 		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
-			tests.add(testNestedOp(f1("123{1}456{2}789", nested, op),
-						f1("[[[123][{1}][456]][{2}][789]]", nested, op),
+			tests.add(testExpressionTree(f1("123{1}456{2}789", nested, op),
+					f1Tree("[[[123][{1}][456]][{2}][789]]", nested, op),
 						f2("'{1}' in '{2}' without spaces", nested, op)));
 		}
 
 		// Whitespace variant is always expected to work!
-		tests.add(testNestedOp(f1("123 {1} 456 {2} 789", nested, op),
-					f1("[[[123][{1}][456]][{2}][789]]", nested, op),
+		tests.add(testExpressionTree(f1("123 {1} 456 {2} 789", nested, op),
+				f1Tree("[[[123][{1}][456]][{2}][789]]", nested, op),
 					f2("'{1}' in '{2}' with spaces", nested, op)));
 
 		return dynamicContainer(f2("'{1}' in '{2}'", nested, op), tests);
@@ -405,32 +451,32 @@ public class IQLExpressionTest {
 			// General
 
 			// [c[b[a]]]
-			tests.add(testNestedOp(f1("12{3}34{2}56{1}78", op1, op2, op3),
-						f1("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
+			tests.add(testExpressionTree(f1("12{3}34{2}56{1}78", op1, op2, op3),
+					f1Tree("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
 						f2("'{3}' in '{2}' in '{1}' without spaces", op1, op2, op3)));
 			// [[a]c[b]]
-			tests.add(testNestedOp(f1("12{1}34{3}56{2}78", op1, op2, op3),
-						f1("[[[12][{1}][34]][{3}][[56][{2}][78]]]", op1, op2, op3),
+			tests.add(testExpressionTree(f1("12{1}34{3}56{2}78", op1, op2, op3),
+					f1Tree("[[[12][{1}][34]][{3}][[56][{2}][78]]]", op1, op2, op3),
 						f2("'{1}' and '{2}' in '{3}' without spaces", op1, op2, op3)));
 			// [[b]c[a]]
-			tests.add(testNestedOp(f1("12{2}34{3}56{1}78", op1, op2, op3),
-						f1("[[[12][{2}][34]][{3}][[56][{1}][78]]]", op1, op2, op3),
+			tests.add(testExpressionTree(f1("12{2}34{3}56{1}78", op1, op2, op3),
+					f1Tree("[[[12][{2}][34]][{3}][[56][{1}][78]]]", op1, op2, op3),
 						f2("'{2}' and '{1}' in '{3}' without spaces", op1, op2, op3)));
 			// [[[a]b]c]
-			tests.add(testNestedOp(f1("12{1}34{2}56{3}78", op1, op2, op3),
-						f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
+			tests.add(testExpressionTree(f1("12{1}34{2}56{3}78", op1, op2, op3),
+					f1Tree("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
 						f2("'{1}' in '{2}' in '{3}' without spaces", op1, op2, op3)));
 
 			// Bracketed
 
 			// [a([b([c])])]
-			tests.add(testNestedOp(f1("12{1}(34{2}(56{3}78))", op1, op2, op3),
-						f1("[[12][{1}][[(][[34][{2}][(56{3}78)]][)]]]", op1, op2, op3),
+			tests.add(testExpressionTree(f1("12{1}(34{2}(56{3}78))", op1, op2, op3),
+					f1Tree("[[12][{1}][[(][[34][{2}][(56{3}78)]][)]]]", op1, op2, op3),
 						f2("'{1}' ('{2}' ('{3}')) without spaces", op1, op2, op3)));
 
 			// [[a]b([c])]
-			tests.add(testNestedOp(f1("12{1}34{2}(56{3}78)", op1, op2, op3),
-						f1("[[[12][{1}][34]][{2}][(56{3}78)]]", op1, op2, op3),
+			tests.add(testExpressionTree(f1("12{1}34{2}(56{3}78)", op1, op2, op3),
+					f1Tree("[[[12][{1}][34]][{2}][(56{3}78)]]", op1, op2, op3),
 						f2("'{1}' in '{2}' ('{3}') without spaces", op1, op2, op3)));
 
 			//TODO make more bracketed test cases!!!
@@ -439,32 +485,32 @@ public class IQLExpressionTest {
 		// Whitespace variant is always expected to work!
 
 		// [c[b[a]]]
-		tests.add(testNestedOp(f1("12 {3} 34 {2} 56 {1} 78", op1, op2, op3),
-					f1("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
+		tests.add(testExpressionTree(f1("12 {3} 34 {2} 56 {1} 78", op1, op2, op3),
+				f1Tree("[[12][{3}][[34][{2}][[56][{1}][78]]]]", op1, op2, op3),
 					f2("'{3}' in '{2}' in '{1}' with spaces", op1, op2, op3)));
 		// [[a]c[b]]
-		tests.add(testNestedOp(f1("12 {1} 34 {3} 56 {2} 78", op1, op2, op3),
-					f1("[[[12][{1}][34]][{3}][[56][{2}][78]]]", op1, op2, op3),
+		tests.add(testExpressionTree(f1("12 {1} 34 {3} 56 {2} 78", op1, op2, op3),
+				f1Tree("[[[12][{1}][34]][{3}][[56][{2}][78]]]", op1, op2, op3),
 					f2("'{1}' and '{2}' in '{3}' with spaces", op1, op2, op3)));
 		// [[b]c[a]]
-		tests.add(testNestedOp(f1("12 {2} 34 {3} 56 {1} 78", op1, op2, op3),
-					f1("[[[12][{2}][34]][{3}][[56][{1}][78]]]", op1, op2, op3),
+		tests.add(testExpressionTree(f1("12 {2} 34 {3} 56 {1} 78", op1, op2, op3),
+				f1Tree("[[[12][{2}][34]][{3}][[56][{1}][78]]]", op1, op2, op3),
 					f2("'{2}' and '{1}' in '{3}' with spaces", op1, op2, op3)));
 		// [[[a]b]c]
-		tests.add(testNestedOp(f1("12 {1} 34 {2} 56 {3} 78", op1, op2, op3),
-					f1("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
+		tests.add(testExpressionTree(f1("12 {1} 34 {2} 56 {3} 78", op1, op2, op3),
+				f1Tree("[[[[12][{1}][34]][{2}][56]][{3}][78]]", op1, op2, op3),
 					f2("'{1}' in '{2}' in '{3}' with spaces", op1, op2, op3)));
 
 		// Bracketed
 
 		// [a([b([c])])]
-		tests.add(testNestedOp(f1("12 {1} (34 {2} (56 {3} 78))", op1, op2, op3),
-					f1("[[12][{1}][[(][[34][{2}][(56{3}78)]][)]]]", op1, op2, op3),
+		tests.add(testExpressionTree(f1("12 {1} (34 {2} (56 {3} 78))", op1, op2, op3),
+				f1Tree("[[12][{1}][[(][[34][{2}][(56{3}78)]][)]]]", op1, op2, op3),
 					f2("'{1}' ('{2}' ('{3}')) with spaces", op1, op2, op3)));
 
 		// [[a]b([c])]
-		tests.add(testNestedOp(f1("12 {1} 34 {2} (56 {3} 78)", op1, op2, op3),
-					f1("[[[12][{1}][34]][{2}][(56{3}78)]]", op1, op2, op3),
+		tests.add(testExpressionTree(f1("12 {1} 34 {2} (56 {3} 78)", op1, op2, op3),
+				f1Tree("[[[12][{1}][34]][{2}][(56{3}78)]]", op1, op2, op3),
 					f2("'{1}' in '{2}' ('{3}') with spaces", op1, op2, op3)));
 
 		return dynamicContainer(header, tests);
@@ -503,5 +549,69 @@ public class IQLExpressionTest {
 		}
 
 		return tests;
+	}
+
+	private static List<DynamicNode> testTernaryOp(Pair<String, String> check,
+			Pair<String, String> opt1, Pair<String, String> opt2) {
+		List<DynamicNode> tests = new ArrayList<>();
+
+		tests.add(testExpressionTree(
+				f1("{1}?{2}:{3}", check, opt1, opt2),
+				f1Tree("[[{1}][?][{2}][:][{3}]]", check, opt1, opt2),
+				f2("'{1}' ? '{2}' : '{3}'", check, opt1, opt2)));
+
+		return tests;
+	}
+
+	private static void testTernaryOpInline(Pair<String, String> check,
+			Pair<String, String> opt1, Pair<String, String> opt2) {
+
+		try {
+			// No WS
+			assertParsedTree(
+					f1("{1}?{2}:{3}", check, opt1, opt2),
+					f1Tree("[[{1}][?][{2}][:][{3}]]", check, opt1, opt2),
+					f2("'{1}' ? '{2}' : '{3}'", check, opt1, opt2),
+					IQL_TestParser::standaloneExpression, true);
+
+			// With WS
+			assertParsedTree(
+					f1("{1} ? {2} : {3}", check, opt1, opt2),
+					f1Tree("[[{1}][?][{2}][:][{3}]]", check, opt1, opt2),
+					f2("'{1}' ? '{2}' : '{3}' with whitespace", check, opt1, opt2),
+					IQL_TestParser::standaloneExpression, true);
+		} catch(RecognitionException e) {
+			fail(f2("'{1}' ? '{2}' : '{3}'", check, opt1, opt2), e);
+		}
+	}
+
+	/**
+	 * Exhaustively test the ternary operation pattern with all variations from the
+	 * {@link #elements()} source for every slot in the pattern.
+	 * <p>
+	 * Since this will result in slightly under 1 million cases, we do not want to
+	 * create separate test instances for all of them.
+	 */
+	@SuppressWarnings("boxing")
+	@Test
+	@DisplayName("flat ternary op 'x ? y : z'")
+	@Tag(SLOW)
+	@DisabledOnCi
+	void testTernaryOp() {
+
+		List<Pair<String, String>> variations = elements().collect(Collectors.toList());
+		int size = variations.size();
+
+		for (int i = 0; i < size; i++) {
+			Pair<String, String> pCheck = variations.get(i);
+			for (int j = 0; j < size; j++) {
+				Pair<String, String> pOpt1 = variations.get(j);
+				for (int k = 0; k < size; k++) {
+					Pair<String, String> pOpt2 = variations.get(k);
+					testTernaryOpInline(pCheck, pOpt1, pOpt2);
+				}
+			}
+			System.out.printf("%d/%d root variations done: %s%n",i+1,size,pCheck.second);
+		}
 	}
 }

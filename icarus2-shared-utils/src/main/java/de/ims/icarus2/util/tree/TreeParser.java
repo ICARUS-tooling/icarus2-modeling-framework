@@ -82,7 +82,7 @@ public class TreeParser<T> {
 
 		final Consumer<Tree<T>> handlePayload = (tree) -> {
 			/*
-			 *  Payload can also only occur before first child, so any
+			 *  Payload can only occur before first child, so any
 			 *  node with children cannot receive any payload data anymore
 			 */
 			if(tree.isChildless()) {
@@ -93,8 +93,22 @@ public class TreeParser<T> {
 			buffer.setLength(0);
 		};
 
+		boolean escaped = false;
+
 		for(int i=0; i<input.length(); i++) {
 			char c = input.charAt(i);
+
+			// Everything escaped goes through unparsed
+			if(escaped) {
+				escaped = false;
+				buffer.append(c);
+				continue;
+			}
+			// Escaping will prevent the following symbol from being parsed
+			if(c=='\\') {
+				escaped = true;
+				continue;
+			}
 
 			// Start of a new node declaration
 			if(c==bracketStyle.openingBracket) {
