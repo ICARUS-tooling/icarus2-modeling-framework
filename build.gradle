@@ -276,6 +276,7 @@ subprojects {
 	}
 	
 	task integrationTest(type: Test) {
+		description = 'Run integration tests based on the integration tag'
 		useJUnitPlatform {
 			includeTags 'integration'
 		}
@@ -283,7 +284,17 @@ subprojects {
 		shouldRunAfter test
 	}
 	
+	task concurrentTest(type: Test) {
+		description = 'Run concurrency tests based on the concurrent tag'
+		useJUnitPlatform {
+			includeTags 'concurrent'
+		}
+		check.dependsOn it
+		shouldRunAfter test
+	}
+	
 	task exhaustiveTest(type: Test) {
+		description = 'Run al lthe exhaustuve tests based on the slow tag'
 		useJUnitPlatform {
 			includeTags 'slow'
 		}
@@ -374,6 +385,7 @@ subprojects {
 	
 	// For when we need new subprojects
     task createProjectStructure {
+		description = 'create the default folder structure for a new project'
     	doLast {
 			sourceSets*.java.srcDirs*.each { it.mkdirs() }
 			sourceSets*.resources.srcDirs*.each { it.mkdirs() }
@@ -404,6 +416,7 @@ subprojects {
     
 	// Bundle test classes into a jar usable for other projects
 	task testJar(type: Jar, dependsOn: testClasses) {
+		description = 'Bundle test classes into a jar usable for other projects'
 		archiveBaseName = project.archivesBaseName
 		archiveClassifier = "test"
 	    from sourceSets.test.output
@@ -411,12 +424,14 @@ subprojects {
 	
 	// Create a jar with javadoc
 	task javadocJar(type: Jar) {
+		description = 'Bundle javadoc files'
 		classifier = 'javadoc'
 		from javadoc
 	}
 
 	// Create a jar with soruces
 	task sourcesJar(type: Jar) {
+		description = 'Bundle source files'
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
