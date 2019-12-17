@@ -112,6 +112,7 @@ public class TreeParser<T> {
 
 			// Start of a new node declaration
 			if(c==bracketStyle.openingBracket) {
+				assert current!=null;
 				handlePayload.accept(current);
 				if(depth>0) {
 					current = current.newChild();
@@ -120,6 +121,7 @@ public class TreeParser<T> {
 			}
 			// End of current node declaration
 			else if(c==bracketStyle.closingBracket) {
+				assert current!=null;
 				handlePayload.accept(current);
 				current = current.parent();
 				depth--;

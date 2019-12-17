@@ -94,7 +94,7 @@ public class IQLTestUtils {
 //		}
 	}
 
-	static IQL_TestParser createParser(String text, String description,
+	public static IQL_TestParser createParser(String text, String description,
 			SyntaxErrorReporter reporter, boolean strict) {
 		IQLLexer lexer = new IQLLexer(CharStreams.fromString(text, description));
 		lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
@@ -118,7 +118,7 @@ public class IQLTestUtils {
 		return parser;
 	}
 
-	static <C extends ParserRuleContext> void assertParsedTree(String text, String expected,
+	public static <C extends ParserRuleContext> void assertParsedTree(String text, String expected,
 			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
 		C ctx;
 
@@ -176,7 +176,7 @@ public class IQLTestUtils {
 		}
 	}
 
-	static <C extends ParserRuleContext> void assertParsedTree(String text, Tree<NodeExpectation> expected,
+	public static <C extends ParserRuleContext> void assertParsedTree(String text, Tree<NodeExpectation> expected,
 			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
 		C ctx = assertValidParse0(text, description, rule);
 
@@ -225,7 +225,7 @@ public class IQLTestUtils {
 	 * Note that the parser skips whitespaces, so do NOT test the freedom of defining
 	 * multiline queries and such with this method!!
 	 */
-	static <C extends ParserRuleContext> void assertValidParse(
+	public static <C extends ParserRuleContext> void assertValidParse(
 			String text, String expected, String description,
 			Function<IQL_TestParser, C> rule) {
 		if(expected==null || expected.isEmpty()) {
@@ -260,9 +260,11 @@ public class IQLTestUtils {
 			throw new RecognitionException(
 					"Some input was ignored", parser, parser.getInputStream(), ctx);
 		}
+
+//		assert reporter.offendingToken!=null : "no offending token reported!";
 	}
 
-	static <C extends ParserRuleContext> void assertInvalidParse(
+	public static <C extends ParserRuleContext> void assertInvalidParse(
 			String text, String description, String offendingToken,
 			Function<IQL_TestParser, C> rule) {
 		SyntaxErrorReporter reporter = new SyntaxErrorReporter();
@@ -274,7 +276,14 @@ public class IQLTestUtils {
 			.isNotNull()
 			.isInstanceOfAny(RecognitionException.class, ParseCancellationException.class);
 
+		if(throwable instanceof ParseCancellationException) {
+			throwable = throwable.getCause();
+		}
+
 		if(throwable instanceof RecognitionException) {
+			if(reporter.offendingToken==null) {
+				reporter.offendingToken = ((RecognitionException)throwable).getOffendingToken().getText();
+			}
 			assertThat(reporter.offendingToken)
 				.as("Unexpected offending symbol")
 				.startsWith(offendingToken);

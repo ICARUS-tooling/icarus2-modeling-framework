@@ -184,9 +184,9 @@ expression
 	// function calls can only occur after direct references
 	| expression {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 				# methodInvocation
 	// array indices can only occur after direct references, function calls or annotations
-	| expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACK expression RBRACK		# arrayAccess
+	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACK expression RBRACK		# arrayAccess
 	// annotation can only occur after direct references, function calls or annotations
-	| expression {isAny(-1,Identifier,RPAREN,RBRACE)}? LBRACE StringLiteral RBRACE	# annotationAccess
+	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACE expression RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE 	# setPredicate

@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertInvalidParse;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.createParser;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.simplify;
@@ -45,6 +46,9 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import de.ims.icarus2.query.api.iql.IQL_TestParser.StandaloneExpressionContext;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
@@ -632,5 +636,106 @@ public class IQLExpressionTest {
 							f1Tree("[[(][{1}][)][[(][{2}{3}{4}][)]]", pType, arg1, op, arg2),
 							f2("cast '{2}' to {1} with brackets", pType, exp));
 				})));
+	}
+
+	/** Produce various paths variants with different depths */
+	public static Stream<Arguments> pathArguments() {
+		return Stream.of(
+				// Simple paths
+				Arguments.of("direct path (1 level)",
+						"root.element1", "[[root][.][element1]]"),
+				Arguments.of("direct path (2 levels)",
+						"root.element1.element2", "[[[root][.][element1]][.][element2]]"),
+
+				// Paths with method invocations
+				Arguments.of("method invocation path (1 call)",
+						"root.method1()", "[[[root][.][method1]][(][)]]"),
+				Arguments.of("method invocation path (multiple calls)",
+						"root.method1().method2()", "[[[[[root][.][method1]][(][)]][.][method2]][(][)]]"),
+				Arguments.of("method invocation path (single call with arguments)",
+						"root.method1(123, 456)", "[[[root][.][method1]][(][123,456][)]]"),
+				Arguments.of("method invocation path (multiple calls with arguments)",
+						"root.method1(123, 456).method2(-78.90)",
+						"[[[[[root][.][method1]][(][123,456][)]][.][method2]][(][-78.90][)]]"),
+
+				// Paths with array access
+				Arguments.of("array access path (1 dimension)",
+						"root.array1[index1]", "[[[root][.][array1]][\\[][index1][\\]]]"),
+				Arguments.of("array access path (2 dimensions)",
+						"root.array1[index1][index2]", "[[[[root][.][array1]][\\[][index1][\\]]][\\[][index2][\\]]]"),
+
+				// Paths with annotation access
+				Arguments.of("annotation access path",
+						"root.anno1{key1}", "[[[root][.][anno1]][{][key1][}]]")
+		);
+	}
+
+	@ParameterizedTest
+	@MethodSource("pathArguments")
+	void testPaths(String desc, String expression, String expected) {
+		assertParsedTree(expression, expected, desc,
+				IQL_TestParser::standaloneExpression, true);
+	}
+
+	/** Produce variations of method, array and annotation access expressions */
+	public static Stream<Arguments> mixedAccessArguments() {
+		return Stream.of(
+				// Method begin
+				Arguments.of("method+array",
+						"func1()[index1]", "[[func1()][\\[][index1][\\]]]"),
+				Arguments.of("method+method",
+						"func1().func2()", "[[[func1()][.][func2]][(][)]]"),
+				Arguments.of("method+args+array",
+						"func1(arg1, arg2)[index1]", "[[func1(arg1,arg2)][\\[][index1][\\]]]"),
+				Arguments.of("method+annotation",
+						"func1(){key1}", "[[func1()][{][key1][}]]"),
+				Arguments.of("method+args+annotation",
+						"func1(arg1, arg2){key1}", "[[func1(arg1,arg2)][{][key1][}]]"),
+				Arguments.of("method+annotation+array",
+						"func1(){key1}[index1]", "[[[func1()][{][key1][}]][\\[][index1][\\]]]"),
+
+				// Array begin
+				Arguments.of("array+array",
+						"array1[index1][index2]", "[[array1\\[index1\\]][\\[][index2][\\]]]"),
+				Arguments.of("array+annotation",
+						"array1[index1]{key1}", "[[array1\\[index1\\]][{][key1][}]]"),
+				Arguments.of("array+method",
+						"array1[index1].func1()", "[[[array1\\[index1\\]][.][func1]][(][)]]"),
+
+				// Annotation begin
+				Arguments.of("annotation+array",
+						"anno1{key1}[index1]", "[[anno1{key1}][\\[][index1][\\]]]"),
+				Arguments.of("annotation+method",
+						"anno1{key1}.func1()", "[[[anno1{key1}][.][func1]][(][)]]")
+		);
+	}
+
+	@ParameterizedTest
+	@MethodSource("mixedAccessArguments")
+	void testMixedAccessExpressions(String desc, String expression, String expected) {
+		assertParsedTree(expression, expected, desc,
+				IQL_TestParser::standaloneExpression, true);
+	}
+
+	/** Produce certain illegal expressions */
+	public static Stream<Arguments> invalidExpressions() {
+		return Stream.of(
+				Arguments.of("double func", "func1()()", "("),
+				Arguments.of("func on array", "array1[123]()", "("),
+				Arguments.of("func on annotation", "anno{\"key\"}()", "("),
+				Arguments.of("func on integer", "123()", "("),
+				Arguments.of("func on float", "1.234()", "("),
+				Arguments.of("func on boolean (true)", "true()", "("),
+				Arguments.of("func on boolean (false)", "false()", "("),
+				Arguments.of("func on string", "\"test\"()", "("),
+				Arguments.of("func on incomplete path", "path.()", "(")
+				//TODO more examples
+		);
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidExpressions")
+	void testInvalidExpressions(String desc, String expression, String offendingToken) {
+		assertInvalidParse(expression, desc, offendingToken, IQL_TestParser::standaloneExpression);
 	}
 }
