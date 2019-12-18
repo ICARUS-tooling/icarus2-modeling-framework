@@ -75,10 +75,10 @@ standaloneVersionDeclaration : versionDeclaration EOF ;
 /** Basic Rules */
 
 query
-	: preambel? statement EOF
+	: preamble? statement EOF
 	;
 	
-preambel
+preamble
 	: (DIALECT version=versionDeclaration)? importStatement+ setupStatement? // here goes configuration stuff, namespace declarations, etc...
 	;
 	
@@ -184,7 +184,7 @@ expression
 	// function calls can only occur after direct references
 	| expression {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 				# methodInvocation
 	// array indices can only occur after direct references, function calls or annotations
-	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACK expression RBRACK		# arrayAccess
+	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACK expressionList RBRACK		# arrayAccess
 	// annotation can only occur after direct references, function calls or annotations
 	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACE expression RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
@@ -298,6 +298,7 @@ sign
  */
 
 // Keywords
+NULL : 'NULL' | 'null' ;
 TRUE : 'TRUE' | 'true' ;
 FALSE : 'FALSE' | 'false' ;
 FROM : 'FROM' | 'from' ;
@@ -324,7 +325,7 @@ IN : 'IN' | 'in' ;
 FOREACH : 'FOREACH' | 'foreach' ;
 EVEN : 'EVEN' | 'even' ;
 ODD : 'ODD' | 'odd' ;
-OMIT : 'OMI' | 'omit' ;
+OMIT : 'OMIT' | 'omit' ;
 STEP : 'STEP' | 'step' ;
 DO : 'DO' | 'do' ;
 END : 'END' | 'end' ;
