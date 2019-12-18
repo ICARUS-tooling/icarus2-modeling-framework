@@ -238,7 +238,7 @@ Also called 'containment predicate', this expression allows to check if a given 
 <expression> 'IN' '{' <expression> (',' <expression>)* '}' 
 ```
 
-The entire expression evaluates to a boolean value and will be ``true`` iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets. See the section about equality operators in 7.10.
+The entire expression evaluates to a boolean value and will be ``true`` iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets. See the section about equality operators in [7.10.](#710-binary-operation)
 
 ### 7.9. Unary Operation
 
