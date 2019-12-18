@@ -189,7 +189,7 @@ expression
 	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACE expression RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
-	| source=expression (NOT | EXMARK)? IN STAR? LBRACE set=expressionList RBRACE 	# setPredicate
+	| source=expression (NOT | EXMARK)? IN (STAR | ALL)? LBRACE set=expressionList RBRACE 	# setPredicate
 	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp

@@ -172,6 +172,8 @@ someObejct.someProperty
 some.really.long.winded.path
 ```
 
+Note that for a lot of native classes of the ICARUS2 framework, IQL provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context.
+
 ### 7.3. Method Invocation
 
 Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace) and round brackets for the invocation with an optional argument list:
@@ -205,7 +207,26 @@ complexArray[1, 2][3]
 complexArray[1, 2, 3]
 ```
 
+Note that IQL provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
+Every [ItemLookup](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/members/item/manager/ItemLookup.java) implementation, such as [Container](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/members/container/Container.java) or [Structure](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/members/structure/Structure.java) that would traditionally access its content via ``myStructure.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myStructure[someIndex]``.
+
 ### 7.5. Annotation Access
+
+The ICARUS2 framework models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given [Item](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/members/item/Item.java) is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, IQL provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
+
+```
+<expression> '{' <expression> (',' <expression>)* '}'
+```
+
+The first expression must evaluate to an item reference and the annotation pointers inside curly brackets must evaluate to strings (if only a single expression is given, it can evaluate to a list or array and be expanded, cf. [7.12.](#712-value-expansion)) that uniquely denote annotation layers in the current context of the query. Typically users will use string literals in double quotes to explicitly state the annotations to be accessed, but the IQL syntax allows for very flexible extraction statement. If the evaluation of those annotation pointers yields more than one string, the result will be an array-like object containing the resolved values for each of the annotation keys in the same order as those were specified.
+
+Examples:
+
+```
+myItem{"pos"}
+myItem{"form", "pos", "lemma"}
+firstSetValue(myItem{"parser1.head", "parser2.head"})   // extract values from multiple concurrent annotation layers and pick the first one present
+```
 
 ### 7.6. Cast
 
@@ -238,18 +259,80 @@ Also called 'containment predicate', this expression allows to check if a given 
 <expression> 'IN' '{' <expression> (',' <expression>)* '}' 
 ```
 
-The entire expression evaluates to a boolean value and will be ``true`` iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets. See the section about equality operators in [7.10.](#710-binary-operation)
+The entire expression evaluates to a boolean value and will be ``true`` iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See the section about equality operators in [7.10.](#710-binary-operation). Note that methods or collections used inside the set definition are subject to the expansion rules described in [7.12.](#712-value-expansion). The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+
+Set predicates can be directly negated (apart from [wrapping](#77-wrapping) them and [negating](#79-unary-operation) the entire expression) with with an exclamation mark ``!`` or the keyword ``NOT`` in front of the ``IN`` keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to ``true`` if at least *one* of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*`` or the ``ALL`` keyword in front of the opening curly bracket to change the overall behavior such that the result will be ``true`` iff *all* of the elements are contained in the set.
+
+The complete syntax with all options looks as follows: 
+
+```
+<expression> ('NOT' | '!')? 'IN' ('ALL' | '*')? '{' <expression> (',' <expression>)* '}' 
+```
+
+Examples:
+
+```
+someAnnotationValue IN {"NP","VP","-"}
+someAnnotationValue NOT IN {"NN","DET"}
+myValue IN {getLegalNames()}
+fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
+```
 
 ### 7.9. Unary Operation
 
+IQL only allows three unary operators to be used directly in front of an expression, the exclamation mark ``!`` and the ``NOT`` keyword for boolean negation and the minus sign ``-`` for negating numerical expressions.
+
+Examples:
+
+```
+!someBooleanFunction()
+NOT someBooleanValue
+-123
+-myNumericalFunction()
+```
+
 ### 7.10. Binary Operation
+
+Binary operations between two expressions take the following simple form:
+
+```
+<expression> <operator> <expression>
+```
+
+Binary operators follow an explicit hierarchy, listed below in the order of priority, from highest to lowest:
+
+|      Operators       |       Explanation       |
+|:------------------------ |:----------------------- |
+| ``*    /    %``          | multiplication, division and modulo |
+| ``+    -``               | addition and subtraction |                 
+| ``<<   >>   &    |   ^`` | shift left, shift right, bitwise and, bitwise or, bitwise xor |
+| ``<    <=   >    >=``    | less, less or equal, greater, greater or equal |   
+| ``~    !~   #    !#``    | string operators: matches (regex), matches not (regex), contains, contains not |
+| ``==   !=``              | equals, equals not | 
+| ``&&   AND``             | logical and |
+| ``||   OR``              | logical or |
+
+#### 7.10.1 Basic Numerical Operations
+
+Basic numerical operations follow the standard mathematical rules for priorities.
+While the basic numerical types (`int`, `long`, `float` and `double`) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
+
+#### 7.10.2 Bit Operations
+
+Bitwise operations (`&`, `|` and `^`) take integer expressions (or any other form of *bitset*) as inputs and generate a result of the corresponding type. If different types are used (e.g. ``int`` and ``long``), one must be [cast](#76-cast) to match the other.
+
+The two shift operations (`<<` and `>>`) take arbitrary integer types as left operand and an ``int`` value as right operand.
+
+#### 7.10.3 Comparisons
+#### 7.10.4 String Operations
+#### 7.10.5 Equality
+#### 7.10.6 Logical Operations
 
 ### 7.11. Ternary Operation
 
 ### 7.12. Value Expansion
 
 IQL supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()`` returns an array of 3 integer values and another method ``invertPoint(int, int, int)`` takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())`` is legal and the array from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]``.
-
 
 ## 8. Switches
 
@@ -259,7 +342,7 @@ For increased flexibility, IQL supports a collection of switches to turn certain
 
 Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), IQL allows the following evaluations as syntactic sugar:
 
-- any ``string`` object evaluate to ``false`` when they are empty or null
+- any ``string`` object evaluates to ``false`` when empty or null
 - any ``int`` or ``long`` value evaluates to ``false`` when it is ``0``
 - 
 - any object evaluates to ``false`` if it is null
