@@ -203,7 +203,8 @@ expression
 	;
 	
 primary
-	: booleanLiteral
+	: nullLiteral
+	| booleanLiteral
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
@@ -256,6 +257,10 @@ versionDeclaration
 /**
  * Low-level literals 
  */	
+ 
+nullLiteral
+	: NULL
+	;
  
 floatingPointLiteral
  	: signedFloatingPointLiteral

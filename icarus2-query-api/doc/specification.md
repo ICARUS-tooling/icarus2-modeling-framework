@@ -95,7 +95,7 @@ Boolean literals are limited to either all lowercase or all uppercase versions o
 ### 4.3. Integer Literals
 
 **Signed Integer Literals**
-Literals representing regular (32bit) or long (64bit) integers consist of an optional initial sign (``+`` or ``-``) and the body consisting of digits or underscore (``_``) characters.
+Literals representing regular ``int`` (32bit) or ``long`` (64bit) integers consist of an optional initial sign (``+`` or ``-``) and the body consisting of digits or underscore (``_``) characters.
 Underscore characters may only appear inside the integer literal, never at the beginning or end (not counting the sign symbol).
 
 Examples for valid (signed) integer literals:
@@ -113,7 +113,7 @@ Some parts of the IQL syntax only allow unsigned "pure" integers and will explic
 
 ### 4.4. Floating Point Literals
 
-Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '``.``' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision ``float`` (32bit) or double-precision ``long`` (64bit) values.
+Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '``.``' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision ``float`` (32bit) or double-precision ``double`` (64bit) values.
 
 Examples for valid (signed) floating point literals:
 
@@ -172,7 +172,7 @@ someObejct.someProperty
 some.really.long.winded.path
 ```
 
-Note that for a lot of native classes of the ICARUS2 framework, IQL provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context.
+Note that for a lot of native classes of the ICARUS2 framework, IQL provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
 
 ### 7.3. Method Invocation
 
@@ -301,7 +301,7 @@ Binary operations between two expressions take the following simple form:
 
 Binary operators follow an explicit hierarchy, listed below in the order of priority, from highest to lowest:
 
-|      Operators       |       Explanation       |
+|      Operators           |       Explanation       |
 |:------------------------ |:----------------------- |
 | ``*    /    %``          | multiplication, division and modulo |
 | ``+    -``               | addition and subtraction |                 
@@ -319,30 +319,92 @@ While the basic numerical types (`int`, `long`, `float` and `double`) can be arb
 
 #### 7.10.2 Bit Operations
 
-Bitwise operations (`&`, `|` and `^`) take integer expressions (or any other form of *bitset*) as inputs and generate a result of the corresponding type. If different types are used (e.g. ``int`` and ``long``), one must be [cast](#76-cast) to match the other.
+Bitwise operations (`&`, `|` and `^`) take integer expressions (or any other form of *bitset*) as inputs and generate a result of the corresponding type. If different types are used (e.g. ``int`` and ``long``), one must be [cast](#76-cast) to match the other. If [value expansion](#712-value-expansion) is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
 The two shift operations (`<<` and `>>`) take arbitrary integer types as left operand and an ``int`` value as right operand.
 
-#### 7.10.3 Comparisons
+#### 7.10.3 Ordered Comparisons
+
+Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically.
+
 #### 7.10.4 String Operations
+
+To account for the ubiquity of textual annotations in corpora, IQL provides a set of dedicated string operators to perform substring matching (with the *contains* operator ``#`` or its negated form ``!``) and regular expression matching (via ``~`` and ``!~``). Per default IQL uses the Java regex syntax, but for the future, additional [switches](#8-switches) are planned to allow finer control over regex details.
+
+Examples:
+
+```
+somePosAnnotation # "V"        // find verbal forms
+somePosAnnotation !~ "NN|NS"   // alternative to the set predicate with more flexibility
+```
+
 #### 7.10.5 Equality
-#### 7.10.6 Logical Operations
+
+Equality checks follow the same basic conditions as [ordered comparisons](#7103-ordered-comparisons), but with the following rules for comparable values ``a`` and ``b``:
+
+``a == b`` iff ``!(a<b) && !(a>b)``
+``a != b`` iff ``a<b || a>b``   
+
+More generally, equality between expressions in IQL is based on content equality and therefore type specific.
+Note that trying to check two expressions of incompatible types (such as ``int`` and ``string``) for equality will always evaluate to ``false`` and also emit a warning. 
+
+#### 7.10.6 Logical Composition
+
+All boolean expressions can be combined via disjunction (either double pipes ``||`` or the ``OR`` keyword) or conjunction (double ampersand ``&&`` or the ``AND`` keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of IQL expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to ``true``, the entire expression is already determined, same for a conjunction's first operand yielding ``false``.  
+
+Examples:
+
+```
+a>1 && b<2
+x==1 or x==3
+```
 
 ### 7.11. Ternary Operation
 
+A single ternary operation is supported in IQL, the popular if-then-else replacement with the following syntax:
+
+```
+<expression> ? <expression> : <expression>
+```
+
+The first expression must evaluate to a boolean value and determines which of the following two alternatives will be evaluated for the total value of the expression. Note that the second and third expressions must have compatible result types.
+
+Examples:
+
+```
+x<2 ? "text for smaller value" : "some other text"
+``` 
+
 ### 7.12. Value Expansion
 
-IQL supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()`` returns an array of 3 integer values and another method ``invertPoint(int, int, int)`` takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())`` is legal and the array from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]``.
+IQL supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()`` returns an array of 3 integer values or a *array-like* data type (such as a point) and another method ``invertPoint(int, int, int)`` takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())`` is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]``.
 
 ## 8. Switches
 
-For increased flexibility, IQL supports a collection of switches to turn certain optional features on when needed. Switches are part of a query's preamble and cannot be changed after their initial declaration. 
+For increased flexibility, IQL supports a collection of switches to turn certain optional features on when needed. Switches are part of a query's preamble and cannot be changed after their initial declaration. All the native IQL switches use the prefix ``iql`` for their name. Any extensions that offer additional switches should declare and use their own namespace for switches!
+
+Currently supported switches:
+
+|    Name                     |   Description                          |
+|:--------------------------- |:-------------------------------------- |
+| iql.string.case.off         | Turns of case sensitivity when performing string operations such as equality checks. |
+| iql.string.case.lower       | Another approach to case insensitivity, this switch turns all strings into lower case. |
+| iql.expansion.off           | Effectively shuts down [value expansion](#712-value-expansion). |
+| iql.string2bool.off         | Deactivates the interpretation of strings as boolean values as described [here](#9-constraints). |
+| iql.int2bool.off            | Deactivates the interpretation of integers as boolean values as described [here](#9-constraints). |
+| iql.float2bool.off          | Deactivates the interpretation of floating point numbers as boolean values as described [here](#9-constraints). |
+| iql.obj2bool.off            | Deactivates the interpretation of arbitrary objects as boolean values as described [here](#9-constraints). |
+| iql.any2bool.off            | Deactivates the interpretation of anything non-boolean as boolean value. This is a combination of ``iql.string2bool.off``, ``iql.int2bool.off``, ``iql.float2bool.off`` and  ``iql.obj2bool.off``. |
+| iql.direction.reverse       | Reverses the direction used to traverse corpus data for a search |
+| iql.warnings.off            | Deactivates all warnings, potentially resulting in confusing results. |
 
 ## 9. Constraints
 
 Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), IQL allows the following evaluations as syntactic sugar:
 
-- any ``string`` object evaluates to ``false`` when empty or null
-- any ``int`` or ``long`` value evaluates to ``false`` when it is ``0``
-- 
-- any object evaluates to ``false`` if it is null
+|      Type               |       Condition         |    Value     |
+|:----------------------- |:----------------------- |:------------ |
+| ``string``              | empty or null           | ``false``    | 
+| ``int`` or ``long``     | ``0``                   | ``false``    |
+| ``float`` or ``double`` | ``0.0``                 | ``false``    |
+| any object              | null                    | ``false``    |
