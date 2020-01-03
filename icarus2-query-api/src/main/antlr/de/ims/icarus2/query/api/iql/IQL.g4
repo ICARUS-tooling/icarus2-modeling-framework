@@ -71,20 +71,36 @@ standaloneExpression : expression EOF ;
 
 standaloneVersionDeclaration : versionDeclaration EOF ;
 
+standalonePreamble : preamble EOF ;
+
+standaloneStatement : statement EOF ;
+
+standaloneResult : result EOF ;
+
 
 /** Basic Rules */
 
 query
-	: preamble? statement EOF
+	: preamble statement result EOF
 	;
 	
+// PREAMBLE BEGIN
+	
 preamble
-	: (DIALECT version=versionDeclaration)? importStatement+ setupStatement? // here goes configuration stuff, namespace declarations, etc...
+	: languageVersion? importStatement? setupStatement? // here goes configuration stuff, namespace declarations, etc...
+	;
+	
+languageVersion
+	: DIALECT versionDeclaration
 	;
 	
 /** Import external extensions or script definitions, optionally renaming their namespace */
 importStatement
-	: IMPORT StringLiteral (AS Identifier)?
+	: IMPORT importTarget (COMMA importTarget)*
+	;
+	
+importTarget
+	: StringLiteral (AS Identifier)?
 	;
 	
 /** Allows to do a general setup of query parameters */
@@ -93,30 +109,29 @@ setupStatement
 	;
 	
 property
-	: key=qualifiedIdentifier # flagProperty
+	: key=qualifiedIdentifier # switchProperty
 	| key=qualifiedIdentifier ASSIGN value=integerLiteral # intProperty
 	| key=qualifiedIdentifier ASSIGN value=floatingPointLiteral # floatProperty
 	| key=qualifiedIdentifier ASSIGN value=booleanLiteral # booleanProperty
 	| key=qualifiedIdentifier ASSIGN value=StringLiteral # stringProperty
 	;
+	
+// PREAMBLE END
 
-/** Core of every query: specify what to extract */
+
+// STATEMENT BEGIN
+
+/** Core of every query: specify what to extract from where */
 statement
  	: sourceStatement selectStatement constraintStatement
-	//TODO add result statement
-	//TODO add payload section to embed encoded binary data
  	;
- 	
-//TODO add hex literals for encoded data
  	
 sourceStatement
 	: FROM corpusSelector (COMMA corpusSelector)*
 	;
 	
-//TODO needs support for namespaces since we can't assume all corpus ids to be unique
 corpusSelector
-	: id=qualifiedIdentifier AS renamed=name? # corpusIdReference
-	| id=StringLiteral AS renamed=name # corpusNameReference
+	: (id=qualifiedIdentifier | uri=StringLiteral) (AS renamed=Identifier)? 
 	;
 
 selectStatement
@@ -124,7 +139,7 @@ selectStatement
 	;
 	
 layerSelector 
-	: id=qualifiedIdentifier (AS PRIMARY? layerAlias=name | AS PRIMARY? SCOPE scopeAlias=Identifier LPAREN scopeElementList RPAREN)?
+	: id=qualifiedIdentifier (AS PRIMARY? layerAlias=Identifier | AS PRIMARY? SCOPE scopeAlias=Identifier LPAREN scopeElementList RPAREN)?
 	;
 
 scopeElementList
@@ -136,15 +151,91 @@ qualifiedIdentifier
 	: Identifier (DOUBLE_COLON Identifier)*
 	;
 	
+/** 
+ * Actual selector part of a query:
+ * 
+ * Bindings can be sued to simplify the subsequent part of the query.
+ * Local constraints are the only obligatory part and define the basic
+ * complexity for evaluating the query. Global constraints are optional and 
+ * can cause unlimited increase in complexity!
+ */
 constraintStatement
-	: //TODO different types of query bodies: nodes, edges, alignments, embedded foreign QL, ...
-	//TODO special markers for elements: DISTINCT to force (quantified) elements to be unique matches (e.g. when matching subgraphs)
+	: bindingsList? localConstraints globalConstraints?
+	| ALL // special marker to return the entire corpus, with only the query scope as vertical filter
 	;
 	
+/** Groups a non-empty sequence of member bindings */
+bindingsList
+	: WITH binding (AND binding)* 
+	;
+	
+/** 
+ * Binds a series of member references to a layer source.
+ * 
+ * The 'DISTINCT' keyword enforces that the bound member references in this binding do
+ * NOT match the same target. Depending on the localConstraint used in the query, this
+ * might be redundant (e.g. when using the member references as identifiers for tree nodes
+ * who already are structurally distinct), but can still be used to make that fact explicit.
+ */
+binding
+	: member (COMMA member)* AS DISTINCT? qualifiedIdentifier
+	;
+	
+localConstraints
+	: WHERE (flatStatement | treeStatement | graphStatement)
+	;
+	
+/** Text-corpus query  */
+flatStatement
+	: constraint
+	;
+	
+/** Treebank query */
+treeStatement
+	: TREE //TODO
+	;
+	
+/** Complex query over graph data */
+graphStatement
+	: NODES //TODO
+	;
+	
+//TODO add more statement variations based on established CQL families
+	
+globalConstraints
+	: HAVING constraint
+	;
+	
+// STATEMENT END
+
+
+// RESULT BEGIN
+
+/** Post.processing directives for generating textual/statistical results */
+result
+	:
+	;
+
+// RESULT END
+
+ 	
+//TODO add hex literals for encoded data
+
+// GENERAL HELPERS
+	
 constraint
-	: source=expression # predicate // must evaluate to boolean or equivalent
-	| source=expression (GROUPING | GROUP) group=PureDigits (LABEL label=StringLiteral)? (DEFAULT defaultValue=StringLiteral)? # groupAssignment
-	| FOREACH source=expression AS renamed=variableName loopControl counters=counterList? # loopConstraint
+	: LPAREN constraint RPAREN 														# wrappingConstraint
+	| expression # predicate // must evaluate to boolean or equivalent
+	| expression (GROUPING | GROUP) PureDigits (LABEL StringLiteral)? (DEFAULT StringLiteral)? # groupAssignment
+	| FOREACH expression AS variableName loopControl counterList? # loopConstraint
+	/*
+	 * The following boolean combinations of constraints are a duplicate of the expression
+	 * equivalent and needed to allow combinations involving grouping or future constraint
+	 * extensions.
+	 * 
+	 */
+	| constraint AND constraint		# conjunctionConstraint
+	| constraint OR constraint		# disjunctionConstraint
 	;
 	
 loopControl
@@ -189,7 +280,7 @@ expression
 	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACE expression RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
-	| source=expression (NOT | EXMARK)? IN (STAR | ALL)? LBRACE set=expressionList RBRACE 	# setPredicate
+	| source=expression (NOT | EXMARK)? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
 	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp
@@ -209,7 +300,8 @@ primary
 	| integerLiteral
 	| StringLiteral
 	| variableName
-	| name	
+	| member
+	| Identifier	
 	;
 	
 type
@@ -238,11 +330,11 @@ all
 	;
 	
 variableName
-	: AT name
+	: AT Identifier
 	;
-	
-name
-	: DOLLAR? Identifier
+
+member
+	: DOLLAR Identifier
 	;
 	
 //signedSimpleQuantifier
@@ -311,6 +403,10 @@ SETUP : 'SETUP' | 'setup' ;
 SELECT : 'SELECT' | 'select' ;
 AS : 'AS' | 'as' ;
 SCOPE : 'SCOPE' | 'scope' ;
+WITH : 'WITH' | 'with' ;
+DISTINCT : 'DISTINCT' | 'distinct' ;
+WHERE : 'WHERE' | 'where' ;
+TREE : 'TREE' | 'tree' ;
 NODES : 'NODES' | 'nodes' ;
 EDGES : 'EDGES' | 'edges' ;
 OR : 'OR' | 'or' ;

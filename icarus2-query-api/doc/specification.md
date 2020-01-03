@@ -6,7 +6,7 @@ Queries in IQL are designed to be self-contained with logical sections for speci
 
 ## 2. Reserved Words
 
-The following list of keywords is reserved and any of the words may not be used as identifier strings in a query (they are reserved in both all lowercase and all uppercase):
+The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query (they are reserved in both all lowercase and all uppercase):
 
 ```
 NULL
@@ -147,7 +147,19 @@ Identifiers are limited in length by the engine to a total of 255 characters.
 
 ## 6. Variables and References
 
-In IQL all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespae is populated with all the globally available constants, methods and helper objects from the IQL core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding ``@`` (e.g. ``@myVariable``). They can be used the same way as any regular identifier, with the exception of allowing assignment expressions when inside script blocks.
+In IQL all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespae is populated with all the globally available constants, methods and helper objects from the IQL core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding ``@`` (e.g. ``@myVariable``). They can be used the same way as any regular identifier, with the exception of allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a ``$`` sign, such as ``$token1``.
+
+| Type      | Prefix | Example       | Scope   | Fixed Type | Final | Can Re-assign |
+| :-------- | :----- | :------------ | :------ | :--------- | :---- | :------------ |
+| Reference | none   | ``max()``     | global  |     X      |   X   |               |
+| Variable  | ``@``  | ``@myVar``    | limited |    (X)     |       |       X       |
+| Member    | ``$``  | ``$sentence`` | limited |     X      |  (X)  |               |
+
+Special remarks:
+
+Variables are more or less general-purpose storage objects for arbitrary values and without a fixed type. Their first assignment however hints at the implied type to be used and as such they can cause cast errors when used for situations where an incompatible type would be needed.
+
+Member identifiers are final in the sense that they cannot be re-assigned explicitly but will be implicitly for every iteration of the query on a new part of the corpus. For example, above ``$sentence`` member will point to a new sentence (container) object every time the inner constraint parts of the query are evaluated. Therefore member identifiers could be viewed as a sort of loop variable. 
 
 ## 7. Expressions
 
@@ -192,7 +204,7 @@ min(123, 456, dynamicContent())
 
 ### 7.4. Array Access
 
-Arrays are accessed by an expression pointing to the array itself and an index expression in square brackets indicating the position of the desired element within the array. Note that the index expression must evaluate to an integer value within ``int`` space. Positive values indicate the position beginning from the start of the array (with ``0`` being the first position), whereas negative values allow backwards referencing of elements with ``-1`` pointing to the last array element and ``-2`` to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
+Arrays are accessed by an expression pointing to the array itself and an index expression in square brackets indicating the position of the desired element within the array. Note that the index expression must evaluate to an integer value within ``int`` space. Positive values indicate the position beginning from the start of the array (with ``1`` being the first position for better human readability per default, see [switches](#93-switches) for an option to switch to 0-based indices), whereas negative values allow backwards referencing of elements with ``-1`` pointing to the last array element and ``-2`` to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
 
 ```
 <expression> '[' <expression> (',' <expression>)* ']'
@@ -329,7 +341,7 @@ Comparisons are special binary operators that take two expressions of equal or c
 
 #### 7.10.4 String Operations
 
-To account for the ubiquity of textual annotations in corpora, IQL provides a set of dedicated string operators to perform substring matching (with the *contains* operator ``#`` or its negated form ``!``) and regular expression matching (via ``~`` and ``!~``). Per default IQL uses the Java regex syntax, but for the future, additional [switches](#8-switches) are planned to allow finer control over regex details.
+To account for the ubiquity of textual annotations in corpora, IQL provides a set of dedicated string operators to perform substring matching (with the *contains* operator ``#`` or its negated form ``!``) and regular expression matching (via ``~`` and ``!~``). Per default IQL uses the Java regex syntax, but for the future, additional [switches](#93-switches) are planned to allow finer control over regex details.
 
 Examples:
 
@@ -379,7 +391,38 @@ x<2 ? "text for smaller value" : "some other text"
 
 IQL supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()`` returns an array of 3 integer values or a *array-like* data type (such as a point) and another method ``invertPoint(int, int, int)`` takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())`` is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]``.
 
-## 8. Switches
+## 8. Constraints
+
+Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), IQL allows the following evaluations as syntactic sugar:
+
+|      Type               |       Condition         |    Value     |
+|:----------------------- |:----------------------- |:------------ |
+| ``string``              | empty or null           | ``false``    | 
+| ``int`` or ``long``     | ``0``                   | ``false``    |
+| ``float`` or ``double`` | ``0.0``                 | ``false``    |
+| any object              | null                    | ``false``    |
+
+
+## 9. Query Preamble Section
+
+The initial part of every IQL query is meant to introduce the version of the query language to be used and all the desired extensions or configurations. In addition it is responsible to bind all the later used identifiers for top level corpus members to unambiguous targets (either via manifests or to actual corpus members). This part of a query can become very verbose and is intended to be automatically generated from the host application based on the search context or GUI choices made by the user.
+
+### 9.1. Dialect
+
+IQL is designed as an evolving query language that can be altered and changed in terms of syntax as the need arises. To enable evaluation engines to easily perform compatibility checks or reject a query, the exact dialect used can be declared by starting the preamble with a ``DIALECT xyz`` part, where ``xyz`` is a version definition.
+The initial version of IQL is ``1.0`` and leaving the dialect part of a query blank, this initial version will be assumed!
+
+### 9.2. Imports
+
+To allow for flexible integration of macro definitions or bigger language extensions, IQL provides an optional ``IMPORT`` section in the preamble that lets users specify exactly what additional modules besides the bare IQL core are required for evaluating the query. each import target is specified by declaring a URI for its resolution and an optional namespace alias to be used within the query.
+
+```
+importStatement := 'IMPORT' importTarget (',' importTarget)*
+	
+importTarget := StringLiteral ('AS' Identifier)?
+``` 
+
+### 9.3. Switches
 
 For increased flexibility, IQL supports a collection of switches to turn certain optional features on when needed. Switches are part of a query's preamble and cannot be changed after their initial declaration. All the native IQL switches use the prefix ``iql`` for their name. Any extensions that offer additional switches should declare and use their own namespace for switches!
 
@@ -390,21 +433,51 @@ Currently supported switches:
 | iql.string.case.off         | Turns of case sensitivity when performing string operations such as equality checks. |
 | iql.string.case.lower       | Another approach to case insensitivity, this switch turns all strings into lower case. |
 | iql.expansion.off           | Effectively shuts down [value expansion](#712-value-expansion). |
-| iql.string2bool.off         | Deactivates the interpretation of strings as boolean values as described [here](#9-constraints). |
-| iql.int2bool.off            | Deactivates the interpretation of integers as boolean values as described [here](#9-constraints). |
-| iql.float2bool.off          | Deactivates the interpretation of floating point numbers as boolean values as described [here](#9-constraints). |
-| iql.obj2bool.off            | Deactivates the interpretation of arbitrary objects as boolean values as described [here](#9-constraints). |
+| iql.string2bool.off         | Deactivates the interpretation of strings as boolean values as described [here](#8-constraints). |
+| iql.int2bool.off            | Deactivates the interpretation of integers as boolean values as described [here](#8-constraints). |
+| iql.float2bool.off          | Deactivates the interpretation of floating point numbers as boolean values as described [here](#8-constraints). |
+| iql.obj2bool.off            | Deactivates the interpretation of arbitrary objects as boolean values as described [here](#8-constraints). |
 | iql.any2bool.off            | Deactivates the interpretation of anything non-boolean as boolean value. This is a combination of ``iql.string2bool.off``, ``iql.int2bool.off``, ``iql.float2bool.off`` and  ``iql.obj2bool.off``. |
-| iql.direction.reverse       | Reverses the direction used to traverse corpus data for a search |
-| iql.warnings.off            | Deactivates all warnings, potentially resulting in confusing results. |
+| iql.direction.reverse       | Reverses the direction used to traverse corpus data for a search. |
+| iql.array.zero              | Change [array access](#74-array-access) to be 0-based. |
+| iql.warnings.off            | Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query. |
 
-## 9. Constraints
+### 9.4. Properties
 
-Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), IQL allows the following evaluations as syntactic sugar:
+In addition to switches, that allow to turn certain IQL feature son or off, a more fine-grained configuration can be performed using named properties. These take the form of a classic assignment of ``name = value`` and support any of the basic [literals](#4-literals).
 
-|      Type               |       Condition         |    Value     |
-|:----------------------- |:----------------------- |:------------ |
-| ``string``              | empty or null           | ``false``    | 
-| ``int`` or ``long``     | ``0``                   | ``false``    |
-| ``float`` or ``double`` | ``0.0``                 | ``false``    |
-| any object              | null                    | ``false``    |
+## 11. Query Statement Section
+
+The only truly obligatory part of an IQL query, this section defines what to actually extract from what corpus. It is divided into three subsections that define the corpus [source](#111-source), a layer/scope [selection](#112-select) for vertical filtering and the actual [constraints](#113-constraints) for horizontal filtering of the corpus data. 
+
+### 11.1. Source
+
+In the initial source statement the corpora to be used are defined and optionally re-assigned new namespaces for easier use.
+
+```
+sourceStatement := 'FROM' corpusSelector (',' corpusSelector)*
+	
+corpusSelector := (qualifiedIdentifier | StringLiteral) (AS renamed=Identifier)?
+
+qualifiedIdentifier := Identifier ('::' Identifier)*
+```
+
+### 11.2. Select
+
+After the corpus source definition, this section is the first actual filtering step in the query, by declaring what layers, layer groups or scopes of the corpus are to be accessed and thereby vertically filtering the corpus data.
+
+```
+selectStatement := 'SELECT' layerSelector (',' layerSelector)*
+	
+layerSelector := qualifiedIdentifier ('AS' 'PRIMARY'? Identifier | 'AS' 'PRIMARY'? 'SCOPE' Identifier '(' scopeElementList ')' )?
+
+scopeElementList := qualifiedIdentifier '*'? (',' qualifiedIdentifier '*'? )*
+```
+
+### 11.3. Constraints
+
+## 12. Result Processing Section
+
+There be dragons.
+
+(Content of the result section will be added as IQL evolves)
