@@ -163,7 +163,7 @@ public class IQLTestUtils {
 
 		// Continue structural check
 		assertThat(actual.getChildCount())
-			.as("rule subtree mismatch: %s", trace)
+			.as("rule subtree mismatch for '%s': '%s' vs. '%s'", actual.getText(), trace, expected)
 			.isEqualTo(expected.childCount());
 
 		// If needed go down the tree
