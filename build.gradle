@@ -336,17 +336,17 @@ subprojects {
 		includes(["**/*.java", "**/*.properties", "**/*.ini", "**/*.xml", "**/*.xsd", "**/*.g4"])
 		
 		// pakage-info.java already has a documentation header, don't need conflicts here!
-		excludes(["**/package-info.java", "**/generated-src/*"])
+		excludes(["**/package-info.java", "**/generated-src/**"])
 		
 		mapping {
 			// Per default the plugin uses full 'JAVADOC_STYLE' for license headers.
 			// We prefer normal multiline comment style to distinguish it from the
 			// documentation after package and import statements.
-			java = 'SLASHSTAR_STYLE'
+			//java = 'SLASHSTAR_STYLE'
 			g4 = 'JAVADOC_STYLE'
 		}
 		
-	    ignoreFailures = true
+	    ignoreFailures = false
 		useDefaultMappings = true
 		dryRun = false
 		strictCheck = true

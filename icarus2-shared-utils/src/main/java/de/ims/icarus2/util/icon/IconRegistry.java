@@ -1,4 +1,4 @@
-/*
+/**
  * ICARUS2 Corpus Modeling Framework
  * Copyright (C) 2014-2020 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
