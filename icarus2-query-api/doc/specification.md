@@ -474,6 +474,10 @@ layerSelector := qualifiedIdentifier ('AS' 'PRIMARY'? Identifier | 'AS' 'PRIMARY
 scopeElementList := qualifiedIdentifier '*'? (',' qualifiedIdentifier '*'? )*
 ```
 
+Every layer selector either references an entire subgraph of the corpus member-graph directly or constructs a partial selection with the ``SCOPE`` keyword. When using the first approach, an [item layer](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/layer/ItemLayer.java) is referenced and all its dependencies and associated annotation layers will be made available implicitly. This is an easy way of accessing simple corpora, but can lead to costly I/O overhead when loading vast parts of a complex corpus that aren't actually needed to evaluate the query. For a more fine-grained alternative, the ``SCOPE`` keyword allows to create a scope that spans an exactly specified collection of layers. If a layer in the list of scope elements is appended the ``*`` symbol, the entire member-subgraph for this layer will be added to the scope.
+
+If multiple layer selectors are defined, up to one can be declared as ``PRIMARY`` to represent the granularity of returned items for the search.
+
 ### 11.3. Constraints
 
 ## 12. Result Processing Section
