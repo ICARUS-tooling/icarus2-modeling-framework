@@ -1,4 +1,4 @@
-/**
+/*
  * ICARUS2 Corpus Modeling Framework
  * Copyright (C) 2014-2020 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
@@ -47,7 +47,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import de.ims.icarus2.query.api.iql.IQL_TestParser.StandaloneExpressionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser;
+import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser.StandaloneExpressionContext;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;

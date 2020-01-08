@@ -1,4 +1,4 @@
-/**
+/*
  * ICARUS2 Corpus Modeling Framework
  * Copyright (C) 2014-2020 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
@@ -23,6 +23,8 @@ import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.Token;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+
+import de.ims.icarus2.query.api.iql.antlr.IQLLexer;
 
 
 /**

@@ -23,7 +23,7 @@ grammar IQL;
 //}
 
 @header {
-package de.ims.icarus2.query.api.iql;
+package de.ims.icarus2.query.api.iql.antlr;
 }
 
 @lexer::members {

@@ -1,4 +1,4 @@
-/**
+/*
  * ICARUS2 Corpus Modeling Framework
  * Copyright (C) 2014-2020 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
@@ -42,6 +42,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestFactory;
 
+import de.ims.icarus2.query.api.iql.antlr.IQLLexer;
+import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser;
 import de.ims.icarus2.util.strings.BracketStyle;
 import de.ims.icarus2.util.tree.Tree;
 import de.ims.icarus2.util.tree.TreeParser;
