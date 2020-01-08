@@ -275,6 +275,16 @@ subprojects {
 		}
 	}
 	
+	/**
+	 * Specialized test tasks for integration, concurrency
+	 * and very costly tests. 
+	 * Association to a group is defined via the respective tag(s). Perdefault
+	 * the 'test' task runs without any of those test types and none of them
+	 * are performed on the CI environment.
+	 * The 'check' task on the other hand includes ALL of them and therefore 
+	 * local build might take quite some time.
+	 */
+	
 	task integrationTest(type: Test) {
 		description = 'Run integration tests based on the integration tag'
 		useJUnitPlatform {
