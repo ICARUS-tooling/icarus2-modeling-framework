@@ -299,9 +299,13 @@ primary
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
-	| variableName
+	| reference	
+	;
+	
+reference
+	: variableName
 	| member
-	| Identifier	
+	| Identifier
 	;
 	
 type
