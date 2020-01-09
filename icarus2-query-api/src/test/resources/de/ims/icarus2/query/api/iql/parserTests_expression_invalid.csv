@@ -7,7 +7,7 @@
 "this.is.some.123loooooong.path","1","long path with numeric symbols"
 "@this.is.some.123loooooong.path","1","long path with numeric symbols and variable start"
 
-"array[]","]","empty array address"
+"array[]","[","empty array address"
 "func()()","(","double method invocation"
 "array[123]()","(","method invocation on array element"
 "()",")","empty wrapping"

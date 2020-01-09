@@ -185,19 +185,75 @@ localConstraints
 	: WHERE (flatStatement | treeStatement | graphStatement)
 	;
 	
-/** Text-corpus query  */
+/** Text-corpus query with a flat sequential structure  */
 flatStatement
 	: constraint
+	| flatNode+
+	;
+	
+flatNode
+	: quantifier? LBRACK memberLabel? constraint? RBRACK
+	;
+	
+memberLabel
+	: member COLON
 	;
 	
 /** Treebank query */
 treeStatement
-	: TREE //TODO
+	: TREE treeNodeList
+	;
+	
+/**
+ * Possible scenarios for tree (root) query composition:
+ * []					singleton
+ * [][]					siblings
+ * [] or []				alternatives
+ * {[][]} or [] 		grouping with alternative
+ * {[][]} or {[] or {[][]}} complex alternatives
+ * 
+ */
+treeNodeList
+	: LBRACE treeNodeList RBRACE		#treeNodeGrouping
+	| treeNode+							#treeNodeSiblings
+	| treeNodeList OR treeNodeList		#treeNodeAlternatives
+	;
+	
+treeNode
+	: quantifier? LBRACK memberLabel? constraint? treeNodeList? RBRACK
 	;
 	
 /** Complex query over graph data */
 graphStatement
-	: NODES //TODO
+	: GRAPH graphElementList
+	;
+	
+graphElementList
+	: LBRACE graphElementList RBRACE			#graphNodeGrouping
+	| graphElement (COMMA graphElement)*		#graphNodeSiblings
+	| graphElementList OR graphElementList		#graphNodeAlternatives
+	;
+	
+/**
+ * Possible graph element scenarios:
+ * [$a]					singleton node
+ * [$a]-->[$b]			right-directed edge (a to b)
+ * [$a]<--[$b]			right-directed edge (a to b)
+ * [$a]---[$b]			undirected edge
+ * [$a]<->[$b]			bidirectional edge
+ * 
+ * Quantifiers on node actually count together with the respective edge:
+ * <4+>[$a]-->[$b]		at least 4 nodes matching $a with an edge to $b
+ */
+graphElement
+	: graphNodeSingleton #graphNode
+	| graphNodeSingleton (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED) graphNodeSingleton #emptyGraphEdge	
+	// Models left-directed, undirected, bidirectional and right-directed edges
+	| graphNodeSingleton (EDGE_LEFT_DIRECTED | EDGE_LEFT_UNDIRECTED) memberLabel? constraint? (EDGE_RIGHT_DIRECTED | EDGE_RIGHT_UNDIRECTED) graphNodeSingleton #graphEdge
+	;
+	
+graphNodeSingleton
+	: quantifier? LBRACK memberLabel constraint? RBRACK
 	;
 	
 //TODO add more statement variations based on established CQL families
@@ -211,7 +267,7 @@ globalConstraints
 
 // RESULT BEGIN
 
-/** Post.processing directives for generating textual/statistical results */
+/** Post-processing directives for generating textual/statistical results */
 result
 	:
 	;
@@ -234,8 +290,8 @@ constraint
 	 * extensions.
 	 * 
 	 */
-	| constraint AND constraint		# conjunctionConstraint
-	| constraint OR constraint		# disjunctionConstraint
+	| constraint and constraint		# conjunctionConstraint
+	| constraint or constraint		# disjunctionConstraint
 	;
 	
 loopControl
@@ -288,8 +344,8 @@ expression
 	| left=expression (LT | LT_EQ | GT | GT_EQ) right=expression 					# comparisonOp
 	| left=expression (TILDE | NOT_MATCHES | HASH | NOT_CONTAINS) right=expression 	# stringOp
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
-	| left=expression (DOUBLE_AMP | AND) right=expression 							# conjunction
-	| left=expression (DOUBLE_PIPE | OR) right=expression 							# disjunction
+	| left=expression and right=expression 							# conjunction
+	| left=expression or right=expression 							# disjunction
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	;
 	
@@ -333,10 +389,24 @@ all
 	| ALL
 	;
 	
+and
+	: AND
+	| DOUBLE_AMP
+	;
+	
+or
+	: OR
+	| DOUBLE_PIPE
+	;
+	
 variableName
 	: AT Identifier
 	;
 
+/** 
+ * Models the actual member variables for a matching.
+ * The optional index suffix
+ */
 member
 	: DOLLAR Identifier
 	;
@@ -411,8 +481,7 @@ WITH : 'WITH' | 'with' ;
 DISTINCT : 'DISTINCT' | 'distinct' ;
 WHERE : 'WHERE' | 'where' ;
 TREE : 'TREE' | 'tree' ;
-NODES : 'NODES' | 'nodes' ;
-EDGES : 'EDGES' | 'edges' ;
+GRAPH : 'GRAPH' | 'graph' ;
 OR : 'OR' | 'or' ;
 AND : 'AND' | 'and' ;
 ELEMENTS : 'ELEMENTS' | 'elements' ;
@@ -488,7 +557,14 @@ DOLLAR : '$';
 HASH : '#';
 QMARK : '?';
 EXMARK : '!';
-ARROW : '=>';
+EDGE_LEFT : '<--';
+EDGE_RIGHT : '-->';
+EDGE_BIDIRECTIONAL : '<->';
+EDGE_UNDIRECTED: '---';
+EDGE_LEFT_DIRECTED : '<-[';
+EDGE_LEFT_UNDIRECTED: '--[';
+EDGE_RIGHT_DIRECTED : ']->';
+EDGE_RIGHT_UNDIRECTED: ']--';
 DOUBLE_COLON : '::';
 DOUBLE_DOT : '..';
 UNDERSCORE : '_';

@@ -17,6 +17,10 @@ SETUP
 SELECT
 AS
 SCOPE
+WITH
+DISTINCT
+WHERE
+TREE
 NODES
 EDGES
 OR
@@ -457,7 +461,7 @@ In the initial source statement the corpora to be used are defined and optionall
 ```
 sourceStatement := 'FROM' corpusSelector (',' corpusSelector)*
 	
-corpusSelector := (qualifiedIdentifier | StringLiteral) (AS renamed=Identifier)?
+corpusSelector := (qualifiedIdentifier | StringLiteral) ('AS' Identifier)?
 
 qualifiedIdentifier := Identifier ('::' Identifier)*
 ```
@@ -479,6 +483,47 @@ Every layer selector either references an entire subgraph of the corpus member-g
 If multiple layer selectors are defined, up to one can be declared as ``PRIMARY`` to represent the granularity of returned items for the search.
 
 ### 11.3. Constraints
+
+The constraints section in IQL consists either of the sole ``ALL`` keyword or of an optional bindings definition and the actual constraints themselves. A binding is a collection of [member](#6-variables-and-references) references that get declared to belong to a certain type and/or part of the corpus. The 'DISTINCT' keyword enforces that the bound member references in this binding do **not** match the same target. Depending on the localConstraint used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
+
+```
+bindingsList := 'WITH' binding ('AND' binding)* 
+binding := member (',' member)* 'AS' 'DISTINCT'? qualifiedIdentifier
+```
+
+Constraints are further divided into local constraints (signaled by the ``WHERE`` keyword) and global ones (with the ``HAVING`` keyword). Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). They also introduce certain limitations on what can be expressed or searched (e.g. a ``flat`` local constraints declaration will not provide implicit access to tree information). However, global constraints can introduce arbitrary constraints and thereby increase the evaluation complexity, potentially without limits. Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
+
+### 11.3.1 Basic Constraints
+
+Constraints can either be predicates, special grouping expressions, loop predicates, bracketed (with ``(`` or ``)``) constraints or boolean disjunctions (via ``OR``) or conjunctions (with ``AND``) of constraints.
+
+### 11.3.1.1 Predicate
+
+Predicates are essentially [expressions](#7-expressions) that evaluate to boolean value. See the previous sections on [constraints](#8-constraints) for information on how non-boolean types are interpreted as boolean values and the [switches](#93-switches) section for ways to influence this behavior.
+
+### 11.3.2.2 Grouping
+
+TODO
+
+### 11.3.3.3 Loop Predicate
+
+TODO
+
+### 11.3.2 Flat Constraints
+
+Flat constraints provide no extra helpers to declare structural properties of the query. They consist of arbitrary [basic constraints](#1121-basic-constraints) and typically make global constraints redundant.
+
+### 11.3.3 Tree Constraints
+
+TODO
+
+### 11.3.4 Graph Constraints
+
+TODO
+
+### 11.3.5 Global Constraints
+
+Global constraints con be any [basic constraint](#1131-basic-constraints).
 
 ## 12. Result Processing Section
 

@@ -143,7 +143,11 @@ public class IQLExpressionTest {
 			pair("ref", "named ref"),
 			pair("path.to.ref", "path"),
 			pair("@var", "named var"),
-			pair("@var.to.path", "path of var")
+			pair("@var.to.path", "path of var"),
+			pair("$xyz", "named member"),
+			pair("$xyz.to.path", "path from member"),
+			pair("$xyz(123)", "named member with index"),
+			pair("$xyz(123).to.path", "path from member with index")
 	);
 
 	private static final List<Pair<String, String>> callableReferences = list(
