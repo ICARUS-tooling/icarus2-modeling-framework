@@ -36,6 +36,7 @@ public static final int WHITESPACE = 1;
 public static final int COMMENTS = 2;
 
 boolean ahead(String text) {
+	//TODO debug this crap
     for (int i = 0; i < text.length(); i++) {
 		if (text.charAt(i) != _input.LA(i + 1)) {
         	return false;
@@ -52,6 +53,10 @@ boolean before(String text) {
 		}
     }
     return true;
+}
+
+boolean isDigit(int offset) {
+	return Character.isDigit(_input.LA(offset));
 }
 
 }
@@ -620,9 +625,9 @@ COMMA : ',';
 UNDERSCORE : '_';
 
 // Edge definitions without inner constraints
-EDGE_LEFT : {before("]")}? '<--' {ahead("[")}?;
-EDGE_RIGHT : {before("]")}? '-->' {ahead("[")}?;
-EDGE_BIDIRECTIONAL : {before("]")}? '<->' {ahead("[")}?;
+EDGE_LEFT : '<--';
+EDGE_RIGHT : '-->';
+EDGE_BIDIRECTIONAL :'<->';
 EDGE_UNDIRECTED: {before("]")}? '---' {ahead("[")}?;
 // Edge definitions with inner constraints
 EDGE_LEFT_DIRECTED : {before("]")}? '<-' {ahead("[")}?;

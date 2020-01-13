@@ -122,7 +122,7 @@ public class IQLTestUtils {
 		parser.addErrorListener(reporter);
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL);
 		parser.setProfile(false);
-		parser.setTrace(true);
+		parser.setTrace(false);
 
 		return parser;
 	}
