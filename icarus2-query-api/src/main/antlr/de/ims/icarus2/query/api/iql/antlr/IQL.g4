@@ -67,36 +67,37 @@ private boolean isNone(int pos, int...set) {
 
 /** Standalone rules */
 
-standaloneExpression : expression EOF ;
 
-standaloneVersionDeclaration : versionDeclaration EOF ;
-
+// Standalone top-level parts
 standalonePreamble : preamble EOF ;
-
 standaloneStatement : statement EOF ;
-
 standaloneResult : result EOF ;
+
+// Standalone statement parts
+standaloneFlatStatement : flatStatement EOF ;
+standaloneTreeStatement : treeStatement EOF ;
+standaloneGraphStatement : graphStatement EOF ;
+
+// Standalone helpers
+standaloneVersionDeclaration : versionDeclaration EOF ;
+standaloneExpression : expression EOF ;
 
 
 /** Basic Rules */
 
 query
-	: preamble statement result EOF
+	: preamble statement (RETURN result) (APPENDIX appendix)? EOF
 	;
 	
 // PREAMBLE BEGIN
 	
 preamble
-	: languageVersion? importStatement? setupStatement? // here goes configuration stuff, namespace declarations, etc...
-	;
-	
-languageVersion
-	: DIALECT versionDeclaration
+	: (DIALECT versionDeclaration)? (IMPORT importTargetList)? (SETUP propertyList)? // here goes configuration stuff, namespace declarations, etc...
 	;
 	
 /** Import external extensions or script definitions, optionally renaming their namespace */
-importStatement
-	: IMPORT importTarget (COMMA importTarget)*
+importTargetList
+	: importTarget (COMMA importTarget)*
 	;
 	
 importTarget
@@ -104,8 +105,8 @@ importTarget
 	;
 	
 /** Allows to do a general setup of query parameters */
-setupStatement
-	: SETUP property (COMMA property)*
+propertyList
+	: property (COMMA property)*
 	;
 	
 property
@@ -123,19 +124,19 @@ property
 
 /** Core of every query: specify what to extract from where */
 statement
- 	: sourceStatement selectStatement constraintStatement
+ 	: FROM corpusSelectorList SELECT layerSelectorList constraintStatement groupStatement?
  	;
  	
-sourceStatement
-	: FROM corpusSelector (COMMA corpusSelector)*
+corpusSelectorList
+	: corpusSelector (COMMA corpusSelector)*
 	;
 	
 corpusSelector
 	: (id=qualifiedIdentifier | uri=StringLiteral) (AS renamed=Identifier)? 
 	;
 
-selectStatement
-	: SELECT layerSelector (COMMA layerSelector)*
+layerSelectorList
+	: layerSelector (COMMA layerSelector)*
 	;
 	
 layerSelector 
@@ -160,13 +161,13 @@ qualifiedIdentifier
  * can cause unlimited increase in complexity!
  */
 constraintStatement
-	: bindingsList? localConstraints globalConstraints?
+	: (WITH bindingsList)? WHERE localConstraints (HAVING globalConstraints)?
 	| ALL // special marker to return the entire corpus, with only the query scope as vertical filter
 	;
 	
 /** Groups a non-empty sequence of member bindings */
 bindingsList
-	: WITH binding (AND binding)* 
+	: binding (AND binding)* 
 	;
 	
 /** 
@@ -182,7 +183,9 @@ binding
 	;
 	
 localConstraints
-	: WHERE (flatStatement | treeStatement | graphStatement)
+	: flatStatement 
+	| TREE treeStatement 
+	| GRAPH graphStatement
 	;
 	
 /** Text-corpus query with a flat sequential structure  */
@@ -199,12 +202,9 @@ memberLabel
 	: member COLON
 	;
 	
-/** Treebank query */
-treeStatement
-	: TREE treeNodeList
-	;
-	
 /**
+ * Treebank query
+ * 
  * Possible scenarios for tree (root) query composition:
  * []					singleton
  * [][]					siblings
@@ -213,25 +213,42 @@ treeStatement
  * {[][]} or {[] or {[][]}} complex alternatives
  * 
  */
-treeNodeList
-	: LBRACE treeNodeList RBRACE		#treeNodeGrouping
+treeStatement
+	: LBRACE treeStatement RBRACE		#treeNodeGrouping
 	| treeNode+							#treeNodeSiblings
-	| treeNodeList OR treeNodeList		#treeNodeAlternatives
+	| treeStatement OR treeStatement	#treeNodeAlternatives
 	;
 	
+/**
+ * Node scenarios:
+ * 
+ * []						empty, existentially quantified node
+ * <xy>[]					empty, explicitly quantified node
+ * [...]					existentially quantified node with inner constraints
+ * <xy>[...]				explicitly quantified node with inner constraints
+ * [[][[]]]					existentially quantified tree
+ * [...[...][[...]]]		existentially quantified tree with (multiple) inner constraints
+ * <x>[[]<y>[<z>[]]]		tree with explicit and implicit quantification
+ */
 treeNode
-	: quantifier? LBRACK memberLabel? constraint? treeNodeList? RBRACK
+	: quantifier? LBRACK memberLabel? constraint? treeStatement? RBRACK
 	;
-	
-/** Complex query over graph data */
+
+/**
+ * Complex query over graph data
+ * 
+ * Possible scenarios for graph query composition:
+ * []							singleton
+ * [],[],[]---[],[]-->[]		siblings and edges
+ * [] or []-->[]				alternatives
+ * {[],[]} or []-->[]			grouping with alternative
+ * {[],[]} or {[] or {[],[]}} 	complex alternatives
+ * 
+ */
 graphStatement
-	: GRAPH graphElementList
-	;
-	
-graphElementList
-	: LBRACE graphElementList RBRACE			#graphNodeGrouping
-	| graphElement (COMMA graphElement)*		#graphNodeSiblings
-	| graphElementList OR graphElementList		#graphNodeAlternatives
+	: LBRACE graphStatement RBRACE			#graphNodeGrouping
+	| graphElement (COMMA graphElement)*	#graphNodeSiblings
+	| graphStatement OR graphStatement		#graphNodeAlternatives
 	;
 	
 /**
@@ -244,6 +261,11 @@ graphElementList
  * 
  * Quantifiers on node actually count together with the respective edge:
  * <4+>[$a]-->[$b]		at least 4 nodes matching $a with an edge to $b
+ * [$a]-->3-[$b]		node $a with no more than 3 edges to nodes matching $b
+ * 
+ * Note:
+ *  Edges always use a total of 3 symbols to define, so they can't be accidentally
+ *  mixed up with combinations of signs and comparison operators.
  */
 graphElement
 	: graphNodeSingleton #graphNode
@@ -259,7 +281,15 @@ graphNodeSingleton
 //TODO add more statement variations based on established CQL families
 	
 globalConstraints
-	: HAVING constraint
+	: constraint
+	;
+	
+groupStatement
+	: GROUP groupExpression (COMMA)
+	;
+	
+groupExpression
+	: BY expression (FILTER ON expression)? (LABEL StringLiteral)? (DEFAULT StringLiteral)?
 	;
 	
 // STATEMENT END
@@ -274,40 +304,28 @@ result
 
 // RESULT END
 
- 	
-//TODO add hex literals for encoded data
+
+// APPENDIX BEGIN
+
+/** Currently appendix of a query can only hold binary payloads as hex strings */
+appendix
+	: binaryPayload (COMMA binaryPayload)*
+	;
+	
+binaryPayload
+	: id=variableName ASSIGN HexLiteral
+	;
+
+// APPENDIX END
 
 // GENERAL HELPERS
 	
+/** 
+ * We keep this rule as an explicit marker for situation where the expression
+ * is required to evaluate to a boolean type.
+ */
 constraint
-	: LPAREN constraint RPAREN 														# wrappingConstraint
-	| expression # predicate // must evaluate to boolean or equivalent
-	| expression (GROUPING | GROUP) PureDigits (LABEL StringLiteral)? (DEFAULT StringLiteral)? # groupAssignment
-	| FOREACH expression AS variableName loopControl counterList? # loopConstraint
-	/*
-	 * The following boolean combinations of constraints are a duplicate of the expression
-	 * equivalent and needed to allow combinations involving grouping or future constraint
-	 * extensions.
-	 * 
-	 */
-	| constraint and constraint		# conjunctionConstraint
-	| constraint or constraint		# disjunctionConstraint
-	;
-	
-loopControl
-	: (EVEN | ODD)? (OMIT omit=constraint)? (RANGE range=boundedRange)? (STEP step=boundedRange)? (DO body=constraint)? END
-	;
-	
-boundedRange
-	: LPAREN from=expression COMMA to=expression RPAREN
-	;
-	
-counterList
-	: counter (AND counter)*
-	;
-	
-counter
-	: COUNT constraint AS variableName
+	: expression 
 	;
 	
 expressionList
@@ -328,12 +346,21 @@ expressionList
 expression
 	: primary																		# primaryExpression
 	| expression DOT Identifier														# pathAccess
-	// function calls can only occur after direct references
+	/*
+	 * Function calls can only occur after direct references.
+	 * Arguments may evaluate to any type (a cast exception may be thrown).
+	 */
 	| expression {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 				# methodInvocation
-	// array indices can only occur after direct references, function calls or annotations
+	/*
+	 * Array indices can only occur after direct references, array access, function calls or annotations.
+	 * Arguments must evaluate to an 'int' type.
+	 */
 	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACK expressionList RBRACK		# arrayAccess
-	// annotation can only occur after direct references, function calls or annotations
-	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACE expression RBRACE	# annotationAccess
+	/*
+	 * Annotation can only occur after direct references, function calls or arrays.
+	 * Arguments must evaluate to string values.
+	 */
+	| expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE expressionList RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| source=expression (NOT | EXMARK)? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
@@ -344,9 +371,10 @@ expression
 	| left=expression (LT | LT_EQ | GT | GT_EQ) right=expression 					# comparisonOp
 	| left=expression (TILDE | NOT_MATCHES | HASH | NOT_CONTAINS) right=expression 	# stringOp
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
-	| left=expression and right=expression 							# conjunction
-	| left=expression or right=expression 							# disjunction
+	| left=expression and right=expression 											# conjunction
+	| left=expression or right=expression 											# disjunction
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
+	| loopExpresseion																# forEach
 	;
 	
 primary
@@ -364,6 +392,27 @@ reference
 	| Identifier
 	;
 	
+loopExpresseion
+	// expression source must be a reference to an iterable object or collection
+	: FOREACH expression AS variableName loopControl (COUNT counterList)?
+	;
+	
+loopControl
+	: (EVEN | ODD)? (OMIT omit=constraint)? (RANGE range=boundedRange)? (STEP step=boundedRange)? (DO body=constraint)? END
+	;
+	
+boundedRange
+	: LPAREN from=expression COMMA to=expression RPAREN
+	;
+	
+counterList
+	: counter (COMMA counter)*
+	;
+	
+counter
+	: constraint AS variableName
+	;
+	
 type
 	: BOOLEAN
 	| STRING
@@ -375,13 +424,16 @@ type
 	
 quantifier
 	: all
-	| unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )* 
+	| EXMARK
+	| unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )*  
 	| LT unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )* GT
 	;
 	
 unsignedSimpleQuantifier
-	: PureDigits sign?
-	| PureDigits DOUBLE_DOT PureDigits
+	: PureDigits 						# exactQuantifier
+	| PureDigits PLUS					# atLeastQuantifier
+	| PureDigits MINUS					# atMostQuantifier
+	| PureDigits DOUBLE_DOT PureDigits	# rangeQuantifier
 	;
 	
 all 
@@ -506,6 +558,12 @@ END : 'END' | 'end' ;
 COUNT : 'COUNT' | 'count' ;
 DIALECT : 'DIALECT' | 'dialect' ;
 PRIMARY : 'PRIMARY' | 'primary' ;
+APPEND : 'APPEND' | 'append' ;
+BY : 'BY' | 'by' ;
+FILTER : 'FILTER' | 'filter' ;
+ON : 'ON' | 'on' ;
+RETURN : 'RETURN' | 'return' ;
+APPENDIX : 'APPENDIX' | 'appendix' ;
 
 // Types
 INT : 'int' ;
@@ -526,6 +584,7 @@ RBRACE : '}';
 LBRACK : '[';
 RBRACK : ']';
 COMMA : ',';
+UNDERSCORE : '_';
  
 // Operator symbols
 ASSIGN : '=';
@@ -557,19 +616,19 @@ DOLLAR : '$';
 HASH : '#';
 QMARK : '?';
 EXMARK : '!';
+// Edge definitions without inner constraints
 EDGE_LEFT : '<--';
 EDGE_RIGHT : '-->';
 EDGE_BIDIRECTIONAL : '<->';
 EDGE_UNDIRECTED: '---';
+// Edge definitions with inner constraints
 EDGE_LEFT_DIRECTED : '<-[';
 EDGE_LEFT_UNDIRECTED: '--[';
 EDGE_RIGHT_DIRECTED : ']->';
 EDGE_RIGHT_UNDIRECTED: ']--';
+// Range and linking punctuation
 DOUBLE_COLON : '::';
 DOUBLE_DOT : '..';
-UNDERSCORE : '_';
-//X : 'x' ;
-GROUPING : '<*>';
 
 VersionPrefix
 	: 'v'
@@ -656,7 +715,31 @@ IdentifierBegin
  	: 	LOWERCASE 
  	| 	UPPERCASE
  	;
-	
+
+HexLiteral
+	:	'0' [xX] HexDigits
+	;
+
+fragment
+HexDigits
+	:	HexDigit (HexDigitsAndUnderscores? HexDigit)?
+	;
+
+fragment
+HexDigit
+	:	[0-9a-fA-F]
+	;
+
+fragment
+HexDigitsAndUnderscores
+	:	HexDigitOrUnderscore+
+	;
+
+fragment
+HexDigitOrUnderscore
+	:	HexDigit
+	|	'_'
+	;	
 
 // Basic alnum symbols
 fragment LOWERCASE  : [a-z] ;
