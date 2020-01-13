@@ -4,7 +4,9 @@
 package de.ims.icarus2.query.api.iql;
 
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
+import static de.ims.icarus2.query.api.iql.IQLTestUtils.f1;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.f1Tree;
+import static de.ims.icarus2.query.api.iql.IQLTestUtils.f2;
 import static de.ims.icarus2.query.api.iql.IQLTestUtils.randomExpressions;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -38,7 +40,7 @@ public class IQLFlatStatementTest {
 	@RandomizedTest
 	@TestFactory
 	Stream<DynamicNode> testFlatConstraint(RandomGenerator rng) {
-		return randomExpressions(rng, 10).stream().map(pExp -> makeStatementTreeTest(
+		return randomExpressions(rng, 10, false).stream().map(pExp -> makeStatementTreeTest(
 				pExp.first, f1Tree("[{1}]", pExp), pExp.second));
 	}
 
@@ -84,5 +86,20 @@ public class IQLFlatStatementTest {
 	@ParameterizedTest
 	void testNodesWithInnerConstraints(String statement, String expected, String desc) {
 		assertParsedStatament(statement, expected, desc);
+	}
+
+	@CsvSource({
+		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
+		"[a>3 && pos~\"N[NP]\"], [[[\\[][a>3&&pos~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
+		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two nodes with constraints",
+	})
+
+	@RandomizedTest
+	@TestFactory
+	Stream<DynamicNode> testNodeWithRandomInnerConstraints(RandomGenerator rng) {
+		return randomExpressions(rng, 10, false).stream().map(pExp -> makeStatementTreeTest(
+				f1("[{1}]", pExp),
+				f1Tree("[[[\\[][{1}][\\]]]]", pExp),
+				f2("single node with {1}", pExp)));
 	}
 }

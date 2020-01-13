@@ -558,16 +558,22 @@ public class IQLTestUtils {
 	}
 
 	/** Generates a sequence of randomly constructed binary expressions */
-	static List<Pair<String, String>> randomExpressions(RandomGenerator rng, int count) {
+	static List<Pair<String, String>> randomExpressions(RandomGenerator rng, int count, boolean allowKeywordOp) {
 		List<Pair<String, String>> result = new ArrayList<>(count);
-		for (int i = 0; i < count; i++) {
+		int remaining = count;
+		while (remaining>0) {
+			Pair<String, String> pOp = rng.random(binaryOps);
+			if(!allowKeywordOp && isKeywordOp(pOp)) {
+				continue;
+			}
+
 			Pair<String, String> pFirst = rng.random(elements);
 			Pair<String, String> pSecond = rng.random(elements);
-			Pair<String, String> pOp = rng.random(binaryOps);
 			pOp = padOp(pOp);
 
 			result.add(pair(pFirst.first+pOp.first+pSecond.first,
 					f2("op '{1}' of '{2}' and '{3}'", pOp, pFirst, pSecond)));
+			remaining--;
 		}
 		return result;
 	}
