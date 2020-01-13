@@ -1,5 +1,6 @@
 "input","description"
-"xx","min size"
+"x","min size (1)"
+"xx","min size (2)"
 "x_x","with underscore"
 "xxxxxxx","long lowercase"
 "XXXXXXX","long upeprcase"

@@ -16,12 +16,17 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static de.ims.icarus2.util.collections.CollectionUtils.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -44,7 +49,10 @@ import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.query.api.iql.antlr.IQLLexer;
 import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser;
+import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.strings.BracketStyle;
+import de.ims.icarus2.util.strings.StringUtil;
 import de.ims.icarus2.util.tree.Tree;
 import de.ims.icarus2.util.tree.TreeParser;
 
@@ -66,7 +74,9 @@ public class IQLTestUtils {
 		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
 				int charPositionInLine, String msg, RecognitionException e) {
 			if(this.offendingToken!=null)
-				throw new IllegalStateException("Offending symbol already assigned: "+this.offendingToken);
+				throw new IllegalStateException(String.format(
+						"Offending symbol already assigned: '%s' - unable to assign '%s'''",
+						this.offendingToken, ((Token)offendingSymbol).getText()));
 
 			if(e!=null) {
 				Token token = e.getOffendingToken();
@@ -119,6 +129,12 @@ public class IQLTestUtils {
 
 	public static <C extends ParserRuleContext> void assertParsedTree(String text, String expected,
 			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
+		assertParsedTree(text, expected, BracketStyle.SQUARE, description, rule, expectEOF);
+	}
+
+	public static <C extends ParserRuleContext> void assertParsedTree(
+			String text, String expected, BracketStyle style,
+			String description, Function<IQL_TestParser, C> rule, boolean expectEOF) {
 		C ctx;
 
 		try {
@@ -140,7 +156,7 @@ public class IQLTestUtils {
 			root = ctx.getChild(0);
 		}
 
-		Tree<String> expectedTree = TreeParser.forStringPayload(BracketStyle.SQUARE).parseTree(expected);
+		Tree<String> expectedTree = TreeParser.forStringPayload(style).parseTree(expected);
 
 		matchParseNodePlain(expectedTree, root, new Stack<>());
 	}
@@ -314,6 +330,128 @@ public class IQLTestUtils {
 		return sb.toString();
 	}
 
+	// DUMMY DATA AND HELPERS
+
+	/**
+	 * Returns the entire binary operatir hierarchy from highest to lowest in respective groups.
+	 * <pre>
+	 *  IQL binary operators, in order from highest to lowest precedence:
+	 *  *    /    %
+	 *  +    -
+	 *  <<   >>   &    |    ^
+	 *  <    <=   >    >=
+	 *  ~   !~   #   !#
+	 *  ==   !=
+	 *  &&   AND
+	 *  ||   OR
+	 * </pre>
+	 */
+	static final List<List<Pair<String, String>>> binaryOpsHierarchy = list(
+			list(pair("*", "multiplication"), pair("/", "division"), pair("%", "modulo")),
+			list(pair("+", "addition"), pair("-", "subtraction")),
+			list(pair("<<", "shift left"), pair(">>", "shift right"), pair("&", "bitwise and"), pair("|", "bitwise or"), pair("^", "bitwise xor")),
+			list(pair("<", "less than"), pair("<=", "less than or equal"), pair(">", "greater than"), pair(">=", "greater than or equal")),
+			list(pair("~", "matches"), pair("!~", "matches not"), pair("#", "contains"), pair("!#", "contains not")),
+			list(pair("==", "equals"), pair("!=", "not equal")),
+			list(pair("&&", "and"), pair("and", "and (keyword)")),
+			list(pair("||", "or"), pair("or", "or (keyword)"))
+	);
+
+	static final List<Pair<String, String>> binaryOps
+		= toList(binaryOpsHierarchy.stream().flatMap(l -> l.stream()));
+
+	static final List<Pair<String, String>> comparisons = list(
+			pair("==", "equals"),
+			pair("<", "less than"),
+			pair("<=", "less than or equal"),
+			pair(">", "greater than"),
+			pair(">=", "greater than or equal"),
+			pair("!=", "not equal"),
+			pair("~", "matches"),
+			pair("!~", "matches not"),
+			pair("#", "contains"),
+			pair("!#", "contains not")
+	);
+
+	static final List<Pair<String, String>> literals = list(
+			pair("123", "unsigned int"),
+			pair("-123", "signed negative int"),
+			pair("+123", "signed positive int"),
+			pair("123.456", "unsigned float"),
+			pair("+123.456", "signed positive float"),
+			pair("-123.456", "signed negative float"),
+			pair("\"\"", "empty string"),
+			pair("\"test\"", "string"),
+			pair("\"test with stuff\"", "string with whitespaces"),
+			pair("true", "boolean true"),
+			pair("TRUE", "boolean TRUE"),
+			pair("false", "boolean false"),
+			pair("FALSE", "boolean FALSE")
+	);
+
+	static final List<Pair<String, String>> strings = list(
+			pair("\"\"", "empty string"),
+			pair("\"test\"", "string"),
+			pair("\"test with stuff\"", "string with whitespaces")
+	);
+
+	static final List<Pair<String, String>> types = list(
+			pair("boolean", "Boolean"),
+			pair("int", "Integer"),
+			pair("long", "Long integer"),
+			pair("float", "Float"),
+			pair("double", "Double"),
+			pair("string", "String")
+	);
+
+	static final List<Pair<String, String>> indices = list(
+			pair("123", "unsigned int"),
+			pair("-123", "signed negative int"),
+			pair("+123", "signed positive int")
+	);
+
+	static final List<Pair<String, String>> references = list(
+			pair("ref", "named ref"),
+			pair("path.to.ref", "path"),
+			pair("@var", "named var"),
+			pair("@var.to.path", "path of var"),
+			pair("$xyz", "named member"),
+			pair("$xyz.to.path", "path from member"),
+			pair("$xyz(123)", "named member with index"),
+			pair("$xyz(123).to.path", "path from member with index")
+	);
+
+	static final List<Pair<String, String>> callableReferences = list(
+			pair("ref", "named ref"),
+			pair("path.to.ref", "path"),
+			pair("@var.to.path", "path from var"),
+			pair("$xyz.to.path", "path from member")
+	);
+
+	static final List<Pair<String, String>> multiArgs = list(
+			pair("123,456,789", "multi ints"),
+			pair("@var,\"test\",4.5", "var, string, float"),
+			pair("-123,765.89", "negative int, float"),
+			pair("123,-765.89", "int, negative float")
+	);
+
+	static final String dummy = "123";
+
+	static final Pair<String, String> noArgs = pair("","<none>");
+
+	/** Literals, references, array lookups, calls and annotations. Literally all available 'things' */
+	static final List<Pair<String, String>> elements = toList(Stream.of(
+			literals.stream(),
+			references.stream(),
+			callableReferences.stream().map(pRef -> func(pRef, noArgs)),
+			callableReferences.stream().flatMap(pRef -> literals.stream().map(pLit -> func(pRef, pLit))),
+			callableReferences.stream().flatMap(pRef -> multiArgs.stream().map(pArgs -> func(pRef, pArgs))),
+			references.stream().flatMap(pRef -> indices.stream().map(pIdx -> array(pRef, pIdx))),
+			Stream.of(array(references.get(0), args(indices))),
+			references.stream().flatMap(pRef -> strings.stream().map(pAnno -> annotation(pRef, pAnno))),
+			Stream.of(annotation(references.get(0), args(strings)))
+		).reduce(Stream::concat).get());
+
 	@TestFactory
 	Stream<DynamicNode> testSimplify() {
 		return Stream.of(
@@ -333,5 +471,104 @@ public class IQLTestUtils {
 				.isNotNull()
 				.isEqualTo(expected);
 		}));
+	}
+
+	/** Combine a bunch of values to produce argument lists */
+	static Pair<String, String> args(List<Pair<String, String>> elements) {
+		StringBuilder sbContent = new StringBuilder();
+		StringBuilder sbDesc = new StringBuilder();
+		for (int i = 0; i < elements.size(); i++) {
+			if(i>0) {
+				sbContent.append(",");
+				sbDesc.append(" and ");
+			}
+			sbContent.append(elements.get(i).first);
+			sbDesc.append(elements.get(i).second);
+		}
+
+		return pair(sbContent.toString(), sbDesc.toString());
+	}
+
+	/** Make function call from a ref and arguments list */
+	static Pair<String, String> func(Pair<String, String> ref, Pair<String, String> args) {
+		return pair(ref.first+"("+args.first+")", "call on '"+ref.second+"' with '"+args.second+"' args");
+	}
+
+	/** Make array access from ref and singular index */
+	static Pair<String, String> array(Pair<String, String> ref, Pair<String, String> index) {
+		return pair(ref.first+"["+index.first+"]", "index of '"+ref.second+"' with "+index.second);
+	}
+
+	/** Make annotation access from ref and key */
+	static Pair<String, String> annotation(Pair<String, String> ref, Pair<String, String>  key) {
+		return pair(ref.first+"{"+key.first+"}", "annotation of '"+ref.second+"' with "+key.second);
+	}
+
+	static Pair<String, String> padOp(Pair<String, String> op) {
+		if(isKeywordOp(op)) {
+			op = pair(" "+op.first+" ", op.second);
+		}
+		return op;
+	}
+
+	static Stream<Pair<String, String>> variateBinary(Pair<String, String> op,
+			Pair<String, String> arg) {
+		op = padOp(op);
+		return Stream.of(
+				pair(arg.first+op.first+dummy, "left "+op.second+" of "+arg.second),
+				pair(dummy+op.first+arg.first, "right "+op.second+" of "+arg.second),
+				pair(arg.first+op.first+arg.first, "dual "+op.second+" of "+arg.second)
+		);
+	}
+
+	static String f(String format, Object...args) {
+			return StringUtil.format(format, args);
+	//		return String.format(format, args);
+		}
+
+	static String treeEscape(String s) {
+		if(s.indexOf('[')!=-1) {
+			StringBuilder sb = new StringBuilder(s.length()*2);
+			for (int i = 0; i < s.length(); i++) {
+				char c = s.charAt(i);
+				if(c=='[' || c==']') {
+					sb.append('\\');
+				}
+				sb.append(c);
+			}
+			s = sb.toString();
+		}
+		return s;
+	}
+
+	static String f1(String format, Pair<?, ?>...ops) {
+		return f(format, Stream.of(ops).map(p -> p.first).toArray());
+	}
+
+	static String f1Tree(String format, Pair<?, ?>...ops) {
+		return f(format, Stream.of(ops).map(p -> treeEscape(p.first.toString())).toArray());
+	}
+
+	static String f2(String format, Pair<?, ?>...ops) {
+		return f(format, Stream.of(ops).map(p -> p.second).toArray());
+	}
+
+	static boolean isKeywordOp(Pair<String, String> op) {
+		return Character.isLetter(op.first.charAt(0));
+	}
+
+	/** Generates a sequence of randomly constructed binary expressions */
+	static List<Pair<String, String>> randomExpressions(RandomGenerator rng, int count) {
+		List<Pair<String, String>> result = new ArrayList<>(count);
+		for (int i = 0; i < count; i++) {
+			Pair<String, String> pFirst = rng.random(elements);
+			Pair<String, String> pSecond = rng.random(elements);
+			Pair<String, String> pOp = rng.random(binaryOps);
+			pOp = padOp(pOp);
+
+			result.add(pair(pFirst.first+pOp.first+pSecond.first,
+					f2("op '{1}' of '{2}' and '{3}'", pOp, pFirst, pSecond)));
+		}
+		return result;
 	}
 }
