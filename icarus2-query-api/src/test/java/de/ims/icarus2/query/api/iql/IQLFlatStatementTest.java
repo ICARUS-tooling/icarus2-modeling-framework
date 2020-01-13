@@ -70,7 +70,7 @@ public class IQLFlatStatementTest {
 		"<4->[], 			[[[<4->][\\[][\\]]]], 				upper bound quantified node",
 		"<4-|6..10|13+>[], 	[[[<4-|6..10|13+>][\\[][\\]]]], 	complex quantified node",
 		"*[], 				[[[*][\\[][\\]]]], 					universally quantified node",
-		"all[], 			[[[all][\\[][\\]]]], 				universally quantified node",
+		"all[], 			[[[all][\\[][\\]]]], 				universally (keyword) quantified node",
 		"![], 				[[[!][\\[][\\]]]], 					existentially negated node",
 	})
 	@ParameterizedTest
@@ -87,12 +87,6 @@ public class IQLFlatStatementTest {
 	void testNodesWithInnerConstraints(String statement, String expected, String desc) {
 		assertParsedStatament(statement, expected, desc);
 	}
-
-	@CsvSource({
-		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
-		"[a>3 && pos~\"N[NP]\"], [[[\\[][a>3&&pos~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
-		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two nodes with constraints",
-	})
 
 	@RandomizedTest
 	@TestFactory
