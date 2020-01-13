@@ -22,13 +22,37 @@ grammar IQL;
 //    tokenVocab=IQLLexer;
 //}
 
-@header {
+@parser::header {
 package de.ims.icarus2.query.api.iql.antlr;
 }
 
+@lexer::header {
+package de.ims.icarus2.query.api.iql.antlr;
+import org.antlr.v4.runtime.misc.Interval;	
+}
+
 @lexer::members {
-	public static final int WHITESPACE = 1;
-	public static final int COMMENTS = 2;
+boolean ahead(String text) {
+	System.out.printf("text=%s next=%s%n", text, (char)_input.LA(1));
+    for (int i = 0; i < text.length(); i++) {
+		if (text.charAt(i) != _input.LA(i + 1)) {
+        	return false;
+		}
+    }
+    return true;
+}
+
+boolean before(String text) {
+	System.out.printf("text=%s prev=%s%n", text, (char)_input.LA(-1));
+	int len = text.length();
+    for (int i = len-1; i > 0; i++) {
+		if (text.charAt(i) != _input.LA(-len + i)) {
+        	return false;
+		}
+    }
+    return true;
+}
+
 }
 
 @parser::members {
@@ -268,14 +292,22 @@ graphStatement
  *  mixed up with combinations of signs and comparison operators.
  */
 graphElement
-	: graphNodeSingleton #graphNode
-	| graphNodeSingleton (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED) graphNodeSingleton #emptyGraphEdge	
-	// Models left-directed, undirected, bidirectional and right-directed edges
-	| graphNodeSingleton (EDGE_LEFT_DIRECTED | EDGE_LEFT_UNDIRECTED) memberLabel? constraint? (EDGE_RIGHT_DIRECTED | EDGE_RIGHT_UNDIRECTED) graphNodeSingleton #graphEdge
+	: graphNode
+	/*
+	 * Models left-directed, undirected, bidirectional and right-directed edges
+	 * with or without inner constraints.
+	 */
+	| graphNode graphEdge graphNode
 	;
 	
-graphNodeSingleton
-	: quantifier? LBRACK memberLabel constraint? RBRACK
+graphNode
+	: member
+	| quantifier? LBRACK memberLabel? constraint? RBRACK
+	;
+	
+graphEdge
+	: (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED)	# emptyGraphEdge
+	| (EDGE_LEFT_DIRECTED | EDGE_OUTER_UNDIRECTED) LBRACK memberLabel? constraint? RBRACK (EDGE_RIGHT_DIRECTED | EDGE_OUTER_UNDIRECTED) # filledGraphEdge
 	;
 	
 //TODO add more statement variations based on established CQL families
@@ -617,15 +649,14 @@ HASH : '#';
 QMARK : '?';
 EXMARK : '!';
 // Edge definitions without inner constraints
-EDGE_LEFT : '<--';
-EDGE_RIGHT : '-->';
-EDGE_BIDIRECTIONAL : '<->';
-EDGE_UNDIRECTED: '---';
+EDGE_LEFT : {before("]")}? '<--' {ahead("[")}?;
+EDGE_RIGHT : {before("]")}? '-->' {ahead("[")}?;
+EDGE_BIDIRECTIONAL : {before("]")}? '<->' {ahead("[")}?;
+EDGE_UNDIRECTED: {before("]")}? '---' {ahead("[")}?;
 // Edge definitions with inner constraints
-EDGE_LEFT_DIRECTED : '<-[';
-EDGE_LEFT_UNDIRECTED: '--[';
-EDGE_RIGHT_DIRECTED : ']->';
-EDGE_RIGHT_UNDIRECTED: ']--';
+EDGE_LEFT_DIRECTED : {before("]")}? '<-' {ahead("[")}?;
+EDGE_OUTER_UNDIRECTED: {before("]")}? '--' {ahead("[")}?;
+EDGE_RIGHT_DIRECTED : {before("]")}? '->' {ahead("[")}?;
 // Range and linking punctuation
 DOUBLE_COLON : '::';
 DOUBLE_DOT : '..';
@@ -645,7 +676,7 @@ PureDigits
 	;
 
 Digits
-	:	Digit (DigitsAndUnderscores? Digit)?
+	: Digit (DigitsAndUnderscores? Digit)?
 	;
 
 fragment
