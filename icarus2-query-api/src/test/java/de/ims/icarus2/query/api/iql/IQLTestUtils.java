@@ -106,7 +106,7 @@ public class IQLTestUtils {
 	public static IQL_TestParser createParser(String text, String description,
 			SyntaxErrorReporter reporter, boolean strict) {
 		IQLLexer lexer = new IQLLexer(CharStreams.fromString(text, description));
-		lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+//		lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
 		IQL_TestParser parser = new IQL_TestParser(new BufferedTokenStream(lexer));
 		parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
@@ -121,8 +121,8 @@ public class IQLTestUtils {
 
 		parser.addErrorListener(reporter);
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL);
-		parser.setProfile(true);
-		parser.setTrace(false);
+		parser.setProfile(false);
+		parser.setTrace(true);
 
 		return parser;
 	}

@@ -52,7 +52,7 @@ public class IQLGraphStatementTest {
 		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
 	})
 	@ParameterizedTest
-	void testSImpleGraphElements(String statement, String expected, String desc) {
+	void testSimpleGraphElements(String statement, String expected, String desc) {
 		assertParsedGraphStatament(statement, expected, desc);
 	}
 
