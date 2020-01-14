@@ -31,60 +31,6 @@ package de.ims.icarus2.query.api.iql.antlr;
 import org.antlr.v4.runtime.misc.Interval;	
 }
 
-//@lexer::members {
-//public static final int WHITESPACE = 1;
-//public static final int COMMENTS = 2;
-//
-//boolean ahead(String text) {
-//	System.out.printf("text=%s LA=%s%n",text,(char)_input.LA(1));
-//    for (int i = 0; i < text.length(); i++) {
-//		if (text.charAt(i) != _input.LA(i + 1)) {
-//        	return false;
-//		}
-//    }
-//    return true;
-//}
-//
-//boolean before(String text) {
-//	int len = text.length();
-//    for (int i = len-1; i > 0; i--) {
-//		if (text.charAt(i) != _input.LA(-len + i)) {
-//        	return false;
-//		}
-//    }
-//    return true;
-//}
-//
-//boolean isDigit(int offset) {
-//	return Character.isDigit(_input.LA(offset));
-//}
-//
-///** Test that char at given lookahead position is IN the specified set */
-//private boolean isAny(int pos, char...set) {
-//	int c = _input.LA(pos);
-//	if(c==-1) return false;
-//	for(int i=0; i<set.length; i++) {
-//		if(set[i]==c) {
-//			return true;
-//		}
-//	}
-//	return false;
-//}
-//
-///** Test that char at given lookahead position is NOT in the specified set */
-//private boolean isNone(int pos, char...set) {
-//	int c = _input.LA(pos);
-//	if(c==-1) return true;
-//	for(int i=0; i<set.length; i++) {
-//		if(set[i]==c) {
-//			return false;
-//		}
-//	}
-//	return true;
-//}
-//
-//}
-
 @parser::members {
 	
 /** Test that type of token at given lookahead position is IN the specified set */
