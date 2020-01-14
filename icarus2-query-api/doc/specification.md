@@ -21,11 +21,10 @@ WITH
 DISTINCT
 WHERE
 TREE
-NODES
-EDGES
+ALIGNED
+GRAPH
 OR
 AND
-ELEMENTS
 HAVING
 LOCAL
 RANGE
@@ -47,6 +46,12 @@ END
 COUNT
 DIALECT
 PRIMARY
+APPEND
+BY
+FILTER
+ON
+RETURN
+APPENDIX
 ```
 
 In addition the following strictly lowercase words are reserved as type identifiers and may not be used otherwise:
