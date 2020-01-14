@@ -31,35 +31,59 @@ package de.ims.icarus2.query.api.iql.antlr;
 import org.antlr.v4.runtime.misc.Interval;	
 }
 
-@lexer::members {
-public static final int WHITESPACE = 1;
-public static final int COMMENTS = 2;
-
-boolean ahead(String text) {
-	//TODO debug this crap
-    for (int i = 0; i < text.length(); i++) {
-		if (text.charAt(i) != _input.LA(i + 1)) {
-        	return false;
-		}
-    }
-    return true;
-}
-
-boolean before(String text) {
-	int len = text.length();
-    for (int i = len-1; i > 0; i--) {
-		if (text.charAt(i) != _input.LA(-len + i)) {
-        	return false;
-		}
-    }
-    return true;
-}
-
-boolean isDigit(int offset) {
-	return Character.isDigit(_input.LA(offset));
-}
-
-}
+//@lexer::members {
+//public static final int WHITESPACE = 1;
+//public static final int COMMENTS = 2;
+//
+//boolean ahead(String text) {
+//	System.out.printf("text=%s LA=%s%n",text,(char)_input.LA(1));
+//    for (int i = 0; i < text.length(); i++) {
+//		if (text.charAt(i) != _input.LA(i + 1)) {
+//        	return false;
+//		}
+//    }
+//    return true;
+//}
+//
+//boolean before(String text) {
+//	int len = text.length();
+//    for (int i = len-1; i > 0; i--) {
+//		if (text.charAt(i) != _input.LA(-len + i)) {
+//        	return false;
+//		}
+//    }
+//    return true;
+//}
+//
+//boolean isDigit(int offset) {
+//	return Character.isDigit(_input.LA(offset));
+//}
+//
+///** Test that char at given lookahead position is IN the specified set */
+//private boolean isAny(int pos, char...set) {
+//	int c = _input.LA(pos);
+//	if(c==-1) return false;
+//	for(int i=0; i<set.length; i++) {
+//		if(set[i]==c) {
+//			return true;
+//		}
+//	}
+//	return false;
+//}
+//
+///** Test that char at given lookahead position is NOT in the specified set */
+//private boolean isNone(int pos, char...set) {
+//	int c = _input.LA(pos);
+//	if(c==-1) return true;
+//	for(int i=0; i<set.length; i++) {
+//		if(set[i]==c) {
+//			return false;
+//		}
+//	}
+//	return true;
+//}
+//
+//}
 
 @parser::members {
 	
@@ -83,6 +107,23 @@ private boolean isNone(int pos, int...set) {
 	int type = t.getType();
 	for(int i=0; i<set.length; i++) {
 		if(set[i]==type) {
+			return false;
+		}
+	}
+	return true;
+}
+
+private Token token(int pos) {
+	return pos==0 ? getCurrentToken() : _input.LT(pos);
+}
+
+private boolean adjacent(int from, int to) {
+	for(int i=from; i<to; i++) {
+		Token t0 = token(i);
+		Token t1 = token(i+1);
+		int t0End = t0.getStopIndex();
+		int t1Begin = t1.getStartIndex();
+		if(t0End==-1 || t1Begin==-1 || t1Begin!=t0End+1) {
 			return false;
 		}
 	}
@@ -288,14 +329,20 @@ graphStatement
  * [$a]<--[$b]			right-directed edge (a to b)
  * [$a]---[$b]			undirected edge
  * [$a]<->[$b]			bidirectional edge
+ * [$a]--[$e]--[$b]		undirected edge $e with internal constraints between $a and $b
  * 
  * Quantifiers on node actually count together with the respective edge:
  * <4+>[$a]-->[$b]		at least 4 nodes matching $a with an edge to $b
  * [$a]-->3-[$b]		node $a with no more than 3 edges to nodes matching $b
  * 
- * Note:
+ * Notes:
+ * 
  *  Edges always use a total of 3 symbols to define, so they can't be accidentally
  *  mixed up with combinations of signs and comparison operators.
+ * 
+ *  Member labels can only be used once for a full grown node. If a node is required
+ *  for more than one graphElement expression, additional statements must use the simple
+ *  member reference instead!
  */
 graphElement
 	: graphNode
@@ -313,7 +360,19 @@ graphNode
 	
 graphEdge
 	: (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED)	# emptyGraphEdge
-	| (EDGE_LEFT_DIRECTED | EDGE_OUTER_UNDIRECTED) LBRACK memberLabel? constraint? RBRACK (EDGE_RIGHT_DIRECTED | EDGE_OUTER_UNDIRECTED) # filledGraphEdge
+	| (directedEdgeLeft | undirectedEdge) LBRACK memberLabel? constraint? RBRACK (directedEdgeRight | undirectedEdge) # filledGraphEdge
+	;
+	
+directedEdgeLeft
+	: LT MINUS //check-adjacent
+	;
+	
+directedEdgeRight
+	: MINUS GT //check-adjacent
+	;
+	
+undirectedEdge
+	: MINUS MINUS //check-adjacent
 	;
 	
 //TODO add more statement variations based on established CQL families
@@ -628,11 +687,7 @@ UNDERSCORE : '_';
 EDGE_LEFT : '<--';
 EDGE_RIGHT : '-->';
 EDGE_BIDIRECTIONAL :'<->';
-EDGE_UNDIRECTED: {before("]")}? '---' {ahead("[")}?;
-// Edge definitions with inner constraints
-EDGE_LEFT_DIRECTED : {before("]")}? '<-' {ahead("[")}?;
-EDGE_OUTER_UNDIRECTED: {before("]")}? '--' {ahead("[")}?;
-EDGE_RIGHT_DIRECTED : {before("]")}? '->' {ahead("[")}?;
+EDGE_UNDIRECTED: '---';
  
 // Operator symbols
 ASSIGN : '=';
