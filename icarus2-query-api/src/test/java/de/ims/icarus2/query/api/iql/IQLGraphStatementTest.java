@@ -50,9 +50,41 @@ public class IQLGraphStatementTest {
 		"[],[]; [[[\\[\\]]][,][[\\[\\]]]]; two nodes",
 		// edges
 		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
+		"[] ---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge (space left)",
+		"[]--- []; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge (space right)",
+		"[]-->[]; [[[\\[\\]][-->][\\[\\]]]]; right-directed empty edge",
+		"[]<--[]; [[[\\[\\]][<--][\\[\\]]]]; left-directed empty edge",
+		"[]<->[]; [[[\\[\\]][<->][\\[\\]]]]; bidirectional empty edge",
 	})
 	@ParameterizedTest
 	void testSimpleGraphElements(String statement, String expected, String desc) {
+		assertParsedGraphStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
+		"4-[]; [[[[4-][\\[][\\]]]]]; single node",
+		"2+[],4|8[]; [[[2+\\[\\]]][,][[4|8\\[\\]]]]; two nodes",
+		// edges
+		"[]---4-[]; [[[\\[\\]][---][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"4-[]---[]; [[[4-\\[\\]][---][\\[\\]]]]; undirected empty left-quantified edge",
+	})
+	@ParameterizedTest
+	void testQuantifiedGraphElements(String statement, String expected, String desc) {
+		assertParsedGraphStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
+		"4-[]; [[[[4-][\\[][\\]]]]]; single node",
+		"2+[],4|8[]; [[[2+\\[\\]]][,][[4|8\\[\\]]]]; two nodes",
+		// edges
+		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
+		"[]---4-[]; [[[\\[\\]][---][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"4-[]---[]; [[[4-\\[\\]][---][\\[\\]]]]; undirected empty left-quantified edge",
+	})
+	@ParameterizedTest
+	void testGraphEdges(String statement, String expected, String desc) {
 		assertParsedGraphStatament(statement, expected, desc);
 	}
 

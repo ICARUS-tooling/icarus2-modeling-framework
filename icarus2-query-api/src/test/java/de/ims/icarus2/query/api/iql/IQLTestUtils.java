@@ -31,6 +31,7 @@ import java.util.Stack;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -330,10 +331,15 @@ public class IQLTestUtils {
 		return sb.toString();
 	}
 
+	public static void showAST(ParseTree tree, Parser parser) {
+		TreeViewer viewer = new TreeViewer(list(parser.getRuleNames()), tree);
+		viewer.open();
+	}
+
 	// DUMMY DATA AND HELPERS
 
 	/**
-	 * Returns the entire binary operatir hierarchy from highest to lowest in respective groups.
+	 * Returns the entire binary operator hierarchy from highest to lowest in respective groups.
 	 * <pre>
 	 *  IQL binary operators, in order from highest to lowest precedence:
 	 *  *    /    %
