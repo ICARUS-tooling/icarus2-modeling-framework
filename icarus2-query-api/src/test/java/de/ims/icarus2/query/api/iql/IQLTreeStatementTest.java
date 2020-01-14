@@ -117,5 +117,15 @@ public class IQLTreeStatementTest {
 				f2("single node with {1}", pExp)));
 	}
 
-	//TODO add tests for braced or disjunctive tree statements
+	@CsvSource({
+		"[x] or [y], [[\\[x\\]][or][\\[y\\]]], 2 alternative nodes",
+		"[x][y] or [z], [[[\\[x\\]][\\[y\\]]][or][\\[z\\]]], node set vs single node",
+		"{[x][y]} or [z], [[[{][[\\[x\\]][\\[y\\]]][}]][or][\\[z\\]]], node set vs single node with braces",
+		//TODO add more tests for braced or disjunctive tree statements
+	})
+	@ParameterizedTest
+	void testTreeDisjunction(String statement, String expected, String desc) {
+		assertParsedTreeStatament(statement, expected, desc);
+	}
+
 }

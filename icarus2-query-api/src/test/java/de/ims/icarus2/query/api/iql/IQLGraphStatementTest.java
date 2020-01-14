@@ -48,13 +48,18 @@ public class IQLGraphStatementTest {
 		// nodes
 		"[]; [[[[\\[][\\]]]]]; single node",
 		"[],[]; [[[\\[\\]]][,][[\\[\\]]]]; two nodes",
-		// edges
+		// empty edges
 		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
 		"[] ---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge (space left)",
 		"[]--- []; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge (space right)",
 		"[]-->[]; [[[\\[\\]][-->][\\[\\]]]]; right-directed empty edge",
 		"[]<--[]; [[[\\[\\]][<--][\\[\\]]]]; left-directed empty edge",
 		"[]<->[]; [[[\\[\\]][<->][\\[\\]]]]; bidirectional empty edge",
+		// filled edges
+		"[]--[]--[]; [[[\\[\\]][[--][\\[][\\]][--]][\\[\\]]]]; undirected empty edge",
+		"[]--[]->[]; [[[\\[\\]][[--][\\[][\\]][->]][\\[\\]]]]; right-directed empty edge",
+		"[]<-[]--[]; [[[\\[\\]][[<-][\\[][\\]][--]][\\[\\]]]]; left-directed empty edge",
+		"[]<-[]->[]; [[[\\[\\]][[<-][\\[][\\]][->]][\\[\\]]]]; bidirectional empty edge",
 	})
 	@ParameterizedTest
 	void testSimpleGraphElements(String statement, String expected, String desc) {
@@ -63,11 +68,40 @@ public class IQLGraphStatementTest {
 
 	@CsvSource(delimiter=';', value={
 		// nodes
+		"[$a:]; [[[[\\[][$a:][\\]]]]]; single node",
+		"[$a:],[$b:]; [[[\\[$a:\\]]][,][[\\[$b:\\]]]]; two nodes",
+		// empty edges
+		"[$a:]---[$b:]; [[[\\[$a:\\]][---][\\[$b:\\]]]]; undirected empty edge",
+		"[$a:]-->[$b:]; [[[\\[$a:\\]][-->][\\[$b:\\]]]]; right-directed empty edge",
+		"[$a:]<--[$b:]; [[[\\[$a:\\]][<--][\\[$b:\\]]]]; left-directed empty edge",
+		"[$a:]<->[$b:]; [[[\\[$a:\\]][<->][\\[$b:\\]]]]; bidirectional empty edge",
+		// filled edges
+		"[$a:]--[$c:]--[$b:]; [[[\\[$a:\\]][[--][\\[][$c:][\\]][--]][\\[$b:\\]]]]; undirected empty edge",
+		"[$a:]--[$c:]->[$b:]; [[[\\[$a:\\]][[--][\\[][$c:][\\]][->]][\\[$b:\\]]]]; right-directed empty edge",
+		"[$a:]<-[$c:]--[$b:]; [[[\\[$a:\\]][[<-][\\[][$c:][\\]][--]][\\[$b:\\]]]]; left-directed empty edge",
+		"[$a:]<-[$c:]->[$b:]; [[[\\[$a:\\]][[<-][\\[][$c:][\\]][->]][\\[$b:\\]]]]; bidirectional empty edge",
+	})
+	@ParameterizedTest
+	void testSimpleGraphElementsWithLabels(String statement, String expected, String desc) {
+		assertParsedGraphStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
 		"4-[]; [[[[4-][\\[][\\]]]]]; single node",
 		"2+[],4|8[]; [[[2+\\[\\]]][,][[4|8\\[\\]]]]; two nodes",
-		// edges
+		// empty edges
 		"[]---4-[]; [[[\\[\\]][---][4-\\[\\]]]]; undirected empty right-quantified edge",
 		"4-[]---[]; [[[4-\\[\\]][---][\\[\\]]]]; undirected empty left-quantified edge",
+		// filled edges
+		"[]--[]--4-[]; [[[\\[\\]][[--][\\[][\\]][--]][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"[]--[]->4-[]; [[[\\[\\]][[--][\\[][\\]][->]][4-\\[\\]]]]; right-directed empty right-quantified edge",
+		"[]<-[]--4-[]; [[[\\[\\]][[<-][\\[][\\]][--]][4-\\[\\]]]]; left-directed empty right-quantified edge",
+		"[]<-[]->4-[]; [[[\\[\\]][[<-][\\[][\\]][->]][4-\\[\\]]]]; bidirectional empty right-quantified edge",
+		"4-[]--[]--[]; [[[4-\\[\\]][[--][\\[][\\]][--]][\\[\\]]]]; undirected empty left-quantified edge",
+		"4-[]--[]->[]; [[[4-\\[\\]][[--][\\[][\\]][->]][\\[\\]]]]; right-directed empty left-quantified edge",
+		"4-[]<-[]--[]; [[[4-\\[\\]][[<-][\\[][\\]][--]][\\[\\]]]]; left-directed empty left-quantified edge",
+		"4-[]<-[]->[]; [[[4-\\[\\]][[<-][\\[][\\]][->]][\\[\\]]]]; bidirectional empty left-quantified edge",
 	})
 	@ParameterizedTest
 	void testQuantifiedGraphElements(String statement, String expected, String desc) {
@@ -76,17 +110,35 @@ public class IQLGraphStatementTest {
 
 	@CsvSource(delimiter=';', value={
 		// nodes
-		"4-[]; [[[[4-][\\[][\\]]]]]; single node",
-		"2+[],4|8[]; [[[2+\\[\\]]][,][[4|8\\[\\]]]]; two nodes",
-		// edges
-		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
-		"[]---4-[]; [[[\\[\\]][---][4-\\[\\]]]]; undirected empty right-quantified edge",
-		"4-[]---[]; [[[4-\\[\\]][---][\\[\\]]]]; undirected empty left-quantified edge",
+		"[a>23]; [[[[\\[][a>23][\\]]]]]; single node",
+		"2+[a>23],4|8[b==0]; [[[2+\\[a>23\\]]][,][[4|8\\[b==0\\]]]]; two nodes",
+		// empty edges
+		"[a>23]---4-[b==0]; [[[\\[a>23\\]][---][4-\\[b==0\\]]]]; undirected empty right-quantified edge",
+		"4-[b==0]---[a<23]; [[[4-\\[b==0\\]][---][\\[a<23\\]]]]; undirected empty left-quantified edge",
+		// filled edges
+		"[]--[a<23]--4-[]; [[[\\[\\]][[--][\\[][a<23][\\]][--]][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"[]--[a<23]->4-[]; [[[\\[\\]][[--][\\[][a<23][\\]][->]][4-\\[\\]]]]; right-directed empty right-quantified edge",
+		"[]<-[a<23]--4-[]; [[[\\[\\]][[<-][\\[][a<23][\\]][--]][4-\\[\\]]]]; left-directed empty right-quantified edge",
+		"[]<-[a<23]->4-[]; [[[\\[\\]][[<-][\\[][a<23][\\]][->]][4-\\[\\]]]]; bidirectional empty right-quantified edge",
+		"4-[]--[a<23]--[]; [[[4-\\[\\]][[--][\\[][a<23][\\]][--]][\\[\\]]]]; undirected empty left-quantified edge",
+		"4-[]--[a<23]->[]; [[[4-\\[\\]][[--][\\[][a<23][\\]][->]][\\[\\]]]]; right-directed empty left-quantified edge",
+		"4-[]<-[a<23]--[]; [[[4-\\[\\]][[<-][\\[][a<23][\\]][--]][\\[\\]]]]; left-directed empty left-quantified edge",
+		"4-[]<-[a<23]->[]; [[[4-\\[\\]][[<-][\\[][a<23][\\]][->]][\\[\\]]]]; bidirectional empty left-quantified edge",
 	})
 	@ParameterizedTest
-	void testGraphEdges(String statement, String expected, String desc) {
+	void testGraphElementsWithCosntraints(String statement, String expected, String desc) {
 		assertParsedGraphStatament(statement, expected, desc);
 	}
 
-	//TODO add tests for braced or disjunctive graph statements
+	@CsvSource(delimiter=';', value={
+		"[x] or [y]; [[\\[x\\]][or][\\[y\\]]]; 2 alternative nodes",
+		"[x],[y] or [z]; [[[\\[x\\]][,][\\[y\\]]][or][\\[z\\]]]; node set vs single node",
+		"{[x],[y]} or [z]; [[[{][[\\[x\\]][,][\\[y\\]]][}]][or][\\[z\\]]]; node set vs single node with braces",
+		//TODO add more tests for braced or disjunctive graph statements
+	})
+	@ParameterizedTest
+	void testGraphDisjunction(String statement, String expected, String desc) {
+		assertParsedGraphStatament(statement, expected, desc);
+	}
+
 }

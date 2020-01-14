@@ -255,8 +255,8 @@ binding
 	
 localConstraints
 	: flatStatement 
-	| TREE treeStatement 
-	| GRAPH graphStatement
+	| ALIGNED? TREE treeStatement 
+	| ALIGNED? GRAPH graphStatement
 	;
 	
 /** Text-corpus query with a flat sequential structure  */
@@ -630,10 +630,10 @@ WITH : 'WITH' | 'with' ;
 DISTINCT : 'DISTINCT' | 'distinct' ;
 WHERE : 'WHERE' | 'where' ;
 TREE : 'TREE' | 'tree' ;
+ALIGNED : 'ALIGNED' | 'aligned';
 GRAPH : 'GRAPH' | 'graph' ;
 OR : 'OR' | 'or' ;
 AND : 'AND' | 'and' ;
-ELEMENTS : 'ELEMENTS' | 'elements' ;
 HAVING : 'HAVING' | 'having' ;
 LOCAL : 'LOCAL' | 'local' ;
 RANGE : 'RANGE' | 'range' ;
