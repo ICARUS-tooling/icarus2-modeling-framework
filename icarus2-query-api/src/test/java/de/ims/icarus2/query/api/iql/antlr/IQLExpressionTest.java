@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.query.api.iql;
+package de.ims.icarus2.query.api.iql.antlr;
 
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertInvalidParse;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.binaryOps;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.binaryOpsHierarchy;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.comparisons;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.createParser;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.dummy;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.elements;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.f1;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.f1Tree;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.f2;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.isKeywordOp;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.padOp;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.simplify;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.types;
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.variateBinary;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.assertInvalidParse;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.assertParsedTree;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.binaryOps;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.binaryOpsHierarchy;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.comparisons;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.createParser;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.dummy;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.elements;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f1;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f1Tree;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f2;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.isKeywordOp;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.padOp;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.simplify;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.types;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.variateBinary;
 import static de.ims.icarus2.test.TestTags.SLOW;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.IcarusUtils.notEq;

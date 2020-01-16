@@ -17,9 +17,9 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.iql;
+package de.ims.icarus2.query.api.iql.antlr;
 
-import static de.ims.icarus2.query.api.iql.IQLTestUtils.assertParsedTree;
+import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.assertParsedTree;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import org.junit.jupiter.api.DynamicTest;

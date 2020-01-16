@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.ims.icarus2.query.api.iql;
+package de.ims.icarus2.query.api.iql.antlr;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
