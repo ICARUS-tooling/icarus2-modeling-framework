@@ -165,7 +165,14 @@ public class TestUtils {
 		}
 	}
 
-	private static final PrintStream out = null; //TODO need a facility to change this dynamically
+	private static final PrintStream out;
+	static {
+		PrintStream _out = null;
+		if("true".equalsIgnoreCase(System.getProperty("de.ims.icarus2.test.verbose"))) {
+			_out = System.out;
+		}
+		out = _out;
+	}
 
 	public static void print(String s) {
 		if(out!=null)
