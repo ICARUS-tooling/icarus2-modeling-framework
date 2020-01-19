@@ -1,5 +1,5 @@
 /**
- * ANTLR grammar definitions
+ * ANTLR grammar definitions for the actual query payload.
  *
  * @author Markus Gärtner
  *

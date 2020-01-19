@@ -1,0 +1,111 @@
+/**
+ *
+ */
+package de.ims.icarus2.query.api.iql;
+
+import static de.ims.icarus2.query.api.iql.IqlConstants.IQL_PREFIX;
+
+/**
+ * @author Markus Gärtner
+ *
+ */
+public final class IqlProperties {
+
+	public static final String DIALECT = IQL_PREFIX+"dialect";
+
+	public static final String IMPORTS = IQL_PREFIX+"imports";
+
+	public static final String SETUP = IQL_PREFIX+"setup";
+
+	public static final String NAME = IQL_PREFIX+"name";
+
+	public static final String ALIAS = IQL_PREFIX+"alias";
+
+	public static final String OPTIONAL = IQL_PREFIX+"optional";
+
+	public static final String BINDINGS = IQL_PREFIX+"bindings";
+
+	public static final String KEY = IQL_PREFIX+"key";
+
+	public static final String VALUE = IQL_PREFIX+"value";
+
+	public static final String EMBEDDED_DATA = IQL_PREFIX+"embeddedData";
+
+	public static final String CONTENT = IQL_PREFIX+"content";
+
+	public static final String VARIABLE = IQL_PREFIX+"variable";
+
+	public static final String CHECKSUM = IQL_PREFIX+"checksum";
+
+	public static final String CORPORA = IQL_PREFIX+"corpora";
+
+	public static final String LAYERS = IQL_PREFIX+"layers";
+
+	public static final String PRIMARY = IQL_PREFIX+"primary";
+
+	public static final String ALL_MEMBERS = IQL_PREFIX+"allMembers";
+
+	public static final String SCOPES = IQL_PREFIX+"scopes";
+
+	public static final String RAW_PAYLOAD = IQL_PREFIX+"rawPayload";
+
+	public static final String PROCESSED_PAYLOAD = IQL_PREFIX+"processedPayload";
+
+	public static final String RAW_GROUPING = IQL_PREFIX+"rawGrouping";
+
+	public static final String PROCESSED_GROUPING = IQL_PREFIX+"processedGrouping";
+
+	public static final String RAW_RESULT_INSTRUCTIONS = IQL_PREFIX+"rawResultInstructions";
+
+	public static final String PROCESSED_RESULT_INSTRUCTIONS = IQL_PREFIX+"processedResultInstructions";
+
+	public static final String GROUP_BY = IQL_PREFIX+"groupBy";
+
+	public static final String FILTER_ON = IQL_PREFIX+"filterOn";
+
+	public static final String LABEL = IQL_PREFIX+"label";
+
+	public static final String DEFAULT_VALUE = IQL_PREFIX+"defaultValue";
+
+	public static final String DISTINCT = IQL_PREFIX+"distinct";
+
+	public static final String MEMBERS = IQL_PREFIX+"members";
+
+	public static final String TARGET = IQL_PREFIX+"target";
+
+	public static final String QUANTIFIER_TYPE = IQL_PREFIX+"quantifierType";
+
+	public static final String LOWER_BOUND = IQL_PREFIX+"lowerBound";
+
+	public static final String UPPER_BOUND = IQL_PREFIX+"upperBound";
+
+	public static final String ELEMENTS = IQL_PREFIX+"elements";
+
+	public static final String CONSTRAINT = IQL_PREFIX+"constraint";
+
+	public static final String QUANTIFIERS = IQL_PREFIX+"quantifiers";
+
+	public static final String CHILDREN = IQL_PREFIX+"children";
+
+	public static final String EDGE_TYPE = IQL_PREFIX+"edgeType";
+
+	public static final String MEMBER_TYPE = IQL_PREFIX+"memberType";
+
+	public static final String QUERY_TYPE = IQL_PREFIX+"queryType";
+
+	public static final String SOURCE = IQL_PREFIX+"source";
+
+	public static final String RETURN_TYPE = IQL_PREFIX+"returnType";
+
+	public static final String SOLVED = IQL_PREFIX+"solved";
+
+	public static final String SOLVED_AS = IQL_PREFIX+"solvedAs";
+
+	public static final String EXPRESSION = IQL_PREFIX+"expression";
+
+	public static final String LEFT = IQL_PREFIX+"left";
+
+	public static final String RIGHT = IQL_PREFIX+"right";
+
+	public static final String OPERATION = IQL_PREFIX+"operation";
+}

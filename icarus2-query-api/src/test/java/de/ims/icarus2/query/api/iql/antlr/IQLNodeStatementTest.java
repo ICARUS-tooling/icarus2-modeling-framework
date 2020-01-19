@@ -34,7 +34,6 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 
@@ -42,16 +41,18 @@ import de.ims.icarus2.test.random.RandomGenerator;
  * @author Markus Gärtner
  *
  */
-public class IQLFlatStatementTest {
+public class IQLNodeStatementTest {
 
-	private static void assertParsedStatament(String statement, String expected, String desc) {
-		assertParsedTree(statement, expected, desc, IQL_TestParser::standaloneFlatStatement, true);
+	private static void assertNodeStatament(String statement, String expected, String desc) {
+		assertParsedTree(statement, expected, desc, IQL_TestParser::standaloneNodeStatement, true);
 	}
 
 	private static DynamicTest makeStatementTreeTest(String statement, String expected, String desc) {
 		return dynamicTest(desc+": "+statement+"  ->  "+expected, () ->
-			assertParsedStatament(statement, expected, desc));
+			assertNodeStatament(statement, expected, desc));
 	}
+
+	// SEQUENCES
 
 	@RandomizedTest
 	@TestFactory
@@ -66,7 +67,7 @@ public class IQLFlatStatementTest {
 	})
 	@ParameterizedTest
 	void testEmptyNodes(String statement, String expected, String desc) {
-		assertParsedStatament(statement, expected, desc);
+		assertNodeStatament(statement, expected, desc);
 	}
 
 	@CsvSource({
@@ -75,7 +76,7 @@ public class IQLFlatStatementTest {
 	})
 	@ParameterizedTest
 	void testNamedNodes(String statement, String expected, String desc) {
-		assertParsedStatament(statement, expected, desc);
+		assertNodeStatament(statement, expected, desc);
 	}
 
 	@CsvSource({
@@ -91,7 +92,7 @@ public class IQLFlatStatementTest {
 	})
 	@ParameterizedTest
 	void testQuantifiedEmptyNodes(String statement, String expected, String desc) {
-		assertParsedStatament(statement, expected, desc);
+		assertNodeStatament(statement, expected, desc);
 	}
 
 	@CsvSource({
@@ -101,7 +102,7 @@ public class IQLFlatStatementTest {
 	})
 	@ParameterizedTest
 	void testNodesWithInnerConstraints(String statement, String expected, String desc) {
-		assertParsedStatament(statement, expected, desc);
+		assertNodeStatament(statement, expected, desc);
 	}
 
 	@RandomizedTest
@@ -111,5 +112,146 @@ public class IQLFlatStatementTest {
 				f1("[{1}]", pExp),
 				f1Tree("[[[\\[][{1}][\\]]]]", pExp),
 				f2("single node with {1}", pExp)));
+	}
+
+	// TREES
+
+
+	@CsvSource({
+		"[[]], [[[\\[][\\[\\]][\\]]]], single nested tree",
+		"[[] []], [[[\\[][[\\[\\]][\\[\\]]][\\]]]], two nested trees",
+	})
+	@ParameterizedTest
+	void testNestedTrees(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource({
+		"[$a:], [[[\\[][$a:][\\]]]], single named tree",
+		"[$a:] [$b:], [[\\[$a:\\]][\\[$b:\\]]], two named trees",
+		"[$a: [$b:]], [[[\\[][$a:][\\[$b:\\]][\\]]]], two named nested trees",
+	})
+	@ParameterizedTest
+	void testNamedTreeNodes(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource({
+		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
+		"[a>3 && pos~\"N[NP]\"], [[[\\[][a>3&&pos~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
+		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two trees with constraints",
+		"[pos==\"NN\" [chars()<7]], [[[\\[][pos==\"NN\"][[\\[chars()<7\\]]][\\]]]], two nested trees with constraints",
+	})
+	@ParameterizedTest
+	void testTreeNodesWithInnerConstraints(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource({
+		"[x] or [y], [[\\[x\\]][or][\\[y\\]]], 2 alternative nodes",
+		"[x][y] or [z], [[[\\[x\\]][\\[y\\]]][or][\\[z\\]]], node set vs single node",
+		"{[x][y]} or [z], [[[{][[\\[x\\]][\\[y\\]]][}]][or][\\[z\\]]], node set vs single node with braces",
+		//TODO add more tests for braced or disjunctive tree statements
+	})
+	@ParameterizedTest
+	void testTreeDisjunction(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
+		"[]; [[[[\\[][\\]]]]]; single node",
+		"[],[]; [[[\\[\\]]][,][[\\[\\]]]]; two nodes",
+		// empty edges
+		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
+		"[] ---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge (space left)",
+		"[]--- []; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge (space right)",
+		"[]-->[]; [[[\\[\\]][-->][\\[\\]]]]; right-directed empty edge",
+		"[]<--[]; [[[\\[\\]][<--][\\[\\]]]]; left-directed empty edge",
+		"[]<->[]; [[[\\[\\]][<->][\\[\\]]]]; bidirectional empty edge",
+		// filled edges
+		"[]--[]--[]; [[[\\[\\]][[--][\\[][\\]][--]][\\[\\]]]]; undirected empty edge",
+		"[]--[]->[]; [[[\\[\\]][[--][\\[][\\]][->]][\\[\\]]]]; right-directed empty edge",
+		"[]<-[]--[]; [[[\\[\\]][[<-][\\[][\\]][--]][\\[\\]]]]; left-directed empty edge",
+		"[]<-[]->[]; [[[\\[\\]][[<-][\\[][\\]][->]][\\[\\]]]]; bidirectional empty edge",
+	})
+	@ParameterizedTest
+	void testSimpleGraphElements(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
+		"[$a:]; [[[[\\[][$a:][\\]]]]]; single node",
+		"[$a:],[$b:]; [[[\\[$a:\\]]][,][[\\[$b:\\]]]]; two nodes",
+		// empty edges
+		"[$a:]---[$b:]; [[[\\[$a:\\]][---][\\[$b:\\]]]]; undirected empty edge",
+		"[$a:]-->[$b:]; [[[\\[$a:\\]][-->][\\[$b:\\]]]]; right-directed empty edge",
+		"[$a:]<--[$b:]; [[[\\[$a:\\]][<--][\\[$b:\\]]]]; left-directed empty edge",
+		"[$a:]<->[$b:]; [[[\\[$a:\\]][<->][\\[$b:\\]]]]; bidirectional empty edge",
+		// filled edges
+		"[$a:]--[$c:]--[$b:]; [[[\\[$a:\\]][[--][\\[][$c:][\\]][--]][\\[$b:\\]]]]; undirected empty edge",
+		"[$a:]--[$c:]->[$b:]; [[[\\[$a:\\]][[--][\\[][$c:][\\]][->]][\\[$b:\\]]]]; right-directed empty edge",
+		"[$a:]<-[$c:]--[$b:]; [[[\\[$a:\\]][[<-][\\[][$c:][\\]][--]][\\[$b:\\]]]]; left-directed empty edge",
+		"[$a:]<-[$c:]->[$b:]; [[[\\[$a:\\]][[<-][\\[][$c:][\\]][->]][\\[$b:\\]]]]; bidirectional empty edge",
+	})
+	@ParameterizedTest
+	void testSimpleGraphElementsWithLabels(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
+		"4-[]; [[[[4-][\\[][\\]]]]]; single node",
+		"2+[],4|8[]; [[[2+\\[\\]]][,][[4|8\\[\\]]]]; two nodes",
+		// empty edges
+		"[]---4-[]; [[[\\[\\]][---][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"4-[]---[]; [[[4-\\[\\]][---][\\[\\]]]]; undirected empty left-quantified edge",
+		// filled edges
+		"[]--[]--4-[]; [[[\\[\\]][[--][\\[][\\]][--]][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"[]--[]->4-[]; [[[\\[\\]][[--][\\[][\\]][->]][4-\\[\\]]]]; right-directed empty right-quantified edge",
+		"[]<-[]--4-[]; [[[\\[\\]][[<-][\\[][\\]][--]][4-\\[\\]]]]; left-directed empty right-quantified edge",
+		"[]<-[]->4-[]; [[[\\[\\]][[<-][\\[][\\]][->]][4-\\[\\]]]]; bidirectional empty right-quantified edge",
+		"4-[]--[]--[]; [[[4-\\[\\]][[--][\\[][\\]][--]][\\[\\]]]]; undirected empty left-quantified edge",
+		"4-[]--[]->[]; [[[4-\\[\\]][[--][\\[][\\]][->]][\\[\\]]]]; right-directed empty left-quantified edge",
+		"4-[]<-[]--[]; [[[4-\\[\\]][[<-][\\[][\\]][--]][\\[\\]]]]; left-directed empty left-quantified edge",
+		"4-[]<-[]->[]; [[[4-\\[\\]][[<-][\\[][\\]][->]][\\[\\]]]]; bidirectional empty left-quantified edge",
+	})
+	@ParameterizedTest
+	void testQuantifiedGraphElements(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		// nodes
+		"[a>23]; [[[[\\[][a>23][\\]]]]]; single node",
+		"2+[a>23],4|8[b==0]; [[[2+\\[a>23\\]]][,][[4|8\\[b==0\\]]]]; two nodes",
+		// empty edges
+		"[a>23]---4-[b==0]; [[[\\[a>23\\]][---][4-\\[b==0\\]]]]; undirected empty right-quantified edge",
+		"4-[b==0]---[a<23]; [[[4-\\[b==0\\]][---][\\[a<23\\]]]]; undirected empty left-quantified edge",
+		// filled edges
+		"[]--[a<23]--4-[]; [[[\\[\\]][[--][\\[][a<23][\\]][--]][4-\\[\\]]]]; undirected empty right-quantified edge",
+		"[]--[a<23]->4-[]; [[[\\[\\]][[--][\\[][a<23][\\]][->]][4-\\[\\]]]]; right-directed empty right-quantified edge",
+		"[]<-[a<23]--4-[]; [[[\\[\\]][[<-][\\[][a<23][\\]][--]][4-\\[\\]]]]; left-directed empty right-quantified edge",
+		"[]<-[a<23]->4-[]; [[[\\[\\]][[<-][\\[][a<23][\\]][->]][4-\\[\\]]]]; bidirectional empty right-quantified edge",
+		"4-[]--[a<23]--[]; [[[4-\\[\\]][[--][\\[][a<23][\\]][--]][\\[\\]]]]; undirected empty left-quantified edge",
+		"4-[]--[a<23]->[]; [[[4-\\[\\]][[--][\\[][a<23][\\]][->]][\\[\\]]]]; right-directed empty left-quantified edge",
+		"4-[]<-[a<23]--[]; [[[4-\\[\\]][[<-][\\[][a<23][\\]][--]][\\[\\]]]]; left-directed empty left-quantified edge",
+		"4-[]<-[a<23]->[]; [[[4-\\[\\]][[<-][\\[][a<23][\\]][->]][\\[\\]]]]; bidirectional empty left-quantified edge",
+	})
+	@ParameterizedTest
+	void testGraphElementsWithCosntraints(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
+	}
+
+	@CsvSource(delimiter=';', value={
+		"[x] or [y]; [[\\[x\\]][or][\\[y\\]]]; 2 alternative nodes",
+		"[x],[y] or [z]; [[[\\[x\\]][,][\\[y\\]]][or][\\[z\\]]]; node set vs single node",
+		"{[x],[y]} or [z]; [[[{][[\\[x\\]][,][\\[y\\]]][}]][or][\\[z\\]]]; node set vs single node with braces",
+		//TODO add more tests for braced or disjunctive graph statements
+	})
+	@ParameterizedTest
+	void testGraphDisjunction(String statement, String expected, String desc) {
+		assertNodeStatament(statement, expected, desc);
 	}
 }

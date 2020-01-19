@@ -1,5 +1,5 @@
 /**
- * Contains the specification, parser and basic handling for the ICARUS2 query language.
+ * Contains the specification, parsers and basic handling for the ICARUS2 query language.
  *
  * @author Markus Gärtner
  *
