@@ -22,4 +22,5 @@ ext {
 	versions.jmhAp = '1.20'
 	versions.assertj = '3.11.1'
 	versions.antlr = '4.7.2'
+	versions.json = '2.10.1'
 }

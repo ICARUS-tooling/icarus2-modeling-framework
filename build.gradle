@@ -82,6 +82,7 @@ subprojects {
 		xerces
 		lucene
 		antlrRuntime
+		json
 		apiguardian
 		// default logging functionality
 			
@@ -140,6 +141,12 @@ subprojects {
 		apiguardian "org.apiguardian:apiguardian-api:${versions.apiguardian}"		
 		// https://github.com/apiguardian-team/apiguardian
 		apiguardian "com.google.code.findbugs:jsr305:${versions.jsr305}"
+		
+		// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+		json "com.fasterxml.jackson.core:jackson-databind:${versions.json}"
+		// https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jsonSchema
+		json "com.fasterxml.jackson.module:jackson-module-jsonSchema:${versions.json}"
+		
 			
 		// TEST ENVIRONMENT
 		
@@ -259,7 +266,7 @@ subprojects {
 
 	test {
 	    useJUnitPlatform {
-			excludeTags = ['concurrent', 'integration', 'slow']
+			excludeTags = ['concurrent', 'integration', 'slow', 'learner']
 		}
 		
 		minHeapSize = "256m"

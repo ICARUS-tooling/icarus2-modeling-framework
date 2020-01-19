@@ -26,6 +26,11 @@ import org.junit.jupiter.api.BeforeEach;
 public final class TestTags {
 
 	/**
+	 * Marks tests that are meant to explore framework features for learning.
+	 */
+	public static final String LEARNER = "learner";
+
+	/**
 	 * Marks tests that could potentially take a very long time.
 	 */
 	public static final String SLOW = "slow";
