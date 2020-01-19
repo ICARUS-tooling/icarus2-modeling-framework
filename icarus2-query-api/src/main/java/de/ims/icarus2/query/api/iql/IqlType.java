@@ -19,7 +19,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 @JsonIgnoreType
 public enum IqlType {
-	QUERY("Query", null, IqlQuery.class),
+	QUERY("Query", "query", IqlQuery.class),
 	IMPORT("Import", "import", IqlImport.class),
 	PROPERTY("Property", "prop", IqlProperty.class),
 	CORPUS("Corpus", "corpus", IqlCorpus.class),

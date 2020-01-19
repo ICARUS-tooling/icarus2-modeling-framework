@@ -146,6 +146,7 @@ subprojects {
 		json "com.fasterxml.jackson.core:jackson-databind:${versions.json}"
 		// https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jsonSchema
 		json "com.fasterxml.jackson.module:jackson-module-jsonSchema:${versions.json}"
+		json "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${versions.json}"
 		
 			
 		// TEST ENVIRONMENT

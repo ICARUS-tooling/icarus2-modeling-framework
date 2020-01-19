@@ -307,7 +307,6 @@ public class IqlQueryGenerator {
 		build.addFieldChange(group::setDefaultValue, "defaultValue", false);
 		build.addFieldChange(group::setDefaultValue, "defaultValue", Integer.MAX_VALUE);
 		build.addFieldChange(group::setDefaultValue, "defaultValue", Long.MAX_VALUE);
-		build.addFieldChange(group::setDefaultValue, "defaultValue", Float.MAX_VALUE);
 		build.addFieldChange(group::setDefaultValue, "defaultValue", Double.MAX_VALUE);
 	}
 
@@ -353,7 +352,6 @@ public class IqlQueryGenerator {
 		build.addFieldChange(property::setValue, "value", false);
 		build.addFieldChange(property::setValue, "value", Integer.MAX_VALUE);
 		build.addFieldChange(property::setValue, "value", Long.MAX_VALUE);
-		build.addFieldChange(property::setValue, "value", Float.MAX_VALUE);
 		build.addFieldChange(property::setValue, "value", Double.MAX_VALUE);
 	}
 
@@ -374,8 +372,41 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareQuery(IqlQuery query, IncrementalBuild<?> build, Config config) {
+		prepareUnique0(query, build, config);
 
-		//TODO
+		// mandatory data
+		query.setRawPayload(index("some-raw-payload"));
+		query.addCorpus(generateFull(IqlType.CORPUS, config));
+
+		build.addFieldChange(query::setDialect, "dialect", index("dialect"));
+		build.addFieldChange(query::setRawPayload, "rawPayload", index("payload-data"));
+		build.addFieldChange(query::setRawGrouping, "rawGrouping", index("grouping-data"));
+		build.addFieldChange(query::setRawResultInstructions, "rawResultInstructions", index("instructions-data"));
+		build.addNestedChange("processedPayload", IqlType.PAYLOAD, config, query, query::setProcessedPayload);
+		for (int i = 0; i < config.getCount(IqlType.IMPORT, DEFAULT_COUNT); i++) {
+			build.addNestedChange("imports", IqlType.IMPORT, config, query, query::addImport);
+		}
+		for (int i = 0; i < config.getCount(IqlType.PROPERTY, DEFAULT_COUNT); i++) {
+			build.addNestedChange("setup", IqlType.PROPERTY, config, query, query::addSetup);
+		}
+		for (int i = 0; i < config.getCount(IqlType.CORPUS, DEFAULT_COUNT); i++) {
+			build.addNestedChange("corpora", IqlType.CORPUS, config, query, query::addCorpus);
+		}
+		for (int i = 0; i < config.getCount(IqlType.LAYER, DEFAULT_COUNT); i++) {
+			build.addNestedChange("layers", IqlType.LAYER, config, query, query::addLayer);
+		}
+		for (int i = 0; i < config.getCount(IqlType.SCOPE, DEFAULT_COUNT); i++) {
+			build.addNestedChange("scope", IqlType.SCOPE, config, query, query::addScope);
+		}
+		for (int i = 0; i < config.getCount(IqlType.GROUP, DEFAULT_COUNT); i++) {
+			build.addNestedChange("grouping", IqlType.GROUP, config, query, query::addGrouping);
+		}
+		for (int i = 0; i < config.getCount(IqlType.RESULT_INSTRUCTION, DEFAULT_COUNT); i++) {
+			build.addNestedChange("resultInstructions", IqlType.RESULT_INSTRUCTION, config, query, query::addResultInstruction);
+		}
+		for (int i = 0; i < config.getCount(IqlType.DATA, DEFAULT_COUNT); i++) {
+			build.addNestedChange("embeddedData", IqlType.DATA, config, query, query::addEmbeddedData);
+		}
 	}
 
 	private void prepareReference0(IqlReference reference, IncrementalBuild<?> build, Config config) {

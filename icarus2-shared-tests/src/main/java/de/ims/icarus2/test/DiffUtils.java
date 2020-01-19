@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.WeakHashMap;
 
+import de.ims.icarus2.apiguard.DataObject;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
@@ -444,6 +445,14 @@ public final class DiffUtils {
 		 * check for equality in subclass implementations
 		 */
 		protected boolean equals(Trace trace, Object value1, Object value2) throws IllegalArgumentException, IllegalAccessException {
+			if(value1 instanceof DataObject && value2 instanceof DataObject) {
+				if(value1.getClass()!=value2.getClass()) {
+					return false;
+				}
+
+				return getChecker(value1.getClass()).equals(trace, value1, value2);
+			}
+
 			return value1.equals(value2);
 		}
 	}
@@ -699,7 +708,7 @@ public final class DiffUtils {
 		}
 	}
 
-	private static boolean equalsCollection(Collection<?> c1, Collection<?> c2) {
+	private static boolean equalsCollection(Trace trace, Collection<?> c1, Collection<?> c2) {
 		if(c1.size()!=c2.size()) {
 			return false;
 		}
@@ -713,13 +722,22 @@ public final class DiffUtils {
 		return true;
 	}
 
-	private static boolean equalsList(List<?> l1, List<?> l2) {
+	private static boolean equalsList(Trace trace, List<?> l1, List<?> l2) throws IllegalAccessException {
 		if(l1.size()!=l2.size()) {
 			return false;
 		}
 
 		for(int i=0; i<l1.size(); i++) {
-			if(!l1.get(i).equals(l2.get(i))) {
+			Object val1 = l1.get(i);
+			Object val2 = l2.get(i);
+			if(val1 instanceof DataObject && val2 instanceof DataObject) {
+				if(val1.getClass()!=val2.getClass()) {
+					return false;
+				}
+				if(!getChecker(val1.getClass()).equals(trace, val1, val2)) {
+					return false;
+				}
+			} else if(!l1.get(i).equals(l2.get(i))) {
 				return false;
 			}
 		}
@@ -727,7 +745,7 @@ public final class DiffUtils {
 		return true;
 	}
 
-	private static boolean equalsMap(Map<?, ?> m1, Map<?, ?> m2) {
+	private static boolean equalsMap(Trace trace, Map<?, ?> m1, Map<?, ?> m2) throws IllegalAccessException {
 		if(m1.size()!=m2.size()) {
 			return false;
 		}
@@ -745,12 +763,24 @@ public final class DiffUtils {
 			boolean equals;
 
 			if((value1 instanceof Map) && (value2 instanceof Map)) {
-				equals = equalsMap((Map<?, ?>) value1 , (Map<?, ?>) value2);
+				trace.visit(value1);
+				equals = equalsMap(trace, (Map<?, ?>) value1 , (Map<?, ?>) value2);
+				trace.leave(value1);
 			} else  if((value1 instanceof List) && (value2 instanceof List)) {
-				equals = equalsList((List<?>) value1 , (List<?>) value2);
+				trace.visit(value1);
+				equals = equalsList(trace, (List<?>) value1 , (List<?>) value2);
+				trace.leave(value1);
 			} else if((value1 instanceof Collection) && (value2 instanceof Collection)) {
-				equals = equalsCollection((Collection<?>) value1, (Collection<?>) value2);
-			} else  {
+				trace.visit(value1);
+				equals = equalsCollection(trace, (Collection<?>) value1, (Collection<?>) value2);
+				trace.leave(value1);
+			} else if(value1 instanceof DataObject && value2 instanceof DataObject) {
+				if(value1.getClass()!=value2.getClass()) {
+					equals = false;
+				} else {
+					equals = getChecker(value1.getClass()).equals(trace, value1, value2);
+				}
+			} else {
 				equals = value1.equals(value2);
 			}
 
@@ -777,7 +807,7 @@ public final class DiffUtils {
 			Map<?, ?> m1 = (Map<?, ?>) value1;
 			Map<?, ?> m2 = (Map<?, ?>) value2;
 
-			return equalsMap(m1, m2);
+			return equalsMap(trace, m1, m2);
 		}
 	}
 
@@ -796,7 +826,7 @@ public final class DiffUtils {
 			Collection<?> c1 = (Collection<?>) value1;
 			Collection<?> c2 = (Collection<?>) value2;
 
-			return equalsCollection(c1, c2);
+			return equalsCollection(trace, c1, c2);
 		}
 	}
 
@@ -815,7 +845,7 @@ public final class DiffUtils {
 			List<?> l1 = (List<?>) value1;
 			List<?> l2 = (List<?>) value2;
 
-			return equalsList(l1, l2);
+			return equalsList(trace, l1, l2);
 		}
 	}
 }

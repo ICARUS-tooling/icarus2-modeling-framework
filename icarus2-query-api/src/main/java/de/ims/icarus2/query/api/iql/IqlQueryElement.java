@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.apiguard.DataObject;
 import de.ims.icarus2.query.api.QueryErrorCode;
 
 /**
@@ -21,7 +22,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 		property = IqlConstants.TYPE_PROPERTY
 )
 @JsonTypeIdResolver(IqlTypeIdResolver.class)
-public interface IqlQueryElement {
+public interface IqlQueryElement extends DataObject {
 
 	/**
 	 * Return the type information for this element, i.e. the {@link IqlType#getId() type id}

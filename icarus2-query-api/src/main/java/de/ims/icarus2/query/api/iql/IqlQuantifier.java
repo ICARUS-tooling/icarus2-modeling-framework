@@ -7,8 +7,6 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,24 +18,20 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public class IqlQuantifier extends AbstractIqlQueryElement {
 
-	private static final Integer UNSET = Integer.valueOf(UNSET_INT);
-
 	@JsonProperty(IqlProperties.QUANTIFIER_TYPE)
 	private QuantifierType quantifierType;
 
 	@JsonProperty(IqlProperties.VALUE)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<Integer> value = Optional.empty();
+	@JsonInclude(Include.NON_DEFAULT)
+	private int value = UNSET_INT;
 
 	@JsonProperty(IqlProperties.LOWER_BOUND)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<Integer> lowerBound = Optional.empty();
+	@JsonInclude(Include.NON_DEFAULT)
+	private int lowerBound = UNSET_INT;
 
 	@JsonProperty(IqlProperties.UPPER_BOUND)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<Integer> upperBound = Optional.empty();
-
-	//TODO some mechanism to exclude the values on default
+	@JsonInclude(Include.NON_DEFAULT)
+	private int upperBound = UNSET_INT;
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -56,22 +50,18 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		checkNotNull(quantifierType, IqlProperties.QUANTIFIER_TYPE);
 	}
 
-	private int _get(Optional<Integer> val) {
-		return val.orElse(UNSET).intValue();
-	}
-
-	private Optional<Integer> _set(int val) {
+	private int _set(int val) {
 		checkArgument(val>=0);
-		return Optional.of(Integer.valueOf(val));
+		return val;
 	}
 
 	public QuantifierType getQuantifierType() { return quantifierType; }
 
-	public int getValue() { return _get(value); }
+	public int getValue() { return value; }
 
-	public int getLowerBound() { return _get(lowerBound); }
+	public int getLowerBound() { return lowerBound; }
 
-	public int getUpperBound() { return _get(upperBound); }
+	public int getUpperBound() { return upperBound; }
 
 	public void setQuantifierType(QuantifierType quantifierType) { this.quantifierType = requireNonNull(quantifierType); }
 

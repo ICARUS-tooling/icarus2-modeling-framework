@@ -7,6 +7,8 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -26,6 +28,7 @@ public class IqlProperty extends AbstractIqlQueryElement {
 	 * Can be either a String or any primitive value.
 	 */
 	@JsonProperty(IqlProperties.VALUE)
+	@JsonInclude(Include.NON_ABSENT)
 	private Optional<Object> value = Optional.empty();
 
 	@Override
