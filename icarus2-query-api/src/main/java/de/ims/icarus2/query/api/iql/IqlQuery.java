@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlQuery extends AbstractIqlQueryElement {
 
+	//TODO rework for proper encapsulation
+
 	/**
 	 * Specifies the IQL dialect to be used. When not defined, the framework
 	 * will default to {@value IqlConstants#DEFAULT_VERSION}.

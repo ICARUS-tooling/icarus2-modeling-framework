@@ -91,6 +91,7 @@ private boolean adjacent(int from, int to) {
 
 // Standalone statement parts
 standaloneNodeStatement : nodeStatement EOF ;
+standaloneSelectiveStatement : selectiveStatement EOF ;
 
 // Standalone helpers
 standaloneExpression : expression EOF ;
@@ -106,13 +107,6 @@ standaloneExpression : expression EOF ;
 constraintStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
 	| (WITH bindingsList FIND)? selectiveStatement EOF
-	;
-
-selectiveStatement
-	: constraint												# plainStatement
-	| nodeStatement (HAVING globalConstraints)? 				# sequenceStatement
-	| ALIGNED? TREE nodeStatement (HAVING globalConstraints)?	# treeStatement
-	| ALIGNED? GRAPH nodeStatement (HAVING globalConstraints)? 	# graphStatement
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -130,6 +124,13 @@ bindingsList
  */
 binding
 	: member (COMMA member)* AS DISTINCT? qualifiedIdentifier
+	;
+
+selectiveStatement
+	: constraint												# plainStatement
+	| nodeStatement (HAVING globalConstraints)? 				# sequenceStatement
+	| ALIGNED? TREE nodeStatement (HAVING globalConstraints)?	# treeStatement
+	| ALIGNED? GRAPH nodeStatement (HAVING globalConstraints)? 	# graphStatement
 	;	
 	
 /** Addressing a layer/context or other embedded member via the identifiers of its environment */

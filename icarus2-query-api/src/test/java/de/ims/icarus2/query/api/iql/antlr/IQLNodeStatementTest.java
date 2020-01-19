@@ -160,7 +160,7 @@ public class IQLNodeStatementTest {
 
 	@CsvSource(delimiter=';', value={
 		// nodes
-		"[]; [[[[\\[][\\]]]]]; single node",
+		"[]; [[[\\[][\\]]]]; single node",
 		"[],[]; [[[\\[\\]]][,][[\\[\\]]]]; two nodes",
 		// empty edges
 		"[]---[]; [[[\\[\\]][---][\\[\\]]]]; undirected empty edge",
@@ -182,7 +182,7 @@ public class IQLNodeStatementTest {
 
 	@CsvSource(delimiter=';', value={
 		// nodes
-		"[$a:]; [[[[\\[][$a:][\\]]]]]; single node",
+		"[$a:]; [[[\\[][$a:][\\]]]]; single node",
 		"[$a:],[$b:]; [[[\\[$a:\\]]][,][[\\[$b:\\]]]]; two nodes",
 		// empty edges
 		"[$a:]---[$b:]; [[[\\[$a:\\]][---][\\[$b:\\]]]]; undirected empty edge",
@@ -202,7 +202,7 @@ public class IQLNodeStatementTest {
 
 	@CsvSource(delimiter=';', value={
 		// nodes
-		"4-[]; [[[[4-][\\[][\\]]]]]; single node",
+		"4-[]; [[[4-][\\[][\\]]]]; single node",
 		"2+[],4|8[]; [[[2+\\[\\]]][,][[4|8\\[\\]]]]; two nodes",
 		// empty edges
 		"[]---4-[]; [[[\\[\\]][---][4-\\[\\]]]]; undirected empty right-quantified edge",
@@ -224,7 +224,7 @@ public class IQLNodeStatementTest {
 
 	@CsvSource(delimiter=';', value={
 		// nodes
-		"[a>23]; [[[[\\[][a>23][\\]]]]]; single node",
+		"[a>23]; [[[\\[][a>23][\\]]]]; single node",
 		"2+[a>23],4|8[b==0]; [[[2+\\[a>23\\]]][,][[4|8\\[b==0\\]]]]; two nodes",
 		// empty edges
 		"[a>23]---4-[b==0]; [[[\\[a>23\\]][---][4-\\[b==0\\]]]]; undirected empty right-quantified edge",

@@ -374,6 +374,8 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareQuery(IqlQuery query, IncrementalBuild<?> build, Config config) {
+
+		//TODO
 	}
 
 	private void prepareReference0(IqlReference reference, IncrementalBuild<?> build, Config config) {
