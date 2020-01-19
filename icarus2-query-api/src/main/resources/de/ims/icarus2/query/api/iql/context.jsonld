@@ -1,0 +1,5 @@
+{
+	"@base": "http://www.ims.uni-stuttgart.de/icarus/jsonld/iql"
+	
+	//TODO add actual context definition
+}

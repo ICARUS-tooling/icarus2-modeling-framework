@@ -18,9 +18,10 @@ grammar IQL;
 
 //TODO wanna label it Query Programming 
 
-//options {
+options {
 //    tokenVocab=IQLLexer;
-//}
+	language = Java;
+}
 
 @parser::header {
 package de.ims.icarus2.query.api.iql.antlr;
@@ -32,6 +33,9 @@ import org.antlr.v4.runtime.misc.Interval;
 }
 
 @parser::members {
+	
+//private boolean allowChildren = false;
+//private boolean allowEdges = false;
 	
 /** Test that type of token at given lookahead position is IN the specified set */
 private boolean isAny(int pos, int...set) {
@@ -85,90 +89,12 @@ private boolean adjacent(int from, int to) {
 /** Standalone rules */
 
 
-// Standalone top-level parts
-standalonePreamble : preamble EOF ;
-standaloneStatement : statement EOF ;
-standaloneResult : result EOF ;
-
 // Standalone statement parts
-standaloneFlatStatement : flatStatement EOF ;
-standaloneTreeStatement : treeStatement EOF ;
-standaloneGraphStatement : graphStatement EOF ;
+standaloneNodeStatement : nodeStatement EOF ;
 
 // Standalone helpers
-standaloneVersionDeclaration : versionDeclaration EOF ;
 standaloneExpression : expression EOF ;
 
-
-/** Basic Rules */
-
-query
-	: preamble statement (RETURN result) (APPENDIX appendix)? EOF
-	;
-	
-// PREAMBLE BEGIN
-	
-preamble
-	: (DIALECT versionDeclaration)? (IMPORT importTargetList)? (SETUP propertyList)? // here goes configuration stuff, namespace declarations, etc...
-	;
-	
-/** Import external extensions or script definitions, optionally renaming their namespace */
-importTargetList
-	: importTarget (COMMA importTarget)*
-	;
-	
-importTarget
-	: StringLiteral (AS Identifier)?
-	;
-	
-/** Allows to do a general setup of query parameters */
-propertyList
-	: property (COMMA property)*
-	;
-	
-property
-	: key=qualifiedIdentifier # switchProperty
-	| key=qualifiedIdentifier ASSIGN value=integerLiteral # intProperty
-	| key=qualifiedIdentifier ASSIGN value=floatingPointLiteral # floatProperty
-	| key=qualifiedIdentifier ASSIGN value=booleanLiteral # booleanProperty
-	| key=qualifiedIdentifier ASSIGN value=StringLiteral # stringProperty
-	;
-	
-// PREAMBLE END
-
-
-// STATEMENT BEGIN
-
-/** Core of every query: specify what to extract from where */
-statement
- 	: FROM corpusSelectorList SELECT layerSelectorList constraintStatement groupStatement?
- 	;
- 	
-corpusSelectorList
-	: corpusSelector (COMMA corpusSelector)*
-	;
-	
-corpusSelector
-	: (id=qualifiedIdentifier | uri=StringLiteral) (AS renamed=Identifier)? 
-	;
-
-layerSelectorList
-	: layerSelector (COMMA layerSelector)*
-	;
-	
-layerSelector 
-	: id=qualifiedIdentifier (AS PRIMARY? layerAlias=Identifier | AS PRIMARY? SCOPE scopeAlias=Identifier LPAREN scopeElementList RPAREN)?
-	;
-
-scopeElementList
-	: qualifiedIdentifier STAR? (COMMA qualifiedIdentifier STAR?)*
-	;
-	
-/** Addressing a layer/context or other embedded member via the identifiers of its environment */
-qualifiedIdentifier
-	: Identifier (DOUBLE_COLON Identifier)*
-	;
-	
 /** 
  * Actual selector part of a query:
  * 
@@ -178,8 +104,15 @@ qualifiedIdentifier
  * can cause unlimited increase in complexity!
  */
 constraintStatement
-	: (WITH bindingsList)? WHERE localConstraints (HAVING globalConstraints)?
-	| ALL // special marker to return the entire corpus, with only the query scope as vertical filter
+	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
+	| (WITH bindingsList FIND)? selectiveStatement EOF
+	;
+
+selectiveStatement
+	: constraint												# plainStatement
+	| nodeStatement (HAVING globalConstraints)? 				# sequenceStatement
+	| ALIGNED? TREE nodeStatement (HAVING globalConstraints)?	# treeStatement
+	| ALIGNED? GRAPH nodeStatement (HAVING globalConstraints)? 	# graphStatement
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -197,43 +130,32 @@ bindingsList
  */
 binding
 	: member (COMMA member)* AS DISTINCT? qualifiedIdentifier
+	;	
+	
+/** Addressing a layer/context or other embedded member via the identifiers of its environment */
+qualifiedIdentifier
+	: Identifier (DOUBLE_COLON Identifier)*
 	;
 	
-localConstraints
-	: flatStatement 
-	| ALIGNED? TREE treeStatement 
-	| ALIGNED? GRAPH graphStatement
-	;
-	
-/** Text-corpus query with a flat sequential structure  */
-flatStatement
-	: constraint
-	| flatNode+
-	;
-	
-flatNode
-	: quantifier? LBRACK memberLabel? constraint? RBRACK
-	;
-	
-memberLabel
-	: member COLON
-	;
 	
 /**
- * Treebank query
- * 
- * Possible scenarios for tree (root) query composition:
+ * Possible scenarios for node composition:
  * []					singleton
  * [][]					siblings
  * [] or []				alternatives
  * {[][]} or [] 		grouping with alternative
  * {[][]} or {[] or {[][]}} complex alternatives
  * 
+ * For Graphs:
+ * [],[],[]---[],[]-->[]		siblings and edges
+ * [] or []-->[]				alternatives
+ * {[],[]} or []-->[]			grouping with alternative
  */
-treeStatement
-	: LBRACE treeStatement RBRACE		#treeNodeGrouping
-	| treeNode+							#treeNodeSiblings
-	| treeStatement OR treeStatement	#treeNodeAlternatives
+nodeStatement
+	: LBRACE nodeStatement RBRACE				#nodeGrouping
+	| node+										#nodeSequence
+	| element (COMMA element)*					#elementSequence	
+	| nodeStatement OR nodeStatement			#nodeAlternatives
 	;
 	
 /**
@@ -243,29 +165,18 @@ treeStatement
  * <xy>[]					empty, explicitly quantified node
  * [...]					existentially quantified node with inner constraints
  * <xy>[...]				explicitly quantified node with inner constraints
+ * 
+ * For trees:
  * [[][[]]]					existentially quantified tree
  * [...[...][[...]]]		existentially quantified tree with (multiple) inner constraints
  * <x>[[]<y>[<z>[]]]		tree with explicit and implicit quantification
  */
-treeNode
-	: quantifier? LBRACK memberLabel? constraint? treeStatement? RBRACK
+node
+	: quantifier? LBRACK memberLabel? constraint? nodeStatement? RBRACK
 	;
-
-/**
- * Complex query over graph data
- * 
- * Possible scenarios for graph query composition:
- * []							singleton
- * [],[],[]---[],[]-->[]		siblings and edges
- * [] or []-->[]				alternatives
- * {[],[]} or []-->[]			grouping with alternative
- * {[],[]} or {[] or {[],[]}} 	complex alternatives
- * 
- */
-graphStatement
-	: LBRACE graphStatement RBRACE			#graphNodeGrouping
-	| graphElement (COMMA graphElement)*	#graphNodeSiblings
-	| graphStatement OR graphStatement		#graphNodeAlternatives
+	
+memberLabel
+	: member COLON
 	;
 	
 /**
@@ -290,23 +201,18 @@ graphStatement
  *  for more than one graphElement expression, additional statements must use the simple
  *  member reference instead!
  */
-graphElement
-	: graphNode
+element
+	: node
 	/*
 	 * Models left-directed, undirected, bidirectional and right-directed edges
 	 * with or without inner constraints.
 	 */
-	| graphNode graphEdge graphNode
+	| node edge node
 	;
-	
-graphNode
-	: member
-	| quantifier? LBRACK memberLabel? constraint? RBRACK
-	;
-	
-graphEdge
-	: (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED)	# emptyGraphEdge
-	| (directedEdgeLeft | undirectedEdge) LBRACK memberLabel? constraint? RBRACK (directedEdgeRight | undirectedEdge) # filledGraphEdge
+
+edge
+	: (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED)	# emptyEdge
+	| (directedEdgeLeft | undirectedEdge) LBRACK memberLabel? constraint? RBRACK (directedEdgeRight | undirectedEdge) # filledEdge
 	;
 	
 directedEdgeLeft
@@ -327,39 +233,29 @@ globalConstraints
 	: constraint
 	;
 	
+// STATEMENT END
+
+
+// GROUPING BEGIN
+	
 groupStatement
-	: GROUP groupExpression (COMMA)
+	: GROUP groupExpression (COMMA groupExpression) EOF
 	;
 	
 groupExpression
 	: BY expression (FILTER ON expression)? (LABEL StringLiteral)? (DEFAULT StringLiteral)?
 	;
+
+// GROUPING END
 	
-// STATEMENT END
-
-
 // RESULT BEGIN
 
 /** Post-processing directives for generating textual/statistical results */
-result
+resultStatement
 	:
 	;
 
-// RESULT END
-
-
-// APPENDIX BEGIN
-
-/** Currently appendix of a query can only hold binary payloads as hex strings */
-appendix
-	: binaryPayload (COMMA binaryPayload)*
-	;
-	
-binaryPayload
-	: id=variableName ASSIGN HexLiteral
-	;
-
-// APPENDIX END
+// RESULT END	
 
 // GENERAL HELPERS
 	
@@ -506,11 +402,6 @@ member
 	: DOLLAR Identifier
 	;
 	
-//signedSimpleQuantifier
-//	: sign? PureDigits sign?
-//	| sign? PureDigits DOUBLE_DOT sign? PureDigits
-//	;
-	
 versionDeclaration
 	: major=PureDigits (DOT minor=PureDigits)? (DOT build=PureDigits)? (MINUS | UNDERSCORE | COLON)? suffix=Identifier? 
 	;
@@ -563,35 +454,6 @@ sign
  * Lexer Rules
  */
 
-// Keywords
-NULL : 'NULL' | 'null' ;
-TRUE : 'TRUE' | 'true' ;
-FALSE : 'FALSE' | 'false' ;
-FROM : 'FROM' | 'from' ;
-SETUP : 'SETUP' | 'setup' ;
-SELECT : 'SELECT' | 'select' ;
-AS : 'AS' | 'as' ;
-SCOPE : 'SCOPE' | 'scope' ;
-WITH : 'WITH' | 'with' ;
-DISTINCT : 'DISTINCT' | 'distinct' ;
-WHERE : 'WHERE' | 'where' ;
-TREE : 'TREE' | 'tree' ;
-ALIGNED : 'ALIGNED' | 'aligned';
-GRAPH : 'GRAPH' | 'graph' ;
-OR : 'OR' | 'or' ;
-AND : 'AND' | 'and' ;
-HAVING : 'HAVING' | 'having' ;
-LOCAL : 'LOCAL' | 'local' ;
-RANGE : 'RANGE' | 'range' ;
-LIMIT : 'LIMIT' | 'limit' ;
-ALL : 'ALL' | 'all' ;
-NOT : 'NOT' | 'not' ;
-IMPORT : 'IMPORT' | 'import' ;
-LABEL : 'LABEL' | 'label' ;
-DEFAULT : 'DEFAULT' | 'default' ;
-GROUP : 'GROUP' | 'group' ;
-IN : 'IN' | 'in' ;
-FOREACH : 'FOREACH' | 'foreach' ;
 EVEN : 'EVEN' | 'even' ;
 ODD : 'ODD' | 'odd' ;
 OMIT : 'OMIT' | 'omit' ;
@@ -599,14 +461,32 @@ STEP : 'STEP' | 'step' ;
 DO : 'DO' | 'do' ;
 END : 'END' | 'end' ;
 COUNT : 'COUNT' | 'count' ;
-DIALECT : 'DIALECT' | 'dialect' ;
-PRIMARY : 'PRIMARY' | 'primary' ;
-APPEND : 'APPEND' | 'append' ;
+FOREACH : 'FOREACH' | 'foreach' ;
+NULL : 'NULL' | 'null' ;
+TRUE : 'TRUE' | 'true' ;
+FALSE : 'FALSE' | 'false' ;
+TREE : 'TREE' | 'tree' ;
+OR : 'OR' | 'or' ;
+AND : 'AND' | 'and' ;
+AS : 'AS' | 'as' ;
+ALL : 'ALL' | 'all' ;
+NOT : 'NOT' | 'not' ;
+IN : 'IN' | 'in' ;
+ALIGNED : 'ALIGNED' | 'aligned';
+GRAPH : 'GRAPH' | 'graph' ;
+HAVING : 'HAVING' | 'having' ;
+RANGE : 'RANGE' | 'range' ;
+DISTINCT : 'DISTINCT' | 'distinct' ;
+WITH : 'WITH' | 'with' ;
+FIND : 'FIND' | 'find' ;
+GROUP : 'GROUP' | 'group' ;
 BY : 'BY' | 'by' ;
+LABEL : 'LABEL' | 'label' ;
+DEFAULT : 'DEFAULT' | 'default' ;
 FILTER : 'FILTER' | 'filter' ;
 ON : 'ON' | 'on' ;
-RETURN : 'RETURN' | 'return' ;
-APPENDIX : 'APPENDIX' | 'appendix' ;
+
+// Keywords
 
 // Types
 INT : 'int' ;
@@ -668,10 +548,6 @@ EXMARK : '!';
 // Range and linking punctuation
 DOUBLE_COLON : '::';
 DOUBLE_DOT : '..';
-
-VersionPrefix
-	: 'v'
-	;
 
 // Literals
 
@@ -753,32 +629,7 @@ fragment
 IdentifierBegin
  	: 	LOWERCASE 
  	| 	UPPERCASE
- 	;
-
-HexLiteral
-	:	'0' [xX] HexDigits
-	;
-
-fragment
-HexDigits
-	:	HexDigit (HexDigitsAndUnderscores? HexDigit)?
-	;
-
-fragment
-HexDigit
-	:	[0-9a-fA-F]
-	;
-
-fragment
-HexDigitsAndUnderscores
-	:	HexDigitOrUnderscore+
-	;
-
-fragment
-HexDigitOrUnderscore
-	:	HexDigit
-	|	'_'
-	;	
+ 	;	
 
 // Basic alnum symbols
 fragment LOWERCASE  : [a-z] ;
