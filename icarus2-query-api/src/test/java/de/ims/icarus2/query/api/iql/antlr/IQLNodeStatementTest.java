@@ -54,13 +54,6 @@ public class IQLNodeStatementTest {
 
 	// SEQUENCES
 
-	@RandomizedTest
-	@TestFactory
-	Stream<DynamicNode> testFlatConstraint(RandomGenerator rng) {
-		return randomExpressions(rng, 10, false).stream().map(pExp -> makeStatementTreeTest(
-				pExp.first, f1Tree("[{1}]", pExp), pExp.second));
-	}
-
 	@CsvSource({
 		"[], [[[\\[][\\]]]], single empty node",
 		"[] [], [[\\[\\]][\\[\\]]], two empty nodes",
