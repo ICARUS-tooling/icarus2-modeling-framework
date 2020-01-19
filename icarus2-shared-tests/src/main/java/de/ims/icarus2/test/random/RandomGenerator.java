@@ -343,6 +343,12 @@ public class RandomGenerator implements Cloneable {
 		return source[nextInt(source.length)];
 	}
 
+	public <T extends Enum<T>> T random(Class<T> enumClass) {
+		requireNonNull(enumClass);
+		T[] values = enumClass.getEnumConstants();
+		return random(values);
+	}
+
 	public <T extends Object> T random(List<? extends T> source) {
 		requireNonNull(source);
 		return source.get(nextInt(source.size()));
