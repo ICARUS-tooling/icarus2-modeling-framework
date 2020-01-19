@@ -3,6 +3,12 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -13,15 +19,35 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public abstract class IqlConstraint extends IqlUnique {
 
 	@JsonProperty(IqlProperties.SOLVED)
-	public boolean solved;
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<Boolean> solved = Optional.empty();
 
 	@JsonProperty(IqlProperties.SOLVED_AS)
-	public boolean solvedAs;
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<Boolean> solvedAs = Optional.empty();
+
+	public boolean isSolved() { return solved.orElse(Boolean.FALSE).booleanValue(); }
+
+	public boolean isSolvedAs() { return solvedAs.orElse(Boolean.FALSE).booleanValue(); }
+
+	public void setSolved(boolean solved) { this.solved = Optional.ofNullable(setOrFallback(solved, false)); }
+
+	public void setSolvedAs(boolean solvedAs) { this.solvedAs = Optional.ofNullable(setOrFallback(solvedAs, false)); }
+
+	/**
+	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
+	 */
+	@Override
+	public void checkIntegrity() {
+		super.checkIntegrity();
+		checkCondition(!solvedAs.isPresent() || solved.isPresent(), IqlProperties.SOLVED_AS,
+				"cannot give 'solvedAs' value if constraint is not marked 'solved'");
+	}
 
 	public static class IqlPredicate extends IqlConstraint {
 
 		@JsonProperty(IqlProperties.EXPRESSION)
-		public IqlExpression expression;
+		private IqlExpression expression;
 
 		/**
 		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -30,18 +56,31 @@ public abstract class IqlConstraint extends IqlUnique {
 		public IqlType getType() {
 			return IqlType.PREDICATE;
 		}
+
+		public IqlExpression getExpression() { return expression; }
+
+		public void setExpression(IqlExpression expression) { this.expression = requireNonNull(expression); }
+
+		/**
+		 * @see de.ims.icarus2.query.api.iql.IqlConstraint#checkIntegrity()
+		 */
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+			checkNestedNotNull(expression, IqlProperties.EXPRESSION);
+		}
 	}
 
 	public static class IqlTerm extends IqlConstraint {
 
 		@JsonProperty(IqlProperties.LEFT)
-		public IqlConstraint left;
+		private IqlConstraint left;
 
 		@JsonProperty(IqlProperties.RIGHT)
-		public IqlConstraint right;
+		private IqlConstraint right;
 
 		@JsonProperty(IqlProperties.OPERATION)
-		public BooleanOperation operation;
+		private BooleanOperation operation;
 
 		/**
 		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -49,6 +88,29 @@ public abstract class IqlConstraint extends IqlUnique {
 		@Override
 		public IqlType getType() {
 			return IqlType.TERM;
+		}
+
+		public IqlConstraint getLeft() { return left; }
+
+		public IqlConstraint getRight() { return right; }
+
+		public BooleanOperation getOperation() { return operation; }
+
+		public void setLeft(IqlConstraint left) { this.left = requireNonNull(left); }
+
+		public void setRight(IqlConstraint right) { this.right = requireNonNull(right); }
+
+		public void setOperation(BooleanOperation operation) { this.operation = requireNonNull(operation); }
+
+		/**
+		 * @see de.ims.icarus2.query.api.iql.IqlConstraint#checkIntegrity()
+		 */
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+			checkNotNull(operation, IqlProperties.OPERATION);
+			checkNestedNotNull(left, IqlProperties.LEFT);
+			checkNestedNotNull(right, IqlProperties.RIGHT);
 		}
 	}
 

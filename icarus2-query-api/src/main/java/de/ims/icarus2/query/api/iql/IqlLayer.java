@@ -3,6 +3,8 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -16,7 +18,8 @@ public class IqlLayer extends IqlAliasedReference {
 	 * in the query result.
 	 */
 	@JsonProperty(IqlProperties.PRIMARY)
-	public boolean primary;
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean primary = false;
 
 	/**
 	 * When this layer definition is used inside a {@link IqlScope}, effectively
@@ -27,7 +30,8 @@ public class IqlLayer extends IqlAliasedReference {
 	 * for each layer are already being added to the global scope!
 	 */
 	@JsonProperty(IqlProperties.ALL_MEMBERS)
-	public boolean allMembers;
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean allMembers = false;
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -36,5 +40,13 @@ public class IqlLayer extends IqlAliasedReference {
 	public IqlType getType() {
 		return IqlType.LAYER;
 	}
+
+	public boolean isPrimary() { return primary; }
+
+	public boolean isAllMembers() { return allMembers; }
+
+	public void setPrimary(boolean primary) { this.primary = primary; }
+
+	public void setAllMembers(boolean allMembers) { this.allMembers = allMembers; }
 
 }

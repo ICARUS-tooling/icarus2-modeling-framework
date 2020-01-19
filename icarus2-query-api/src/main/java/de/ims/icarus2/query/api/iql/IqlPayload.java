@@ -3,33 +3,43 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+
+import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class IqlPayload implements IqlQueryElement {
+public class IqlPayload extends AbstractIqlQueryElement {
 
 	@JsonProperty(IqlProperties.QUERY_TYPE)
-	public QueryType queryType;
+	private QueryType queryType;
 
 	/**
 	 * All the bindings to be usable for this query, if defined.
 	 */
 	@JsonProperty(IqlProperties.BINDINGS)
-	public List<IqlBinding> bindings = new ArrayList<>();
+	@JsonInclude(Include.NON_EMPTY)
+	private final List<IqlBinding> bindings = new ArrayList<>();
 
 	// Either plain or global constraints
 	@JsonProperty(IqlProperties.CONSTRAINT)
-	public IqlConstraint constraint;
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<IqlConstraint> constraint = Optional.empty();
 
 	@JsonProperty(IqlProperties.ELEMENTS)
-	public List<IqlElement> elements = new ArrayList<>();
+	@JsonInclude(Include.NON_EMPTY)
+	private final List<IqlElement> elements = new ArrayList<>();
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -38,6 +48,37 @@ public class IqlPayload implements IqlQueryElement {
 	public IqlType getType() {
 		return IqlType.PAYLOAD;
 	}
+
+	/**
+	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
+	 */
+	@Override
+	public void checkIntegrity() {
+		super.checkIntegrity();
+		checkNotNull(queryType, IqlProperties.QUERY_TYPE);
+		checkCondition(!(constraint==null && elements.isEmpty()), "constraint/elements",
+				"must either define a global 'csontraint' or 'elements'");
+
+		checkCollection(bindings);
+		checkOptionalNested(constraint);
+		checkCollection(elements);
+	}
+
+	public QueryType getQueryType() { return queryType; }
+
+	public List<IqlBinding> getBindings() { return CollectionUtils.unmodifiableListProxy(bindings); }
+
+	public Optional<IqlConstraint> getConstraint() { return constraint; }
+
+	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
+
+	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
+
+	public void addBinding(IqlBinding binding) { bindings.add(requireNonNull(binding)); }
+
+	public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
+
+	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
 
 	public enum QueryType {
 		/**

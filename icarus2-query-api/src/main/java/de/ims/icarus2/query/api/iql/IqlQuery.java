@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Markus Gärtner
  *
  */
-public class IqlQuery implements IqlQueryElement {
+public class IqlQuery extends AbstractIqlQueryElement {
 
 	/**
 	 * Specifies the IQL dialect to be used. When not defined, the framework
@@ -109,5 +109,15 @@ public class IqlQuery implements IqlQueryElement {
 	@Override
 	public IqlType getType() {
 		return IqlType.QUERY;
+	}
+
+	/**
+	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
+	 */
+	@Override
+	public void checkIntegrity() {
+		super.checkIntegrity();
+
+		//TODO
 	}
 }

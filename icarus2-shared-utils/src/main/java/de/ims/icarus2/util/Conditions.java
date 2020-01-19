@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util;
 
+import static java.util.Objects.requireNonNull;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 
@@ -75,5 +77,12 @@ public class Conditions {
 	public static void checkIndex(int index, int min, int max) {
 		if(index<min || (index!=min && index>max))
 			throw new IndexOutOfBoundsException();
+	}
+
+	public static String checkNotEmpty(String s) {
+		requireNonNull(s);
+		if(s.isEmpty())
+			throw new IllegalArgumentException("String must not be empty");
+		return s;
 	}
 }

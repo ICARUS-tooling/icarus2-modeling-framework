@@ -3,6 +3,8 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -12,7 +14,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class IqlImport extends IqlAliasedReference {
 
 	@JsonProperty(IqlProperties.OPTIONAL)
-	public boolean optional;
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean optional = false;
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -21,5 +24,9 @@ public class IqlImport extends IqlAliasedReference {
 	public IqlType getType() {
 		return IqlType.IMPORT;
 	}
+
+	public boolean isOptional() { return optional; }
+
+	public void setOptional(boolean optional) { this.optional = optional; }
 
 }

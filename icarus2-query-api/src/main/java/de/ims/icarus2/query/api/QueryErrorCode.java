@@ -7,6 +7,7 @@ import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.query.api.iql.IqlQueryElement;
 
 /**
  * @author Markus Gärtner
@@ -17,6 +18,12 @@ public enum QueryErrorCode implements ErrorCode {
 	//**************************************************
 	//       1xx  GENERAL ERRORS
 	//**************************************************
+
+	/**
+	 * Signals that an instance of {@link IqlQueryElement} failed its
+	 * {@link IqlQueryElement#checkIntegrity() integrity check}.
+	 */
+	CORRUPTED_QUERY(101),
 
 	//**************************************************
 	//       2xx  IQL SYNTAX ERRORS

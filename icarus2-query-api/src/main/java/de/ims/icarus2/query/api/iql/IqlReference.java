@@ -3,6 +3,10 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
+import static java.util.Objects.requireNonNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -17,9 +21,23 @@ public abstract class IqlReference extends IqlUnique {
 	 * prefix, such as '$' or '@'.
 	 */
 	@JsonProperty(IqlProperties.NAME)
-	public String name;
+	private String name;
 
+	@JsonIgnore
 	public abstract ReferenceType getReferenceType();
+
+	public String getName() { return name; }
+
+	public void setName(String name) { this.name = checkNotEmpty(name); }
+
+	/**
+	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
+	 */
+	@Override
+	public void checkIntegrity() {
+		super.checkIntegrity();
+		checkStringNotEmpty(name, IqlProperties.NAME);
+	}
 
 	public static class IqlVariable extends IqlReference {
 
@@ -38,13 +56,12 @@ public abstract class IqlReference extends IqlUnique {
 		public IqlType getType() {
 			return IqlType.VARIABLE;
 		}
-
 	}
 
 	public static class IqlMember extends IqlReference {
 
 		@JsonProperty(IqlProperties.MEMBER_TYPE)
-		public MemberType memberType;
+		private MemberType memberType;
 
 		/**
 		 * @see de.ims.icarus2.query.api.iql.IqlReference#getReferenceType()
@@ -62,6 +79,18 @@ public abstract class IqlReference extends IqlUnique {
 			return IqlType.MEMBER;
 		}
 
+		/**
+		 * @see de.ims.icarus2.query.api.iql.IqlReference#checkIntegrity()
+		 */
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+			checkNotNull(memberType, IqlProperties.MEMBER_TYPE);
+		}
+
+		public MemberType getMemberType() { return memberType; }
+
+		public void setMemberType(MemberType memberType) { this.memberType = requireNonNull(memberType); }
 	}
 
 	public enum ReferenceType {
