@@ -251,10 +251,34 @@ groupExpression
 	
 // RESULT BEGIN
 
-/** Post-processing directives for generating textual/statistical results */
+/** 
+ * Post-processing directives for generating textual/statistical results:
+ * 
+ * LIMIT:
+ * Limit the result to the first N reported matches
+ * 
+ * ORDER BY:
+ * General result reordering. Potentially expensive
+ * 
+ * BEST N (LIMIT+ORDER BY):
+ * Find the N biggest or smallest results according to the specified order
+ * criteria. Note that it a tie between two results cannot be resolved by
+ * using the provided order expressions, it is undefined which the evaluation
+ * engine will pick.
+ */
 resultStatement
-	:
+	: (LIMIT limit=unsignedIntegerLiteral)? (ORDER BY orderExpressionList)? EOF
 	;
+	
+orderExpressionList
+	: orderExpression (COMMA orderExpression)*
+	;
+	
+orderExpression
+	: expression (ASC | DESC)
+	;
+	
+
 
 // RESULT END	
 
@@ -272,7 +296,9 @@ expressionList
 	: expression (COMMA expression)*
 	;
 	
-/*
+/**
+ * Core rule to express complex formulas/references/constraints, basically everything...
+ * 
     IQL binary operators, in order from highest to lowest precedence:
     *    /    %
     +    -
@@ -486,6 +512,10 @@ LABEL : 'LABEL' | 'label' ;
 DEFAULT : 'DEFAULT' | 'default' ;
 FILTER : 'FILTER' | 'filter' ;
 ON : 'ON' | 'on' ;
+LIMIT : 'LIMIT' | 'limit' ;
+ORDER : 'ORDER' | 'order' ;
+ASC : 'ASC' | 'asc' ;
+DESC : 'DESC' | 'desc' ;
 
 // Keywords
 

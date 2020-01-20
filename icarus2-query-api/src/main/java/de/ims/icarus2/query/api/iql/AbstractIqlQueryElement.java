@@ -55,6 +55,11 @@ abstract class AbstractIqlQueryElement implements IqlQueryElement {
 			throw forCorruption(label, "value is null");
 	}
 
+	protected void checkNull(Object field, String label) {
+		if(field!=null)
+			throw forCorruption(label, "value expected to be null");
+	}
+
 	protected void checkCondition(boolean condition, String label, String message) {
 		if(!condition)
 			throw forCorruption(label, message);

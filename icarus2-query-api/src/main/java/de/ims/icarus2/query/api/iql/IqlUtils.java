@@ -28,6 +28,10 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
  */
 public final class IqlUtils {
 
+	public static void main(String[] args) {
+
+	}
+
 	public static ObjectMapper createMapper() {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(new Jdk8Module()); // Properly handles java.util.Optional

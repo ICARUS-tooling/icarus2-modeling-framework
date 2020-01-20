@@ -71,7 +71,11 @@ public final class IqlProperties {
 
 	public static final String PROCESSED_GROUPING = IQL_PREFIX+"processedGrouping";
 
-	public static final String RAW_RESULT_INSTRUCTIONS = IQL_PREFIX+"rawResultInstructions";
+	public static final String RAW_RESULT = IQL_PREFIX+"rawResult";
+
+	public static final String RESULT = IQL_PREFIX+"result";
+
+	public static final String RESULT_TYPES = IQL_PREFIX+"resultTypes";
 
 	public static final String PROCESSED_RESULT_INSTRUCTIONS = IQL_PREFIX+"processedResultInstructions";
 
@@ -124,4 +128,10 @@ public final class IqlProperties {
 	public static final String RIGHT = IQL_PREFIX+"right";
 
 	public static final String OPERATION = IQL_PREFIX+"operation";
+
+	public static final String ORDER = IQL_PREFIX+"order";
+
+	public static final String SORTINGS = IQL_PREFIX+"sortings";
+
+	public static final String LIMIT = IQL_PREFIX+"limit";
 }

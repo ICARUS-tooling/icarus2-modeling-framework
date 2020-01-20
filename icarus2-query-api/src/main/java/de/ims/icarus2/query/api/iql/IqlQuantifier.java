@@ -22,7 +22,7 @@ package de.ims.icarus2.query.api.iql;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
+import java.util.OptionalInt;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -42,16 +42,16 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	private QuantifierType quantifierType;
 
 	@JsonProperty(IqlProperties.VALUE)
-	@JsonInclude(Include.NON_DEFAULT)
-	private Integer value;
+	@JsonInclude(Include.NON_ABSENT)
+	private OptionalInt value = OptionalInt.empty();
 
 	@JsonProperty(IqlProperties.LOWER_BOUND)
-	@JsonInclude(Include.NON_DEFAULT)
-	private Integer lowerBound;
+	@JsonInclude(Include.NON_ABSENT)
+	private OptionalInt lowerBound = OptionalInt.empty();
 
 	@JsonProperty(IqlProperties.UPPER_BOUND)
-	@JsonInclude(Include.NON_DEFAULT)
-	private Integer upperBound;
+	@JsonInclude(Include.NON_ABSENT)
+	private OptionalInt upperBound = OptionalInt.empty();
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -84,18 +84,18 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		}
 	}
 
-	private Integer _set(int val) {
+	private OptionalInt _set(int val) {
 		checkArgument(val>=0);
-		return Integer.valueOf(val);
+		return OptionalInt.of(val);
 	}
 
 	public QuantifierType getQuantifierType() { return quantifierType; }
 
-	public Optional<Integer> getValue() { return Optional.ofNullable(value); }
+	public OptionalInt getValue() { return value; }
 
-	public Optional<Integer> getLowerBound() { return Optional.ofNullable(lowerBound); }
+	public OptionalInt getLowerBound() { return lowerBound; }
 
-	public Optional<Integer> getUpperBound() { return Optional.ofNullable(upperBound); }
+	public OptionalInt getUpperBound() { return upperBound; }
 
 	public void setQuantifierType(QuantifierType quantifierType) { this.quantifierType = requireNonNull(quantifierType); }
 

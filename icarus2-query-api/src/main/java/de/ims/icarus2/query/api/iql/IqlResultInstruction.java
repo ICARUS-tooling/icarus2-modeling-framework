@@ -20,12 +20,15 @@
 package de.ims.icarus2.query.api.iql;
 
 /**
+ * Models a complete processing pipeline for transforming the match results
+ * into whatever output the user desired.
+ *
  * @author Markus Gärtner
  *
  */
 public class IqlResultInstruction extends IqlUnique {
 
-	//TODO define actual content based on the antlr gramamr for results
+	//TODO define actual content based on the antlr grammar for results
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -34,5 +37,4 @@ public class IqlResultInstruction extends IqlUnique {
 	public IqlType getType() {
 		return IqlType.RESULT_INSTRUCTION;
 	}
-
 }

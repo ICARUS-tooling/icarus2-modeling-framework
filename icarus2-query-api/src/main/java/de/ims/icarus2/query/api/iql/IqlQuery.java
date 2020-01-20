@@ -82,7 +82,7 @@ public class IqlQuery extends IqlUnique {
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlScope> scopes = new ArrayList<>();
 
-	//TODO add entries for pre and post processing of data (outside of result processing)
+	//TODO add entries for pre and post processing of data (outside of processedResult processing)
 
 	/**
 	 * The raw unprocessed query payload as provided by the user.
@@ -116,17 +116,12 @@ public class IqlQuery extends IqlUnique {
 	/**
 	 * The raw result processing instructions if provided.
 	 */
-	@JsonProperty(IqlProperties.RAW_RESULT_INSTRUCTIONS)
+	@JsonProperty(IqlProperties.RAW_RESULT)
 	@JsonInclude(Include.NON_ABSENT)
-	private Optional<String> rawResultInstructions = Optional.empty();
+	private Optional<String> rawResult = Optional.empty();
 
-	/**
-	 * The processed result instructions if
-	 * {@link #rawResultInstructions} was set.
-	 */
-	@JsonProperty(IqlProperties.PROCESSED_RESULT_INSTRUCTIONS)
-	@JsonInclude(Include.NON_EMPTY)
-	private final List<IqlResultInstruction> processedResultInstructions = new ArrayList<>();
+	@JsonProperty(IqlProperties.RESULT)
+	private IqlResult processedResult;
 
 	/**
 	 * Binary data required for the query. Each embedded data
@@ -153,10 +148,11 @@ public class IqlQuery extends IqlUnique {
 		super.checkIntegrity();
 		checkCollectionNotEmpty(corpora, "corpora");
 		checkStringNotEmpty(rawPayload, "rawPayload");
+		checkNestedNotNull(processedResult, "processedResult");
 
 		checkOptionalStringNotEmpty(dialect, "dialect");
 		checkOptionalStringNotEmpty(rawGrouping, "rawGrouping");
-		checkOptionalStringNotEmpty(rawResultInstructions, "rawResultInstructions");
+		checkOptionalStringNotEmpty(rawResult, "rawResult");
 		checkOptionalNested(processedPayload);
 		checkCollection(imports);
 		checkCollection(setup);
@@ -164,7 +160,6 @@ public class IqlQuery extends IqlUnique {
 		checkCollection(scopes);
 		checkCollection(embeddedData);
 		checkCollection(processedGrouping);
-		checkCollection(processedResultInstructions);
 	}
 
 	public Optional<String> getDialect() { return dialect; }
@@ -187,11 +182,12 @@ public class IqlQuery extends IqlUnique {
 
 	public List<IqlGroup> getProcessedGrouping() { return CollectionUtils.unmodifiableListProxy(processedGrouping); }
 
-	public Optional<String> getRawResultInstructions() { return rawResultInstructions; }
-
-	public List<IqlResultInstruction> getProcessedResultInstructions() { return CollectionUtils.unmodifiableListProxy(processedResultInstructions); }
-
 	public List<IqlData> getEmbeddedData() { return CollectionUtils.unmodifiableListProxy(embeddedData); }
+
+	public Optional<String> getRawResult() { return rawResult; }
+
+	public IqlResult getProcessedResult() { return processedResult; }
+
 
 	public void setDialect(String dialect) { this.dialect = Optional.of(checkNotEmpty(dialect)); }
 
@@ -200,8 +196,6 @@ public class IqlQuery extends IqlUnique {
 	public void setProcessedPayload(IqlPayload processedPayload) { this.processedPayload = Optional.of(processedPayload); }
 
 	public void setRawGrouping(String rawGrouping) { this.rawGrouping = Optional.of(checkNotEmpty(rawGrouping)); }
-
-	public void setRawResultInstructions(String rawResultInstructions) { this.rawResultInstructions = Optional.of(checkNotEmpty(rawResultInstructions)); }
 
 	public void addImport(IqlImport imp) { imports.add(requireNonNull(imp)); }
 
@@ -215,9 +209,11 @@ public class IqlQuery extends IqlUnique {
 
 	public void addGrouping(IqlGroup group) { processedGrouping.add(requireNonNull(group)); }
 
-	public void addResultInstruction(IqlResultInstruction instruction) { processedResultInstructions.add(requireNonNull(instruction)); }
-
 	public void addEmbeddedData(IqlData data) { embeddedData.add(requireNonNull(data)); }
+
+	public void setRawResult(String rawResult) { this.rawResult = Optional.of(checkNotEmpty(rawResult)); }
+
+	public void setProcessedResult(IqlResult result) { this.processedResult = requireNonNull(result); }
 
 	//TODO add the 'forEach' style methods for all list properties
 

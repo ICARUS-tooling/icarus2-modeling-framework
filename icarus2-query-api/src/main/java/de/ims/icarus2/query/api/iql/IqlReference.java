@@ -135,11 +135,22 @@ public abstract class IqlReference extends IqlUnique {
 
 	public enum MemberType {
 
-		ITEM,
-		EDGE,
-		FRAGMENT,
-		CONTAINER,
-		STRUCTURE,
+		ITEM("item"),
+		EDGE("edge"),
+		FRAGMENT("fragment"),
+		CONTAINER("container"),
+		STRUCTURE("structure"),
 		;
+
+		private final String label;
+
+		private MemberType(String label) {
+			this.label = label;
+		}
+
+		@JsonValue
+		public String getLabel() {
+			return label;
+		}
 	}
 }
