@@ -101,8 +101,8 @@ public class IqlJsonTest {
 				String json = mapper1.writeValueAsString(original);
 
 				ObjectMapper mapper2 = IqlUtils.createMapper();
-				IqlQueryElement copy = (IqlQueryElement) mapper2.readValue(
-						json, original.getType().getType());
+				Class<?> targetType = original.getType().getType();
+				IqlQueryElement copy = (IqlQueryElement) mapper2.readValue(json, targetType);
 
 				assertDeepEqual(label, original, copy, json);
 

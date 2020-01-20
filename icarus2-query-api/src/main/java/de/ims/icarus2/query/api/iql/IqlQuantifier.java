@@ -4,13 +4,17 @@
 package de.ims.icarus2.query.api.iql;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
+
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
@@ -23,15 +27,15 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 	@JsonProperty(IqlProperties.VALUE)
 	@JsonInclude(Include.NON_DEFAULT)
-	private int value = UNSET_INT;
+	private Integer value;
 
 	@JsonProperty(IqlProperties.LOWER_BOUND)
 	@JsonInclude(Include.NON_DEFAULT)
-	private int lowerBound = UNSET_INT;
+	private Integer lowerBound;
 
 	@JsonProperty(IqlProperties.UPPER_BOUND)
 	@JsonInclude(Include.NON_DEFAULT)
-	private int upperBound = UNSET_INT;
+	private Integer upperBound;
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -48,20 +52,34 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(quantifierType, IqlProperties.QUANTIFIER_TYPE);
+		switch (quantifierType) {
+		case EXACT:
+		case AT_LEAST:
+		case AT_MOST:
+			checkNotNull(value, IqlProperties.VALUE);
+			break;
+		case RANGE:
+			checkNotNull(lowerBound, IqlProperties.LOWER_BOUND);
+			checkNotNull(upperBound, IqlProperties.UPPER_BOUND);
+			break;
+		default:
+			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
+					"Unknown quantifier type: "+quantifierType);
+		}
 	}
 
-	private int _set(int val) {
+	private Integer _set(int val) {
 		checkArgument(val>=0);
-		return val;
+		return Integer.valueOf(val);
 	}
 
 	public QuantifierType getQuantifierType() { return quantifierType; }
 
-	public int getValue() { return value; }
+	public Optional<Integer> getValue() { return Optional.ofNullable(value); }
 
-	public int getLowerBound() { return lowerBound; }
+	public Optional<Integer> getLowerBound() { return Optional.ofNullable(lowerBound); }
 
-	public int getUpperBound() { return upperBound; }
+	public Optional<Integer> getUpperBound() { return Optional.ofNullable(upperBound); }
 
 	public void setQuantifierType(QuantifierType quantifierType) { this.quantifierType = requireNonNull(quantifierType); }
 

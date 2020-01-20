@@ -360,7 +360,8 @@ public class IqlQueryGenerator {
 		prepareQueryElement0(quantifier, build, config);
 
 		// mandatory data
-		quantifier.setQuantifierType(rng.random(QuantifierType.class));
+		quantifier.setQuantifierType(rng.random(QuantifierType.EXACT, QuantifierType.AT_LEAST, QuantifierType.AT_MOST));
+		quantifier.setValue(index());
 
 		for(QuantifierType quantifierType : QuantifierType.values()) {
 			build.addEnumFieldChange(quantifier::setQuantifierType, "quantifierType", quantifierType);
