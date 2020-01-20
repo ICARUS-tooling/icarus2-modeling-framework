@@ -17,57 +17,59 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.iql;
+package de.ims.icarus2.query.api;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Optional;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.IcarusApiException;
-import de.ims.icarus2.query.api.QueryFragment;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class IqlException extends IcarusApiException {
+public class QueryException extends IcarusApiException {
 
 	private static final long serialVersionUID = 466513317359445843L;
 
 	/** Part of the original query that led to this error */
-	private final QueryFragment fragment;
+	private final Optional<QueryFragment> fragment;
 
-	/**
-	 * @param errorCode
-	 * @param message
-	 * @param cause
-	 */
-	public IqlException(ErrorCode errorCode, String message, QueryFragment fragment, Throwable cause) {
+	public QueryException(ErrorCode errorCode, String message, QueryFragment fragment, Throwable cause) {
 		super(errorCode, message, cause);
-		this.fragment = requireNonNull(fragment);
+		this.fragment = Optional.ofNullable(fragment);
 	}
 
-	/**
-	 * @param errorCode
-	 * @param message
-	 */
-	public IqlException(ErrorCode errorCode, String message, QueryFragment fragment) {
+	public QueryException(ErrorCode errorCode, String message, QueryFragment fragment) {
 		super(errorCode, message);
-		this.fragment = requireNonNull(fragment);
+		this.fragment = Optional.ofNullable(fragment);
 	}
 
-	/**
-	 * @param errorCode
-	 * @param cause
-	 */
-	public IqlException(ErrorCode errorCode, QueryFragment fragment, Throwable cause) {
+	public QueryException(ErrorCode errorCode, QueryFragment fragment, Throwable cause) {
 		super(errorCode, cause);
-		this.fragment = requireNonNull(fragment);
+		this.fragment = Optional.ofNullable(fragment);
+	}
+
+	public QueryException(ErrorCode errorCode, String message, Throwable cause) {
+		super(errorCode, message, cause);
+		this.fragment = Optional.empty();
+
+	}
+
+	public QueryException(ErrorCode errorCode, String message) {
+		super(errorCode, message);
+		this.fragment = Optional.empty();
+	}
+
+	public QueryException(ErrorCode errorCode, Throwable cause) {
+		super(errorCode, cause);
+		this.fragment = Optional.empty();
 	}
 
 	/**
 	 * @return the fragment
 	 */
-	public QueryFragment getFragment() {
+	public Optional<QueryFragment> getFragment() {
 		return fragment;
 	}
 }

@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
@@ -41,8 +43,14 @@ public enum QueryErrorCode implements ErrorCode {
 	 */
 	CORRUPTED_QUERY(101),
 
+	/**
+	 * Wraps a {@link JsonProcessingException} that occurred
+	 * during reading or writing of a query.
+	 */
+	JSON_ERROR(102),
+
 	//**************************************************
-	//       2xx  IQL SYNTAX ERRORS
+	//       2xx  INNER IQL SYNTAX ERRORS
 	//**************************************************
 
 	/**

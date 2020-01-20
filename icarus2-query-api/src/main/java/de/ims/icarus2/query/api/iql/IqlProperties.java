@@ -65,11 +65,11 @@ public final class IqlProperties {
 
 	public static final String RAW_PAYLOAD = IQL_PREFIX+"rawPayload";
 
-	public static final String PROCESSED_PAYLOAD = IQL_PREFIX+"processedPayload";
+	public static final String PAYLOAD = IQL_PREFIX+"payload";
 
 	public static final String RAW_GROUPING = IQL_PREFIX+"rawGrouping";
 
-	public static final String PROCESSED_GROUPING = IQL_PREFIX+"processedGrouping";
+	public static final String GROUPING = IQL_PREFIX+"grouping";
 
 	public static final String RAW_RESULT = IQL_PREFIX+"rawResult";
 
@@ -77,7 +77,7 @@ public final class IqlProperties {
 
 	public static final String RESULT_TYPES = IQL_PREFIX+"resultTypes";
 
-	public static final String PROCESSED_RESULT_INSTRUCTIONS = IQL_PREFIX+"processedResultInstructions";
+	public static final String RESULT_INSTRUCTIONS = IQL_PREFIX+"resultInstructions";
 
 	public static final String GROUP_BY = IQL_PREFIX+"groupBy";
 

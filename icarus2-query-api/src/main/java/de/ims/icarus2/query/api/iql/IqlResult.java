@@ -48,9 +48,9 @@ public class IqlResult extends AbstractIqlQueryElement {
 	 * The processed result instructions if
 	 * {@link #rawResultInstructions} was set.
 	 */
-	@JsonProperty(IqlProperties.PROCESSED_RESULT_INSTRUCTIONS)
+	@JsonProperty(IqlProperties.RESULT_INSTRUCTIONS)
 	@JsonInclude(Include.NON_EMPTY)
-	private final List<IqlResultInstruction> processedResultInstructions = new ArrayList<>();
+	private final List<IqlResultInstruction> resultInstructions = new ArrayList<>();
 
 	@JsonProperty(IqlProperties.LIMIT)
 	@JsonInclude(Include.NON_ABSENT)
@@ -76,11 +76,11 @@ public class IqlResult extends AbstractIqlQueryElement {
 		super.checkIntegrity();
 		checkCondition(!resultTypes.isEmpty(), "resultTypes", "Must define at elast 1 result type");
 
-		checkCollection(processedResultInstructions);
+		checkCollection(resultInstructions);
 		checkCollection(sortings);
 	}
 
-	public List<IqlResultInstruction> getProcessedResultInstructions() { return CollectionUtils.unmodifiableListProxy(processedResultInstructions); }
+	public List<IqlResultInstruction> getResultInstructions() { return CollectionUtils.unmodifiableListProxy(resultInstructions); }
 
 	public Set<ResultType> getResultTypes() { return CollectionUtils.unmodifiableSetProxy(resultTypes); }
 
@@ -90,7 +90,7 @@ public class IqlResult extends AbstractIqlQueryElement {
 
 	public void setLimit(long limit) { checkArgument(limit>0); this.limit = OptionalLong.of(limit); }
 
-	public void addResultInstruction(IqlResultInstruction instruction) { processedResultInstructions.add(requireNonNull(instruction)); }
+	public void addResultInstruction(IqlResultInstruction instruction) { resultInstructions.add(requireNonNull(instruction)); }
 
 	public void addResultType(ResultType resultType) { resultTypes.add(requireNonNull(resultType)); }
 

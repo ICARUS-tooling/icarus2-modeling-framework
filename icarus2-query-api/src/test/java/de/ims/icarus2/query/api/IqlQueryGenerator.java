@@ -400,14 +400,14 @@ public class IqlQueryGenerator {
 		// mandatory data
 		query.setRawPayload(index("some-raw-payload"));
 		query.addCorpus(generateFull(IqlType.CORPUS, config));
-		query.setProcessedResult(generateFull(IqlType.RESULT, config));
+		query.setResult(generateFull(IqlType.RESULT, config));
 
 		build.addFieldChange(query::setDialect, "dialect", index("dialect"));
 		build.addFieldChange(query::setRawPayload, "rawPayload", index("payload-data"));
 		build.addFieldChange(query::setRawGrouping, "rawGrouping", index("grouping-data"));
 		build.addFieldChange(query::setRawResult, "rawResult", index("result-data"));
-		build.addNestedChange("processedPayload", IqlType.PAYLOAD, config, query, query::setProcessedPayload);
-		build.addNestedChange("processedResult", IqlType.RESULT, config, query, query::setProcessedResult);
+		build.addNestedChange("processedPayload", IqlType.PAYLOAD, config, query, query::setPayload);
+		build.addNestedChange("processedResult", IqlType.RESULT, config, query, query::setResult);
 		for (int i = 0; i < config.getCount(IqlType.IMPORT, DEFAULT_COUNT); i++) {
 			build.addNestedChange("imports", IqlType.IMPORT, config, query, query::addImport);
 		}
