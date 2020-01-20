@@ -134,4 +134,10 @@ public final class IqlProperties {
 	public static final String SORTINGS = IQL_PREFIX+"sortings";
 
 	public static final String LIMIT = IQL_PREFIX+"limit";
+
+	public static final String START = IQL_PREFIX+"start";
+
+	public static final String STOP = IQL_PREFIX+"stop";
+
+	public static final String FRAGMENT = IQL_PREFIX+"fragment";
 }

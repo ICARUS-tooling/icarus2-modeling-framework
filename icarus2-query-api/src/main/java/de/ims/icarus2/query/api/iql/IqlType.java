@@ -56,6 +56,7 @@ public enum IqlType {
 	TREE_NODE("TreeNode", "tree", IqlElement.IqlTreeNode.class),
 	RESULT("Result", null, IqlResult.class),
 	SORTING("Sorting", null, IqlSorting.class),
+	FRAGMENT("Fragment", null, IqlFragment.class),
 	RESULT_INSTRUCTION("ResultInstruction", "res", IqlResultInstruction.class),
 	;
 
