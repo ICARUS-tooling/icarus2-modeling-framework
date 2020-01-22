@@ -34,8 +34,8 @@ import org.antlr.v4.runtime.misc.Interval;
 
 @parser::members {
 	
-//private boolean allowChildren = false;
-//private boolean allowEdges = false;
+public static final int WHITESPACE = 1;
+public static final int COMMENTS = 2;
 	
 /** Test that type of token at given lookahead position is IN the specified set */
 private boolean isAny(int pos, int...set) {
@@ -244,7 +244,7 @@ groupStatement
 	;
 	
 groupExpression
-	: BY expression (FILTER ON expression)? (LABEL StringLiteral)? (DEFAULT StringLiteral)?
+	: BY selector=expression (FILTER ON filter=expression)? (LABEL label=StringLiteral)? (DEFAULT defaultValue=StringLiteral)?
 	;
 
 // GROUPING END
@@ -667,8 +667,8 @@ fragment LOWERCASE  : [a-z] ;
 fragment UPPERCASE  : [A-Z] ;
 
 // Ignored content
-WS : [ \t\r\n\u000C\u000B]+ -> skip;
+WS : [ \t\r\n\u000C\u000B]+ -> channel(1);
 
-SL_COMMENT : '//' .*? '\n' -> skip;
+SL_COMMENT : '//' .*? '\n' -> channel(2);
 
 ErrorCharacter : . ;
