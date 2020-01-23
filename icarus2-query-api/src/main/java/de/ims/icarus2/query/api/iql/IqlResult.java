@@ -56,6 +56,10 @@ public class IqlResult extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalLong limit = OptionalLong.empty();
 
+	@JsonProperty(IqlProperties.PERCENT)
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean percent = false;
+
 	@JsonProperty(IqlProperties.SORTINGS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlSorting> sortings = new ArrayList<>();
@@ -75,6 +79,8 @@ public class IqlResult extends AbstractIqlQueryElement {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkCondition(!resultTypes.isEmpty(), "resultTypes", "Must define at elast 1 result type");
+		checkCondition(!percent || (limit.isPresent() && limit.getAsLong()>0 && limit.getAsLong()<100),
+				"percent", "When using 'percent' flag, 'limit' must be between 0 and 100 (both ends exclusive)");
 
 		checkCollection(resultInstructions);
 		checkCollection(sortings);
@@ -86,9 +92,13 @@ public class IqlResult extends AbstractIqlQueryElement {
 
 	public OptionalLong getLimit() { return limit; }
 
+	public boolean isPercent() { return percent; }
+
 	public List<IqlSorting> getSortings() { return CollectionUtils.unmodifiableListProxy(sortings); }
 
 	public void setLimit(long limit) { checkArgument(limit>0); this.limit = OptionalLong.of(limit); }
+
+	public void setPercent(boolean percent) { this.percent = percent; }
 
 	public void addResultInstruction(IqlResultInstruction instruction) { resultInstructions.add(requireNonNull(instruction)); }
 

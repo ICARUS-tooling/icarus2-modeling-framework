@@ -109,7 +109,7 @@ public final class IqlProperties {
 
 	public static final String EDGE_TYPE = IQL_PREFIX+"edgeType";
 
-	public static final String MEMBER_TYPE = IQL_PREFIX+"memberType";
+	public static final String REFERENCE_TYPE = IQL_PREFIX+"referenceType";
 
 	public static final String QUERY_TYPE = IQL_PREFIX+"queryType";
 
@@ -134,6 +134,8 @@ public final class IqlProperties {
 	public static final String SORTINGS = IQL_PREFIX+"sortings";
 
 	public static final String LIMIT = IQL_PREFIX+"limit";
+
+	public static final String PERCENT = IQL_PREFIX+"percent";
 
 	public static final String START = IQL_PREFIX+"start";
 

@@ -54,6 +54,12 @@ public enum QueryErrorCode implements ErrorCode {
 	//**************************************************
 
 	/**
+	 * An inner expression of an IQL query contains syntax errors.
+	 * The associated exception will be wrapped as cause for inspection.
+	 */
+	SYNTAX_ERROR(200),
+
+	/**
 	 * Signals that a token is expected to be in a continuous form,
 	 * but was written in chunks. The default IQL grammar for example
 	 * defines rules for various edge expressions that are constructed

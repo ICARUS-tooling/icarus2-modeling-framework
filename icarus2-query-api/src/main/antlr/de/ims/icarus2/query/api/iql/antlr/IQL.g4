@@ -34,9 +34,6 @@ import org.antlr.v4.runtime.misc.Interval;
 
 @parser::members {
 	
-public static final int WHITESPACE = 1;
-public static final int COMMENTS = 2;
-	
 /** Test that type of token at given lookahead position is IN the specified set */
 private boolean isAny(int pos, int...set) {
 	Token t = _input.LT(pos);
@@ -80,6 +77,11 @@ private boolean adjacent(int from, int to) {
 	return true;
 }
 
+}
+
+@lexer::members {
+public static final int WHITESPACE = 1;
+public static final int COMMENTS = 2;
 }
 
 /**
@@ -127,16 +129,15 @@ binding
 	;
 
 selectiveStatement
-	: constraint												# plainStatement
-	| nodeStatement (HAVING globalConstraints)? 				# sequenceStatement
-	| ALIGNED? TREE nodeStatement (HAVING globalConstraints)?	# treeStatement
-	| ALIGNED? GRAPH nodeStatement (HAVING globalConstraints)? 	# graphStatement
+	: constraint
+	| structureStatement (HAVING globalConstraints)?
 	;	
-	
-/** Addressing a layer/context or other embedded member via the identifiers of its environment */
-qualifiedIdentifier
-	: Identifier (DOUBLE_COLON Identifier)*
-	;
+
+structureStatement
+	: nodeStatement					# sequenceStatement
+	| ALIGNED? TREE nodeStatement	# treeStatement
+	| ALIGNED? GRAPH nodeStatement 	# graphStatement
+	;	
 	
 	
 /**
@@ -240,11 +241,11 @@ globalConstraints
 // GROUPING BEGIN
 	
 groupStatement
-	: GROUP groupExpression (COMMA groupExpression) EOF
+	: GROUP groupExpression (COMMA groupExpression)* EOF
 	;
 	
 groupExpression
-	: BY selector=expression (FILTER ON filter=expression)? (LABEL label=StringLiteral)? (DEFAULT defaultValue=StringLiteral)?
+	: BY selector=expression (FILTER ON filter=expression)? LABEL label=StringLiteral (DEFAULT defaultValue=expression)?
 	;
 
 // GROUPING END
@@ -267,7 +268,7 @@ groupExpression
  * engine will pick.
  */
 resultStatement
-	: (LIMIT limit=unsignedIntegerLiteral)? (ORDER BY orderExpressionList)? EOF
+	: (LIMIT limit=unsignedIntegerLiteral PERCENT?)? (ORDER BY orderExpressionList)? EOF
 	;
 	
 orderExpressionList
@@ -339,6 +340,7 @@ expression
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
 	| left=expression and right=expression 											# conjunction
 	| left=expression or right=expression 											# disjunction
+	// Optional extra expressions that will be supported fully in a later IQL iteration
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
 	;
@@ -355,7 +357,12 @@ primary
 reference
 	: variableName
 	| member
-	| Identifier
+	| qualifiedIdentifier
+	;
+	
+/** Addressing a layer/context or other embedded member via the identifiers of its environment */
+qualifiedIdentifier
+	: Identifier (DOUBLE_COLON Identifier)*
 	;
 	
 loopExpresseion
@@ -667,8 +674,8 @@ fragment LOWERCASE  : [a-z] ;
 fragment UPPERCASE  : [A-Z] ;
 
 // Ignored content
-WS : [ \t\r\n\u000C\u000B]+ -> channel(1);
+WS : [ \t\r\n\u000C\u000B]+ -> skip;
 
-SL_COMMENT : '//' .*? '\n' -> channel(2);
+SL_COMMENT : '//' .*? '\n' -> skip;
 
 ErrorCharacter : . ;

@@ -28,26 +28,26 @@ import static java.util.Objects.requireNonNull;
  */
 public class QueryFragment {
 
-	private final Query source;
+	private final String source;
 	private final int begin, end;
 
 	/**
 	 * @param source the {@link Query}
-	 * @param begin
-	 * @param end
+	 * @param begin first character index to include (inclusive)
+	 * @param end last character index to include (inclusive)
 	 */
-	public QueryFragment(Query source, int begin, int end) {
+	public QueryFragment(String source, int begin, int end) {
 		requireNonNull(source);
 		checkArgument("begin must not be negative", begin>=0);
 		checkArgument("end must not be less then begin", end>=begin);
-		checkArgument("end must not exceed source query length", end<source.getText().length());
+		checkArgument("end must not exceed source query length", end<source.length());
 
 		this.source = source;
 		this.begin = begin;
 		this.end = end;
 	}
 
-	public Query getSource() {
+	public String getSource() {
 		return source;
 	}
 	public int getBegin() {
@@ -58,6 +58,6 @@ public class QueryFragment {
 	}
 
 	public String getText() {
-		return source.getText().substring(begin, end+1);
+		return source.substring(begin, end+1);
 	}
 }

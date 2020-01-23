@@ -20,12 +20,14 @@
 package de.ims.icarus2.query.api.iql;
 
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,6 +39,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  *
  */
 public class IqlQuery extends IqlUnique {
+
 	/**
 	 * Specifies the IQL dialect to be used. When not defined, the framework
 	 * will default to {@value IqlConstants#DEFAULT_VERSION}.
@@ -132,6 +135,9 @@ public class IqlQuery extends IqlUnique {
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlData> embeddedData = new ArrayList<>();
 
+	@JsonIgnore
+	private boolean processed = false;
+
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
 	 */
@@ -161,6 +167,17 @@ public class IqlQuery extends IqlUnique {
 		checkCollection(embeddedData);
 		checkCollection(grouping);
 	}
+
+	@JsonIgnore
+	public boolean isProcessed() {
+		return processed;
+	}
+
+	public void markProcessed() {
+		checkState("ALready processed", !processed);
+		processed = true;
+	}
+
 
 	public Optional<String> getDialect() { return dialect; }
 

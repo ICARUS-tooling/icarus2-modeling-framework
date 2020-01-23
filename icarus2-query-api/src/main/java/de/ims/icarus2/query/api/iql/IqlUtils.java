@@ -26,7 +26,6 @@ import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
-import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.QueryFragment;
 
 /**
@@ -46,7 +45,7 @@ public final class IqlUtils {
 		return mapper;
 	}
 
-	public static QueryFragment fragment(Query query, JsonLocation loc) {
+	public static QueryFragment fragment(String query, JsonLocation loc) {
 		requireNonNull(query);
 		if(loc==null) {
 			return null;

@@ -30,7 +30,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.ims.icarus2.query.api.iql.IqlReference.IqlMember;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -60,7 +59,7 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	 * to the specified {@link #target target layer}.
 	 */
 	@JsonProperty(IqlProperties.MEMBERS)
-	private final List<IqlMember> members = new ArrayList<>();
+	private final List<IqlReference> members = new ArrayList<>();
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -84,13 +83,13 @@ public class IqlBinding extends AbstractIqlQueryElement {
 
 	public String getTarget() { return target; }
 
-	public List<IqlMember> getMembers() { return CollectionUtils.unmodifiableListProxy(members); }
+	public List<IqlReference> getMembers() { return CollectionUtils.unmodifiableListProxy(members); }
 
-	public void forEachMember(Consumer<? super IqlMember> action) { members.forEach(requireNonNull(action)); }
+	public void forEachMember(Consumer<? super IqlReference> action) { members.forEach(requireNonNull(action)); }
 
 	public void setDistinct(boolean distinct) { this.distinct = distinct; }
 
 	public void setTarget(String target) { this.target = checkNotEmpty(target); }
 
-	public void addMember(IqlMember member) { members.add(requireNonNull(member)); }
+	public void addMember(IqlReference member) { members.add(requireNonNull(member)); }
 }

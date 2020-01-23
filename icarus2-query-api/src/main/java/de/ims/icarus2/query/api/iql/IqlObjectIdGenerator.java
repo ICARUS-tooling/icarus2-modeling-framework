@@ -32,7 +32,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class IqlObjectIdgenerator extends ObjectIdGenerator<String> {
+public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
 
 	private static final long serialVersionUID = 5881761728858492729L;
 
@@ -40,11 +40,11 @@ public class IqlObjectIdgenerator extends ObjectIdGenerator<String> {
 
 	private final Class<?> _scope;
 
-	public IqlObjectIdgenerator() {
+	public IqlObjectIdGenerator() {
 		this(Object.class, null);
 	}
 
-	private IqlObjectIdgenerator(Class<?> scope,
+	private IqlObjectIdGenerator(Class<?> scope,
 			Map<String, AtomicInteger> counters) {
 		_scope = requireNonNull(scope);
 		this.counters = counters;
@@ -90,7 +90,7 @@ public class IqlObjectIdgenerator extends ObjectIdGenerator<String> {
 	 */
 	@Override
 	public ObjectIdGenerator<String> forScope(Class<?> scope) {
-		return scope==_scope ? this : new IqlObjectIdgenerator(scope, counters());
+		return scope==_scope ? this : new IqlObjectIdGenerator(scope, counters());
 	}
 
 	/**
@@ -98,7 +98,7 @@ public class IqlObjectIdgenerator extends ObjectIdGenerator<String> {
 	 */
 	@Override
 	public ObjectIdGenerator<String> newForSerialization(Object context) {
-		return new IqlObjectIdgenerator(_scope, null);
+		return new IqlObjectIdGenerator(_scope, null);
 	}
 
 	/**

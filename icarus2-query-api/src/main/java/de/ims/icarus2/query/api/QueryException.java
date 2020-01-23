@@ -22,13 +22,13 @@ package de.ims.icarus2.query.api;
 import java.util.Optional;
 
 import de.ims.icarus2.ErrorCode;
-import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class QueryException extends IcarusApiException {
+public class QueryException extends IcarusRuntimeException {
 
 	private static final long serialVersionUID = 466513317359445843L;
 

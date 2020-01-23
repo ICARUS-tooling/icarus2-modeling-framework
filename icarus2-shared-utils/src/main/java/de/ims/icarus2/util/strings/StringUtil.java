@@ -559,6 +559,10 @@ public final class StringUtil {
         }
     }
 
+    public static boolean isNullOrEmpty(String s) {
+    	return s==null || s.trim().isEmpty();
+    }
+
     /**
      *
      * @param obj
@@ -997,6 +1001,35 @@ public final class StringUtil {
 
 	public static String padLeft(String s, int n) {
 	    return String.format("%1$" + n + "s", s); //$NON-NLS-1$ //$NON-NLS-2$
+	}
+
+	/**
+	 * Replaces all occurrences of {@code c} in {@code source} with the string
+	 * {@code r}.
+	 * @param source
+	 * @param c
+	 * @param r
+	 * @return
+	 */
+	public static String replaceAll(String source, char c, String r) {
+		requireNonNull(source);
+		requireNonNull(r);
+
+		if(source.indexOf(c)==-1) {
+			return source;
+		}
+
+		StringBuilder sb = new StringBuilder(source.length()+10*r.length()); //TODO smart estimation?
+
+		for (int i = 0; i < source.length(); i++) {
+			if(source.charAt(i)==c) {
+				sb.append(r);
+			} else {
+				sb.append(c);
+			}
+		}
+
+		return sb.toString();
 	}
 
     /**

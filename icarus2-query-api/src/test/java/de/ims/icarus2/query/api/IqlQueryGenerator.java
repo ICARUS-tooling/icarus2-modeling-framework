@@ -54,7 +54,7 @@ import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLayer;
-import de.ims.icarus2.query.api.iql.IqlObjectIdgenerator;
+import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlProperty;
@@ -63,9 +63,7 @@ import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlReference;
-import de.ims.icarus2.query.api.iql.IqlReference.IqlMember;
-import de.ims.icarus2.query.api.iql.IqlReference.IqlVariable;
-import de.ims.icarus2.query.api.iql.IqlReference.MemberType;
+import de.ims.icarus2.query.api.iql.IqlReference.ReferenceType;
 import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
 import de.ims.icarus2.query.api.iql.IqlResultInstruction;
@@ -90,6 +88,21 @@ public class IqlQueryGenerator {
 			IqlQueryGenerator generator, IqlType type, Config config) {
 
 		return generator.build(type, config);
+	}
+
+	/**
+	 * Creates an instance for given {@link IqlType} with the bare minimum of fields
+	 * set to pass the integrity check. THe implementation is kinda inefficient as we
+	 * create a full incremental build and then throw away all the dynamic changes,
+	 *  but whatever...
+	 *
+	 * @param type
+	 * @param rng
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E extends IqlQueryElement> E createBare(IqlType type, RandomGenerator rng) {
+		return (E) generateOnce(new IqlQueryGenerator(rng), type, config()).getInstance();
 	}
 
 	private static final int DEFAULT_COUNT = 3;
@@ -151,20 +164,19 @@ public class IqlQueryGenerator {
 		case GROUP: prepareGroup((IqlGroup) element, build, config); break;
 		case IMPORT: prepareImport((IqlImport) element, build, config); break;
 		case LAYER: prepareLayer((IqlLayer) element, build, config); break;
-		case MEMBER: prepareMember((IqlMember) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
 		case PREDICATE: preparePredicate((IqlPredicate) element, build, config); break;
 		case PROPERTY: prepareProperty((IqlProperty) element, build, config); break;
 		case QUANTIFIER: prepareQuantifier((IqlQuantifier) element, build, config); break;
 		case QUERY: prepareQuery((IqlQuery) element, build, config); break;
+		case REFERENCE: prepareReference((IqlReference) element, build, config); break;
 		case RESULT: prepareResult((IqlResult) element, build, config); break;
 		case RESULT_INSTRUCTION: prepareResultInstruction((IqlResultInstruction) element, build, config); break;
 		case SCOPE: prepareScope((IqlScope) element, build, config); break;
 		case SORTING: prepareSorting((IqlSorting) element, build, config); break;
 		case TERM: prepareTerm((IqlTerm) element, build, config); break;
 		case TREE_NODE: prepareTreeNode((IqlTreeNode) element, build, config); break;
-		case VARIABLE: prepareVariable((IqlVariable) element, build, config); break;
 
 		default:
 			fail("Type not handled: "+type);
@@ -201,14 +213,14 @@ public class IqlQueryGenerator {
 
 		// mandatory data
 		binding.setTarget(index("target"));
-		binding.addMember(generateFull(IqlType.MEMBER, config));
+		binding.addMember(generateFull(IqlType.REFERENCE, config));
 
 		build.addFieldChange(binding::setDistinct, "distint", Boolean.TRUE);
 		build.addFieldChange(binding::setDistinct, "distint", Boolean.FALSE);
 		build.addFieldChange(binding::setTarget, "target", index("target"));
 
-		for (int i = 0; i < config.getCount(IqlType.MEMBER, DEFAULT_COUNT); i++) {
-			build.addNestedChange("member", IqlType.MEMBER, config, binding, binding::addMember);
+		for (int i = 0; i < config.getCount(IqlType.REFERENCE, DEFAULT_COUNT); i++) {
+			build.addNestedChange("member", IqlType.REFERENCE, config, binding, binding::addMember);
 		}
 	}
 
@@ -312,6 +324,13 @@ public class IqlQueryGenerator {
 				String.format("%s(123, %s)~\"val%d\"", index("func"), index("value"), index()));
 	}
 
+	private IqlExpression expression(Object val, IncrementalBuild<?> build, Config config) {
+		IqlExpression exp = new IqlExpression();
+		prepareQueryElement0(exp, build, config);
+		exp.setContent(String.valueOf(val));
+		return exp;
+	}
+
 	@SuppressWarnings("boxing")
 	private void prepareGroup(IqlGroup group, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(group, build, config);
@@ -324,12 +343,12 @@ public class IqlQueryGenerator {
 		build.addNestedChange("filterOn", IqlType.EXPRESSION, config, group, group::setFilterOn);
 		build.addFieldChange(group::setLabel, "label", index("label"));
 		// Include all typical value types!
-		build.addFieldChange(group::setDefaultValue, "defaultValue", index("value"));
-		build.addFieldChange(group::setDefaultValue, "defaultValue", true);
-		build.addFieldChange(group::setDefaultValue, "defaultValue", false);
-		build.addFieldChange(group::setDefaultValue, "defaultValue", Integer.MAX_VALUE);
-		build.addFieldChange(group::setDefaultValue, "defaultValue", Long.MAX_VALUE);
-		build.addFieldChange(group::setDefaultValue, "defaultValue", Double.MAX_VALUE);
+		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(index("value"), build, config));
+		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(true, build, config));
+		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(false, build, config));
+		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(Integer.MAX_VALUE, build, config));
+		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(Long.MAX_VALUE, build, config));
+		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(Double.MAX_VALUE, build, config));
 	}
 
 	private void prepareImport(IqlImport imp, IncrementalBuild<?> build, Config config) {
@@ -431,32 +450,17 @@ public class IqlQueryGenerator {
 		}
 	}
 
-	private void prepareReference0(IqlReference reference, IncrementalBuild<?> build, Config config) {
+	private void prepareReference(IqlReference reference, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(reference, build, config);
 
 		// mandatory data
 		reference.setName(index("name"));
+		reference.setReferenceType(rng.random(ReferenceType.class));
 
 		build.addFieldChange(reference::setName, "name", index("name"));
-	}
-
-	private void prepareMember(IqlMember member, IncrementalBuild<?> build, Config config) {
-		prepareReference0(member, build, config);
-
-		// mandatory data
-		member.setMemberType(rng.random(MemberType.class));
-
-		if(build.isRoot(member)) {
-			for(MemberType memberType : MemberType.values()) {
-				build.addEnumFieldChange(member::setMemberType, "memberType", memberType);
-			}
-		} else {
-			build.addEnumFieldChange(member::setMemberType, "memberType", rng.random(MemberType.class));
+		for(ReferenceType referenceType : ReferenceType.values()) {
+			build.addEnumFieldChange(reference::setReferenceType, "referenceType", referenceType);
 		}
-	}
-
-	private void prepareVariable(IqlVariable variable, IncrementalBuild<?> build, Config config) {
-		prepareReference0(variable, build, config);
 	}
 
 	@SuppressWarnings("boxing")
@@ -677,7 +681,7 @@ public class IqlQueryGenerator {
 		Object2IntMap<IqlType> specificCounts = new Object2IntOpenHashMap<>();
 		String label = "<unnamed>";
 
-		IqlObjectIdgenerator idGenerator = new IqlObjectIdgenerator();
+		IqlObjectIdGenerator idGenerator = new IqlObjectIdGenerator();
 
 		Map<IqlType, List<Consumer<? super IqlQueryElement>>> preprocessors = new Object2ObjectOpenHashMap<>();
 		Map<IqlType, List<Consumer<? super IqlQueryElement>>> postprocessors = new Object2ObjectOpenHashMap<>();

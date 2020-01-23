@@ -46,7 +46,7 @@ public class IqlGroup extends IqlUnique {
 
 	@JsonProperty(IqlProperties.DEFAULT_VALUE)
 	@JsonInclude(Include.NON_ABSENT)
-	private Optional<Object> defaultValue = Optional.empty();
+	private Optional<IqlExpression> defaultValue = Optional.empty();
 
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -66,6 +66,8 @@ public class IqlGroup extends IqlUnique {
 		checkNestedNotNull(groupBy, IqlProperties.GROUP_BY);
 
 		checkOptionalNested(filterOn);
+		checkOptionalNested(defaultValue);
+		//TODO maybe check assignment compatibility of defaultValue/filter/expression ?
 	}
 
 	public IqlExpression getGroupBy() { return groupBy; }
@@ -74,7 +76,7 @@ public class IqlGroup extends IqlUnique {
 
 	public String getLabel() { return label; }
 
-	public Optional<Object> getDefaultValue() { return defaultValue; }
+	public Optional<IqlExpression> getDefaultValue() { return defaultValue; }
 
 	public void setGroupBy(IqlExpression groupBy) { this.groupBy = requireNonNull(groupBy); }
 
@@ -82,6 +84,6 @@ public class IqlGroup extends IqlUnique {
 
 	public void setLabel(String label) { this.label = checkNotEmpty(label); }
 
-	public void setDefaultValue(Object defaultValue) { this.defaultValue = Optional.of(defaultValue); }
+	public void setDefaultValue(IqlExpression defaultValue) { this.defaultValue = Optional.of(defaultValue); }
 
 }
