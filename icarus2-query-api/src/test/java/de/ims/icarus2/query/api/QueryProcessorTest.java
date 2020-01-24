@@ -286,25 +286,33 @@ class QueryProcessorTest {
 			assertThat(payload.isAligned()).isFalse();
 		}
 
-		private void assertTerm(IqlTerm term, BooleanOperation op, String...contents) {
-			assertThat(term.getOperation()).isSameAs(op);
-			List<IqlConstraint> items = term.getItems();
-			assertThat(items).hasSize(contents.length);
-			for (int i = 0; i < contents.length; i++) {
-				assertThat(items.get(i)).isInstanceOf(IqlPredicate.class);
-				assertPredicate((IqlPredicate) items.get(i), contents[i]);
-			}
-		}
-
-		private void assertPredicate(IqlPredicate predicate, String content) {
-			assertExpression(predicate.getExpression(), content);
-		}
+//		private void assertTerm(IqlTerm term, BooleanOperation op, String...contents) {
+//			assertThat(term.getOperation()).isSameAs(op);
+//			List<IqlConstraint> items = term.getItems();
+//			assertThat(items).hasSize(contents.length);
+//			for (int i = 0; i < contents.length; i++) {
+//				assertThat(items.get(i)).isInstanceOf(IqlPredicate.class);
+//				assertPredicate((IqlPredicate) items.get(i), contents[i]);
+//			}
+//		}
+//
+//		private void assertPredicate(IqlPredicate predicate, String content) {
+//			assertExpression(predicate.getExpression(), content);
+//		}
 
 		private void assertBindings(IqlPayload payload, @SuppressWarnings("unchecked") Consumer<IqlBinding>...asserters) {
 			List<IqlBinding> bindings = payload.getBindings();
 			assertThat(bindings).hasSize(asserters.length);
 			for (int i = 0; i < asserters.length; i++) {
 				asserters[i].accept(bindings.get(i));
+			}
+		}
+
+		private void assertConstraint(IqlPayload payload, Consumer<IqlConstraint> asserter) {
+			if(asserter!=null) {
+				assertThat(payload.getConstraint()).isNotEmpty().get().satisfies(asserter);
+			} else {
+				assertThat(payload.getConstraint()).isEmpty();
 			}
 		}
 
@@ -361,7 +369,21 @@ class QueryProcessorTest {
 		private Consumer<IqlConstraint> pred(String content) {
 			return constraint -> {
 				assertThat(constraint).isInstanceOf(IqlPredicate.class);
-				assertPredicate((IqlPredicate) constraint, content);
+				assertExpression(((IqlPredicate)constraint).getExpression(), content);
+			};
+		}
+
+		private Consumer<IqlConstraint> term(BooleanOperation op,
+				@SuppressWarnings("unchecked") Consumer<IqlConstraint>...asserters) {
+			return constraint -> {
+				assertThat(constraint).isInstanceOf(IqlTerm.class);
+				IqlTerm term = (IqlTerm) constraint;
+				assertThat(term.getOperation()).isSameAs(op);
+				List<IqlConstraint> items = term.getItems();
+				assertThat(items).hasSize(asserters.length);
+				for (int i = 0; i < asserters.length; i++) {
+					asserters[i].accept(items.get(i));
+				}
 			};
 		}
 
@@ -409,8 +431,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlPredicate.class);
-					assertPredicate((IqlPredicate) payload.getConstraint().get(), "$token1.val>0");
+					assertConstraint(payload, pred("$token1.val>0"));
 				}
 
 				@SuppressWarnings("unchecked")
@@ -420,10 +441,10 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlTerm.class);
-					IqlTerm term = (IqlTerm) payload.getConstraint().get();
-					assertTerm(term, BooleanOperation.CONJUNCTION,
-							"$token1.val>0", "func() !=true", "$edge.dist()<5+4");
+					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
+							pred("$token1.val>0"),
+							pred("func() !=true"),
+							pred("$edge.dist()<5+4")));
 				}
 
 				@SuppressWarnings("unchecked")
@@ -433,10 +454,10 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlTerm.class);
-					IqlTerm term = (IqlTerm) payload.getConstraint().get();
-					assertTerm(term, BooleanOperation.DISJUNCTION,
-							"$token1.val>0", "func() !=true", "$edge.dist()<5+4");
+					assertConstraint(payload, term(BooleanOperation.DISJUNCTION,
+							pred("$token1.val>0"),
+							pred("func() !=true"),
+							pred("$edge.dist()<5+4")));
 				}
 
 				@SuppressWarnings("unchecked")
@@ -446,14 +467,11 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlTerm.class);
-
-					IqlTerm termD = (IqlTerm) payload.getConstraint().get();
-					assertThat(termD.getOperation()).isSameAs(BooleanOperation.DISJUNCTION);
-					assertPredicate((IqlPredicate) termD.getItems().get(0), "$token1.val>0");
-
-					IqlTerm termC =(IqlTerm) termD.getItems().get(1);
-					assertTerm(termC, BooleanOperation.CONJUNCTION, "func() !=true", "$edge.dist()<5+4");
+					assertConstraint(payload, term(BooleanOperation.DISJUNCTION,
+							pred("$token1.val>0"),
+							term(BooleanOperation.CONJUNCTION,
+								pred("func() !=true"),
+								pred("$edge.dist()<5+4"))));
 				}
 
 			}
@@ -468,8 +486,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlPredicate.class);
-					assertPredicate((IqlPredicate) payload.getConstraint().get(), "$token.val>0");
+					assertConstraint(payload, pred("$token.val>0"));
 				}
 
 				@SuppressWarnings("unchecked")
@@ -479,8 +496,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlPredicate.class);
-					assertPredicate((IqlPredicate) payload.getConstraint().get(), "$token1.val+$token2.val>0");
+					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
 				@SuppressWarnings("unchecked")
@@ -490,8 +506,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", true, "token1", "token2"));
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlPredicate.class);
-					assertPredicate((IqlPredicate) payload.getConstraint().get(), "$token1.val+$token2.val>0");
+					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
 				@SuppressWarnings("unchecked")
@@ -503,8 +518,7 @@ class QueryProcessorTest {
 					assertBindings(payload,
 							bind("corpus::layer1", false, "token1"),
 							bind("corpus::layer2", false, "token2"));
-					assertThat(payload.getConstraint()).containsInstanceOf(IqlPredicate.class);
-					assertPredicate((IqlPredicate) payload.getConstraint().get(), "$token1.val+$token2.val>0");
+					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
 			}
