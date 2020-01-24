@@ -130,7 +130,7 @@ binding
 
 selectiveStatement
 	: constraint
-	| structureStatement (HAVING globalConstraints)?
+	| structureStatement (HAVING constraint)?
 	;	
 
 structureStatement
@@ -157,7 +157,7 @@ nodeStatement
 	: LBRACE nodeStatement RBRACE				#nodeGrouping
 	| node+										#nodeSequence
 	| element (COMMA element)*					#elementSequence	
-	| nodeStatement OR nodeStatement			#nodeAlternatives
+	| <assoc=right> nodeStatement or nodeStatement			#nodeAlternatives
 	;
 	
 /**
@@ -230,10 +230,6 @@ undirectedEdge
 	;
 	
 //TODO add more statement variations based on established CQL families
-	
-globalConstraints
-	: constraint
-	;
 	
 // STATEMENT END
 
@@ -338,8 +334,8 @@ expression
 	| left=expression (LT | LT_EQ | GT | GT_EQ) right=expression 					# comparisonOp
 	| left=expression (TILDE | NOT_MATCHES | HASH | NOT_CONTAINS) right=expression 	# stringOp
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
-	| left=expression and right=expression 											# conjunction
-	| left=expression or right=expression 											# disjunction
+	| <assoc=right> left=expression and right=expression 											# conjunction
+	| <assoc=right> left=expression or right=expression 											# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach

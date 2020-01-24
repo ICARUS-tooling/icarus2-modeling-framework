@@ -21,12 +21,16 @@ package de.ims.icarus2.query.api.iql;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+
+import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
@@ -89,11 +93,8 @@ public abstract class IqlConstraint extends IqlUnique {
 
 	public static class IqlTerm extends IqlConstraint {
 
-		@JsonProperty(IqlProperties.LEFT)
-		private IqlConstraint left;
-
-		@JsonProperty(IqlProperties.RIGHT)
-		private IqlConstraint right;
+		@JsonProperty(IqlProperties.ITEMS)
+		private final List<IqlConstraint> items = new ArrayList<>();
 
 		@JsonProperty(IqlProperties.OPERATION)
 		private BooleanOperation operation;
@@ -106,15 +107,11 @@ public abstract class IqlConstraint extends IqlUnique {
 			return IqlType.TERM;
 		}
 
-		public IqlConstraint getLeft() { return left; }
-
-		public IqlConstraint getRight() { return right; }
+		public List<IqlConstraint> getItems() { return CollectionUtils.unmodifiableListProxy(items); }
 
 		public BooleanOperation getOperation() { return operation; }
 
-		public void setLeft(IqlConstraint left) { this.left = requireNonNull(left); }
-
-		public void setRight(IqlConstraint right) { this.right = requireNonNull(right); }
+		public void addItem(IqlConstraint item) { items.add(requireNonNull(item)); }
 
 		public void setOperation(BooleanOperation operation) { this.operation = requireNonNull(operation); }
 
@@ -125,8 +122,7 @@ public abstract class IqlConstraint extends IqlUnique {
 		public void checkIntegrity() {
 			super.checkIntegrity();
 			checkNotNull(operation, IqlProperties.OPERATION);
-			checkNestedNotNull(left, IqlProperties.LEFT);
-			checkNestedNotNull(right, IqlProperties.RIGHT);
+			checkCollectionNotEmpty(items, "items");
 		}
 	}
 

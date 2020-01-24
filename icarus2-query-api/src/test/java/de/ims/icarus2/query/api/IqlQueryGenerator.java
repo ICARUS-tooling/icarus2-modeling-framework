@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import de.ims.icarus2.model.manifest.ManifestGenerator;
 import de.ims.icarus2.query.api.iql.IqlAliasedReference;
@@ -48,7 +50,9 @@ import de.ims.icarus2.query.api.iql.IqlData;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -160,6 +164,7 @@ public class IqlQueryGenerator {
 		case CORPUS: prepareCorpus((IqlCorpus) element, build, config); break;
 		case DATA: prepareData((IqlData) element, build, config); break;
 		case EDGE: prepareEdge((IqlEdge) element, build, config); break;
+		case ELEMENT_DISJUNCTION: prepareElementDisjunction((IqlElementDisjunction) element, build, config); break;
 		case EXPRESSION: prepareExpression((IqlExpression) element, build, config); break;
 		case GROUP: prepareGroup((IqlGroup) element, build, config); break;
 		case IMPORT: prepareImport((IqlImport) element, build, config); break;
@@ -244,12 +249,12 @@ public class IqlQueryGenerator {
 		prepareConstraint0(term, build, config);
 
 		// mandatory data
-		term.setLeft(generateFull(IqlType.PREDICATE, config));
-		term.setRight(generateFull(IqlType.PREDICATE, config));
+		term.addItem(generateFull(IqlType.PREDICATE, config));
 		term.setOperation(rng.random(BooleanOperation.class));
 
-		build.addNestedChange("left", IqlType.PREDICATE, config, term, term::setLeft);
-		build.addNestedChange("right", IqlType.PREDICATE, config, term, term::setRight);
+		for (int i = 0; i < config.getCount(IqlType.PREDICATE, DEFAULT_COUNT); i++) {
+			build.addNestedChange("items", IqlType.PREDICATE, config, term, term::addItem);
+		}
 		for(BooleanOperation operation : BooleanOperation.values()) {
 			build.addEnumFieldChange(term::setOperation, "operation", operation);
 		}
@@ -273,13 +278,17 @@ public class IqlQueryGenerator {
 
 	private void prepareElement0(IqlElement element, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(element, build, config);
+	}
+
+	private void prepareProperElement0(IqlProperElement element, IncrementalBuild<?> build, Config config) {
+		prepareElement0(element, build, config);
 
 		build.addFieldChange(element::setLabel, "label", index("label"));
 		build.addNestedChange("constraint", IqlType.PREDICATE, config, element, element::setConstraint);
 	}
 
 	private void prepareNode(IqlNode node, IncrementalBuild<?> build, Config config) {
-		prepareElement0(node, build, config);
+		prepareProperElement0(node, build, config);
 
 		for (int i = 0; i < config.getCount(IqlType.QUANTIFIER, DEFAULT_COUNT); i++) {
 			build.addNestedChange("quantifier", IqlType.QUANTIFIER, config, node, node::addQuantifier);
@@ -298,7 +307,7 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareEdge(IqlEdge edge, IncrementalBuild<?> build, Config config) {
-		prepareElement0(edge, build, config);
+		prepareProperElement0(edge, build, config);
 
 		// mandatory data
 		edge.setEdgeType(rng.random(EdgeType.class));
@@ -310,6 +319,16 @@ public class IqlQueryGenerator {
 		}
 		build.addNestedChange("source", IqlType.NODE, config, edge, edge::setSource);
 		build.addNestedChange("target", IqlType.NODE, config, edge, edge::setTarget);
+	}
+
+	private void prepareElementDisjunction(IqlElementDisjunction dis, IncrementalBuild<?> build, Config config) {
+		prepareElement0(dis, build, config);
+
+		for (int i = 0; i < 3; i++) {
+			dis.addAlternative(IntStream.range(0, i+1)
+					.mapToObj(j -> (IqlElement)generateFull(IqlType.NODE, config))
+					.collect(Collectors.toList()));
+		}
 	}
 
 	@SuppressWarnings("boxing")
@@ -370,6 +389,7 @@ public class IqlQueryGenerator {
 		// mandatory data
 		payload.setQueryType(rng.random(QueryType.class));
 
+		build.addFieldChange(payload::setAligned, "aligned", Boolean.TRUE);
 		for(QueryType queryType : QueryType.values()) {
 			build.addEnumFieldChange(payload::setQueryType, "queryType", queryType);
 		}

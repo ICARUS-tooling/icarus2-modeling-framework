@@ -101,11 +101,15 @@ public final class IqlProperties {
 
 	public static final String ELEMENTS = IQL_PREFIX+"elements";
 
+	public static final String ALIGNED = IQL_PREFIX+"aligned";
+
 	public static final String CONSTRAINT = IQL_PREFIX+"constraint";
 
 	public static final String QUANTIFIERS = IQL_PREFIX+"quantifiers";
 
 	public static final String CHILDREN = IQL_PREFIX+"children";
+
+	public static final String ALTERNATIVES = IQL_PREFIX+"alternatives";
 
 	public static final String EDGE_TYPE = IQL_PREFIX+"edgeType";
 
@@ -123,9 +127,7 @@ public final class IqlProperties {
 
 	public static final String EXPRESSION = IQL_PREFIX+"expression";
 
-	public static final String LEFT = IQL_PREFIX+"left";
-
-	public static final String RIGHT = IQL_PREFIX+"right";
+	public static final String ITEMS = IQL_PREFIX+"items";
 
 	public static final String OPERATION = IQL_PREFIX+"operation";
 

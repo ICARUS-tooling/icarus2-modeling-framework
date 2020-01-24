@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,34 +42,37 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public abstract class IqlElement extends IqlUnique {
 
-	@JsonProperty(IqlProperties.LABEL)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<String> label = Optional.empty();
+	public static abstract class IqlProperElement extends IqlElement {
 
-	@JsonProperty(IqlProperties.CONSTRAINT)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<IqlConstraint> constraint = Optional.empty();
+		@JsonProperty(IqlProperties.LABEL)
+		@JsonInclude(Include.NON_ABSENT)
+		private Optional<String> label = Optional.empty();
+		@JsonProperty(IqlProperties.CONSTRAINT)
+		@JsonInclude(Include.NON_ABSENT)
+		private Optional<IqlConstraint> constraint = Optional.empty();
 
-	public Optional<String> getLabel() { return label; }
+		public Optional<String> getLabel() { return label; }
 
-	public Optional<IqlConstraint> getConstraint() { return constraint; }
+		public Optional<IqlConstraint> getConstraint() { return constraint; }
 
-	public void setLabel(String label) { this.label = Optional.of(checkNotEmpty(label)); }
+		public void setLabel(String label) { this.label = Optional.of(checkNotEmpty(label)); }
 
-	public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
+		public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-	 */
-	@Override
-	public void checkIntegrity() {
-		super.checkIntegrity();
+		/**
+		 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
+		 */
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
 
-		checkOptionalStringNotEmpty(label, IqlProperties.LABEL);
-		checkOptionalNested(constraint);
+			checkOptionalStringNotEmpty(label, IqlProperties.LABEL);
+			checkOptionalNested(constraint);
+		}
+
 	}
 
-	public static class IqlNode extends IqlElement {
+	public static class IqlNode extends IqlProperElement {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
@@ -129,7 +134,7 @@ public abstract class IqlElement extends IqlUnique {
 		public void forEachChild(Consumer<? super IqlTreeNode> action) { children.forEach(requireNonNull(action)); }
 	}
 
-	public static class IqlEdge extends IqlElement {
+	public static class IqlEdge extends IqlProperElement {
 
 		@JsonProperty(IqlProperties.SOURCE)
 		private IqlNode source;
@@ -172,10 +177,49 @@ public abstract class IqlElement extends IqlUnique {
 		public void setEdgeType(EdgeType edgeType) { this.edgeType = requireNonNull(edgeType); }
 	}
 
+	public static class IqlElementDisjunction extends IqlElement {
+
+		@JsonProperty(IqlProperties.ALTERNATIVES)
+		private final List<List<IqlElement>> alternatives = new ArrayList<>();
+
+		/**
+		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
+		 */
+		@Override
+		public IqlType getType() {
+			return IqlType.ELEMENT_DISJUNCTION;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
+		 */
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+			checkCondition(alternatives.size()>1, "alternatives", "Must have at least 2 alternatives");
+
+			for(int i=0; i<alternatives.size(); i++) {
+				checkCollectionNotEmpty(alternatives.get(i), "alternatives["+i+"]");
+			}
+		}
+
+		@JsonIgnore
+		public int getAlternativesCount() { return alternatives.size(); }
+
+		public List<IqlElement> getAlternative(int index) { return CollectionUtils.unmodifiableListProxy(alternatives.get(index)); }
+
+		public void addAlternative(List<IqlElement> items) {
+			requireNonNull(items);
+			checkArgument("Alternative must not be empty", !items.isEmpty());
+
+			alternatives.add(new ArrayList<>(items));
+		}
+	}
+
 	public enum EdgeType {
 		UNDIRECTED("simple"),
-		UNIDIRECTIONAL("uni"),
-		BIDIRECTIONAL("bi"),
+		UNIDIRECTIONAL("one-way"),
+		BIDIRECTIONAL("two-way"),
 		;
 
 		private final String label;

@@ -42,6 +42,10 @@ import com.google.common.annotations.VisibleForTesting;
 import de.ims.icarus2.query.api.iql.AntlrUtils;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
+import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
+import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
@@ -54,20 +58,28 @@ import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlUnique;
-import de.ims.icarus2.query.api.iql.antlr.IQLBaseVisitor;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingsListContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.GraphStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeGroupingContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.OrderExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectiveStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.SequenceStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.StructureStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.TreeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLVisitor;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 
 /**
  * @author Markus Gärtner
@@ -132,7 +144,7 @@ public class QueryProcessor {
 
 		IQLParser parser = createParser(rawGrouping, "rawGrouping");
 		try {
-			return groupStatementVisitor.visitGroupStatement(parser.groupStatement());
+			return processGroupStatement(parser.groupStatement());
 		} catch(RecognitionException e) {
 			throw asSyntaxException(e, "Failed to parse 'rawGrouping'");
 		}
@@ -157,7 +169,7 @@ public class QueryProcessor {
 			if(ctx.orderExpressionList()!=null) {
 				List<IqlSorting> sortings = new ArrayList<>();
 				for(OrderExpressionContext octx : ctx.orderExpressionList().orderExpression()) {
-					sortings.add(orderVisitor.visit(octx));
+					sortings.add(processOrderExpression(octx));
 				}
 				sortings.forEach(result::addSorting);
 			}
@@ -183,18 +195,41 @@ public class QueryProcessor {
 				BindingsListContext blctx = ctx.bindingsList();
 				if(blctx!=null) {
 					for(BindingContext bctx : blctx.binding()) {
-						payload.addBinding(bindingVisitor.visitBinding(bctx));
+						payload.addBinding(processBinding(bctx));
 					}
 				}
 
 				// Handle actual selection statement variants
 				SelectiveStatementContext sctx = ctx.selectiveStatement();
+				// Plain constraints or global constraints section of structure statement
 				if(sctx.constraint()!=null) {
+					payload.setConstraint(processConstraint(sctx.constraint()));
+				}
+
+				if(sctx.structureStatement()!=null) {
+					// Structure statement [sequence,tree,graph]
+					StructureStatementContext ssctx = sctx.structureStatement();
+					NodeStatementContext nsctx = null;
+					QueryType queryType = null;
+					if(ssctx instanceof SequenceStatementContext) {
+						nsctx = ((SequenceStatementContext)ssctx).nodeStatement();
+						queryType = QueryType.SEQUENCE;
+					} else if(ssctx instanceof TreeStatementContext) {
+						TreeStatementContext tsctx = (TreeStatementContext) ssctx;
+						payload.setAligned(tsctx.ALIGNED()!=null);
+						queryType = QueryType.TREE;
+						nsctx = tsctx.nodeStatement();
+					} else if(ssctx instanceof GraphStatementContext) {
+						GraphStatementContext gsctx = (GraphStatementContext) ssctx;
+						payload.setAligned(gsctx.ALIGNED()!=null);
+						queryType = QueryType.GRAPH;
+						nsctx = gsctx.nodeStatement();
+					} // needs sanity check against yet unhandled alternatives
+
+					processNodeStatement(nsctx, queryType).forEach(payload::addElement);
+				} else {
 					// Simple plain statement
 					payload.setQueryType(QueryType.PLAIN);
-					payload.setConstraint(constraintVisitor.visitConstraint(sctx.constraint()));
-				} else {
-					// Structure statement [plain,tree,graph]
 				}
 			}
 
@@ -204,104 +239,157 @@ public class QueryProcessor {
 		}
 	}
 
-	private String id(IqlUnique target) {
-		return idGenerator.generateId(target);
+	private void genId(IqlUnique target) {
+		target.setId(idGenerator.generateId(target));
 	}
 
-	private final IQLVisitor<List<IqlGroup>> groupStatementVisitor = new IQLBaseVisitor<List<IqlGroup>>() {
-		@Override
-		public List<IqlGroup> visitGroupStatement(GroupStatementContext gctx) {
-			List<IqlGroup> groups = new ArrayList<>();
-			for (GroupExpressionContext ectx : gctx.groupExpression()) {
-				groups.add(groupExpressionVisitor.visitGroupExpression(ectx));
-			}
-			return groups;
+	private List<IqlGroup> processGroupStatement(GroupStatementContext gctx) {
+		List<IqlGroup> groups = new ArrayList<>();
+		for (GroupExpressionContext ectx : gctx.groupExpression()) {
+			groups.add(processGroupExpression(ectx));
 		}
-	};
+		return groups;
+	}
 
-	private final IQLVisitor<IqlGroup> groupExpressionVisitor = new IQLBaseVisitor<IqlGroup>() {
-		@Override
-		public IqlGroup visitGroupExpression(GroupExpressionContext ctx) {
-			IqlGroup group = new IqlGroup();
+	private IqlGroup processGroupExpression(GroupExpressionContext ctx) {
+		IqlGroup group = new IqlGroup();
 
-			group.setGroupBy(toExpression(ctx.selector));
-			group.setLabel(textOf(ctx.label));
+		group.setGroupBy(processExpression(ctx.selector));
+		group.setLabel(textOf(ctx.label));
 
-			Optional.ofNullable(ctx.filter)
-				.map(QueryProcessor.this::toExpression)
-				.ifPresent(group::setFilterOn);
-			Optional.ofNullable(ctx.defaultValue)
-				.map(QueryProcessor.this::toExpression)
-				.ifPresent(group::setDefaultValue);
+		Optional.ofNullable(ctx.filter)
+			.map(QueryProcessor.this::processExpression)
+			.ifPresent(group::setFilterOn);
+		Optional.ofNullable(ctx.defaultValue)
+			.map(QueryProcessor.this::processExpression)
+			.ifPresent(group::setDefaultValue);
 
-			return group;
-		}
-	};
+		return group;
+	}
 
-	private IqlExpression toExpression(IQLParser.ExpressionContext ctx) {
+	private IqlExpression processExpression(ExpressionContext ctx) {
 		IqlExpression expression = new IqlExpression();
 		expression.setContent(textOf(ctx));
 		return expression;
 	}
 
-	private final IQLVisitor<IqlSorting> orderVisitor = new IQLBaseVisitor<IqlSorting>() {
-		@Override
-		public IqlSorting visitOrderExpression(OrderExpressionContext ctx) {
-			IqlSorting sorting = new IqlSorting();
-			sorting.setOrder(ctx.ASC()!=null ? Order.ASCENDING : Order.DESCENDING);
-			sorting.setExpression(toExpression(ctx.expression()));
-			return sorting;
-		}
-	};
+	private  IqlSorting processOrderExpression(OrderExpressionContext ctx) {
+		IqlSorting sorting = new IqlSorting();
+		sorting.setOrder(ctx.ASC()!=null ? Order.ASCENDING : Order.DESCENDING);
+		sorting.setExpression(processExpression(ctx.expression()));
+		return sorting;
+	}
 
-	private final IQLVisitor<IqlBinding> bindingVisitor = new IQLBaseVisitor<IqlBinding>() {
-		@Override
-		public IqlBinding visitBinding(BindingContext ctx) {
-			IqlBinding binding = new IqlBinding();
+	private IqlBinding processBinding(BindingContext ctx) {
+		IqlBinding binding = new IqlBinding();
 
-			binding.setTarget(textOf(ctx.qualifiedIdentifier()));
-			binding.setDistinct(ctx.DISTINCT()!=null);
-			for(MemberContext mctx : ctx.member()) {
-				binding.addMember(referenceVisitor.visitMember(mctx));
-			}
-
-			return binding;
-		}
-	};
-
-	private final IQLVisitor<IqlReference> referenceVisitor = new IQLBaseVisitor<IqlReference>() {
-		@Override
-		public IqlReference visitMember(MemberContext ctx) {
-			IqlReference member = new IqlReference();
-
-			member.setId(id(member));
-			member.setReferenceType(ReferenceType.MEMBER);
-			member.setName(textOf(ctx.Identifier()));
-
-			return member;
+		binding.setTarget(textOf(ctx.qualifiedIdentifier()));
+		binding.setDistinct(ctx.DISTINCT()!=null);
+		for(MemberContext mctx : ctx.member()) {
+			binding.addMember(processMember(mctx));
 		}
 
-		@Override
-		public IqlReference visitVariableName(VariableNameContext ctx) {
-			IqlReference member = new IqlReference();
+		return binding;
+	}
 
-			member.setId(id(member));
-			member.setReferenceType(ReferenceType.VARIABLE);
-			member.setName(textOf(ctx.Identifier()));
+	private IqlReference processMember(MemberContext ctx) {
+		IqlReference member = new IqlReference();
 
-			return member;
+		genId(member);
+		member.setReferenceType(ReferenceType.MEMBER);
+		member.setName(textOf(ctx.Identifier()));
+
+		return member;
+	}
+
+	private IqlReference processVariableName(VariableNameContext ctx) {
+		IqlReference variable = new IqlReference();
+
+		genId(variable);
+		variable.setReferenceType(ReferenceType.VARIABLE);
+		variable.setName(textOf(ctx.Identifier()));
+
+		return variable;
+	}
+
+	private IqlConstraint processConstraint(ConstraintContext ctx) {
+		return processBooleanExpression(ctx.expression());
+	}
+
+	private IqlConstraint processBooleanExpression(ExpressionContext ctx) {
+		ctx = unwrap(ctx);
+
+		if(ctx instanceof ConjunctionContext) {
+			return processConjunction((ConjunctionContext) ctx);
+		} else if(ctx instanceof DisjunctionContext) {
+			return processDisjunction((DisjunctionContext) ctx);
+		} else {
+			return processPredicate(ctx);
 		}
-	};
+	}
 
-	private final IQLVisitor<IqlConstraint> constraintVisitor = new IQLBaseVisitor<IqlConstraint>() {
-		@Override
-		public IqlConstraint visitConstraint(ConstraintContext ctx) {
-			IqlConstraint constraint = new IqlConstraint();
+	private IqlPredicate processPredicate(ExpressionContext ctx) {
+		IqlPredicate predicate = new IqlPredicate();
+		genId(predicate);
+		predicate.setExpression(processExpression(ctx));
+		return predicate;
+	}
 
-			constraint.setId(id(constraint));
-			//TODO
-
-			return constraint;
+	/** Unwraps arbitrarily nested wrapping expression to the deepest nested one */
+	private ExpressionContext unwrap(ExpressionContext ctx) {
+		while(ctx instanceof WrappingExpressionContext) {
+			ctx = ((WrappingExpressionContext)ctx).expression();
 		}
-	};
+		return ctx;
+	}
+
+	private IqlTerm processConjunction(ConjunctionContext ctx) {
+		IqlTerm term = new IqlTerm();
+		genId(term);
+		term.setOperation(BooleanOperation.CONJUNCTION);
+
+		// Try to collapse any conjunctive sequence into a single term
+		ExpressionContext tail = ctx;
+		while(tail instanceof ConjunctionContext) {
+			ConjunctionContext cctx = (ConjunctionContext) tail;
+			term.addItem(processBooleanExpression(cctx.left));
+			tail = unwrap(cctx.right);
+		}
+		// Now add the final dangling expression
+		term.addItem(processBooleanExpression(tail));
+		return term;
+	}
+
+	private IqlTerm processDisjunction(DisjunctionContext ctx) {
+		IqlTerm term = new IqlTerm();
+		genId(term);
+		term.setOperation(BooleanOperation.DISJUNCTION);
+
+		// Try to collapse any disjunctive sequence into a single term
+		ExpressionContext tail = ctx;
+		while(tail instanceof DisjunctionContext) {
+			DisjunctionContext cctx = (DisjunctionContext) tail;
+			term.addItem(processBooleanExpression(cctx.left));
+			tail = unwrap(cctx.right);
+		}
+		// Now add the final dangling expression
+		term.addItem(processBooleanExpression(tail));
+		return term;
+	}
+
+	/** Unwraps arbitrarily nested wrapping of node statements */
+	private NodeStatementContext unwrap(NodeStatementContext ctx) {
+		while(ctx instanceof NodeGroupingContext) {
+			ctx = ((NodeGroupingContext)ctx).nodeStatement();
+		}
+		return ctx;
+	}
+
+	/** Process given node statement and honor limitations of specified query type */
+	private List<IqlElement> processNodeStatement(NodeStatementContext ctx, QueryType queryType) {
+		ctx = unwrap(ctx);
+		//TODO
+		return null;
+	}
+
 }

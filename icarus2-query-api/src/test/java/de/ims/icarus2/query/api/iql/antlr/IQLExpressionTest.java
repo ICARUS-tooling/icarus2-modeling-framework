@@ -57,7 +57,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser;
 import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser.StandaloneExpressionContext;
 import de.ims.icarus2.test.annotations.DisabledOnCi;
 import de.ims.icarus2.test.annotations.RandomizedTest;
@@ -182,7 +181,7 @@ public class IQLExpressionTest {
 
 	/**
 	 * Create expression {@code <a> nested <b> op <c>}, assuming {@code op} has equal priority
-	 * compared to {@code nested} and verify that the parse tree is {@code [[<a> nested <b>] op <c>]]}.
+	 * compared to {@code nested} and verify that the parse tree is {@code [[<a> nested <b>] op <c>]}.
 	 */
 	private static DynamicNode makeEqualNestedOpTests(Pair<String, String> op, Pair<String, String> nested) {
 		List<DynamicTest> tests = new ArrayList<>();
@@ -202,6 +201,28 @@ public class IQLExpressionTest {
 		return dynamicContainer(f2("'{1}' in '{2}'", nested, op), tests);
 	}
 
+	/**
+	 * Create expression {@code <a> nested <b> op <c>}, assuming {@code op} has equal priority
+	 * compared to {@code nested} and verify that the parse tree is {@code [<a> nested [<b> op <c>]]}.
+	 */
+	private static DynamicNode makeRightAssociativeOpTests(Pair<String, String> op, Pair<String, String> nested) {
+		List<DynamicTest> tests = new ArrayList<>();
+
+		// Only skip whitespace if we have no keyword-based operators
+		if(!isKeywordOp(op) && !isKeywordOp(nested)) {
+			tests.add(makeExpressionTreeTest(f1("123{1}456{2}789", nested, op),
+					f1Tree("[[123][{1}][[456][{2}][789]]]", nested, op),
+						f2("'{1}' right assoc '{2}' without spaces", nested, op)));
+		}
+
+		// Whitespace variant is always expected to work!
+		tests.add(makeExpressionTreeTest(f1("123 {1} 456 {2} 789", nested, op),
+				f1Tree("[[123][{1}][[456][{2}][789]]]", nested, op),
+					f2("'{1}' right assoc '{2}' with spaces", nested, op)));
+
+		return dynamicContainer(f2("'{1}' right assoc '{2}'", nested, op), tests);
+	}
+
 	@TestFactory
 	@DisplayName("direct nesting of two binary operators according to their priorities")
 	List<DynamicNode> testDualOpNesting() {
@@ -218,7 +239,13 @@ public class IQLExpressionTest {
 				Pair<String, String> op = ops.get(opIndex);
 
 				tests.add(dynamicContainer(op.second+" <equal level>",
-						ops.stream().filter(notEq(op)).map(eqOp -> makeEqualNestedOpTests(op, eqOp))));
+						ops.stream().filter(notEq(op)).map(eqOp -> {
+							if(IQLTestUtils.isRightAssoc(op, eqOp)) {
+								return makeRightAssociativeOpTests(op, eqOp);
+							}
+
+							return makeEqualNestedOpTests(op, eqOp);
+							})));
 
 				// If we have a privileged op, verify against all ops of lower precedence
 				if(level<levels-1) {

@@ -57,6 +57,10 @@ public class IqlPayload extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlElement> elements = new ArrayList<>();
 
+	@JsonProperty(IqlProperties.ALIGNED)
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean aligned = false;
+
 	/**
 	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
 	 */
@@ -73,7 +77,9 @@ public class IqlPayload extends AbstractIqlQueryElement {
 		super.checkIntegrity();
 		checkNotNull(queryType, IqlProperties.QUERY_TYPE);
 		checkCondition(!(constraint==null && elements.isEmpty()), "constraint/elements",
-				"must either define a global 'csontraint' or 'elements'");
+				"must either define a global 'constraint' or 'elements'");
+
+		//TODO 'aligned' flag only supported for tree or graph statement
 
 		checkCollection(bindings);
 		checkOptionalNested(constraint);
@@ -88,6 +94,9 @@ public class IqlPayload extends AbstractIqlQueryElement {
 
 	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
+	public boolean isAligned() { return aligned; }
+
+
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
 
 	public void addBinding(IqlBinding binding) { bindings.add(requireNonNull(binding)); }
@@ -96,34 +105,46 @@ public class IqlPayload extends AbstractIqlQueryElement {
 
 	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
 
+	public void setAligned(boolean aligned) { this.aligned = aligned; }
+
 	public enum QueryType {
 		/**
 		 * Return all elements of the corpus for specified primary layer.
 		 * Cannot have any constraints defined at all!
 		 */
-		ALL("all"),
+		ALL("all", false, false, false),
 		/** Define basic constraints for bound members */
-		PLAIN("plain"),
+		PLAIN("plain", false, false, false),
 		/** Define sequential flat nodes */
-		SEQUENCE("sequence"),
+		SEQUENCE("sequence", true, false, false),
 		/** Define structural constraints via nested tree nodes */
-		TREE("tree"),
+		TREE("tree", true, true, false),
 		/**
 		 * Use full power of graph-based constraints via definition
 		 * of arbitrary nodes and edges.
 		 */
-		GRAPH("graph"),
+		GRAPH("graph", true, false, true),
 		;
 
 		private final String label;
+		private final boolean allowNodes, allowChildren, allowEdges;
 
-		private QueryType(String label) {
+		private QueryType(String label, boolean allowNodes, boolean allowChildren, boolean allowEdges) {
 			this.label = label;
+			this.allowNodes = allowNodes;
+			this.allowChildren = allowChildren;
+			this.allowEdges = allowEdges;
 		}
 
 		@JsonValue
 		public String getLabel() {
 			return label;
 		}
+
+		public boolean isAllowNodes() { return allowNodes; }
+
+		public boolean isAllowChildren() { return allowChildren; }
+
+		public boolean isAllowEdges() { return allowEdges; }
 	}
 }

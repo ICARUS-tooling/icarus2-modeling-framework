@@ -708,6 +708,33 @@ public final class DiffUtils {
 		}
 	}
 
+	private static boolean equals(Trace trace, Object value1, Object value2) throws IllegalAccessException {
+		boolean equals;
+
+		if((value1 instanceof Map) && (value2 instanceof Map)) {
+			trace.visit(value1);
+			equals = equalsMap(trace, (Map<?, ?>) value1 , (Map<?, ?>) value2);
+			trace.leave(value1);
+		} else  if((value1 instanceof List) && (value2 instanceof List)) {
+			trace.visit(value1);
+			equals = equalsList(trace, (List<?>) value1 , (List<?>) value2);
+			trace.leave(value1);
+		} else if((value1 instanceof Collection) && (value2 instanceof Collection)) {
+			trace.visit(value1);
+			equals = equalsCollection(trace, (Collection<?>) value1, (Collection<?>) value2);
+			trace.leave(value1);
+		} else if(value1 instanceof DataObject && value2 instanceof DataObject) {
+			if(value1.getClass()!=value2.getClass()) {
+				equals = false;
+			} else {
+				equals = getChecker(value1.getClass()).equals(trace, value1, value2);
+			}
+		} else {
+			equals = value1.equals(value2);
+		}
+		return equals;
+	}
+
 	private static boolean equalsCollection(Trace trace, Collection<?> c1, Collection<?> c2) {
 		if(c1.size()!=c2.size()) {
 			return false;
@@ -730,16 +757,19 @@ public final class DiffUtils {
 		for(int i=0; i<l1.size(); i++) {
 			Object val1 = l1.get(i);
 			Object val2 = l2.get(i);
-			if(val1 instanceof DataObject && val2 instanceof DataObject) {
-				if(val1.getClass()!=val2.getClass()) {
-					return false;
-				}
-				if(!getChecker(val1.getClass()).equals(trace, val1, val2)) {
-					return false;
-				}
-			} else if(!l1.get(i).equals(l2.get(i))) {
+			if(!equals(trace, val1, val2)) {
 				return false;
 			}
+//			if(val1 instanceof DataObject && val2 instanceof DataObject) {
+//				if(val1.getClass()!=val2.getClass()) {
+//					return false;
+//				}
+//				if(!getChecker(val1.getClass()).equals(trace, val1, val2)) {
+//					return false;
+//				}
+//			} else if(!l1.get(i).equals(l2.get(i))) {
+//				return false;
+//			}
 		}
 
 		return true;
@@ -760,31 +790,31 @@ public final class DiffUtils {
 				return false;
 			}
 
-			boolean equals;
+//			boolean equals;
+//
+//			if((value1 instanceof Map) && (value2 instanceof Map)) {
+//				trace.visit(value1);
+//				equals = equalsMap(trace, (Map<?, ?>) value1 , (Map<?, ?>) value2);
+//				trace.leave(value1);
+//			} else  if((value1 instanceof List) && (value2 instanceof List)) {
+//				trace.visit(value1);
+//				equals = equalsList(trace, (List<?>) value1 , (List<?>) value2);
+//				trace.leave(value1);
+//			} else if((value1 instanceof Collection) && (value2 instanceof Collection)) {
+//				trace.visit(value1);
+//				equals = equalsCollection(trace, (Collection<?>) value1, (Collection<?>) value2);
+//				trace.leave(value1);
+//			} else if(value1 instanceof DataObject && value2 instanceof DataObject) {
+//				if(value1.getClass()!=value2.getClass()) {
+//					equals = false;
+//				} else {
+//					equals = getChecker(value1.getClass()).equals(trace, value1, value2);
+//				}
+//			} else {
+//				equals = value1.equals(value2);
+//			}
 
-			if((value1 instanceof Map) && (value2 instanceof Map)) {
-				trace.visit(value1);
-				equals = equalsMap(trace, (Map<?, ?>) value1 , (Map<?, ?>) value2);
-				trace.leave(value1);
-			} else  if((value1 instanceof List) && (value2 instanceof List)) {
-				trace.visit(value1);
-				equals = equalsList(trace, (List<?>) value1 , (List<?>) value2);
-				trace.leave(value1);
-			} else if((value1 instanceof Collection) && (value2 instanceof Collection)) {
-				trace.visit(value1);
-				equals = equalsCollection(trace, (Collection<?>) value1, (Collection<?>) value2);
-				trace.leave(value1);
-			} else if(value1 instanceof DataObject && value2 instanceof DataObject) {
-				if(value1.getClass()!=value2.getClass()) {
-					equals = false;
-				} else {
-					equals = getChecker(value1.getClass()).equals(trace, value1, value2);
-				}
-			} else {
-				equals = value1.equals(value2);
-			}
-
-			if(!equals) {
+			if(!equals(trace, value1, value2)) {
 				return false;
 			}
 		}

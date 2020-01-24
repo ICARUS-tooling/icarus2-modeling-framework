@@ -48,8 +48,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.TestFactory;
 
-import de.ims.icarus2.query.api.iql.antlr.IQLLexer;
-import de.ims.icarus2.query.api.iql.antlr.IQL_TestParser;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.strings.BracketStyle;
@@ -362,6 +360,14 @@ public class IQLTestUtils {
 			list(pair("&&", "and"), pair("and", "and (keyword)")),
 			list(pair("||", "or"), pair("or", "or (keyword)"))
 	);
+
+	public static boolean isRightAssoc(Pair<String, String> op1, Pair<String, String> op2) {
+		return ("&&".equals(op1.first) && "and".equals(op2.first))
+				|| ("and".equals(op1.first) && "&&".equals(op2.first))
+				|| ("||".equals(op1.first) && "or".equals(op2.first))
+				|| ("or".equals(op1.first) && "||".equals(op2.first));
+
+	}
 
 	static final List<Pair<String, String>> binaryOps
 		= toList(binaryOpsHierarchy.stream().flatMap(l -> l.stream()));
