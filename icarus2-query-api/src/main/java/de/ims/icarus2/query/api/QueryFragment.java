@@ -40,7 +40,7 @@ public class QueryFragment {
 		requireNonNull(source);
 		checkArgument("begin must not be negative", begin>=0);
 		checkArgument("end must not be less then begin", end>=begin);
-		checkArgument("end must not exceed source query length", end<source.length());
+		checkArgument("end must not exceed source query length", end<=source.length());
 
 		this.source = source;
 		this.begin = begin;

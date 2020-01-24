@@ -50,8 +50,11 @@ import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
 import de.ims.icarus2.query.api.iql.IqlElement;
+import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlPayload;
@@ -286,21 +289,9 @@ class QueryProcessorTest {
 			assertThat(payload.isAligned()).isFalse();
 		}
 
-//		private void assertTerm(IqlTerm term, BooleanOperation op, String...contents) {
-//			assertThat(term.getOperation()).isSameAs(op);
-//			List<IqlConstraint> items = term.getItems();
-//			assertThat(items).hasSize(contents.length);
-//			for (int i = 0; i < contents.length; i++) {
-//				assertThat(items.get(i)).isInstanceOf(IqlPredicate.class);
-//				assertPredicate((IqlPredicate) items.get(i), contents[i]);
-//			}
-//		}
-//
-//		private void assertPredicate(IqlPredicate predicate, String content) {
-//			assertExpression(predicate.getExpression(), content);
-//		}
 
-		private void assertBindings(IqlPayload payload, @SuppressWarnings("unchecked") Consumer<IqlBinding>...asserters) {
+		private void assertBindings(IqlPayload payload,
+				@SuppressWarnings("unchecked") Consumer<IqlBinding>...asserters) {
 			List<IqlBinding> bindings = payload.getBindings();
 			assertThat(bindings).hasSize(asserters.length);
 			for (int i = 0; i < asserters.length; i++) {
@@ -329,7 +320,8 @@ class QueryProcessorTest {
 			};
 		}
 
-		private void assertElements(IqlPayload payload, @SuppressWarnings("unchecked") Consumer<IqlElement>...asserters) {
+		private void assertElements(IqlPayload payload,
+				@SuppressWarnings("unchecked") Consumer<IqlElement>...asserters) {
 			List<IqlElement> elements = payload.getElements();
 			assertThat(elements).hasSize(asserters.length);
 			for (int i = 0; i < asserters.length; i++) {
@@ -351,6 +343,10 @@ class QueryProcessorTest {
 				assertThat(element.getConstraint()).isEmpty();
 			}
 		}
+		@SuppressWarnings("unchecked")
+		private Consumer<IqlElement> node() {
+			return node(null, null);
+		}
 
 		private Consumer<IqlElement> node(String label, Consumer<IqlConstraint> constraint,
 				@SuppressWarnings("unchecked") Consumer<IqlQuantifier>...qAsserters) {
@@ -363,6 +359,47 @@ class QueryProcessorTest {
 				for (int i = 0; i < qAsserters.length; i++) {
 					qAsserters[i].accept(quantifiers.get(i));
 				}
+			};
+		}
+
+		// ISSUE: won't work as the nodeAssert itself will assume its own amount of wuantifiers and fail
+//		private Consumer<IqlElement> quantify(Consumer<IqlElement> nodeAssert,
+//				@SuppressWarnings("unchecked") Consumer<IqlQuantifier>...qAsserters) {
+//			return element -> {
+//				nodeAssert.accept(element);
+//				assertThat(element).isInstanceOf(IqlNode.class);
+//				IqlNode node = (IqlNode) element;
+//				List<IqlQuantifier> quantifiers = node.getQuantifiers();
+//				assertThat(quantifiers).hasSize(qAsserters.length);
+//				for (int i = 0; i < qAsserters.length; i++) {
+//					qAsserters[i].accept(quantifiers.get(i));
+//				}
+//			};
+//		}
+
+		private Consumer<IqlElement> tree(String label, Consumer<IqlConstraint> constraint,
+				@SuppressWarnings("unchecked") Consumer<IqlElement>...nAsserters) {
+			return element -> {
+				assertThat(element).isInstanceOf(IqlTreeNode.class);
+				IqlTreeNode tree = (IqlTreeNode) element;
+				assertProperElement(tree, label, constraint);
+				List<IqlElement> children = tree.getChildren();
+				assertThat(children).hasSize(nAsserters.length);
+				for (int i = 0; i < nAsserters.length; i++) {
+					nAsserters[i].accept(children.get(i));
+				}
+			};
+		}
+
+		private Consumer<IqlElement> edge(EdgeType edgeType, String label, Consumer<IqlConstraint> constraint,
+				Consumer<IqlElement> sourceAssert, Consumer<IqlElement> targetAssert) {
+			return element -> {
+				assertThat(element).isInstanceOf(IqlEdge.class);
+				IqlEdge edge = (IqlEdge) element;
+				assertProperElement(edge, label, constraint);
+				assertThat(edge.getEdgeType()).isEqualTo(edgeType);
+				sourceAssert.accept(edge.getSource());
+				targetAssert.accept(edge.getTarget());
 			};
 		}
 
@@ -407,6 +444,15 @@ class QueryProcessorTest {
 			return quantifier -> {
 				assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.ALL);
 				assertThat(quantifier.getValue()).isEmpty();
+				assertThat(quantifier.getLowerBound()).isEmpty();
+				assertThat(quantifier.getUpperBound()).isEmpty();
+			};
+		}
+
+		private Consumer<IqlQuantifier> quantNone() {
+			return quantifier -> {
+				assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.EXACT);
+				assertThat(quantifier.getValue()).hasValue(0);
 				assertThat(quantifier.getLowerBound()).isEmpty();
 				assertThat(quantifier.getUpperBound()).isEmpty();
 			};
@@ -717,17 +763,160 @@ class QueryProcessorTest {
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
 					assertElements(payload, node(null, null));
 				}
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyNamedNode() {
+					String rawPayload = "WITH $token AS corpus::layer1 FIND [$token:]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertSequence(payload);
+					assertBindings(payload, bind("corpus::layer1", false, "token"));
+					assertElements(payload, node("token", null));
+				}
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyNamedNodes() {
+					String rawPayload = "WITH $token1,$token2 AS corpus::layer1 FIND [$token1:][$token2:]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertSequence(payload);
+					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
+					assertElements(payload, node("token1", null), node("token2", null));
+				}
+ 			}
+
+			@Nested
+			class GlobalConstraints {
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testFilledNodes() {
+					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 "
+							+ "AND $p AS corpus::phrase "
+							+ "FIND [$token1: pos!=\"NNP\"] 4+[] [$token2: length()>12] "
+							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
+//					System.out.println(rawPayload);
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertSequence(payload);
+					assertBindings(payload,
+							bind("corpus::layer1", true, "token1", "token2"),
+							bind("corpus::phrase", false, "p"));
+					assertElements(payload,
+							node("token1", pred("pos!=\"NNP\"")),
+							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
+							node("token2", pred("length()>12")));
+					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
+							pred("$p.contains($token1)"),
+							pred("!$p.contains($token2)")));
+				}
+
 			}
 		}
 
 		@Nested
 		class Tree {
 
+			private void assertTree(IqlPayload payload, boolean aigned) {
+				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.TREE);
+				assertThat(payload.getElements()).isNotEmpty();
+				assertThat(payload.isAligned()).isEqualTo(aigned);
+			}
+
+			@Nested
+			class Unbound {
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyUnnamedNode() {
+					String rawPayload = "TREE []";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertTree(payload, false);
+					assertBindings(payload);
+					assertElements(payload, node(null, null));
+				}
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyUnnamedAlignedNodes() {
+					String rawPayload = "ALIGNED TREE [][]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertTree(payload, true);
+					assertBindings(payload);
+					assertElements(payload, node(null, null), node(null, null));
+				}
+			}
+
+			@Nested
+			class NestedNodes {
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyNestedNode() {
+					String rawPayload = "TREE [[]]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertTree(payload, false);
+					assertBindings(payload);
+					assertElements(payload, tree(null, null, node()));
+				}
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyNestedSiblings() {
+					String rawPayload = "TREE [[][]]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertTree(payload, false);
+					assertBindings(payload);
+					assertElements(payload, tree(null, null, node(), node()));
+				}
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testEmptyNestedChain() {
+					String rawPayload = "TREE [[[]]]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertTree(payload, false);
+					assertBindings(payload);
+					assertElements(payload, tree(null, null, tree(null, null, node())));
+				}
+			}
+
+			@Nested
+			class GlobalConstraints {
+
+				@SuppressWarnings("unchecked")
+				@Test
+				void testFilledNodes() {
+					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 "
+							+ "AND $p AS corpus::phrase "
+							+ "FIND ALIGNED TREE [5-[][$token1: pos!=\"NNP\"]] 4+[] "
+							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
+							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
+//					System.out.println(rawPayload);
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertTree(payload, true);
+					assertBindings(payload,
+							bind("corpus::layer1", true, "token1", "token2"),
+							bind("corpus::phrase", false, "p"));
+					assertElements(payload,
+							tree(null, null,
+									node(null, null, quant(QuantifierType.AT_MOST, 5)),
+									node("token1", pred("pos!=\"NNP\""))),
+							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
+							tree("token2", pred("length()>12"),
+									node(null, pred("pos==\"DET\""), quantNone()),
+									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3))));
+					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
+							pred("$p.contains($token1)"),
+							pred("!$p.contains($token2)")));
+				}
+
+				//TODO
+			}
 		}
 
 		@Nested
 		class Graph {
-
+			//TODO
 		}
 
 	}

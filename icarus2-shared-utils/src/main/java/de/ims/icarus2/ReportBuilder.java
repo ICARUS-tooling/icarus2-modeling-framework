@@ -32,6 +32,7 @@ import de.ims.icarus2.Report.ReportItemCollector;
 import de.ims.icarus2.Report.Severity;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.id.StaticIdentity;
 import de.ims.icarus2.util.strings.StringUtil;
 
 /**
@@ -63,7 +64,8 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		requireNonNull(source);
 		checkState("Source already set", this.source==null);
 
-		this.source = source;
+		// Defensive copying so we don't keep any foreign references or cause side effects
+		this.source = new StaticIdentity(source);
 
 		return thisAsCast();
 	}
@@ -227,6 +229,10 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 
 			if(timestamp==null) {
 				timestamp = LocalDateTime.now();
+			}
+
+			if(source!=null && !(source instanceof StaticIdentity)) {
+				source = new StaticIdentity(source);
 			}
 
 			this.timestamp = timestamp;
