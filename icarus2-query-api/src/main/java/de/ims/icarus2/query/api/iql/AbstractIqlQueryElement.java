@@ -21,6 +21,7 @@ package de.ims.icarus2.query.api.iql;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -53,6 +54,16 @@ abstract class AbstractIqlQueryElement implements IqlQueryElement {
 	protected void checkNotNull(Object field, String label) {
 		if(field==null)
 			throw forCorruption(label, "value is null");
+	}
+
+	protected void checkPresent(OptionalInt field, String label) {
+		if(!field.isPresent())
+			throw forCorruption(label, "value is not present");
+	}
+
+	protected void checkNotPresent(OptionalInt field, String label) {
+		if(field.isPresent())
+			throw forCorruption(label, "unexpected value is present");
 	}
 
 	protected void checkNull(Object field, String label) {

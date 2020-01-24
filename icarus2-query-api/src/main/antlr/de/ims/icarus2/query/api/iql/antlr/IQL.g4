@@ -129,7 +129,7 @@ binding
 	;
 
 selectiveStatement
-	: constraint
+	: constraint // plain
 	| structureStatement (HAVING constraint)?
 	;	
 
@@ -157,7 +157,7 @@ nodeStatement
 	: LBRACE nodeStatement RBRACE				#nodeGrouping
 	| node+										#nodeSequence
 	| element (COMMA element)*					#elementSequence	
-	| <assoc=right> nodeStatement or nodeStatement			#nodeAlternatives
+	| <assoc=right> left=nodeStatement or right=nodeStatement			#nodeAlternatives
 	;
 	
 /**
@@ -204,17 +204,25 @@ memberLabel
  *  member reference instead!
  */
 element
-	: node
+	: content=node
 	/*
 	 * Models left-directed, undirected, bidirectional and right-directed edges
 	 * with or without inner constraints.
 	 */
-	| node edge node
+	| source=node edge target=node
 	;
 
 edge
 	: (EDGE_LEFT | EDGE_RIGHT | EDGE_BIDIRECTIONAL | EDGE_UNDIRECTED)	# emptyEdge
-	| (directedEdgeLeft | undirectedEdge) LBRACK memberLabel? constraint? RBRACK (directedEdgeRight | undirectedEdge) # filledEdge
+	| leftEdgePart LBRACK memberLabel? constraint? RBRACK rightEdgePart # filledEdge
+	;
+	
+leftEdgePart
+	: directedEdgeLeft | undirectedEdge
+	;
+	
+rightEdgePart
+	: directedEdgeRight | undirectedEdge
 	;
 	
 directedEdgeLeft
@@ -326,7 +334,7 @@ expression
 	| expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE expressionList RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
-	| source=expression (NOT | EXMARK)? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
+	| source=expression not? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
 	| (NOT | EXMARK | MINUS) expression 											# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp
@@ -393,16 +401,21 @@ type
 	
 quantifier
 	: all
-	| EXMARK
+	| not
 	| unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )*  
 	| LT unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )* GT
 	;
 	
 unsignedSimpleQuantifier
-	: PureDigits 						# exactQuantifier
-	| PureDigits PLUS					# atLeastQuantifier
-	| PureDigits MINUS					# atMostQuantifier
-	| PureDigits DOUBLE_DOT PureDigits	# rangeQuantifier
+	: value=PureDigits 						
+	| value=PureDigits PLUS					
+	| value=PureDigits MINUS					
+	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits
+	;
+	
+not
+	: NOT
+	| EXMARK
 	;
 	
 all 

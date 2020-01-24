@@ -447,7 +447,7 @@ public final class CollectionUtils {
 
 	@SafeVarargs
 	public static <E extends Object> List<E> list(E...items) {
-		ArrayList<E> list = new ArrayList<>();
+		ArrayList<E> list = new ArrayList<>(Math.max(1, items.length));
 		feedItems(list, items);
 		return list;
 	}

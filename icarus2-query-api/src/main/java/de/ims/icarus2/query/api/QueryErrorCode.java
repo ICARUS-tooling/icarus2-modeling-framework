@@ -25,6 +25,7 @@ import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.Report;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 
 /**
@@ -49,6 +50,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 */
 	JSON_ERROR(102),
 
+	/**
+	 * Dummy code to signal a more complex {@link Report} containing detailed
+	 * and aggregated error descriptions.
+	 */
+	REPORT(103),
+
 	//**************************************************
 	//       2xx  INNER IQL SYNTAX ERRORS
 	//**************************************************
@@ -60,6 +67,15 @@ public enum QueryErrorCode implements ErrorCode {
 	SYNTAX_ERROR(200),
 
 	/**
+	 * Processing the abstract syntax tree (AST) of a parsed query or
+	 * query subpart yielded a construction that cannot be handled.
+	 * This error is reserved for indicating discrepancies between the
+	 * ANTLR grammar for IQL and the actual processing code and hints
+	 * at internal bugs on either side.
+	 */
+	AST_ERROR(201),
+
+	/**
 	 * Signals that a token is expected to be in a continuous form,
 	 * but was written in chunks. The default IQL grammar for example
 	 * defines rules for various edge expressions that are constructed
@@ -68,6 +84,19 @@ public enum QueryErrorCode implements ErrorCode {
 	 * do the semantic checks based on context.
 	 */
 	NON_CONTINUOUS_TOKEN(203),
+
+	/**
+	 * More like a warning: A wrappable part (e.g. an expression) has been
+	 * surrounded by multiple (redundant) wrappings of parentheses.
+	 */
+	SUPERFLUOUS_NESTING(204),
+
+	/**
+	 * A literal (number, string, boolean) has been detected to hold a value
+	 * that is invalid for the given context. This covers all the situations
+	 * where value validation can be performed during the first process pass.
+	 */
+	INVALID_LITERAL(205),
 
 	/**
 	 * An identifier (member name, variable, etc...) could not be resolved
@@ -87,6 +116,7 @@ public enum QueryErrorCode implements ErrorCode {
 	 * detects a problem too complex to handle.
 	 */
 	UNSUPPORTED_FEATURE(220),
+
 
 	//**************************************************
 	//       3xx  MATCHER ERRORS

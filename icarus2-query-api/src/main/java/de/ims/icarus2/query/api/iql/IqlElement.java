@@ -101,13 +101,26 @@ public abstract class IqlElement extends IqlUnique {
 		public void addQuantifier(IqlQuantifier quantifier) { quantifiers.add(requireNonNull(quantifier)); }
 
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers.forEach(requireNonNull(action)); }
+
+		// utility
+
+		public boolean hasQuantifiers() {
+			return !quantifiers.isEmpty();
+		}
 	}
 
+	/**
+	 * Implementation note: we use {@link IqlElement} as child type so that
+	 * {@link IqlElementDisjunction} is also allowed.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class IqlTreeNode extends IqlNode {
 
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_EMPTY)
-		private List<IqlTreeNode> children = new ArrayList<>();
+		private List<IqlElement> children = new ArrayList<>();
 
 		/**
 		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
@@ -127,11 +140,11 @@ public abstract class IqlElement extends IqlUnique {
 			checkCollection(children);
 		}
 
-		public List<IqlTreeNode> getChildren() { return CollectionUtils.unmodifiableListProxy(children); }
+		public List<IqlElement> getChildren() { return CollectionUtils.unmodifiableListProxy(children); }
 
-		public void addChild(IqlTreeNode child) { children.add(requireNonNull(child)); }
+		public void addChild(IqlElement child) { children.add(requireNonNull(child)); }
 
-		public void forEachChild(Consumer<? super IqlTreeNode> action) { children.forEach(requireNonNull(action)); }
+		public void forEachChild(Consumer<? super IqlElement> action) { children.forEach(requireNonNull(action)); }
 	}
 
 	public static class IqlEdge extends IqlProperElement {
@@ -162,6 +175,9 @@ public abstract class IqlElement extends IqlUnique {
 			checkNestedNotNull(source, IqlProperties.SOURCE);
 			checkNestedNotNull(target, IqlProperties.TARGET);
 			checkNotNull(edgeType, IqlProperties.EDGE_TYPE);
+//			checkCondition(source.getQuantifiers().isEmpty() || target.getQuantifiers().isEmpty(),
+//					"source/target", "Redundant quantifiers on edge - only one of 'source' or 'target' nodes may be assigned a quantifier!");
+			//TODO having the quantifier check here causes test issues. is it ok to do that check only in the QueryProcessor
 		}
 
 		public IqlNode getSource() { return source; }
@@ -208,7 +224,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		public List<IqlElement> getAlternative(int index) { return CollectionUtils.unmodifiableListProxy(alternatives.get(index)); }
 
-		public void addAlternative(List<IqlElement> items) {
+		public void addAlternative(List<? extends IqlElement> items) {
 			requireNonNull(items);
 			checkArgument("Alternative must not be empty", !items.isEmpty());
 

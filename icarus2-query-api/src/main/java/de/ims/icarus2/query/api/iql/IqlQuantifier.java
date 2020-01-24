@@ -69,14 +69,22 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		super.checkIntegrity();
 		checkNotNull(quantifierType, IqlProperties.QUANTIFIER_TYPE);
 		switch (quantifierType) {
+		case ALL:
+//			checkNotPresent(value, IqlProperties.VALUE);
+//			checkNotPresent(lowerBound, IqlProperties.LOWER_BOUND);
+//			checkNotPresent(upperBound, IqlProperties.UPPER_BOUND);
+			break;
 		case EXACT:
 		case AT_LEAST:
 		case AT_MOST:
-			checkNotNull(value, IqlProperties.VALUE);
+			checkPresent(value, IqlProperties.VALUE);
+//			checkNotPresent(lowerBound, IqlProperties.LOWER_BOUND);
+//			checkNotPresent(upperBound, IqlProperties.UPPER_BOUND);
 			break;
 		case RANGE:
-			checkNotNull(lowerBound, IqlProperties.LOWER_BOUND);
-			checkNotNull(upperBound, IqlProperties.UPPER_BOUND);
+			checkPresent(lowerBound, IqlProperties.LOWER_BOUND);
+			checkPresent(upperBound, IqlProperties.UPPER_BOUND);
+//			checkNotPresent(value, IqlProperties.VALUE);
 			break;
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -106,6 +114,7 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	public void setUpperBound(int upperBound) { this.upperBound = _set(upperBound); }
 
 	public enum QuantifierType {
+		ALL("all"),
 		EXACT("exact"),
 		AT_MOST("atMost"),
 		AT_LEAST("atLeast"),

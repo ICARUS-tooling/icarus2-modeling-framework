@@ -39,6 +39,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -123,20 +124,73 @@ public final class AntlrUtils {
 		return createParser(createLexer(text, sourceName));
 	}
 
-	public static QueryException asSyntaxException(RecognitionException ex, String msg) {
-		String message = Optional.ofNullable(msg)
-				.orElse("Unspecified parsing error");
-		RuleContext ctx = Optional.ofNullable(ex)
-				.map(RecognitionException::getCtx)
-				.orElse(null);
-		QueryFragment fragment = Optional.ofNullable(ctx)
+	private static final String UNSPECIFIED_MSG = "Unspecified parsing error";
+
+	public static QueryFragment asFragment(RuleContext ctx) {
+		return Optional.ofNullable(ctx)
 				.map(RuleContext::getSourceInterval)
 				.map(iv -> new QueryFragment(ctx.getText(), iv.a, Math.max(iv.a, iv.b)))
 				.orElse(null);
+	}
+
+	public static QueryException asSyntaxException(RecognitionException ex, String msg) {
+		String message = Optional.ofNullable(msg)
+				.orElse(UNSPECIFIED_MSG);
+		RuleContext ctx = Optional.ofNullable(ex)
+				.map(RecognitionException::getCtx)
+				.orElse(null);
+		QueryFragment fragment = asFragment(ctx);
 		return new QueryException(QueryErrorCode.SYNTAX_ERROR, message, fragment, ex);
 	}
 
+	public static QueryException asFeatureException(ParserRuleContext ctx, String msg) {
+		String message = Optional.ofNullable(msg)
+				.map(m -> String.format("%s in '%s'", m, textOf(ctx)))
+				.orElse(UNSPECIFIED_MSG);
+		QueryFragment fragment = asFragment(ctx);
+		return new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE, message, fragment);
+	}
+
+	/** Removes all underscores from the number literal, as Java is more strict than IQL */
 	public static String cleanNumberLiteral(String s) {
 		return replaceAll(s, '_', "");
+	}
+
+	private static boolean isContinuous(Token t1, Token t2) {
+		int t1Stop = t1.getStopIndex();
+		int t2Start = t2.getStopIndex();
+
+		if(t1Stop==-1 || t2Start==-1)
+			throw new QueryException(QueryErrorCode.AST_ERROR, String.format(
+					"Cannot check continuity of tokens %s and %s", t1, t2));
+
+		return t2Start==t1Stop+1;
+	}
+
+	public static boolean isContinuous(ParserRuleContext ctx) {
+		Token previous = null;
+		for (int i = 0; i < ctx.getChildCount(); i++) {
+			ParseTree child = ctx.getChild(i);
+			Token start, stop;
+			if(child instanceof TerminalNode) {
+				start = stop = ((TerminalNode)child).getSymbol();
+			} else if(child instanceof ParserRuleContext) {
+				ParserRuleContext cctx = (ParserRuleContext)child;
+				if(!isContinuous(cctx)) {
+						return false;
+				}
+				start = cctx.start;
+				stop = cctx.stop;
+			} else
+				throw new QueryException(QueryErrorCode.AST_ERROR,
+						"Unexpected rule context: "+ctx.getClass());
+
+			if(previous!=null && !isContinuous(previous, start))
+				return false;
+
+			previous = stop;
+		}
+
+		return true;
 	}
 }

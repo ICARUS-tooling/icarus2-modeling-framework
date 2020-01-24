@@ -96,7 +96,7 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 	@Override
 	@SuppressWarnings("unchecked")
 	public void addItem(Severity severity, Identity source, ErrorCode code, String message, Object...data) {
-		addItem((R) new ReportItemImpl(LocalDateTime .now(), severity, source, code, message, data));
+		addItem((R) new ReportItemImpl(LocalDateTime.now(), severity, source, code, message, data));
 	}
 
 	public ReportBuilder<R> addItems(Collection<? extends R> items) {
