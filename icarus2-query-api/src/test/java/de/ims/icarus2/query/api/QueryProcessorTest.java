@@ -20,12 +20,18 @@
 package de.ims.icarus2.query.api;
 
 import static de.ims.icarus2.test.TestUtils.assertDeepEqual;
+import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -43,6 +49,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.ims.icarus2.Report;
+import de.ims.icarus2.Report.ReportItem;
+import de.ims.icarus2.Report.Severity;
 import de.ims.icarus2.query.api.IqlQueryGenerator.IncrementalBuild;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
@@ -70,6 +79,7 @@ import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.util.Pair;
 
 /**
  * @author Markus Gärtner
@@ -118,7 +128,84 @@ class QueryProcessorTest {
 	}
 
 	@Nested
-	class Groupings {
+	class ForErrors {
+
+		private Report<ReportItem> expectReport(String rawPayload) {
+			QueryProcessingException exception = assertThrows(QueryProcessingException.class,
+					() -> new QueryProcessor().processPayload(rawPayload));
+			assertThat(exception.getErrorCode()).isSameAs(QueryErrorCode.REPORT);
+			return exception.getReport();
+		}
+
+		@SafeVarargs
+		private final void assertReportHasErrors(Report<ReportItem> report,
+				Pair<QueryErrorCode, Predicate<? super ReportItem>>...entries) {
+			assertThat(report.countErrors()).isEqualTo(entries.length);
+			assertReportEntries(report, Severity.ERROR, list(entries));
+		}
+
+		@SafeVarargs
+		private final void assertReportHasWarnings(Report<ReportItem> report,
+				Pair<QueryErrorCode, Predicate<? super ReportItem>>...entries) {
+			assertThat(report.countWarnings()).isEqualTo(entries.length);
+			assertReportEntries(report, Severity.WARNING, list(entries));
+		}
+
+		private void assertReportEntries(Report<ReportItem> report, Severity severity,
+				List<Pair<QueryErrorCode, Predicate<? super ReportItem>>> expected) {
+
+			List<ReportItem> items = report.getItems()
+					.stream()
+					.filter(item -> item.getSeverity()==severity)
+					.collect(Collectors.toList());
+
+			for(Pair<QueryErrorCode, Predicate<? super ReportItem>> matcher : expected) {
+				ReportItem found = null;
+				search : for (int i = 0; i < items.size(); i++) {
+					ReportItem item = items.get(i);
+					if(item.getCode()==matcher.first && matcher.second.test(item)) {
+						found = item;
+						items.remove(i);
+						break search;
+					}
+				}
+
+				if(found==null) {
+					fail("Missing entry with error code "+matcher.first);
+				}
+			}
+		}
+
+		private Predicate<? super ReportItem> msgEnds(String suffix) {
+			return item -> item.getMessage().endsWith(suffix);
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+			"((x>0));((x>0))",
+			"[][((x>0))][];((x>0))",
+			"[][][] HAVING ((x>0));((x>0))"
+		})
+		void testSuperfluousExpressionNesting(String rawPayload, String offendingPart) {
+			assertReportHasWarnings(expectReport(rawPayload),
+					pair(QueryErrorCode.SUPERFLUOUS_NESTING, msgEnds(offendingPart)));
+		}
+
+		/*
+		 * Errors to check:
+		 * SUPERFLUOUS_NESTING -> redundant nesting of node statements with {}
+		 * INVALID_LITERAL -> AT_MOST quantifier with 0
+		 * INCORRECT_USE -> ALIGNED flag with less than 2 existentially quantified nodes
+		 * UNSUPPORTED_FEATURE -> children in graph or sequence
+		 * UNSUPPORTED_FEATURE -> edges in tree or sequence
+		 * INVALID_LITERAL -> range quantifier with lower>=upper
+		 * UNSUPPORTED_FEATURE -> quantifier on both ends of edge
+		 * NON_CONTINUOUS_TOKEN -> patr of complex edge definition is not continuous
+		 */
+	}
+
+	@Nested
+	class ForGroupings {
 
 		private void assertGroup(IqlGroup group,
 				String expression, @Nullable String filter,
@@ -205,7 +292,7 @@ class QueryProcessorTest {
 	}
 
 	@Nested
-	class Result {
+	class ForResult {
 
 		private void assertSorting(IqlSorting sorting, String expression, Order order) {
 			assertThat(sorting.getExpression().getContent()).isEqualTo(expression);
@@ -276,7 +363,7 @@ class QueryProcessorTest {
 	}
 
 	@Nested
-	class Payload {
+	class ForPayload {
 
 		@ParameterizedTest
 		@ValueSource(strings = {"all", "ALL"})
@@ -290,8 +377,8 @@ class QueryProcessorTest {
 		}
 
 
-		private void assertBindings(IqlPayload payload,
-				@SuppressWarnings("unchecked") Consumer<IqlBinding>...asserters) {
+		@SafeVarargs
+		private final void assertBindings(IqlPayload payload, Consumer<IqlBinding>...asserters) {
 			List<IqlBinding> bindings = payload.getBindings();
 			assertThat(bindings).hasSize(asserters.length);
 			for (int i = 0; i < asserters.length; i++) {
@@ -320,8 +407,8 @@ class QueryProcessorTest {
 			};
 		}
 
-		private void assertElements(IqlPayload payload,
-				@SuppressWarnings("unchecked") Consumer<IqlElement>...asserters) {
+		@SafeVarargs
+		private final void assertElements(IqlPayload payload, Consumer<IqlElement>...asserters) {
 			List<IqlElement> elements = payload.getElements();
 			assertThat(elements).hasSize(asserters.length);
 			for (int i = 0; i < asserters.length; i++) {
@@ -343,13 +430,14 @@ class QueryProcessorTest {
 				assertThat(element.getConstraint()).isEmpty();
 			}
 		}
-		@SuppressWarnings("unchecked")
+
 		private Consumer<IqlElement> node() {
 			return node(null, null);
 		}
 
-		private Consumer<IqlElement> node(String label, Consumer<IqlConstraint> constraint,
-				@SuppressWarnings("unchecked") Consumer<IqlQuantifier>...qAsserters) {
+		@SafeVarargs
+		private final Consumer<IqlElement> node(String label, Consumer<IqlConstraint> constraint,
+				Consumer<IqlQuantifier>...qAsserters) {
 			return element -> {
 				assertThat(element).isInstanceOf(IqlNode.class);
 				IqlNode node = (IqlNode) element;
@@ -377,8 +465,9 @@ class QueryProcessorTest {
 //			};
 //		}
 
-		private Consumer<IqlElement> tree(String label, Consumer<IqlConstraint> constraint,
-				@SuppressWarnings("unchecked") Consumer<IqlElement>...nAsserters) {
+		@SafeVarargs
+		private final Consumer<IqlElement> tree(String label, Consumer<IqlConstraint> constraint,
+				Consumer<IqlElement>...nAsserters) {
 			return element -> {
 				assertThat(element).isInstanceOf(IqlTreeNode.class);
 				IqlTreeNode tree = (IqlTreeNode) element;
@@ -410,8 +499,9 @@ class QueryProcessorTest {
 			};
 		}
 
-		private Consumer<IqlConstraint> term(BooleanOperation op,
-				@SuppressWarnings("unchecked") Consumer<IqlConstraint>...asserters) {
+		@SafeVarargs
+		private final Consumer<IqlConstraint> term(BooleanOperation op,
+				Consumer<IqlConstraint>...asserters) {
 			return constraint -> {
 				assertThat(constraint).isInstanceOf(IqlTerm.class);
 				IqlTerm term = (IqlTerm) constraint;
@@ -459,7 +549,7 @@ class QueryProcessorTest {
 		}
 
 		@Nested
-		class Plain {
+		class WhenPlain {
 
 			private void assertPlain(IqlPayload payload) {
 				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.PLAIN);
@@ -470,7 +560,6 @@ class QueryProcessorTest {
 			@Nested
 			class Unbound {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testPredicate() {
 					String rawPayload = "$token1.val>0";
@@ -480,7 +569,6 @@ class QueryProcessorTest {
 					assertConstraint(payload, pred("$token1.val>0"));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testConjunctiveChain() {
 					String rawPayload = "$token1.val>0 && func() !=true && ($edge.dist()<5+4)";
@@ -493,7 +581,6 @@ class QueryProcessorTest {
 							pred("$edge.dist()<5+4")));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testDisjunctiveChain() {
 					String rawPayload = "$token1.val>0 || func() !=true || ($edge.dist()<5+4)";
@@ -506,7 +593,6 @@ class QueryProcessorTest {
 							pred("$edge.dist()<5+4")));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testMixedExpression() {
 					String rawPayload = "$token1.val>0 || func() !=true && ($edge.dist()<5+4)";
@@ -525,7 +611,6 @@ class QueryProcessorTest {
 			@Nested
 			class Bound {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testBoundPredicate() {
 					String rawPayload = "WITH $token AS corpus::layer1 FIND $token.val>0";
@@ -535,7 +620,6 @@ class QueryProcessorTest {
 					assertConstraint(payload, pred("$token.val>0"));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testMultiBoundPredicate() {
 					String rawPayload = "WITH $token1,$token2 AS corpus::layer1 FIND $token1.val+$token2.val>0";
@@ -545,7 +629,6 @@ class QueryProcessorTest {
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testDistinctMultiBoundPredicate() {
 					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 FIND $token1.val+$token2.val>0";
@@ -555,7 +638,6 @@ class QueryProcessorTest {
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testMultiLayerBoundPredicate() {
 					String rawPayload = "WITH $token1 AS corpus::layer1 AND $token2 AS corpus::layer2 FIND $token1.val+$token2.val>0";
@@ -571,7 +653,7 @@ class QueryProcessorTest {
 		}
 
 		@Nested
-		class Sequence {
+		class WhenSequence {
 
 			private void assertSequence(IqlPayload payload) {
 				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.SEQUENCE);
@@ -582,7 +664,6 @@ class QueryProcessorTest {
 			@Nested
 			class Unbound {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyUnnamedNode() {
 					String rawPayload = "[]";
@@ -592,7 +673,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyNamedNode() {
 					String rawPayload = "[$node1:]";
@@ -602,7 +682,6 @@ class QueryProcessorTest {
 					assertElements(payload, node("node1", null));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testFilledUnnamedNode() {
 					String rawPayload = "[pos!=\"NNP\"]";
@@ -612,7 +691,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, pred("pos!=\"NNP\"")));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testFilledNamedNode() {
 					String rawPayload = "[$node1: pos!=\"NNP\"]";
@@ -627,7 +705,6 @@ class QueryProcessorTest {
 			@Nested
 			class Quantified {
 
-				@SuppressWarnings("unchecked")
 				@ParameterizedTest
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
 				void testEmptyExactQuantifiedNode(int quantifier) {
@@ -638,7 +715,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null, quant(QuantifierType.EXACT, quantifier)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@ParameterizedTest
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
 				void testEmptyAtLeastQuantifiedNode(int quantifier) {
@@ -649,9 +725,8 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null, quant(QuantifierType.AT_LEAST, quantifier)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@ParameterizedTest
-				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
+				@ValueSource(ints = {1, 1000, Integer.MAX_VALUE})
 				void testEmptyAtMostQuantifiedNode(int quantifier) {
 					String rawPayload = quantifier+"-[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
@@ -660,7 +735,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null, quant(QuantifierType.AT_MOST, quantifier)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@ParameterizedTest
 				@ValueSource(strings = {"all", "ALL", "*"})
 				void testEmptyAllQuantifiedNode(String quantifier) {
@@ -671,7 +745,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null, quantAll()));
 				}
 
-				@SuppressWarnings("unchecked")
 				@ParameterizedTest
 				@ValueSource(strings = {"not", "NOT", "!"})
 				void testEmptyNegatedNode(String quantifier) {
@@ -682,7 +755,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null, quant(QuantifierType.EXACT, 0)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@ParameterizedTest
 				@CsvSource({
 					"0, 1",
@@ -697,7 +769,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null, quant(lower, upper)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyMultiQuantifiedNode() {
 					String rawPayload = "2|10|5..7|1000+[]";
@@ -711,7 +782,6 @@ class QueryProcessorTest {
 							quant(QuantifierType.AT_LEAST, 1000)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testFilledQuantifiedNode() {
 					String rawPayload = "2|10|5..7|1000+[$node1: pos!=\"NNP\"]";
@@ -725,7 +795,6 @@ class QueryProcessorTest {
 							quant(QuantifierType.AT_LEAST, 1000)));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyUnnamedNodeSequence() {
 					String rawPayload = "[][][]";
@@ -735,7 +804,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null), node(null, null), node(null, null));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyUnnamedQuantifiedNodeSequence() {
 					String rawPayload = "4-[] 2..10[] <3|5+>[] ![]";
@@ -754,7 +822,6 @@ class QueryProcessorTest {
 			@Nested
 			class Bound {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyUnnamedNode() {
 					String rawPayload = "WITH $token AS corpus::layer1 FIND []";
@@ -764,7 +831,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyNamedNode() {
 					String rawPayload = "WITH $token AS corpus::layer1 FIND [$token:]";
@@ -774,7 +840,6 @@ class QueryProcessorTest {
 					assertElements(payload, node("token", null));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyNamedNodes() {
 					String rawPayload = "WITH $token1,$token2 AS corpus::layer1 FIND [$token1:][$token2:]";
@@ -788,7 +853,6 @@ class QueryProcessorTest {
 			@Nested
 			class GlobalConstraints {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testFilledNodes() {
 					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 "
@@ -814,7 +878,7 @@ class QueryProcessorTest {
 		}
 
 		@Nested
-		class Tree {
+		class WhenTree {
 
 			private void assertTree(IqlPayload payload, boolean aigned) {
 				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.TREE);
@@ -825,7 +889,6 @@ class QueryProcessorTest {
 			@Nested
 			class Unbound {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyUnnamedNode() {
 					String rawPayload = "TREE []";
@@ -835,7 +898,6 @@ class QueryProcessorTest {
 					assertElements(payload, node(null, null));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyUnnamedAlignedNodes() {
 					String rawPayload = "ALIGNED TREE [][]";
@@ -849,7 +911,6 @@ class QueryProcessorTest {
 			@Nested
 			class NestedNodes {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyNestedNode() {
 					String rawPayload = "TREE [[]]";
@@ -859,7 +920,6 @@ class QueryProcessorTest {
 					assertElements(payload, tree(null, null, node()));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyNestedSiblings() {
 					String rawPayload = "TREE [[][]]";
@@ -869,7 +929,6 @@ class QueryProcessorTest {
 					assertElements(payload, tree(null, null, node(), node()));
 				}
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testEmptyNestedChain() {
 					String rawPayload = "TREE [[[]]]";
@@ -883,7 +942,6 @@ class QueryProcessorTest {
 			@Nested
 			class GlobalConstraints {
 
-				@SuppressWarnings("unchecked")
 				@Test
 				void testFilledNodes() {
 					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 "
@@ -915,7 +973,7 @@ class QueryProcessorTest {
 		}
 
 		@Nested
-		class Graph {
+		class WhenGraph {
 			//TODO
 		}
 

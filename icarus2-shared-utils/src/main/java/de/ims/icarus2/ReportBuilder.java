@@ -269,6 +269,7 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 
 		/**
 		 * @see de.ims.icarus2.Report.ReportItem#getMessage()
+		 * @see StringUtil#format(String, Object...)
 		 */
 		@Override
 		public String getMessage() {
@@ -285,6 +286,7 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 
 		/**
 		 * @see de.ims.icarus2.Report.ReportItem#getMessage(java.util.Locale)
+		 * @see StringUtil#format(Locale, String, Object...)
 		 */
 		@Override
 		public String getMessage(Locale locale) {

@@ -117,6 +117,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 */
 	UNSUPPORTED_FEATURE(220),
 
+	/**
+	 * Signals that an IQL feature has been used incorrectly. This is sometimes
+	 * shown as a mere warning, depending on the actual severity.
+	 */
+	INCORRECT_USE(221),
+
 
 	//**************************************************
 	//       3xx  MATCHER ERRORS

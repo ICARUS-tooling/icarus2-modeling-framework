@@ -220,6 +220,7 @@ public class QueryProcessor {
 		}
 	}
 
+	/** Insurance against changes in the IQL grammar that we missed */
 	private <E extends IqlQueryElement> E failForUnhandledAlternative(ParserRuleContext ctx) {
 		throw asFeatureException(ctx, "Unhandled alternative of type "+ctx.getClass());
 	}
@@ -309,6 +310,8 @@ public class QueryProcessor {
 
 		private final ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(this);
 
+		private int existentiallyQuantifiedNodes = 0;
+
 		@Override
 		public Optional<String> getId() { return Optional.of(getClass().getSimpleName()); }
 
@@ -328,7 +331,7 @@ public class QueryProcessor {
 			}
 			if(depths>1) {
 				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_NESTING,
-						"Superfluous wrapping of expression", textOf(original));
+						"Superfluous wrapping of expression {1}", textOf(original));
 			}
 			return ctx;
 		}
@@ -342,7 +345,7 @@ public class QueryProcessor {
 			}
 			if(depths>1) {
 				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_NESTING,
-						"Superfluous wrapping of node statements", textOf(original));
+						"Superfluous wrapping of node statement {1}", textOf(original));
 			}
 			return ctx;
 		}
@@ -389,6 +392,13 @@ public class QueryProcessor {
 				payload.setQueryType(queryType);
 
 				processNodeStatement(nsctx, queryType).forEach(payload::addElement);
+
+				//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
+				if(payload.isAligned() && existentiallyQuantifiedNodes<2) {
+					reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
+							"For 'ALIGNED' feature to be effective the query needs at least"
+							+ "two distinct nodes that are existentially quantified.");
+				}
 			} else {
 				// Simple plain statement
 				payload.setQueryType(QueryType.PLAIN);
@@ -397,8 +407,7 @@ public class QueryProcessor {
 			payload.checkIntegrity();
 
 			if(reportBuilder.getErrorCount()>0 || reportBuilder.getWarningCount()>0)
-				throw new QueryException(QueryErrorCode.REPORT,
-						reportBuilder.build().toString("Failed to process payload:"));
+				throw new QueryProcessingException("Failed to process payload", reportBuilder.build());
 
 			return payload;
 		}
@@ -529,7 +538,7 @@ public class QueryProcessor {
 			if(ctx.nodeStatement()!=null) {
 				if(!queryType.isAllowChildren()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Query type %s does not allow tree structures via nested nodes: ", queryType, textOf(ctx));
+							"Query type {1} does not allow tree structures via nested nodes: {2}", queryType, textOf(ctx));
 				}
 				IqlTreeNode tNode = new IqlTreeNode();
 				processNodeStatement(ctx.nodeStatement(), queryType).forEach(tNode::addChild);
@@ -541,7 +550,18 @@ public class QueryProcessor {
 			processProperElement0(node, ctx.memberLabel(), ctx.constraint());
 
 			if(ctx.quantifier()!=null) {
-				processQuantifier(ctx.quantifier()).forEach(node::addQuantifier);
+				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
+				quantifiers.forEach(node::addQuantifier);
+
+				for(IqlQuantifier quantifier : quantifiers) {
+					if(quantifier.isExistentiallyQuantified()) {
+						existentiallyQuantifiedNodes++;
+						break;
+					}
+				}
+			} else {
+				// Unquantified means existentially quantified
+				existentiallyQuantifiedNodes++;
 			}
 
 			return node;
@@ -583,14 +603,19 @@ public class QueryProcessor {
 				quantifier.setValue(pureDigits(ctx.value));
 			} else if(ctx.MINUS()!=null) {
 				quantifier.setQuantifierType(QuantifierType.AT_MOST);
-				quantifier.setValue(pureDigits(ctx.value));
+				int value = pureDigits(ctx.value);
+				if(value==0) {
+					reportBuilder.addError(QueryErrorCode.INVALID_LITERAL,
+							"Cannot use 'at-most' quantifier with a target value of 0 - use 'exact' instead: {1}", textOf(ctx));
+				}
+				quantifier.setValue(value);
 			} else if(ctx.DOUBLE_DOT()!=null) {
 				quantifier.setQuantifierType(QuantifierType.RANGE);
 				int lower = pureDigits(ctx.lowerBound);
 				int upper = pureDigits(ctx.upperBound);
 				if(lower>=upper) {
 					reportBuilder.addError(QueryErrorCode.INVALID_LITERAL,
-							"Lower end of range quantifier must not be equal or greater than upper end: %s", textOf(ctx));
+							"Lower end of range quantifier must not be equal or greater than upper end: {1}", textOf(ctx));
 				}
 				quantifier.setLowerBound(lower);
 				quantifier.setUpperBound(upper);
@@ -605,7 +630,7 @@ public class QueryProcessor {
 			if(ctx.edge()!=null) {
 				if(!queryType.isAllowEdges()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Query type %s does not support edges", queryType);
+							"Query type {1} does not support edges", queryType);
 				}
 
 				IqlNode source = processNode(ctx.source, queryType);
@@ -613,7 +638,7 @@ public class QueryProcessor {
 
 				if(source.hasQuantifiers() && target.hasQuantifiers()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Redundant quantifier definition - can only define quantifiers on either source or target: %s", textOf(ctx));
+							"Redundant quantifier definition - can only define quantifiers on either source or target: {1}", textOf(ctx));
 				}
 
 				IqlEdge edge = processEdge(ctx.edge(), source, target);
@@ -662,11 +687,11 @@ public class QueryProcessor {
 
 			if(!isContinuous(left)) {
 				reportBuilder.addError(QueryErrorCode.NON_CONTINUOUS_TOKEN,
-						"Left part of multipart edge definition is not continuous (must not contain whitespaces): %s", textOf(left));
+						"Left part of multipart edge definition is not continuous (must not contain whitespaces): {1}", textOf(left));
 			}
 			if(!isContinuous(right)) {
 				reportBuilder.addError(QueryErrorCode.NON_CONTINUOUS_TOKEN,
-						"Right part of multipart edge definition is not continuous (must not contain whitespaces): %s", textOf(right));
+						"Right part of multipart edge definition is not continuous (must not contain whitespaces): {1}", textOf(right));
 			}
 
 			if(left.directedEdgeLeft()!=null && right.undirectedEdge()!=null) {
