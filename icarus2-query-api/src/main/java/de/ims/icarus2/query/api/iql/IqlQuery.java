@@ -168,7 +168,6 @@ public class IqlQuery extends IqlUnique {
 		checkCollection(grouping);
 	}
 
-	@JsonIgnore
 	public boolean isProcessed() {
 		return processed;
 	}

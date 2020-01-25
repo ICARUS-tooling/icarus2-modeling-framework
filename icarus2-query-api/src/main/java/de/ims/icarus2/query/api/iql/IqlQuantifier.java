@@ -113,6 +113,13 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 	public void setUpperBound(int upperBound) { this.upperBound = _set(upperBound); }
 
+	// Utility
+
+	public boolean isExistentiallyQuantified() {
+		return (value.isPresent() && value.getAsInt()>0)
+				|| (upperBound.isPresent() && upperBound.getAsInt()>0);
+	}
+
 	public enum QuantifierType {
 		ALL("all"),
 		EXACT("exact"),

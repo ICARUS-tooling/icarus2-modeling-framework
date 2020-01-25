@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 
@@ -38,6 +39,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 		property = IqlConstants.TYPE_PROPERTY
 )
 @JsonTypeIdResolver(IqlTypeIdResolver.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface IqlQueryElement extends DataObject {
 
 	/**

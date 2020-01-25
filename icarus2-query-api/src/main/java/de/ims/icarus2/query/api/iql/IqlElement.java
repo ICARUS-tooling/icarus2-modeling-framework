@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -219,7 +218,6 @@ public abstract class IqlElement extends IqlUnique {
 			}
 		}
 
-		@JsonIgnore
 		public int getAlternativesCount() { return alternatives.size(); }
 
 		public List<IqlElement> getAlternative(int index) { return CollectionUtils.unmodifiableListProxy(alternatives.get(index)); }
