@@ -61,7 +61,7 @@ public enum IqlType {
 	;
 
 	private IqlType(String id, String uidPrefix, Class<?> type) {
-		this.id = IqlConstants.IQL_PREFIX+requireNonNull(id);
+		this.id = IqlConstants.IQL_NS_PREFIX+requireNonNull(id);
 		this.uidPrefix = uidPrefix;
 		this.type = requireNonNull(type);
 	}

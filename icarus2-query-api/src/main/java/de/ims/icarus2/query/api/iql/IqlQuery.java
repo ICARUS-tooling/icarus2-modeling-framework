@@ -32,6 +32,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -233,4 +236,43 @@ public class IqlQuery extends IqlUnique {
 
 	//TODO add the 'forEach' style methods for all list properties
 
+	// Utility methods
+
+	public Optional<IqlProperty> getProperty(String key) {
+		checkNotEmpty(key);
+		// We expect setup list to be rather small, so linear search shouldn't be an issue
+		for (IqlProperty property : setup) {
+			if(key.equals(property.getKey())) {
+				return Optional.of(property);
+			}
+		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Shorthand method for {@link #isSwitchSet(String)} using the {@link QuerySwitch#getKey() key}
+	 * of the specified {@link QuerySwitch} enum.
+	 * @param qs
+	 * @return
+	 */
+	public boolean isSwitchSet(QuerySwitch qs) {
+		return isSwitchSet(qs.getKey());
+	}
+
+	/**
+	 * Returns {@code true} iff a switch property with the specified {@link IqlProperty#getKey() key}
+	 * is present in this query.
+	 * @param key
+	 * @return
+	 * @throws QueryException of type {@link GlobalErrorCode#INVALID_INPUT} in case a property is
+	 * present for the specified key but it is not a proper switch, i.e. it has an actual value
+	 * associated with it.
+	 */
+	public boolean isSwitchSet(String key) {
+		Optional<IqlProperty> property = getProperty(key);
+		if(property.map(IqlProperty::getValue).isPresent())
+			throw new QueryException(GlobalErrorCode.INVALID_INPUT,
+					"Specified property is not a switch: "+key);
+		return property.isPresent();
+	}
 }
