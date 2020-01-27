@@ -149,7 +149,7 @@ structureStatement
  * {[][]} or {[] or {[][]}} complex alternatives
  * 
  * For Graphs:
- * [],[],[]---[],[]-->[]		siblings and edges
+ * [],[],[]---[],[]-->[]		unconnected nodes and edges
  * [] or []-->[]				alternatives
  * {[],[]} or []-->[]			grouping with alternative
  */

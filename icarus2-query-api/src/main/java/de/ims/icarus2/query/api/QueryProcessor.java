@@ -169,7 +169,9 @@ public class QueryProcessor {
 		if(!isNullOrEmpty(rawResult)) {
 			processResult(rawResult, query.getResult());
 		}
-		//TODO handle payload
+
+		query.setPayload(processPayload(query.getRawPayload(),
+				query.isSwitchSet(QuerySwitch.WARNINGS_OFF)));
 
 		query.markProcessed();
 	}
@@ -199,7 +201,7 @@ public class QueryProcessor {
 	}
 
 	@VisibleForTesting
-	IqlPayload processPayload(String rawPayload) {
+	IqlPayload processPayload(String rawPayload, boolean ignoreWarnings) {
 		checkNotEmpty(rawPayload);
 
 		IQLParser parser = createParser(rawPayload, "rawPayload");
@@ -213,7 +215,7 @@ public class QueryProcessor {
 				return payload;
 			}
 
-			return new PayloadProcessor().processConstraintStatement(ctx);
+			return new PayloadProcessor(ignoreWarnings).processConstraintStatement(ctx);
 
 		} catch(RecognitionException e) {
 			throw asSyntaxException(e, "Failed to parse 'rawPayload'");
@@ -312,6 +314,12 @@ public class QueryProcessor {
 
 		private int existentiallyQuantifiedNodes = 0;
 
+		private final boolean ignoreWarnings;
+
+		PayloadProcessor(boolean ignoreWarnings) {
+			this.ignoreWarnings = ignoreWarnings;
+		}
+
 		@Override
 		public Optional<String> getId() { return Optional.of(getClass().getSimpleName()); }
 
@@ -406,8 +414,10 @@ public class QueryProcessor {
 
 			payload.checkIntegrity();
 
-			if(reportBuilder.getErrorCount()>0 || reportBuilder.getWarningCount()>0)
-				throw new QueryProcessingException("Failed to process payload", reportBuilder.build());
+			if(reportBuilder.getErrorCount()>0)
+				throw new QueryProcessingException("Failed to process payload - encountered errors", reportBuilder.build());
+			if(reportBuilder.getWarningCount()>0 && !ignoreWarnings)
+				throw new QueryProcessingException("Failed to process payload - encountered errors", reportBuilder.build());
 
 			return payload;
 		}
