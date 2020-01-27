@@ -188,12 +188,12 @@ class QueryProcessorTest {
 		})
 		void testSuperfluousExpressionNesting(String rawPayload, String offendingPart) {
 			assertReportHasWarnings(expectReport(rawPayload),
-					pair(QueryErrorCode.SUPERFLUOUS_NESTING, msgEnds(offendingPart)));
+					pair(QueryErrorCode.SUPERFLUOUS_DECLARATION, msgEnds(offendingPart)));
 		}
 
 		/*
 		 * Errors to check:
-		 * SUPERFLUOUS_NESTING -> redundant nesting of node statements with {}
+		 * SUPERFLUOUS_DECLARATION -> redundant nesting of node statements with {}
 		 * INVALID_LITERAL -> AT_MOST quantifier with 0
 		 * INCORRECT_USE -> ALIGNED flag with less than 2 existentially quantified nodes
 		 * UNSUPPORTED_FEATURE -> children in graph or sequence

@@ -316,6 +316,9 @@ public class QueryProcessor {
 
 		private final boolean ignoreWarnings;
 
+		private boolean treeFeaturesUsed = false;
+		private boolean graphFeaturesUsed = false;
+
 		PayloadProcessor(boolean ignoreWarnings) {
 			this.ignoreWarnings = ignoreWarnings;
 		}
@@ -338,7 +341,7 @@ public class QueryProcessor {
 				depths++;
 			}
 			if(depths>1) {
-				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_NESTING,
+				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
 						"Superfluous wrapping of expression {1}", textOf(original));
 			}
 			return ctx;
@@ -352,7 +355,7 @@ public class QueryProcessor {
 				ctx = ((NodeGroupingContext)ctx).nodeStatement();
 			}
 			if(depths>1) {
-				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_NESTING,
+				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
 						"Superfluous wrapping of node statement {1}", textOf(original));
 			}
 			return ctx;
@@ -376,6 +379,8 @@ public class QueryProcessor {
 			}
 
 			if(sctx.structureStatement()!=null) {
+				//TODO check that no "root" element is universally quantified
+
 				// Structure statement [sequence,tree,graph]
 				StructureStatementContext ssctx = sctx.structureStatement();
 				NodeStatementContext nsctx = null;
@@ -388,11 +393,22 @@ public class QueryProcessor {
 					payload.setAligned(tsctx.ALIGNED()!=null);
 					queryType = QueryType.TREE;
 					nsctx = tsctx.nodeStatement();
+					if(!treeFeaturesUsed) {
+						reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+								"Tree query does not contain any actual tree definition. For matching"
+								+ " individual unrelated notes the simple sequence type is sufficient.");
+					}
+					//TODO check that there is no immediate nested double negation -> recommend universal quantification
 				} else if(ssctx instanceof GraphStatementContext) {
 					GraphStatementContext gsctx = (GraphStatementContext) ssctx;
 					payload.setAligned(gsctx.ALIGNED()!=null);
 					queryType = QueryType.GRAPH;
 					nsctx = gsctx.nodeStatement();
+					if(!graphFeaturesUsed) {
+						reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+								"Graph query does not contain any actual graph features (edges)."
+								+ " For matching simple structrues, consider using TREE or sequence queries.");
+					}
 				} else {
 					failForUnhandledAlternative(ssctx);
 				}
@@ -546,6 +562,7 @@ public class QueryProcessor {
 		private IqlNode processNode(NodeContext ctx, QueryType queryType) {
 			IqlNode node;
 			if(ctx.nodeStatement()!=null) {
+				treeFeaturesUsed = true;
 				if(!queryType.isAllowChildren()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
 							"Query type {1} does not allow tree structures via nested nodes: {2}", queryType, textOf(ctx));
@@ -638,6 +655,7 @@ public class QueryProcessor {
 
 		private IqlElement processElement(ElementContext ctx, QueryType queryType) {
 			if(ctx.edge()!=null) {
+				graphFeaturesUsed = true;
 				if(!queryType.isAllowEdges()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
 							"Query type {1} does not support edges", queryType);

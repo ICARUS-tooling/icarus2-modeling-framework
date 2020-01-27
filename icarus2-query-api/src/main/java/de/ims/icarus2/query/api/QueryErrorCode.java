@@ -86,10 +86,12 @@ public enum QueryErrorCode implements ErrorCode {
 	NON_CONTINUOUS_TOKEN(203),
 
 	/**
-	 * More like a warning: A wrappable part (e.g. an expression) has been
+	 * More like a warning: Some part of the query is not actually needed
+	 * for an unambiguous evaluation.
+	 * For instance, a wrappable part (e.g. an expression) has been
 	 * surrounded by multiple (redundant) wrappings of parentheses.
 	 */
-	SUPERFLUOUS_NESTING(204),
+	SUPERFLUOUS_DECLARATION(204),
 
 	/**
 	 * A literal (number, string, boolean) has been detected to hold a value
