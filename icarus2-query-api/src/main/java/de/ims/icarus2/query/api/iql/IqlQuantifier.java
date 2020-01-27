@@ -120,6 +120,10 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 				|| (upperBound.isPresent() && upperBound.getAsInt()>0);
 	}
 
+	public boolean isExistentiallyNegated() {
+		return quantifierType==QuantifierType.EXACT && value.getAsInt()==0;
+	}
+
 	public enum QuantifierType {
 		ALL("all"),
 		EXACT("exact"),

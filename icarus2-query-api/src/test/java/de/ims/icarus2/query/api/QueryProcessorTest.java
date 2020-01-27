@@ -200,7 +200,7 @@ class QueryProcessorTest {
 		 * UNSUPPORTED_FEATURE -> edges in tree or sequence
 		 * INVALID_LITERAL -> range quantifier with lower>=upper
 		 * UNSUPPORTED_FEATURE -> quantifier on both ends of edge
-		 * NON_CONTINUOUS_TOKEN -> patr of complex edge definition is not continuous
+		 * NON_CONTINUOUS_TOKEN -> part of complex edge definition is not continuous
 		 */
 	}
 
@@ -892,19 +892,20 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyUnnamedNode() {
 					String rawPayload = "TREE []";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					// ignore warnings
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, true);
 					assertTree(payload, false);
 					assertBindings(payload);
-					assertElements(payload, node(null, null));
+					assertElements(payload, node());
 				}
 
 				@Test
 				void testEmptyUnnamedAlignedNodes() {
 					String rawPayload = "ALIGNED TREE [][]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, true);
 					assertTree(payload, true);
 					assertBindings(payload);
-					assertElements(payload, node(null, null), node(null, null));
+					assertElements(payload, node(), node());
 				}
 			}
 

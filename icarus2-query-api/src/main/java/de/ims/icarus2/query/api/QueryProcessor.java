@@ -319,6 +319,8 @@ public class QueryProcessor {
 		private boolean treeFeaturesUsed = false;
 		private boolean graphFeaturesUsed = false;
 
+		private final IqlElement TERMINAL_DUMMY = new IqlNode();
+
 		PayloadProcessor(boolean ignoreWarnings) {
 			this.ignoreWarnings = ignoreWarnings;
 		}
@@ -393,35 +395,35 @@ public class QueryProcessor {
 					payload.setAligned(tsctx.ALIGNED()!=null);
 					queryType = QueryType.TREE;
 					nsctx = tsctx.nodeStatement();
-					if(!treeFeaturesUsed) {
-						reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-								"Tree query does not contain any actual tree definition. For matching"
-								+ " individual unrelated notes the simple sequence type is sufficient.");
-					}
-					//TODO check that there is no immediate nested double negation -> recommend universal quantification
 				} else if(ssctx instanceof GraphStatementContext) {
 					GraphStatementContext gsctx = (GraphStatementContext) ssctx;
 					payload.setAligned(gsctx.ALIGNED()!=null);
 					queryType = QueryType.GRAPH;
 					nsctx = gsctx.nodeStatement();
-					if(!graphFeaturesUsed) {
-						reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-								"Graph query does not contain any actual graph features (edges)."
-								+ " For matching simple structrues, consider using TREE or sequence queries.");
-					}
 				} else {
 					failForUnhandledAlternative(ssctx);
 				}
 
 				payload.setQueryType(queryType);
 
-				processNodeStatement(nsctx, queryType).forEach(payload::addElement);
+				processNodeStatement(nsctx, queryType, null).forEach(payload::addElement);
 
 				//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
 				if(payload.isAligned() && existentiallyQuantifiedNodes<2) {
 					reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 							"For 'ALIGNED' feature to be effective the query needs at least"
 							+ "two distinct nodes that are existentially quantified.");
+				}
+				//TODO check that there is no immediate nested double negation -> recommend universal quantification
+				if(queryType==QueryType.TREE && !treeFeaturesUsed) {
+					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+							"Tree query does not contain any actual tree definition. For matching"
+							+ " individual unrelated notes the simple sequence type is sufficient.");
+				}
+				if(queryType==QueryType.GRAPH && !graphFeaturesUsed) {
+					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+							"Graph query does not contain any actual graph features (edges)."
+							+ " For matching simple structrues, consider using TREE or sequence queries.");
 				}
 			} else {
 				// Simple plain statement
@@ -518,32 +520,35 @@ public class QueryProcessor {
 		}
 
 		/** Process given node statement and honor limitations of specified query type */
-		private List<? extends IqlElement> processNodeStatement(NodeStatementContext ctx, QueryType queryType) {
+		private List<? extends IqlElement> processNodeStatement(NodeStatementContext ctx,
+				QueryType queryType, IqlElement parent) {
 			ctx = unwrap(ctx);
 
 			if(ctx instanceof NodeSequenceContext) {
-				return processNodeSequence((NodeSequenceContext) ctx, queryType);
+				return processNodeSequence((NodeSequenceContext) ctx, queryType, parent);
 			} else if (ctx instanceof ElementSequenceContext) {
-				return processElementSequence((ElementSequenceContext) ctx, queryType);
+				return processElementSequence((ElementSequenceContext) ctx, queryType, parent);
 			} else if (ctx instanceof NodeAlternativesContext) {
-				return list(processNodeAlternatives((NodeAlternativesContext) ctx, queryType));
+				return list(processNodeAlternatives((NodeAlternativesContext) ctx, queryType, parent));
 			}
 
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx, QueryType queryType) {
+		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx,
+				QueryType queryType, IqlElement parent) {
 			List<IqlNode> elements = new ArrayList<>();
 			for(NodeContext nctx : ctx.node()) {
-				elements.add(processNode(nctx, queryType));
+				elements.add(processNode(nctx, queryType, parent));
 			}
 			return elements;
 		}
 
-		private List<IqlElement> processElementSequence(ElementSequenceContext ctx, QueryType queryType) {
+		private List<IqlElement> processElementSequence(ElementSequenceContext ctx,
+				QueryType queryType, IqlElement parent) {
 			List<IqlElement> elements = new ArrayList<>();
 			for(ElementContext ectx : ctx.element()) {
-				elements.add(processElement(ectx, queryType));
+				elements.add(processElement(ectx, queryType, parent));
 			}
 			return elements;
 		}
@@ -559,17 +564,16 @@ public class QueryProcessor {
 			}
 		}
 
-		private IqlNode processNode(NodeContext ctx, QueryType queryType) {
+		private IqlNode processNode(NodeContext ctx, QueryType queryType, IqlElement parent) {
 			IqlNode node;
+			// Decide on type of node
 			if(ctx.nodeStatement()!=null) {
 				treeFeaturesUsed = true;
 				if(!queryType.isAllowChildren()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
 							"Query type {1} does not allow tree structures via nested nodes: {2}", queryType, textOf(ctx));
 				}
-				IqlTreeNode tNode = new IqlTreeNode();
-				processNodeStatement(ctx.nodeStatement(), queryType).forEach(tNode::addChild);
-				node = tNode;
+				node = new IqlTreeNode();
 			} else {
 				node = new IqlNode();
 			}
@@ -580,15 +584,20 @@ public class QueryProcessor {
 				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
 				quantifiers.forEach(node::addQuantifier);
 
-				for(IqlQuantifier quantifier : quantifiers) {
-					if(quantifier.isExistentiallyQuantified()) {
-						existentiallyQuantifiedNodes++;
-						break;
-					}
+				if(node.isExistentiallyQuantified()) {
+					existentiallyQuantifiedNodes++;
 				}
+				//TODO check against negation in combination with negated parent
 			} else {
 				// Unquantified means existentially quantified
 				existentiallyQuantifiedNodes++;
+			}
+
+			// Finally process actual children
+			if(ctx.nodeStatement()!=null) {
+				treeFeaturesUsed = true;
+				IqlTreeNode tNode = (IqlTreeNode) node;
+				processNodeStatement(ctx.nodeStatement(), queryType, tNode).forEach(tNode::addChild);
 			}
 
 			return node;
@@ -653,7 +662,7 @@ public class QueryProcessor {
 			return quantifier;
 		}
 
-		private IqlElement processElement(ElementContext ctx, QueryType queryType) {
+		private IqlElement processElement(ElementContext ctx, QueryType queryType, IqlElement parent) {
 			if(ctx.edge()!=null) {
 				graphFeaturesUsed = true;
 				if(!queryType.isAllowEdges()) {
@@ -661,8 +670,8 @@ public class QueryProcessor {
 							"Query type {1} does not support edges", queryType);
 				}
 
-				IqlNode source = processNode(ctx.source, queryType);
-				IqlNode target = processNode(ctx.target, queryType);
+				IqlNode source = processNode(ctx.source, queryType, TERMINAL_DUMMY);
+				IqlNode target = processNode(ctx.target, queryType, TERMINAL_DUMMY);
 
 				if(source.hasQuantifiers() && target.hasQuantifiers()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -673,7 +682,7 @@ public class QueryProcessor {
 				return edge;
 			}
 
-			return processNode(ctx.content, queryType);
+			return processNode(ctx.content, queryType, parent);
 		}
 
 		private IqlEdge processEdge(EdgeContext ctx, IqlNode source, IqlNode target) {
@@ -741,7 +750,8 @@ public class QueryProcessor {
 			return edge;
 		}
 
-		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx, QueryType queryType) {
+		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx,
+				QueryType queryType, IqlElement parent) {
 			IqlElementDisjunction dis = new IqlElementDisjunction();
 			genId(dis);
 
@@ -749,11 +759,11 @@ public class QueryProcessor {
 			NodeStatementContext tail = ctx;
 			while(tail instanceof NodeAlternativesContext) {
 				NodeAlternativesContext nactx = (NodeAlternativesContext) tail;
-				dis.addAlternative(processNodeStatement(nactx.left, queryType));
+				dis.addAlternative(processNodeStatement(nactx.left, queryType, dis));
 				tail = unwrap(nactx.right);
 			}
-			// Now add the final dangling expression
-			dis.addAlternative(processNodeStatement(tail, queryType));
+			// Now add the final dangling expression (note that we have to forward the original parent!)
+			dis.addAlternative(processNodeStatement(tail, queryType, parent));
 
 			return dis;
 		}

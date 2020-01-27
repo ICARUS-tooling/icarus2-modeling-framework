@@ -33,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -105,6 +106,28 @@ public abstract class IqlElement extends IqlUnique {
 
 		public boolean hasQuantifiers() {
 			return !quantifiers.isEmpty();
+		}
+
+		public boolean isExistentiallyQuantified() {
+			if(quantifiers.isEmpty()) {
+				return false;
+			}
+			for(IqlQuantifier quantifier : quantifiers) {
+				if(quantifier.isExistentiallyQuantified()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public boolean isUniversallyQuantified() {
+			return quantifiers.size()==1
+					&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
+		}
+
+		public boolean isNegated() {
+			return quantifiers.size()==1
+					&& quantifiers.get(0).isExistentiallyNegated();
 		}
 	}
 
