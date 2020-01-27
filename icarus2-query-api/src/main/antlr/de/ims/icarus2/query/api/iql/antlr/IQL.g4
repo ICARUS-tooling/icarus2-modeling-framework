@@ -125,7 +125,7 @@ bindingsList
  * who already are structurally distinct), but can still be used to make that fact explicit.
  */
 binding
-	: member (COMMA member)* AS DISTINCT? qualifiedIdentifier
+	: DISTINCT? member (COMMA member)* FROM qualifiedIdentifier
 	;
 
 selectiveStatement
@@ -497,6 +497,8 @@ sign
  * Lexer Rules
  */
 
+//TODO change all keywords to use character fragments to make them resistant against camel casing abuse
+
 EVEN : 'EVEN' | 'even' ;
 ODD : 'ODD' | 'odd' ;
 OMIT : 'OMIT' | 'omit' ;
@@ -512,6 +514,7 @@ TREE : 'TREE' | 'tree' ;
 OR : 'OR' | 'or' ;
 AND : 'AND' | 'and' ;
 AS : 'AS' | 'as' ;
+FROM : 'FROM' | 'from' ;
 ALL : 'ALL' | 'all' ;
 NOT : 'NOT' | 'not' ;
 IN : 'IN' | 'in' ;

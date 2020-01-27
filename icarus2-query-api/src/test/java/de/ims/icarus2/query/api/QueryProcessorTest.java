@@ -613,7 +613,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testBoundPredicate() {
-					String rawPayload = "WITH $token AS corpus::layer1 FIND $token.val>0";
+					String rawPayload = "WITH $token FROM corpus::layer1 FIND $token.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
@@ -622,7 +622,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testMultiBoundPredicate() {
-					String rawPayload = "WITH $token1,$token2 AS corpus::layer1 FIND $token1.val+$token2.val>0";
+					String rawPayload = "WITH $token1,$token2 FROM corpus::layer1 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
@@ -631,7 +631,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testDistinctMultiBoundPredicate() {
-					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 FIND $token1.val+$token2.val>0";
+					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", true, "token1", "token2"));
@@ -640,7 +640,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testMultiLayerBoundPredicate() {
-					String rawPayload = "WITH $token1 AS corpus::layer1 AND $token2 AS corpus::layer2 FIND $token1.val+$token2.val>0";
+					String rawPayload = "WITH $token1 FROM corpus::layer1 AND $token2 FROM corpus::layer2 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload,
@@ -824,7 +824,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyUnnamedNode() {
-					String rawPayload = "WITH $token AS corpus::layer1 FIND []";
+					String rawPayload = "WITH $token FROM corpus::layer1 FIND []";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
@@ -833,7 +833,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyNamedNode() {
-					String rawPayload = "WITH $token AS corpus::layer1 FIND [$token:]";
+					String rawPayload = "WITH $token FROM corpus::layer1 FIND [$token:]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
@@ -842,7 +842,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyNamedNodes() {
-					String rawPayload = "WITH $token1,$token2 AS corpus::layer1 FIND [$token1:][$token2:]";
+					String rawPayload = "WITH $token1,$token2 FROM corpus::layer1 FIND [$token1:][$token2:]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
@@ -855,8 +855,8 @@ class QueryProcessorTest {
 
 				@Test
 				void testFilledNodes() {
-					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 "
-							+ "AND $p AS corpus::phrase "
+					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 "
+							+ "AND $p FROM corpus::phrase "
 							+ "FIND [$token1: pos!=\"NNP\"] 4+[] [$token2: length()>12] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);
@@ -944,8 +944,8 @@ class QueryProcessorTest {
 
 				@Test
 				void testFilledNodes() {
-					String rawPayload = "WITH $token1,$token2 AS DISTINCT corpus::layer1 "
-							+ "AND $p AS corpus::phrase "
+					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 "
+							+ "AND $p FROM corpus::phrase "
 							+ "FIND ALIGNED TREE [5-[][$token1: pos!=\"NNP\"]] 4+[] "
 							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
