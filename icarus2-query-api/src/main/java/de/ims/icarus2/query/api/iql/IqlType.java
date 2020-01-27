@@ -53,10 +53,9 @@ public enum IqlType {
 	EDGE("Edge", "edge", IqlElement.IqlEdge.class),
 	NODE("Node", "node", IqlElement.IqlNode.class),
 	TREE_NODE("TreeNode", "tree", IqlElement.IqlTreeNode.class),
-	ELEMENT_DISJUNCTION("ElementDisjunction", "tree", IqlElement.IqlElementDisjunction.class),
+	ELEMENT_DISJUNCTION("ElementDisjunction", "choice", IqlElement.IqlElementDisjunction.class),
 	RESULT("Result", null, IqlResult.class),
 	SORTING("Sorting", null, IqlSorting.class),
-//	FRAGMENT("Fragment", null, IqlFragment.class),
 	RESULT_INSTRUCTION("ResultInstruction", "res", IqlResultInstruction.class),
 	;
 
