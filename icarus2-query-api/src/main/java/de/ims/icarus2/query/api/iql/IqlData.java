@@ -37,6 +37,10 @@ public class IqlData extends IqlUnique {
 	@JsonProperty(IqlProperties.CONTENT)
 	private String content;
 
+	/** Defines how to interpret the 'content' string */
+	@JsonProperty(IqlProperties.CODEC)
+	private String codec;
+
 	@JsonProperty(IqlProperties.VARIABLE)
 	private String variable;
 
@@ -59,6 +63,7 @@ public class IqlData extends IqlUnique {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkStringNotEmpty(content, IqlProperties.CONTENT);
+		checkStringNotEmpty(codec, IqlProperties.CODEC);
 		checkStringNotEmpty(variable, IqlProperties.VARIABLE);
 
 		checkOptionalStringNotEmpty(checksum, IqlProperties.CHECKSUM);
@@ -66,11 +71,15 @@ public class IqlData extends IqlUnique {
 
 	public String getContent() { return content; }
 
+	public String getCodec() { return codec; }
+
 	public String getVariable() { return variable; }
 
 	public Optional<String> getChecksum() { return checksum; }
 
 	public void setContent(String content) { this.content = requireNonNull(content); }
+
+	public void setCodec(String codec) { this.codec = requireNonNull(codec); }
 
 	public void setVariable(String variable) { this.variable = requireNonNull(variable); }
 

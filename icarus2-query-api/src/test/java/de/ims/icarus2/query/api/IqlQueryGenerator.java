@@ -270,14 +270,18 @@ public class IqlQueryGenerator {
 		// mandatory data
 		data.setVariable(index("variable"));
 		data.setContent(index("content"));
+		data.setCodec(index("codec"));
 
 		build.addFieldChange(data::setVariable, "variable", index("variable"));
 		build.addFieldChange(data::setContent, "content", index("content"));
+		build.addFieldChange(data::setCodec, "codec", index("codec"));
 		build.addFieldChange(data::setChecksum, "checksum", index("checksum"));
 	}
 
 	private void prepareElement0(IqlElement element, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(element, build, config);
+
+		build.addFieldChange(element::setConsumed, "consumed", Boolean.TRUE);
 	}
 
 	private void prepareProperElement0(IqlProperElement element, IncrementalBuild<?> build, Config config) {

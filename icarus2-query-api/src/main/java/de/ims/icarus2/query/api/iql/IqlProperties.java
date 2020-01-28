@@ -51,6 +51,8 @@ public final class IqlProperties {
 
 	public static final String VARIABLE = IQL_NS_PREFIX+"variable";
 
+	public static final String CODEC = IQL_NS_PREFIX+"codec";
+
 	public static final String CHECKSUM = IQL_NS_PREFIX+"checksum";
 
 	public static final String CORPORA = IQL_NS_PREFIX+"corpora";
@@ -84,6 +86,8 @@ public final class IqlProperties {
 	public static final String FILTER_ON = IQL_NS_PREFIX+"filterOn";
 
 	public static final String LABEL = IQL_NS_PREFIX+"label";
+
+	public static final String CONSUMED = IQL_NS_PREFIX+"consumed";
 
 	public static final String DEFAULT_VALUE = IQL_NS_PREFIX+"defaultValue";
 
