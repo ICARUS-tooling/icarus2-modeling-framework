@@ -24,7 +24,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.OptionalInt;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -116,13 +115,11 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 	// Utility
 
-	@JsonIgnore
 	public boolean isExistentiallyQuantified() {
 		return (value.isPresent() && value.getAsInt()>0)
 				|| (upperBound.isPresent() && upperBound.getAsInt()>0);
 	}
 
-	@JsonIgnore
 	public boolean isExistentiallyNegated() {
 		return quantifierType==QuantifierType.EXACT && value.getAsInt()==0;
 	}

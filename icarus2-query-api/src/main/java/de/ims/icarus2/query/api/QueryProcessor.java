@@ -121,10 +121,8 @@ import de.ims.icarus2.util.id.Identity;
 @NotThreadSafe
 public class QueryProcessor {
 
-	//TODO currently we throw exceptions even for warning-level offense, need to review
-
 	private final ObjectMapper mapper = createMapper();
-	private final IqlObjectIdGenerator idGenerator = new IqlObjectIdGenerator();
+	private IqlObjectIdGenerator idGenerator;
 
 	/**
 	 * Parses a raw JSON query into an {@link IqlQuery} instance,
@@ -160,6 +158,8 @@ public class QueryProcessor {
 	public void parseQuery(IqlQuery query) {
 		requireNonNull(query);
 		checkState("Query processed", !query.isProcessed());
+
+		idGenerator = new IqlObjectIdGenerator();
 
 		String rawGrouping = query.getRawGrouping().orElse(null);
 		if(!isNullOrEmpty(rawGrouping)) {
@@ -311,8 +311,6 @@ public class QueryProcessor {
 	private class PayloadProcessor implements Identity {
 
 		private final ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(this);
-
-		private int existentiallyQuantifiedNodes = 0;
 
 		private final boolean ignoreWarnings;
 
@@ -604,18 +602,13 @@ public class QueryProcessor {
 				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
 				quantifiers.forEach(node::addQuantifier);
 
-				if(node.isExistentiallyQuantified()) {
-					existentiallyQuantifiedNodes++;
-				} else if(parent!=null && parent.isNegated() && node.isNegated()) {
+				if(parent!=null && parent.isNegated() && node.isNegated()) {
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
 							"Double negation of nested nodes '{1}' - try to express query positively instead", textOf(ctx));
 				} else if(parent==null && node.isUniversallyQuantified()) {
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
 							"Cannot universally qualify top-level nodes: {1}", textOf(ctx));
 				}
-			} else {
-				// Unquantified means existentially quantified
-				existentiallyQuantifiedNodes++;
 			}
 
 			// Finally process actual children

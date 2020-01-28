@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -113,12 +112,10 @@ public abstract class IqlElement extends IqlUnique {
 
 		// utility
 
-		@JsonIgnore
 		public boolean hasQuantifiers() {
 			return !quantifiers.isEmpty();
 		}
 
-		@JsonIgnore
 		public boolean isExistentiallyQuantified() {
 			if(quantifiers.isEmpty()) {
 				return true;
@@ -131,13 +128,11 @@ public abstract class IqlElement extends IqlUnique {
 			return false;
 		}
 
-		@JsonIgnore
 		public boolean isUniversallyQuantified() {
 			return quantifiers.size()==1
 					&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
 		}
 
-		@JsonIgnore
 		public boolean isNegated() {
 			return quantifiers.size()==1
 					&& quantifiers.get(0).isExistentiallyNegated();
@@ -229,7 +224,6 @@ public abstract class IqlElement extends IqlUnique {
 
 		// utility
 
-		@JsonIgnore
 		private List<IqlQuantifier> quantifiers() {
 			if(source.hasQuantifiers()) {
 				return source.getQuantifiers();
@@ -238,17 +232,14 @@ public abstract class IqlElement extends IqlUnique {
 			return target.getQuantifiers();
 		}
 
-		@JsonIgnore
 		public List<IqlQuantifier> getQuantifiers() { return quantifiers(); }
 
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers().forEach(requireNonNull(action)); }
 
-		@JsonIgnore
 		public boolean hasQuantifiers() {
 			return source.hasQuantifiers() || target.hasQuantifiers();
 		}
 
-		@JsonIgnore
 		public boolean isExistentiallyQuantified() {
 			if(!hasQuantifiers()) {
 				return true;
@@ -261,14 +252,12 @@ public abstract class IqlElement extends IqlUnique {
 			return false;
 		}
 
-		@JsonIgnore
 		public boolean isUniversallyQuantified() {
 			List<IqlQuantifier> quantifiers = quantifiers();
 			return quantifiers.size()==1
 					&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
 		}
 
-		@JsonIgnore
 		public boolean isNegated() {
 			List<IqlQuantifier> quantifiers = quantifiers();
 			return quantifiers.size()==1

@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
@@ -40,6 +42,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 )
 @JsonTypeIdResolver(IqlTypeIdResolver.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonAutoDetect(getterVisibility=Visibility.NONE, isGetterVisibility=Visibility.NONE)
 public interface IqlQueryElement extends DataObject {
 
 	/**
