@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public abstract class AbstractParsedQueryFragment extends IqlUnique {
 
 	@JsonProperty(IqlProperties.FRAGMENT)

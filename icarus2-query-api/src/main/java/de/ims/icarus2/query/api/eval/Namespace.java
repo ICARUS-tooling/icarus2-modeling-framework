@@ -30,8 +30,7 @@ public interface Namespace {
 	}
 
 	/**
-	 * Try to resolve the specified {@code name} to an entry
-	 * in this namespace.
+	 * Try to resolve the specified {@code name} to an entry in this namespace.
 	 *
 	 * @param name
 	 * @return

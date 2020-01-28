@@ -89,7 +89,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EmptyEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.FilledEdgeContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.GraphStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
@@ -105,9 +104,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.QuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectiveStatementContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.SequenceStatementContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.StructureStatementContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.TreeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnsignedSimpleQuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
@@ -353,26 +349,18 @@ public class QueryProcessor {
 				payload.setConstraint(processConstraint(sctx.constraint()));
 			}
 
-			if(sctx.structureStatement()!=null) {
+			if(sctx.nodeStatement()!=null) {
 				// Structure statement [sequence,tree,graph]
-				StructureStatementContext ssctx = sctx.structureStatement();
-				NodeStatementContext nsctx = null;
+				NodeStatementContext nsctx = sctx.nodeStatement();
 				QueryType queryType = null;
-				if(ssctx instanceof SequenceStatementContext) {
-					nsctx = ((SequenceStatementContext)ssctx).nodeStatement();
-					queryType = QueryType.SEQUENCE;
-				} else if(ssctx instanceof TreeStatementContext) {
-					TreeStatementContext tsctx = (TreeStatementContext) ssctx;
-					payload.setAligned(tsctx.ALIGNED()!=null);
+				if(sctx.TREE()!=null) {
+					payload.setAligned(sctx.ALIGNED()!=null);
 					queryType = QueryType.TREE;
-					nsctx = tsctx.nodeStatement();
-				} else if(ssctx instanceof GraphStatementContext) {
-					GraphStatementContext gsctx = (GraphStatementContext) ssctx;
-					payload.setAligned(gsctx.ALIGNED()!=null);
+				} else if(sctx.GRAPH()!=null) {
+					payload.setAligned(sctx.ALIGNED()!=null);
 					queryType = QueryType.GRAPH;
-					nsctx = gsctx.nodeStatement();
 				} else {
-					failForUnhandledAlternative(ssctx);
+					queryType = QueryType.SEQUENCE;
 				}
 
 				payload.setQueryType(queryType);

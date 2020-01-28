@@ -45,6 +45,8 @@ public enum QuerySwitch {
 	ARRAY_ZERO("array.zero", "Change array access to be 0-based."),
 	WARNINGS_OFF("warnings.off", "Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query."),
 
+	PARALLEL_OFF("parall.off", "Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher,"
+			+ " not additional modules such as monitoring or item caches."),
 	;
 	private final String key, description;
 

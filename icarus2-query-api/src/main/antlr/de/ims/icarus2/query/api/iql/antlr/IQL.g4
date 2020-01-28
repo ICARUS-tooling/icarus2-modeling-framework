@@ -130,15 +130,8 @@ binding
 
 selectiveStatement
 	: constraint // plain
-	| structureStatement (HAVING constraint)?
+	| (ALIGNED? (TREE | GRAPH))? nodeStatement (HAVING constraint)?
 	;	
-
-structureStatement
-	: nodeStatement					# sequenceStatement
-	| ALIGNED? TREE nodeStatement	# treeStatement
-	| ALIGNED? GRAPH nodeStatement 	# graphStatement
-	;	
-	
 	
 /**
  * Possible scenarios for node composition:
