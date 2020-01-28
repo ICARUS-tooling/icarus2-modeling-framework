@@ -17,42 +17,35 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.engine;
 
-import static de.ims.icarus2.test.TestUtils.assertDeepEqual;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.Report.Severity;
-import de.ims.icarus2.query.api.IqlQueryGenerator.IncrementalBuild;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.engine.QueryProcessingException;
+import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
@@ -70,15 +63,10 @@ import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
-import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
-import de.ims.icarus2.query.api.iql.IqlType;
-import de.ims.icarus2.query.api.iql.IqlUtils;
-import de.ims.icarus2.test.annotations.RandomizedTest;
-import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 
 /**
@@ -98,37 +86,6 @@ class QueryProcessorTest {
 
 	private String qt(String s) {
 		return '\''+s+'\'';
-	}
-
-	@Nested
-	class ReadQuery {
-
-		/**
-		 * Test method for {@link de.ims.icarus2.query.api.QueryProcessor#readQuery(de.ims.icarus2.query.api.Query)}.
-		 */
-		@RandomizedTest
-		@TestFactory
-		@DisplayName("read incrementally built query")
-		Stream<DynamicTest> testIncremental(RandomGenerator rng) {
-			IqlQueryGenerator generator = new IqlQueryGenerator(rng);
-			IncrementalBuild<IqlQuery> build = generator.build(IqlType.QUERY, IqlQueryGenerator.config());
-			ObjectMapper mapper = IqlUtils.createMapper();
-
-			return IntStream.rangeClosed(0, build.getChangeCount())
-					.mapToObj(i -> dynamicTest(build.currentLabel(), () -> {
-						if(i>0) {
-							assertThat(build.applyNextChange()).isTrue();
-						}
-						IqlQuery original = build.getInstance();
-						String json = mapper.writeValueAsString(original);
-
-						QueryProcessor processor = new QueryProcessor();
-						IqlQuery query = processor.readQuery(new Query(json));
-						assertDeepEqual(null, original, query, json);
-					}));
-
-		}
-
 	}
 
 	@Nested

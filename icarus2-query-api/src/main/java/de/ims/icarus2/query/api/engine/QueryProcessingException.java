@@ -17,10 +17,12 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.engine;
 
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 
 /**
  * Exception to signal one or more issues found during the processing of a

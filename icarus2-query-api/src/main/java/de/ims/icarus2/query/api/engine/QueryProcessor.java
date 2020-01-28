@@ -17,15 +17,13 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFeatureException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asSyntaxException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.isContinuous;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
-import static de.ims.icarus2.query.api.iql.IqlUtils.createMapper;
-import static de.ims.icarus2.query.api.iql.IqlUtils.fragment;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -43,12 +41,13 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.iql.AntlrUtils;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
@@ -115,35 +114,15 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
 
 /**
+ * Helper for processing the actual content of a query.
+ *
  * @author Markus Gärtner
  *
  */
 @NotThreadSafe
 public class QueryProcessor {
 
-	private final ObjectMapper mapper = createMapper();
-	private IqlObjectIdGenerator idGenerator;
-
-	/**
-	 * Parses a raw JSON query into an {@link IqlQuery} instance,
-	 * but does <b>not</b> parse the embedded textual representations
-	 * for query payload, grouping and query instructions.
-	 *
-	 * @param rawQuery
-	 * @return
-	 * @throws QueryException
-	 */
-	public IqlQuery readQuery(Query rawQuery) throws QueryException {
-		requireNonNull(rawQuery);
-
-		try {
-			return mapper.readValue(rawQuery.getText(), IqlQuery.class);
-		} catch (JsonProcessingException e) {
-			throw new QueryException(QueryErrorCode.JSON_ERROR,
-					"Failed to read query",
-					fragment(rawQuery.getText(), e.getLocation()), e);
-		}
-	}
+	private final IqlObjectIdGenerator idGenerator = new IqlObjectIdGenerator();
 
 	/**
 	 * Parses the the embedded textual representations
@@ -158,8 +137,6 @@ public class QueryProcessor {
 	public void parseQuery(IqlQuery query) {
 		requireNonNull(query);
 		checkState("Query processed", !query.isProcessed());
-
-		idGenerator = new IqlObjectIdGenerator();
 
 		String rawGrouping = query.getRawGrouping().orElse(null);
 		if(!isNullOrEmpty(rawGrouping)) {
