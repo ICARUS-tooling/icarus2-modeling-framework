@@ -319,8 +319,6 @@ public class QueryProcessor {
 		private boolean treeFeaturesUsed = false;
 		private boolean graphFeaturesUsed = false;
 
-		private final IqlElement TERMINAL_DUMMY = new IqlNode();
-
 		PayloadProcessor(boolean ignoreWarnings) {
 			this.ignoreWarnings = ignoreWarnings;
 		}
@@ -344,7 +342,7 @@ public class QueryProcessor {
 			}
 			if(depths>1) {
 				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-						"Superfluous wrapping of expression {1}", textOf(original));
+						"Superfluous wrapping of expression '{1}'", textOf(original));
 			}
 			return ctx;
 		}
@@ -358,7 +356,7 @@ public class QueryProcessor {
 			}
 			if(depths>1) {
 				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-						"Superfluous wrapping of node statement {1}", textOf(original));
+						"Superfluous wrapping of node statement '{1}'", textOf(original));
 			}
 			return ctx;
 		}
@@ -381,8 +379,6 @@ public class QueryProcessor {
 			}
 
 			if(sctx.structureStatement()!=null) {
-				//TODO check that no "root" element is universally quantified
-
 				// Structure statement [sequence,tree,graph]
 				StructureStatementContext ssctx = sctx.structureStatement();
 				NodeStatementContext nsctx = null;
@@ -409,12 +405,11 @@ public class QueryProcessor {
 				processNodeStatement(nsctx, queryType, null).forEach(payload::addElement);
 
 				//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-				if(payload.isAligned() && existentiallyQuantifiedNodes<2) {
+				if(payload.isAligned() && countExistentialElements(payload.getElements())<2) {
 					reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 							"For 'ALIGNED' feature to be effective the query needs at least"
-							+ "two distinct nodes that are existentially quantified.");
+							+ " two distinct nodes that are existentially quantified.");
 				}
-				//TODO check that there is no immediate nested double negation -> recommend universal quantification
 				if(queryType==QueryType.TREE && !treeFeaturesUsed) {
 					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
 							"Tree query does not contain any actual tree definition. For matching"
@@ -438,6 +433,31 @@ public class QueryProcessor {
 				throw new QueryProcessingException("Failed to process payload - encountered errors", reportBuilder.build());
 
 			return payload;
+		}
+
+		private int countExistentialElements(List<IqlElement> elements) {
+			int count = 0;
+			for (IqlElement element : elements) {
+				boolean existential = false;
+				switch (element.getType()) {
+				case EDGE:
+					existential = ((IqlEdge)element).isExistentiallyQuantified();
+					break;
+
+				case NODE:
+				case TREE_NODE:
+					existential = ((IqlNode)element).isExistentiallyQuantified();
+					break;
+
+				default:
+					break;
+				}
+
+				if(existential) {
+					count++;
+				}
+			}
+			return count;
 		}
 
 		private IqlBinding processBinding(BindingContext ctx) {
@@ -521,7 +541,7 @@ public class QueryProcessor {
 
 		/** Process given node statement and honor limitations of specified query type */
 		private List<? extends IqlElement> processNodeStatement(NodeStatementContext ctx,
-				QueryType queryType, IqlElement parent) {
+				QueryType queryType, IqlTreeNode parent) {
 			ctx = unwrap(ctx);
 
 			if(ctx instanceof NodeSequenceContext) {
@@ -536,7 +556,7 @@ public class QueryProcessor {
 		}
 
 		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx,
-				QueryType queryType, IqlElement parent) {
+				QueryType queryType, IqlTreeNode parent) {
 			List<IqlNode> elements = new ArrayList<>();
 			for(NodeContext nctx : ctx.node()) {
 				elements.add(processNode(nctx, queryType, parent));
@@ -545,7 +565,7 @@ public class QueryProcessor {
 		}
 
 		private List<IqlElement> processElementSequence(ElementSequenceContext ctx,
-				QueryType queryType, IqlElement parent) {
+				QueryType queryType, IqlTreeNode parent) {
 			List<IqlElement> elements = new ArrayList<>();
 			for(ElementContext ectx : ctx.element()) {
 				elements.add(processElement(ectx, queryType, parent));
@@ -564,14 +584,14 @@ public class QueryProcessor {
 			}
 		}
 
-		private IqlNode processNode(NodeContext ctx, QueryType queryType, IqlElement parent) {
+		private IqlNode processNode(NodeContext ctx, QueryType queryType, IqlTreeNode parent) {
 			IqlNode node;
 			// Decide on type of node
 			if(ctx.nodeStatement()!=null) {
 				treeFeaturesUsed = true;
 				if(!queryType.isAllowChildren()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Query type {1} does not allow tree structures via nested nodes: {2}", queryType, textOf(ctx));
+							"Query type {1} does not allow tree structures via nested nodes: '{2}'", queryType, textOf(ctx));
 				}
 				node = new IqlTreeNode();
 			} else {
@@ -586,8 +606,13 @@ public class QueryProcessor {
 
 				if(node.isExistentiallyQuantified()) {
 					existentiallyQuantifiedNodes++;
+				} else if(parent!=null && parent.isNegated() && node.isNegated()) {
+					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
+							"Double negation of nested nodes '{1}' - try to express query positively instead", textOf(ctx));
+				} else if(parent==null && node.isUniversallyQuantified()) {
+					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
+							"Cannot universally qualify top-level nodes: {1}", textOf(ctx));
 				}
-				//TODO check against negation in combination with negated parent
 			} else {
 				// Unquantified means existentially quantified
 				existentiallyQuantifiedNodes++;
@@ -642,7 +667,7 @@ public class QueryProcessor {
 				int value = pureDigits(ctx.value);
 				if(value==0) {
 					reportBuilder.addError(QueryErrorCode.INVALID_LITERAL,
-							"Cannot use 'at-most' quantifier with a target value of 0 - use 'exact' instead: {1}", textOf(ctx));
+							"Cannot use 'at-most' quantifier with a target value of 0 - use 'exact' instead: '{1}'", textOf(ctx));
 				}
 				quantifier.setValue(value);
 			} else if(ctx.DOUBLE_DOT()!=null) {
@@ -651,7 +676,7 @@ public class QueryProcessor {
 				int upper = pureDigits(ctx.upperBound);
 				if(lower>=upper) {
 					reportBuilder.addError(QueryErrorCode.INVALID_LITERAL,
-							"Lower end of range quantifier must not be equal or greater than upper end: {1}", textOf(ctx));
+							"Lower end of range quantifier must not be equal or greater than upper end: '{1}'", textOf(ctx));
 				}
 				quantifier.setLowerBound(lower);
 				quantifier.setUpperBound(upper);
@@ -662,20 +687,20 @@ public class QueryProcessor {
 			return quantifier;
 		}
 
-		private IqlElement processElement(ElementContext ctx, QueryType queryType, IqlElement parent) {
+		private IqlElement processElement(ElementContext ctx, QueryType queryType, IqlTreeNode parent) {
 			if(ctx.edge()!=null) {
 				graphFeaturesUsed = true;
 				if(!queryType.isAllowEdges()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Query type {1} does not support edges", queryType);
+							"Query type {1} does not support edges: '{2}'", queryType, textOf(ctx));
 				}
 
-				IqlNode source = processNode(ctx.source, queryType, TERMINAL_DUMMY);
-				IqlNode target = processNode(ctx.target, queryType, TERMINAL_DUMMY);
+				IqlNode source = processNode(ctx.source, queryType, parent);
+				IqlNode target = processNode(ctx.target, queryType, parent);
 
 				if(source.hasQuantifiers() && target.hasQuantifiers()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Redundant quantifier definition - can only define quantifiers on either source or target: {1}", textOf(ctx));
+							"Competing quantifier definition - can only define quantifiers on either source or target: '{1}'", textOf(ctx));
 				}
 
 				IqlEdge edge = processEdge(ctx.edge(), source, target);
@@ -696,6 +721,8 @@ public class QueryProcessor {
 
 		private IqlEdge processEmptyEdge(EmptyEdgeContext ctx, IqlNode source, IqlNode target) {
 			IqlEdge edge = new IqlEdge();
+
+			genId(edge);
 			if(ctx.EDGE_LEFT()!=null) {
 				edge.setSource(target);
 				edge.setTarget(source);
@@ -717,6 +744,8 @@ public class QueryProcessor {
 
 		private IqlEdge processFilledEdge(FilledEdgeContext ctx, IqlNode source, IqlNode target) {
 			IqlEdge edge = new IqlEdge();
+
+			genId(edge);
 			processProperElement0(edge, ctx.memberLabel(), ctx.constraint());
 
 			LeftEdgePartContext left = ctx.leftEdgePart();
@@ -724,11 +753,11 @@ public class QueryProcessor {
 
 			if(!isContinuous(left)) {
 				reportBuilder.addError(QueryErrorCode.NON_CONTINUOUS_TOKEN,
-						"Left part of multipart edge definition is not continuous (must not contain whitespaces): {1}", textOf(left));
+						"Left part of multipart edge definition is not continuous (must not contain whitespaces): '{1}'", textOf(left));
 			}
 			if(!isContinuous(right)) {
 				reportBuilder.addError(QueryErrorCode.NON_CONTINUOUS_TOKEN,
-						"Right part of multipart edge definition is not continuous (must not contain whitespaces): {1}", textOf(right));
+						"Right part of multipart edge definition is not continuous (must not contain whitespaces): '{1}'", textOf(right));
 			}
 
 			if(left.directedEdgeLeft()!=null && right.undirectedEdge()!=null) {
@@ -751,7 +780,7 @@ public class QueryProcessor {
 		}
 
 		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx,
-				QueryType queryType, IqlElement parent) {
+				QueryType queryType, IqlTreeNode parent) {
 			IqlElementDisjunction dis = new IqlElementDisjunction();
 			genId(dis);
 
@@ -759,7 +788,7 @@ public class QueryProcessor {
 			NodeStatementContext tail = ctx;
 			while(tail instanceof NodeAlternativesContext) {
 				NodeAlternativesContext nactx = (NodeAlternativesContext) tail;
-				dis.addAlternative(processNodeStatement(nactx.left, queryType, dis));
+				dis.addAlternative(processNodeStatement(nactx.left, queryType, parent));
 				tail = unwrap(nactx.right);
 			}
 			// Now add the final dangling expression (note that we have to forward the original parent!)

@@ -110,7 +110,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		public boolean isExistentiallyQuantified() {
 			if(quantifiers.isEmpty()) {
-				return false;
+				return true;
 			}
 			for(IqlQuantifier quantifier : quantifiers) {
 				if(quantifier.isExistentiallyQuantified()) {
@@ -213,6 +213,48 @@ public abstract class IqlElement extends IqlUnique {
 		public void setTarget(IqlNode target) { this.target = requireNonNull(target); }
 
 		public void setEdgeType(EdgeType edgeType) { this.edgeType = requireNonNull(edgeType); }
+
+		// utility
+
+		private List<IqlQuantifier> quantifiers() {
+			if(source.hasQuantifiers()) {
+				return source.getQuantifiers();
+			}
+
+			return target.getQuantifiers();
+		}
+
+		public List<IqlQuantifier> getQuantifiers() { return quantifiers(); }
+
+		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers().forEach(requireNonNull(action)); }
+
+		public boolean hasQuantifiers() {
+			return source.hasQuantifiers() || target.hasQuantifiers();
+		}
+
+		public boolean isExistentiallyQuantified() {
+			if(!hasQuantifiers()) {
+				return true;
+			}
+			for(IqlQuantifier quantifier : quantifiers()) {
+				if(quantifier.isExistentiallyQuantified()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public boolean isUniversallyQuantified() {
+			List<IqlQuantifier> quantifiers = quantifiers();
+			return quantifiers.size()==1
+					&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
+		}
+
+		public boolean isNegated() {
+			List<IqlQuantifier> quantifiers = quantifiers();
+			return quantifiers.size()==1
+					&& quantifiers.get(0).isExistentiallyNegated();
+		}
 	}
 
 	public static class IqlElementDisjunction extends IqlElement {

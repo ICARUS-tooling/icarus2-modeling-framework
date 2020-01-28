@@ -96,6 +96,10 @@ class QueryProcessorTest {
 		assertExpression(expression.get(), content);
 	}
 
+	private String qt(String s) {
+		return '\''+s+'\'';
+	}
+
 	@Nested
 	class ReadQuery {
 
@@ -128,7 +132,7 @@ class QueryProcessorTest {
 	}
 
 	@Nested
-	class ForErrors {
+	class ForPayloadErrors {
 
 		private Report<ReportItem> expectReport(String rawPayload) {
 			QueryProcessingException exception = assertThrows(QueryProcessingException.class,
@@ -139,31 +143,37 @@ class QueryProcessorTest {
 
 		@SafeVarargs
 		private final void assertReportHasErrors(Report<ReportItem> report,
-				Pair<QueryErrorCode, Predicate<? super ReportItem>>...entries) {
+				Pair<QueryErrorCode, List<Predicate<? super ReportItem>>>...entries) {
 			assertThat(report.countErrors()).isEqualTo(entries.length);
 			assertReportEntries(report, Severity.ERROR, list(entries));
 		}
 
 		@SafeVarargs
 		private final void assertReportHasWarnings(Report<ReportItem> report,
-				Pair<QueryErrorCode, Predicate<? super ReportItem>>...entries) {
+				Pair<QueryErrorCode, List<Predicate<? super ReportItem>>>...entries) {
 			assertThat(report.countWarnings()).isEqualTo(entries.length);
 			assertReportEntries(report, Severity.WARNING, list(entries));
 		}
 
 		private void assertReportEntries(Report<ReportItem> report, Severity severity,
-				List<Pair<QueryErrorCode, Predicate<? super ReportItem>>> expected) {
+				List<Pair<QueryErrorCode, List<Predicate<? super ReportItem>>>> expected) {
 
 			List<ReportItem> items = report.getItems()
 					.stream()
 					.filter(item -> item.getSeverity()==severity)
 					.collect(Collectors.toList());
 
-			for(Pair<QueryErrorCode, Predicate<? super ReportItem>> matcher : expected) {
+			for(Pair<QueryErrorCode, List<Predicate<? super ReportItem>>> matcher : expected) {
 				ReportItem found = null;
 				search : for (int i = 0; i < items.size(); i++) {
 					ReportItem item = items.get(i);
-					if(item.getCode()==matcher.first && matcher.second.test(item)) {
+					if(item.getCode()==matcher.first) {
+						for(Predicate<? super ReportItem> pred : matcher.second) {
+							if(!pred.test(item)) {
+								// Exit early
+								continue search;
+							}
+						}
 						found = item;
 						items.remove(i);
 						break search;
@@ -180,27 +190,136 @@ class QueryProcessorTest {
 			return item -> item.getMessage().endsWith(suffix);
 		}
 
+		private Predicate<? super ReportItem> msgContains(String content) {
+			return item -> item.getMessage().contains(content);
+		}
+
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
 			"((x>0));((x>0))",
 			"[][((x>0))][];((x>0))",
-			"[][][] HAVING ((x>0));((x>0))"
+			"[][][] HAVING ((x>0));((x>0))",
 		})
 		void testSuperfluousExpressionNesting(String rawPayload, String offendingPart) {
 			assertReportHasWarnings(expectReport(rawPayload),
-					pair(QueryErrorCode.SUPERFLUOUS_DECLARATION, msgEnds(offendingPart)));
+					pair(QueryErrorCode.SUPERFLUOUS_DECLARATION, list(msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+			"0-[];0-",
+			"[]0-[][];0-",
+			"TREE [0-[]];0-",
+			"GRAPH []---0-[];0-",
+		})
+		void testInvalidAtMostQuantifier(String rawPayload, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.INVALID_LITERAL, list(msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@ValueSource(strings = {"all", "ALL", "*"})
+		void testUniversallyQuantifiedRoot(String quantifier) {
+			String rawPayload = quantifier+"[]";
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.INCORRECT_USE, list(msgContains("universally"))));
+		}
+
+		@ParameterizedTest
+		@ValueSource(strings = {
+				"ALIGNED TREE [![]]",
+				"ALIGNED GRAPH [],![]---[]",
+		})
+		void testInsufficientNodesForAlignment(String rawPayload) {
+			assertReportHasWarnings(expectReport(rawPayload),
+					pair(QueryErrorCode.INCORRECT_USE, list(msgContains("existentially"))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+				"[[]];SEQUENCE;[[]]",
+				"[]4+[][[]][];SEQUENCE;[[]]",
+				"GRAPH [[]];GRAPH;[[]]",
+				"GRAPH []-->[],3-[x<5],[[]],1..2[]--[rel==\"dom\"]->[];GRAPH;[[]]",
+		})
+		void testUnexpectedChildren(String rawPayload, String type, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.UNSUPPORTED_FEATURE,
+							list(msgContains(type), msgContains("nested nodes"), msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+				"[]-->[];SEQUENCE;[]-->[]",
+				"[],4+[],[]-->[],[];SEQUENCE;[]-->[]",
+				"TREE []-->[];TREE;[]-->[]",
+				"TREE [[]![x()]],[]-->[],3-[$t: pos!=\"NN\" 4+[]];TREE;[]-->[]",
+		})
+		void testUnexpectedEdge(String rawPayload, String type, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.UNSUPPORTED_FEATURE,
+							list(msgContains(type), msgContains("not support edges"), msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+				"4..3[];4..3",
+				"2..2[];2..2",
+				"<4..3>[];4..3",
+				"TREE [[] 4..3[]];4..3",
+				"GRAPH [], 4..3[]-->[], 5-[];4..3",
+		})
+		void testInvalidQuantifierRange(String rawPayload, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.INVALID_LITERAL, list(msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+				"GRAPH 2..3[]-->4-[];2..3[]-->4-[]",
+				"GRAPH [],![]-->4-[],3+[];![]-->4-[]",
+		})
+		void testCompetingQuantifiers(String rawPayload, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.UNSUPPORTED_FEATURE, list(msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+				"GRAPH []< -[]--[];< -",
+				"GRAPH []--[]- >[];- >",
+		})
+		void testNonContinuousEdgePart(String rawPayload, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.NON_CONTINUOUS_TOKEN, list(msgEnds(qt(offendingPart)))));
+		}
+
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+				"TREE ![![]];![]",
+				"TREE ![3+[] ![x<4]];![x<4]",
+		})
+		void testDoubleNegation(String rawPayload, String offendingPart) {
+			assertReportHasErrors(expectReport(rawPayload),
+					pair(QueryErrorCode.INCORRECT_USE,
+							list(msgContains("Double negation"), msgContains(qt(offendingPart)))));
 		}
 
 		/*
 		 * Errors to check:
-		 * SUPERFLUOUS_DECLARATION -> redundant nesting of node statements with {}
+		 * -
+		 *
+		 * Done:
+		 * INCORRECT_USE -> double negation on nested nodes
+		 * NON_CONTINUOUS_TOKEN -> part of complex edge definition is not continuous
+		 * UNSUPPORTED_FEATURE -> quantifier on both ends of edge
+		 * INVALID_LITERAL -> range quantifier with lower>=upper
+		 * UNSUPPORTED_FEATURE -> edges in tree or sequence
 		 * INVALID_LITERAL -> AT_MOST quantifier with 0
+		 * SUPERFLUOUS_DECLARATION -> redundant nesting of node statements with {}
+		 * INCORRECT_USE -> universally quantified root node
 		 * INCORRECT_USE -> ALIGNED flag with less than 2 existentially quantified nodes
 		 * UNSUPPORTED_FEATURE -> children in graph or sequence
-		 * UNSUPPORTED_FEATURE -> edges in tree or sequence
-		 * INVALID_LITERAL -> range quantifier with lower>=upper
-		 * UNSUPPORTED_FEATURE -> quantifier on both ends of edge
-		 * NON_CONTINUOUS_TOKEN -> part of complex edge definition is not continuous
 		 */
 	}
 
@@ -736,16 +855,6 @@ class QueryProcessorTest {
 				}
 
 				@ParameterizedTest
-				@ValueSource(strings = {"all", "ALL", "*"})
-				void testEmptyAllQuantifiedNode(String quantifier) {
-					String rawPayload = quantifier+"[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
-					assertSequence(payload);
-					assertBindings(payload);
-					assertElements(payload, node(null, null, quantAll()));
-				}
-
-				@ParameterizedTest
 				@ValueSource(strings = {"not", "NOT", "!"})
 				void testEmptyNegatedNode(String quantifier) {
 					String rawPayload = quantifier+"[]";
@@ -937,6 +1046,20 @@ class QueryProcessorTest {
 					assertTree(payload, false);
 					assertBindings(payload);
 					assertElements(payload, tree(null, null, tree(null, null, node())));
+				}
+			}
+
+			@Nested
+			class QuantifiedNodes {
+
+				@ParameterizedTest
+				@ValueSource(strings = {"all", "ALL", "*"})
+				void testEmptyAllQuantifiedNode(String quantifier) {
+					String rawPayload = "TREE ["+quantifier+"[]]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					assertTree(payload, false);
+					assertBindings(payload);
+					assertElements(payload, tree(null, null, node(null, null, quantAll())));
 				}
 			}
 
