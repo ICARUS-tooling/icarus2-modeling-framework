@@ -44,8 +44,6 @@ import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.Report.Severity;
 import de.ims.icarus2.query.api.QueryErrorCode;
-import de.ims.icarus2.query.api.engine.QueryProcessingException;
-import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
@@ -194,28 +192,30 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"[[]];SEQUENCE;[[]]",
-				"[]4+[][[]][];SEQUENCE;[[]]",
-				"GRAPH [[]];GRAPH;[[]]",
-				"GRAPH []-->[],3-[x<5],[[]],1..2[]--[rel==\"dom\"]->[];GRAPH;[[]]",
+				"[]-->[],[[]];GRAPH;[[]]",
+				"[]-->[],[],4+[],[[]],[];GRAPH;[[]]",
+				"[]-->[],3-[x<5],[[]],1..2[]--[rel==\"dom\"]->[];GRAPH;[[]]",
 		})
 		void testUnexpectedChildren(String rawPayload, String type, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
 					pair(QueryErrorCode.UNSUPPORTED_FEATURE,
-							list(msgContains(type), msgContains("nested nodes"), msgEnds(qt(offendingPart)))));
+							list(msgContains(type),
+									msgContains("mix tree and graph features"),
+									msgEnds(qt(offendingPart)))));
 		}
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"[]-->[];SEQUENCE;[]-->[]",
-				"[],4+[],[]-->[],[];SEQUENCE;[]-->[]",
-				"TREE []-->[];TREE;[]-->[]",
-				"TREE [[]![x()]],[]-->[],3-[$t: pos!=\"NN\" 4+[]];TREE;[]-->[]",
+				"[[]], []-->[];TREE;[]-->[]",
+				"[],[[]],4+[],[]-->[],[];TREE;[]-->[]",
+				"[[]![x()]],[]-->[],3-[$t: pos!=\"NN\" 4+[]];TREE;[]-->[]",
 		})
 		void testUnexpectedEdge(String rawPayload, String type, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
 					pair(QueryErrorCode.UNSUPPORTED_FEATURE,
-							list(msgContains(type), msgContains("not support edges"), msgEnds(qt(offendingPart)))));
+							list(msgContains(type),
+									msgContains("mix tree and graph features"),
+									msgEnds(qt(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -953,34 +953,11 @@ class QueryProcessorTest {
 			}
 
 			@Nested
-			class Unbound {
-
-				@Test
-				void testEmptyUnnamedNode() {
-					String rawPayload = "TREE []";
-					// ignore warnings
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, true);
-					assertTree(payload, false);
-					assertBindings(payload);
-					assertElements(payload, node());
-				}
-
-				@Test
-				void testEmptyUnnamedAlignedNodes() {
-					String rawPayload = "ALIGNED TREE [][]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, true);
-					assertTree(payload, true);
-					assertBindings(payload);
-					assertElements(payload, node(), node());
-				}
-			}
-
-			@Nested
 			class NestedNodes {
 
 				@Test
 				void testEmptyNestedNode() {
-					String rawPayload = "TREE [[]]";
+					String rawPayload = "[[]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
@@ -989,7 +966,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyNestedSiblings() {
-					String rawPayload = "TREE [[][]]";
+					String rawPayload = "[[][]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
@@ -998,7 +975,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyNestedChain() {
-					String rawPayload = "TREE [[[]]]";
+					String rawPayload = "[[[]]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
@@ -1012,7 +989,7 @@ class QueryProcessorTest {
 				@ParameterizedTest
 				@ValueSource(strings = {"all", "ALL", "*"})
 				void testEmptyAllQuantifiedNode(String quantifier) {
-					String rawPayload = "TREE ["+quantifier+"[]]";
+					String rawPayload = "["+quantifier+"[]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
@@ -1027,7 +1004,7 @@ class QueryProcessorTest {
 				void testFilledNodes() {
 					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 "
 							+ "AND $p FROM corpus::phrase "
-							+ "FIND ALIGNED TREE [5-[][$token1: pos!=\"NNP\"]] 4+[] "
+							+ "FIND ALIGNED [5-[][$token1: pos!=\"NNP\"]] 4+[] "
 							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);

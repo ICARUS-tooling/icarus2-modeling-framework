@@ -24,8 +24,6 @@ import org.antlr.v4.runtime.Token;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
-import de.ims.icarus2.query.api.iql.antlr.IQLLexer;
-
 
 /**
  * @author Markus Gärtner
@@ -48,7 +46,7 @@ class IQLLexerTest {
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"lexerTests_stringLiteral.csv"}, numLinesToSkip=1)
-	void testStringListeral(String text, String description) {
+	void testStringLiteral(String text, String description) {
 		// To keep our csv file readable, we artificially add the surrounding quotation marks here
 		text = "\""+text+"\"";
 

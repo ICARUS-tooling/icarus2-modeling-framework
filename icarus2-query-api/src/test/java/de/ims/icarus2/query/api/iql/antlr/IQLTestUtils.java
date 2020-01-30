@@ -410,9 +410,9 @@ public class IQLTestUtils {
 	static final List<Pair<String, String>> types = list(
 			pair("boolean", "Boolean"),
 			pair("int", "Integer"),
-			pair("long", "Long integer"),
+//			pair("long", "Long integer"),
 			pair("float", "Float"),
-			pair("double", "Double"),
+//			pair("double", "Double"),
 			pair("string", "String")
 	);
 

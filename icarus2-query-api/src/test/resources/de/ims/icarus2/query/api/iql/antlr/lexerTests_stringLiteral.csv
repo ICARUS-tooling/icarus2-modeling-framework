@@ -9,8 +9,6 @@
 "\r","escaped carriage return"
 "\t","escaped tab"
 "\n","escaped newline"
-"\f","escaped form feed"
-"\b","escaped backspace"
 "\""","escaped quotation mark"
 "this is a somewhat lengthy test...","content with spaces"
 "this is a \nmultiline\ntest\n...","content with linebreaks"
