@@ -455,7 +455,7 @@ public final class CollectionUtils {
 	@SafeVarargs
 	public static <E extends Object> Set<E> set(E...items) {
 		Set<E> set = new ObjectOpenHashSet<>();
-		Collections.addAll(set, items);
+		feedItems(set, items);
 		return set;
 	}
 

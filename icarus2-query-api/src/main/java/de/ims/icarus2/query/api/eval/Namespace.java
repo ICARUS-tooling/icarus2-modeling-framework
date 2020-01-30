@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import de.ims.icarus2.util.Wrapper;
+
 /**
  * @author Markus Gärtner
  *
@@ -31,9 +33,32 @@ public interface Namespace {
 
 	/**
 	 * Try to resolve the specified {@code name} to an entry in this namespace.
-	 *
-	 * @param name
-	 * @return
 	 */
-	<T> T lookup(String name);
+	default NsEntry lookup(String name) {
+		return lookup(name, TypeFilter.ALL);
+	}
+
+	/**
+	 * Try to resolve the specified {@code name} to an entry in this namespace
+	 * that satisfies the specified filter. This will return
+	 */
+	NsEntry lookup(String name, TypeFilter filter);
+
+	/**
+	 * An individual type-aware entry in a namespace.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	interface NsEntry extends Wrapper<Object> {
+		/** Info about the (expected) type of the entry. */
+		TypeInfo getType();
+
+		/** Fetches and returns the actual content of this entry. */
+		@Override
+		Object get();
+
+		/** Returns the namespace this entry belongs to. */
+		Namespace getSource();
+	}
 }

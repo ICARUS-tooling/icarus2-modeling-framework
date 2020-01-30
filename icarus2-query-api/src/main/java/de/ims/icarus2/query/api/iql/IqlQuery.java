@@ -94,15 +94,15 @@ public class IqlQuery extends IqlUnique {
 	 * The raw unprocessed query payload as provided by the user.
 	 */
 	@JsonProperty(value=IqlProperties.RAW_PAYLOAD, required=true)
-	private String rawPayload;
+	private final List<String> rawPayload = new ArrayList<>();
 
 	/**
 	 * The processed query payload after being parsed by the
 	 * query engine.
 	 */
 	@JsonProperty(IqlProperties.PAYLOAD)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<IqlPayload> payload = Optional.empty();
+	@JsonInclude(Include.NON_EMPTY)
+	private final List<IqlPayload> payload = new ArrayList<>();
 
 	/**
 	 * The raw unprocessed grouping definitions if provided.
@@ -156,13 +156,13 @@ public class IqlQuery extends IqlUnique {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkCollectionNotEmpty(corpora, "corpora");
-		checkStringNotEmpty(rawPayload, "rawPayload");
+		checkCondition(!rawPayload.isEmpty(), "rawPayload", "Must define at least 1 query payload");
 		checkNestedNotNull(result, "result");
 
 		checkOptionalStringNotEmpty(dialect, "dialect");
 		checkOptionalStringNotEmpty(rawGrouping, "rawGrouping");
 		checkOptionalStringNotEmpty(rawResult, "rawResult");
-		checkOptionalNested(payload);
+		checkCollection(payload);
 		checkCollection(imports);
 		checkCollection(setup);
 		checkCollection(layers);
@@ -193,9 +193,9 @@ public class IqlQuery extends IqlUnique {
 
 	public List<IqlScope> getScopes() { return CollectionUtils.unmodifiableListProxy(scopes); }
 
-	public String getRawPayload() { return rawPayload; }
+	public List<String> getRawPayload() { return CollectionUtils.unmodifiableListProxy(rawPayload); }
 
-	public Optional<IqlPayload> getPayload() { return payload; }
+	public List<IqlPayload> getPayload() { return CollectionUtils.unmodifiableListProxy(payload); }
 
 	public Optional<String> getRawGrouping() { return rawGrouping; }
 
@@ -210,9 +210,9 @@ public class IqlQuery extends IqlUnique {
 
 	public void setDialect(String dialect) { this.dialect = Optional.of(checkNotEmpty(dialect)); }
 
-	public void setRawPayload(String rawPayload) { this.rawPayload = checkNotEmpty(rawPayload); }
+	public void addRawPayload(String rawPayload) { this.rawPayload.add(checkNotEmpty(rawPayload)); }
 
-	public void setPayload(IqlPayload payload) { this.payload = Optional.of(payload); }
+	public void addPayload(IqlPayload payload) { this.payload.add(requireNonNull(payload)); }
 
 	public void setRawGrouping(String rawGrouping) { this.rawGrouping = Optional.of(checkNotEmpty(rawGrouping)); }
 
@@ -237,6 +237,11 @@ public class IqlQuery extends IqlUnique {
 	//TODO add the 'forEach' style methods for all list properties
 
 	// Utility methods
+
+	/** Returns whether this query is meant to evaluate multiple independent data streams. */
+	public boolean isMultiStream() {
+		return rawPayload.size()>1;
+	}
 
 	public Optional<IqlProperty> getProperty(String key) {
 		checkNotEmpty(key);

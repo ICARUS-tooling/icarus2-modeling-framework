@@ -388,12 +388,13 @@ public class IqlQueryGenerator {
 	}
 
 	private void preparePayload(IqlPayload payload, IncrementalBuild<?> build, Config config) {
-		prepareQueryElement0(payload, build, config);
+		prepareUnique0(payload, build, config);
 
 		// mandatory data
 		payload.setQueryType(rng.random(QueryType.class));
 
 		build.addFieldChange(payload::setAligned, "aligned", Boolean.TRUE);
+		build.addFieldChange(payload::setName, "name", index("name"));
 		for(QueryType queryType : QueryType.values()) {
 			build.addEnumFieldChange(payload::setQueryType, "queryType", queryType);
 		}
@@ -441,15 +442,13 @@ public class IqlQueryGenerator {
 		prepareUnique0(query, build, config);
 
 		// mandatory data
-		query.setRawPayload(index("some-raw-payload"));
+		query.addRawPayload(index("some-raw-payload"));
 		query.addCorpus(generateFull(IqlType.CORPUS, config));
 		query.setResult(generateFull(IqlType.RESULT, config));
 
 		build.addFieldChange(query::setDialect, "dialect", index("dialect"));
-		build.addFieldChange(query::setRawPayload, "rawPayload", index("payload-data"));
 		build.addFieldChange(query::setRawGrouping, "rawGrouping", index("grouping-data"));
 		build.addFieldChange(query::setRawResult, "rawResult", index("result-data"));
-		build.addNestedChange("processedPayload", IqlType.PAYLOAD, config, query, query::setPayload);
 		build.addNestedChange("processedResult", IqlType.RESULT, config, query, query::setResult);
 		for (int i = 0; i < config.getCount(IqlType.IMPORT, DEFAULT_COUNT); i++) {
 			build.addNestedChange("imports", IqlType.IMPORT, config, query, query::addImport);
@@ -471,6 +470,12 @@ public class IqlQueryGenerator {
 		}
 		for (int i = 0; i < config.getCount(IqlType.DATA, DEFAULT_COUNT); i++) {
 			build.addNestedChange("embeddedData", IqlType.DATA, config, query, query::addEmbeddedData);
+		}
+		for (int i = 0; i < config.getCount(IqlType.PAYLOAD, DEFAULT_COUNT); i++) {
+			build.addFieldChange(query::addRawPayload, "rawPayload", index("payload-data"));
+		}
+		for (int i = 0; i < config.getCount(IqlType.PAYLOAD, DEFAULT_COUNT); i++) {
+			build.addNestedChange("payload", IqlType.PAYLOAD, config, query, query::addPayload);
 		}
 	}
 

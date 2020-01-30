@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -36,10 +37,14 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class IqlPayload extends AbstractIqlQueryElement {
+public class IqlPayload extends IqlUnique {
 
 	@JsonProperty(IqlProperties.QUERY_TYPE)
 	private QueryType queryType;
+
+	@JsonProperty(IqlProperties.NAME)
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<String> name = Optional.empty();
 
 	/**
 	 * All the bindings to be usable for this query, if defined.
@@ -88,6 +93,8 @@ public class IqlPayload extends AbstractIqlQueryElement {
 
 	public QueryType getQueryType() { return queryType; }
 
+	public Optional<String> getName() { return name; }
+
 	public List<IqlBinding> getBindings() { return CollectionUtils.unmodifiableListProxy(bindings); }
 
 	public Optional<IqlConstraint> getConstraint() { return constraint; }
@@ -98,6 +105,8 @@ public class IqlPayload extends AbstractIqlQueryElement {
 
 
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
+
+	public void setName(String name) { this.name = Optional.of(checkNotEmpty(name)); }
 
 	public void addBinding(IqlBinding binding) { bindings.add(requireNonNull(binding)); }
 

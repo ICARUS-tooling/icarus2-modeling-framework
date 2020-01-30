@@ -5,6 +5,7 @@ package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.query.api.iql.IqlUtils.createMapper;
 import static de.ims.icarus2.query.api.iql.IqlUtils.fragment;
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,13 +31,26 @@ public class QueryEngine {
 		return new Builder();
 	}
 
-	private final ObjectMapper mapper = createMapper();
+	private final ObjectMapper mapper;
+
+	private final CorpusManager corpusManager;
 
 	private QueryEngine(Builder builder) {
-		//TODO
+		builder.validate();
+
+		mapper = builder.getMapper();
+		corpusManager = builder.getCorpusManager();
 	}
 
-	public QueryJob query(Query query) {
+	public QueryJob query(Query rawQuery) {
+
+		// Read and parse query content
+		IqlQuery query = readQuery(rawQuery);
+		new QueryProcessor().parseQuery(query);
+
+		// Ensure we only ever consider validated queries
+		query.checkIntegrity();
+
 
 	}
 
@@ -66,6 +80,41 @@ public class QueryEngine {
 
 		private Builder() {
 			// no-op
+		}
+
+		public Builder mapper(ObjectMapper mapper) {
+			requireNonNull(mapper);
+			checkState("Mapper already set", this.mapper==null);
+			this.mapper = mapper;
+			return this;
+		}
+
+		public Builder corpusManager(CorpusManager corpusManager) {
+			requireNonNull(corpusManager);
+			checkState("Corpus manager already set", this.corpusManager==null);
+			this.corpusManager = corpusManager;
+			return this;
+		}
+
+		public Builder useDefaultMapper() {
+			return mapper(createMapper());
+		}
+
+		public ObjectMapper getMapper() {
+			return mapper;
+		}
+
+		public CorpusManager getCorpusManager() {
+			return corpusManager;
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.AbstractBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			checkState("Mapper not set", mapper!=null);
+			checkState("Corpus manager not set", corpusManager!=null);
 		}
 
 		/**

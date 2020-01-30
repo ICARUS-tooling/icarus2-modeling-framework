@@ -106,9 +106,9 @@ standaloneExpression : expression EOF ;
  * complexity for evaluating the query. Global constraints are optional and 
  * can cause unlimited increase in complexity!
  */
-constraintStatement
+payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (WITH bindingsList FIND)? selectiveStatement EOF
+	| (STREAM Identifier)? (WITH bindingsList FIND)? selectiveStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -130,7 +130,7 @@ binding
 
 selectiveStatement
 	: constraint // plain
-	| (ALIGNED? (TREE | GRAPH))? nodeStatement (HAVING constraint)?
+	| ALIGNED? nodeStatement (HAVING constraint)?
 	;	
 	
 /**
@@ -386,10 +386,10 @@ counter
 type
 	: BOOLEAN
 	| STRING
-	| INT
-	| LONG
-	| FLOAT
-	| DOUBLE
+	| INT // all kinds of integer types (up to 64bit signed integer)
+//	| LONG
+	| FLOAT // all kinds of floating point types (up to 64bit double precision)
+//	| DOUBLE
 	;
 	
 quantifier
@@ -528,6 +528,7 @@ LIMIT : 'LIMIT' | 'limit' ;
 ORDER : 'ORDER' | 'order' ;
 ASC : 'ASC' | 'asc' ;
 DESC : 'DESC' | 'desc' ;
+STREAM : 'STREAM' | 'stream' ;
 
 // Keywords
 
@@ -642,13 +643,13 @@ StringCharacters
 	
 fragment
 StringCharacter
-	:	~["\\\r\n\f\b\t]
+	:	~["\\\r\n\t]
 	|	EscapeSequence
 	;
 	
 fragment
 EscapeSequence
-	:	'\\' [rnfbt"\\]
+	:	'\\' [rnt"\\]
 	;
 
 // Identifiers

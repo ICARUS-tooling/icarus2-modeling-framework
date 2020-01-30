@@ -47,7 +47,7 @@ public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
 	private IqlObjectIdGenerator(Class<?> scope,
 			Map<String, AtomicInteger> counters) {
 		_scope = requireNonNull(scope);
-		this.counters = counters;
+		this.counters = counters==null ? null : new Object2ObjectOpenHashMap<>(counters);
 	}
 
 	private Map<String, AtomicInteger> counters() {

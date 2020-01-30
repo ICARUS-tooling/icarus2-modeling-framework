@@ -81,7 +81,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingsListContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
@@ -100,6 +99,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeGroupingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.OrderExpressionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.PayloadStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
@@ -143,8 +143,10 @@ public class QueryProcessor {
 			processResult(rawResult, query.getResult());
 		}
 
-		query.setPayload(processPayload(query.getRawPayload(),
-				query.isSwitchSet(QuerySwitch.WARNINGS_OFF)));
+		final boolean ignoreWarnings = query.isSwitchSet(QuerySwitch.WARNINGS_OFF);
+		for(String rawPayload : query.getRawPayload()) {
+			query.addPayload(processPayload(rawPayload, ignoreWarnings));
+		}
 
 		query.markProcessed();
 	}
@@ -179,7 +181,7 @@ public class QueryProcessor {
 
 		IQLParser parser = createParser(rawPayload, "rawPayload");
 		try {
-			ConstraintStatementContext ctx = parser.constraintStatement();
+			PayloadStatementContext ctx = parser.payloadStatement();
 
 			if(ctx.ALL()!=null) {
 				IqlPayload payload = new IqlPayload();
@@ -188,7 +190,7 @@ public class QueryProcessor {
 				return payload;
 			}
 
-			return new PayloadProcessor(ignoreWarnings).processConstraintStatement(ctx);
+			return new PayloadProcessor(ignoreWarnings).processPayloadStatement(ctx);
 
 		} catch(RecognitionException e) {
 			throw asSyntaxException(e, "Failed to parse 'rawPayload'");
@@ -332,7 +334,7 @@ public class QueryProcessor {
 			return ctx;
 		}
 
-		private IqlPayload processConstraintStatement(ConstraintStatementContext ctx) {
+		private IqlPayload processPayloadStatement(PayloadStatementContext ctx) {
 			IqlPayload payload = new IqlPayload();
 			// Handle bindings
 			BindingsListContext blctx = ctx.bindingsList();
@@ -352,20 +354,18 @@ public class QueryProcessor {
 			if(sctx.nodeStatement()!=null) {
 				// Structure statement [sequence,tree,graph]
 				NodeStatementContext nsctx = sctx.nodeStatement();
-				QueryType queryType = null;
-				if(sctx.TREE()!=null) {
-					payload.setAligned(sctx.ALIGNED()!=null);
+				payload.setAligned(sctx.ALIGNED()!=null);
+
+				processNodeStatement(nsctx, null).forEach(payload::addElement);
+
+				QueryType queryType = QueryType.SEQUENCE;
+				if(treeFeaturesUsed) {
 					queryType = QueryType.TREE;
-				} else if(sctx.GRAPH()!=null) {
-					payload.setAligned(sctx.ALIGNED()!=null);
+				} else if(graphFeaturesUsed) {
 					queryType = QueryType.GRAPH;
-				} else {
-					queryType = QueryType.SEQUENCE;
 				}
 
 				payload.setQueryType(queryType);
-
-				processNodeStatement(nsctx, queryType, null).forEach(payload::addElement);
 
 				//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
 				if(payload.isAligned() && countExistentialElements(payload.getElements())<2) {
@@ -503,35 +503,32 @@ public class QueryProcessor {
 		}
 
 		/** Process given node statement and honor limitations of specified query type */
-		private List<? extends IqlElement> processNodeStatement(NodeStatementContext ctx,
-				QueryType queryType, IqlTreeNode parent) {
+		private List<? extends IqlElement> processNodeStatement(NodeStatementContext ctx, IqlTreeNode parent) {
 			ctx = unwrap(ctx);
 
 			if(ctx instanceof NodeSequenceContext) {
-				return processNodeSequence((NodeSequenceContext) ctx, queryType, parent);
+				return processNodeSequence((NodeSequenceContext) ctx, parent);
 			} else if (ctx instanceof ElementSequenceContext) {
-				return processElementSequence((ElementSequenceContext) ctx, queryType, parent);
+				return processElementSequence((ElementSequenceContext) ctx, parent);
 			} else if (ctx instanceof NodeAlternativesContext) {
-				return list(processNodeAlternatives((NodeAlternativesContext) ctx, queryType, parent));
+				return list(processNodeAlternatives((NodeAlternativesContext) ctx, parent));
 			}
 
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx,
-				QueryType queryType, IqlTreeNode parent) {
+		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx, IqlTreeNode parent) {
 			List<IqlNode> elements = new ArrayList<>();
 			for(NodeContext nctx : ctx.node()) {
-				elements.add(processNode(nctx, queryType, parent));
+				elements.add(processNode(nctx, parent));
 			}
 			return elements;
 		}
 
-		private List<IqlElement> processElementSequence(ElementSequenceContext ctx,
-				QueryType queryType, IqlTreeNode parent) {
+		private List<IqlElement> processElementSequence(ElementSequenceContext ctx, IqlTreeNode parent) {
 			List<IqlElement> elements = new ArrayList<>();
 			for(ElementContext ectx : ctx.element()) {
-				elements.add(processElement(ectx, queryType, parent));
+				elements.add(processElement(ectx, parent));
 			}
 			return elements;
 		}
@@ -547,15 +544,11 @@ public class QueryProcessor {
 			}
 		}
 
-		private IqlNode processNode(NodeContext ctx, QueryType queryType, IqlTreeNode parent) {
+		private IqlNode processNode(NodeContext ctx, IqlTreeNode parent) {
 			IqlNode node;
 			// Decide on type of node
 			if(ctx.nodeStatement()!=null) {
 				treeFeaturesUsed = true;
-				if(!queryType.isAllowChildren()) {
-					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Query type {1} does not allow tree structures via nested nodes: '{2}'", queryType, textOf(ctx));
-				}
 				node = new IqlTreeNode();
 			} else {
 				node = new IqlNode();
@@ -578,9 +571,13 @@ public class QueryProcessor {
 
 			// Finally process actual children
 			if(ctx.nodeStatement()!=null) {
+				if(graphFeaturesUsed) {
+					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
+							"Cannot mix tree and graph features - query type already determined to be GRAPH: '{1}'", textOf(ctx));
+				}
 				treeFeaturesUsed = true;
 				IqlTreeNode tNode = (IqlTreeNode) node;
-				processNodeStatement(ctx.nodeStatement(), queryType, tNode).forEach(tNode::addChild);
+				processNodeStatement(ctx.nodeStatement(), tNode).forEach(tNode::addChild);
 			}
 
 			return node;
@@ -645,16 +642,16 @@ public class QueryProcessor {
 			return quantifier;
 		}
 
-		private IqlElement processElement(ElementContext ctx, QueryType queryType, IqlTreeNode parent) {
+		private IqlElement processElement(ElementContext ctx, IqlTreeNode parent) {
 			if(ctx.edge()!=null) {
-				graphFeaturesUsed = true;
-				if(!queryType.isAllowEdges()) {
+				if(treeFeaturesUsed) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Query type {1} does not support edges: '{2}'", queryType, textOf(ctx));
+							"Cannot mix tree and graph features - query type already determined to be TREE: '{1}'", textOf(ctx));
 				}
+				graphFeaturesUsed = true;
 
-				IqlNode source = processNode(ctx.source, queryType, parent);
-				IqlNode target = processNode(ctx.target, queryType, parent);
+				IqlNode source = processNode(ctx.source, parent);
+				IqlNode target = processNode(ctx.target, parent);
 
 				if(source.hasQuantifiers() && target.hasQuantifiers()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -665,7 +662,7 @@ public class QueryProcessor {
 				return edge;
 			}
 
-			return processNode(ctx.content, queryType, parent);
+			return processNode(ctx.content, parent);
 		}
 
 		private IqlEdge processEdge(EdgeContext ctx, IqlNode source, IqlNode target) {
@@ -737,8 +734,7 @@ public class QueryProcessor {
 			return edge;
 		}
 
-		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx,
-				QueryType queryType, IqlTreeNode parent) {
+		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx, IqlTreeNode parent) {
 			IqlElementDisjunction dis = new IqlElementDisjunction();
 			genId(dis);
 
@@ -746,11 +742,11 @@ public class QueryProcessor {
 			NodeStatementContext tail = ctx;
 			while(tail instanceof NodeAlternativesContext) {
 				NodeAlternativesContext nactx = (NodeAlternativesContext) tail;
-				dis.addAlternative(processNodeStatement(nactx.left, queryType, parent));
+				dis.addAlternative(processNodeStatement(nactx.left, parent));
 				tail = unwrap(nactx.right);
 			}
 			// Now add the final dangling expression (note that we have to forward the original parent!)
-			dis.addAlternative(processNodeStatement(tail, queryType, parent));
+			dis.addAlternative(processNodeStatement(tail, parent));
 
 			return dis;
 		}
