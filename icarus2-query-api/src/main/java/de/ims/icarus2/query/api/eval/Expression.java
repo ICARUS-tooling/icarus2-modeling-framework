@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
+
 /**
  * @author Markus Gärtner
  *
@@ -67,10 +69,8 @@ public interface Expression<T> {
 	 *
 	 * @param <N> actual wrapper type of the primitive source type
 	 */
-	public interface NumericalExpression<N extends Number> extends Expression<N> {
-//		int computeAsInt();
+	public interface NumericalExpression<N extends Number> extends Expression<Primitive<N>> {
 		long computeAsLong();
-//		float computeAsFloat();
 		double computeAsDouble();
 	}
 

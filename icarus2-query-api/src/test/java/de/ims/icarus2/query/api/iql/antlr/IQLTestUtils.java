@@ -344,7 +344,7 @@ public class IQLTestUtils {
 	 *  +    -
 	 *  <<   >>   &    |    ^
 	 *  <    <=   >    >=
-	 *  ~   !~   #   !#
+	 *  =~   !~   =#   !#
 	 *  ==   !=
 	 *  &&   AND
 	 *  ||   OR
@@ -355,7 +355,7 @@ public class IQLTestUtils {
 			list(pair("+", "addition"), pair("-", "subtraction")),
 			list(pair("<<", "shift left"), pair(">>", "shift right"), pair("&", "bitwise and"), pair("|", "bitwise or"), pair("^", "bitwise xor")),
 			list(pair("<", "less than"), pair("<=", "less than or equal"), pair(">", "greater than"), pair(">=", "greater than or equal")),
-			list(pair("~", "matches"), pair("!~", "matches not"), pair("#", "contains"), pair("!#", "contains not")),
+			list(pair("=~", "matches"), pair("!~", "matches not"), pair("=#", "contains"), pair("!#", "contains not")),
 			list(pair("==", "equals"), pair("!=", "not equal")),
 			list(pair("&&", "and"), pair("and", "and (keyword)")),
 			list(pair("||", "or"), pair("or", "or (keyword)"))
@@ -379,9 +379,9 @@ public class IQLTestUtils {
 			pair(">", "greater than"),
 			pair(">=", "greater than or equal"),
 			pair("!=", "not equal"),
-			pair("~", "matches"),
+			pair("=~", "matches"),
 			pair("!~", "matches not"),
-			pair("#", "contains"),
+			pair("=#", "contains"),
 			pair("!#", "contains not")
 	);
 

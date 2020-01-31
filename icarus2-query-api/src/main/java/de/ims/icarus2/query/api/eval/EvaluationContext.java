@@ -37,4 +37,6 @@ public class EvaluationContext {
 	private final Map<String, NsEntry> layers = new Object2ObjectOpenHashMap<>();
 
 	//TODO add mechanisms to obtain root namespace and to navigate namespace hierarchies
+
+	//TODO add mechanism to register callbacks for stages of matching process?
 }

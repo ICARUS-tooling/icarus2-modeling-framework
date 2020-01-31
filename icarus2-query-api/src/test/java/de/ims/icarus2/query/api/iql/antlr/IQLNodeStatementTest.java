@@ -90,7 +90,7 @@ public class IQLNodeStatementTest {
 
 	@CsvSource({
 		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
-		"[a>3 && pos~\"N[NP]\"], [[[\\[][a>3&&pos~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
+		"[a>3 && pos=~\"N[NP]\"], [[[\\[][a>3&&pos=~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
 		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two nodes with constraints",
 	})
 	@ParameterizedTest
@@ -131,7 +131,7 @@ public class IQLNodeStatementTest {
 
 	@CsvSource({
 		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
-		"[a>3 && pos~\"N[NP]\"], [[[\\[][a>3&&pos~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
+		"[a>3 && pos=~\"N[NP]\"], [[[\\[][a>3&&pos=~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
 		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two trees with constraints",
 		"[pos==\"NN\" [chars()<7]], [[[\\[][pos==\"NN\"][[\\[chars()<7\\]]][\\]]]], two nested trees with constraints",
 	})

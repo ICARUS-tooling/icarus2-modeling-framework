@@ -23,6 +23,9 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
+import de.ims.icarus2.util.MutablePrimitives.MutableLong;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
 /**
  * @author Markus Gärtner
@@ -90,26 +93,39 @@ public final class Literals {
 		public boolean computeAsBoolean() { return value; }
 	}
 
-	public static class NumericalLiteral <N extends Number> extends Literal<N> implements NumericalExpression<N> {
+	public static class IntegerLiteral extends Literal<Primitive<Long>> implements NumericalExpression<Long> {
 
-		private final N value;
+		private final MutableLong value;
 
-		public NumericalLiteral(TypeInfo type, N value) {
-			super(type);
-			this.value = value;
+		public IntegerLiteral(long value) {
+			super(TypeInfo.LONG);
+			this.value = new MutableLong(value);
 		}
 
 		@Override
-		public N compute() { return value; }
-
-//		@Override
-//		public int computeAsInt() { return value.intValue(); }
+		public Primitive<Long> compute() { return value; }
 
 		@Override
 		public long computeAsLong() { return value.longValue(); }
 
-//		@Override
-//		public float computeAsFloat() { return value.floatValue(); }
+		@Override
+		public double computeAsDouble() { return value.doubleValue(); }
+	}
+
+	public static class FloatingPointLiteral extends Literal<Primitive<Double>> implements NumericalExpression<Double> {
+
+		private final MutableDouble value;
+
+		public FloatingPointLiteral(double value) {
+			super(TypeInfo.DOUBLE);
+			this.value = new MutableDouble(value);
+		}
+
+		@Override
+		public Primitive<Double> compute() { return value; }
+
+		@Override
+		public long computeAsLong() { return value.longValue(); }
 
 		@Override
 		public double computeAsDouble() { return value.doubleValue(); }

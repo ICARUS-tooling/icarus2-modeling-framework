@@ -23,9 +23,7 @@ import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
 import static de.ims.icarus2.util.lang.Primitives._char;
-import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._int;
-import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
@@ -38,7 +36,8 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Literals.BooleanLiteral;
-import de.ims.icarus2.query.api.eval.Literals.NumericalLiteral;
+import de.ims.icarus2.query.api.eval.Literals.FloatingPointLiteral;
+import de.ims.icarus2.query.api.eval.Literals.IntegerLiteral;
 import de.ims.icarus2.query.api.eval.Literals.StringLiteral;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
@@ -183,26 +182,26 @@ public class ExpressionFactory {
 		return new BooleanLiteral(ctx.TRUE()!=null);
 	}
 
-	private NumericalLiteral<?> processIntegerLiteral(IntegerLiteralContext ctx) {
+	private IntegerLiteral processIntegerLiteral(IntegerLiteralContext ctx) {
 		String content = textOf(ctx);
 		content = cleanNumberLiteral(content);
 
 		try {
 			long value = Long.parseLong(content);
-			return new NumericalLiteral<Long>(TypeInfo.LONG, _long(value));
+			return new IntegerLiteral(value);
 		} catch(NumberFormatException e) {
 			throw new QueryException(QueryErrorCode.INVALID_LITERAL,
 					"Invalid integer literal: "+textOf(ctx), asFragment(ctx), e);
 		}
 	}
 
-	private NumericalLiteral<?> processFloatingPointLiteral(FloatingPointLiteralContext ctx) {
+	private FloatingPointLiteral processFloatingPointLiteral(FloatingPointLiteralContext ctx) {
 		String content = textOf(ctx);
 		content = cleanNumberLiteral(content);
 
 		try {
 			double value = Double.parseDouble(content);
-			return new NumericalLiteral<Double>(TypeInfo.DOUBLE, _double(value));
+			return new FloatingPointLiteral(value);
 		} catch(NumberFormatException e) {
 			throw new QueryException(QueryErrorCode.INVALID_LITERAL,
 					"Invalid foating point literal: "+textOf(ctx), asFragment(ctx), e);
@@ -242,7 +241,7 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processWrappingExpression(WrappingExpressionContext ctx) {
-		return failForUnhandledAlternative(ctx);
+		return processExpression(ctx.expression());
 	}
 
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {

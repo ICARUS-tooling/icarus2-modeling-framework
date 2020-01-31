@@ -302,7 +302,7 @@ expressionList
     +    -
     <<   >>   &    |   ^
     <    <=   >    >=   
-    ~   !~   #   !#
+    =~   !~   =#   !#
     ==   != 
     &&   AND
     ||   OR
@@ -328,12 +328,12 @@ expression
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| source=expression not? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
-	| (NOT | EXMARK | MINUS) expression 											# unaryOp
+	| (NOT | EXMARK | MINUS | TILDE) expression 									# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp
 	| left=expression (SHIFT_LEFT | SHIFT_RIGHT | PIPE | AMP | CARET) right=expression 		# bitwiseOp
 	| left=expression (LT | LT_EQ | GT | GT_EQ) right=expression 					# comparisonOp
-	| left=expression (TILDE | NOT_MATCHES | HASH | NOT_CONTAINS) right=expression 	# stringOp
+	| left=expression (MATCHES | NOT_MATCHES | CONTAINS | NOT_CONTAINS) right=expression 	# stringOp
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
 	| <assoc=right> left=expression and right=expression 											# conjunction
 	| <assoc=right> left=expression or right=expression 											# disjunction
@@ -559,6 +559,13 @@ EDGE_RIGHT : '-->';
 EDGE_BIDIRECTIONAL :'<->';
 EDGE_UNDIRECTED: '---';
  
+
+// Helper symbols
+AT : '@';
+DOLLAR : '$';
+HASH : '#';
+QMARK : '?';
+EXMARK : '!';
 // Operator symbols
 ASSIGN : '=';
 STAR : '*';
@@ -580,15 +587,10 @@ GT : '>';
 GT_EQ : '>=';
 EQ : '==';
 NOT_EQ : '!=';
+MATCHES : '=~';
 NOT_MATCHES : '!~';
+CONTAINS : '=#';
 NOT_CONTAINS : '!#';
-
-// Helper symbols
-AT : '@';
-DOLLAR : '$';
-HASH : '#';
-QMARK : '?';
-EXMARK : '!';
 // Range and linking punctuation
 DOUBLE_COLON : '::';
 DOUBLE_DOT : '..';
