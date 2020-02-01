@@ -126,7 +126,7 @@ public class BinaryOperations {
 	 * @param <T> the result type for {@link #compute()} and similar value retrieving method
 	 * @param <E> the expression types expected as input for the left and right operands
 	 */
-	private static abstract class AbstractBinaryOperation<T, E extends Expression<?>> implements Expression<T> {
+	private abstract class AbstractBinaryOperation<T, E extends Expression<?>> implements Expression<T> {
 		protected final E left;
 		protected final E right;
 		private boolean usesSideEffects;
@@ -234,7 +234,7 @@ public class BinaryOperations {
 		@Override
 		protected NumericalExpression toConstant(NumericalExpression left,
 				NumericalExpression right) {
-			return new Literals.FloatingPointLiteral(op.applyAsDouble(left, right));
+			return Literals.of(op.applyAsDouble(left, right));
 		}
 	}
 
@@ -278,38 +278,7 @@ public class BinaryOperations {
 		@Override
 		protected NumericalExpression toConstant(NumericalExpression left,
 				NumericalExpression right) {
-			return new Literals.IntegerLiteral(op.applyAsLong(left, right));
-		}
-	}
-
-	static class StringConcatenation
-			extends AbstractBinaryOperation<CharSequence, Expression<CharSequence>> {
-
-		private final StringBuilder buffer = new StringBuilder(100);
-
-		StringConcatenation(Expression<CharSequence> left, Expression<CharSequence> right) {
-			super(left, right, true);
-		}
-
-		@Override
-		public TypeInfo getResultType() { return TypeInfo.STRING; }
-
-		@Override
-		public CharSequence compute() {
-			buffer.setLength(0);
-			return buffer.append(left.compute()).append(right.compute());
-		}
-
-		@Override
-		protected Expression<CharSequence> duplicate(Expression<CharSequence> left,
-				Expression<CharSequence> right) {
-			return new StringConcatenation(left, right);
-		}
-
-		@Override
-		protected Expression<CharSequence> toConstant(Expression<CharSequence> left,
-				Expression<CharSequence> right) {
-			return new Literals.StringLiteral(left.compute()+""+right.compute());
+			return Literals.of(op.applyAsLong(left, right));
 		}
 	}
 
@@ -357,7 +326,7 @@ public class BinaryOperations {
 		@Override
 		protected BooleanExpression toConstant(Expression<T> left,
 				Expression<T> right) {
-			return new Literals.BooleanLiteral(pred.test(left, right));
+			return Literals.of(pred.test(left, right));
 		}
 	}
 
@@ -385,7 +354,7 @@ public class BinaryOperations {
 		@Override
 		protected BooleanExpression toConstant(NumericalExpression left,
 				NumericalExpression right) {
-			return new Literals.BooleanLiteral(pred.test(left, right));
+			return Literals.of(pred.test(left, right));
 		}
 	}
 
@@ -410,7 +379,7 @@ public class BinaryOperations {
 		@Override
 		protected BooleanExpression toConstant(Expression<CharSequence> left,
 				Expression<CharSequence> right) {
-			return new Literals.BooleanLiteral(pred.test(left, right));
+			return Literals.of(pred.test(left, right));
 		}
 	}
 

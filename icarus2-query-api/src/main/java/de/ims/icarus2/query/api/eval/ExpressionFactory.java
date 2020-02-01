@@ -40,10 +40,6 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.ComparableComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Literals.BooleanLiteral;
-import de.ims.icarus2.query.api.eval.Literals.FloatingPointLiteral;
-import de.ims.icarus2.query.api.eval.Literals.IntegerLiteral;
-import de.ims.icarus2.query.api.eval.Literals.StringLiteral;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ArrayAccessContext;
@@ -170,7 +166,7 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(pctx);
 	}
 
-	private StringLiteral processStringLiteral(TerminalNode node) {
+	private Expression<CharSequence> processStringLiteral(TerminalNode node) {
 		String content = textOf(node);
 		if(content.indexOf('\\')!=-1) {
 			StringBuilder sb = new StringBuilder(content.length());
@@ -199,37 +195,37 @@ public class ExpressionFactory {
 			}
 			content = sb.toString();
 		}
-		return new StringLiteral(content);
+		return Literals.of(content);
 	}
 
 	private Expression<?> processNullLiteral(NullLiteralContext ctx) {
-		return new Literals.NullLiteral();
+		return Literals.ofNull();
 	}
 
-	private BooleanLiteral processBooleanLiteral(BooleanLiteralContext ctx) {
-		return new BooleanLiteral(ctx.TRUE()!=null);
+	private BooleanExpression processBooleanLiteral(BooleanLiteralContext ctx) {
+		return Literals.of(ctx.TRUE()!=null);
 	}
 
-	private IntegerLiteral processIntegerLiteral(IntegerLiteralContext ctx) {
+	private NumericalExpression processIntegerLiteral(IntegerLiteralContext ctx) {
 		String content = textOf(ctx);
 		content = cleanNumberLiteral(content);
 
 		try {
 			long value = Long.parseLong(content);
-			return new IntegerLiteral(value);
+			return Literals.of(value);
 		} catch(NumberFormatException e) {
 			throw new QueryException(QueryErrorCode.INVALID_LITERAL,
 					"Invalid integer literal: "+textOf(ctx), asFragment(ctx), e);
 		}
 	}
 
-	private FloatingPointLiteral processFloatingPointLiteral(FloatingPointLiteralContext ctx) {
+	private NumericalExpression processFloatingPointLiteral(FloatingPointLiteralContext ctx) {
 		String content = textOf(ctx);
 		content = cleanNumberLiteral(content);
 
 		try {
 			double value = Double.parseDouble(content);
-			return new FloatingPointLiteral(value);
+			return Literals.of(value);
 		} catch(NumberFormatException e) {
 			throw new QueryException(QueryErrorCode.INVALID_LITERAL,
 					"Invalid foating point literal: "+textOf(ctx), asFragment(ctx), e);

@@ -36,7 +36,7 @@ public final class Literals {
 
 	private Literals() { /* no-op */ }
 
-	public static abstract class Literal<T> implements Expression<T> {
+	static abstract class Literal<T> implements Expression<T> {
 		private final TypeInfo type;
 
 		protected Literal(TypeInfo type) {
@@ -54,7 +54,13 @@ public final class Literals {
 		public boolean isConstant() { return true; }
 	}
 
-	public static class NullLiteral extends Literal<Object> {
+	public static Expression<Object> ofNull() {
+		return NULL_LITERAL;
+	}
+
+	private static final NullLiteral NULL_LITERAL = new NullLiteral();
+
+	static class NullLiteral extends Literal<Object> {
 
 		public NullLiteral() { super(TypeInfo.NULL); }
 
@@ -62,7 +68,11 @@ public final class Literals {
 		public Object compute() { return null; }
 	}
 
-	public static class StringLiteral extends Literal<CharSequence> {
+	public static Expression<CharSequence> of(String value) {
+		return new StringLiteral(value);
+	}
+
+	static class StringLiteral extends Literal<CharSequence> {
 
 		private final String value;
 
@@ -75,11 +85,15 @@ public final class Literals {
 		public String compute() { return value; }
 	}
 
-	public static class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
+	public static BooleanExpression of(boolean value) {
+		return new BooleanLiteral(value);
+	}
+
+	static class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
 
 		private final MutableBoolean value;
 
-		public BooleanLiteral(boolean value) {
+		BooleanLiteral(boolean value) {
 			super(TypeInfo.BOOLEAN);
 			this.value = new MutableBoolean(value);
 		}
@@ -91,11 +105,15 @@ public final class Literals {
 		public boolean computeAsBoolean() { return value.booleanValue(); }
 	}
 
-	public static class IntegerLiteral extends Literal<Primitive<?>> implements NumericalExpression {
+	public static NumericalExpression of(long value) {
+		return new IntegerLiteral(value);
+	}
+
+	static class IntegerLiteral extends Literal<Primitive<?>> implements NumericalExpression {
 
 		private final MutableLong value;
 
-		public IntegerLiteral(long value) {
+		IntegerLiteral(long value) {
 			super(TypeInfo.LONG);
 			this.value = new MutableLong(value);
 		}
@@ -110,11 +128,15 @@ public final class Literals {
 		public double computeAsDouble() { return value.doubleValue(); }
 	}
 
-	public static class FloatingPointLiteral extends Literal<Primitive<?>> implements NumericalExpression {
+	public static NumericalExpression of(double value) {
+		return new FloatingPointLiteral(value);
+	}
+
+	static class FloatingPointLiteral extends Literal<Primitive<?>> implements NumericalExpression {
 
 		private final MutableDouble value;
 
-		public FloatingPointLiteral(double value) {
+		FloatingPointLiteral(double value) {
 			super(TypeInfo.DOUBLE);
 			this.value = new MutableDouble(value);
 		}

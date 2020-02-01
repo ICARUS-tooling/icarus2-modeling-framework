@@ -91,85 +91,85 @@ class UnicodeUtilsTest {
 	@ParameterizedTest
 	@MethodSource("matchedPairs")
 	void testEqual_true(String s1, String s2) {
-		assertThat(UnicodeUtils.equal(s1, s2)).isTrue();
+		assertThat(StringEquals.equal(s1, s2)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("mismatchedPairs")
 	void testEqual_false(String s1, String s2) {
-		assertThat(UnicodeUtils.equal(s1, s2)).isFalse();
+		assertThat(StringEquals.equal(s1, s2)).isFalse();
 	}
 
 	@ParameterizedTest
 	@MethodSource("mismatchedPairs")
 	void testNotEqual_true(String s1, String s2) {
-		assertThat(UnicodeUtils.notEqual(s1, s2)).isTrue();
+		assertThat(StringEquals.notEqual(s1, s2)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("matchedPairs")
 	void testNotEqual_false(String s1, String s2) {
-		assertThat(UnicodeUtils.notEqual(s1, s2)).isFalse();
+		assertThat(StringEquals.notEqual(s1, s2)).isFalse();
 	}
 
 	@ParameterizedTest
 	@MethodSource("matchedPairs")
 	void testEqualLowerCase_true(String s1, String s2) {
-		assertThat(UnicodeUtils.equalLowerCase(s1, s2)).isTrue();
+		assertThat(StringEquals.equalLowerCase(s1, s2)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("mismatchedPairs")
 	void testEqualLowerCase_false(String s1, String s2) {
-		assertThat(UnicodeUtils.equalLowerCase(s1, s2)).isFalse();
+		assertThat(StringEquals.equalLowerCase(s1, s2)).isFalse();
 	}
 
 	@ParameterizedTest
 	@MethodSource("testValues")
 	void testEqualLowerCase_vs_String_LC(String s) {
-		assertThat(UnicodeUtils.equalLowerCase(s, s.toLowerCase())).isTrue();
+		assertThat(StringEquals.equalLowerCase(s, s.toLowerCase())).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("testValues")
 	void testEqualLowerCase_vs_String_UC(String s) {
-		assertThat(UnicodeUtils.equalLowerCase(s, s.toUpperCase())).isTrue();
+		assertThat(StringEquals.equalLowerCase(s, s.toUpperCase())).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("mismatchedPairs")
 	void testNotEqualLowerCase_true(String s1, String s2) {
-		assertThat(UnicodeUtils.notEqualLowerCase(s1, s2)).isTrue();
+		assertThat(StringEquals.notEqualLowerCase(s1, s2)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("matchedPairs")
 	void testNotEqualLowerCase_false(String s1, String s2) {
-		assertThat(UnicodeUtils.notEqualLowerCase(s1, s2)).isFalse();
+		assertThat(StringEquals.notEqualLowerCase(s1, s2)).isFalse();
 	}
 
 	@ParameterizedTest
 	@MethodSource("matchedPairs")
 	void testEqualIgnoreCase_true(String s1, String s2) {
-		assertThat(UnicodeUtils.equalIgnoreCase(s1, s2)).isTrue();
+		assertThat(StringEquals.equalIgnoreCase(s1, s2)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("mismatchedPairs")
 	void testEqualIgnoreCase_false(String s1, String s2) {
-		assertThat(UnicodeUtils.equalIgnoreCase(s1, s2)).isFalse();
+		assertThat(StringEquals.equalIgnoreCase(s1, s2)).isFalse();
 	}
 
 	@ParameterizedTest
 	@MethodSource("mismatchedPairs")
 	void testNotEqualIgnoreCase_true(String s1, String s2) {
-		assertThat(UnicodeUtils.notEqualIgnoreCase(s1, s2)).isTrue();
+		assertThat(StringEquals.notEqualIgnoreCase(s1, s2)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("matchedPairs")
 	void testNotEqualIgnoreCase_false(String s1, String s2) {
-		assertThat(UnicodeUtils.notEqualIgnoreCase(s1, s2)).isFalse();
+		assertThat(StringEquals.notEqualIgnoreCase(s1, s2)).isFalse();
 	}
 
 }

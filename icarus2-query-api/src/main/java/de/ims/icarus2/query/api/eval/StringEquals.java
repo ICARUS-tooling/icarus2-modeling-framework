@@ -41,9 +41,9 @@ import de.ims.icarus2.IcarusRuntimeException;
  * @author Markus Gärtner
  *
  */
-public final class UnicodeUtils {
+public final class StringEquals {
 
-	private UnicodeUtils() { /* no-op */ }
+	private StringEquals() { /* no-op */ }
 
 	/** Runs a basic character-wise equality check of two character sequences */
 	public static boolean equal(CharSequence cs1, CharSequence cs2) {
