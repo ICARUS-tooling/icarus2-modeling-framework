@@ -49,13 +49,13 @@ public final class StringUtil {
 
 	private static final Logger log = LoggerFactory.getLogger(StringUtil.class);
 
-	public static final String TEXT_WILDCARD = "[...]"; //$NON-NLS-1$
+	public static final String TEXT_WILDCARD = "[...]";
 
 	public static final String WEAK_INTERN_PROPERTY =
-			"de.ims.icarus2.strings.useWeakIntern"; //$NON-NLS-1$
+			"de.ims.icarus2.strings.useWeakIntern";
 
 	public static final String NATIVE_INTERN_PROPERTY =
-			"de.ims.icarus2.strings.useNativeIntern"; //$NON-NLS-1$
+			"de.ims.icarus2.strings.useNativeIntern";
 
 	private static final Locale ICARUS_LOCALE;
 	static {
@@ -184,7 +184,7 @@ public final class StringUtil {
 
 	static {
 		Interner<CharSequence> i;
-		if("true".equals(System.getProperty(WEAK_INTERN_PROPERTY, "false"))) { //$NON-NLS-1$ //$NON-NLS-2$
+		if("true".equals(System.getProperty(WEAK_INTERN_PROPERTY, "false"))) {
 			i = new WeakInterner<CharSequence>(defaultInternerCapacity){
 
 				/**
@@ -196,7 +196,7 @@ public final class StringUtil {
 				}
 
 			};
-		} else if("true".equals(System.getProperty(NATIVE_INTERN_PROPERTY, "false"))) { //$NON-NLS-1$ //$NON-NLS-2$
+		} else if("true".equals(System.getProperty(NATIVE_INTERN_PROPERTY, "false"))) {
 			i = new NativeStringInterner();
 		} else {
 			i = new StrongInterner<CharSequence>(defaultInternerCapacity){
@@ -276,7 +276,7 @@ public final class StringUtil {
 		return s==null ? fallback : s;
 	}
 
-	private static final Pattern lineBreak = Pattern.compile("\r\n|\n|\r"); //$NON-NLS-1$
+	private static final Pattern lineBreak = Pattern.compile("\r\n|\n|\r");
 
 	public static String[] splitLines(String s) {
 		return s==null ? null : lineBreak.split(s);
@@ -462,8 +462,7 @@ public final class StringUtil {
     }
 
     public static int indexOf(CharSequence s, CharSequence str, int fromIndex) {
-        return indexOf(s, 0, s.length(),
-                str, 0, str.length(), fromIndex);
+        return indexOf(s, 0, s.length(), str, 0, str.length(), fromIndex);
     }
 
     public static int lastIndexOf(CharSequence s, CharSequence str) {
@@ -612,7 +611,7 @@ public final class StringUtil {
 		if(indexPattern==null) {
 			// Don't care about synchronization, since concurrent initializations still
 			// yield functionally identical Pattern instances
-			indexPattern = Pattern.compile("\\((\\d+)\\)$"); //$NON-NLS-1$
+			indexPattern = Pattern.compile("\\((\\d+)\\)$");
 		}
 
 		return indexPattern;
@@ -633,7 +632,7 @@ public final class StringUtil {
 			try {
 				currentCount = Integer.parseInt(matcher.group(1));
 			} catch(NumberFormatException e) {
-				log.error("Failed to parse existing base name index suffix: {}", name, e); //$NON-NLS-1$
+				log.error("Failed to parse existing base name index suffix: {}", name, e);
 			}
 			return currentCount;
 		}
@@ -648,9 +647,9 @@ public final class StringUtil {
 
 	public static String getUniqueName(String baseName, Set<String> usedNames, boolean allowBaseName) {
 		if(baseName==null)
-			throw new NullPointerException("Invalid basename"); //$NON-NLS-1$
+			throw new NullPointerException("Invalid basename");
 		if(usedNames==null)
-			throw new NullPointerException("Invalid used name set"); //$NON-NLS-1$
+			throw new NullPointerException("Invalid used name set");
 
 		if(usedNames.isEmpty())
 			return baseName;
@@ -664,7 +663,7 @@ public final class StringUtil {
 		baseName = getBaseName(baseName);
 
 		if(usedNames.contains(name)) {
-			while(usedNames.contains((name = baseName+" ("+count+")"))) { //$NON-NLS-1$ //$NON-NLS-2$
+			while(usedNames.contains((name = baseName+" ("+count+")"))) {
 				count++;
 			}
 		}
@@ -678,7 +677,7 @@ public final class StringUtil {
 
 	public static String fit(String s, int maxLength, String wildcard) {
 		if(s==null)
-			return ""; //$NON-NLS-1$
+			return "";
 		if(s.length()<=maxLength)
 			return s;
 		if(wildcard==null || wildcard.isEmpty()) {
@@ -695,7 +694,7 @@ public final class StringUtil {
 		return sb.toString();
 	}
 
-	private static DecimalFormat decimalFormat = new DecimalFormat("#,###"); //$NON-NLS-1$
+	private static DecimalFormat decimalFormat = new DecimalFormat("#,###");
 
 	public static String formatDecimal(int value) {
 		synchronized (decimalFormat) {
@@ -708,7 +707,7 @@ public final class StringUtil {
 		}
 	}
 
-	private static DecimalFormat fractionDecimalFormat = new DecimalFormat("#,##0.00"); //$NON-NLS-1$
+	private static DecimalFormat fractionDecimalFormat = new DecimalFormat("#,##0.00");
 
 	public static String formatDecimal(double value) {
 		synchronized (fractionDecimalFormat) {
@@ -809,9 +808,9 @@ public final class StringUtil {
 	 */
 	public static String wrap(String s, FontMetrics fm, int width) {
 		if(fm==null)
-			throw new NullPointerException("Invalid font metrics"); //$NON-NLS-1$
+			throw new NullPointerException("Invalid font metrics");
 		//if(width<MIN_WRAP_WIDTH)
-		//	throw new IllegalArgumentException("Width must not be less than "+MIN_WRAP_WIDTH+" pixels"); //$NON-NLS-1$ //$NON-NLS-2$
+		//	throw new IllegalArgumentException("Width must not be less than "+MIN_WRAP_WIDTH+" pixels");
 
 		if(s==null || s.length()==0)
 			return s;
@@ -868,9 +867,9 @@ public final class StringUtil {
 
 	public static String[] split(String s, FontMetrics fm, int width) {
 		if(fm==null)
-			throw new NullPointerException("Invalid font metrics"); //$NON-NLS-1$
+			throw new NullPointerException("Invalid font metrics");
 		//if(width<MIN_WRAP_WIDTH)
-		//	throw new IllegalArgumentException("Width must not be less than "+MIN_WRAP_WIDTH+" pixels"); //$NON-NLS-1$ //$NON-NLS-2$
+		//	throw new IllegalArgumentException("Width must not be less than "+MIN_WRAP_WIDTH+" pixels");
 
 		if(s==null || s.length()==0)
 			return new String[0];
@@ -924,18 +923,18 @@ public final class StringUtil {
 
 	public static String capitalize(String s) {
 		if(s==null || s.length()<2)
-			throw new NullPointerException("Invalid string"); //$NON-NLS-1$
+			throw new NullPointerException("Invalid string");
 
 		return Character.toUpperCase(s.charAt(0))+s.substring(1);
 	}
 
 	public static String join(String[] tokens) {
-		return join(tokens, ", ", '[', ']'); //$NON-NLS-1$
+		return join(tokens, ", ", '[', ']');
 	}
 
 	public static String join(String[] tokens, String separator, char start, char end) {
 		if(tokens==null || tokens.length==0)
-			return ""; //$NON-NLS-1$
+			return "";
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(start);
@@ -952,7 +951,7 @@ public final class StringUtil {
 
 	public static String join(String[] tokens, String separator) {
 		if(tokens==null || tokens.length==0)
-			return ""; //$NON-NLS-1$
+			return "";
 		StringBuilder sb = new StringBuilder();
 
 		for(int i=0; i<tokens.length; i++) {
@@ -996,11 +995,11 @@ public final class StringUtil {
 	}
 
 	public static String padRight(String s, int n) {
-	     return String.format("%1$-" + n + "s", s); //$NON-NLS-1$ //$NON-NLS-2$
+	     return String.format("%1$-" + n + "s", s);
 	}
 
 	public static String padLeft(String s, int n) {
-	    return String.format("%1$" + n + "s", s); //$NON-NLS-1$ //$NON-NLS-2$
+	    return String.format("%1$" + n + "s", s);
 	}
 
 	/**

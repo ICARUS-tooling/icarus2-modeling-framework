@@ -69,7 +69,7 @@ public interface Expression<T> {
 	 *
 	 * @param <N> actual wrapper type of the primitive source type
 	 */
-	public interface NumericalExpression<N extends Number> extends Expression<Primitive<N>> {
+	public interface NumericalExpression extends Expression<Primitive<?>> {
 		long computeAsLong();
 		double computeAsDouble();
 	}
@@ -80,8 +80,13 @@ public interface Expression<T> {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public interface BooleanExpression extends Expression<Boolean> {
+	public interface BooleanExpression extends Expression<Primitive<Boolean>> {
 		boolean computeAsBoolean();
+
+		@Override
+		default TypeInfo getResultType() {
+			return TypeInfo.BOOLEAN;
+		}
 	}
 
 	/** Gives list-style access to the underlying data */

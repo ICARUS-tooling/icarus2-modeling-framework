@@ -130,6 +130,10 @@ public enum QueryErrorCode implements ErrorCode {
 	//       3xx  MATCHER ERRORS
 	//**************************************************
 
+	/**
+	 * An expression encountered an unsupported value type.
+	 */
+	TYPE_MISMATCH(301),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;

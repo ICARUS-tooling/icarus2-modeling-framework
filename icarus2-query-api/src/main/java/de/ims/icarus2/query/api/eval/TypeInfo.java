@@ -63,8 +63,20 @@ public class TypeInfo {
 	/** Returns {@code true} if this type describes a corpus member. */
 	public boolean isMember() { return member; }
 
-	/** Returns {@code true} if this type describes a structure that allows index-based access */
+	/** Returns {@code true} if this type describes a structure that allows index-based access. */
 	public boolean isList() { return list; }
+
+	public static boolean isNumerical(TypeInfo info) {
+		return info==LONG || info==DOUBLE;
+	}
+
+	public static boolean isBoolean(TypeInfo info) {
+		return info==BOOLEAN;
+	}
+
+	public static boolean isComparable(TypeInfo info) {
+		return Comparable.class.isAssignableFrom(info.type);
+	}
 
 	public static final TypeInfo NULL = new TypeInfo(Object.class, null, false, false);
 
@@ -72,10 +84,6 @@ public class TypeInfo {
 	public static final TypeInfo LONG = new TypeInfo(Long.class, long.class, false, false);
 //	public static final TypeInfo FLOAT = new TypeInfo(Float.class, float.class, false, false);
 	public static final TypeInfo DOUBLE = new TypeInfo(Double.class, double.class, false, false);
-
-	public static boolean isNumerical(TypeInfo info) {
-		return info==LONG || info==DOUBLE;
-	}
 
 	public static final TypeInfo BOOLEAN = new TypeInfo(Boolean.class, boolean.class, false, false);
 

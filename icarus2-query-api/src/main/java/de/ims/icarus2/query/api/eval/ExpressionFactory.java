@@ -35,6 +35,11 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.eval.BinaryOperations.AlgebraicOp;
+import de.ims.icarus2.query.api.eval.BinaryOperations.ComparableComparator;
+import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
+import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
+import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Literals.BooleanLiteral;
 import de.ims.icarus2.query.api.eval.Literals.FloatingPointLiteral;
 import de.ims.icarus2.query.api.eval.Literals.IntegerLiteral;
@@ -113,6 +118,12 @@ public class ExpressionFactory {
 	}
 
 	public Expression<?> processExpression(ExpressionContext ctx) {
+		Expression<?> expression = processExpression0(ctx);
+		//TODO call optimize() already?
+		return expression;
+	}
+
+	private Expression<?> processExpression0(ExpressionContext ctx) {
 		return handlerFor(ctx).apply(ctx);
 	}
 
@@ -120,6 +131,23 @@ public class ExpressionFactory {
 	private <T> T failForUnhandledAlternative(ParserRuleContext ctx) {
 		throw new QueryException(QueryErrorCode.AST_ERROR,
 				"Unknown alterative: "+ctx.getClass().getCanonicalName(), asFragment(ctx));
+	}
+
+	private NumericalExpression ensureNumerical(Expression<?> source) {
+		if(!TypeInfo.isNumerical(source.getResultType()))
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a numerical type: "+source.getResultType());
+		//TODO maybe validate via instanceof ?
+		return (NumericalExpression)source;
+	}
+
+	private BooleanExpression ensureBoolean(Expression<?> source) {
+		if(!TypeInfo.isBoolean(source.getResultType()))
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a boolean type: "+source.getResultType());
+		//TODO take switches and general boolean type conversion into account!!
+		//TODO maybe validate via instanceof ?
+		return (BooleanExpression)source;
 	}
 
 	Expression<?> processPrimary(PrimaryExpressionContext ctx) {
@@ -221,74 +249,183 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processPathAccess(PathAccessContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processMethodInvocation(MethodInvocationContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processArrayAccess(ArrayAccessContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processAnnotationAccess(AnnotationAccessContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processCastExpression(CastExpressionContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processWrappingExpression(WrappingExpressionContext ctx) {
-		return processExpression(ctx.expression());
+		return processExpression0(ctx.expression());
 	}
 
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processUnaryOp(UnaryOpContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processMultiplicativeOp(MultiplicativeOpContext ctx) {
-		return failForUnhandledAlternative(ctx);
+		NumericalExpression left = ensureNumerical(processExpression0(ctx.left));
+		NumericalExpression right = ensureNumerical(processExpression0(ctx.right));
+
+		AlgebraicOp op = null;
+		if(ctx.STAR()!=null) {
+			op = AlgebraicOp.MULT;
+		} else if(ctx.SLASH()!=null) {
+			op = AlgebraicOp.DIV;
+		} else if(ctx.PERCENT()!=null) {
+			op = AlgebraicOp.MOD;
+		} else {
+			failForUnhandledAlternative(ctx);
+		}
+
+		return BinaryOperations.numericalOp(op, left, right);
 	}
 
 	Expression<?> processAdditiveOp(AdditiveOpContext ctx) {
-		return failForUnhandledAlternative(ctx);
+		NumericalExpression left = ensureNumerical(processExpression0(ctx.left));
+		NumericalExpression right = ensureNumerical(processExpression0(ctx.right));
+
+		AlgebraicOp op = null;
+		if(ctx.PLUS()!=null) {
+			op = AlgebraicOp.ADD;
+		} else if(ctx.MINUS()!=null) {
+			op = AlgebraicOp.SUB;
+		} else {
+			failForUnhandledAlternative(ctx);
+		}
+
+		return BinaryOperations.numericalOp(op, left, right);
 	}
 
 	Expression<?> processBitwiseOp(BitwiseOpContext ctx) {
-		return failForUnhandledAlternative(ctx);
+		NumericalExpression left = ensureNumerical(processExpression0(ctx.left));
+		NumericalExpression right = ensureNumerical(processExpression0(ctx.right));
+
+		AlgebraicOp op = null;
+		if(ctx.AMP()!=null) {
+			op = AlgebraicOp.BIT_AND;
+		} else if(ctx.PIPE()!=null) {
+			op = AlgebraicOp.BIT_OR;
+		} else if(ctx.CARET()!=null) {
+			op = AlgebraicOp.BIT_XOR;
+		} else if(ctx.SHIFT_LEFT()!=null) {
+			op = AlgebraicOp.LSHIFT;
+		} else if(ctx.SHIFT_RIGHT()!=null) {
+			op = AlgebraicOp.RSHIFT;
+		} else {
+			failForUnhandledAlternative(ctx);
+		}
+
+		return BinaryOperations.numericalOp(op, left, right);
 	}
 
 	Expression<?> processComparisonOp(ComparisonOpContext ctx) {
+
+		Expression<?> left = processExpression0(ctx.left);
+		Expression<?> right = processExpression0(ctx.right);
+
+		if(TypeInfo.isNumerical(left.getResultType()) && TypeInfo.isNumerical(right.getResultType())) {
+			return processNumericalComparison(ctx, ensureNumerical(left), ensureNumerical(right));
+		} else if(TypeInfo.isComparable(left.getResultType()) && TypeInfo.isComparable(right.getResultType())) {
+			//TODO try to infer type compatibility between the two comparables
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			Expression<Comparable> leftComp = (Expression<Comparable>)left;
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			Expression<Comparable> rightComp = (Expression<Comparable>)right;
+			return processComparableComparison(ctx, leftComp, rightComp);
+		}
+		//TODO provide error information
 		return failForUnhandledAlternative(ctx);
 	}
 
+	private BooleanExpression processNumericalComparison(ComparisonOpContext ctx,
+			NumericalExpression left, NumericalExpression right) {
+		NumericalComparator comp = null;
+		if(ctx.LT()!=null) {
+			comp = NumericalComparator.LESS;
+		} else if(ctx.LT_EQ()!=null) {
+			comp = NumericalComparator.LESS_OR_EQUAL;
+		} else if(ctx.GT()!=null) {
+			comp = NumericalComparator.GREATER;
+		} else if(ctx.GT_EQ()!=null) {
+			comp = NumericalComparator.GREATER_OR_EQUAL;
+		} else {
+			failForUnhandledAlternative(ctx);
+		}
+
+		return BinaryOperations.numericalPred(comp, left, right);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private BooleanExpression processComparableComparison(ComparisonOpContext ctx,
+			Expression<Comparable> left, Expression<Comparable> right) {
+		ComparableComparator comp = null;
+		if(ctx.LT()!=null) {
+			comp = ComparableComparator.LESS;
+		} else if(ctx.LT_EQ()!=null) {
+			comp = ComparableComparator.LESS_OR_EQUAL;
+		} else if(ctx.GT()!=null) {
+			comp = ComparableComparator.GREATER;
+		} else if(ctx.GT_EQ()!=null) {
+			comp = ComparableComparator.GREATER_OR_EQUAL;
+		} else {
+			failForUnhandledAlternative(ctx);
+		}
+
+		return BinaryOperations.comparablePred(comp, left, right);
+	}
+
 	Expression<?> processStringOp(StringOpContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processEqualityCheck(EqualityCheckContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processConjunction(ConjunctionContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processDisjunction(DisjunctionContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processTernaryOp(TernaryOpContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processForEach(ForEachContext ctx) {
+		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 }

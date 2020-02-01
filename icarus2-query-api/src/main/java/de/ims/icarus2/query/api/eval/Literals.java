@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
@@ -61,7 +62,7 @@ public final class Literals {
 		public Object compute() { return null; }
 	}
 
-	public static class StringLiteral extends Literal<String> {
+	public static class StringLiteral extends Literal<CharSequence> {
 
 		private final String value;
 
@@ -71,29 +72,26 @@ public final class Literals {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.STRING; }
-
-		@Override
 		public String compute() { return value; }
 	}
 
-	public static class BooleanLiteral extends Literal<Boolean> implements BooleanExpression {
+	public static class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
 
-		private final boolean value;
+		private final MutableBoolean value;
 
 		public BooleanLiteral(boolean value) {
 			super(TypeInfo.BOOLEAN);
-			this.value = value;
+			this.value = new MutableBoolean(value);
 		}
 
 		@Override
-		public Boolean compute() { return Boolean.valueOf(value); }
+		public Primitive<Boolean> compute() { return value; }
 
 		@Override
-		public boolean computeAsBoolean() { return value; }
+		public boolean computeAsBoolean() { return value.booleanValue(); }
 	}
 
-	public static class IntegerLiteral extends Literal<Primitive<Long>> implements NumericalExpression<Long> {
+	public static class IntegerLiteral extends Literal<Primitive<?>> implements NumericalExpression {
 
 		private final MutableLong value;
 
@@ -112,7 +110,7 @@ public final class Literals {
 		public double computeAsDouble() { return value.doubleValue(); }
 	}
 
-	public static class FloatingPointLiteral extends Literal<Primitive<Double>> implements NumericalExpression<Double> {
+	public static class FloatingPointLiteral extends Literal<Primitive<?>> implements NumericalExpression {
 
 		private final MutableDouble value;
 
