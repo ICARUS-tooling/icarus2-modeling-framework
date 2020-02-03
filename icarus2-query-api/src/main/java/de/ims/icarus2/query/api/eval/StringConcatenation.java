@@ -14,9 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- */
 package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
@@ -26,25 +23,49 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class StringConcatenation implements Expression<CharSequence> {
+import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.util.strings.CodePointBuffer;
+import de.ims.icarus2.util.strings.CodePointSequence;
+
+public class StringConcatenation implements TextExpression {
+
+	public static StringConcatenation concat(TextExpression[] elements) {
+		return new StringConcatenation(elements);
+	}
+
 
 	private final StringBuilder buffer;
+	private final CodePointBuffer translator;
+	private final TextExpression[] elements;
 
-	private final Expression<CharSequence>[] elements;
-
-	public StringConcatenation(Expression<CharSequence>[] elements) {
+	StringConcatenation(TextExpression[] elements) {
 		requireNonNull(elements);
 		checkArgument("Must have at least 2 elements to concatenat", elements.length>1);
 
 		this.elements = elements;
 		buffer = new StringBuilder(100);
+		translator = new CodePointBuffer();
+	}
+
+	/**
+	 * Returns the raw elements of this concatenation. Package-private visibility
+	 * so that {@link ExpressionFactory} can optimize nested concatenation expressions.
+	 */
+	TextExpression[] getElements() {
+		return elements;
 	}
 
 	@Override
 	public TypeInfo getResultType() { return TypeInfo.STRING; }
 
 	@Override
-	public CharSequence compute() {
+	public CodePointSequence compute() {
+		translator.set(computeAsChars());
+		return translator;
+	}
+
+	@Override
+	public CharSequence computeAsChars() {
 		buffer.setLength(0);
 		for (int i = 0; i < elements.length; i++) {
 			buffer.append(elements[i].compute());
@@ -59,21 +80,24 @@ public class StringConcatenation implements Expression<CharSequence> {
 	public StringConcatenation duplicate(EvaluationContext context) {
 		return new StringConcatenation(Stream.of(elements)
 				.map(ex -> ex.duplicate(context))
-				.toArray(Expression[]::new));
+				.toArray(TextExpression[]::new));
 	}
 
 	/**
+	 * Optimizes all the nested {@link TextExpression} elements and tries to
+	 * collapse as many of them into constants as possible.
+	 *
 	 * @see de.ims.icarus2.query.api.eval.Expression#optimize(de.ims.icarus2.query.api.eval.EvaluationContext)
 	 */
 	@Override
-	public Expression<CharSequence> optimize(EvaluationContext context) {
-		List<Expression<CharSequence>> newElements = new ArrayList<>(elements.length);
+	public TextExpression optimize(EvaluationContext context) {
+		List<TextExpression> newElements = new ArrayList<>(elements.length);
 		StringBuilder buffer = new StringBuilder();
 		boolean hasChanged = false;
 
 		for (int i = 0; i < elements.length; i++) {
-			Expression<CharSequence> original = elements[i];
-			Expression<CharSequence> optimized = original.optimize(context);
+			TextExpression original = elements[i];
+			TextExpression optimized = (TextExpression) original.optimize(context);
 
 			if(optimized.isConstant()) {
 				buffer.append(optimized.compute());
@@ -96,7 +120,7 @@ public class StringConcatenation implements Expression<CharSequence> {
 		if(newElements.size()==1) {
 			return newElements.get(0);
 		} else if(hasChanged) {
-			return new StringConcatenation(newElements.toArray(new Expression[0]));
+			return new StringConcatenation(newElements.toArray(new TextExpression[0]));
 		}
 
 		return this;
