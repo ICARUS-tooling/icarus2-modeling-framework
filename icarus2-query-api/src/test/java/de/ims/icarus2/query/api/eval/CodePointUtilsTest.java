@@ -19,13 +19,19 @@
  */
 package de.ims.icarus2.query.api.eval;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
+import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -81,21 +87,6 @@ class CodePointUtilsTest {
 		);
 	}
 
-	public static Stream<Arguments> mismatchedPairsForContains() {
-		return Stream.of(
-				arguments("x", "y"),
-				arguments("xxxxx", "xy"),
-				arguments("Äö", "Öä"),
-				arguments("This is a test", "are"),
-				arguments("This is a test", "\t"),
-				arguments(test_mixed, "test"),
-				arguments(test_mixed2, "𐰉"),
-				arguments(test_mixed3, "𐰆𐰇𐰈𐰊"),
-				arguments(test_mixed3, test_mixed2),
-				arguments(test_mixed3, test_mixed3+test_mixed2) // ensure longer queries get skipped
-		);
-	}
-
 	public static Stream<Arguments> matchedPairsForContains() {
 		return Stream.of(
 				arguments("x", "x"),
@@ -111,36 +102,167 @@ class CodePointUtilsTest {
 		);
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsChars(java.lang.CharSequence, java.lang.CharSequence, de.ims.icarus2.util.function.CharBiPredicate)}.
-	 */
-	@Test
-	void testEqualsChars() {
-		fail("Not yet implemented"); // TODO
+	public static Stream<Arguments> mismatchedPairsForContains() {
+		return Stream.of(
+				arguments("x", "y"),
+				arguments("xxxxx", "xy"),
+				arguments("Äö", "Öä"),
+				arguments("This is a test", "are"),
+				arguments("This is a test", "\t"),
+				arguments(test_mixed, "test"),
+				arguments(test_mixed2, "𐰉"),
+				arguments(test_mixed3, "𐰆𐰇𐰈𐰊"),
+				arguments(test_mixed3, test_mixed2),
+				arguments(test_mixed3, test_mixed3+test_mixed2) // ensure longer queries get skipped
+		);
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
-	 */
-	@Test
-	void testEqualsCodePoints() {
-		fail("Not yet implemented"); // TODO
+	abstract class EqualityTests {
+
+		private final StringMode mode;
+
+		public EqualityTests(StringMode mode) { this.mode = requireNonNull(mode); }
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsChars(java.lang.CharSequence, java.lang.CharSequence, de.ims.icarus2.util.function.CharBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#testValues")
+		void testEqualsChars_true(String value) {
+			assertThat(CodePointUtils.equalsChars(value, value, mode.getCharComparator())).isTrue();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsChars(java.lang.CharSequence, java.lang.CharSequence, de.ims.icarus2.util.function.CharBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#mismatchedPairsForEquals")
+		void testEqualsChars_false(String s1, String s2) {
+			assertThat(CodePointUtils.equalsChars(s1, s2, mode.getCharComparator())).isFalse();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#testValues")
+		void testEqualsCodePoints_true(String value) {
+			assertThat(CodePointUtils.equalsCodePoints(CodePointSequence.fixed(value),
+					CodePointSequence.fixed(value), mode.getCodePointComparator()));
+		}
+
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#containsChars(java.lang.CharSequence, java.lang.CharSequence, de.ims.icarus2.util.function.CharBiPredicate)}.
-	 */
-	@Test
-	void testContainsChars() {
-		fail("Not yet implemented"); // TODO
+	@Nested
+	class ForEquality {
+
+		@Nested
+		class DefaultMode extends EqualityTests {
+
+			public DefaultMode() {
+				super(StringMode.DEFAULT);
+			}
+
+		}
+
+		@Nested
+		class LowerCaseMode extends EqualityTests {
+
+			public LowerCaseMode() {
+				super(StringMode.LOWERCASE);
+			}
+
+			//TODO add special tests for different casings that transform to the same results
+		}
+
+		@Nested
+		class IgnoreCaseMode extends EqualityTests {
+
+			public IgnoreCaseMode() {
+				super(StringMode.IGNORE_CASE);
+			}
+
+			//TODO add special tests for different casings that transform to the same results
+		}
+
 	}
 
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#containsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
-	 */
-	@Test
-	void testContainsCodePoints() {
-		fail("Not yet implemented"); // TODO
+	abstract class ContainsTests {
+
+		private final StringMode mode;
+
+		public ContainsTests(StringMode mode) { this.mode = requireNonNull(mode); }
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#containsChars(java.lang.CharSequence, java.lang.CharSequence, de.ims.icarus2.util.function.CharBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#matchedPairsForContains")
+		void testContainsChars_true(String target, String query) {
+			assertThat(CodePointUtils.containsChars(target, query, mode.getCharComparator())).isTrue();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#containsChars(java.lang.CharSequence, java.lang.CharSequence, de.ims.icarus2.util.function.CharBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#mismatchedPairsForContains")
+		void testContainsChars_false(String target, String query) {
+			assertThat(CodePointUtils.containsChars(target, query, mode.getCharComparator())).isFalse();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#containsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#matchedPairsForContains")
+		void testContainsCodePoints_true(String target, String query) {
+			assertThat(CodePointUtils.containsCodePoints(CodePointSequence.fixed(target),
+					CodePointSequence.fixed(query), mode.getCodePointComparator())).isTrue();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#containsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#mismatchedPairsForContains")
+		void testContainsCodePoints_false(String target, String query) {
+			assertThat(CodePointUtils.containsCodePoints(CodePointSequence.fixed(target),
+					CodePointSequence.fixed(query), mode.getCodePointComparator())).isFalse();
+		}
+
 	}
 
+	@Nested
+	class ForContains {
+
+		@Nested
+		class DefaultMode extends ContainsTests {
+
+			public DefaultMode() {
+				super(StringMode.DEFAULT);
+			}
+
+		}
+
+		@Nested
+		class LowerCaseMode extends ContainsTests {
+
+			public LowerCaseMode() {
+				super(StringMode.LOWERCASE);
+			}
+
+			//TODO add special tests for different casings that transform to the same results
+		}
+
+		@Nested
+		class IgnoreCaseMode extends ContainsTests {
+
+			public IgnoreCaseMode() {
+				super(StringMode.IGNORE_CASE);
+			}
+
+			//TODO add special tests for different casings that transform to the same results
+		}
+	}
 }
