@@ -19,12 +19,23 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
+ * Models the basic building blocks for evaluating and accessing corpus data through the
+ * IQL evaluation engine. Note that {@link Expression} instances are not required to be
+ * thread-safe and as such no expression may ever be used by more than a single thread
+ * during its lifetime. A special method for {@link #duplicate(EvaluationContext) cloning}
+ * is specified that allows to create a new expression instance that behaves exactly as
+ * the original but can be used in another thread.
+ *
  * @author Markus Gärtner
  *
  */
+@NotThreadSafe
 public interface Expression<T> {
 
 	/** Returns the most precise description of the result type for this expression. */
@@ -62,16 +73,32 @@ public interface Expression<T> {
 	 */
 	Expression<T> duplicate(EvaluationContext context);
 
+	default boolean isText() {
+		return TypeInfo.isText(getResultType());
+	}
+
+	default boolean isNumerical() {
+		return TypeInfo.isNumerical(getResultType());
+	}
+
+	default boolean isBoolean() {
+		return TypeInfo.isBoolean(getResultType());
+	}
+
+
 	/**
 	 * Specialized expression with primitive numerical return value.
 	 *
 	 * @author Markus Gärtner
-	 *
-	 * @param <N> actual wrapper type of the primitive source type
 	 */
-	public interface NumericalExpression extends Expression<Primitive<?>> {
+	public interface NumericalExpression extends Expression<Primitive<? extends Number>> {
 		long computeAsLong();
 		double computeAsDouble();
+
+		/** REturns true iff this expression is a floating point expression */
+		default boolean isFPE() {
+			return getResultType()==TypeInfo.DOUBLE;
+		}
 	}
 
 	/**
@@ -86,6 +113,22 @@ public interface Expression<T> {
 		@Override
 		default TypeInfo getResultType() {
 			return TypeInfo.BOOLEAN;
+		}
+	}
+
+	/**
+	 * Specialized expression with unicode text value.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public interface TextExpression extends Expression<CodePointSequence> {
+
+		CharSequence computeAsChars();
+
+		@Override
+		default TypeInfo getResultType() {
+			return TypeInfo.STRING;
 		}
 	}
 

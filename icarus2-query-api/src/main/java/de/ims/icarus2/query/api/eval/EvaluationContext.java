@@ -19,10 +19,15 @@
  */
 package de.ims.icarus2.query.api.eval;
 
-import java.util.Map;
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 
+import java.util.Map;
+import java.util.Set;
+
+import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.eval.Namespace.NsEntry;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -36,7 +41,21 @@ public class EvaluationContext {
 	/** Maps the usable raw names or aliases to layer entries. */
 	private final Map<String, NsEntry> layers = new Object2ObjectOpenHashMap<>();
 
+	/** Flags that have been switched on for the query. */
+	private final Set<String> switches = new ObjectOpenHashSet<>();
+
+	/** Additional properties that have been set for this query. */
+	private final Map<String, String> properties = new Object2ObjectOpenHashMap<>();
+
 	//TODO add mechanisms to obtain root namespace and to navigate namespace hierarchies
 
 	//TODO add mechanism to register callbacks for stages of matching process?
+
+	public boolean isSwitchSet(String name) {
+		return switches.contains(checkNotEmpty(name));
+	}
+
+	public boolean isSwitchSet(QuerySwitch qs) {
+		return switches.contains(qs.getKey());
+	}
 }

@@ -35,6 +35,8 @@ public enum QuerySwitch {
 	STRING_CASE_OFF("string.case.off", "Turns of case sensitivity when performing string operations such as equality checks."),
 	STRING_CASE_LOWER("string.case.lower", "Another approach to case insensitivity, this switch turns all strings into lower case."),
 	STRING_DIRECTION_RLT("string.direction.right2left", "Signals the engine that all string oeprations need to be performed right-to-left."),
+	STRING_UNICODE_OFF("string.unicode.off", "Disables support for unicode code points."),
+
 	EXPANSION_OFF("expansion.off", "Effectively shuts down value expansion."),
 	STRING_TO_BOOLEAN_OFF("string2bool.off", "Deactivates the interpretation of strings as boolean values."),
 	INT_TO_BOOLEAN_OFF("int2bool.off", "Deactivates the interpretation of integers as boolean values."),

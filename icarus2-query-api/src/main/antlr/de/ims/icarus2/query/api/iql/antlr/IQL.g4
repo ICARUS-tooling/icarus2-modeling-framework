@@ -328,6 +328,7 @@ expression
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| source=expression not? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
+	//TODO maybe replace 'NOT | EXMARK' by 'not' rule, but might interfere with priorities?
 	| (NOT | EXMARK | MINUS | TILDE) expression 									# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp

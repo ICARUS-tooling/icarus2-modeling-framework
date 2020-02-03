@@ -31,6 +31,7 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -38,7 +39,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  */
 public class TypeInfo {
 
-	public TypeInfo of(Class<?> type, boolean list) {
+	public static TypeInfo of(Class<?> type, boolean list) {
 		return new TypeInfo(type, null, false, list);
 	}
 
@@ -52,6 +53,15 @@ public class TypeInfo {
 		this.primitiveType = primitiveType;
 		this.member = member;
 		this.list = list;
+	}
+
+	@Override
+	public String toString() {
+		if(primitiveType!=null) {
+			return primitiveType.getSimpleName();
+		}
+
+		return type.getSimpleName();
 	}
 
 	public Class<?> getType() { return type; }
@@ -74,11 +84,17 @@ public class TypeInfo {
 		return info==BOOLEAN;
 	}
 
+	public static boolean isText(TypeInfo info) {
+		return info==STRING;
+	}
+
 	public static boolean isComparable(TypeInfo info) {
 		return Comparable.class.isAssignableFrom(info.type);
 	}
 
 	public static final TypeInfo NULL = new TypeInfo(Object.class, null, false, false);
+
+	public static final TypeInfo GENERIC = of(Object.class, false);
 
 //	public static final TypeInfo INT = new TypeInfo(Integer.class, int.class, false, false);
 	public static final TypeInfo LONG = new TypeInfo(Long.class, long.class, false, false);
@@ -88,7 +104,7 @@ public class TypeInfo {
 	public static final TypeInfo BOOLEAN = new TypeInfo(Boolean.class, boolean.class, false, false);
 
 	/** We use {@link CharSequence} as type for strings, in accordance with {@link ValueType#STRING} */
-	public static final TypeInfo STRING = new TypeInfo(CharSequence.class, null, false, false);
+	public static final TypeInfo STRING = new TypeInfo(CodePointSequence.class, null, false, false);
 
 	// Low-level members
 	public static final TypeInfo ITEM = new TypeInfo(Item.class, null, true, false);

@@ -26,20 +26,29 @@ import static de.ims.icarus2.util.lang.Primitives._char;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.eval.BinaryOperations.AlgebraicOp;
 import de.ims.icarus2.query.api.eval.BinaryOperations.ComparableComparator;
+import de.ims.icarus2.query.api.eval.BinaryOperations.EqualityPred;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
+import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
+import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
+import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ArrayAccessContext;
@@ -74,6 +83,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public class ExpressionFactory {
 
+	/** Context and settings to be used for evaluating the query. */
 	private final EvaluationContext context;
 
 	private final Map<Class<? extends ParserRuleContext>, Function<ParserRuleContext, Expression<?>>>
@@ -107,6 +117,20 @@ public class ExpressionFactory {
 		handlers.put(ForEachContext.class, ctx -> processForEach((ForEachContext) ctx));
 	}
 
+	private boolean isAllowUnicode() {
+		return !context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF);
+	}
+
+	private StringMode getStringMode() {
+		StringMode stringMode = StringMode.DEFAULT;
+		if(context.isSwitchSet(QuerySwitch.STRING_CASE_OFF)) {
+			stringMode = StringMode.IGNORE_CASE;
+		} else if(context.isSwitchSet(QuerySwitch.STRING_CASE_LOWER)) {
+			stringMode = StringMode.LOWERCASE;
+		}
+		return stringMode;
+	}
+
 	private Function<ParserRuleContext, Expression<?>> handlerFor(ParserRuleContext ctx) {
 		return Optional.ofNullable(handlers.get(ctx.getClass()))
 				.orElseThrow(() -> new QueryException(QueryErrorCode.AST_ERROR,
@@ -130,20 +154,41 @@ public class ExpressionFactory {
 	}
 
 	private NumericalExpression ensureNumerical(Expression<?> source) {
-		if(!TypeInfo.isNumerical(source.getResultType()))
+		if(!source.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a numerical type: "+source.getResultType());
 		//TODO maybe validate via instanceof ?
 		return (NumericalExpression)source;
 	}
 
+	private NumericalExpression ensureInteger(Expression<?> source) {
+		NumericalExpression nexp = ensureNumerical(source);
+		if(nexp.isFPE())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not an integer expression: "+nexp.getResultType());
+		return nexp;
+	}
+
 	private BooleanExpression ensureBoolean(Expression<?> source) {
-		if(!TypeInfo.isBoolean(source.getResultType()))
+		if(!source.isBoolean())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a boolean type: "+source.getResultType());
 		//TODO take switches and general boolean type conversion into account!!
 		//TODO maybe validate via instanceof ?
 		return (BooleanExpression)source;
+	}
+
+	private TextExpression ensureText(Expression<?> source) {
+		if(!source.isText())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a text type: "+source.getResultType());
+		//TODO take string conversion into account!!
+		//TODO maybe validate via instanceof ?
+		return (TextExpression)source;
+	}
+
+	private BooleanExpression maybeNegate(BooleanExpression source, boolean negate) {
+		return negate ? UnaryOperations.not(source) : source;
 	}
 
 	Expression<?> processPrimary(PrimaryExpressionContext ctx) {
@@ -166,8 +211,9 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(pctx);
 	}
 
-	private Expression<CharSequence> processStringLiteral(TerminalNode node) {
+	private TextExpression processStringLiteral(TerminalNode node) {
 		String content = textOf(node);
+		// If needed, unescape the content first
 		if(content.indexOf('\\')!=-1) {
 			StringBuilder sb = new StringBuilder(content.length());
 			boolean escaped = false;
@@ -270,7 +316,16 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processWrappingExpression(WrappingExpressionContext ctx) {
-		return processExpression0(ctx.expression());
+		return processExpression0(unwrap(ctx));
+	}
+
+	/** Unwraps until a non wrapper context is encountered */
+	private ExpressionContext unwrap(ExpressionContext ctx) {
+		ExpressionContext ectx = ctx;
+		while(ectx instanceof WrappingExpressionContext) {
+			ectx = ((WrappingExpressionContext)ectx).expression();
+		}
+		return ectx;
 	}
 
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {
@@ -279,7 +334,16 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processUnaryOp(UnaryOpContext ctx) {
-		//TODO implement
+		Expression<?> source = processExpression0(ctx.expression());
+
+		if(ctx.EXMARK()!=null || ctx.NOT()!=null) {
+			return UnaryOperations.not(ensureBoolean(source));
+		} else if(ctx.MINUS()!=null) {
+			return UnaryOperations.minus(ensureNumerical(source));
+		} else if(ctx.TILDE()!=null) {
+			return UnaryOperations.bitwiseNot(ensureNumerical(source));
+		}
+
 		return failForUnhandledAlternative(ctx);
 	}
 
@@ -302,8 +366,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processAdditiveOp(AdditiveOpContext ctx) {
-		NumericalExpression left = ensureNumerical(processExpression0(ctx.left));
-		NumericalExpression right = ensureNumerical(processExpression0(ctx.right));
+		Expression<?> left = processExpression0(ctx.left);
+		Expression<?> right = processExpression0(ctx.right);
 
 		AlgebraicOp op = null;
 		if(ctx.PLUS()!=null) {
@@ -314,12 +378,53 @@ public class ExpressionFactory {
 			failForUnhandledAlternative(ctx);
 		}
 
-		return BinaryOperations.numericalOp(op, left, right);
+		if(left.isText() || right.isText()) {
+			return processStringConcatenation(ctx);
+		}
+
+		return BinaryOperations.numericalOp(op,
+				ensureNumerical(left), ensureNumerical(right));
+	}
+
+	private TextExpression processStringConcatenation(AdditiveOpContext ctx) {
+		/*
+		 * Additive op in IQL is left associative, so we gonna add elements to
+		 * the buffer starting from the right while descending down the parse tree.
+		 */
+		List<ExpressionContext> items = new ArrayList<>();
+
+		ExpressionContext ectx = ctx;
+		while(ectx instanceof AdditiveOpContext) {
+			AdditiveOpContext actx = (AdditiveOpContext) ectx;
+			items.add(actx.right);
+			ectx = actx.left;
+		}
+		// Now ectx is the last left-directed child
+		items.add(ectx);
+
+		// Reverse list before processing
+		Collections.reverse(items);
+
+		TextExpression[] elements = items.stream()
+				// Basic processing
+				.map(this::processExpression0)
+				// Make sure we only concatenate strings
+				.map(this::ensureText)
+				// Expand nested concatenations for optimization
+				.flatMap(exp -> {
+					if(exp instanceof StringConcatenation) {
+						return Stream.of(((StringConcatenation)exp).getElements());
+					}
+					return Stream.of(exp);
+				})
+				.toArray(TextExpression[]::new);
+
+		return StringConcatenation.concat(elements);
 	}
 
 	Expression<?> processBitwiseOp(BitwiseOpContext ctx) {
-		NumericalExpression left = ensureNumerical(processExpression0(ctx.left));
-		NumericalExpression right = ensureNumerical(processExpression0(ctx.right));
+		NumericalExpression left = ensureInteger(processExpression0(ctx.left));
+		NumericalExpression right = ensureInteger(processExpression0(ctx.right));
 
 		AlgebraicOp op = null;
 		if(ctx.AMP()!=null) {
@@ -354,8 +459,10 @@ public class ExpressionFactory {
 			Expression<Comparable> rightComp = (Expression<Comparable>)right;
 			return processComparableComparison(ctx, leftComp, rightComp);
 		}
-		//TODO provide error information
-		return failForUnhandledAlternative(ctx);
+
+		throw new QueryException(QueryErrorCode.INCORRECT_USE,
+				"Operands of a comparison must either be numerical or their result types must"
+				+ " both implement java.lang.Comparable: "+textOf(ctx), asFragment(ctx));
 	}
 
 	private BooleanExpression processNumericalComparison(ComparisonOpContext ctx,
@@ -396,13 +503,88 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processStringOp(StringOpContext ctx) {
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		TextExpression target = ensureText(processExpression0(ctx.left));
+		TextExpression query = ensureText(processExpression0(ctx.right));
+
+		StringOp op = null;
+		boolean negate = false;
+
+		if(ctx.MATCHES()!=null || ctx.NOT_MATCHES()!=null) {
+			// Regex rules are more strict
+			if(!query.isConstant())
+				throw new QueryException(QueryErrorCode.INCORRECT_USE,
+						"Query part of regex operation must be a constant", asFragment(ctx));
+			op = StringOp.MATCHES;
+			negate = ctx.NOT_MATCHES()!=null;
+		} else if(ctx.CONTAINS()!=null || ctx.NOT_CONTAINS()!=null) {
+			op = StringOp.CONTAINS;
+			negate = ctx.NOT_CONTAINS()!=null;
+		} else {
+			return failForUnhandledAlternative(ctx);
+		}
+
+		BooleanExpression expression = isAllowUnicode() ?
+				BinaryOperations.unicodeOp(op, getStringMode(), target, query)
+				: BinaryOperations.asciiOp(op, getStringMode(), target, query);
+
+		return maybeNegate(expression, negate);
 	}
 
 	Expression<?> processEqualityCheck(EqualityCheckContext ctx) {
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		Expression<?> left = processExpression0(ctx.left);
+		Expression<?> right = processExpression0(ctx.right);
+
+		BooleanExpression expression;
+
+		if(left.isNumerical() && right.isNumerical()) {
+			// Strictly numerical check
+			NumericalComparator comparator;
+			if(ctx.EQ()!=null) {
+				comparator = NumericalComparator.EQUALS;
+			} else if(ctx.NOT_EQ()!=null) {
+				comparator = NumericalComparator.NOT_EQUALS;
+			} else
+				return failForUnhandledAlternative(ctx);
+
+			expression = BinaryOperations.numericalPred(comparator,
+					ensureNumerical(left), ensureNumerical(right));
+
+		} else if(left.isText() || right.isText()) {
+			// Expanded string equality check
+
+			StringOp op = StringOp.EQUALS;
+			boolean negate = false;
+			if(ctx.EQ()!=null) {
+				// no-op
+			} else if(ctx.NOT_EQ()!=null) {
+				negate = true;
+			} else
+				return failForUnhandledAlternative(ctx);
+
+			TextExpression target = ensureText(left);
+			TextExpression query = ensureText(right);
+
+			expression = isAllowUnicode() ?
+					BinaryOperations.unicodeOp(op, getStringMode(), target, query)
+					: BinaryOperations.asciiOp(op, getStringMode(), target, query);
+
+			expression = maybeNegate(expression, negate);
+
+		} else {
+			// Basic (costly) object equality check
+
+			EqualityPred pred;
+			if(ctx.EQ()!=null) {
+				pred = EqualityPred.EQUALS;
+			} else if(ctx.NOT_EQ()!=null) {
+				pred = EqualityPred.NOT_EQUALS;
+			} else
+				return failForUnhandledAlternative(ctx);
+
+			expression = BinaryOperations.equalityPred(pred, left, right);
+		}
+
+		return expression;
 	}
 
 	Expression<?> processConjunction(ConjunctionContext ctx) {

@@ -192,6 +192,18 @@ public class Primitives {
 		return (short)v;
 	}
 
+	public static char strictToChar(int v) {
+		if(v<Character.MIN_VALUE || v>Character.MAX_VALUE)
+			throw forOverflow("char", v);
+		return (char)v;
+	}
+
+	public static char strictToChar(long v) {
+		if(v<Character.MIN_VALUE || v>Character.MAX_VALUE)
+			throw forOverflow("char", v);
+		return (char)v;
+	}
+
 	public static int strictToInt(long v) {
 		if(v<Integer.MIN_VALUE || v>Integer.MAX_VALUE)
 			throw forOverflow("int", v);

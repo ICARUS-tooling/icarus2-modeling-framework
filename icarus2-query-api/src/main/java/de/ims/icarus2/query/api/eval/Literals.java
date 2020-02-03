@@ -19,14 +19,17 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
+import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -68,21 +71,32 @@ public final class Literals {
 		public Object compute() { return null; }
 	}
 
-	public static Expression<CharSequence> of(String value) {
-		return new StringLiteral(value);
+	public static TextExpression of(CharSequence value) {
+		return new StringLiteral(CodePointSequence.fixed(value.toString()));
 	}
 
-	static class StringLiteral extends Literal<CharSequence> {
+	public static TextExpression of(String value) {
+		return new StringLiteral(CodePointSequence.fixed(value));
+	}
 
-		private final String value;
+	public static TextExpression of(CodePointSequence codepoints) {
+		return new StringLiteral(codepoints);
+	}
 
-		public StringLiteral(String value) {
+	static class StringLiteral extends Literal<CodePointSequence> implements TextExpression {
+
+		private final CodePointSequence value;
+
+		public StringLiteral(CodePointSequence value) {
 			super(TypeInfo.STRING);
 			this.value = requireNonNull(value);
 		}
 
 		@Override
-		public String compute() { return value; }
+		public CodePointSequence compute() { return value; }
+
+		@Override
+		public CharSequence computeAsChars() { return value; }
 	}
 
 	public static BooleanExpression of(boolean value) {
@@ -109,7 +123,7 @@ public final class Literals {
 		return new IntegerLiteral(value);
 	}
 
-	static class IntegerLiteral extends Literal<Primitive<?>> implements NumericalExpression {
+	static class IntegerLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
 
 		private final MutableLong value;
 
@@ -132,7 +146,7 @@ public final class Literals {
 		return new FloatingPointLiteral(value);
 	}
 
-	static class FloatingPointLiteral extends Literal<Primitive<?>> implements NumericalExpression {
+	static class FloatingPointLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
 
 		private final MutableDouble value;
 
@@ -145,7 +159,7 @@ public final class Literals {
 		public Primitive<Double> compute() { return value; }
 
 		@Override
-		public long computeAsLong() { return value.longValue(); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.LONG); }
 
 		@Override
 		public double computeAsDouble() { return value.doubleValue(); }

@@ -19,19 +19,31 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkComparableType;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkNumericalType;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedFloatingPoint;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.requiresFloatingPointOp;
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static java.lang.Character.toLowerCase;
+import static java.lang.Character.toUpperCase;
 import static java.util.Objects.requireNonNull;
 
-import java.util.function.BiPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import de.ims.icarus2.query.api.QueryErrorCode;
-import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
+import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.StringUtil;
+import de.ims.icarus2.util.function.CharBiPredicate;
+import de.ims.icarus2.util.function.IntBiPredicate;
+import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -85,37 +97,42 @@ public class BinaryOperations {
 				(Expression<Comparable>)left, (Expression<Comparable>)right, pred.getPred());
 	}
 
-
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static BooleanExpression equalityPred(EqualityPred pred,
 			Expression<?> left, Expression<?> right) {
 		requireNonNull(pred);
-
 		return new BinaryObjectPredicate(left, right, pred.getPred());
 	}
 
-	private static void checkNumericalType(Expression<?> exp) {
-		if(!TypeInfo.isNumerical(exp.getResultType()))
-			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-					"Not a proper numerical type: "+exp.getResultType());
+	public static BooleanExpression unicodeOp(StringOp op, StringMode mode,
+			TextExpression left, TextExpression right) {
+		requireNonNull(op);
+		switch (op) {
+		case EQUALS: return new UnicodeEquality(left, right, mode.getCodePointComparator());
+		case CONTAINS: return new UnicodeContainment(left, right, mode.getCodePointComparator());
+		case MATCHES: return new StringRegex(left, right, mode, true);
+
+		default:
+			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
+					"Unknown string operation: "+op);
+		}
 	}
 
-	private static void checkComparableType(Expression<?> exp) {
-		if(!TypeInfo.isComparable(exp.getResultType()))
-			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-					"Not a type compatible with java.lang.Comparable: "+exp.getResultType());
+	public static BooleanExpression asciiOp(StringOp op, StringMode mode,
+			TextExpression left, TextExpression right) {
+		requireNonNull(op);
+		switch (op) {
+		case EQUALS: return new CharsEquality(left, right, mode.getCharComparator());
+		case CONTAINS: return new CharsContainment(left, right, mode.getCharComparator());
+		case MATCHES: return new StringRegex(left, right, mode, false);
+
+		default:
+			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
+					"Unknown string operation: "+op);
+		}
 	}
 
-	private static boolean requiresFloatingPointOp(
-			Expression<?> left, Expression<?> right) {
-		return left.getResultType()==TypeInfo.DOUBLE
-				|| right.getResultType()==TypeInfo.DOUBLE;
-	}
-
-	private static QueryException forUnsupportedFloatingPoint(String op) {
-		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
-				"Operation does not support floating point types: "+op);
-	}
+	// Helpers
 
 	/**
 	 * Base class for all operations that take two operands and produce a single
@@ -126,7 +143,7 @@ public class BinaryOperations {
 	 * @param <T> the result type for {@link #compute()} and similar value retrieving method
 	 * @param <E> the expression types expected as input for the left and right operands
 	 */
-	private abstract class AbstractBinaryOperation<T, E extends Expression<?>> implements Expression<T> {
+	private static abstract class AbstractBinaryOperation<T, E extends Expression<?>> implements Expression<T> {
 		protected final E left;
 		protected final E right;
 		private boolean usesSideEffects;
@@ -194,7 +211,7 @@ public class BinaryOperations {
 	}
 
 	static class BinaryDoubleOperation
-			extends AbstractBinaryOperation<Primitive<?>, NumericalExpression>
+			extends AbstractBinaryOperation<Primitive<? extends Number>, NumericalExpression>
 			implements NumericalExpression {
 
 		private final NumericalToDoubleOp op;
@@ -213,9 +230,8 @@ public class BinaryOperations {
 			return value;
 		}
 
-		//TODO do we really want to simply cast to long?
 		@Override
-		public long computeAsLong() { return (long) computeAsDouble(); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.LONG); }
 
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.DOUBLE; }
@@ -239,7 +255,7 @@ public class BinaryOperations {
 	}
 
 	static class BinaryLongOperation
-			extends AbstractBinaryOperation<Primitive<?>, NumericalExpression>
+			extends AbstractBinaryOperation<Primitive<? extends Number>, NumericalExpression>
 			implements NumericalExpression {
 
 		private final NumericalToLongOp op;
@@ -346,40 +362,181 @@ public class BinaryOperations {
 		}
 
 		@Override
-		protected BinaryNumericalPredicate duplicate(NumericalExpression left,
-				NumericalExpression right) {
+		protected BinaryNumericalPredicate duplicate(NumericalExpression left, NumericalExpression right) {
 			return new BinaryNumericalPredicate(left, right, pred);
 		}
 
 		@Override
-		protected BooleanExpression toConstant(NumericalExpression left,
-				NumericalExpression right) {
+		protected BooleanExpression toConstant(NumericalExpression left, NumericalExpression right) {
 			return Literals.of(pred.test(left, right));
 		}
 	}
 
-	static class StringContainment extends AbstractBinaryPredicate<Expression<CharSequence>> {
+	static class CharsEquality extends AbstractBinaryPredicate<TextExpression> {
 
-		StringContainment(Expression<CharSequence> left, Expression<CharSequence> right,
-				NumericalPred pred) {
+		private final CharBiPredicate comparator;
+
+		CharsEquality(TextExpression left, TextExpression right,
+				CharBiPredicate comparator) {
 			super(left, right);
+			this.comparator = comparator;
 		}
 
 		@Override
 		public boolean computeAsBoolean() {
-			return StringUtil.indexOf(left.compute(), right.compute()) > -1;
+			return CodePointUtils.equalsChars(left.computeAsChars(), right.computeAsChars(), comparator);
 		}
 
 		@Override
-		protected StringContainment duplicate(Expression<CharSequence> left,
-				Expression<CharSequence> right) {
-			return new BinaryNumericalPredicate(left, right, pred);
+		protected CharsEquality duplicate(TextExpression left, TextExpression right) {
+			return new CharsEquality(left, right, comparator);
 		}
 
 		@Override
-		protected BooleanExpression toConstant(Expression<CharSequence> left,
-				Expression<CharSequence> right) {
-			return Literals.of(pred.test(left, right));
+		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
+			return Literals.of(CodePointUtils.equalsChars(
+					left.computeAsChars(), right.computeAsChars(), comparator));
+		}
+	}
+
+	static class UnicodeEquality extends AbstractBinaryPredicate<TextExpression> {
+
+		private final IntBiPredicate comparator;
+
+		UnicodeEquality(TextExpression left, TextExpression right,
+				IntBiPredicate comparator) {
+			super(left, right);
+			this.comparator = comparator;
+		}
+
+		@Override
+		public boolean computeAsBoolean() {
+			return CodePointUtils.equalsCodePoints(left.compute(), right.compute(), comparator);
+		}
+
+		@Override
+		protected UnicodeEquality duplicate(TextExpression left, TextExpression right) {
+			return new UnicodeEquality(left, right, comparator);
+		}
+
+		@Override
+		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
+			return Literals.of(CodePointUtils.equalsCodePoints(
+					left.compute(), right.compute(), comparator));
+		}
+	}
+
+	static class CharsContainment extends AbstractBinaryPredicate<TextExpression> {
+
+		private final CharBiPredicate comparator;
+
+		CharsContainment(TextExpression left, TextExpression right,
+				CharBiPredicate comparator) {
+			super(left, right);
+			this.comparator = comparator;
+		}
+
+		@Override
+		public boolean computeAsBoolean() {
+			return CodePointUtils.containsChars(left.computeAsChars(), right.computeAsChars(), comparator);
+		}
+
+		@Override
+		protected CharsContainment duplicate(TextExpression left, TextExpression right) {
+			return new CharsContainment(left, right, comparator);
+		}
+
+		@Override
+		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
+			return Literals.of(CodePointUtils.containsChars(
+					left.computeAsChars(), right.computeAsChars(), comparator));
+		}
+	}
+
+	static class UnicodeContainment extends AbstractBinaryPredicate<TextExpression> {
+
+		private final IntBiPredicate comparator;
+
+		UnicodeContainment(TextExpression left, TextExpression right,
+				IntBiPredicate comparator) {
+			super(left, right);
+			this.comparator = comparator;
+		}
+
+		@Override
+		public boolean computeAsBoolean() {
+			return CodePointUtils.containsCodePoints(left.compute(), right.compute(), comparator);
+		}
+
+		@Override
+		protected UnicodeContainment duplicate(TextExpression left, TextExpression right) {
+			return new UnicodeContainment(left, right, comparator);
+		}
+
+		@Override
+		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
+			return Literals.of(CodePointUtils.containsCodePoints(
+					left.compute(), right.compute(), comparator));
+		}
+	}
+
+	/**
+	 * Wraps around an instance of {@link Matcher} to perform the actual regular expression
+	 * matching. Note that the {@code right} expression for this operation must be constant!
+	 * <p>
+	 * Performance aspects:
+	 * Regular expression matching is inherently a lot more expensive than simple equality
+	 * or containment checks. The {@link Pattern} implementation already does a good job
+	 * at optimizing simple expressions. Depending on the {@link StringMode mode} defined
+	 * at constructor time, further performance penalties might come into effect when
+	 * casing is meant to be ignored. This will be amplified when the regex expression itself
+	 * also contains supplementary code points, as that will cause the pattern matching to
+	 * be done based on unicode code points instead of simple char comparison.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	static class StringRegex extends AbstractBinaryPredicate<TextExpression> {
+
+		private final Matcher matcher;
+
+		StringRegex(TextExpression left, TextExpression right, StringMode mode, boolean allowUnicode) {
+			super(left, right);
+			checkArgument("Query part of regex expression must be constant", right.isConstant());
+
+			int flags = 0;
+			if(mode==StringMode.IGNORE_CASE) {
+				flags |= Pattern.CASE_INSENSITIVE;
+			}
+
+			CodePointSequence regex = right.compute();
+			if(allowUnicode && regex.containsSupplementaryCodePoints()) {
+				flags |= Pattern.UNICODE_CASE;
+			}
+
+			matcher = Pattern.compile(regex.toString(), flags).matcher("");
+		}
+
+		private StringRegex(TextExpression left, TextExpression right, Pattern source) {
+			super(left, right);
+			matcher = Pattern.compile(source.pattern(), source.flags()).matcher("");
+		}
+
+		@Override
+		public boolean computeAsBoolean() {
+			return matcher.reset(left.compute()).find();
+		}
+
+		@Override
+		protected StringRegex duplicate(TextExpression left, TextExpression right) {
+			// Ensure that our internal matcher gets effectively cloned
+			return new StringRegex(left, right, matcher.pattern());
+		}
+
+		@Override
+		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
+			// We effectively ignore 'right', as that one is already supposed to be constant!!
+			return Literals.of(matcher.reset(left.compute()).find());
 		}
 	}
 
@@ -513,58 +670,33 @@ public class BinaryOperations {
 		}
 	}
 
-	public enum StringPred implements BiPredicate<CharSequence, CharSequence> {
-		EQUALS{
-			@Override
-			public boolean test(CharSequence cs1, CharSequence cs2) {
-				int len1 = cs1.length();
-				int len2 = cs2.length();
-				if(len1!=len2) {
-					return false;
-				}
-				for (int i = 0; i < len1; i++) {
-					if(cs1.charAt(i)!=cs2.charAt(i)) {
-						return false;
-					}
-				}
-				return true;
-			}
-		},
-
-		EQUALS_NOT{
-			@Override
-			public boolean test(CharSequence cs1, CharSequence cs2) {
-				int len1 = cs1.length();
-				int len2 = cs2.length();
-				if(len1!=len2) {
-					return true;
-				}
-				for (int i = 0; i < len1; i++) {
-					if(cs1.charAt(i)!=cs2.charAt(i)) {
-						return true;
-					}
-				}
-				return false;
-			}
-		},
-
-		EQUALS_LOWER_CASE{
-			@Override
-			public boolean test(CharSequence cs1, CharSequence cs2) {
-				int len1 = cs1.length();
-				int len2 = cs2.length();
-				if(len1!=len2) {
-					return false;
-				}
-				int cbLen1 = cs1.codePoints()
-				for (int i = 0; i < len1; i++) {
-					if(Character.toLowerCase(ch)cs1.charAt(i)!=cs2.charAt(i)) {
-						return false;
-					}
-				}
-				return true;
-			}
-		},
+	public enum StringOp {
+		EQUALS,
+		CONTAINS,
+		MATCHES,
 		;
+	}
+
+	public enum StringMode {
+		DEFAULT((cp1, cp2) -> cp1==cp2, (c1, c2) -> c1==c2),
+		LOWERCASE((cp1, cp2) -> cp1==cp2 || toLowerCase(cp1)==toLowerCase(cp2),
+				(c1, c2) -> c1==c2 || toLowerCase(c1)==toLowerCase(c2)),
+		IGNORE_CASE((cp1, cp2) -> cp1==cp2 || toLowerCase(cp1)==toLowerCase(cp2)
+					|| toUpperCase(cp1)==toUpperCase(cp2),
+				(c1, c2) -> c1==c2 || toLowerCase(c1)==toLowerCase(c2)
+					|| toUpperCase(c1)==toUpperCase(c2)),
+		;
+
+		private final IntBiPredicate codePointComparator;
+		private final CharBiPredicate charComparator;
+
+		private StringMode(IntBiPredicate codePointComparator, CharBiPredicate charComparator) {
+			this.codePointComparator = requireNonNull(codePointComparator);
+			this.charComparator = requireNonNull(charComparator);
+		}
+
+		public IntBiPredicate getCodePointComparator() { return codePointComparator; }
+
+		public CharBiPredicate getCharComparator() { return charComparator; }
 	}
 }
