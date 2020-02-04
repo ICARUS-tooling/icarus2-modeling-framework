@@ -450,6 +450,7 @@ Currently supported switches:
 | iql.direction.reverse       | Reverses the direction used to traverse corpus data for a search. |
 | iql.array.zero              | Change [array access](#74-array-access) to be 0-based. |
 | iql.warnings.off            | Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query. |
+| iql.parall.off			  | Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches |
 
 ### 9.4. Properties
 
