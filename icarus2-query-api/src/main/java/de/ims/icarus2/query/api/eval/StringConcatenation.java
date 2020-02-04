@@ -30,12 +30,14 @@ import de.ims.icarus2.util.strings.CodePointSequence;
 public class StringConcatenation implements TextExpression {
 
 	public static StringConcatenation concat(TextExpression[] elements) {
-		return new StringConcatenation(elements);
+		return new StringConcatenation(elements.clone()); // defensive copy
 	}
 
-
+	/** Stores accumulated characters */
 	private final StringBuilder buffer;
+	/** Provides the unicode codepoint view on the aggregated text */
 	private final CodePointBuffer translator;
+	/** Raw elements to aggregate */
 	private final TextExpression[] elements;
 
 	StringConcatenation(TextExpression[] elements) {
@@ -114,13 +116,18 @@ public class StringConcatenation implements TextExpression {
 			}
 		}
 
+		// Append remaining aggregated constant text
+		if(buffer.length()>0) {
+			newElements.add(Literals.of(buffer.toString()));
+		}
+
 		assert newElements.size()<=elements.length;
 		hasChanged |= newElements.size()!=elements.length;
 
 		if(newElements.size()==1) {
 			return newElements.get(0);
-		} else if(hasChanged) {
-			return new StringConcatenation(newElements.toArray(new TextExpression[0]));
+		} else if(hasChanged || newElements.size()<elements.length) {
+			return new StringConcatenation(newElements.toArray(new TextExpression[newElements.size()]));
 		}
 
 		return this;

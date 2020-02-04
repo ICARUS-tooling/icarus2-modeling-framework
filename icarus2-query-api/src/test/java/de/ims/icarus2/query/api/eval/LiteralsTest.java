@@ -122,6 +122,11 @@ class LiteralsTest {
 
 		@Override
 		public boolean nativeConstant() { return true; }
+
+		@Test
+		void testIsLiteral() {
+			assertThat(Literals.isLiteral(create())).isTrue();
+		}
 	}
 
 	@Nested

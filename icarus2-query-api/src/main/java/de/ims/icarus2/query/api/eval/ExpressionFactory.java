@@ -178,6 +178,7 @@ public class ExpressionFactory {
 		return (BooleanExpression)source;
 	}
 
+	//TODO add argument to enable conversion
 	private TextExpression ensureText(Expression<?> source) {
 		if(!source.isText())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,

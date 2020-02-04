@@ -41,6 +41,10 @@ public final class Literals {
 
 	private Literals() { /* no-op */ }
 
+	public static boolean isLiteral(Expression<?> expression) {
+		return expression instanceof Literal;
+	}
+
 	static abstract class Literal<T> implements Expression<T> {
 
 		@Override
