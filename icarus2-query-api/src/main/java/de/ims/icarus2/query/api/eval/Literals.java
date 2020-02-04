@@ -22,6 +22,8 @@ package de.ims.icarus2.query.api.eval;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
@@ -65,7 +67,7 @@ public final class Literals {
 
 	static class NullLiteral extends Literal<Object> {
 
-		public NullLiteral() { super(TypeInfo.NULL); }
+		NullLiteral() { super(TypeInfo.NULL); }
 
 		@Override
 		public Object compute() { return null; }
@@ -79,7 +81,8 @@ public final class Literals {
 		return new StringLiteral(CodePointSequence.fixed(value));
 	}
 
-	public static TextExpression of(CodePointSequence codepoints) {
+	@VisibleForTesting
+	static TextExpression of(CodePointSequence codepoints) {
 		return new StringLiteral(codepoints);
 	}
 
@@ -87,7 +90,7 @@ public final class Literals {
 
 		private final CodePointSequence value;
 
-		public StringLiteral(CodePointSequence value) {
+		StringLiteral(CodePointSequence value) {
 			super(TypeInfo.STRING);
 			this.value = requireNonNull(value);
 		}

@@ -17,9 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.util.strings;
-
-import static de.ims.icarus2.util.lang.Primitives.strictToChar;
+package de.ims.icarus2.test.util;
 
 import java.util.stream.IntStream;
 
@@ -30,6 +28,12 @@ import de.ims.icarus2.test.random.RandomGenerator;
  *
  */
 public class Unicodes {
+
+	private static char strictToChar(int v) {
+		if(v<Character.MIN_VALUE || v>Character.MAX_VALUE)
+			throw new IllegalArgumentException("Outside of char space: "+v);
+		return (char)v;
+	}
 
 	public static IntStream validBMPChars() {
 		return IntStream.of(
@@ -53,6 +57,10 @@ public class Unicodes {
 
 	public static IntStream randomBMPCodepoints(RandomGenerator rng, int size) {
 		return randomBMPCodepoints(rng).limit(size);
+	}
+
+	public static int randomSupplementaryCodepoint(RandomGenerator rng) {
+		return rng.random(Character.MIN_SUPPLEMENTARY_CODE_POINT, Character.MAX_CODE_POINT+1);
 	}
 
 	public static char randomHighSurrogate(RandomGenerator rng) {

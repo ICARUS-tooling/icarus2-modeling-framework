@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.eval;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.strings.CodePointSequence;
 
@@ -41,7 +43,12 @@ public interface Expression<T> {
 	/** Returns the most precise description of the result type for this expression. */
 	TypeInfo getResultType();
 
-	/** Returns the result of evaluating this expression, computing it first if needed. */
+	/**
+	 * Returns the result of evaluating this expression, computing it first if needed.
+	 *
+	 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
+	 * value's type clashes with the expectations set by the parameterized type {@code T}.
+	 */
 	T compute();
 
 	/**
@@ -92,7 +99,23 @@ public interface Expression<T> {
 	 * @author Markus Gärtner
 	 */
 	public interface NumericalExpression extends Expression<Primitive<? extends Number>> {
+
+		/**
+		 * Primitive equivalent of {@link #compute()} that avoids object generation and
+		 * primitive wrapping.
+		 * @return
+		 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
+		 * value cannot directly be converted to a {@code long} value.
+		 */
 		long computeAsLong();
+
+		/**
+		 * Primitive equivalent of {@link #compute()} that avoids object generation and
+		 * primitive wrapping.
+		 * @return
+		 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
+		 * value cannot directly be converted to a {@code double} value.
+		 */
 		double computeAsDouble();
 
 		/** REturns true iff this expression is a floating point expression */

@@ -29,6 +29,7 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.util.Unicodes;
 
 /**
  * @author Markus Gärtner

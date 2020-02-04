@@ -156,6 +156,27 @@ public class CodePointBuffer implements CodePointSequence, Mutable<CharSequence>
 		return new String(codepoints, 0, codePointCount);
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof CodePointBuffer) {
+			CodePointBuffer other = (CodePointBuffer) obj;
+			if(codePointCount != other.codePointCount) {
+				return false;
+			}
+			for (int i = 0; i < codePointCount; i++) {
+				if(codepoints[i] != other.codepoints[i]) {
+					return false;
+				}
+			}
+			return true;
+		} else if(obj instanceof CharSequence) {
+			return StringUtil.equals(this, (CharSequence)obj);
+		}
+		return false;
+	}
+
 	/**
 	 * @see de.ims.icarus2.util.Wrapper#get()
 	 */

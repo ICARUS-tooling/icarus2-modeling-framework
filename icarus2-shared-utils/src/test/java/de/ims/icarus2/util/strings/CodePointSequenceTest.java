@@ -34,6 +34,7 @@ import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.util.Unicodes;
 
 /**
  * @author Markus Gärtner

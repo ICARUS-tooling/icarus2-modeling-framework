@@ -35,6 +35,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.test.util.Unicodes;
 
 /**
  * Wraps around a {@link Random} instance and provides various
@@ -145,6 +146,29 @@ public class RandomGenerator implements Cloneable {
 			tmp[i] = alNum.charAt(nextInt(alNum.length()));
 		}
 		return new String(tmp);
+	}
+
+	/**
+	 * Creates a random unicode string of requested size. Note that unlike
+	 * {@link #randomString(int)} this method considers the {@code len} argument
+	 * to define the number of <i>unicode codepoints</i> and as such the
+	 * {@link String#length() length} of the returned string measured in characters
+	 * might be up to two times that number.
+	 * @param len
+	 * @return
+	 */
+	public String randomUnicodeString(int len) {
+		int[] tmp = new int[len];
+		for(int i=0; i<len; i++) {
+			// 50/50 chance of BMP vs supplementary codepoint
+			if(nextBoolean()) {
+				tmp[i] = Unicodes.randomBMPCodepoint(this);
+			} else {
+				tmp[i] = Unicodes.randomSupplementaryCodepoint(this);
+			}
+			tmp[i] = alNum.charAt(nextInt(alNum.length()));
+		}
+		return new String(tmp, 0, tmp.length);
 	}
 
 	// RANDOM STREAMS
