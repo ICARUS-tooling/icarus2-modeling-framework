@@ -150,7 +150,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 			CodePointSequence origin = random(rng);
 			TextExpression instance = createWithValue(origin);
 			CharSequence chars = instance.computeAsChars();
-			assertThat(chars).isEqualTo(origin);
+			assertThat(chars).hasToString(origin.toString());
 		}
 	}
 
@@ -186,15 +186,15 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		@Test
 		@RandomizedTest
 		default void testComputeAsLong(RandomGenerator rng) {
-			long value = rng.nextLong();
-			assertThat(createWithValue(new MutableLong(value)).computeAsLong()).isEqualTo(value);
+			Primitive<? extends Number> value = random(rng);
+			assertThat(createWithValue(value).computeAsLong()).isEqualTo(value.longValue());
 		}
 
 		@Test
 		@RandomizedTest
 		default void testComputeAsDouble(RandomGenerator rng) {
-			long value = rng.nextLong();
-			assertThat(createWithValue(new MutableLong(value)).computeAsDouble()).isEqualTo(value);
+			Primitive<? extends Number> value = random(rng);
+			assertThat(createWithValue(value).computeAsDouble()).isEqualTo(value.doubleValue());
 		}
 	}
 
@@ -212,16 +212,16 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		@Test
 		@RandomizedTest
 		default void testComputeAsLong(RandomGenerator rng) {
-			double value = rng.nextDouble();
+			Primitive<? extends Number> value = random(rng);
 			assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
-					() -> createWithValue(new MutableDouble(value)).computeAsLong());
+					() -> createWithValue(value).computeAsLong());
 		}
 
 		@Test
 		@RandomizedTest
 		default void testComputeAsDouble(RandomGenerator rng) {
-			double value = rng.nextDouble();
-			assertThat(createWithValue(new MutableDouble(value)).computeAsDouble()).isEqualTo(value);
+			Primitive<? extends Number> value = random(rng);
+			assertThat(createWithValue(value).computeAsDouble()).isEqualTo(value.doubleValue());
 		}
 	}
 

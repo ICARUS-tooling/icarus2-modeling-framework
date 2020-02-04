@@ -56,8 +56,8 @@ public class EvaluationUtils {
 				String.format("Cannot return %s as %s", source, target));
 	}
 
-	public static boolean string2Boolean(String value) {
-		return value!=null && !"".equals(value);
+	public static boolean string2Boolean(CharSequence value) {
+		return value!=null && value.length()>0;
 	}
 
 	public static boolean int2Boolean(long value) {

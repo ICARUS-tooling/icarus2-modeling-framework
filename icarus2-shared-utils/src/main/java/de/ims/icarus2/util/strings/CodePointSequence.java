@@ -52,6 +52,27 @@ public interface CodePointSequence extends CharSequence {
 		return s.isEmpty() ? EMPTY_SEQUENCE : new FixedCodePointSequence(s);
 	}
 
+	public static boolean equals(CodePointSequence cp1, Object obj) {
+		if(cp1==obj) {
+			return true;
+		} else if(obj instanceof CodePointSequence) {
+			CodePointSequence other = (CodePointSequence) obj;
+			if(cp1.codePointCount() != other.codePointCount()) {
+				return false;
+			}
+			int len = cp1.codePointCount();
+			for (int i = 0; i < len; i++) {
+				if(cp1.codePointAt(i) != other.codePointAt(i)) {
+					return false;
+				}
+			}
+			return true;
+		} else if(obj instanceof CharSequence) {
+			return StringUtil.equals(cp1, (CharSequence)obj);
+		}
+		return false;
+	}
+
 	public static CodePointSequence EMPTY_SEQUENCE = new CodePointSequence() {
 
 		@Override
@@ -118,6 +139,15 @@ public interface CodePointSequence extends CharSequence {
 		@Override
 		public String toString() {
 			return new String(codepoints, 0, codepoints.length);
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 * @see CodePointSequence#equals(CodePointSequence, Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			return CodePointSequence.equals(this, obj);
 		}
 	}
 }

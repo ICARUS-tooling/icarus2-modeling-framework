@@ -42,14 +42,6 @@ public final class Literals {
 	private Literals() { /* no-op */ }
 
 	static abstract class Literal<T> implements Expression<T> {
-		private final TypeInfo type;
-
-		protected Literal(TypeInfo type) {
-			this.type = requireNonNull(type);
-		}
-
-		@Override
-		public TypeInfo getResultType() { return type; }
 
 		@Override
 		public Expression<T> duplicate(EvaluationContext ctx) { return this; }
@@ -67,7 +59,8 @@ public final class Literals {
 
 	static class NullLiteral extends Literal<Object> {
 
-		NullLiteral() { super(TypeInfo.NULL); }
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.NULL; }
 
 		@Override
 		public Object compute() { return null; }
@@ -91,7 +84,6 @@ public final class Literals {
 		private final CodePointSequence value;
 
 		StringLiteral(CodePointSequence value) {
-			super(TypeInfo.STRING);
 			this.value = requireNonNull(value);
 		}
 
@@ -103,15 +95,17 @@ public final class Literals {
 	}
 
 	public static BooleanExpression of(boolean value) {
-		return new BooleanLiteral(value);
+		return value ? TRUE : FALSE;
 	}
+
+	private static final BooleanLiteral TRUE = new BooleanLiteral(true);
+	private static final BooleanLiteral FALSE = new BooleanLiteral(false);
 
 	static class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
 
 		private final MutableBoolean value;
 
 		BooleanLiteral(boolean value) {
-			super(TypeInfo.BOOLEAN);
 			this.value = new MutableBoolean(value);
 		}
 
@@ -131,9 +125,11 @@ public final class Literals {
 		private final MutableLong value;
 
 		IntegerLiteral(long value) {
-			super(TypeInfo.LONG);
 			this.value = new MutableLong(value);
 		}
+
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.LONG; }
 
 		@Override
 		public Primitive<Long> compute() { return value; }
@@ -154,9 +150,11 @@ public final class Literals {
 		private final MutableDouble value;
 
 		FloatingPointLiteral(double value) {
-			super(TypeInfo.DOUBLE);
 			this.value = new MutableDouble(value);
 		}
+
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.DOUBLE; }
 
 		@Override
 		public Primitive<Double> compute() { return value; }

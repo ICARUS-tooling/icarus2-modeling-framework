@@ -23,6 +23,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.float2Boolean;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.int2Boolean;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.object2Boolean;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.string2Boolean;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.Function;
@@ -56,6 +57,7 @@ import de.ims.icarus2.util.strings.StringPrimitives;
  * boolean |   s    |     -     |     f     |    f    |
  * integer |   s    |   f(b*)   |     -     |    c    |
  * float   |   s    |   f(b*)   |     c     |    -    |
+ * generic |   s    |   f(b*)   |     f     |    f    |
  * --------+--------+-----------+-----------+---------+
  *
  * c = primitive cast
@@ -70,33 +72,45 @@ import de.ims.icarus2.util.strings.StringPrimitives;
  */
 public class Conversions {
 
-	public static TextExpression toString(Expression<?> source) {
+	public static TextExpression toText(Expression<?> source) {
+		if(source instanceof TextExpression) {
+			return (TextExpression) source;
+		}
 		return new TextCast(source, converterFrom(source));
 	}
 
 	public static BooleanExpression toBoolean(Expression<?> source) {
+		if(source instanceof BooleanExpression) {
+			return (BooleanExpression) source;
+		}
 		return new BooleanCast(source, converterFrom(source));
 	}
 
 	public static NumericalExpression toInteger(Expression<?> source) {
+		if(source instanceof NumericalExpression && !((NumericalExpression) source).isFPE()) {
+			return (NumericalExpression) source;
+		}
 		return new IntegerCast(source, converterFrom(source));
 	}
 
 	public static NumericalExpression toFloatingPoint(Expression<?> source) {
+		if(source instanceof NumericalExpression && ((NumericalExpression) source).isFPE()) {
+			return (NumericalExpression) source;
+		}
 		return new FloatingPointCast(source, converterFrom(source));
 	}
 
 	private static Converter converterFrom(Expression<?> expression) {
 		if(expression.isNumerical()) {
 			return ((NumericalExpression)expression).isFPE() ?
-					Converter.FLOAT : Converter.INTEGER;
+					Converter.FROM_FLOAT : Converter.FROM_INTEGER;
 		} else if(expression.isBoolean()) {
-			return Converter.BOOLEAN;
+			return Converter.FROM_BOOLEAN;
 		} else if(expression.isText()) {
-			return Converter.TEXT;
+			return Converter.FROM_TEXT;
 		}
 
-		return Converter.GENERIC;
+		return Converter.FROM_GENERIC;
 	}
 
 	private static abstract class CastExpression<T> implements Expression<T> {
@@ -173,14 +187,14 @@ public class Conversions {
 		private final ToDoubleFunction<Expression<?>> cast;
 
 		public FloatingPointCast(Expression<?> source, Converter converter) {
-			super(TypeInfo.LONG, source);
+			super(TypeInfo.DOUBLE, source);
 			cast = converter.getToDouble();
 			value = new MutableDouble();
 		}
 
 		/** Copy constructor */
 		private FloatingPointCast(Expression<?> source, ToDoubleFunction<Expression<?>> cast) {
-			super(TypeInfo.LONG, source);
+			super(TypeInfo.DOUBLE, source);
 			this.cast = requireNonNull(cast);
 			value = new MutableDouble();
 		}
@@ -215,14 +229,14 @@ public class Conversions {
 		private final Predicate<Expression<?>> cast;
 
 		public BooleanCast(Expression<?> source, Converter converter) {
-			super(TypeInfo.LONG, source);
+			super(TypeInfo.BOOLEAN, source);
 			cast = converter.getToBoolean();
 			value = new MutableBoolean();
 		}
 
 		/** Copy constructor */
 		private BooleanCast(Expression<?> source, Predicate<Expression<?>> cast) {
-			super(TypeInfo.LONG, source);
+			super(TypeInfo.BOOLEAN, source);
 			this.cast = requireNonNull(cast);
 			value = new MutableBoolean();
 		}
@@ -289,35 +303,35 @@ public class Conversions {
 
 	/** Provides conversion from a specific type to the 4 casting targets */
 	private enum Converter {
-		TEXT(TypeInfo.STRING,
+		FROM_TEXT(TypeInfo.STRING,
 				exp -> StringPrimitives.parseLong(((TextExpression)exp).computeAsChars()),
 				exp -> StringPrimitives.parseDouble(((TextExpression)exp).computeAsChars()),
-				exp -> StringPrimitives.parseBoolean(((TextExpression)exp).computeAsChars()),
+				exp -> string2Boolean(((TextExpression)exp).computeAsChars()),
 				null
 		),
 
-		INTEGER(TypeInfo.LONG,
+		FROM_INTEGER(TypeInfo.LONG,
 				null,
 				exp -> (double)((NumericalExpression)exp).computeAsLong(),
 				exp -> int2Boolean(((NumericalExpression)exp).computeAsLong()),
 				exp -> String.valueOf(((NumericalExpression)exp).computeAsLong())
 		),
 
-		FLOAT(TypeInfo.DOUBLE,
+		FROM_FLOAT(TypeInfo.DOUBLE,
 				exp -> (long)((NumericalExpression)exp).computeAsDouble(),
 				null,
 				exp -> float2Boolean(((NumericalExpression)exp).computeAsDouble()),
 				exp -> String.valueOf(((NumericalExpression)exp).computeAsDouble())
 		),
 
-		BOOLEAN(TypeInfo.BOOLEAN,
+		FROM_BOOLEAN(TypeInfo.BOOLEAN,
 				null,
 				null,
 				null,
 				exp -> String.valueOf(((BooleanExpression)exp).computeAsBoolean())
 		),
 
-		GENERIC(TypeInfo.GENERIC,
+		FROM_GENERIC(TypeInfo.GENERIC,
 				null,
 				null,
 				exp -> object2Boolean(exp.compute()),
