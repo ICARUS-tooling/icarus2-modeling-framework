@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.util.Mutable;
+import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
@@ -208,6 +210,21 @@ class StringConcatenationTest implements TextExpressionTest {
 			assertThat(instance.optimize(context())).isSameAs(instance);
 		}
 
-		//TODO other 'compression' scenario we wanna test?
+		@Test
+		void testDynamic() {
+			Mutable<String> buffer = new MutableObject<>(" ");
+
+			TextExpression[] elements = {
+				optimizable("begin"),
+				dynamic(buffer),
+				fixed("end"),
+			};
+
+			StringConcatenation instance = StringConcatenation.concat(elements);
+			assertThat(instance.compute()).hasToString("begin end");
+
+			buffer.set("...");
+			assertThat(instance.compute()).hasToString("begin...end");
+		}
 	}
 }

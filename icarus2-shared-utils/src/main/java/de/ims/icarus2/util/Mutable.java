@@ -169,5 +169,13 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 		public boolean isEmpty() {
 			return value==DEFAULT_EMPTY_VALUE;
 		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return isEmpty() ? "<empty>" : (value==null ? "null" : value.toString());
+		}
 	}
 }

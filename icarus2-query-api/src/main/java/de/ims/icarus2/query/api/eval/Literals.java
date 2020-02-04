@@ -34,6 +34,8 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
+ * Provides methods to obtain constant literals for every defined IQL type.
+ *
  * @author Markus Gärtner
  *
  */
