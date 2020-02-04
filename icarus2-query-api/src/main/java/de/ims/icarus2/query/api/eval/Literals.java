@@ -63,7 +63,7 @@ public final class Literals {
 
 	private static final NullLiteral NULL_LITERAL = new NullLiteral();
 
-	static class NullLiteral extends Literal<Object> {
+	static final class NullLiteral extends Literal<Object> {
 
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.NULL; }
@@ -85,7 +85,7 @@ public final class Literals {
 		return new StringLiteral(codepoints);
 	}
 
-	static class StringLiteral extends Literal<CodePointSequence> implements TextExpression {
+	static final class StringLiteral extends Literal<CodePointSequence> implements TextExpression {
 
 		private final CodePointSequence value;
 
@@ -107,7 +107,7 @@ public final class Literals {
 	private static final BooleanLiteral TRUE = new BooleanLiteral(true);
 	private static final BooleanLiteral FALSE = new BooleanLiteral(false);
 
-	static class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
+	static final class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
 
 		private final MutableBoolean value;
 
@@ -126,7 +126,7 @@ public final class Literals {
 		return new IntegerLiteral(value);
 	}
 
-	static class IntegerLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
+	static final class IntegerLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
 
 		private final MutableLong value;
 
@@ -151,7 +151,7 @@ public final class Literals {
 		return new FloatingPointLiteral(value);
 	}
 
-	static class FloatingPointLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
+	static final class FloatingPointLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
 
 		private final MutableDouble value;
 

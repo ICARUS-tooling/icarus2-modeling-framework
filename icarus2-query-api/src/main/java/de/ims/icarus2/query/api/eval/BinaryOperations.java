@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
@@ -110,7 +112,12 @@ public class BinaryOperations {
 		switch (op) {
 		case EQUALS: return new UnicodeEquality(left, right, mode.getCodePointComparator());
 		case CONTAINS: return new UnicodeContainment(left, right, mode.getCodePointComparator());
-		case MATCHES: return new StringRegex(left, right, mode, true);
+		case MATCHES: {
+			if(mode==StringMode.LOWERCASE)
+				throw new QueryException(QueryErrorCode.INCORRECT_USE,
+						"Regular expression matching does not support lower case mode - use "+StringMode.IGNORE_CASE);
+			return new StringRegex(left, right, mode, true);
+		}
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -124,7 +131,12 @@ public class BinaryOperations {
 		switch (op) {
 		case EQUALS: return new CharsEquality(left, right, mode.getCharComparator());
 		case CONTAINS: return new CharsContainment(left, right, mode.getCharComparator());
-		case MATCHES: return new StringRegex(left, right, mode, false);
+		case MATCHES: {
+			if(mode==StringMode.LOWERCASE)
+				throw new QueryException(QueryErrorCode.INCORRECT_USE,
+						"Regular expression matching does not support lower case mode - use "+StringMode.IGNORE_CASE);
+			return new StringRegex(left, right, mode, false);
+		}
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -254,7 +266,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class BinaryLongOperation
+	static final class BinaryLongOperation
 			extends AbstractBinaryOperation<Primitive<? extends Number>, NumericalExpression>
 			implements NumericalExpression {
 
@@ -278,7 +290,7 @@ public class BinaryOperations {
 		public double computeAsDouble() { return computeAsLong(); }
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.DOUBLE; }
+		public TypeInfo getResultType() { return TypeInfo.LONG; }
 
 		@Override
 		public long computeAsLong() {
@@ -319,7 +331,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class BinaryObjectPredicate<T> extends AbstractBinaryPredicate<Expression<T>> {
+	static final class BinaryObjectPredicate<T> extends AbstractBinaryPredicate<Expression<T>> {
 
 		private final Pred<T> pred;
 
@@ -346,7 +358,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class BinaryNumericalPredicate extends AbstractBinaryPredicate<NumericalExpression> {
+	static final class BinaryNumericalPredicate extends AbstractBinaryPredicate<NumericalExpression> {
 
 		private final NumericalPred pred;
 
@@ -372,7 +384,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class CharsEquality extends AbstractBinaryPredicate<TextExpression> {
+	static final class CharsEquality extends AbstractBinaryPredicate<TextExpression> {
 
 		private final CharBiPredicate comparator;
 
@@ -399,7 +411,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class UnicodeEquality extends AbstractBinaryPredicate<TextExpression> {
+	static final class UnicodeEquality extends AbstractBinaryPredicate<TextExpression> {
 
 		private final IntBiPredicate comparator;
 
@@ -426,7 +438,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class CharsContainment extends AbstractBinaryPredicate<TextExpression> {
+	static final class CharsContainment extends AbstractBinaryPredicate<TextExpression> {
 
 		private final CharBiPredicate comparator;
 
@@ -453,7 +465,7 @@ public class BinaryOperations {
 		}
 	}
 
-	static class UnicodeContainment extends AbstractBinaryPredicate<TextExpression> {
+	static final class UnicodeContainment extends AbstractBinaryPredicate<TextExpression> {
 
 		private final IntBiPredicate comparator;
 
@@ -496,7 +508,7 @@ public class BinaryOperations {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class StringRegex extends AbstractBinaryPredicate<TextExpression> {
+	static final class StringRegex extends AbstractBinaryPredicate<TextExpression> {
 
 		private final Matcher matcher;
 

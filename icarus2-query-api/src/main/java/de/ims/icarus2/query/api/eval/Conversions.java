@@ -139,7 +139,7 @@ public class Conversions {
 
 	}
 
-	static class IntegerCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
+	static final class IntegerCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
 
 		private final MutableLong value;
 		private final ToLongFunction<Expression<?>> cast;
@@ -181,7 +181,7 @@ public class Conversions {
 
 	}
 
-	static class FloatingPointCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
+	static final class FloatingPointCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
 
 		private final MutableDouble value;
 		private final ToDoubleFunction<Expression<?>> cast;
@@ -223,7 +223,7 @@ public class Conversions {
 
 	}
 
-	static class BooleanCast extends CastExpression<Primitive<Boolean>> implements BooleanExpression {
+	static final class BooleanCast extends CastExpression<Primitive<Boolean>> implements BooleanExpression {
 
 		private final MutableBoolean value;
 		private final Predicate<Expression<?>> cast;
@@ -262,7 +262,7 @@ public class Conversions {
 
 	}
 
-	static class TextCast extends CastExpression<CodePointSequence> implements TextExpression {
+	static final class TextCast extends CastExpression<CodePointSequence> implements TextExpression {
 
 		private final CodePointBuffer buffer;
 		private final Function<Expression<?>, CharSequence> cast;

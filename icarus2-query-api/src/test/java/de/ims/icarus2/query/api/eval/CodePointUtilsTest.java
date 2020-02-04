@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Nested;
@@ -43,17 +44,36 @@ class CodePointUtilsTest {
 
 	/** 'This is a test' in Simplified Chinese */
 	private static final String test_chinese = "这是一个测试";
+//	private static final String test_chinese_uc = test_chinese.toUpperCase(Locale.SIMPLIFIED_CHINESE);
+//	private static final String test_chinese_lc = test_chinese.toLowerCase(Locale.SIMPLIFIED_CHINESE);
+
 	/** 'This is a test' in Georgian */
 	private static final String test_georgian = "ეს ტესტია";
+	private static final String test_georgian_uc = test_georgian.toUpperCase(Locale.ENGLISH);
+	private static final String test_georgian_lc = test_georgian.toLowerCase(Locale.ENGLISH);
+
 	/** 'This is a test' in Urdu */
 	private static final String test_urdu = "یہ ایک امتحان ہے";
+	private static final String test_urdu_uc = test_urdu.toUpperCase(Locale.ENGLISH);
+	private static final String test_urdu_lc = test_urdu.toLowerCase(Locale.ENGLISH);
+
 	/** 'This is a test' in Hebrew */
 	private static final String test_hebrew = "یזה מבחן";
+	private static final String test_hebrew_uc = test_hebrew.toUpperCase(Locale.ENGLISH);
+	private static final String test_hebrew_lc = test_hebrew.toLowerCase(Locale.ENGLISH);
 
 	// dummy strings using Old Turkic block starting from U+10C00
 	private static final String test_mixed  = "𐰀𐰁𐰂𐰃𐰄𐰅𐰆𐰇𐰈𐰉";
+	private static final String test_mixed_uc = test_mixed.toUpperCase(Locale.ENGLISH);
+	private static final String test_mixed_lc = test_mixed.toLowerCase(Locale.ENGLISH);
+
 	private static final String test_mixed2  = "𐰀𐰁𐰂𐰃𐰄𐰅𐰆𐰇𐰈𐰊";
+	private static final String test_mixed2_uc = test_mixed2.toUpperCase(Locale.ENGLISH);
+	private static final String test_mixed2_lc = test_mixed2.toLowerCase(Locale.ENGLISH);
+
 	private static final String test_mixed3  = "𐰀𐰁𐰂𐰃𐰄𐰎𐰆𐰇𐰈𐰉";
+	private static final String test_mixed3_uc = test_mixed3.toUpperCase(Locale.ENGLISH);
+	private static final String test_mixed3_lc = test_mixed3.toLowerCase(Locale.ENGLISH);
 
 	public static Stream<String> testValues() {
 		return Stream.of(
