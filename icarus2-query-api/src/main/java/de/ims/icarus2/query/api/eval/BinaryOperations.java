@@ -640,8 +640,8 @@ public class BinaryOperations {
 		// Equality checks
 		EQUALS((l, r) -> l.computeAsLong()==r.computeAsLong(),
 				(l, r) -> Double.compare(l.computeAsDouble(), r.computeAsDouble())==0),
-		NOT_EQUALS((l, r) -> l.computeAsLong()==r.computeAsLong(),
-				(l, r) -> Double.compare(l.computeAsDouble(), r.computeAsDouble())==0),
+		NOT_EQUALS((l, r) -> l.computeAsLong()!=r.computeAsLong(),
+				(l, r) -> Double.compare(l.computeAsDouble(), r.computeAsDouble())!=0),
 		;
 
 		private final NumericalPred integerPred;
