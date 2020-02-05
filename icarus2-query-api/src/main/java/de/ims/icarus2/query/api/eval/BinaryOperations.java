@@ -703,6 +703,7 @@ public class BinaryOperations {
 		CONTAINS,
 		MATCHES,
 		;
+		//TODO add the comparator ops here and make them codepoint-aware!!!
 	}
 
 	public enum StringMode {

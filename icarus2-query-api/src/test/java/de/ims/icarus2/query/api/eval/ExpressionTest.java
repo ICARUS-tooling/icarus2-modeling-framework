@@ -62,6 +62,11 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 
 	boolean nativeConstant();
 
+	/** Return true if this test case expects the expression instances to always optimize into constants */
+	default boolean optimizeToConstant() {
+		return true;
+	}
+
 	default EvaluationContext context() {
 		return mock(EvaluationContext.class);
 	}
@@ -101,7 +106,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		T value = constant();
 		E instance = createWithValue(value);
 		Expression<T> optimized = instance.optimize(context());
-		assertThat(optimized.isConstant()).isTrue();
+		assertThat(optimized.isConstant()).isEqualTo(optimizeToConstant());
 		assertThat(optimized.compute()).isEqualTo(value);
 	}
 

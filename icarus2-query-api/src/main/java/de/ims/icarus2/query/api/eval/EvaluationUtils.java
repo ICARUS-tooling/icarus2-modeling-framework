@@ -86,16 +86,16 @@ public class EvaluationUtils {
 			public String toString() { return toStringValue; }
 		};
 		return new Expression<Object>() {
-	
+
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
-	
+
 			@Override
 			public Object compute() { return dummy; }
-	
+
 			@Override
 			public Expression<Object> duplicate(EvaluationContext context) { return this; }
-	
+
 			@Override
 			public boolean isConstant() { return true; }
 		};
@@ -104,15 +104,15 @@ public class EvaluationUtils {
 	public static TextExpression fixed(String text) {
 		return new TextExpression() {
 			final CodePointSequence value = CodePointSequence.fixed(text);
-	
+
 			@Override
 			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
 				return this;
 			}
-	
+
 			@Override
 			public CodePointSequence compute() { return value; }
-	
+
 			@Override
 			public CharSequence computeAsChars() { return value; }
 		};
@@ -121,18 +121,18 @@ public class EvaluationUtils {
 	public static TextExpression optimizable(String text) {
 		return new TextExpression() {
 			final CodePointSequence value = CodePointSequence.fixed(text);
-	
+
 			@Override
 			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
 				return this;
 			}
-	
+
 			@Override
 			public CodePointSequence compute() { return value; }
-	
+
 			@Override
 			public CharSequence computeAsChars() { return value; }
-	
+
 			@Override
 			public Expression<CodePointSequence> optimize(EvaluationContext context) {
 				return Literals.of(value);
@@ -142,19 +142,35 @@ public class EvaluationUtils {
 
 	public static TextExpression dynamic(Object dummy) {
 		Expression<Object> expression = new Expression<Object>() {
-	
+
 			@Override
-			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
-	
+			public TypeInfo getResultType() { return TypeInfo.of(dummy.getClass()); }
+
 			@Override
 			public Expression<Object> duplicate(EvaluationContext context) {
 				return this;
 			}
-	
+
 			@Override
 			public Object compute() { return dummy; }
 		};
-	
+
 		return Conversions.toText(expression);
+	}
+
+	public static Expression<?> raw(Object dummy) {
+		return new Expression<Object>() {
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.of(dummy.getClass()); }
+
+			@Override
+			public Expression<Object> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Object compute() { return dummy; }
+		};
 	}
 }

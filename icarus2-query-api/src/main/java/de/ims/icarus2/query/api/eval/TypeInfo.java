@@ -31,6 +31,7 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
@@ -41,6 +42,10 @@ public class TypeInfo {
 
 	public static TypeInfo of(Class<?> type, boolean list) {
 		return new TypeInfo(type, null, false, list);
+	}
+
+	public static TypeInfo of(Class<?> type) {
+		return new TypeInfo(type, null, false, false);
 	}
 
 	private final Class<?> type;
@@ -97,11 +102,11 @@ public class TypeInfo {
 	public static final TypeInfo GENERIC = of(Object.class, false);
 
 //	public static final TypeInfo INT = new TypeInfo(Integer.class, int.class, false, false);
-	public static final TypeInfo LONG = new TypeInfo(Long.class, long.class, false, false);
+	public static final TypeInfo LONG = new TypeInfo(Primitive.class, long.class, false, false);
 //	public static final TypeInfo FLOAT = new TypeInfo(Float.class, float.class, false, false);
-	public static final TypeInfo DOUBLE = new TypeInfo(Double.class, double.class, false, false);
+	public static final TypeInfo DOUBLE = new TypeInfo(Primitive.class, double.class, false, false);
 
-	public static final TypeInfo BOOLEAN = new TypeInfo(Boolean.class, boolean.class, false, false);
+	public static final TypeInfo BOOLEAN = new TypeInfo(Primitive.class, boolean.class, false, false);
 
 	/** We use {@link CharSequence} as type for strings, in accordance with {@link ValueType#STRING} */
 	public static final TypeInfo STRING = new TypeInfo(CodePointSequence.class, null, false, false);

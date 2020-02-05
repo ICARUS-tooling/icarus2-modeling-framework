@@ -25,6 +25,9 @@ import static de.ims.icarus2.test.TestUtils.npeAsserter;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
@@ -46,6 +49,8 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.AlgebraicOp;
 import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryDoubleOperation;
 import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryLongOperation;
 import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryNumericalPredicate;
+import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryObjectPredicate;
+import de.ims.icarus2.query.api.eval.BinaryOperations.ComparableComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
@@ -106,6 +111,16 @@ class BinaryOperationsTest {
 		}
 	}
 
+	private static class GenericPredData {
+		public final Object left, right;
+		public final boolean result;
+		GenericPredData(Object left, Object right, boolean result) {
+			this.left = requireNonNull(left);
+			this.right = requireNonNull(right);
+			this.result = result;
+		}
+	}
+
 	private static long notZero(long v) {
 		return v==0 ? 1 : v;
 	}
@@ -144,9 +159,12 @@ class BinaryOperationsTest {
 		@TestFactory
 		Stream<DynamicNode> testNullArgs() {
 			return Stream.of(
-					dynamicTest("null op", npeAsserter(() -> BinaryOperations.numericalOp(null, Literals.of(1), Literals.of(1)))),
-					dynamicTest("null left", npeAsserter(() -> BinaryOperations.numericalOp(AlgebraicOp.ADD, null, Literals.of(1)))),
-					dynamicTest("null right", npeAsserter(() -> BinaryOperations.numericalOp(AlgebraicOp.ADD, Literals.of(1), null)))
+					dynamicTest("null op", npeAsserter(() -> BinaryOperations.numericalOp(
+							null, Literals.of(1), Literals.of(1)))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.numericalOp(
+							AlgebraicOp.ADD, null, Literals.of(1)))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.numericalOp(
+							AlgebraicOp.ADD, Literals.of(1), null)))
 			);
 		}
 
@@ -618,9 +636,12 @@ class BinaryOperationsTest {
 		@TestFactory
 		Stream<DynamicNode> testNullArgs() {
 			return Stream.of(
-					dynamicTest("null op", npeAsserter(() -> BinaryOperations.numericalPred(null, Literals.of(1), Literals.of(1)))),
-					dynamicTest("null left", npeAsserter(() -> BinaryOperations.numericalPred(NumericalComparator.EQUALS, null, Literals.of(1)))),
-					dynamicTest("null right", npeAsserter(() -> BinaryOperations.numericalPred(NumericalComparator.EQUALS, Literals.of(1), null)))
+					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.numericalPred(
+							null, Literals.of(1), Literals.of(1)))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.numericalPred(
+							NumericalComparator.EQUALS, null, Literals.of(1)))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.numericalPred(
+							NumericalComparator.EQUALS, Literals.of(1), null)))
 			);
 		}
 
@@ -813,29 +834,28 @@ class BinaryOperationsTest {
 		}
 
 		@Nested
-		class ForFloatingPoint implements FloatingPointExpressionTest {
+		class ForFloatingPoint implements BooleanExpressionTest {
 
-			/** Use ADD as basic op for testing general behavior */
+			/** Use EQUALS as basic op for testing general behavior */
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
-				double result = value.doubleValue();
-				double left = result-10;
-				double right = 10;
-				return create(AlgebraicOp.ADD, left, right);
+			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+				double left = 10.5;
+				double right = value.booleanValue() ? 10.5 : 10.8;
+				return create(NumericalComparator.EQUALS, left, right);
 			}
 
 			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
-			public Class<?> getTestTargetClass() { return BinaryDoubleOperation.class; }
+			public Class<?> getTestTargetClass() { return BinaryNumericalPredicate.class; }
 
-			private NumericalExpression create(AlgebraicOp op, double left, double right) {
-				return BinaryOperations.numericalOp(op, Literals.of(left), Literals.of(right));
+			private BooleanExpression create(NumericalComparator pred, double left, double right) {
+				return BinaryOperations.numericalPred(pred, Literals.of(left), Literals.of(right));
 			}
 
-			private DoubleOpData data(double left, double right, double result) {
-				return new DoubleOpData(left, right, result);
+			private DoublePredData data(double left, double right, boolean result) {
+				return new DoublePredData(left, right, result);
 			}
 
 			private final double max = Double.MAX_VALUE;
@@ -843,136 +863,161 @@ class BinaryOperationsTest {
 			private final double float_max = Float.MAX_VALUE;
 
 			/** Wrap op into test instance and verify result on original, duplicated and optimized */
-			private DynamicNode assertDoubleOp(AlgebraicOp op, DoubleOpData data) {
-				return dynamicTest(String.format("%s %s %s [= %s]",
-						displayString(data.left), op, displayString(data.right), displayString(data.result)), () -> {
-					NumericalExpression expression = create(op, data.left, data.right);
-					assertThat(expression.isFPE()).isTrue();
-					assertThat(expression.computeAsDouble()).isEqualTo(data.result);
-					assertThat(expression.compute().doubleValue()).isEqualTo(data.result);
+			private DynamicNode assertDoublePred(NumericalComparator pred, DoublePredData data) {
+				return dynamicTest(String.format("%s %s %s [= %b]",
+						displayString(data.left), pred, displayString(data.right), _boolean(data.result)), () -> {
+					BooleanExpression expression = create(pred, data.left, data.right);
+					assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
+					assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
 
-					NumericalExpression duplicate = (NumericalExpression) expression.duplicate(mock(EvaluationContext.class));
-					assertThat(duplicate.computeAsDouble()).isEqualTo(data.result);
-					assertThat(duplicate.compute().doubleValue()).isEqualTo(data.result);
+					BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+					assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
+					assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
 
-					NumericalExpression optimized = (NumericalExpression) expression.optimize(mock(EvaluationContext.class));
-					assertThat(optimized.computeAsDouble()).isEqualTo(data.result);
-					assertThat(optimized.compute().doubleValue()).isEqualTo(data.result);
+					BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+					assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
+					assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
 				});
 			}
 
-			// GENERAL ALGEBRAIC OPS
-
 			@TestFactory
 			@RandomizedTest
-			Stream<DynamicNode> testAdd(RandomGenerator rng) {
+			Stream<DynamicNode> testEquals(RandomGenerator rng) {
 				return Stream.concat(
 						// Static test data
 						Stream.of(
-						data(1, 2, 3),
-						data(0, 0, 0),
-						data(max, 0, max),
-						data(0, min, min),
-						data(-float_max, -float_max, -2*float_max),
-						data(float_max, float_max, 2*float_max)
+						data(0.0, 0.0, true),
+						data(0.1, 0.2, false),
+						data(max, 0.0, false),
+						data(0.0, min, false),
+						data(min, max, false),
+						data(-float_max, -float_max, true),
+						data(float_max, float_max, true)
 						),
 						// Random test data
-						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = rng.nextDouble();
-							return data(left, right, left+right);
+							return data(left, right, Double.compare(left, right)==0);
 						})
-				).map(data -> assertDoubleOp(AlgebraicOp.ADD, data));
+				).map(data -> assertDoublePred(NumericalComparator.EQUALS, data));
 			}
 
 			@TestFactory
 			@RandomizedTest
-			Stream<DynamicNode> testSub(RandomGenerator rng) {
+			Stream<DynamicNode> testNotEquals(RandomGenerator rng) {
 				return Stream.concat(
 						// Static test data
 						Stream.of(
-						data(1, 2, -1),
-						data(0, 0, 0),
-						data(max, 0, max),
-						data(0, min, max),
-						data(0, max, -max),
-						data(0, min, -min),
-						data(-float_max, -float_max, 0),
-						data(float_max, float_max, 0),
-						data(float_max, -float_max, 2*float_max),
-						data(-float_max, float_max, -2*float_max)
+						data(0.0, 0.0, false),
+						data(0.1, 0.2, true),
+						data(max, 0.0, true),
+						data(0.0, min, true),
+						data(min, max, true),
+						data(-float_max, -float_max, false),
+						data(float_max, float_max, false)
 						),
 						// Random test data
-						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = rng.nextDouble();
-							return data(left, right, left-right);
+							return data(left, right, Double.compare(left, right)!=0);
 						})
-				).map(data -> assertDoubleOp(AlgebraicOp.SUB, data));
+				).map(data -> assertDoublePred(NumericalComparator.NOT_EQUALS, data));
 			}
 
 			@TestFactory
 			@RandomizedTest
-			Stream<DynamicNode> testMult(RandomGenerator rng) {
+			Stream<DynamicNode> testLess(RandomGenerator rng) {
 				return Stream.concat(
 						// Static test data
 						Stream.of(
-						data(1, 2, 2),
-						data(0, 0, 0),
-						data(max, 0, 0),
-						data(0, min, -0.0),
-						data(max, 1, max),
-						data(1, min, min),
-						data(-float_max, -float_max, float_max*float_max),
-						data(float_max, float_max, float_max*float_max)
+						data(0.0, 0.0, false),
+						data(0.1, 0.2, true),
+						data(0.2, 0.1, false),
+						data(max, 0.0, false),
+						data(0.0, min, false),
+						data(min, 0.0, true),
+						data(min, max, true),
+						data(-float_max, -float_max, false),
+						data(float_max, float_max, false)
 						),
 						// Random test data
-						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = rng.nextDouble();
-							return data(left, right, left*right);
+							return data(left, right, Double.compare(left, right)<0);
 						})
-				).map(data -> assertDoubleOp(AlgebraicOp.MULT, data));
+				).map(data -> assertDoublePred(NumericalComparator.LESS, data));
 			}
 
 			@TestFactory
 			@RandomizedTest
-			Stream<DynamicNode> testDiv(RandomGenerator rng) {
+			Stream<DynamicNode> testLessOrEqual(RandomGenerator rng) {
 				return Stream.concat(
 						// Static test data
 						Stream.of(
-						data(2, 1, 2),
-						data(0, 1, 0),
-						data(max, 1, max),
-						data(0, min, -0.0),
-						data(float_max, -float_max, -1),
-						data(-float_max, float_max, -1),
-						data(-float_max, -float_max, 1),
-						data(float_max, float_max, 1)
+						data(0.0, 0.0, true),
+						data(0.1, 0.2, true),
+						data(0.2, 0.1, false),
+						data(max, 0.0, false),
+						data(0.0, min, false),
+						data(min, 0.0, true),
+						data(min, max, true),
+						data(-float_max, -float_max, true),
+						data(float_max, float_max, true)
 						),
 						// Random test data
-						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
-							double right = notZero(rng.nextDouble());
-							return data(left, right, left/right);
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+							double right = rng.nextDouble();
+							return data(left, right, Double.compare(left, right)<=0);
 						})
-				).map(data -> assertDoubleOp(AlgebraicOp.DIV, data));
+				).map(data -> assertDoublePred(NumericalComparator.LESS_OR_EQUAL, data));
 			}
 
-			// BITWISE OPS
+			@TestFactory
+			@RandomizedTest
+			Stream<DynamicNode> testGreater(RandomGenerator rng) {
+				return Stream.concat(
+						// Static test data
+						Stream.of(
+						data(0.0, 0.0, false),
+						data(0.1, 0.2, false),
+						data(0.2, 0.1, true),
+						data(max, 0.0, true),
+						data(0.0, min, true),
+						data(min, 0.0, false),
+						data(min, max, false),
+						data(-float_max, -float_max, false),
+						data(float_max, float_max, false)
+						),
+						// Random test data
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+							double right = rng.nextDouble();
+							return data(left, right, Double.compare(left, right)>0);
+						})
+				).map(data -> assertDoublePred(NumericalComparator.GREATER, data));
+			}
 
 			@TestFactory
-			Stream<DynamicNode> testUnsupportedOPs() {
-				return Stream.of(
-						// IQL does not define modulo for floating point, but Java does, so ignore it
-						AlgebraicOp.MOD,
-						// All bitwise operations are not supported for floating point types
-						AlgebraicOp.BIT_AND,
-						AlgebraicOp.BIT_OR,
-						AlgebraicOp.BIT_XOR,
-						AlgebraicOp.LSHIFT,
-						AlgebraicOp.RSHIFT
-				).map(op -> dynamicTest(op.name(), () -> {
-					IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
-							() -> create(op, 1.0, 1.0));
-					assertThat(ex).hasMessageContaining("does not support floating point");
-				}));
+			@RandomizedTest
+			Stream<DynamicNode> testGreaterOrEqual(RandomGenerator rng) {
+				return Stream.concat(
+						// Static test data
+						Stream.of(
+						data(0.0, 0.0, true),
+						data(0.1, 0.2, false),
+						data(0.2, 0.1, true),
+						data(max, 0.0, true),
+						data(0.0, min, true),
+						data(min, 0.0, false),
+						data(min, max, false),
+						data(-float_max, -float_max, true),
+						data(float_max, float_max, true)
+						),
+						// Random test data
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+							double right = rng.nextDouble();
+							return data(left, right, Double.compare(left, right)>=0);
+						})
+				).map(data -> assertDoublePred(NumericalComparator.GREATER_OR_EQUAL, data));
 			}
 		}
 
@@ -982,8 +1027,111 @@ class BinaryOperationsTest {
 	 * Test method for {@link de.ims.icarus2.query.api.eval.BinaryOperations#comparablePred(de.ims.icarus2.query.api.eval.BinaryOperations.ComparableComparator, de.ims.icarus2.query.api.eval.Expression, de.ims.icarus2.query.api.eval.Expression)}.
 	 */
 	@Nested
-	class ForComparablePreds {
+	class ForComparablePreds implements BooleanExpressionTest {
 
+		/** Use EQUALS as basic op for testing general behavior */
+		@Override
+		public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			String left = "test1";
+			String right = value.booleanValue() ? "test1" : "test234";
+			return create(ComparableComparator.EQUALS, left, right);
+		}
+
+		@Override
+		public boolean nativeConstant() { return false; }
+
+		@Override
+		public Class<?> getTestTargetClass() { return BinaryObjectPredicate.class; }
+
+		@Override
+		public boolean optimizeToConstant() { return false; }
+
+		private BooleanExpression create(ComparableComparator pred, Object left, Object right) {
+			return BinaryOperations.comparablePred(pred, EvaluationUtils.raw(left), EvaluationUtils.raw(right));
+		}
+
+		private GenericPredData data(Object left, Object right, boolean result) {
+			return new GenericPredData(left, right, result);
+		}
+
+		/** Wrap op into test instance and verify result on original, duplicated and optimized */
+		private DynamicNode assertComparablePred(ComparableComparator pred, GenericPredData data) {
+			return dynamicTest(String.format("%s %s %s [= %b]",
+					data.left, pred, data.right, _boolean(data.result)), () -> {
+				BooleanExpression expression = create(pred, data.left, data.right);
+				assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
+				assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
+
+				BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+				assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
+				assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
+
+				BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+				assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
+				assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
+			});
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testNonComparableOperands() {
+			List<Triple<Expression<?>, Expression<?>, String>> data = list(
+					triple(Literals.of(1), EvaluationUtils.raw("comp"), "numeric+comparable"),
+					triple(Literals.of(true), EvaluationUtils.raw("comp"), "boolean+comparable"),
+					triple(Literals.of("test"), EvaluationUtils.raw("comp"), "text+comparable"),
+					triple(Literals.ofNull(), EvaluationUtils.raw("comp"), "null+comparable"),
+					triple(EvaluationUtils.generic("dummy"), EvaluationUtils.raw("comp"), "generic+comparable"),
+
+					triple(EvaluationUtils.raw("comp"), Literals.of(1), "comparable+numeric"),
+					triple(EvaluationUtils.raw("comp"), Literals.of(true), "comparable+boolean"),
+					triple(EvaluationUtils.raw("comp"), Literals.of("test"), "comparable+text"),
+					triple(EvaluationUtils.raw("comp"), Literals.ofNull(), "comparable+null"),
+					triple(EvaluationUtils.raw("comp"), EvaluationUtils.generic("dummy"), "comparable+generic")
+			);
+
+			return data.stream().map(t -> dynamicTest(t.third, () -> {
+				IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+						() -> BinaryOperations.comparablePred(ComparableComparator.EQUALS, t.first, t.second));
+				assertThat(ex).hasMessageContaining("java.lang.Comparable");
+			}));
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testNullArgs() {
+			return Stream.of(
+					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.comparablePred(
+							null, EvaluationUtils.raw("comp"), EvaluationUtils.raw("comp")))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.comparablePred(
+							ComparableComparator.EQUALS, null, EvaluationUtils.raw("comp")))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.comparablePred(
+							ComparableComparator.EQUALS, EvaluationUtils.raw("comp"), null)))
+			);
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testUncomparableArgs() {
+			//TODO try to compare Integer vs String etc...
+			return Stream.empty();
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testEquals(RandomGenerator rng) {
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", true),
+					data("test", "test2", false),
+					data(Boolean.FALSE, Boolean.TRUE, false),
+					data(Boolean.TRUE, Boolean.TRUE, true),
+					data(_int(0), _int(100), false)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left==right);
+					})
+			).map(data -> assertComparablePred(ComparableComparator.EQUALS, data));
+		}
 	}
 
 	/**

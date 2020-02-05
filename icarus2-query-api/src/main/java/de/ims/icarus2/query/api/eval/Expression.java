@@ -76,7 +76,11 @@ public interface Expression<T> {
 
 	/**
 	 * Effectively clones this expression to be used in the new {@link EvaluationContext context}.
-	 *
+	 * <p>
+	 * Note that every expression that operates via side effects or is in any way <b>not</b>
+	 * thread-safe, <b>must</b> return a fresh and independent new instance as a result of
+	 * this method!! Not doing so will inevitably result in race conditions during execution
+	 * within the IQL evaluation engine and corrupt any results.
 	 */
 	Expression<T> duplicate(EvaluationContext context);
 
