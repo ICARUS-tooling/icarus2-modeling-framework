@@ -21,10 +21,14 @@ package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.test.TestUtils.displayString;
+import static de.ims.icarus2.test.TestUtils.npeAsserter;
+import static de.ims.icarus2.test.util.Triple.triple;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
@@ -48,6 +52,7 @@ import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.test.util.Triple;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
 /**
@@ -57,7 +62,7 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
 class BinaryOperationsTest {
 
 	/** Number of randomly chosen test instances */
-	private static final int RANDOM_SIZE = 10;
+	private static final int RANDOM_INSTANCES = 10;
 
 	private static class IntOpData {
 		public final long left, right, result;
@@ -90,6 +95,36 @@ class BinaryOperationsTest {
 	 */
 	@Nested
 	class ForNumericalOps {
+
+		@TestFactory
+		Stream<DynamicNode> testNonNumericalOperands() {
+			List<Triple<Expression<?>, Expression<?>, String>> data = list(
+					triple(Literals.of(true), Literals.of(1.0), "boolean+numeric"),
+					triple(Literals.of("test"), Literals.of(1.0), "text+numeric"),
+					triple(Literals.ofNull(), Literals.of(1.0), "null+numeric"),
+					triple(EvaluationUtils.generic("dummy"), Literals.of(1.0), "generic+numeric"),
+
+					triple(Literals.of(1.0), Literals.of(true), "numeric+boolean"),
+					triple(Literals.of(1.0), Literals.of("test"), "numeric+text"),
+					triple(Literals.of(1.0), Literals.ofNull(), "numeric+null"),
+					triple(Literals.of(1.0), EvaluationUtils.generic("dummy"), "numeric+generic")
+			);
+
+			return data.stream().map(t -> dynamicTest(t.third, () -> {
+				IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+						() -> BinaryOperations.numericalOp(AlgebraicOp.ADD, t.first, t.second));
+				assertThat(ex).hasMessageContaining("numerical expression");
+			}));
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testNullArgs() {
+			return Stream.of(
+					dynamicTest("null op", npeAsserter(() -> BinaryOperations.numericalOp(null, Literals.of(1), Literals.of(1)))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.numericalOp(AlgebraicOp.ADD, null, Literals.of(1)))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.numericalOp(AlgebraicOp.ADD, Literals.of(1), null)))
+			);
+		}
 
 		@Nested
 		class ForInteger implements IntegerExpressionTest {
@@ -159,7 +194,7 @@ class BinaryOperationsTest {
 						data(int_max, int_max, 2*int_max)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left+right);
 						})
@@ -184,7 +219,7 @@ class BinaryOperationsTest {
 						data(-int_max, int_max, -2*int_max)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left-right);
 						})
@@ -207,7 +242,7 @@ class BinaryOperationsTest {
 						data(int_max, int_max, int_max*int_max)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left*right);
 						})
@@ -230,7 +265,7 @@ class BinaryOperationsTest {
 						data(int_max, int_max, 1)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = notZero(rng.nextLong());
 							return data(left, right, left/right);
 						})
@@ -255,7 +290,7 @@ class BinaryOperationsTest {
 						data(int_max+1, int_max-1, 2)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = notZero(rng.nextLong());
 							return data(left, right, left%right);
 						})
@@ -276,7 +311,7 @@ class BinaryOperationsTest {
 						data(0b00011111, 0b11111000, 0b00011000)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left&right);
 						})
@@ -297,7 +332,7 @@ class BinaryOperationsTest {
 						data(0b00011111, 0b11111000, 0b11111111)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left|right);
 						})
@@ -318,7 +353,7 @@ class BinaryOperationsTest {
 						data(0b00011111, 0b11111000, 0b11100111)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left^right);
 						})
@@ -337,7 +372,7 @@ class BinaryOperationsTest {
 						data(0b00011000, 2, 0b01100000)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left<<right);
 						})
@@ -356,7 +391,7 @@ class BinaryOperationsTest {
 						data(0b01100000, 6, 0b00000001)
 						),
 						// Random test data
-						rng.longs(10).mapToObj(left -> {
+						rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
 							long right = rng.nextLong();
 							return data(left, right, left>>right);
 						})
@@ -429,7 +464,7 @@ class BinaryOperationsTest {
 						data(float_max, float_max, 2*float_max)
 						),
 						// Random test data
-						rng.doubles(10).mapToObj(left -> {
+						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = rng.nextDouble();
 							return data(left, right, left+right);
 						})
@@ -454,7 +489,7 @@ class BinaryOperationsTest {
 						data(-float_max, float_max, -2*float_max)
 						),
 						// Random test data
-						rng.doubles(10).mapToObj(left -> {
+						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = rng.nextDouble();
 							return data(left, right, left-right);
 						})
@@ -477,7 +512,7 @@ class BinaryOperationsTest {
 						data(float_max, float_max, float_max*float_max)
 						),
 						// Random test data
-						rng.doubles(10).mapToObj(left -> {
+						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = rng.nextDouble();
 							return data(left, right, left*right);
 						})
@@ -500,7 +535,7 @@ class BinaryOperationsTest {
 						data(float_max, float_max, 1)
 						),
 						// Random test data
-						rng.doubles(10).mapToObj(left -> {
+						rng.doubles(RANDOM_INSTANCES).mapToObj(left -> {
 							double right = notZero(rng.nextDouble());
 							return data(left, right, left/right);
 						})
@@ -558,6 +593,37 @@ class BinaryOperationsTest {
 	 */
 	@Nested
 	class ForUnicodeOps {
+
+		@TestFactory
+		Stream<DynamicNode> testNonTextualOperands() {
+			List<Triple<Expression<?>, Expression<?>, String>> data = list(
+					triple(Literals.of(true), Literals.of("text"), "boolean+text"),
+					triple(Literals.of(1), Literals.of("text"), "numeric+text"),
+					triple(Literals.ofNull(), Literals.of("text"), "null+text"),
+					triple(EvaluationUtils.generic("dummy"), Literals.of("text"), "generic+text"),
+
+					triple(Literals.of("text"), Literals.of(true), "text+boolean"),
+					triple(Literals.of("text"), Literals.of(1), "text+numeric"),
+					triple(Literals.of("text"), Literals.ofNull(), "text+null"),
+					triple(Literals.of("text"), EvaluationUtils.generic("dummy"), "text+generic")
+			);
+
+			return data.stream().map(t -> dynamicTest(t.third, () -> {
+				IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+						() -> BinaryOperations.unicodeOp(StringOp.EQUALS, StringMode.DEFAULT, t.first, t.second));
+				assertThat(ex).hasMessageContaining("text expression");
+			}));
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testNullArgs() {
+			return Stream.of(
+					dynamicTest("null op", npeAsserter(() -> BinaryOperations.unicodeOp(null, StringMode.DEFAULT, Literals.of("test1"), Literals.of("test2")))),
+					dynamicTest("null mode", npeAsserter(() -> BinaryOperations.unicodeOp(StringOp.EQUALS, null, Literals.of("test1"), Literals.of("test2")))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.unicodeOp(StringOp.EQUALS, StringMode.DEFAULT, null, Literals.of("test2")))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.unicodeOp(StringOp.EQUALS, StringMode.DEFAULT, Literals.of("test1"), null)))
+			);
+		}
 
 		private BooleanExpression create(StringOp op, StringMode mode, String left, String right) {
 			return BinaryOperations.unicodeOp(op, mode, Literals.of(left), Literals.of(right));
@@ -741,6 +807,37 @@ class BinaryOperationsTest {
 	 */
 	@Nested
 	class ForAsciiOps {
+
+		@TestFactory
+		Stream<DynamicNode> testNonTextualOperands() {
+			List<Triple<Expression<?>, Expression<?>, String>> data = list(
+					triple(Literals.of(true), Literals.of("text"), "boolean+text"),
+					triple(Literals.of(1), Literals.of("text"), "numeric+text"),
+					triple(Literals.ofNull(), Literals.of("text"), "null+text"),
+					triple(EvaluationUtils.generic("dummy"), Literals.of("text"), "generic+text"),
+
+					triple(Literals.of("text"), Literals.of(true), "text+boolean"),
+					triple(Literals.of("text"), Literals.of(1), "text+numeric"),
+					triple(Literals.of("text"), Literals.ofNull(), "text+null"),
+					triple(Literals.of("text"), EvaluationUtils.generic("dummy"), "text+generic")
+			);
+
+			return data.stream().map(t -> dynamicTest(t.third, () -> {
+				IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+						() -> BinaryOperations.asciiOp(StringOp.EQUALS, StringMode.DEFAULT, t.first, t.second));
+				assertThat(ex).hasMessageContaining("text expression");
+			}));
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testNullArgs() {
+			return Stream.of(
+					dynamicTest("null op", npeAsserter(() -> BinaryOperations.asciiOp(null, StringMode.DEFAULT, Literals.of("test1"), Literals.of("test2")))),
+					dynamicTest("null mode", npeAsserter(() -> BinaryOperations.asciiOp(StringOp.EQUALS, null, Literals.of("test1"), Literals.of("test2")))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.asciiOp(StringOp.EQUALS, StringMode.DEFAULT, null, Literals.of("test2")))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.asciiOp(StringOp.EQUALS, StringMode.DEFAULT, Literals.of("test1"), null)))
+			);
+		}
 
 		private BooleanExpression create(StringOp op, StringMode mode, String left, String right) {
 			return BinaryOperations.asciiOp(op, mode, Literals.of(left), Literals.of(right));

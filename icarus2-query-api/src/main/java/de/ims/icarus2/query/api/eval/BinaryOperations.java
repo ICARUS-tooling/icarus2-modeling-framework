@@ -21,6 +21,7 @@ package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkComparableType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkNumericalType;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkTextType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedFloatingPoint;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.requiresFloatingPointOp;
@@ -55,7 +56,7 @@ public class BinaryOperations {
 
 
 	public static NumericalExpression numericalOp(AlgebraicOp op,
-			NumericalExpression left, NumericalExpression right) {
+			Expression<?> left, Expression<?> right) {
 		requireNonNull(op);
 		checkNumericalType(left);
 		checkNumericalType(right);
@@ -63,16 +64,20 @@ public class BinaryOperations {
 		NumericalExpression expression;
 
 		if(requiresFloatingPointOp(left, right)) {
-			expression = new BinaryDoubleOperation(left, right, op.getFloatingPointOp());
+			expression = new BinaryDoubleOperation(
+					(NumericalExpression)left, (NumericalExpression)right,
+					op.getFloatingPointOp());
 		} else {
-			expression = new BinaryLongOperation(left, right, op.getIntegerOp());
+			expression = new BinaryLongOperation(
+					(NumericalExpression)left, (NumericalExpression)right,
+					op.getIntegerOp());
 		}
 
 		return expression;
 	}
 
 	public static BooleanExpression numericalPred(NumericalComparator pred,
-			NumericalExpression left, NumericalExpression right) {
+			Expression<?> left, Expression<?> right) {
 		requireNonNull(pred);
 		checkNumericalType(left);
 		checkNumericalType(right);
@@ -80,9 +85,13 @@ public class BinaryOperations {
 		BooleanExpression expression;
 
 		if(requiresFloatingPointOp(left, right)) {
-			expression = new BinaryNumericalPredicate(left, right, pred.getFloatingPointPred());
+			expression = new BinaryNumericalPredicate(
+					(NumericalExpression)left, (NumericalExpression)right,
+					pred.getFloatingPointPred());
 		} else {
-			expression = new BinaryNumericalPredicate(left, right, pred.getIntegerPred());
+			expression = new BinaryNumericalPredicate(
+					(NumericalExpression)left, (NumericalExpression)right,
+					pred.getIntegerPred());
 		}
 
 		return expression;
@@ -107,16 +116,20 @@ public class BinaryOperations {
 	}
 
 	public static BooleanExpression unicodeOp(StringOp op, StringMode mode,
-			TextExpression left, TextExpression right) {
+			Expression<?> left, Expression<?> right) {
 		requireNonNull(op);
+		checkTextType(left);
+		checkTextType(right);
 		switch (op) {
-		case EQUALS: return new UnicodeEquality(left, right, mode.getCodePointComparator());
-		case CONTAINS: return new UnicodeContainment(left, right, mode.getCodePointComparator());
+		case EQUALS: return new UnicodeEquality(
+				(TextExpression)left, (TextExpression)right, mode.getCodePointComparator());
+		case CONTAINS: return new UnicodeContainment(
+				(TextExpression)left, (TextExpression)right, mode.getCodePointComparator());
 		case MATCHES: {
 			if(mode==StringMode.LOWERCASE)
 				throw new QueryException(QueryErrorCode.INCORRECT_USE,
 						"Regular expression matching does not support lower case mode - use "+StringMode.IGNORE_CASE);
-			return new StringRegex(left, right, mode, true);
+			return new StringRegex((TextExpression)left, (TextExpression)right, mode, true);
 		}
 
 		default:
@@ -126,16 +139,20 @@ public class BinaryOperations {
 	}
 
 	public static BooleanExpression asciiOp(StringOp op, StringMode mode,
-			TextExpression left, TextExpression right) {
+			Expression<?> left, Expression<?> right) {
 		requireNonNull(op);
+		checkTextType(left);
+		checkTextType(right);
 		switch (op) {
-		case EQUALS: return new CharsEquality(left, right, mode.getCharComparator());
-		case CONTAINS: return new CharsContainment(left, right, mode.getCharComparator());
+		case EQUALS: return new CharsEquality(
+				(TextExpression)left, (TextExpression)right, mode.getCharComparator());
+		case CONTAINS: return new CharsContainment(
+				(TextExpression)left, (TextExpression)right, mode.getCharComparator());
 		case MATCHES: {
 			if(mode==StringMode.LOWERCASE)
 				throw new QueryException(QueryErrorCode.INCORRECT_USE,
 						"Regular expression matching does not support lower case mode - use "+StringMode.IGNORE_CASE);
-			return new StringRegex(left, right, mode, false);
+			return new StringRegex((TextExpression)left, (TextExpression)right, mode, false);
 		}
 
 		default:

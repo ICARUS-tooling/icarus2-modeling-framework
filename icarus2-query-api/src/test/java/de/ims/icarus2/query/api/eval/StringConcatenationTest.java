@@ -40,63 +40,6 @@ import de.ims.icarus2.util.strings.CodePointSequence;
  */
 class StringConcatenationTest implements TextExpressionTest {
 
-	private static TextExpression fixed(String text) {
-		return new TextExpression() {
-			final CodePointSequence value = CodePointSequence.fixed(text);
-
-			@Override
-			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public CodePointSequence compute() { return value; }
-
-			@Override
-			public CharSequence computeAsChars() { return value; }
-		};
-	}
-
-	private static TextExpression optimizable(String text) {
-		return new TextExpression() {
-			final CodePointSequence value = CodePointSequence.fixed(text);
-
-			@Override
-			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public CodePointSequence compute() { return value; }
-
-			@Override
-			public CharSequence computeAsChars() { return value; }
-
-			@Override
-			public Expression<CodePointSequence> optimize(EvaluationContext context) {
-				return Literals.of(value);
-			}
-		};
-	}
-
-	private static TextExpression dynamic(Object dummy) {
-		Expression<Object> expression = new Expression<Object>() {
-
-			@Override
-			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
-
-			@Override
-			public Expression<Object> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public Object compute() { return dummy; }
-		};
-
-		return Conversions.toText(expression);
-	}
-
 	private static TextExpression literal(String s) {
 		return Literals.of(s);
 	}
@@ -155,8 +98,8 @@ class StringConcatenationTest implements TextExpressionTest {
 		@Test
 		void testPartialOptimization() {
 			TextExpression[] elements = {
-				fixed("begin"),
-				optimizable(" "),
+				EvaluationUtils.fixed("begin"),
+				EvaluationUtils.optimizable(" "),
 				literal("end"),
 			};
 
@@ -178,9 +121,9 @@ class StringConcatenationTest implements TextExpressionTest {
 		@Test
 		void testIntermediateAggregation() {
 			TextExpression[] elements = {
-				optimizable("begin"),
-				optimizable(" "),
-				fixed("end"),
+				EvaluationUtils.optimizable("begin"),
+				EvaluationUtils.optimizable(" "),
+				EvaluationUtils.fixed("end"),
 			};
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
@@ -201,9 +144,9 @@ class StringConcatenationTest implements TextExpressionTest {
 		@Test
 		void testNonOptimizable() {
 			TextExpression[] elements = {
-				fixed("begin"),
-				fixed(" "),
-				fixed("end"),
+				EvaluationUtils.fixed("begin"),
+				EvaluationUtils.fixed(" "),
+				EvaluationUtils.fixed("end"),
 			};
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
@@ -215,9 +158,9 @@ class StringConcatenationTest implements TextExpressionTest {
 			Mutable<String> buffer = new MutableObject<>(" ");
 
 			TextExpression[] elements = {
-				optimizable("begin"),
-				dynamic(buffer),
-				fixed("end"),
+				EvaluationUtils.optimizable("begin"),
+				EvaluationUtils.dynamic(buffer),
+				EvaluationUtils.fixed("end"),
 			};
 
 			StringConcatenation instance = StringConcatenation.concat(elements);

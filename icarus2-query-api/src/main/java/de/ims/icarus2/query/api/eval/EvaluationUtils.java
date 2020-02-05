@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.eval;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -31,13 +33,19 @@ public class EvaluationUtils {
 	static void checkNumericalType(Expression<?> exp) {
 		if(!exp.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-					"Not a proper numerical type: "+exp.getResultType());
+					"Not a proper numerical expression: "+exp.getResultType());
+	}
+
+	static void checkTextType(Expression<?> exp) {
+		if(!exp.isText())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a proper text expression: "+exp.getResultType());
 	}
 
 	static void checkComparableType(Expression<?> exp) {
 		if(!TypeInfo.isComparable(exp.getResultType()))
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-					"Not a type compatible with java.lang.Comparable: "+exp.getResultType());
+					"Not an expression compatible with java.lang.Comparable: "+exp.getResultType());
 	}
 
 	static boolean requiresFloatingPointOp(
@@ -70,5 +78,83 @@ public class EvaluationUtils {
 
 	public static boolean object2Boolean(Object value) {
 		return value!=null;
+	}
+
+	public static Expression<Object> generic(String toStringValue) {
+		Object dummy = new Object() {
+			@Override
+			public String toString() { return toStringValue; }
+		};
+		return new Expression<Object>() {
+	
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
+	
+			@Override
+			public Object compute() { return dummy; }
+	
+			@Override
+			public Expression<Object> duplicate(EvaluationContext context) { return this; }
+	
+			@Override
+			public boolean isConstant() { return true; }
+		};
+	}
+
+	public static TextExpression fixed(String text) {
+		return new TextExpression() {
+			final CodePointSequence value = CodePointSequence.fixed(text);
+	
+			@Override
+			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
+				return this;
+			}
+	
+			@Override
+			public CodePointSequence compute() { return value; }
+	
+			@Override
+			public CharSequence computeAsChars() { return value; }
+		};
+	}
+
+	public static TextExpression optimizable(String text) {
+		return new TextExpression() {
+			final CodePointSequence value = CodePointSequence.fixed(text);
+	
+			@Override
+			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
+				return this;
+			}
+	
+			@Override
+			public CodePointSequence compute() { return value; }
+	
+			@Override
+			public CharSequence computeAsChars() { return value; }
+	
+			@Override
+			public Expression<CodePointSequence> optimize(EvaluationContext context) {
+				return Literals.of(value);
+			}
+		};
+	}
+
+	public static TextExpression dynamic(Object dummy) {
+		Expression<Object> expression = new Expression<Object>() {
+	
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
+	
+			@Override
+			public Expression<Object> duplicate(EvaluationContext context) {
+				return this;
+			}
+	
+			@Override
+			public Object compute() { return dummy; }
+		};
+	
+		return Conversions.toText(expression);
 	}
 }
