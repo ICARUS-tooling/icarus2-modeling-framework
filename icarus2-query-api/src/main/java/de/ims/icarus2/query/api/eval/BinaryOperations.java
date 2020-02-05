@@ -572,8 +572,7 @@ public class BinaryOperations {
 				(l, r) -> l.computeAsDouble()*r.computeAsDouble()),
 		DIV((l, r) -> l.computeAsLong()/r.computeAsLong(),
 				(l, r) -> l.computeAsDouble()/r.computeAsDouble()),
-		MOD((l, r) -> l.computeAsLong()%r.computeAsLong(),
-				(l, r) -> l.computeAsDouble()%r.computeAsDouble()),
+		MOD((l, r) -> l.computeAsLong()%r.computeAsLong(), null),
 
 		// Bitwise operations
 		LSHIFT((l, r) -> l.computeAsLong()<<r.computeAsLong(), null),

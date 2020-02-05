@@ -228,7 +228,6 @@ public class TestUtils {
 
 	@SuppressWarnings({ "boxing", "rawtypes" })
 	private static final Pair[] floatDisplayLabels = {
-			pair(Float.MIN_VALUE, "Float.MIN_VALUE"),
 			pair(Float.MAX_VALUE, "Float.MAX_VALUE"),
 			pair(Float.MAX_VALUE/2, "Float.MAX_VALUE/2"),
 			pair(-Float.MAX_VALUE, "-Float.MAX_VALUE"),
@@ -237,7 +236,6 @@ public class TestUtils {
 
 	@SuppressWarnings({ "boxing", "rawtypes" })
 	private static final Pair[] doubleDisplayLabels = {
-			pair(Double.MIN_VALUE, "Double.MIN_VALUE"),
 			pair(Double.MAX_VALUE, "Double.MAX_VALUE"),
 			pair(Double.MAX_VALUE/2, "Double.MAX_VALUE/2"),
 			pair(-Double.MAX_VALUE, "-Double.MAX_VALUE"),

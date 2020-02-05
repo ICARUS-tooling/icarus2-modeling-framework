@@ -196,8 +196,9 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		@Override
 		default Primitive<? extends Number> constant() { return new MutableLong(1234); }
 
+		/** We return a random int from the generator to keep some room. */
 		@Override
-		default Primitive<? extends Number> random(RandomGenerator rng) { return new MutableLong(rng.nextLong()); }
+		default Primitive<? extends Number> random(RandomGenerator rng) { return new MutableLong(rng.nextInt()); }
 
 		@Test
 		@RandomizedTest
@@ -222,8 +223,9 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		@Override
 		default Primitive<? extends Number> constant() { return new MutableDouble(1234.5678); }
 
+		/** We pick from float space to make testing easier */
 		@Override
-		default Primitive<? extends Number> random(RandomGenerator rng) { return new MutableDouble(rng.nextDouble()); }
+		default Primitive<? extends Number> random(RandomGenerator rng) { return new MutableDouble(rng.nextFloat()); }
 
 		@Test
 		@RandomizedTest

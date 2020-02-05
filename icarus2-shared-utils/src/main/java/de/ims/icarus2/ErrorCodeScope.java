@@ -40,7 +40,7 @@ public final class ErrorCodeScope {
 		synchronized (_scopes) {
 			ErrorCodeScope scope = _scopes.get(code);
 			if(scope!=null)
-				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Code already in use: "+code);
+				throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT, "Scope range already in use: "+code);
 
 			scope = new ErrorCodeScope(code, label);
 
