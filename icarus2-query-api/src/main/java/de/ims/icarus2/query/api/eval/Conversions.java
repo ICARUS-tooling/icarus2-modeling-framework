@@ -187,14 +187,14 @@ public class Conversions {
 		private final ToDoubleFunction<Expression<?>> cast;
 
 		public FloatingPointCast(Expression<?> source, Converter converter) {
-			super(TypeInfo.DOUBLE, source);
+			super(TypeInfo.FLOATING_POINT, source);
 			cast = converter.getToDouble();
 			value = new MutableDouble();
 		}
 
 		/** Copy constructor */
 		private FloatingPointCast(Expression<?> source, ToDoubleFunction<Expression<?>> cast) {
-			super(TypeInfo.DOUBLE, source);
+			super(TypeInfo.FLOATING_POINT, source);
 			this.cast = requireNonNull(cast);
 			value = new MutableDouble();
 		}
@@ -206,7 +206,7 @@ public class Conversions {
 		}
 
 		@Override
-		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.INTEGER); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
 
 		@Override
 		public double computeAsDouble() { return cast.applyAsDouble(source); }
@@ -317,7 +317,7 @@ public class Conversions {
 				exp -> String.valueOf(((NumericalExpression)exp).computeAsLong())
 		),
 
-		FROM_FLOAT(TypeInfo.DOUBLE,
+		FROM_FLOAT(TypeInfo.FLOATING_POINT,
 				exp -> (long)((NumericalExpression)exp).computeAsDouble(),
 				null,
 				exp -> float2Boolean(((NumericalExpression)exp).computeAsDouble()),
@@ -364,7 +364,7 @@ public class Conversions {
 
 		public ToLongFunction<Expression<?>> getToInt() { return expect(toInt, TypeInfo.INTEGER); }
 
-		public ToDoubleFunction<Expression<?>> getToDouble() { return expect(toDouble, TypeInfo.DOUBLE); }
+		public ToDoubleFunction<Expression<?>> getToDouble() { return expect(toDouble, TypeInfo.FLOATING_POINT); }
 
 		public Predicate<Expression<?>> getToBoolean() { return expect(toBoolean, TypeInfo.BOOLEAN); }
 

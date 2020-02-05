@@ -138,7 +138,7 @@ public class UnaryOperations {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.DOUBLE; }
+		public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
 
 		@Override
 		public Primitive<? extends Number> compute() {

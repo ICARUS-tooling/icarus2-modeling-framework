@@ -160,13 +160,13 @@ public final class Literals {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.DOUBLE; }
+		public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
 
 		@Override
 		public Primitive<Double> compute() { return value; }
 
 		@Override
-		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.INTEGER); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
 
 		@Override
 		public double computeAsDouble() { return value.doubleValue(); }

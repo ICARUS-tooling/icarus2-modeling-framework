@@ -50,8 +50,8 @@ public class EvaluationUtils {
 
 	static boolean requiresFloatingPointOp(
 			Expression<?> left, Expression<?> right) {
-		return left.getResultType()==TypeInfo.DOUBLE
-				|| right.getResultType()==TypeInfo.DOUBLE;
+		return left.getResultType()==TypeInfo.FLOATING_POINT
+				|| right.getResultType()==TypeInfo.FLOATING_POINT;
 	}
 
 	static QueryException forUnsupportedFloatingPoint(String op) {

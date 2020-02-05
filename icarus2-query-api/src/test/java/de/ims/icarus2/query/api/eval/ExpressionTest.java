@@ -223,7 +223,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 	public interface FloatingPointExpressionTest extends ExpressionTest<Primitive<? extends Number>, NumericalExpression> {
 
 		@Override
-		default TypeInfo getExpectedType() { return TypeInfo.DOUBLE; }
+		default TypeInfo getExpectedType() { return TypeInfo.FLOATING_POINT; }
 
 		@Override
 		default Primitive<? extends Number> constant() { return new MutableDouble(1234.5678); }

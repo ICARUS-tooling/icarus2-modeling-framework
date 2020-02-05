@@ -124,7 +124,7 @@ public interface Expression<T> {
 
 		/** REturns true iff this expression is a floating point expression */
 		default boolean isFPE() {
-			return getResultType()==TypeInfo.DOUBLE;
+			return getResultType()==TypeInfo.FLOATING_POINT;
 		}
 	}
 
