@@ -29,9 +29,11 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -51,6 +53,7 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryLongOperation;
 import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryNumericalPredicate;
 import de.ims.icarus2.query.api.eval.BinaryOperations.BinaryObjectPredicate;
 import de.ims.icarus2.query.api.eval.BinaryOperations.ComparableComparator;
+import de.ims.icarus2.query.api.eval.BinaryOperations.EqualityPred;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
@@ -1029,6 +1032,41 @@ class BinaryOperationsTest {
 	@Nested
 	class ForComparablePreds implements BooleanExpressionTest {
 
+		@TestFactory
+		Stream<DynamicNode> testNonComparableOperands() {
+			List<Triple<Expression<?>, Expression<?>, String>> data = list(
+					triple(Literals.of(1), EvaluationUtils.raw("comp"), "numeric+comparable"),
+					triple(Literals.of(true), EvaluationUtils.raw("comp"), "boolean+comparable"),
+					triple(Literals.of("test"), EvaluationUtils.raw("comp"), "text+comparable"),
+					triple(Literals.ofNull(), EvaluationUtils.raw("comp"), "null+comparable"),
+					triple(EvaluationUtils.generic("dummy"), EvaluationUtils.raw("comp"), "generic+comparable"),
+
+					triple(EvaluationUtils.raw("comp"), Literals.of(1), "comparable+numeric"),
+					triple(EvaluationUtils.raw("comp"), Literals.of(true), "comparable+boolean"),
+					triple(EvaluationUtils.raw("comp"), Literals.of("test"), "comparable+text"),
+					triple(EvaluationUtils.raw("comp"), Literals.ofNull(), "comparable+null"),
+					triple(EvaluationUtils.raw("comp"), EvaluationUtils.generic("dummy"), "comparable+generic")
+			);
+
+			return data.stream().map(t -> dynamicTest(t.third, () -> {
+				IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+						() -> BinaryOperations.comparablePred(ComparableComparator.EQUALS, t.first, t.second));
+				assertThat(ex).hasMessageContaining("java.lang.Comparable");
+			}));
+		}
+
+		@TestFactory
+		Stream<DynamicNode> testNullArgs() {
+			return Stream.of(
+					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.comparablePred(
+							null, EvaluationUtils.raw("comp"), EvaluationUtils.raw("comp")))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.comparablePred(
+							ComparableComparator.EQUALS, null, EvaluationUtils.raw("comp")))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.comparablePred(
+							ComparableComparator.EQUALS, EvaluationUtils.raw("comp"), null)))
+			);
+		}
+
 		/** Use EQUALS as basic op for testing general behavior */
 		@Override
 		public BooleanExpression createWithValue(Primitive<Boolean> value) {
@@ -1073,44 +1111,16 @@ class BinaryOperationsTest {
 		}
 
 		@TestFactory
-		Stream<DynamicNode> testNonComparableOperands() {
-			List<Triple<Expression<?>, Expression<?>, String>> data = list(
-					triple(Literals.of(1), EvaluationUtils.raw("comp"), "numeric+comparable"),
-					triple(Literals.of(true), EvaluationUtils.raw("comp"), "boolean+comparable"),
-					triple(Literals.of("test"), EvaluationUtils.raw("comp"), "text+comparable"),
-					triple(Literals.ofNull(), EvaluationUtils.raw("comp"), "null+comparable"),
-					triple(EvaluationUtils.generic("dummy"), EvaluationUtils.raw("comp"), "generic+comparable"),
-
-					triple(EvaluationUtils.raw("comp"), Literals.of(1), "comparable+numeric"),
-					triple(EvaluationUtils.raw("comp"), Literals.of(true), "comparable+boolean"),
-					triple(EvaluationUtils.raw("comp"), Literals.of("test"), "comparable+text"),
-					triple(EvaluationUtils.raw("comp"), Literals.ofNull(), "comparable+null"),
-					triple(EvaluationUtils.raw("comp"), EvaluationUtils.generic("dummy"), "comparable+generic")
-			);
-
-			return data.stream().map(t -> dynamicTest(t.third, () -> {
-				IcarusRuntimeException ex = assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
-						() -> BinaryOperations.comparablePred(ComparableComparator.EQUALS, t.first, t.second));
-				assertThat(ex).hasMessageContaining("java.lang.Comparable");
-			}));
-		}
-
-		@TestFactory
-		Stream<DynamicNode> testNullArgs() {
-			return Stream.of(
-					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.comparablePred(
-							null, EvaluationUtils.raw("comp"), EvaluationUtils.raw("comp")))),
-					dynamicTest("null left", npeAsserter(() -> BinaryOperations.comparablePred(
-							ComparableComparator.EQUALS, null, EvaluationUtils.raw("comp")))),
-					dynamicTest("null right", npeAsserter(() -> BinaryOperations.comparablePred(
-							ComparableComparator.EQUALS, EvaluationUtils.raw("comp"), null)))
-			);
-		}
-
-		@TestFactory
 		Stream<DynamicNode> testUncomparableArgs() {
-			//TODO try to compare Integer vs String etc...
-			return Stream.empty();
+			return Stream.of(
+					triple("test", _int(0), "string vs. int"),
+					triple(_int(100), "test", "int vs. string"),
+					triple(new BigDecimal(Integer.MAX_VALUE), "test", "bigInt vs. string"),
+					triple("test", new BigDecimal(Integer.MAX_VALUE), "string vs. bigInt")
+			).map(data -> dynamicTest(data.third, () -> {
+				assertThrows(RuntimeException.class,
+						() -> create(ComparableComparator.LESS, data.first, data.second).compute());
+			}));
 		}
 
 		@TestFactory
@@ -1132,13 +1142,233 @@ class BinaryOperationsTest {
 					})
 			).map(data -> assertComparablePred(ComparableComparator.EQUALS, data));
 		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testNotEquals(RandomGenerator rng) {
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", false),
+					data("test", "test2", true),
+					data(Boolean.FALSE, Boolean.TRUE, true),
+					data(Boolean.TRUE, Boolean.TRUE, false),
+					data(_int(0), _int(100), true)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left!=right);
+					})
+			).map(data -> assertComparablePred(ComparableComparator.NOT_EQUALS, data));
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testLess(RandomGenerator rng) {
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", false),
+					data("test", "test2", true),
+					data(Boolean.FALSE, Boolean.TRUE, true),
+					data(Boolean.TRUE, Boolean.FALSE, false),
+					data(_int(0), _int(100), true)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left<right);
+					})
+			).map(data -> assertComparablePred(ComparableComparator.LESS, data));
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testLessOrEqual(RandomGenerator rng) {
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", true),
+					data("test", "test2", true),
+					data("test2", "test", false),
+					data(Boolean.FALSE, Boolean.TRUE, true),
+					data(Boolean.TRUE, Boolean.FALSE, false),
+					data(Boolean.FALSE, Boolean.FALSE, true),
+					data(Boolean.TRUE, Boolean.TRUE, true),
+					data(_int(0), _int(100), true),
+					data(_int(100), _int(100), true)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left<=right);
+					})
+			).map(data -> assertComparablePred(ComparableComparator.LESS_OR_EQUAL, data));
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testGreater(RandomGenerator rng) {
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", false),
+					data("test", "test2", false),
+					data("test2", "test", true),
+					data(Boolean.FALSE, Boolean.TRUE, false),
+					data(Boolean.TRUE, Boolean.FALSE, true),
+					data(_int(0), _int(100), false),
+					data(_int(100), _int(0), true)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left>right);
+					})
+			).map(data -> assertComparablePred(ComparableComparator.GREATER, data));
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testGreaterOrEqual(RandomGenerator rng) {
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", true),
+					data("test", "test2", false),
+					data("test2", "test", true),
+					data(Boolean.FALSE, Boolean.TRUE, false),
+					data(Boolean.TRUE, Boolean.FALSE, true),
+					data(Boolean.FALSE, Boolean.FALSE, true),
+					data(Boolean.TRUE, Boolean.TRUE, true),
+					data(_int(0), _int(100), false),
+					data(_int(100), _int(0), true),
+					data(_int(100), _int(100), true)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left>=right);
+					})
+			).map(data -> assertComparablePred(ComparableComparator.GREATER_OR_EQUAL, data));
+		}
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.query.api.eval.BinaryOperations#equalityPred(de.ims.icarus2.query.api.eval.BinaryOperations.EqualityPred, de.ims.icarus2.query.api.eval.Expression, de.ims.icarus2.query.api.eval.Expression)}.
 	 */
 	@Nested
-	class ForEqualityPreds {
+	class ForEqualityPreds implements BooleanExpressionTest {
+
+		@TestFactory
+		Stream<DynamicNode> testNullArgs() {
+			return Stream.of(
+					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.equalityPred(
+							null, EvaluationUtils.raw("comp"), EvaluationUtils.raw("comp")))),
+					dynamicTest("null left", npeAsserter(() -> BinaryOperations.equalityPred(
+							EqualityPred.EQUALS, null, EvaluationUtils.raw("comp")))),
+					dynamicTest("null right", npeAsserter(() -> BinaryOperations.equalityPred(
+							EqualityPred.EQUALS, EvaluationUtils.raw("comp"), null)))
+			);
+		}
+
+		/** Use EQUALS as basic op for testing general behavior */
+		@Override
+		public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			String left = "test1";
+			String right = value.booleanValue() ? "test1" : "test234";
+			return create(EqualityPred.EQUALS, left, right);
+		}
+
+		@Override
+		public boolean nativeConstant() { return false; }
+
+		@Override
+		public Class<?> getTestTargetClass() { return BinaryObjectPredicate.class; }
+
+		@Override
+		public boolean optimizeToConstant() { return false; }
+
+		private BooleanExpression create(EqualityPred pred, Object left, Object right) {
+			return BinaryOperations.equalityPred(pred, EvaluationUtils.raw(left), EvaluationUtils.raw(right));
+		}
+
+		private GenericPredData data(Object left, Object right, boolean result) {
+			return new GenericPredData(left, right, result);
+		}
+
+		/** Wrap op into test instance and verify result on original, duplicated and optimized */
+		private DynamicNode assertEqualityPred(EqualityPred pred, GenericPredData data) {
+			return dynamicTest(String.format("%s %s %s [= %b]",
+					data.left, pred, data.right, _boolean(data.result)), () -> {
+				BooleanExpression expression = create(pred, data.left, data.right);
+				assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
+				assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
+
+				BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+				assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
+				assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
+
+				BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+				assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
+				assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
+			});
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testEquals(RandomGenerator rng) {
+			Object dummy = new Object();
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", true),
+					data("test", "test2", false),
+					data(Boolean.FALSE, Boolean.TRUE, false),
+					data(Boolean.TRUE, Boolean.TRUE, true),
+					data(Boolean.FALSE, Boolean.FALSE, true),
+					data(dummy, dummy, true),
+					data(dummy, new Object(), false),
+					data(dummy, "test", false),
+					data("test", dummy, false),
+					data(_int(0), _int(100), false),
+					data(_int(100), _int(100), true)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left==right);
+					})
+			).map(data -> assertEqualityPred(EqualityPred.EQUALS, data));
+		}
+
+		@TestFactory
+		@RandomizedTest
+		Stream<DynamicNode> testNotEquals(RandomGenerator rng) {
+			Object dummy = new Object();
+			return Stream.concat(
+					// Static test data
+					Stream.of(
+					data("test", "test", false),
+					data("test", "test2", true),
+					data(Boolean.FALSE, Boolean.TRUE, true),
+					data(Boolean.TRUE, Boolean.TRUE, false),
+					data(Boolean.FALSE, Boolean.FALSE, false),
+					data(dummy, dummy, false),
+					data(dummy, new Object(), true),
+					data(dummy, "test", true),
+					data("test", dummy, true),
+					data(_int(0), _int(100), true),
+					data(_int(100), _int(100), false)
+					),
+					// Random test data
+					rng.longs(RANDOM_INSTANCES).mapToObj(left -> {
+						long right = rng.nextLong();
+						return data(_long(left), _long(right), left!=right);
+					})
+			).map(data -> assertEqualityPred(EqualityPred.NOT_EQUALS, data));
+		}
 
 	}
 
@@ -1348,7 +1578,6 @@ class BinaryOperationsTest {
 				"abc, ^abc$, true",
 				"a B c, ^abc$, false",
 			})
-			//TODO this is effectively the same as lower case
 			void testIgnoreCase(String left, String right, boolean equals) {
 				assertUnicodeOp(op, StringMode.IGNORE_CASE, left, right, equals);
 			}
