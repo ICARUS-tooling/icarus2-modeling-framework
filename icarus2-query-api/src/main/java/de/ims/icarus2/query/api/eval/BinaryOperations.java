@@ -260,7 +260,7 @@ public class BinaryOperations {
 		}
 
 		@Override
-		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.LONG); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.INTEGER); }
 
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.DOUBLE; }
@@ -307,7 +307,7 @@ public class BinaryOperations {
 		public double computeAsDouble() { return computeAsLong(); }
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.LONG; }
+		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 		@Override
 		public long computeAsLong() {

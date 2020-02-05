@@ -135,7 +135,7 @@ public final class Literals {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.LONG; }
+		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 		@Override
 		public Primitive<Long> compute() { return value; }
@@ -166,7 +166,7 @@ public final class Literals {
 		public Primitive<Double> compute() { return value; }
 
 		@Override
-		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.LONG); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.INTEGER); }
 
 		@Override
 		public double computeAsDouble() { return value.doubleValue(); }

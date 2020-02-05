@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.eval;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.List;
+
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -82,7 +84,7 @@ public class TypeInfo {
 	public boolean isList() { return list; }
 
 	public static boolean isNumerical(TypeInfo info) {
-		return info==LONG || info==DOUBLE;
+		return info==INTEGER || info==DOUBLE;
 	}
 
 	public static boolean isBoolean(TypeInfo info) {
@@ -97,17 +99,20 @@ public class TypeInfo {
 		return Comparable.class.isAssignableFrom(info.type);
 	}
 
+	// Dummy types
+	/** Wraps all inherent {@code null} types */
 	public static final TypeInfo NULL = new TypeInfo(Object.class, null, false, false);
-
+	/** Placeholder for general {@code unknown} non-primitive types */
 	public static final TypeInfo GENERIC = of(Object.class, false);
 
-//	public static final TypeInfo INT = new TypeInfo(Integer.class, int.class, false, false);
-	public static final TypeInfo LONG = new TypeInfo(Primitive.class, long.class, false, false);
-//	public static final TypeInfo FLOAT = new TypeInfo(Float.class, float.class, false, false);
+	// Primitives
+	/** Represents all integer types, up to {@code long} */
+	public static final TypeInfo INTEGER = new TypeInfo(Primitive.class, long.class, false, false);
+	/** Represents all floating point types, up to {@code double} */
 	public static final TypeInfo DOUBLE = new TypeInfo(Primitive.class, double.class, false, false);
-
 	public static final TypeInfo BOOLEAN = new TypeInfo(Primitive.class, boolean.class, false, false);
 
+	// Former "String" proxy, now adjusted for proper unicode support
 	/** We use {@link CharSequence} as type for strings, in accordance with {@link ValueType#STRING} */
 	public static final TypeInfo TEXT = new TypeInfo(CodePointSequence.class, null, false, false);
 
@@ -125,4 +130,7 @@ public class TypeInfo {
 	public static final TypeInfo LAYER = new TypeInfo(Layer.class, null, true, false);
 
 	// Frequently used helpers
+	public static final TypeInfo STRING = new TypeInfo(CharSequence.class, null, false, false);
+	public static final TypeInfo LIST = new TypeInfo(List.class, null, false, true);
+	public static final TypeInfo ARRAY = new TypeInfo(Object[].class, null, false, true);
 }

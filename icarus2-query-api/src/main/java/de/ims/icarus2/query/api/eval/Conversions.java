@@ -145,14 +145,14 @@ public class Conversions {
 		private final ToLongFunction<Expression<?>> cast;
 
 		public IntegerCast(Expression<?> source, Converter converter) {
-			super(TypeInfo.LONG, source);
+			super(TypeInfo.INTEGER, source);
 			cast = converter.getToInt();
 			value = new MutableLong();
 		}
 
 		/** Copy constructor */
 		private IntegerCast(Expression<?> source, ToLongFunction<Expression<?>> cast) {
-			super(TypeInfo.LONG, source);
+			super(TypeInfo.INTEGER, source);
 			this.cast = requireNonNull(cast);
 			value = new MutableLong();
 		}
@@ -206,7 +206,7 @@ public class Conversions {
 		}
 
 		@Override
-		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.LONG); }
+		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.DOUBLE, TypeInfo.INTEGER); }
 
 		@Override
 		public double computeAsDouble() { return cast.applyAsDouble(source); }
@@ -310,7 +310,7 @@ public class Conversions {
 				null
 		),
 
-		FROM_INTEGER(TypeInfo.LONG,
+		FROM_INTEGER(TypeInfo.INTEGER,
 				null,
 				exp -> (double)((NumericalExpression)exp).computeAsLong(),
 				exp -> int2Boolean(((NumericalExpression)exp).computeAsLong()),
@@ -362,7 +362,7 @@ public class Conversions {
 			return cast;
 		}
 
-		public ToLongFunction<Expression<?>> getToInt() { return expect(toInt, TypeInfo.LONG); }
+		public ToLongFunction<Expression<?>> getToInt() { return expect(toInt, TypeInfo.INTEGER); }
 
 		public ToDoubleFunction<Expression<?>> getToDouble() { return expect(toDouble, TypeInfo.DOUBLE); }
 

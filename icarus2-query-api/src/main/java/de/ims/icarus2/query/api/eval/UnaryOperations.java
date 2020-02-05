@@ -74,7 +74,7 @@ public class UnaryOperations {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.LONG; }
+		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 		@Override
 		public Primitive<? extends Number> compute() {
@@ -106,7 +106,7 @@ public class UnaryOperations {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.LONG; }
+		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 		@Override
 		public Primitive<? extends Number> compute() {

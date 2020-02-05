@@ -196,7 +196,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 	public interface IntegerExpressionTest extends ExpressionTest<Primitive<? extends Number>, NumericalExpression> {
 
 		@Override
-		default TypeInfo getExpectedType() { return TypeInfo.LONG; }
+		default TypeInfo getExpectedType() { return TypeInfo.INTEGER; }
 
 		@Override
 		default Primitive<? extends Number> constant() { return new MutableLong(1234); }
