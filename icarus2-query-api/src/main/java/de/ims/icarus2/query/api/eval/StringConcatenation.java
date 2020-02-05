@@ -58,7 +58,7 @@ public class StringConcatenation implements TextExpression {
 	}
 
 	@Override
-	public TypeInfo getResultType() { return TypeInfo.STRING; }
+	public TypeInfo getResultType() { return TypeInfo.TEXT; }
 
 	@Override
 	public CodePointSequence compute() {

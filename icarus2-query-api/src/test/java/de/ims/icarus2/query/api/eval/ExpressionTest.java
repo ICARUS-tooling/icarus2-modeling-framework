@@ -153,7 +153,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 	public interface TextExpressionTest extends ExpressionTest<CodePointSequence, TextExpression> {
 
 		@Override
-		default TypeInfo getExpectedType() { return TypeInfo.STRING; }
+		default TypeInfo getExpectedType() { return TypeInfo.TEXT; }
 
 		@Override
 		default CodePointSequence constant() {

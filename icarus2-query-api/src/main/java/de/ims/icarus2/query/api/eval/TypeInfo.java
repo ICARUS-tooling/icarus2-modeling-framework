@@ -90,7 +90,7 @@ public class TypeInfo {
 	}
 
 	public static boolean isText(TypeInfo info) {
-		return info==STRING;
+		return info==TEXT;
 	}
 
 	public static boolean isComparable(TypeInfo info) {
@@ -109,7 +109,7 @@ public class TypeInfo {
 	public static final TypeInfo BOOLEAN = new TypeInfo(Primitive.class, boolean.class, false, false);
 
 	/** We use {@link CharSequence} as type for strings, in accordance with {@link ValueType#STRING} */
-	public static final TypeInfo STRING = new TypeInfo(CodePointSequence.class, null, false, false);
+	public static final TypeInfo TEXT = new TypeInfo(CodePointSequence.class, null, false, false);
 
 	// Low-level members
 	public static final TypeInfo ITEM = new TypeInfo(Item.class, null, true, false);
@@ -123,4 +123,6 @@ public class TypeInfo {
 	public static final TypeInfo CONTEXT = new TypeInfo(Context.class, null, true, false);
 	public static final TypeInfo LAYER_GROUP = new TypeInfo(LayerGroup.class, null, true, false);
 	public static final TypeInfo LAYER = new TypeInfo(Layer.class, null, true, false);
+
+	// Frequently used helpers
 }

@@ -268,14 +268,14 @@ public class Conversions {
 		private final Function<Expression<?>, CharSequence> cast;
 
 		public TextCast(Expression<?> source, Converter converter) {
-			super(TypeInfo.STRING, source);
+			super(TypeInfo.TEXT, source);
 			cast = converter.getToString();
 			buffer = new CodePointBuffer();
 		}
 
 		/** Copy constructor */
 		private TextCast(Expression<?> source, Function<Expression<?>, CharSequence> cast) {
-			super(TypeInfo.STRING, source);
+			super(TypeInfo.TEXT, source);
 			this.cast = requireNonNull(cast);
 			buffer = new CodePointBuffer();
 		}
@@ -303,7 +303,7 @@ public class Conversions {
 
 	/** Provides conversion from a specific type to the 4 casting targets */
 	private enum Converter {
-		FROM_TEXT(TypeInfo.STRING,
+		FROM_TEXT(TypeInfo.TEXT,
 				exp -> StringPrimitives.parseLong(((TextExpression)exp).computeAsChars()),
 				exp -> StringPrimitives.parseDouble(((TextExpression)exp).computeAsChars()),
 				exp -> string2Boolean(((TextExpression)exp).computeAsChars()),
@@ -368,6 +368,6 @@ public class Conversions {
 
 		public Predicate<Expression<?>> getToBoolean() { return expect(toBoolean, TypeInfo.BOOLEAN); }
 
-		public Function<Expression<?>, CharSequence> getToString() { return expect(toString, TypeInfo.STRING); }
+		public Function<Expression<?>, CharSequence> getToString() { return expect(toString, TypeInfo.TEXT); }
 	}
 }

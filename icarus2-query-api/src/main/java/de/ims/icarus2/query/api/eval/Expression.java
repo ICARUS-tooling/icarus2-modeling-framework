@@ -155,12 +155,15 @@ public interface Expression<T> {
 
 		@Override
 		default TypeInfo getResultType() {
-			return TypeInfo.STRING;
+			return TypeInfo.TEXT;
 		}
 	}
 
 	/** Gives list-style access to the underlying data */
 	public interface ListExpression<T, E> extends Expression<T>, ListProxy<E> {
+
+		/** Returns the type of elements that are accessable as part of this expressions output */
+		TypeInfo getElementType();
 
 	}
 
