@@ -19,7 +19,13 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
+
+import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableLong;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
 /**
  * @author Markus Gärtner
@@ -81,19 +87,19 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static TextExpression dynamic(Object dummy) {
-		Expression<Object> expression = new Expression<Object>() {
+	static <T> TextExpression dynamicText(Supplier<T> dummy) {
+		Expression<T> expression = new Expression<T>() {
 
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.of(dummy.getClass()); }
 
 			@Override
-			public Expression<Object> duplicate(EvaluationContext context) {
+			public Expression<T> duplicate(EvaluationContext context) {
 				return this;
 			}
 
 			@Override
-			public Object compute() { return dummy; }
+			public T compute() { return dummy.get(); }
 		};
 
 		return Conversions.toText(expression);
@@ -115,4 +121,32 @@ public class ExpressionTestUtils {
 		};
 	}
 
+	static NumericalExpression dynamic(LongSupplier source) {
+		return new NumericalExpression() {
+
+			final MutableLong value = new MutableLong();
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.INTEGER; }
+
+			@Override
+			public NumericalExpression duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Primitive<? extends Number> compute() {
+				value.setLong(computeAsLong());
+				return value;
+			}
+
+			@Override
+			public long computeAsLong() { return source.getAsLong(); }
+
+			@Override
+			public double computeAsDouble() { return computeAsLong(); }
+		};
+	}
+
+	//TODO other simple dynamic implementations!
 }

@@ -34,6 +34,12 @@ import de.ims.icarus2.query.api.eval.Expression.TextExpression;
  */
 public class EvaluationUtils {
 
+	static void checkIntegerType(Expression<?> exp) {
+		if(exp.getResultType()!=TypeInfo.INTEGER)
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a proper integer expression: "+exp.getResultType());
+	}
+
 	static void checkNumericalType(Expression<?> exp) {
 		if(!exp.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
@@ -108,16 +114,25 @@ public class EvaluationUtils {
 		return result;
 	}
 
+	/** Clones the given array of expressions into integer {@link NumericalExpression}[] */
+	public static NumericalExpression[] ensureInteger(Expression<?>...expressions) {
+		return ensureSpecificType0(expressions, EvaluationUtils::checkIntegerType,
+				NumericalExpression[]::new);
+	}
+
+	/** Clones the given array of expressions into {@link NumericalExpression}[] */
 	public static NumericalExpression[] ensureNumeric(Expression<?>...expressions) {
 		return ensureSpecificType0(expressions, EvaluationUtils::checkNumericalType,
 				NumericalExpression[]::new);
 	}
 
+	/** Clones the given array of expressions into {@link BooleanExpression}[] */
 	public static BooleanExpression[] ensureBoolean(Expression<?>...expressions) {
 		return ensureSpecificType0(expressions, EvaluationUtils::checkBooleanType,
 				BooleanExpression[]::new);
 	}
 
+	/** Clones the given array of expressions into {@link TextExpression}[] */
 	public static TextExpression[] ensureText(Expression<?>...expressions) {
 		return ensureSpecificType0(expressions, EvaluationUtils::checkTextType,
 				TextExpression[]::new);

@@ -52,6 +52,9 @@ public final class Literals {
 		/** Literals are inherently constant */
 		@Override
 		public boolean isConstant() { return true; }
+
+		@Override
+		public String toString() { return String.valueOf(compute()); }
 	}
 
 	public static Expression<Object> ofNull() {

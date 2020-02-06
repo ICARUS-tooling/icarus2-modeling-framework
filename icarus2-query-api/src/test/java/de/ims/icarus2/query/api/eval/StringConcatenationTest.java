@@ -164,7 +164,7 @@ class StringConcatenationTest implements TextExpressionTest {
 
 			TextExpression[] elements = {
 				ExpressionTestUtils.optimizable("begin"),
-				ExpressionTestUtils.dynamic(buffer),
+				ExpressionTestUtils.dynamicText(() -> buffer),
 				ExpressionTestUtils.fixed("end"),
 			};
 

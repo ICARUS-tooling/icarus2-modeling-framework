@@ -57,7 +57,7 @@ public class SetPredicates {
 			if(numQuery.isFPE()) {
 				//TODO
 			} else {
-				return new FlatIntegerSetPredicate(numQuery, EvaluationUtils.ensureNumeric(set));
+				return new FlatIntegerSetPredicate(numQuery, EvaluationUtils.ensureInteger(set));
 			}
 		}
 		//TODO
@@ -65,7 +65,7 @@ public class SetPredicates {
 	}
 
 
-	// expects 'query' to be a lsit expression
+	// expects 'query' to be a list expression
 	private static BooleanExpression allIn(Expression<?> query, Expression<?>...set) {
 		//TODO
 		throw new UnsupportedOperationException();
@@ -159,6 +159,13 @@ public class SetPredicates {
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			// Main optimization comes from the target expression
+			NumericalExpression newTarget = (NumericalExpression) target.optimize(context);
+			// If we don't have any dynamic part going on, optimize to constant directly
+			if(newTarget.isConstant() && dynamicElements.length==0) {
+				return Literals.of(fixedElements.contains(newTarget.computeAsLong()));
+			}
+
 			/*
 			 * If we have at least 1 constant in the current set of dynamic elements,
 			 * we can shift that over to the fixed set.
@@ -171,7 +178,6 @@ public class SetPredicates {
 					fixedElements);
 
 			if(dynamicElements.length<this.dynamicElements.length) {
-				NumericalExpression newTarget = (NumericalExpression) target.optimize(context);
 
 				// Special case of full constant expression -> optimize into single boolean
 				if(newTarget.isConstant() && dynamicElements.length==0) {
