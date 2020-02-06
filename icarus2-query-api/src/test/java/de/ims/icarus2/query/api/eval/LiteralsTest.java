@@ -127,6 +127,11 @@ class LiteralsTest {
 
 		@Override
 		public Class<?> getTestTargetClass() { return NullLiteral.class; }
+
+		@Override
+		public boolean equals(Object x, Object y) {
+			return x==y;
+		}
 	}
 
 	@Nested
