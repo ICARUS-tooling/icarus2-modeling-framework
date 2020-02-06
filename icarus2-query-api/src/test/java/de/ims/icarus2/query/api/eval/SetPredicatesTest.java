@@ -119,7 +119,7 @@ class SetPredicatesTest {
 			}
 
 			@Test
-			void testDynamic() {
+			void testDynamicTarget() {
 				NumericalExpression[] set = {
 						Literals.of(1),
 						Literals.of(2),
@@ -139,6 +139,31 @@ class SetPredicatesTest {
 				assertThat(pred.computeAsBoolean()).isFalse();
 
 				dummy.setLong(100_000);
+				assertThat(pred.computeAsBoolean()).isTrue();
+			}
+
+			@Test
+			void testDynamicSet() {
+				MutableLong v1 = new MutableLong(2);
+				MutableLong v2 = new MutableLong(10_000);
+				NumericalExpression[] set = {
+						Literals.of(1),
+						dynamic(v1::longValue),
+						Literals.of(11),
+						dynamic(v2::longValue),
+				};
+				NumericalExpression target = Literals.of(10);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				v1.setLong(10);
+				assertThat(pred.computeAsBoolean()).isTrue();
+
+				v1.setLong(50);
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				v2.setLong(10);
 				assertThat(pred.computeAsBoolean()).isTrue();
 			}
 		}
