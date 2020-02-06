@@ -44,7 +44,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.function.CharBiPredicate;
 import de.ims.icarus2.util.function.IntBiPredicate;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -401,7 +400,7 @@ public class BinaryOperations {
 
 		@Override
 		public boolean computeAsBoolean() {
-			return CodePointUtils.equalsChars(left.computeAsChars(), right.computeAsChars(), comparator);
+			return CodePointUtils.equalsChars(left.compute(), right.compute(), comparator);
 		}
 
 		@Override
@@ -412,7 +411,7 @@ public class BinaryOperations {
 		@Override
 		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
 			return Literals.of(CodePointUtils.equalsChars(
-					left.computeAsChars(), right.computeAsChars(), comparator));
+					left.compute(), right.compute(), comparator));
 		}
 	}
 
@@ -455,7 +454,7 @@ public class BinaryOperations {
 
 		@Override
 		public boolean computeAsBoolean() {
-			return CodePointUtils.containsChars(left.computeAsChars(), right.computeAsChars(), comparator);
+			return CodePointUtils.containsChars(left.compute(), right.compute(), comparator);
 		}
 
 		@Override
@@ -466,7 +465,7 @@ public class BinaryOperations {
 		@Override
 		protected BooleanExpression toConstant(TextExpression left, TextExpression right) {
 			return Literals.of(CodePointUtils.containsChars(
-					left.computeAsChars(), right.computeAsChars(), comparator));
+					left.compute(), right.compute(), comparator));
 		}
 	}
 
@@ -526,8 +525,8 @@ public class BinaryOperations {
 				flags |= Pattern.CASE_INSENSITIVE;
 			}
 
-			CodePointSequence regex = right.compute();
-			if(allowUnicode && regex.containsSupplementaryCodePoints()) {
+			CharSequence regex = right.compute();
+			if(allowUnicode && CodePointUtils.containsSupplementaryCodePoints(regex)) {
 				flags |= Pattern.UNICODE_CASE;
 			}
 

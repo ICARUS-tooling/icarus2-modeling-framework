@@ -245,11 +245,12 @@ public final class StringUtil {
 			return cs==other;
 		}
 
-		if(cs.length()!=other.length()) {
+		int len = cs.length();
+		if(len!=other.length()) {
 			return false;
 		}
 
-		for(int i=cs.length()-1; i>=0; i--) {
+		for(int i=len-1; i>=0; i--) {
 			if(cs.charAt(i)!=other.charAt(i)) {
 				return false;
 			}

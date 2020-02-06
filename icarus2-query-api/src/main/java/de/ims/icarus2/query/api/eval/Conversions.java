@@ -40,8 +40,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointBuffer;
-import de.ims.icarus2.util.strings.CodePointSequence;
 import de.ims.icarus2.util.strings.StringPrimitives;
 
 /**
@@ -262,40 +260,33 @@ public class Conversions {
 
 	}
 
-	static final class TextCast extends CastExpression<CodePointSequence> implements TextExpression {
+	static final class TextCast extends CastExpression<CharSequence> implements TextExpression {
 
-		private final CodePointBuffer buffer;
 		private final Function<Expression<?>, CharSequence> cast;
 
 		public TextCast(Expression<?> source, Converter converter) {
 			super(TypeInfo.TEXT, source);
 			cast = converter.getToString();
-			buffer = new CodePointBuffer();
 		}
 
 		/** Copy constructor */
 		private TextCast(Expression<?> source, Function<Expression<?>, CharSequence> cast) {
 			super(TypeInfo.TEXT, source);
 			this.cast = requireNonNull(cast);
-			buffer = new CodePointBuffer();
 		}
 
 		@Override
-		public CodePointSequence compute() {
-			buffer.set(computeAsChars());
-			return buffer;
+		public CharSequence compute() {
+			return cast.apply(source);
 		}
 
 		@Override
-		public Expression<CodePointSequence> duplicate(EvaluationContext context) {
+		public Expression<CharSequence> duplicate(EvaluationContext context) {
 			return new TextCast(source.duplicate(context), cast);
 		}
 
 		@Override
-		public CharSequence computeAsChars() { return cast.apply(source); }
-
-		@Override
-		protected Expression<CodePointSequence> toConstant(Expression<?> source) {
+		protected Expression<CharSequence> toConstant(Expression<?> source) {
 			return Literals.of(cast.apply(source));
 		}
 
@@ -304,9 +295,9 @@ public class Conversions {
 	/** Provides conversion from a specific type to the 4 casting targets */
 	private enum Converter {
 		FROM_TEXT(TypeInfo.TEXT,
-				exp -> StringPrimitives.parseLong(((TextExpression)exp).computeAsChars()),
-				exp -> StringPrimitives.parseDouble(((TextExpression)exp).computeAsChars()),
-				exp -> string2Boolean(((TextExpression)exp).computeAsChars()),
+				exp -> StringPrimitives.parseLong(((TextExpression)exp).compute()),
+				exp -> StringPrimitives.parseDouble(((TextExpression)exp).compute()),
+				exp -> string2Boolean(((TextExpression)exp).compute()),
 				null
 		),
 

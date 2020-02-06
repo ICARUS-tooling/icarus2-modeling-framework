@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
@@ -102,5 +103,34 @@ public class UnicodeTests {
 		String sl = new String(cps, 0, idx);
 		System.out.println(sl);
 		assertThat(sl).isEqualTo(s.toLowerCase());
+	}
+
+	private static String _string(int codepoint) {
+		return new String(new int[] {codepoint}, 0, 1);
+	}
+
+	@Test
+	void unicodeCharCountConsistency() {
+		for (int cp_base = Character.MIN_CODE_POINT; cp_base <= Character.MAX_CODE_POINT; cp_base++) {
+			int cp_lower = Character.toLowerCase(cp_base);
+			int cp_upper = Character.toUpperCase(cp_base);
+			int cp_title = Character.toTitleCase(cp_base);
+
+			if(Character.charCount(cp_base)!=Character.charCount(cp_lower)) {
+				System.out.printf("LowerCase length mismatch: %s base=%s (%d) lc=%s (%d)%n",
+						Character.getName(cp_base), _string(cp_base), _int(Character.charCount(cp_base)),
+						_string(cp_lower), _int(Character.charCount(cp_lower)));
+			}
+			if(Character.charCount(cp_base)!=Character.charCount(cp_upper)) {
+				System.out.printf("UpperCase length mismatch: %s base=%s (%d) lc=%s (%d)%n",
+						Character.getName(cp_base), _string(cp_base), _int(Character.charCount(cp_base)),
+						_string(cp_upper), _int(Character.charCount(cp_upper)));
+			}
+			if(Character.charCount(cp_base)!=Character.charCount(cp_title)) {
+				System.out.printf("TitleCase length mismatch: %s base=%s (%d) lc=%s (%d)%n",
+						Character.getName(cp_base), _string(cp_base), _int(Character.charCount(cp_base)),
+						_string(cp_title), _int(Character.charCount(cp_title)));
+			}
+		}
 	}
 }

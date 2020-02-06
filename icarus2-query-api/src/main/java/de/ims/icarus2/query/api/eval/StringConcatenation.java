@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
-import de.ims.icarus2.util.strings.CodePointBuffer;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 public class StringConcatenation implements TextExpression {
 
@@ -35,8 +33,6 @@ public class StringConcatenation implements TextExpression {
 
 	/** Stores accumulated characters */
 	private final StringBuilder buffer;
-	/** Provides the unicode codepoint view on the aggregated text */
-	private final CodePointBuffer translator;
 	/** Raw elements to aggregate */
 	private final TextExpression[] elements;
 
@@ -46,7 +42,6 @@ public class StringConcatenation implements TextExpression {
 
 		this.elements = elements;
 		buffer = new StringBuilder(100);
-		translator = new CodePointBuffer();
 	}
 
 	/**
@@ -61,13 +56,7 @@ public class StringConcatenation implements TextExpression {
 	public TypeInfo getResultType() { return TypeInfo.TEXT; }
 
 	@Override
-	public CodePointSequence compute() {
-		translator.set(computeAsChars());
-		return translator;
-	}
-
-	@Override
-	public CharSequence computeAsChars() {
+	public CharSequence compute() {
 		buffer.setLength(0);
 		for (int i = 0; i < elements.length; i++) {
 			buffer.append(elements[i].compute());

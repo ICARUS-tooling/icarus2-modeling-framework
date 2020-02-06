@@ -24,7 +24,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * Models the basic building blocks for evaluating and accessing corpus data through the
@@ -149,9 +148,7 @@ public interface Expression<T> {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public interface TextExpression extends Expression<CodePointSequence> {
-
-		CharSequence computeAsChars();
+	public interface TextExpression extends Expression<CharSequence> {
 
 		@Override
 		default TypeInfo getResultType() {

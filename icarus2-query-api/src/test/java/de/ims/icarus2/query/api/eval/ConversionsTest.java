@@ -45,7 +45,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointSequence;
 import de.ims.icarus2.util.strings.StringPrimitives;
 
 /**
@@ -73,7 +72,7 @@ class ConversionsTest {
 		void testFromBoolean(RandomGenerator rng) {
 			BooleanExpression source = Literals.of(rng.nextBoolean());
 			TextExpression instance = Conversions.toText(source);
-			assertThat(instance.computeAsChars()).hasToString(String.valueOf(source.computeAsBoolean()));
+			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsBoolean()));
 		}
 
 		@Test
@@ -81,7 +80,7 @@ class ConversionsTest {
 		void testFromInteger(RandomGenerator rng) {
 			NumericalExpression source = Literals.of(rng.nextInt());
 			TextExpression instance = Conversions.toText(source);
-			assertThat(instance.computeAsChars()).hasToString(String.valueOf(source.computeAsLong()));
+			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsLong()));
 		}
 
 		@Test
@@ -89,7 +88,7 @@ class ConversionsTest {
 		void testFromFloatingPoint(RandomGenerator rng) {
 			NumericalExpression source = Literals.of(rng.nextDouble());
 			TextExpression instance = Conversions.toText(source);
-			assertThat(instance.computeAsChars()).hasToString(String.valueOf(source.computeAsDouble()));
+			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsDouble()));
 		}
 
 		@Test
@@ -98,7 +97,7 @@ class ConversionsTest {
 			String value = rng.randomUnicodeString(10);
 			Expression<Object> source = ExpressionTestUtils.generic(value);
 			TextExpression instance = Conversions.toText(source);
-			assertThat(instance.computeAsChars()).hasToString(value);
+			assertThat(instance.compute()).hasToString(value);
 		}
 
 		abstract class ToTextTestBase implements TextExpressionTest {
@@ -114,15 +113,15 @@ class ConversionsTest {
 		class FromBoolean extends ToTextTestBase {
 
 			@Override
-			public CodePointSequence constant() { return CodePointSequence.fixed(String.valueOf(true)); }
+			public CharSequence constant() { return String.valueOf(true); }
 
 			@Override
-			public CodePointSequence random(RandomGenerator rng) {
-				return CodePointSequence.fixed(String.valueOf(rng.nextBoolean()));
+			public CharSequence random(RandomGenerator rng) {
+				return String.valueOf(rng.nextBoolean());
 			}
 
 			@Override
-			public TextExpression createWithValue(CodePointSequence value) {
+			public TextExpression createWithValue(CharSequence value) {
 				Expression<?> source = Literals.of(StringPrimitives.parseBoolean(value));
 				return Conversions.toText(source);
 			}
@@ -132,15 +131,15 @@ class ConversionsTest {
 		class FromInteger extends ToTextTestBase {
 
 			@Override
-			public CodePointSequence constant() { return CodePointSequence.fixed(String.valueOf(1234)); }
+			public CharSequence constant() { return String.valueOf(1234); }
 
 			@Override
-			public CodePointSequence random(RandomGenerator rng) {
-				return CodePointSequence.fixed(String.valueOf(rng.nextInt()));
+			public CharSequence random(RandomGenerator rng) {
+				return String.valueOf(rng.nextInt());
 			}
 
 			@Override
-			public TextExpression createWithValue(CodePointSequence value) {
+			public TextExpression createWithValue(CharSequence value) {
 				Expression<?> source = Literals.of(StringPrimitives.parseLong(value));
 				return Conversions.toText(source);
 			}
@@ -150,15 +149,15 @@ class ConversionsTest {
 		class FromFloatingPoint extends ToTextTestBase {
 
 			@Override
-			public CodePointSequence constant() { return CodePointSequence.fixed(String.valueOf(1234.5678)); }
+			public CharSequence constant() { return String.valueOf(1234.5678); }
 
 			@Override
-			public CodePointSequence random(RandomGenerator rng) {
-				return CodePointSequence.fixed(String.valueOf(rng.nextDouble()));
+			public CharSequence random(RandomGenerator rng) {
+				return String.valueOf(rng.nextDouble());
 			}
 
 			@Override
-			public TextExpression createWithValue(CodePointSequence value) {
+			public TextExpression createWithValue(CharSequence value) {
 				Expression<?> source = Literals.of(StringPrimitives.parseDouble(value));
 				return Conversions.toText(source);
 			}
@@ -168,15 +167,15 @@ class ConversionsTest {
 		class FromGeneric extends ToTextTestBase {
 
 			@Override
-			public CodePointSequence constant() { return CodePointSequence.fixed("test"); }
+			public CharSequence constant() { return "test"; }
 
 			@Override
-			public CodePointSequence random(RandomGenerator rng) {
-				return CodePointSequence.fixed(rng.randomUnicodeString(10));
+			public CharSequence random(RandomGenerator rng) {
+				return rng.randomUnicodeString(10);
 			}
 
 			@Override
-			public TextExpression createWithValue(CodePointSequence value) {
+			public TextExpression createWithValue(CharSequence value) {
 				Expression<?> source = ExpressionTestUtils.generic(value.toString());
 				return Conversions.toText(source);
 			}

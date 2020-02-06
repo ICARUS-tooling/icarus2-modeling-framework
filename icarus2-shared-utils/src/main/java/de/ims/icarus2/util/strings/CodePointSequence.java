@@ -36,6 +36,7 @@ import de.ims.icarus2.IcarusRuntimeException;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public interface CodePointSequence extends CharSequence {
 
 	int codePointCount();

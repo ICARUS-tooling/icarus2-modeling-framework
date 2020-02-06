@@ -39,7 +39,6 @@ import de.ims.icarus2.query.api.eval.Literals.StringLiteral;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -64,29 +63,8 @@ class LiteralsTest {
 	@Test
 	void testOfCharSequence() {
 		String value = "test";
-		TextExpression expression = Literals.of((CharSequence)value);
-		assertThat(expression.computeAsChars()).hasToString(value);
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.eval.Literals#of(java.lang.String)}.
-	 */
-	@Test
-	void testOfString() {
-		String value = "test";
 		TextExpression expression = Literals.of(value);
-		assertThat(expression.computeAsChars()).hasToString(value);
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.eval.Literals#of(de.ims.icarus2.util.strings.CodePointSequence)}.
-	 */
-	@Test
-	void testOfCodePointSequence() {
-		CodePointSequence value = CodePointSequence.fixed("test");
-		TextExpression expression = Literals.of(value);
-		assertThat(expression.compute()).isEqualTo(value);
-		assertThat(expression.computeAsChars()).hasToString("test");
+		assertThat(expression.compute()).hasToString(value);
 	}
 
 	/**
@@ -152,10 +130,10 @@ class LiteralsTest {
 	}
 
 	@Nested
-	class StringLiteralTest extends TestBase<CodePointSequence, TextExpression> implements TextExpressionTest {
+	class StringLiteralTest extends TestBase<CharSequence, TextExpression> implements TextExpressionTest {
 
 		@Override
-		public TextExpression createWithValue(CodePointSequence value) { return Literals.of(value); }
+		public TextExpression createWithValue(CharSequence value) { return Literals.of(value); }
 
 		@Override
 		public Class<?> getTestTargetClass() { return StringLiteral.class; }

@@ -22,8 +22,6 @@ package de.ims.icarus2.query.api.eval;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
@@ -31,7 +29,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * Provides methods to obtain constant literals for every defined IQL type.
@@ -73,31 +70,19 @@ public final class Literals {
 	}
 
 	public static TextExpression of(CharSequence value) {
-		return new StringLiteral(CodePointSequence.fixed(value.toString()));
+		return new StringLiteral(value);
 	}
 
-	public static TextExpression of(String value) {
-		return new StringLiteral(CodePointSequence.fixed(value));
-	}
+	static final class StringLiteral extends Literal<CharSequence> implements TextExpression {
 
-	@VisibleForTesting
-	static TextExpression of(CodePointSequence codepoints) {
-		return new StringLiteral(codepoints);
-	}
+		private final CharSequence value;
 
-	static final class StringLiteral extends Literal<CodePointSequence> implements TextExpression {
-
-		private final CodePointSequence value;
-
-		StringLiteral(CodePointSequence value) {
+		StringLiteral(CharSequence value) {
 			this.value = requireNonNull(value);
 		}
 
 		@Override
-		public CodePointSequence compute() { return value; }
-
-		@Override
-		public CharSequence computeAsChars() { return value; }
+		public CharSequence compute() { return value; }
 	}
 
 	public static BooleanExpression of(boolean value) {

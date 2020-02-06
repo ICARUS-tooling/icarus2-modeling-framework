@@ -115,7 +115,7 @@ public class TypeInfo {
 
 	// Former "String" proxy, now adjusted for proper unicode support
 	/** We use {@link CodePointSequence} as type for strings, as extension of {@link ValueType#STRING} */
-	public static final TypeInfo TEXT = new TypeInfo(CodePointSequence.class, null, false, false);
+	public static final TypeInfo TEXT = new TypeInfo(CharSequence.class, null, false, false);
 
 	// Low-level members
 	public static final TypeInfo ITEM = new TypeInfo(Item.class, null, true, false);
@@ -131,7 +131,6 @@ public class TypeInfo {
 	public static final TypeInfo LAYER = new TypeInfo(Layer.class, null, true, false);
 
 	// Frequently used helpers
-	public static final TypeInfo STRING = new TypeInfo(CharSequence.class, null, false, false);
 	public static final TypeInfo LIST = new TypeInfo(List.class, null, false, true);
 	public static final TypeInfo ARRAY = new TypeInfo(Object[].class, null, false, true);
 }

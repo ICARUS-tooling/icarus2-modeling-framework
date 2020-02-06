@@ -32,7 +32,7 @@ import de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.Mutable;
 import de.ims.icarus2.util.Mutable.MutableObject;
-import de.ims.icarus2.util.strings.CodePointSequence;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  * @author Markus Gärtner
@@ -45,13 +45,13 @@ class StringConcatenationTest implements TextExpressionTest {
 	}
 
 	@Override
-	public CodePointSequence constant() {return CodePointSequence.fixed("x1 x2 x3"); }
+	public CharSequence constant() {return "x1 x2 x3"; }
 
 	/**
 	 * @see de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest#random(de.ims.icarus2.test.random.RandomGenerator)
 	 */
 	@Override
-	public CodePointSequence random(RandomGenerator rng) {
+	public CharSequence random(RandomGenerator rng) {
 		int size = rng.random(3, 6);
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < size; i++) {
@@ -62,14 +62,14 @@ class StringConcatenationTest implements TextExpressionTest {
 			s = s.replace(' ', '_');
 			sb.append(s);
 		}
-		return CodePointSequence.fixed(sb.toString());
+		return sb.toString();
 	}
 
 	/**
 	 * @see de.ims.icarus2.query.api.eval.ExpressionTest#createWithValue(java.lang.Object)
 	 */
 	@Override
-	public TextExpression createWithValue(CodePointSequence value) {
+	public TextExpression createWithValue(CharSequence value) {
 		List<TextExpression> buffer = new ArrayList<>();
 
 		String[] blocks = value.toString().split(" ");
@@ -91,6 +91,11 @@ class StringConcatenationTest implements TextExpressionTest {
 
 	@Override
 	public Class<?> getTestTargetClass() { return StringConcatenation.class; }
+
+	@Override
+	public boolean equals(CharSequence x, CharSequence y) {
+		return StringUtil.equals(x, y);
+	}
 
 	@Nested
 	class WithData {

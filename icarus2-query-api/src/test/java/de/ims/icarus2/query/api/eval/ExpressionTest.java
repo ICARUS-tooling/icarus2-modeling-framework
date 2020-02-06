@@ -38,7 +38,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -61,6 +60,10 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 	TypeInfo getExpectedType();
 
 	boolean nativeConstant();
+
+	default boolean equals(T x, T y) {
+		return x.equals(y);
+	}
 
 	/** Return true if this test case expects the expression instances to always optimize into constants */
 	default boolean optimizeToConstant() {
@@ -87,7 +90,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 	default void testCompute(RandomGenerator rng) {
 		T value = random(rng);
 		E instance = createWithValue(value);
-		assertThat(instance.compute()).isEqualTo(value);
+		assertThat(instance.compute()).satisfies(newVal -> equals(newVal, value));
 	}
 
 	/**
@@ -107,7 +110,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		E instance = createWithValue(value);
 		Expression<T> optimized = instance.optimize(context());
 		assertThat(optimized.isConstant()).isEqualTo(optimizeToConstant());
-		assertThat(optimized.compute()).isEqualTo(value);
+		assertThat(optimized.compute()).satisfies(newVal -> equals(newVal, value));
 	}
 
 	/**
@@ -123,7 +126,7 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		} else {
 			assertThat(clone).isNotSameAs(instance);
 		}
-		assertThat(clone.compute()).isEqualTo(value);
+		assertThat(clone.compute()).satisfies(newVal -> equals(newVal, value));
 	}
 
 	/**
@@ -150,27 +153,27 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 		assertThat(create().isBoolean()).isEqualTo(TypeInfo.isBoolean(getExpectedType()));
 	}
 
-	public interface TextExpressionTest extends ExpressionTest<CodePointSequence, TextExpression> {
+	public interface TextExpressionTest extends ExpressionTest<CharSequence, TextExpression> {
 
 		@Override
 		default TypeInfo getExpectedType() { return TypeInfo.TEXT; }
 
 		@Override
-		default CodePointSequence constant() {
-			return CodePointSequence.fixed("test");
+		default CharSequence constant() {
+			return "test";
 		}
 
 		@Override
-		default CodePointSequence random(RandomGenerator rng) {
-			return CodePointSequence.fixed(rng.randomUnicodeString(10));
+		default CharSequence random(RandomGenerator rng) {
+			return rng.randomUnicodeString(10);
 		}
 
 		@Test
 		@RandomizedTest
 		default void testComputeAsChars(RandomGenerator rng) {
-			CodePointSequence origin = random(rng);
+			CharSequence origin = random(rng);
 			TextExpression instance = createWithValue(origin);
-			CharSequence chars = instance.computeAsChars();
+			CharSequence chars = instance.compute();
 			assertThat(chars).hasToString(origin.toString());
 		}
 	}

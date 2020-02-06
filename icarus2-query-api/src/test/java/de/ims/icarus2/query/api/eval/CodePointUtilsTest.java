@@ -32,7 +32,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -161,14 +160,32 @@ class CodePointUtilsTest {
 			assertThat(CodePointUtils.equalsChars(s1, s2, mode.getCharComparator())).isFalse();
 		}
 
+//		/**
+//		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
+//		 */
+//		@ParameterizedTest
+//		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#testValues")
+//		void testEqualsCodePoints_true(String value) {
+//			assertThat(CodePointUtils.equalsCodePoints(CodePointSequence.fixed(value),
+//					CodePointSequence.fixed(value), mode.getCodePointComparator()));
+//		}
+
 		/**
 		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
 		 */
 		@ParameterizedTest
 		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#testValues")
 		void testEqualsCodePoints_true(String value) {
-			assertThat(CodePointUtils.equalsCodePoints(CodePointSequence.fixed(value),
-					CodePointSequence.fixed(value), mode.getCodePointComparator()));
+			assertThat(CodePointUtils.equalsCodePoints(value, value, mode.getCodePointComparator())).isTrue();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.CodePointUtils#equalsCodePoints(de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.strings.CodePointSequence, de.ims.icarus2.util.function.IntBiPredicate)}.
+		 */
+		@ParameterizedTest
+		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#mismatchedPairsForEquals")
+		void testEqualsCodePoints_false(String value) {
+			assertThat(CodePointUtils.equalsCodePoints(value, value, mode.getCodePointComparator())).isTrue();
 		}
 
 	}
@@ -227,8 +244,7 @@ class CodePointUtilsTest {
 		@ParameterizedTest
 		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#matchedPairsForContains")
 		void testContainsCodePoints_true(String target, String query) {
-			assertThat(CodePointUtils.containsCodePoints(CodePointSequence.fixed(target),
-					CodePointSequence.fixed(query), mode.getCodePointComparator())).isTrue();
+			assertThat(CodePointUtils.containsCodePoints(target, query, mode.getCodePointComparator())).isTrue();
 		}
 
 		/**
@@ -237,8 +253,7 @@ class CodePointUtilsTest {
 		@ParameterizedTest
 		@MethodSource("de.ims.icarus2.query.api.eval.CodePointUtilsTest#mismatchedPairsForContains")
 		void testContainsCodePoints_false(String target, String query) {
-			assertThat(CodePointUtils.containsCodePoints(CodePointSequence.fixed(target),
-					CodePointSequence.fixed(query), mode.getCodePointComparator())).isFalse();
+			assertThat(CodePointUtils.containsCodePoints(target, query, mode.getCodePointComparator())).isFalse();
 		}
 
 	}

@@ -36,6 +36,7 @@ import de.ims.icarus2.util.Mutable;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public class CodePointBuffer implements CodePointSequence, Mutable<CharSequence> {
 
 	/** Raw character data */
