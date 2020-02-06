@@ -85,6 +85,7 @@ public class ValueType implements StringResource, NamedObject {
 
 	private static Map<String, ValueType> xmlLookup = new HashMap<>();
 
+	//TODO explain the textual schema for value type definitions here!!!
 	public static ValueType parseValueType(String s) {
 		ValueType result = xmlLookup.get(s);
 

@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -144,12 +143,12 @@ class BinaryOperationsTest {
 					triple(Literals.of(true), Literals.of(1.0), "boolean+numeric"),
 					triple(Literals.of("test"), Literals.of(1.0), "text+numeric"),
 					triple(Literals.ofNull(), Literals.of(1.0), "null+numeric"),
-					triple(EvaluationUtils.generic("dummy"), Literals.of(1.0), "generic+numeric"),
+					triple(ExpressionTestUtils.generic("dummy"), Literals.of(1.0), "generic+numeric"),
 
 					triple(Literals.of(1.0), Literals.of(true), "numeric+boolean"),
 					triple(Literals.of(1.0), Literals.of("test"), "numeric+text"),
 					triple(Literals.of(1.0), Literals.ofNull(), "numeric+null"),
-					triple(Literals.of(1.0), EvaluationUtils.generic("dummy"), "numeric+generic")
+					triple(Literals.of(1.0), ExpressionTestUtils.generic("dummy"), "numeric+generic")
 			);
 
 			return data.stream().map(t -> dynamicTest(t.third, () -> {
@@ -621,12 +620,12 @@ class BinaryOperationsTest {
 					triple(Literals.of(true), Literals.of(1.0), "boolean+numeric"),
 					triple(Literals.of("test"), Literals.of(1.0), "text+numeric"),
 					triple(Literals.ofNull(), Literals.of(1.0), "null+numeric"),
-					triple(EvaluationUtils.generic("dummy"), Literals.of(1.0), "generic+numeric"),
+					triple(ExpressionTestUtils.generic("dummy"), Literals.of(1.0), "generic+numeric"),
 
 					triple(Literals.of(1.0), Literals.of(true), "numeric+boolean"),
 					triple(Literals.of(1.0), Literals.of("test"), "numeric+text"),
 					triple(Literals.of(1.0), Literals.ofNull(), "numeric+null"),
-					triple(Literals.of(1.0), EvaluationUtils.generic("dummy"), "numeric+generic")
+					triple(Literals.of(1.0), ExpressionTestUtils.generic("dummy"), "numeric+generic")
 			);
 
 			return data.stream().map(t -> dynamicTest(t.third, () -> {
@@ -1035,17 +1034,17 @@ class BinaryOperationsTest {
 		@TestFactory
 		Stream<DynamicNode> testNonComparableOperands() {
 			List<Triple<Expression<?>, Expression<?>, String>> data = list(
-					triple(Literals.of(1), EvaluationUtils.raw("comp"), "numeric+comparable"),
-					triple(Literals.of(true), EvaluationUtils.raw("comp"), "boolean+comparable"),
-					triple(Literals.of("test"), EvaluationUtils.raw("comp"), "text+comparable"),
-					triple(Literals.ofNull(), EvaluationUtils.raw("comp"), "null+comparable"),
-					triple(EvaluationUtils.generic("dummy"), EvaluationUtils.raw("comp"), "generic+comparable"),
+					triple(Literals.of(1), ExpressionTestUtils.raw("comp"), "numeric+comparable"),
+					triple(Literals.of(true), ExpressionTestUtils.raw("comp"), "boolean+comparable"),
+					triple(Literals.of("test"), ExpressionTestUtils.raw("comp"), "text+comparable"),
+					triple(Literals.ofNull(), ExpressionTestUtils.raw("comp"), "null+comparable"),
+					triple(ExpressionTestUtils.generic("dummy"), ExpressionTestUtils.raw("comp"), "generic+comparable"),
 
-					triple(EvaluationUtils.raw("comp"), Literals.of(1), "comparable+numeric"),
-					triple(EvaluationUtils.raw("comp"), Literals.of(true), "comparable+boolean"),
-					triple(EvaluationUtils.raw("comp"), Literals.of("test"), "comparable+text"),
-					triple(EvaluationUtils.raw("comp"), Literals.ofNull(), "comparable+null"),
-					triple(EvaluationUtils.raw("comp"), EvaluationUtils.generic("dummy"), "comparable+generic")
+					triple(ExpressionTestUtils.raw("comp"), Literals.of(1), "comparable+numeric"),
+					triple(ExpressionTestUtils.raw("comp"), Literals.of(true), "comparable+boolean"),
+					triple(ExpressionTestUtils.raw("comp"), Literals.of("test"), "comparable+text"),
+					triple(ExpressionTestUtils.raw("comp"), Literals.ofNull(), "comparable+null"),
+					triple(ExpressionTestUtils.raw("comp"), ExpressionTestUtils.generic("dummy"), "comparable+generic")
 			);
 
 			return data.stream().map(t -> dynamicTest(t.third, () -> {
@@ -1059,11 +1058,11 @@ class BinaryOperationsTest {
 		Stream<DynamicNode> testNullArgs() {
 			return Stream.of(
 					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.comparablePred(
-							null, EvaluationUtils.raw("comp"), EvaluationUtils.raw("comp")))),
+							null, ExpressionTestUtils.raw("comp"), ExpressionTestUtils.raw("comp")))),
 					dynamicTest("null left", npeAsserter(() -> BinaryOperations.comparablePred(
-							ComparableComparator.EQUALS, null, EvaluationUtils.raw("comp")))),
+							ComparableComparator.EQUALS, null, ExpressionTestUtils.raw("comp")))),
 					dynamicTest("null right", npeAsserter(() -> BinaryOperations.comparablePred(
-							ComparableComparator.EQUALS, EvaluationUtils.raw("comp"), null)))
+							ComparableComparator.EQUALS, ExpressionTestUtils.raw("comp"), null)))
 			);
 		}
 
@@ -1085,7 +1084,7 @@ class BinaryOperationsTest {
 		public boolean optimizeToConstant() { return false; }
 
 		private BooleanExpression create(ComparableComparator pred, Object left, Object right) {
-			return BinaryOperations.comparablePred(pred, EvaluationUtils.raw(left), EvaluationUtils.raw(right));
+			return BinaryOperations.comparablePred(pred, ExpressionTestUtils.raw(left), ExpressionTestUtils.raw(right));
 		}
 
 		private GenericPredData data(Object left, Object right, boolean result) {
@@ -1265,11 +1264,11 @@ class BinaryOperationsTest {
 		Stream<DynamicNode> testNullArgs() {
 			return Stream.of(
 					dynamicTest("null pred", npeAsserter(() -> BinaryOperations.equalityPred(
-							null, EvaluationUtils.raw("comp"), EvaluationUtils.raw("comp")))),
+							null, ExpressionTestUtils.raw("comp"), ExpressionTestUtils.raw("comp")))),
 					dynamicTest("null left", npeAsserter(() -> BinaryOperations.equalityPred(
-							EqualityPred.EQUALS, null, EvaluationUtils.raw("comp")))),
+							EqualityPred.EQUALS, null, ExpressionTestUtils.raw("comp")))),
 					dynamicTest("null right", npeAsserter(() -> BinaryOperations.equalityPred(
-							EqualityPred.EQUALS, EvaluationUtils.raw("comp"), null)))
+							EqualityPred.EQUALS, ExpressionTestUtils.raw("comp"), null)))
 			);
 		}
 
@@ -1291,7 +1290,7 @@ class BinaryOperationsTest {
 		public boolean optimizeToConstant() { return false; }
 
 		private BooleanExpression create(EqualityPred pred, Object left, Object right) {
-			return BinaryOperations.equalityPred(pred, EvaluationUtils.raw(left), EvaluationUtils.raw(right));
+			return BinaryOperations.equalityPred(pred, ExpressionTestUtils.raw(left), ExpressionTestUtils.raw(right));
 		}
 
 		private GenericPredData data(Object left, Object right, boolean result) {
@@ -1384,12 +1383,12 @@ class BinaryOperationsTest {
 					triple(Literals.of(true), Literals.of("text"), "boolean+text"),
 					triple(Literals.of(1), Literals.of("text"), "numeric+text"),
 					triple(Literals.ofNull(), Literals.of("text"), "null+text"),
-					triple(EvaluationUtils.generic("dummy"), Literals.of("text"), "generic+text"),
+					triple(ExpressionTestUtils.generic("dummy"), Literals.of("text"), "generic+text"),
 
 					triple(Literals.of("text"), Literals.of(true), "text+boolean"),
 					triple(Literals.of("text"), Literals.of(1), "text+numeric"),
 					triple(Literals.of("text"), Literals.ofNull(), "text+null"),
-					triple(Literals.of("text"), EvaluationUtils.generic("dummy"), "text+generic")
+					triple(Literals.of("text"), ExpressionTestUtils.generic("dummy"), "text+generic")
 			);
 
 			return data.stream().map(t -> dynamicTest(t.third, () -> {
@@ -1448,26 +1447,10 @@ class BinaryOperationsTest {
 				"X, X, true",
 				"test, test, true",
 				"test, Test, true",
-				"the first one, is longer, false",
-				"this time, the second one is far longer, false",
-			})
-			void testLowerCase(String left, String right, boolean equals) {
-				assertUnicodeOp(op, StringMode.LOWERCASE, left, right, equals);
-			}
-
-			@ParameterizedTest
-			@CsvSource({
-				"x, x, true",
-				"X, x, true",
-				"x, X, true",
-				"X, X, true",
-				"test, test, true",
-				"test, Test, true",
 				"TEST, tesT, true",
 				"the first one, is longer, false",
 				"this time, the second one is far longer, false",
 			})
-			//TODO this is effectively the same as lower case
 			void testIgnoreCase(String left, String right, boolean equals) {
 				assertUnicodeOp(op, StringMode.IGNORE_CASE, left, right, equals);
 			}
@@ -1513,29 +1496,6 @@ class BinaryOperationsTest {
 				"is in THIS long string, this, true",
 				//TODO add search for surrogate symbols that ignores codepoints
 			})
-			void testLowerCase(String left, String right, boolean equals) {
-				assertUnicodeOp(op, StringMode.LOWERCASE, left, right, equals);
-			}
-
-			@ParameterizedTest
-			// [target, query]
-			@CsvSource({
-				"x, x, true",
-				"test, test, true",
-				"test, Test, true",
-				"this is, not in this long string, false",
-				"this is to long, to fit, false",
-				"yyyyyxyyyy, x, true",
-				"xyyyyyyyyy, x, true",
-				"yyyyyyyyyx, x, true",
-				"yyyyyXyyyy, x, true",
-				"Xyyyyyyyyy, x, true",
-				"yyyyyyyyyX, x, true",
-				"is in this long string, This, true",
-				"is in THIS long string, this, true",
-				//TODO add search for surrogate symbols that ignores codepoints
-			})
-			//TODO this is effectively the same as lower case
 			void testIgnoreCase(String left, String right, boolean equals) {
 				assertUnicodeOp(op, StringMode.IGNORE_CASE, left, right, equals);
 			}
@@ -1558,13 +1518,6 @@ class BinaryOperationsTest {
 			})
 			void testDefault(String left, String right, boolean equals) {
 				assertUnicodeOp(op, StringMode.DEFAULT, left, right, equals);
-			}
-
-			@Test
-			void testLowerCase() {
-				assertIcarusException(QueryErrorCode.INCORRECT_USE,
-						() -> BinaryOperations.asciiOp(op, StringMode.LOWERCASE,
-								Literals.of("left"), Literals.of("right")));
 			}
 
 			@ParameterizedTest
@@ -1597,12 +1550,12 @@ class BinaryOperationsTest {
 					triple(Literals.of(true), Literals.of("text"), "boolean+text"),
 					triple(Literals.of(1), Literals.of("text"), "numeric+text"),
 					triple(Literals.ofNull(), Literals.of("text"), "null+text"),
-					triple(EvaluationUtils.generic("dummy"), Literals.of("text"), "generic+text"),
+					triple(ExpressionTestUtils.generic("dummy"), Literals.of("text"), "generic+text"),
 
 					triple(Literals.of("text"), Literals.of(true), "text+boolean"),
 					triple(Literals.of("text"), Literals.of(1), "text+numeric"),
 					triple(Literals.of("text"), Literals.ofNull(), "text+null"),
-					triple(Literals.of("text"), EvaluationUtils.generic("dummy"), "text+generic")
+					triple(Literals.of("text"), ExpressionTestUtils.generic("dummy"), "text+generic")
 			);
 
 			return data.stream().map(t -> dynamicTest(t.third, () -> {
@@ -1661,26 +1614,10 @@ class BinaryOperationsTest {
 				"X, X, true",
 				"test, test, true",
 				"test, Test, true",
-				"the first one, is longer, false",
-				"this time, the second one is far longer, false",
-			})
-			void testLowerCase(String left, String right, boolean equals) {
-				assertAsciiOp(op, StringMode.LOWERCASE, left, right, equals);
-			}
-
-			@ParameterizedTest
-			@CsvSource({
-				"x, x, true",
-				"X, x, true",
-				"x, X, true",
-				"X, X, true",
-				"test, test, true",
-				"test, Test, true",
 				"TEST, tesT, true",
 				"the first one, is longer, false",
 				"this time, the second one is far longer, false",
 			})
-			//TODO this is effectively the same as lower case
 			void testIgnoreCase(String left, String right, boolean equals) {
 				assertAsciiOp(op, StringMode.IGNORE_CASE, left, right, equals);
 			}
@@ -1726,29 +1663,6 @@ class BinaryOperationsTest {
 				"is in THIS long string, this, true",
 				//TODO add search for surrogate symbols that ignores codepoints
 			})
-			void testLowerCase(String left, String right, boolean equals) {
-				assertAsciiOp(op, StringMode.LOWERCASE, left, right, equals);
-			}
-
-			@ParameterizedTest
-			// [target, query]
-			@CsvSource({
-				"x, x, true",
-				"test, test, true",
-				"test, Test, true",
-				"this is, not in this long string, false",
-				"this is to long, to fit, false",
-				"yyyyyxyyyy, x, true",
-				"xyyyyyyyyy, x, true",
-				"yyyyyyyyyx, x, true",
-				"yyyyyXyyyy, x, true",
-				"Xyyyyyyyyy, x, true",
-				"yyyyyyyyyX, x, true",
-				"is in this long string, This, true",
-				"is in THIS long string, this, true",
-				//TODO add search for surrogate symbols that ignores codepoints
-			})
-			//TODO this is effectively the same as lower case
 			void testIgnoreCase(String left, String right, boolean equals) {
 				assertAsciiOp(op, StringMode.IGNORE_CASE, left, right, equals);
 			}
@@ -1773,13 +1687,6 @@ class BinaryOperationsTest {
 				assertAsciiOp(op, StringMode.DEFAULT, left, right, equals);
 			}
 
-			@Test
-			void testLowerCase() {
-				assertIcarusException(QueryErrorCode.INCORRECT_USE,
-						() -> BinaryOperations.asciiOp(op, StringMode.LOWERCASE,
-								Literals.of("left"), Literals.of("right")));
-			}
-
 			@ParameterizedTest
 			// [target, query]
 			@CsvSource({
@@ -1791,7 +1698,6 @@ class BinaryOperationsTest {
 				"abc, ^abc$, true",
 				"a B c, ^abc$, false",
 			})
-			//TODO this is effectively the same as lower case
 			void testIgnoreCase(String left, String right, boolean equals) {
 				assertAsciiOp(op, StringMode.IGNORE_CASE, left, right, equals);
 			}

@@ -28,7 +28,9 @@ package de.ims.icarus2.query.api.eval;
 //TODO for now we restrict indices to int space, but Container for instance uses long
 public interface ListProxy<T> {
 
+	/** Total number of elements in this proxy. */
 	int size();
 
+	/** Fetch element at specified {@code index}. */
 	T get(int index);
 }

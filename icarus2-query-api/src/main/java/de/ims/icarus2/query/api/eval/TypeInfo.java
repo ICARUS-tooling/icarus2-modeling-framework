@@ -100,20 +100,21 @@ public class TypeInfo {
 	}
 
 	// Dummy types
-	/** Wraps all inherent {@code null} types */
+	/** Wraps all inherent {@code null} types. */
 	public static final TypeInfo NULL = new TypeInfo(Object.class, null, false, false);
-	/** Placeholder for general {@code unknown} non-primitive types */
+	/** Placeholder for general {@code unknown} non-primitive types. */
 	public static final TypeInfo GENERIC = of(Object.class, false);
 
 	// Primitives
-	/** Represents all integer types, up to {@code long} */
+	/** Represents all primitive integer types, up to {@code long}. */
 	public static final TypeInfo INTEGER = new TypeInfo(Primitive.class, long.class, false, false);
-	/** Represents all floating point types, up to {@code double} */
+	/** Represents all primitive floating point types, up to {@code double}. */
 	public static final TypeInfo FLOATING_POINT = new TypeInfo(Primitive.class, double.class, false, false);
+	/** Represents the primitive type {@code boolean}. */
 	public static final TypeInfo BOOLEAN = new TypeInfo(Primitive.class, boolean.class, false, false);
 
 	// Former "String" proxy, now adjusted for proper unicode support
-	/** We use {@link CharSequence} as type for strings, in accordance with {@link ValueType#STRING} */
+	/** We use {@link CodePointSequence} as type for strings, as extension of {@link ValueType#STRING} */
 	public static final TypeInfo TEXT = new TypeInfo(CodePointSequence.class, null, false, false);
 
 	// Low-level members

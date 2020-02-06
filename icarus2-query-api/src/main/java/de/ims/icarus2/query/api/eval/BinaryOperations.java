@@ -35,8 +35,6 @@ import java.util.regex.Pattern;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
-import de.ims.icarus2.query.api.QueryErrorCode;
-import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
@@ -125,12 +123,7 @@ public class BinaryOperations {
 				(TextExpression)left, (TextExpression)right, mode.getCodePointComparator());
 		case CONTAINS: return new UnicodeContainment(
 				(TextExpression)left, (TextExpression)right, mode.getCodePointComparator());
-		case MATCHES: {
-			if(mode==StringMode.LOWERCASE)
-				throw new QueryException(QueryErrorCode.INCORRECT_USE,
-						"Regular expression matching does not support lower case mode - use "+StringMode.IGNORE_CASE);
-			return new StringRegex((TextExpression)left, (TextExpression)right, mode, true);
-		}
+		case MATCHES: return new StringRegex((TextExpression)left, (TextExpression)right, mode, true);
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -148,12 +141,7 @@ public class BinaryOperations {
 				(TextExpression)left, (TextExpression)right, mode.getCharComparator());
 		case CONTAINS: return new CharsContainment(
 				(TextExpression)left, (TextExpression)right, mode.getCharComparator());
-		case MATCHES: {
-			if(mode==StringMode.LOWERCASE)
-				throw new QueryException(QueryErrorCode.INCORRECT_USE,
-						"Regular expression matching does not support lower case mode - use "+StringMode.IGNORE_CASE);
-			return new StringRegex((TextExpression)left, (TextExpression)right, mode, false);
-		}
+		case MATCHES: return new StringRegex((TextExpression)left, (TextExpression)right, mode, false);
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -708,8 +696,6 @@ public class BinaryOperations {
 
 	public enum StringMode {
 		DEFAULT((cp1, cp2) -> cp1==cp2, (c1, c2) -> c1==c2),
-		LOWERCASE((cp1, cp2) -> cp1==cp2 || toLowerCase(cp1)==toLowerCase(cp2),
-				(c1, c2) -> c1==c2 || toLowerCase(c1)==toLowerCase(c2)),
 		IGNORE_CASE((cp1, cp2) -> cp1==cp2 || toLowerCase(cp1)==toLowerCase(cp2)
 					|| toUpperCase(cp1)==toUpperCase(cp2),
 				(c1, c2) -> c1==c2 || toLowerCase(c1)==toLowerCase(c2)

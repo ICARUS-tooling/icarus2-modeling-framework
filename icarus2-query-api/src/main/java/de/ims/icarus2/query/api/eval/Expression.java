@@ -162,7 +162,7 @@ public interface Expression<T> {
 	/** Gives list-style access to the underlying data */
 	public interface ListExpression<T, E> extends Expression<T>, ListProxy<E> {
 
-		/** Returns the type of elements that are accessable as part of this expressions output */
+		/** Returns the type of elements that are accessible as part of this expressions output */
 		TypeInfo getElementType();
 
 	}

@@ -98,8 +98,8 @@ class StringConcatenationTest implements TextExpressionTest {
 		@Test
 		void testPartialOptimization() {
 			TextExpression[] elements = {
-				EvaluationUtils.fixed("begin"),
-				EvaluationUtils.optimizable(" "),
+				ExpressionTestUtils.fixed("begin"),
+				ExpressionTestUtils.optimizable(" "),
 				literal("end"),
 			};
 
@@ -121,9 +121,9 @@ class StringConcatenationTest implements TextExpressionTest {
 		@Test
 		void testIntermediateAggregation() {
 			TextExpression[] elements = {
-				EvaluationUtils.optimizable("begin"),
-				EvaluationUtils.optimizable(" "),
-				EvaluationUtils.fixed("end"),
+				ExpressionTestUtils.optimizable("begin"),
+				ExpressionTestUtils.optimizable(" "),
+				ExpressionTestUtils.fixed("end"),
 			};
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
@@ -144,9 +144,9 @@ class StringConcatenationTest implements TextExpressionTest {
 		@Test
 		void testNonOptimizable() {
 			TextExpression[] elements = {
-				EvaluationUtils.fixed("begin"),
-				EvaluationUtils.fixed(" "),
-				EvaluationUtils.fixed("end"),
+				ExpressionTestUtils.fixed("begin"),
+				ExpressionTestUtils.fixed(" "),
+				ExpressionTestUtils.fixed("end"),
 			};
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
@@ -158,9 +158,9 @@ class StringConcatenationTest implements TextExpressionTest {
 			Mutable<String> buffer = new MutableObject<>(" ");
 
 			TextExpression[] elements = {
-				EvaluationUtils.optimizable("begin"),
-				EvaluationUtils.dynamic(buffer),
-				EvaluationUtils.fixed("end"),
+				ExpressionTestUtils.optimizable("begin"),
+				ExpressionTestUtils.dynamic(buffer),
+				ExpressionTestUtils.fixed("end"),
 			};
 
 			StringConcatenation instance = StringConcatenation.concat(elements);

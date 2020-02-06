@@ -19,10 +19,14 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
+import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -36,10 +40,22 @@ public class EvaluationUtils {
 					"Not a proper numerical expression: "+exp.getResultType());
 	}
 
+	static void checkBooleanType(Expression<?> exp) {
+		if(!exp.isBoolean())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a proper boolean expression: "+exp.getResultType());
+	}
+
 	static void checkTextType(Expression<?> exp) {
 		if(!exp.isText())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a proper text expression: "+exp.getResultType());
+	}
+
+	static void checkListType(Expression<?> exp) {
+		if(!exp.getResultType().isList())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a proper list expression: "+exp.getResultType());
 	}
 
 	static void checkComparableType(Expression<?> exp) {
@@ -80,97 +96,30 @@ public class EvaluationUtils {
 		return value!=null;
 	}
 
-	public static Expression<Object> generic(String toStringValue) {
-		Object dummy = new Object() {
-			@Override
-			public String toString() { return toStringValue; }
-		};
-		return new Expression<Object>() {
-
-			@Override
-			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
-
-			@Override
-			public Object compute() { return dummy; }
-
-			@Override
-			public Expression<Object> duplicate(EvaluationContext context) { return this; }
-
-			@Override
-			public boolean isConstant() { return true; }
-		};
+	@SuppressWarnings("unchecked")
+	private static <T> T[] ensureSpecificType0(Expression<?>[] expressions,
+			@SuppressWarnings("rawtypes") Consumer<? super Expression> check, IntFunction<T[]> arrayGen) {
+		T[] result = arrayGen.apply(expressions.length);
+		for (int i = 0; i < expressions.length; i++) {
+			Expression<?> expression = expressions[i];
+			check.accept(expression);
+			result[i] = (T) expression;
+		}
+		return result;
 	}
 
-	public static TextExpression fixed(String text) {
-		return new TextExpression() {
-			final CodePointSequence value = CodePointSequence.fixed(text);
-
-			@Override
-			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public CodePointSequence compute() { return value; }
-
-			@Override
-			public CharSequence computeAsChars() { return value; }
-		};
+	public static NumericalExpression[] ensureNumeric(Expression<?>...expressions) {
+		return ensureSpecificType0(expressions, EvaluationUtils::checkNumericalType,
+				NumericalExpression[]::new);
 	}
 
-	public static TextExpression optimizable(String text) {
-		return new TextExpression() {
-			final CodePointSequence value = CodePointSequence.fixed(text);
-
-			@Override
-			public Expression<CodePointSequence> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public CodePointSequence compute() { return value; }
-
-			@Override
-			public CharSequence computeAsChars() { return value; }
-
-			@Override
-			public Expression<CodePointSequence> optimize(EvaluationContext context) {
-				return Literals.of(value);
-			}
-		};
+	public static BooleanExpression[] ensureBoolean(Expression<?>...expressions) {
+		return ensureSpecificType0(expressions, EvaluationUtils::checkBooleanType,
+				BooleanExpression[]::new);
 	}
 
-	public static TextExpression dynamic(Object dummy) {
-		Expression<Object> expression = new Expression<Object>() {
-
-			@Override
-			public TypeInfo getResultType() { return TypeInfo.of(dummy.getClass()); }
-
-			@Override
-			public Expression<Object> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public Object compute() { return dummy; }
-		};
-
-		return Conversions.toText(expression);
-	}
-
-	public static Expression<?> raw(Object dummy) {
-		return new Expression<Object>() {
-
-			@Override
-			public TypeInfo getResultType() { return TypeInfo.of(dummy.getClass()); }
-
-			@Override
-			public Expression<Object> duplicate(EvaluationContext context) {
-				return this;
-			}
-
-			@Override
-			public Object compute() { return dummy; }
-		};
+	public static TextExpression[] ensureText(Expression<?>...expressions) {
+		return ensureSpecificType0(expressions, EvaluationUtils::checkTextType,
+				TextExpression[]::new);
 	}
 }

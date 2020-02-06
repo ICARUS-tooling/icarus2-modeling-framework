@@ -186,16 +186,6 @@ class CodePointUtilsTest {
 		}
 
 		@Nested
-		class LowerCaseMode extends EqualityTests {
-
-			public LowerCaseMode() {
-				super(StringMode.LOWERCASE);
-			}
-
-			//TODO add special tests for different casings that transform to the same results
-		}
-
-		@Nested
 		class IgnoreCaseMode extends EqualityTests {
 
 			public IgnoreCaseMode() {
@@ -263,16 +253,6 @@ class CodePointUtilsTest {
 				super(StringMode.DEFAULT);
 			}
 
-		}
-
-		@Nested
-		class LowerCaseMode extends ContainsTests {
-
-			public LowerCaseMode() {
-				super(StringMode.LOWERCASE);
-			}
-
-			//TODO add special tests for different casings that transform to the same results
 		}
 
 		@Nested

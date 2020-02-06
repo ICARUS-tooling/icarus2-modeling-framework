@@ -96,7 +96,7 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromGeneric(RandomGenerator rng) {
 			String value = rng.randomUnicodeString(10);
-			Expression<Object> source = EvaluationUtils.generic(value);
+			Expression<Object> source = ExpressionTestUtils.generic(value);
 			TextExpression instance = Conversions.toText(source);
 			assertThat(instance.computeAsChars()).hasToString(value);
 		}
@@ -177,7 +177,7 @@ class ConversionsTest {
 
 			@Override
 			public TextExpression createWithValue(CodePointSequence value) {
-				Expression<?> source = EvaluationUtils.generic(value.toString());
+				Expression<?> source = ExpressionTestUtils.generic(value.toString());
 				return Conversions.toText(source);
 			}
 		}
@@ -213,7 +213,7 @@ class ConversionsTest {
 		@Test
 		void testFromGeneric() {
 			assertThat(Conversions.toBoolean(Literals.ofNull()).computeAsBoolean()).isFalse();
-			assertThat(Conversions.toBoolean(EvaluationUtils.generic("test")).computeAsBoolean()).isTrue();
+			assertThat(Conversions.toBoolean(ExpressionTestUtils.generic("test")).computeAsBoolean()).isTrue();
 		}
 
 		abstract class ToBooleanTestBase implements BooleanExpressionTest {
@@ -264,7 +264,7 @@ class ConversionsTest {
 		class FromGeneric extends ToBooleanTestBase {
 			@Override
 			public BooleanExpression createWithValue(Primitive<Boolean> value) {
-				Expression<?> source = value.booleanValue() ? EvaluationUtils.generic("test") : Literals.ofNull();
+				Expression<?> source = value.booleanValue() ? ExpressionTestUtils.generic("test") : Literals.ofNull();
 				return Conversions.toBoolean(source);
 			}
 		}
@@ -306,7 +306,7 @@ class ConversionsTest {
 
 		@Test
 		void testFromGeneric() {
-			assertFailedCast(() -> Conversions.toInteger(EvaluationUtils.generic("test")));
+			assertFailedCast(() -> Conversions.toInteger(ExpressionTestUtils.generic("test")));
 		}
 
 		abstract class ToIntegerTestBase implements IntegerExpressionTest {
@@ -384,7 +384,7 @@ class ConversionsTest {
 
 		@Test
 		void testFromGeneric() {
-			assertFailedCast(() -> Conversions.toFloatingPoint(EvaluationUtils.generic("test")));
+			assertFailedCast(() -> Conversions.toFloatingPoint(ExpressionTestUtils.generic("test")));
 		}
 
 		abstract class ToFloatingPointTestBase implements FloatingPointExpressionTest {

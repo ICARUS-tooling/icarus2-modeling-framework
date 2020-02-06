@@ -125,8 +125,6 @@ public class ExpressionFactory {
 		StringMode stringMode = StringMode.DEFAULT;
 		if(context.isSwitchSet(QuerySwitch.STRING_CASE_OFF)) {
 			stringMode = StringMode.IGNORE_CASE;
-		} else if(context.isSwitchSet(QuerySwitch.STRING_CASE_LOWER)) {
-			stringMode = StringMode.LOWERCASE;
 		}
 		return stringMode;
 	}
