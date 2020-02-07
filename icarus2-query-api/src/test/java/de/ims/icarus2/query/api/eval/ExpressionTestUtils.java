@@ -87,6 +87,34 @@ public class ExpressionTestUtils {
 		};
 	}
 
+	static NumericalExpression optimizable(long value) {
+		return new NumericalExpression() {
+			final MutableLong buffer = new MutableLong(value);
+
+			@Override
+			public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Primitive<? extends Number> compute() { return buffer; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.INTEGER; }
+
+			@Override
+			public long computeAsLong() { return value; }
+
+			@Override
+			public double computeAsDouble() { return value; }
+
+			@Override
+			public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+				return Literals.of(value);
+			}
+		};
+	}
+
 	static <T> TextExpression dynamicText(Supplier<T> dummy) {
 		Expression<T> expression = new Expression<T>() {
 

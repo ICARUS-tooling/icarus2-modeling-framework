@@ -24,6 +24,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.stream.Stream;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
@@ -108,6 +110,16 @@ public class SetPredicates {
 			this.fixedElements = requireNonNull(fixedElements);
 			this.dynamicElements = requireNonNull(dynamicElements);
 			value = new MutableBoolean();
+		}
+
+		@VisibleForTesting
+		LongSet getFixedElements() {
+			return fixedElements;
+		}
+
+		@VisibleForTesting
+		NumericalExpression[] getDynamicElements() {
+			return dynamicElements;
 		}
 
 		private static NumericalExpression[] filterConstant(Stream<NumericalExpression> elements,

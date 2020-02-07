@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.dynamic;
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.optimizable;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,7 @@ import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.SetPredicates.FlatIntegerSetPredicate;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 /**
  * @author Markus Gärtner
@@ -165,6 +167,58 @@ class SetPredicatesTest {
 
 				v2.setLong(10);
 				assertThat(pred.computeAsBoolean()).isTrue();
+			}
+
+			@Test
+			void testUnoptimizable() {
+				MutableLong v1 = new MutableLong(2);
+				MutableLong v2 = new MutableLong(10_000);
+				NumericalExpression[] set = {
+						Literals.of(1),
+						dynamic(v1::longValue),
+						Literals.of(11),
+						dynamic(v2::longValue),
+				};
+				NumericalExpression target = Literals.of(10);
+				BooleanExpression pred = SetPredicates.in(target, set);
+				assertThat(pred.optimize(mock(EvaluationContext.class))).isSameAs(pred);
+			}
+
+			@Test
+			void testOptimizable() {
+				MutableLong v2 = new MutableLong(10_000);
+				NumericalExpression[] set = {
+						Literals.of(1),
+						optimizable(2),
+						Literals.of(11),
+						dynamic(v2::longValue),
+				};
+				MutableLong dummy = new MutableLong(0);
+				NumericalExpression target = dynamic(dummy::longValue);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(optimized).isInstanceOf(FlatIntegerSetPredicate.class);
+				NumericalExpression[] optimizedSet = ((FlatIntegerSetPredicate)optimized).getDynamicElements();
+				assertThat(optimizedSet).hasSize(1);
+				LongSet optimizedConstants = ((FlatIntegerSetPredicate)optimized).getFixedElements();
+				assertThat(optimizedConstants).hasSize(3);
+			}
+
+			@Test
+			void testOptimizableToConstant() {
+				NumericalExpression[] set = {
+						Literals.of(1),
+						optimizable(2),
+						Literals.of(11),
+						optimizable(10_000),
+				};
+				NumericalExpression target = optimizable(0);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(Literals.isLiteral(optimized)).isTrue();
+				assertThat(optimized.computeAsBoolean()).isFalse();
 			}
 		}
 	}
