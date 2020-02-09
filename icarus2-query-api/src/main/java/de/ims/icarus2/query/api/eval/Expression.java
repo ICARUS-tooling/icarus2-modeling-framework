@@ -95,6 +95,9 @@ public interface Expression<T> {
 		return TypeInfo.isBoolean(getResultType());
 	}
 
+	default boolean isList() {
+		return getResultType().isList();
+	}
 
 	/**
 	 * Specialized expression with primitive numerical return value.

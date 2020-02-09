@@ -19,6 +19,12 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.LongConsumer;
+
 /**
  * A proxy to model arbitrary random-access data structures.
  *
@@ -33,4 +39,40 @@ public interface ListProxy<T> {
 
 	/** Fetch element at specified {@code index}. */
 	T get(int index);
+
+	default void forEachItem(Consumer<? super T> action) {
+		requireNonNull(action);
+		int size = size();
+		for (int i = 0; i < size; i++) {
+			action.accept(get(i));
+		}
+	}
+
+	public interface OfInteger extends ListProxy<Long> {
+		long getAsLong(int index);
+
+		default void forEachItem(LongConsumer action) {
+			requireNonNull(action);
+			int size = size();
+			for (int i = 0; i < size; i++) {
+				action.accept(getAsLong(i));
+			}
+		}
+	}
+
+	public interface OfFloatingPoint extends ListProxy<Double> {
+		double getAsDouble(int index);
+
+		default void forEachItem(DoubleConsumer action) {
+			requireNonNull(action);
+			int size = size();
+			for (int i = 0; i < size; i++) {
+				action.accept(getAsDouble(i));
+			}
+		}
+	}
+
+	public interface OfBoolean extends ListProxy<Boolean> {
+		boolean getAsBoolean(int index);
+	}
 }

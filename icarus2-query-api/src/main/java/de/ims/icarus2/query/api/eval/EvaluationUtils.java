@@ -40,6 +40,12 @@ public class EvaluationUtils {
 					"Not a proper integer expression: "+exp.getResultType());
 	}
 
+	static void checkFloatingPointType(Expression<?> exp) {
+		if(exp.getResultType()!=TypeInfo.FLOATING_POINT)
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a proper floating point expression: "+exp.getResultType());
+	}
+
 	static void checkNumericalType(Expression<?> exp) {
 		if(!exp.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
@@ -117,6 +123,12 @@ public class EvaluationUtils {
 	/** Clones the given array of expressions into integer {@link NumericalExpression}[] */
 	public static NumericalExpression[] ensureInteger(Expression<?>...expressions) {
 		return ensureSpecificType0(expressions, EvaluationUtils::checkIntegerType,
+				NumericalExpression[]::new);
+	}
+
+	/** Clones the given array of expressions into floating point {@link NumericalExpression}[] */
+	public static NumericalExpression[] ensureFloatingPoint(Expression<?>...expressions) {
+		return ensureSpecificType0(expressions, EvaluationUtils::checkFloatingPointType,
 				NumericalExpression[]::new);
 	}
 

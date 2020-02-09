@@ -19,11 +19,13 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
@@ -115,6 +117,35 @@ public class ExpressionTestUtils {
 		};
 	}
 
+	static NumericalExpression optimizable(double value) {
+		return new NumericalExpression() {
+			final MutableDouble buffer = new MutableDouble(value);
+
+			@Override
+			public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Primitive<? extends Number> compute() { return buffer; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
+
+			@Override
+			public long computeAsLong() { throw EvaluationUtils.forUnsupportedCast(
+					TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
+
+			@Override
+			public double computeAsDouble() { return value; }
+
+			@Override
+			public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+				return Literals.of(value);
+			}
+		};
+	}
+
 	static <T> TextExpression dynamicText(Supplier<T> dummy) {
 		Expression<T> expression = new Expression<T>() {
 
@@ -173,6 +204,46 @@ public class ExpressionTestUtils {
 
 			@Override
 			public double computeAsDouble() { return computeAsLong(); }
+		};
+	}
+
+	static NumericalExpression dynamic(DoubleSupplier source) {
+		return new NumericalExpression() {
+
+			final MutableDouble value = new MutableDouble();
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
+
+			@Override
+			public NumericalExpression duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Primitive<? extends Number> compute() {
+				value.setDouble(computeAsDouble());
+				return value;
+			}
+
+			@Override
+			public long computeAsLong() { throw EvaluationUtils.forUnsupportedCast(
+					TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
+
+			@Override
+			public double computeAsDouble() { return source.getAsDouble(); }
+		};
+	}
+
+	static TextExpression dynamic(Supplier<? extends CharSequence> source) {
+		return new TextExpression() {
+			@Override
+			public TextExpression duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public CharSequence compute() { return source.get(); }
 		};
 	}
 
