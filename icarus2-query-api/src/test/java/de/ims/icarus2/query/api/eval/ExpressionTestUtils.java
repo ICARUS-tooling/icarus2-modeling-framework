@@ -23,6 +23,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -146,6 +147,35 @@ public class ExpressionTestUtils {
 		};
 	}
 
+	static IntegerListExpression<long[]> optimizableLongs(long...array) {
+		return new IntegerListExpression<long[]>() {
+			@Override
+			public IntegerListExpression<long[]> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public long[] compute() { return array; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.of(long[].class, true); }
+
+			@Override
+			public IntegerListExpression<long[]> optimize(EvaluationContext context) {
+				return ArrayLiterals.of(array);
+			}
+
+			@Override
+			public int size() { return array.length; }
+
+			@Override
+			public Long get(int index) { return Long.valueOf(getAsLong(index)); }
+
+			@Override
+			public long getAsLong(int index) { return array[index]; }
+		};
+	}
+
 	static <T> TextExpression dynamicText(Supplier<T> dummy) {
 		Expression<T> expression = new Expression<T>() {
 
@@ -244,6 +274,30 @@ public class ExpressionTestUtils {
 
 			@Override
 			public CharSequence compute() { return source.get(); }
+		};
+	}
+
+	static IntegerListExpression<long[]> dynamicLongs(Supplier<long[]> source) {
+		return new IntegerListExpression<long[]>() {
+			@Override
+			public IntegerListExpression<long[]> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public long[] compute() { return source.get(); }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.of(long[].class, true); }
+
+			@Override
+			public int size() { return source.get().length; }
+
+			@Override
+			public Long get(int index) { return Long.valueOf(getAsLong(index)); }
+
+			@Override
+			public long getAsLong(int index) { return source.get()[index]; }
 		};
 	}
 

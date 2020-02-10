@@ -87,6 +87,10 @@ public class TypeInfo {
 		return info==INTEGER || info==FLOATING_POINT;
 	}
 
+	public static boolean isFloatingPoint(TypeInfo info) {
+		return info==FLOATING_POINT;
+	}
+
 	public static boolean isBoolean(TypeInfo info) {
 		return info==BOOLEAN;
 	}

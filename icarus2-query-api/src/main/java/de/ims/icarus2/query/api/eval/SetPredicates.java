@@ -22,11 +22,15 @@ package de.ims.icarus2.query.api.eval;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
@@ -67,7 +71,7 @@ public class SetPredicates {
 			if(target.isFPE()) {
 				return new FlatFloatingPointSetPredicate(target, EvaluationUtils.ensureFloatingPoint(set));
 			}
-			return new FlatIntegerSetPredicate(target, EvaluationUtils.ensureInteger(set));
+			return FlatIntegerSetPredicate.of(target, set);
 		} else if(query.isText()) {
 			return new FlatTextSetPredicate((TextExpression) query, EvaluationUtils.ensureText(set));
 		}
@@ -77,7 +81,7 @@ public class SetPredicates {
 
 
 	// expects 'query' to be a list expression
-	private static BooleanExpression allIn(Expression<?> query, Expression<?>...set) {
+	public static BooleanExpression allIn(Expression<?> query, Expression<?>...set) {
 		//TODO
 		throw new UnsupportedOperationException();
 	}
@@ -95,59 +99,80 @@ public class SetPredicates {
 	 *
 	 */
 	static final class FlatIntegerSetPredicate implements BooleanExpression {
+
+		static FlatIntegerSetPredicate of(NumericalExpression target, Expression<?>[] elements) {
+			checkArgument("Need at least 1 element to check set containment", elements.length>0);
+
+			LongSet fixedLongs = new LongOpenHashSet();
+			List<IntegerListExpression<?>> dynamicLists = new ArrayList<>();
+			List<NumericalExpression> dynamicElements = new ArrayList<>();
+
+			for (Expression<?> element : elements) {
+				if(element.isNumerical()) {
+					NumericalExpression ne = (NumericalExpression)element;
+					if(ne.isFPE())
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not an integer type: "+ne.getResultType());
+
+					if(ne.isConstant()) {
+						fixedLongs.add(ne.computeAsLong());
+					} else {
+						dynamicElements.add(ne);
+					}
+				} else if(element.isList()) {
+					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
+					if(!TypeInfo.isNumerical(elementType))
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not an numerical list type: "+elementType);
+					if(TypeInfo.isFloatingPoint(elementType))
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not an integer type: "+elementType);
+
+					IntegerListExpression<?> ie = (IntegerListExpression<?>) element;
+					if(ie.isConstant()) {
+						ie.forEachInteger(fixedLongs::add);
+					} else {
+						dynamicLists.add(ie);
+					}
+				}
+			}
+
+			return new FlatIntegerSetPredicate(target, fixedLongs,
+					dynamicElements.toArray(new NumericalExpression[0]),
+					dynamicLists.toArray(new IntegerListExpression[0]));
+		}
+
+		/** Pre-compiled (expanded) fixed values */
 		private final LongSet fixedLongs;
 		/** Bitmask computed by bitwise 'or' of all the fixed elements */
 		private long quickFilter = 0L;
+		/** Dynamic expressions producing integer list values */
+		private final IntegerListExpression<?>[] dynamicLists;
+		/** Single-value dynamic expressions */
 		private final NumericalExpression[] dynamicElements;
+		/** Buffer for result value when using the wrapper {@link #compute()} method. */
 		private final MutableBoolean value;
-
+		/** Query value to match against */
 		private final NumericalExpression target;
 
-		FlatIntegerSetPredicate(NumericalExpression target, NumericalExpression[] elements) {
-			requireNonNull(elements);
-			this.target = requireNonNull(target);
-			checkArgument("Need at least 1 element to check set containment", elements.length>0);
-
-			fixedLongs = new LongOpenHashSet();
-			dynamicElements = filterConstant(Stream.of(elements), fixedLongs);
-			quickFilter = createQuickFilter(fixedLongs);
-			value = new MutableBoolean();
-		}
-
-		/** Copy constructor */
 		private FlatIntegerSetPredicate(NumericalExpression target, LongSet fixedLongs,
-				NumericalExpression[] dynamicElements) {
+				NumericalExpression[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
 			this.target = requireNonNull(target);
 			this.fixedLongs = requireNonNull(fixedLongs);
+			this.dynamicLists = requireNonNull(dynamicLists);
 			this.dynamicElements = requireNonNull(dynamicElements);
 			quickFilter = createQuickFilter(fixedLongs);
 			value = new MutableBoolean();
 		}
 
 		@VisibleForTesting
-		LongSet getFixedLongs() {
-			return fixedLongs;
-		}
+		LongSet getFixedLongs() { return fixedLongs; }
 
 		@VisibleForTesting
-		NumericalExpression[] getDynamicElements() {
-			return dynamicElements;
-		}
+		NumericalExpression[] getDynamicElements() { return dynamicElements; }
 
-		private static NumericalExpression[] filterConstant(Stream<NumericalExpression> elements,
-				LongSet fixedElements) {
-			return elements
-					// Collect all the constant entries directly into the fixed set for lookup
-					.filter(element -> {
-						boolean constant = element.isConstant();
-						if(constant) {
-							fixedElements.add(element.computeAsLong());
-						}
-						return !constant;
-					})
-					// The dynamic elements stay as they are
-					.toArray(NumericalExpression[]::new);
-		}
+		@VisibleForTesting
+		IntegerListExpression<?>[] getDynamicLists() { return dynamicLists; }
 
 		private static long createQuickFilter(LongSet set) {
 			long filter = 0L;
@@ -172,6 +197,18 @@ public class SetPredicates {
 			return false;
 		}
 
+		private static boolean containsDynamic(long value, IntegerListExpression<?>[] elements) {
+			for (int i = 0; i < elements.length; i++) {
+				ListProxy.OfInteger iList = elements[i];
+				for (int j = 0; j < iList.size(); j++) {
+					if(value==iList.getAsLong(j)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		private boolean containsStatic(long value) {
 			return (quickFilter & value)==value && fixedLongs.contains(value);
 		}
@@ -180,7 +217,8 @@ public class SetPredicates {
 		public boolean computeAsBoolean() {
 			long value = target.computeAsLong();
 			return (!fixedLongs.isEmpty() && containsStatic(value))
-					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements));
+					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
+					|| (dynamicLists.length>0 && containsDynamic(value, dynamicLists));
 		}
 
 		@Override
@@ -190,15 +228,22 @@ public class SetPredicates {
 					new LongOpenHashSet(fixedLongs),
 					Stream.of(dynamicElements)
 						.map(expression -> expression.duplicate(context))
-						.toArray(NumericalExpression[]::new));
+						.map(NumericalExpression.class::cast)
+						.toArray(NumericalExpression[]::new),
+					Stream.of(dynamicLists)
+						.map(expression -> expression.duplicate(context))
+						.map(IntegerListExpression.class::cast)
+						.toArray(IntegerListExpression[]::new));
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+
 			// Main optimization comes from the target expression
 			NumericalExpression newTarget = (NumericalExpression) target.optimize(context);
 			// If we don't have any dynamic part going on, optimize to constant directly
-			if(newTarget.isConstant() && dynamicElements.length==0) {
+			if(newTarget.isConstant() && dynamicElements.length==0
+					&& dynamicLists.length==0) {
 				return Literals.of(fixedLongs.contains(newTarget.computeAsLong()));
 			}
 
@@ -206,21 +251,39 @@ public class SetPredicates {
 			 * If we have at least 1 constant in the current set of dynamic elements,
 			 * we can shift that over to the fixed set.
 			 */
-			LongSet fixedElements = new LongOpenHashSet(this.fixedLongs);
-			NumericalExpression[] dynamicElements = filterConstant(
-					Stream.of(this.dynamicElements)
-						.map(expression -> expression.optimize(context))
-						.map(NumericalExpression.class::cast),
-					fixedElements);
+			LongSet fixedLongs = new LongOpenHashSet(this.fixedLongs);
+			NumericalExpression[] dynamicElements = Stream.of(this.dynamicElements)
+					.map(expression -> expression.optimize(context))
+					.map(NumericalExpression.class::cast)
+					.filter(ne -> {
+						if(ne.isConstant()) {
+							fixedLongs.add(ne.computeAsLong());
+							return false;
+						}
+						return true;
+					})
+					.toArray(NumericalExpression[]::new);
+			IntegerListExpression<?>[] dynamicLists = Stream.of(this.dynamicLists)
+					.map(expression -> expression.optimize(context))
+					.map(IntegerListExpression.class::cast)
+					.filter(ile -> {
+						if(ile.isConstant()) {
+							ile.forEachInteger(fixedLongs::add);
+							return false;
+						}
+						return true;
+					})
+					.toArray(IntegerListExpression[]::new);
 
-			if(dynamicElements.length<this.dynamicElements.length) {
+			if(dynamicElements.length < this.dynamicElements.length
+					|| dynamicLists.length < this.dynamicLists.length) {
 
 				// Special case of full constant expression -> optimize into single boolean
-				if(newTarget.isConstant() && dynamicElements.length==0) {
-					return Literals.of(fixedElements.contains(newTarget.computeAsLong()));
+				if(newTarget.isConstant() && dynamicElements.length==0 && dynamicLists.length==0) {
+					return Literals.of(fixedLongs.contains(newTarget.computeAsLong()));
 				}
 
-				return new FlatIntegerSetPredicate(newTarget, fixedElements, dynamicElements);
+				return new FlatIntegerSetPredicate(newTarget, fixedLongs, dynamicElements, dynamicLists);
 			}
 
 			return this;

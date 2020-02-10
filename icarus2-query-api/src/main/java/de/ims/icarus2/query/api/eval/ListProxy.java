@@ -51,7 +51,7 @@ public interface ListProxy<T> {
 	public interface OfInteger extends ListProxy<Long> {
 		long getAsLong(int index);
 
-		default void forEachItem(LongConsumer action) {
+		default void forEachInteger(LongConsumer action) {
 			requireNonNull(action);
 			int size = size();
 			for (int i = 0; i < size; i++) {
@@ -63,7 +63,7 @@ public interface ListProxy<T> {
 	public interface OfFloatingPoint extends ListProxy<Double> {
 		double getAsDouble(int index);
 
-		default void forEachItem(DoubleConsumer action) {
+		default void forEachFloatingPoint(DoubleConsumer action) {
 			requireNonNull(action);
 			int size = size();
 			for (int i = 0; i < size; i++) {

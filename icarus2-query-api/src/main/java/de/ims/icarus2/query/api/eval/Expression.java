@@ -165,6 +165,28 @@ public interface Expression<T> {
 		/** Returns the type of elements that are accessible as part of this expressions output */
 		TypeInfo getElementType();
 
+		/**
+		 * Computes and/or returns the raw {@code list-style} object behind this expression.
+		 * Since the actual
+		 * @see de.ims.icarus2.query.api.eval.Expression#compute()
+		 */
+		@Override
+		T compute();
+	}
+
+	public interface IntegerListExpression<T> extends ListExpression<T, Long>, ListProxy.OfInteger {
+		@Override
+		default TypeInfo getElementType() { return TypeInfo.INTEGER; }
+	}
+
+	public interface FloatingPointListExpression<T> extends ListExpression<T, Double>, ListProxy.OfFloatingPoint {
+		@Override
+		default TypeInfo getElementType() { return TypeInfo.FLOATING_POINT; }
+	}
+
+	public interface BooleanListExpression<T> extends ListExpression<T, Boolean>, ListProxy.OfBoolean {
+		@Override
+		default TypeInfo getElementType() { return TypeInfo.BOOLEAN; }
 	}
 
 	//TODO
