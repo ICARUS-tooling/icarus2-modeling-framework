@@ -69,7 +69,7 @@ public class SetPredicates {
 		} else if(query.isNumerical()) {
 			NumericalExpression target = (NumericalExpression)query;
 			if(target.isFPE()) {
-				return new FlatFloatingPointSetPredicate(target, EvaluationUtils.ensureFloatingPoint(set));
+				return FlatFloatingPointSetPredicate.of(target, set);
 			}
 			return FlatIntegerSetPredicate.of(target, set);
 		} else if(query.isText()) {
@@ -303,56 +303,76 @@ public class SetPredicates {
 	 *
 	 */
 	static final class FlatFloatingPointSetPredicate implements BooleanExpression {
-		private final DoubleSet fixedDoubles;
-		private final NumericalExpression[] dynamicElements;
-		private final MutableBoolean value;
-
-		private final NumericalExpression target;
-
-		FlatFloatingPointSetPredicate(NumericalExpression target, NumericalExpression[] elements) {
-			requireNonNull(elements);
-			this.target = requireNonNull(target);
+		static FlatFloatingPointSetPredicate of(NumericalExpression target, Expression<?>[] elements) {
 			checkArgument("Need at least 1 element to check set containment", elements.length>0);
 
-			fixedDoubles = new DoubleOpenHashSet();
-			dynamicElements = filterConstant(Stream.of(elements), fixedDoubles);
+			DoubleSet fixedDoubles = new DoubleOpenHashSet();
+			List<FloatingPointListExpression<?>> dynamicLists = new ArrayList<>();
+			List<NumericalExpression> dynamicElements = new ArrayList<>();
 
-			value = new MutableBoolean();
+			for (Expression<?> element : elements) {
+				if(element.isNumerical()) {
+					NumericalExpression ne = (NumericalExpression)element;
+					if(!ne.isFPE())
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not a floating point type: "+ne.getResultType());
+
+					if(ne.isConstant()) {
+						fixedDoubles.add(ne.computeAsDouble());
+					} else {
+						dynamicElements.add(ne);
+					}
+				} else if(element.isList()) {
+					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
+					if(!TypeInfo.isNumerical(elementType))
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not an numerical list type: "+elementType);
+					if(!TypeInfo.isFloatingPoint(elementType))
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not a floating point type: "+elementType);
+
+					FloatingPointListExpression<?> ie = (FloatingPointListExpression<?>) element;
+					if(ie.isConstant()) {
+						ie.forEachFloatingPoint(fixedDoubles::add);
+					} else {
+						dynamicLists.add(ie);
+					}
+				}
+			}
+
+			return new FlatFloatingPointSetPredicate(target, fixedDoubles,
+					dynamicElements.toArray(new NumericalExpression[0]),
+					dynamicLists.toArray(new FloatingPointListExpression[0]));
 		}
 
-		/** Copy constructor */
+		/** Pre-compiled (expanded) fixed values */
+		private final DoubleSet fixedDoubles;
+		/** Dynamic expressions producing integer list values */
+		private final FloatingPointListExpression<?>[] dynamicLists;
+		/** Single-value dynamic expressions */
+		private final NumericalExpression[] dynamicElements;
+		/** Buffer for result value when using the wrapper {@link #compute()} method. */
+		private final MutableBoolean value;
+		/** Query value to match against */
+		private final NumericalExpression target;
+
 		private FlatFloatingPointSetPredicate(NumericalExpression target, DoubleSet fixedDoubles,
-				NumericalExpression[] dynamicElements) {
+				NumericalExpression[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
 			this.target = requireNonNull(target);
 			this.fixedDoubles = requireNonNull(fixedDoubles);
+			this.dynamicLists = requireNonNull(dynamicLists);
 			this.dynamicElements = requireNonNull(dynamicElements);
 			value = new MutableBoolean();
 		}
 
 		@VisibleForTesting
-		DoubleSet getFixedDoubles() {
-			return fixedDoubles;
-		}
+		DoubleSet getFixedDoubles() { return fixedDoubles; }
 
 		@VisibleForTesting
-		NumericalExpression[] getDynamicElements() {
-			return dynamicElements;
-		}
+		NumericalExpression[] getDynamicElements() { return dynamicElements; }
 
-		private static NumericalExpression[] filterConstant(Stream<NumericalExpression> elements,
-				DoubleSet fixedDoubles) {
-			return elements
-					// Collect all the constant entries directly into the fixed set for lookup
-					.filter(element -> {
-						boolean constant = element.isConstant();
-						if(constant) {
-							fixedDoubles.add(element.computeAsDouble());
-						}
-						return !constant;
-					})
-					// The dynamic elements stay as they are
-					.toArray(NumericalExpression[]::new);
-		}
+		@VisibleForTesting
+		FloatingPointListExpression<?>[] getDynamicLists() { return dynamicLists; }
 
 		@Override
 		public Primitive<Boolean> compute() {
@@ -369,11 +389,28 @@ public class SetPredicates {
 			return false;
 		}
 
+		private static boolean containsDynamic(double value, FloatingPointListExpression<?>[] elements) {
+			for (int i = 0; i < elements.length; i++) {
+				ListProxy.OfFloatingPoint iList = elements[i];
+				for (int j = 0; j < iList.size(); j++) {
+					if(value==iList.getAsDouble(j)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		private boolean containsStatic(double value) {
+			return fixedDoubles.contains(value);
+		}
+
 		@Override
 		public boolean computeAsBoolean() {
 			double value = target.computeAsDouble();
-			return (!fixedDoubles.isEmpty() && fixedDoubles.contains(value))
-					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements));
+			return (!fixedDoubles.isEmpty() && containsStatic(value))
+					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
+					|| (dynamicLists.length>0 && containsDynamic(value, dynamicLists));
 		}
 
 		@Override
@@ -383,15 +420,22 @@ public class SetPredicates {
 					new DoubleOpenHashSet(fixedDoubles),
 					Stream.of(dynamicElements)
 						.map(expression -> expression.duplicate(context))
-						.toArray(NumericalExpression[]::new));
+						.map(NumericalExpression.class::cast)
+						.toArray(NumericalExpression[]::new),
+					Stream.of(dynamicLists)
+						.map(expression -> expression.duplicate(context))
+						.map(IntegerListExpression.class::cast)
+						.toArray(FloatingPointListExpression[]::new));
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+
 			// Main optimization comes from the target expression
 			NumericalExpression newTarget = (NumericalExpression) target.optimize(context);
 			// If we don't have any dynamic part going on, optimize to constant directly
-			if(newTarget.isConstant() && dynamicElements.length==0) {
+			if(newTarget.isConstant() && dynamicElements.length==0
+					&& dynamicLists.length==0) {
 				return Literals.of(fixedDoubles.contains(newTarget.computeAsDouble()));
 			}
 
@@ -399,21 +443,39 @@ public class SetPredicates {
 			 * If we have at least 1 constant in the current set of dynamic elements,
 			 * we can shift that over to the fixed set.
 			 */
-			DoubleSet fixedElements = new DoubleOpenHashSet(this.fixedDoubles);
-			NumericalExpression[] dynamicElements = filterConstant(
-					Stream.of(this.dynamicElements)
-						.map(expression -> expression.optimize(context))
-						.map(NumericalExpression.class::cast),
-					fixedElements);
+			DoubleSet fixedDoubles = new DoubleOpenHashSet(this.fixedDoubles);
+			NumericalExpression[] dynamicElements = Stream.of(this.dynamicElements)
+					.map(expression -> expression.optimize(context))
+					.map(NumericalExpression.class::cast)
+					.filter(ne -> {
+						if(ne.isConstant()) {
+							fixedDoubles.add(ne.computeAsDouble());
+							return false;
+						}
+						return true;
+					})
+					.toArray(NumericalExpression[]::new);
+			FloatingPointListExpression<?>[] dynamicLists = Stream.of(this.dynamicLists)
+					.map(expression -> expression.optimize(context))
+					.map(FloatingPointListExpression.class::cast)
+					.filter(ile -> {
+						if(ile.isConstant()) {
+							ile.forEachFloatingPoint(fixedDoubles::add);
+							return false;
+						}
+						return true;
+					})
+					.toArray(FloatingPointListExpression[]::new);
 
-			if(dynamicElements.length<this.dynamicElements.length) {
+			if(dynamicElements.length < this.dynamicElements.length
+					|| dynamicLists.length < this.dynamicLists.length) {
 
 				// Special case of full constant expression -> optimize into single boolean
-				if(newTarget.isConstant() && dynamicElements.length==0) {
-					return Literals.of(fixedElements.contains(newTarget.computeAsDouble()));
+				if(newTarget.isConstant() && dynamicElements.length==0 && dynamicLists.length==0) {
+					return Literals.of(fixedDoubles.contains(newTarget.computeAsDouble()));
 				}
 
-				return new FlatFloatingPointSetPredicate(newTarget, fixedElements, dynamicElements);
+				return new FlatFloatingPointSetPredicate(newTarget, fixedDoubles, dynamicElements, dynamicLists);
 			}
 
 			return this;
