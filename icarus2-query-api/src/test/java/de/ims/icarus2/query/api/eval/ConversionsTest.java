@@ -35,6 +35,7 @@ import de.ims.icarus2.query.api.eval.Conversions.BooleanCast;
 import de.ims.icarus2.query.api.eval.Conversions.BooleanListCast;
 import de.ims.icarus2.query.api.eval.Conversions.FloatingPointCast;
 import de.ims.icarus2.query.api.eval.Conversions.IntegerCast;
+import de.ims.icarus2.query.api.eval.Conversions.IntegerListCast;
 import de.ims.icarus2.query.api.eval.Conversions.TextCast;
 import de.ims.icarus2.query.api.eval.Conversions.TextListCast;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
@@ -48,6 +49,7 @@ import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
+import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.TextListExpressionTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
@@ -790,6 +792,136 @@ class ConversionsTest {
 
 				Expression<?> source = Literals.of(val);
 				return Conversions.toInteger(source);
+			}
+		}
+	}
+
+	@Nested
+	class ToIntegerList {
+
+		@Test
+		@RandomizedTest
+		void testFromText(RandomGenerator rng) {
+			ListExpression<?, CharSequence> source = ArrayLiterals.of(
+					String.valueOf(rng.nextInt()),
+					String.valueOf(rng.nextInt()),
+					String.valueOf(rng.nextInt()),
+					String.valueOf(rng.nextInt()));
+			IntegerListExpression<?> instance = Conversions.toIntegerList(source);
+			assertThat(instance.size()).isEqualTo(4);
+			for (int i = 0; i < instance.size(); i++) {
+				assertThat(instance.getAsLong(i)).as("Mismatch at index %d", _int(i))
+					.isEqualTo(StringPrimitives.parseLong(source.get(i)));
+			}
+		}
+
+		@Test
+		@RandomizedTest
+		void testFromBoolean(RandomGenerator rng) {
+			assertFailedCast(() -> Conversions.toIntegerList(ArrayLiterals.of(true, false, true)));
+		}
+
+		@Test
+		@RandomizedTest
+		void testFromInteger(RandomGenerator rng) {
+			ListExpression<?, Primitive<Long>> source = ArrayLiterals.of(
+					rng.nextInt(),
+					rng.nextInt(),
+					rng.nextInt(),
+					rng.nextInt());
+			assertThat(Conversions.toIntegerList(source)).isSameAs(source);
+		}
+
+		@Test
+		@RandomizedTest
+		void testFromFloatingPoint(RandomGenerator rng) {
+			FloatingPointListExpression<?> source = ArrayLiterals.of(
+					rng.nextDouble(),
+					rng.nextDouble(),
+					rng.nextDouble(),
+					rng.nextDouble());
+			IntegerListExpression<?> instance = Conversions.toIntegerList(source);
+			assertThat(instance.size()).isEqualTo(4);
+			for (int i = 0; i < instance.size(); i++) {
+				assertThat(instance.getAsLong(i)).as("Mismatch at index %d", _int(i))
+					.isEqualTo((long)source.getAsDouble(i));
+			}
+		}
+
+		@Test
+		void testFromGeneric() {
+			assertFailedCast(() -> Conversions.toIntegerList(
+					ArrayLiterals.of(new Object(), "test", new Object())));
+		}
+
+		abstract class ToIntegerListTestBase implements IntegerListExpressionTest<long[]> {
+
+			@Override
+			public long[] constant() {
+				return new long[]{
+						0,
+						10,
+						10_000,
+						-1000
+				};
+			}
+
+			@Override
+			public long[] random(RandomGenerator rng) {
+				return new long[]{
+						rng.nextInt(),
+						rng.nextInt(),
+						rng.nextInt(),
+						rng.nextInt()
+				};
+			}
+
+			@Override
+			public boolean nativeConstant() { return false; }
+
+			@Override
+			public Class<?> getTestTargetClass() { return IntegerListCast.class; }
+
+			@Override
+			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
+
+			@Override
+			public IntegerListExpression<long[]> createForSize(int size) {
+				long[] content = new long[size];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = i+1000L;
+				}
+				return createWithValue(content);
+			}
+		}
+
+		@Nested
+		class FromText extends ToIntegerListTestBase {
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public IntegerListExpression<long[]> createWithValue(long[] value) {
+				CharSequence[] content = new CharSequence[value.length];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = String.valueOf(value[i]);
+				}
+				return (IntegerListExpression<long[]>)
+						Conversions.toIntegerList(ArrayLiterals.of(content));
+			}
+		}
+
+		@Nested
+		class FromFloatingPoint extends ToIntegerListTestBase {
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public IntegerListExpression<long[]> createWithValue(long[] value) {
+				double[] content = new double[value.length];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = value[i] + Math.signum(value[i])*0.000;
+				}
+				return (IntegerListExpression<long[]>)
+						Conversions.toIntegerList(ArrayLiterals.of(content));
 			}
 		}
 	}

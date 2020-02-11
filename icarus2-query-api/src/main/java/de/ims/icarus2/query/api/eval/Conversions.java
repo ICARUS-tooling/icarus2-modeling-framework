@@ -255,7 +255,7 @@ public class Conversions {
 	static final class IntegerListCast extends ListCastExpression<long[], Primitive<Long>>
 			implements IntegerListExpression<long[]> {
 
-		private static final TypeInfo type = TypeInfo.of(CharSequence[].class, true);
+		private static final TypeInfo type = TypeInfo.of(long[].class, true);
 
 		private final MutableLong value;
 		private final ToLongIndexFunction cast;
