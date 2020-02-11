@@ -93,7 +93,8 @@ public class SetPredicates {
 	 * and stored in a set for quick evaluation. Only dynamic expressions need to still be
 	 * traversed linearly in order to do the set containment check.
 	 * <p>
-	 * This implementation does not support value expansion!
+	 * This implementation automatically expands list type expressions when they are
+	 * part of the {@code set} part.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -197,7 +198,7 @@ public class SetPredicates {
 			return false;
 		}
 
-		private static boolean containsDynamic(long value, IntegerListExpression<?>[] elements) {
+		private static boolean containsDynamicExpanded(long value, IntegerListExpression<?>[] elements) {
 			for (int i = 0; i < elements.length; i++) {
 				ListProxy.OfInteger iList = elements[i];
 				for (int j = 0; j < iList.size(); j++) {
@@ -218,7 +219,7 @@ public class SetPredicates {
 			long value = target.computeAsLong();
 			return (!fixedLongs.isEmpty() && containsStatic(value))
 					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
-					|| (dynamicLists.length>0 && containsDynamic(value, dynamicLists));
+					|| (dynamicLists.length>0 && containsDynamicExpanded(value, dynamicLists));
 		}
 
 		@Override
@@ -297,7 +298,8 @@ public class SetPredicates {
 	 * and stored in a set for quick evaluation. Only dynamic expressions need to still be
 	 * traversed linearly in order to do the set containment check.
 	 * <p>
-	 * This implementation does not support value expansion!
+	 * This implementation automatically expands list type expressions when they are
+	 * part of the {@code set} part.
 	 *
 	 * @author Markus Gärtner
 	 *

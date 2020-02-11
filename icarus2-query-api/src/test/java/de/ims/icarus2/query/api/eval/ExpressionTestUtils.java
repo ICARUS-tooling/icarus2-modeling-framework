@@ -36,11 +36,15 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  */
 public class ExpressionTestUtils {
 
-	static Expression<Object> generic(String toStringValue) {
-		Object dummy = new Object() {
+	static Object dummy(String toStringValue) {
+		return new Object() {
 			@Override
 			public String toString() { return toStringValue; }
 		};
+	}
+
+	static Expression<Object> generic(String toStringValue) {
+		Object dummy = dummy(toStringValue);
 		return new Expression<Object>() {
 
 			@Override

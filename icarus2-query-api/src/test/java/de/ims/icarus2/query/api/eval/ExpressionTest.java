@@ -24,9 +24,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.test.ApiGuardedTest;
@@ -249,6 +255,65 @@ public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTe
 			Primitive<? extends Number> value = random(rng);
 			assertThat(createWithValue(value).computeAsDouble()).isEqualTo(value.doubleValue());
 		}
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 * @param <T> type of list object
+	 * @param <V> element type of list object
+	 * @param <E> type of list expression under test
+	 */
+	public interface ListExpressionTest<T, V, E extends ListExpression<T, V>>
+			extends ExpressionTest<T, E> {
+
+		@Provider
+		E createForSize(int size);
+
+		TypeInfo getExpectedElementType();
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.Expression.ListExpression#getElementType()}.
+		 */
+		@Test
+		default void testGetElementType() {
+			assertThat(create().getElementType()).isEqualTo(getExpectedElementType());
+		}
+
+		@ParameterizedTest
+		@ValueSource(ints = {1, 10, 10_000})
+		default void testSize(int size) {
+			assertThat(createForSize(size).size()).isEqualTo(size);
+		}
+	}
+
+	public interface TextListExpressionTest<T>
+			extends ListExpressionTest<T, CharSequence, ListExpression<T, CharSequence>> {
+
+		@Override
+		default TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
+	}
+
+	public interface IntegerListExpressionTest<T>
+			extends ListExpressionTest<T, Primitive<Long>, IntegerListExpression<T>> {
+
+		@Override
+		default TypeInfo getExpectedElementType() { return TypeInfo.INTEGER; }
+	}
+
+	public interface FloatingPointListExpressionTest<T>
+			extends ListExpressionTest<T, Primitive<Double>, FloatingPointListExpression<T>> {
+
+		@Override
+		default TypeInfo getExpectedElementType() { return TypeInfo.FLOATING_POINT; }
+	}
+
+	public interface BooleanListExpressionTest<T>
+			extends ListExpressionTest<T, Primitive<Boolean>, BooleanListExpression<T>> {
+
+		@Override
+		default TypeInfo getExpectedElementType() { return TypeInfo.BOOLEAN; }
 	}
 
 	//TODO add a list expression test once we finalized that interface

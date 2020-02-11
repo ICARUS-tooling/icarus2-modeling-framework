@@ -7,7 +7,12 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.Supplier;
 
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
+import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
@@ -33,8 +38,55 @@ public class ArrayLiterals {
 		return new ByteArray(array);
 	}
 
+	public static FloatingPointListExpression<double[]> of(double...array) {
+		return new DoubleArray(array);
+	}
+
+	public static BooleanListExpression<boolean[]> of(boolean...array) {
+		return new BooleanArray(array);
+	}
+
+	public static <E> ListExpression<E[], E> of(
+			@SuppressWarnings("unchecked") E...array) {
+		return new ObjectArray<>(array);
+	}
+
 	public static IntegerListExpression<int[]> of(Supplier<int[]> source) {
 		return new DelegatingIntArray(source);
+	}
+
+	static final class ObjectArray<E> implements ListExpression<E[], E> {
+
+		private final TypeInfo listType, elementType;
+
+		private final E[] array;
+
+		ObjectArray(E[] array) {
+			this.array = requireNonNull(array);
+			listType = TypeInfo.of(array.getClass(), true);
+			elementType = TypeInfo.of(array.getClass().getComponentType());
+		}
+
+		@Override
+		public TypeInfo getResultType() { return listType; }
+
+		@Override
+		public TypeInfo getElementType() { return elementType; }
+
+		@Override
+		public boolean isConstant() { return true; }
+
+		@Override
+		public Expression<E[]> duplicate(EvaluationContext context) { return this; }
+
+		@Override
+		public int size() { return array.length; }
+
+		@Override
+		public E get(int index) { return array[index]; }
+
+		@Override
+		public E[] compute() { return array; }
 	}
 
 	static final class LongArray implements IntegerListExpression<long[]> {
@@ -220,5 +272,79 @@ public class ArrayLiterals {
 
 		@Override
 		public byte[] compute() { return array; }
+	}
+
+	static final class DoubleArray implements FloatingPointListExpression<double[]> {
+
+		private static final TypeInfo listType = TypeInfo.of(double[].class, true);
+
+		private final double[] array;
+
+		private final MutableDouble value = new MutableDouble();
+
+		DoubleArray(double[] array) {
+			this.array = requireNonNull(array);
+		}
+
+		@Override
+		public TypeInfo getResultType() { return listType; }
+
+		@Override
+		public boolean isConstant() { return true; }
+
+		@Override
+		public Expression<double[]> duplicate(EvaluationContext context) { return this; }
+
+		@Override
+		public int size() { return array.length; }
+
+		@Override
+		public Primitive<Double> get(int index) {
+			value.setDouble(array[index]);
+			return value;
+		}
+
+		@Override
+		public double getAsDouble(int index) { return array[index]; }
+
+		@Override
+		public double[] compute() { return array; }
+	}
+
+	static final class BooleanArray implements BooleanListExpression<boolean[]> {
+
+		private static final TypeInfo listType = TypeInfo.of(boolean[].class, true);
+
+		private final boolean[] array;
+
+		private final MutableBoolean value = new MutableBoolean();
+
+		BooleanArray(boolean[] array) {
+			this.array = requireNonNull(array);
+		}
+
+		@Override
+		public TypeInfo getResultType() { return listType; }
+
+		@Override
+		public boolean isConstant() { return true; }
+
+		@Override
+		public Expression<boolean[]> duplicate(EvaluationContext context) { return this; }
+
+		@Override
+		public int size() { return array.length; }
+
+		@Override
+		public Primitive<Boolean> get(int index) {
+			value.setBoolean(array[index]);
+			return value;
+		}
+
+		@Override
+		public boolean getAsBoolean(int index) { return array[index]; }
+
+		@Override
+		public boolean[] compute() { return array; }
 	}
 }

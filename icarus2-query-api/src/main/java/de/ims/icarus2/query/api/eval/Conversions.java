@@ -81,11 +81,26 @@ public class Conversions {
 		return new TextCast(source, converterFrom(source));
 	}
 
+	@SuppressWarnings("unchecked")
+	public static ListExpression<?, CharSequence> toTextList(ListExpression<?, ?> source) {
+		if(TypeInfo.isText(source.getElementType())) {
+			return (ListExpression<?, CharSequence>) source;
+		}
+		return new TextListCast(source, converterFromList(source));
+	}
+
 	public static BooleanExpression toBoolean(Expression<?> source) {
 		if(source instanceof BooleanExpression) {
 			return (BooleanExpression) source;
 		}
 		return new BooleanCast(source, converterFrom(source));
+	}
+
+	public static BooleanListExpression<?> toBooleanList(ListExpression<?, ?> source) {
+		if(source instanceof BooleanListExpression) {
+			return (BooleanListExpression<?>) source;
+		}
+		return new BooleanListCast(source, converterFromList(source));
 	}
 
 	public static NumericalExpression toInteger(Expression<?> source) {
@@ -95,9 +110,9 @@ public class Conversions {
 		return new IntegerCast(source, converterFrom(source));
 	}
 
-	public static IntegerListExpression<long[]> toIntegerList(ListExpression<?, ?> source) {
+	public static IntegerListExpression<?> toIntegerList(ListExpression<?, ?> source) {
 		if(source instanceof IntegerListExpression) {
-			return (IntegerListExpression) source;
+			return (IntegerListExpression<?>) source;
 		}
 		return new IntegerListCast(source, converterFromList(source));
 	}
@@ -107,6 +122,13 @@ public class Conversions {
 			return (NumericalExpression) source;
 		}
 		return new FloatingPointCast(source, converterFrom(source));
+	}
+
+	public static FloatingPointListExpression<?> toFloatingPointList(ListExpression<?, ?> source) {
+		if(source instanceof FloatingPointListExpression) {
+			return (FloatingPointListExpression<?>) source;
+		}
+		return new FloatingPointListCast(source, converterFromList(source));
 	}
 
 	private static Converter converterFrom(Expression<?> expression) {
@@ -233,18 +255,20 @@ public class Conversions {
 	static final class IntegerListCast extends ListCastExpression<long[], Primitive<Long>>
 			implements IntegerListExpression<long[]> {
 
+		private static final TypeInfo type = TypeInfo.of(CharSequence[].class, true);
+
 		private final MutableLong value;
 		private final ToLongIndexFunction cast;
 
 		public IntegerListCast(ListExpression<?,?> source, ListConverter converter) {
-			super(TypeInfo.LIST, source);
+			super(type, source);
 			cast = converter.getToInt();
 			value = new MutableLong();
 		}
 
 		/** Copy constructor */
 		private IntegerListCast(ListExpression<?,?> source, ToLongIndexFunction cast) {
-			super(TypeInfo.LIST, source);
+			super(type, source);
 			this.cast = requireNonNull(cast);
 			value = new MutableLong();
 		}
@@ -324,6 +348,60 @@ public class Conversions {
 
 	}
 
+	static final class FloatingPointListCast extends ListCastExpression<double[], Primitive<Double>>
+			implements FloatingPointListExpression<double[]> {
+
+		private static final TypeInfo type = TypeInfo.of(double[].class, true);
+
+		private final MutableDouble value;
+		private final ToDoubleIndexFunction cast;
+
+		public FloatingPointListCast(ListExpression<?,?> source, ListConverter converter) {
+			super(type, source);
+			cast = converter.getToDouble();
+			value = new MutableDouble();
+		}
+
+		/** Copy constructor */
+		private FloatingPointListCast(ListExpression<?,?> source, ToDoubleIndexFunction cast) {
+			super(type, source);
+			this.cast = requireNonNull(cast);
+			value = new MutableDouble();
+		}
+
+		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
+		@Override
+		public double[] compute() {
+			double[] array = new double[source.size()];
+			for (int i = 0; i < array.length; i++) {
+				array[i] = cast.applyAsDouble(source, i);
+			}
+			return array;
+		}
+
+		@Override
+		public Expression<double[]> duplicate(EvaluationContext context) {
+			return new FloatingPointListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+		}
+
+		@Override
+		protected ListExpression<double[], Primitive<Double>> toConstant(ListExpression<?,?> source) {
+			return ArrayLiterals.of(compute());
+		}
+
+		@Override
+		public Primitive<Double> get(int index) {
+			value.setDouble(getAsDouble(index));
+			return value;
+		}
+
+		@Override
+		public double getAsDouble(int index) { return cast.applyAsDouble(source, index); }
+
+		@Override
+		public int size() { return source.size(); }
+	}
+
 	static final class BooleanCast extends CastExpression<Primitive<Boolean>> implements BooleanExpression {
 
 		private final MutableBoolean value;
@@ -363,6 +441,60 @@ public class Conversions {
 
 	}
 
+	static final class BooleanListCast extends ListCastExpression<boolean[], Primitive<Boolean>>
+			implements BooleanListExpression<boolean[]> {
+
+		private static final TypeInfo type = TypeInfo.of(boolean[].class, true);
+
+		private final MutableBoolean value;
+		private final ListPredicate cast;
+
+		public BooleanListCast(ListExpression<?,?> source, ListConverter converter) {
+			super(type, source);
+			cast = converter.getToBoolean();
+			value = new MutableBoolean();
+		}
+
+		/** Copy constructor */
+		private BooleanListCast(ListExpression<?,?> source, ListPredicate cast) {
+			super(type, source);
+			this.cast = requireNonNull(cast);
+			value = new MutableBoolean();
+		}
+
+		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
+		@Override
+		public boolean[] compute() {
+			boolean[] array = new boolean[source.size()];
+			for (int i = 0; i < array.length; i++) {
+				array[i] = cast.test(source, i);
+			}
+			return array;
+		}
+
+		@Override
+		public Expression<boolean[]> duplicate(EvaluationContext context) {
+			return new BooleanListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+		}
+
+		@Override
+		protected ListExpression<boolean[], Primitive<Boolean>> toConstant(ListExpression<?,?> source) {
+			return ArrayLiterals.of(compute());
+		}
+
+		@Override
+		public Primitive<Boolean> get(int index) {
+			value.setBoolean(getAsBoolean(index));
+			return value;
+		}
+
+		@Override
+		public boolean getAsBoolean(int index) { return cast.test(source, index); }
+
+		@Override
+		public int size() { return source.size(); }
+	}
+
 	static final class TextCast extends CastExpression<CharSequence> implements TextExpression {
 
 		private final Function<Expression<?>, CharSequence> cast;
@@ -393,6 +525,53 @@ public class Conversions {
 			return Literals.of(cast.apply(source));
 		}
 
+	}
+
+	static final class TextListCast extends ListCastExpression<CharSequence[], CharSequence> {
+
+		private static final TypeInfo type = TypeInfo.of(CharSequence[].class, true);
+
+		private final ToTextIndexFunction cast;
+
+		public TextListCast(ListExpression<?,?> source, ListConverter converter) {
+			super(type, source);
+			cast = converter.getToString();
+		}
+
+		/** Copy constructor */
+		private TextListCast(ListExpression<?,?> source, ToTextIndexFunction cast) {
+			super(type, source);
+			this.cast = requireNonNull(cast);
+		}
+
+		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
+		@Override
+		public CharSequence[] compute() {
+			CharSequence[] array = new CharSequence[source.size()];
+			for (int i = 0; i < array.length; i++) {
+				array[i] = cast.applyAsText(source, i);
+			}
+			return array;
+		}
+
+		@Override
+		public TypeInfo getElementType() { return TypeInfo.TEXT; }
+
+		@Override
+		public Expression<CharSequence[]> duplicate(EvaluationContext context) {
+			return new TextListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+		}
+
+		@Override
+		protected ListExpression<CharSequence[], CharSequence> toConstant(ListExpression<?,?> source) {
+			return ArrayLiterals.of(compute());
+		}
+
+		@Override
+		public CharSequence get(int index) { return cast.applyAsText(source, index); }
+
+		@Override
+		public int size() { return source.size(); }
 	}
 
 	/** Provides conversion from a specific type to the 4 casting targets */
