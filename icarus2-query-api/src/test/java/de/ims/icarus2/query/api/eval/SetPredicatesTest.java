@@ -507,6 +507,8 @@ class SetPredicatesTest {
 				assertThat(Literals.isLiteral(optimized)).isTrue();
 				assertThat(optimized.computeAsBoolean()).isFalse();
 			}
+
+			//TODO create expansion tests similar to integer version!
 		}
 
 		@Nested

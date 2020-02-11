@@ -149,6 +149,8 @@ public class ExpressionTestUtils {
 
 	static IntegerListExpression<long[]> optimizableLongs(long...array) {
 		return new IntegerListExpression<long[]>() {
+			private final MutableLong value = new MutableLong();
+
 			@Override
 			public IntegerListExpression<long[]> duplicate(EvaluationContext context) {
 				return this;
@@ -169,7 +171,10 @@ public class ExpressionTestUtils {
 			public int size() { return array.length; }
 
 			@Override
-			public Long get(int index) { return Long.valueOf(getAsLong(index)); }
+			public Primitive<Long> get(int index) {
+				value.setLong(array[index]);
+				return value;
+			}
 
 			@Override
 			public long getAsLong(int index) { return array[index]; }
@@ -279,6 +284,8 @@ public class ExpressionTestUtils {
 
 	static IntegerListExpression<long[]> dynamicLongs(Supplier<long[]> source) {
 		return new IntegerListExpression<long[]>() {
+			private final MutableLong value = new MutableLong();
+
 			@Override
 			public IntegerListExpression<long[]> duplicate(EvaluationContext context) {
 				return this;
@@ -294,7 +301,10 @@ public class ExpressionTestUtils {
 			public int size() { return source.get().length; }
 
 			@Override
-			public Long get(int index) { return Long.valueOf(getAsLong(index)); }
+			public Primitive<Long> get(int index) {
+				value.setLong(getAsLong(index));
+				return value;
+			}
 
 			@Override
 			public long getAsLong(int index) { return source.get()[index]; }

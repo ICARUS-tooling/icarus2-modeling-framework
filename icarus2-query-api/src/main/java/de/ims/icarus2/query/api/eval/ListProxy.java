@@ -25,6 +25,8 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.LongConsumer;
 
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
+
 /**
  * A proxy to model arbitrary random-access data structures.
  *
@@ -48,7 +50,7 @@ public interface ListProxy<T> {
 		}
 	}
 
-	public interface OfInteger extends ListProxy<Long> {
+	public interface OfInteger extends ListProxy<Primitive<Long>> {
 		long getAsLong(int index);
 
 		default void forEachInteger(LongConsumer action) {
@@ -60,7 +62,7 @@ public interface ListProxy<T> {
 		}
 	}
 
-	public interface OfFloatingPoint extends ListProxy<Double> {
+	public interface OfFloatingPoint extends ListProxy<Primitive<Double>> {
 		double getAsDouble(int index);
 
 		default void forEachFloatingPoint(DoubleConsumer action) {
@@ -72,7 +74,7 @@ public interface ListProxy<T> {
 		}
 	}
 
-	public interface OfBoolean extends ListProxy<Boolean> {
+	public interface OfBoolean extends ListProxy<Primitive<Boolean>> {
 		boolean getAsBoolean(int index);
 	}
 }

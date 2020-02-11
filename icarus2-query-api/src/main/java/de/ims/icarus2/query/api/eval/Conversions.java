@@ -34,6 +34,10 @@ import java.util.function.ToLongFunction;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
@@ -91,6 +95,13 @@ public class Conversions {
 		return new IntegerCast(source, converterFrom(source));
 	}
 
+	public static IntegerListExpression<long[]> toIntegerList(ListExpression<?, ?> source) {
+		if(source instanceof IntegerListExpression) {
+			return (IntegerListExpression) source;
+		}
+		return new IntegerListCast(source, converterFromList(source));
+	}
+
 	public static NumericalExpression toFloatingPoint(Expression<?> source) {
 		if(source instanceof NumericalExpression && ((NumericalExpression) source).isFPE()) {
 			return (NumericalExpression) source;
@@ -109,6 +120,20 @@ public class Conversions {
 		}
 
 		return Converter.FROM_GENERIC;
+	}
+
+	private static ListConverter converterFromList(ListExpression<?,?> expression) {
+		TypeInfo type = expression.getElementType();
+		if(TypeInfo.isNumerical(type)) {
+			return TypeInfo.isFloatingPoint(type) ?
+					ListConverter.FROM_FLOAT : ListConverter.FROM_INTEGER;
+		} else if(TypeInfo.isBoolean(type)) {
+			return ListConverter.FROM_BOOLEAN;
+		} else if(TypeInfo.isText(type)) {
+			return ListConverter.FROM_TEXT;
+		}
+
+		return ListConverter.FROM_GENERIC;
 	}
 
 	private static abstract class CastExpression<T> implements Expression<T> {
@@ -134,6 +159,32 @@ public class Conversions {
 		}
 
 		protected abstract Expression<T> toConstant(Expression<?> source);
+
+	}
+
+	private static abstract class ListCastExpression<T,E> implements ListExpression<T,E> {
+
+		private final TypeInfo type;
+		protected final ListExpression<?,?> source;
+
+		public ListCastExpression(TypeInfo type, ListExpression<?,?> source) {
+			this.type = requireNonNull(type);
+			this.source = requireNonNull(source);
+		}
+
+		@Override
+		public TypeInfo getResultType() { return type; }
+
+		@Override
+		public ListExpression<T,E> optimize(EvaluationContext context) {
+			ListExpression<?,?> newSource = (ListExpression<?, ?>) source.optimize(context);
+			if(newSource.isConstant()) {
+				return toConstant(newSource);
+			}
+			return this;
+		}
+
+		protected abstract ListExpression<T,E> toConstant(ListExpression<?,?> source);
 
 	}
 
@@ -177,6 +228,58 @@ public class Conversions {
 			return Literals.of(cast.applyAsLong(source));
 		}
 
+	}
+
+	static final class IntegerListCast extends ListCastExpression<long[], Primitive<Long>>
+			implements IntegerListExpression<long[]> {
+
+		private final MutableLong value;
+		private final ToLongIndexFunction cast;
+
+		public IntegerListCast(ListExpression<?,?> source, ListConverter converter) {
+			super(TypeInfo.LIST, source);
+			cast = converter.getToInt();
+			value = new MutableLong();
+		}
+
+		/** Copy constructor */
+		private IntegerListCast(ListExpression<?,?> source, ToLongIndexFunction cast) {
+			super(TypeInfo.LIST, source);
+			this.cast = requireNonNull(cast);
+			value = new MutableLong();
+		}
+
+		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
+		@Override
+		public long[] compute() {
+			long[] array = new long[source.size()];
+			for (int i = 0; i < array.length; i++) {
+				array[i] = cast.applyAsLong(source, i);
+			}
+			return array;
+		}
+
+		@Override
+		public Expression<long[]> duplicate(EvaluationContext context) {
+			return new IntegerListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+		}
+
+		@Override
+		protected ListExpression<long[], Primitive<Long>> toConstant(ListExpression<?,?> source) {
+			return ArrayLiterals.of(compute());
+		}
+
+		@Override
+		public Primitive<Long> get(int index) {
+			value.setLong(getAsLong(index));
+			return value;
+		}
+
+		@Override
+		public long getAsLong(int index) { return cast.applyAsLong(source, index); }
+
+		@Override
+		public int size() { return source.size(); }
 	}
 
 	static final class FloatingPointCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
@@ -360,5 +463,99 @@ public class Conversions {
 		public Predicate<Expression<?>> getToBoolean() { return expect(toBoolean, TypeInfo.BOOLEAN); }
 
 		public Function<Expression<?>, CharSequence> getToString() { return expect(toString, TypeInfo.TEXT); }
+	}
+
+	@FunctionalInterface
+	private interface ToLongIndexFunction {
+		long applyAsLong(ListExpression<?, ?> expression, int index);
+	}
+
+	@FunctionalInterface
+	private interface ToDoubleIndexFunction {
+		double applyAsDouble(ListExpression<?, ?> expression, int index);
+	}
+
+	@FunctionalInterface
+	private interface ToTextIndexFunction {
+		CharSequence applyAsText(ListExpression<?, ?> expression, int index);
+	}
+
+	@FunctionalInterface
+	private interface ListPredicate {
+		boolean test(ListExpression<?, ?> expression, int index);
+	}
+
+	/** Provides conversion from a specific type to the 4 casting targets */
+	private enum ListConverter {
+		@SuppressWarnings("unchecked")
+		FROM_TEXT(TypeInfo.TEXT,
+				(exp, i) -> StringPrimitives.parseLong(((ListExpression<?, CharSequence>)exp).get(i)),
+				(exp, i) -> StringPrimitives.parseDouble(((ListExpression<?, CharSequence>)exp).get(i)),
+				(exp, i) -> string2Boolean(((ListExpression<?, CharSequence>)exp).get(i)),
+				null
+		),
+
+		FROM_INTEGER(TypeInfo.INTEGER,
+				null,
+				(exp, i) -> (double)((IntegerListExpression<?>)exp).getAsLong(i),
+				(exp, i) -> int2Boolean(((IntegerListExpression<?>)exp).getAsLong(i)),
+				(exp, i) -> String.valueOf(((IntegerListExpression<?>)exp).getAsLong(i))
+		),
+
+		FROM_FLOAT(TypeInfo.FLOATING_POINT,
+				(exp, i) -> (long)((FloatingPointListExpression<?>)exp).getAsDouble(i),
+				null,
+				(exp, i) -> float2Boolean(((FloatingPointListExpression<?>)exp).getAsDouble(i)),
+				(exp, i) -> String.valueOf(((FloatingPointListExpression<?>)exp).getAsDouble(i))
+		),
+
+		FROM_BOOLEAN(TypeInfo.BOOLEAN,
+				null,
+				null,
+				null,
+				(exp, i) -> String.valueOf(((BooleanListExpression<?>)exp).getAsBoolean(i))
+		),
+
+		FROM_GENERIC(TypeInfo.GENERIC,
+				null,
+				null,
+				(exp, i) -> object2Boolean(exp.get(i)),
+				(exp, i) -> String.valueOf(exp.get(i))
+		),
+		;
+
+		private final TypeInfo origin;
+
+		private final ToLongIndexFunction toInt;
+		private final ToDoubleIndexFunction toDouble;
+		private final ListPredicate toBoolean;
+		private final ToTextIndexFunction toString;
+
+		private ListConverter(TypeInfo origin,
+				ToLongIndexFunction toInt,
+				ToDoubleIndexFunction toDouble,
+				ListPredicate toBoolean,
+				ToTextIndexFunction toString) {
+			this.origin = requireNonNull(origin);
+			this.toInt = toInt;
+			this.toDouble = toDouble;
+			this.toBoolean = toBoolean;
+			this.toString = toString;
+		}
+
+		private <T> T expect(T cast, TypeInfo target) {
+			if(cast==null)
+				throw new QueryException(QueryErrorCode.INCORRECT_USE,
+						String.format("Cannot cast list of %s to target list type %s", origin, target));
+			return cast;
+		}
+
+		public ToLongIndexFunction getToInt() { return expect(toInt, TypeInfo.INTEGER); }
+
+		public ToDoubleIndexFunction getToDouble() { return expect(toDouble, TypeInfo.FLOATING_POINT); }
+
+		public ListPredicate getToBoolean() { return expect(toBoolean, TypeInfo.BOOLEAN); }
+
+		public ToTextIndexFunction getToString() { return expect(toString, TypeInfo.TEXT); }
 	}
 }

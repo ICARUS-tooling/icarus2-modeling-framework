@@ -174,17 +174,17 @@ public interface Expression<T> {
 		T compute();
 	}
 
-	public interface IntegerListExpression<T> extends ListExpression<T, Long>, ListProxy.OfInteger {
+	public interface IntegerListExpression<T> extends ListExpression<T, Primitive<Long>>, ListProxy.OfInteger {
 		@Override
 		default TypeInfo getElementType() { return TypeInfo.INTEGER; }
 	}
 
-	public interface FloatingPointListExpression<T> extends ListExpression<T, Double>, ListProxy.OfFloatingPoint {
+	public interface FloatingPointListExpression<T> extends ListExpression<T, Primitive<Double>>, ListProxy.OfFloatingPoint {
 		@Override
 		default TypeInfo getElementType() { return TypeInfo.FLOATING_POINT; }
 	}
 
-	public interface BooleanListExpression<T> extends ListExpression<T, Boolean>, ListProxy.OfBoolean {
+	public interface BooleanListExpression<T> extends ListExpression<T, Primitive<Boolean>>, ListProxy.OfBoolean {
 		@Override
 		default TypeInfo getElementType() { return TypeInfo.BOOLEAN; }
 	}

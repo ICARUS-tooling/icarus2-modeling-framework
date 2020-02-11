@@ -8,6 +8,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.function.Supplier;
 
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableLong;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
 /**
  * @author Markus Gärtner
@@ -41,6 +43,8 @@ public class ArrayLiterals {
 
 		private final long[] array;
 
+		private final MutableLong value = new MutableLong();
+
 		LongArray(long[] array) {
 			this.array = requireNonNull(array);
 		}
@@ -58,7 +62,10 @@ public class ArrayLiterals {
 		public int size() { return array.length; }
 
 		@Override
-		public Long get(int index) { return Long.valueOf(array[index]); }
+		public Primitive<Long> get(int index) {
+			value.setLong(array[index]);
+			return value;
+		}
 
 		@Override
 		public long getAsLong(int index) { return array[index]; }
@@ -72,6 +79,8 @@ public class ArrayLiterals {
 		private static final TypeInfo listType = TypeInfo.of(int[].class, true);
 
 		private final int[] array;
+
+		private final MutableLong value = new MutableLong();
 
 		IntArray(int[] array) {
 			this.array = requireNonNull(array);
@@ -90,7 +99,10 @@ public class ArrayLiterals {
 		public int size() { return array.length; }
 
 		@Override
-		public Long get(int index) { return Long.valueOf(array[index]); }
+		public Primitive<Long> get(int index) {
+			value.setInt(array[index]);
+			return value;
+		}
 
 		@Override
 		public long getAsLong(int index) { return array[index]; }
@@ -104,6 +116,8 @@ public class ArrayLiterals {
 		private static final TypeInfo listType = TypeInfo.of(int[].class, true);
 
 		private final Supplier<int[]> source;
+
+		private final MutableLong value = new MutableLong();
 
 		DelegatingIntArray(Supplier<int[]> source) {
 			this.source = requireNonNull(source);
@@ -122,7 +136,10 @@ public class ArrayLiterals {
 		public int size() { return source.get().length; }
 
 		@Override
-		public Long get(int index) { return Long.valueOf(source.get()[index]); }
+		public Primitive<Long> get(int index) {
+			value.setInt(source.get()[index]);
+			return value;
+		}
 
 		@Override
 		public long getAsLong(int index) { return source.get()[index]; }
@@ -136,6 +153,8 @@ public class ArrayLiterals {
 		private static final TypeInfo listType = TypeInfo.of(short[].class, true);
 
 		private final short[] array;
+
+		private final MutableLong value = new MutableLong();
 
 		ShortArray(short[] array) {
 			this.array = requireNonNull(array);
@@ -154,7 +173,10 @@ public class ArrayLiterals {
 		public int size() { return array.length; }
 
 		@Override
-		public Long get(int index) { return Long.valueOf(array[index]); }
+		public Primitive<Long> get(int index) {
+			value.setShort(array[index]);
+			return value;
+		}
 
 		@Override
 		public long getAsLong(int index) { return array[index]; }
@@ -168,6 +190,8 @@ public class ArrayLiterals {
 		private static final TypeInfo listType = TypeInfo.of(byte[].class, true);
 
 		private final byte[] array;
+
+		private final MutableLong value = new MutableLong();
 
 		ByteArray(byte[] array) {
 			this.array = requireNonNull(array);
@@ -186,7 +210,10 @@ public class ArrayLiterals {
 		public int size() { return array.length; }
 
 		@Override
-		public Long get(int index) { return Long.valueOf(array[index]); }
+		public Primitive<Long> get(int index) {
+			value.setByte(array[index]);
+			return value;
+		}
 
 		@Override
 		public long getAsLong(int index) { return array[index]; }
