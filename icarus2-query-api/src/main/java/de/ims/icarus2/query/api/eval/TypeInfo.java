@@ -19,10 +19,13 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -33,8 +36,8 @@ import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.strings.CodePointSequence;
 
 /**
  * @author Markus Gärtner
@@ -47,6 +50,15 @@ public class TypeInfo {
 	}
 
 	public static TypeInfo of(Class<?> type) {
+		if(Primitive.class.isAssignableFrom(type))
+			throw new QueryException(GlobalErrorCode.INVALID_INPUT,
+					"Cannot disambiguate the exact primitive type, use TypeInfo.XXX constants");
+
+		// Unify all the string-related types
+		if(CharSequence.class.isAssignableFrom(type)) {
+			return TEXT;
+		}
+
 		return new TypeInfo(type, null, false, false);
 	}
 
@@ -69,6 +81,25 @@ public class TypeInfo {
 		}
 
 		return type.getSimpleName();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof TypeInfo) {
+			TypeInfo other = (TypeInfo)obj;
+			return type.equals(other.type)
+					&& Objects.equals(primitiveType, other.primitiveType)
+					&& member==other.member
+					&& list==other.list;
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(type, primitiveType, _boolean(member), _boolean(list));
 	}
 
 	public Class<?> getType() { return type; }
@@ -118,7 +149,7 @@ public class TypeInfo {
 	public static final TypeInfo BOOLEAN = new TypeInfo(Primitive.class, boolean.class, false, false);
 
 	// Former "String" proxy, now adjusted for proper unicode support
-	/** We use {@link CodePointSequence} as type for strings, as extension of {@link ValueType#STRING} */
+	/** We use {@code CharSequence}, as defined by {@link ValueType#STRING} */
 	public static final TypeInfo TEXT = new TypeInfo(CharSequence.class, null, false, false);
 
 	// Low-level members
