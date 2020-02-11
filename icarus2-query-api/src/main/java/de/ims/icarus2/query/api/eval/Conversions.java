@@ -564,7 +564,7 @@ public class Conversions {
 
 		@Override
 		protected ListExpression<CharSequence[], CharSequence> toConstant(ListExpression<?,?> source) {
-			return ArrayLiterals.of(compute());
+			return ArrayLiterals.ofGeneric(compute());
 		}
 
 		@Override

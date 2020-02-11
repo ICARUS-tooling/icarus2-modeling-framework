@@ -54,6 +54,10 @@ public class TypeInfo {
 			throw new QueryException(GlobalErrorCode.INVALID_INPUT,
 					"Cannot disambiguate the exact primitive type, use TypeInfo.XXX constants");
 
+		if(type==String.class) {
+			return STRING;
+		}
+
 		// Unify all the string-related types
 		if(CharSequence.class.isAssignableFrom(type)) {
 			return TEXT;
@@ -127,7 +131,7 @@ public class TypeInfo {
 	}
 
 	public static boolean isText(TypeInfo info) {
-		return info==TEXT;
+		return CharSequence.class.isAssignableFrom(info.type);
 	}
 
 	public static boolean isComparable(TypeInfo info) {
@@ -151,6 +155,7 @@ public class TypeInfo {
 	// Former "String" proxy, now adjusted for proper unicode support
 	/** We use {@code CharSequence}, as defined by {@link ValueType#STRING} */
 	public static final TypeInfo TEXT = new TypeInfo(CharSequence.class, null, false, false);
+	public static final TypeInfo STRING = new TypeInfo(String.class, null, false, false);
 
 	// Low-level members
 	public static final TypeInfo ITEM = new TypeInfo(Item.class, null, true, false);

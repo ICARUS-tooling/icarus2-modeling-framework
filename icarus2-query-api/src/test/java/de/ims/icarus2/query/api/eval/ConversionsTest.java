@@ -207,7 +207,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
-			ListExpression<?, ?> source = ArrayLiterals.of(
+			ListExpression<?, ?> source = ArrayLiterals.ofGeneric(
 					rng.randomUnicodeString(5),
 					rng.randomUnicodeString(10),
 					rng.randomUnicodeString(20),
@@ -266,7 +266,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromGeneric() {
-			ListExpression<?, ?> source = ArrayLiterals.of(
+			ListExpression<?, ?> source = ArrayLiterals.ofGeneric(
 					new Object(),
 					new Object(),
 					new Object(),
@@ -456,7 +456,7 @@ class ConversionsTest {
 					content[i] = ExpressionTestUtils.dummy(value[i].toString());
 				}
 				return (ListExpression<CharSequence[], CharSequence>)
-						Conversions.toTextList(ArrayLiterals.of(content));
+						Conversions.toTextList(ArrayLiterals.ofGeneric(content));
 			}
 		}
 	}
@@ -554,7 +554,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
-			ListExpression<?, CharSequence> source = ArrayLiterals.of(
+			ListExpression<?, CharSequence> source = ArrayLiterals.ofGeneric(
 					String.valueOf(rng.nextBoolean()),
 					String.valueOf(rng.nextBoolean()),
 					String.valueOf(rng.nextBoolean()),
@@ -613,7 +613,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromGeneric(RandomGenerator rng) {
-			ListExpression<?, ?> source = ArrayLiterals.of(
+			ListExpression<?, ?> source = ArrayLiterals.ofGeneric(
 					rng.nextBoolean() ? new Object() : null,
 					rng.nextBoolean() ? new Object() : null,
 					rng.nextBoolean() ? new Object() : null,
@@ -677,7 +677,7 @@ class ConversionsTest {
 					content[i] = value[i] ? "item_"+i : "";
 				}
 				return (BooleanListExpression<boolean[]>)
-						Conversions.toBooleanList(ArrayLiterals.of(content));
+						Conversions.toBooleanList(ArrayLiterals.ofGeneric(content));
 			}
 		}
 
@@ -719,7 +719,7 @@ class ConversionsTest {
 					content[i] = value[i] ? new Object() : null;
 				}
 				return (BooleanListExpression<boolean[]>)
-						Conversions.toBooleanList(ArrayLiterals.of(content));
+						Conversions.toBooleanList(ArrayLiterals.ofGeneric(content));
 			}
 		}
 	}
@@ -808,7 +808,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
-			ListExpression<?, CharSequence> source = ArrayLiterals.of(
+			ListExpression<?, CharSequence> source = ArrayLiterals.ofGeneric(
 					String.valueOf(rng.nextInt()),
 					String.valueOf(rng.nextInt()),
 					String.valueOf(rng.nextInt()),
@@ -857,7 +857,7 @@ class ConversionsTest {
 		@Test
 		void testFromGeneric() {
 			assertFailedCast(() -> Conversions.toIntegerList(
-					ArrayLiterals.of(new Object(), "test", new Object())));
+					ArrayLiterals.ofGeneric(new Object(), "test", new Object())));
 		}
 
 		abstract class ToIntegerListTestBase implements IntegerListExpressionTest<long[]> {
@@ -912,7 +912,7 @@ class ConversionsTest {
 					content[i] = String.valueOf(value[i]);
 				}
 				return (IntegerListExpression<long[]>)
-						Conversions.toIntegerList(ArrayLiterals.of(content));
+						Conversions.toIntegerList(ArrayLiterals.ofGeneric(content));
 			}
 		}
 
@@ -1022,7 +1022,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
-			ListExpression<?, CharSequence> source = ArrayLiterals.of(
+			ListExpression<?, CharSequence> source = ArrayLiterals.ofGeneric(
 					String.valueOf(randomDouble(rng)),
 					String.valueOf(randomDouble(rng)),
 					String.valueOf(randomDouble(rng)),
@@ -1072,7 +1072,7 @@ class ConversionsTest {
 		@Test
 		void testFromGeneric() {
 			assertFailedCast(() -> Conversions.toFloatingPointList(
-					ArrayLiterals.of(new Object(), "test", new Object())));
+					ArrayLiterals.ofGeneric(new Object(), "test", new Object())));
 		}
 
 		abstract class ToFloatingPointListTestBase implements FloatingPointListExpressionTest<double[]> {
@@ -1127,7 +1127,7 @@ class ConversionsTest {
 					content[i] = String.valueOf(value[i]);
 				}
 				return (FloatingPointListExpression<double[]>)
-						Conversions.toFloatingPointList(ArrayLiterals.of(content));
+						Conversions.toFloatingPointList(ArrayLiterals.ofGeneric(content));
 			}
 		}
 

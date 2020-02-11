@@ -62,7 +62,7 @@ public class ArrayLiterals {
 		return new BooleanArray(array);
 	}
 
-	public static <E> ListExpression<E[], E> of(
+	public static <E> ListExpression<E[], E> ofGeneric(
 			@SuppressWarnings("unchecked") E...array) {
 		return new ObjectArray<>(array);
 	}
