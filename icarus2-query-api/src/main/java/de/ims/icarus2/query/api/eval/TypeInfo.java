@@ -58,11 +58,6 @@ public class TypeInfo {
 			return STRING;
 		}
 
-		// Unify all the string-related types
-		if(CharSequence.class.isAssignableFrom(type)) {
-			return TEXT;
-		}
-
 		return new TypeInfo(type, null, false, false);
 	}
 
