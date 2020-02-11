@@ -202,6 +202,11 @@ public class RandomGenerator implements Cloneable {
 		return randomLongs(1, minInclusive, maxExclusive)[0];
 	}
 
+	public double random(double minInclusive, double maxExclusive) {
+		double range = maxExclusive-minInclusive;
+		return minInclusive + (range * nextDouble());
+	}
+
 	// RANDOM ITERATORS (with filter)
 
 	public PrimitiveIterator.OfInt randomIndices(int spectrum, int size) {

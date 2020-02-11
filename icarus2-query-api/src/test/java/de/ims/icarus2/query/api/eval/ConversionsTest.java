@@ -34,6 +34,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.eval.Conversions.BooleanCast;
 import de.ims.icarus2.query.api.eval.Conversions.BooleanListCast;
 import de.ims.icarus2.query.api.eval.Conversions.FloatingPointCast;
+import de.ims.icarus2.query.api.eval.Conversions.FloatingPointListCast;
 import de.ims.icarus2.query.api.eval.Conversions.IntegerCast;
 import de.ims.icarus2.query.api.eval.Conversions.IntegerListCast;
 import de.ims.icarus2.query.api.eval.Conversions.TextCast;
@@ -48,6 +49,7 @@ import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
+import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest;
@@ -68,6 +70,10 @@ class ConversionsTest {
 
 	private static IcarusRuntimeException assertFailedCast(Executable executable) {
 		return assertIcarusException(QueryErrorCode.INCORRECT_USE, executable);
+	}
+
+	private static double randomDouble(RandomGenerator rng) {
+		return rng.random((double)Integer.MIN_VALUE, (double)Integer.MAX_VALUE);
 	}
 
 	@Nested
@@ -99,7 +105,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
-			NumericalExpression source = Literals.of(rng.nextDouble());
+			NumericalExpression source = Literals.of(randomDouble(rng));
 			TextExpression instance = Conversions.toText(source);
 			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsDouble()));
 		}
@@ -166,7 +172,7 @@ class ConversionsTest {
 
 			@Override
 			public CharSequence random(RandomGenerator rng) {
-				return String.valueOf(rng.nextDouble());
+				return String.valueOf(randomDouble(rng));
 			}
 
 			@Override
@@ -245,10 +251,10 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
 			ListExpression<?, Primitive<Double>> source = ArrayLiterals.of(
-					rng.nextDouble(),
-					rng.nextDouble(),
-					rng.nextDouble(),
-					rng.nextDouble());
+					randomDouble(rng),
+					randomDouble(rng),
+					randomDouble(rng),
+					randomDouble(rng));
 			ListExpression<?, CharSequence> instance = Conversions.toTextList(source);
 			assertThat(instance.size()).isEqualTo(4);
 			for (int i = 0; i < instance.size(); i++) {
@@ -384,10 +390,10 @@ class ConversionsTest {
 			@Override
 			public CharSequence[] random(RandomGenerator rng) {
 				return new CharSequence[] {
-						String.valueOf(rng.nextDouble()),
-						String.valueOf(rng.nextDouble()),
-						String.valueOf(rng.nextDouble()),
-						String.valueOf(rng.nextDouble())
+						String.valueOf(randomDouble(rng)),
+						String.valueOf(randomDouble(rng)),
+						String.valueOf(randomDouble(rng)),
+						String.valueOf(randomDouble(rng))
 				};
 			}
 
@@ -592,10 +598,10 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
 			FloatingPointListExpression<?> source = ArrayLiterals.of(
-					rng.nextBoolean() ? rng.nextDouble() : 0.0,
-					rng.nextBoolean() ? rng.nextDouble() : 0.0,
-					rng.nextBoolean() ? rng.nextDouble() : 0.0,
-					rng.nextBoolean() ? rng.nextDouble() : 0.0);
+					rng.nextBoolean() ? randomDouble(rng) : 0.0,
+					rng.nextBoolean() ? randomDouble(rng) : 0.0,
+					rng.nextBoolean() ? randomDouble(rng) : 0.0,
+					rng.nextBoolean() ? randomDouble(rng) : 0.0);
 			BooleanListExpression<?> instance = Conversions.toBooleanList(source);
 			assertThat(instance.size()).isEqualTo(4);
 			for (int i = 0; i < instance.size(); i++) {
@@ -746,7 +752,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
-			double value = rng.nextDouble();
+			double value = randomDouble(rng);
 			NumericalExpression source = Literals.of(value);
 			NumericalExpression instance = Conversions.toInteger(source);
 			assertThat(instance.computeAsLong()).isEqualTo((long) value);
@@ -836,10 +842,10 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
 			FloatingPointListExpression<?> source = ArrayLiterals.of(
-					rng.nextDouble(),
-					rng.nextDouble(),
-					rng.nextDouble(),
-					rng.nextDouble());
+					randomDouble(rng),
+					randomDouble(rng),
+					randomDouble(rng),
+					randomDouble(rng));
 			IntegerListExpression<?> instance = Conversions.toIntegerList(source);
 			assertThat(instance.size()).isEqualTo(4);
 			for (int i = 0; i < instance.size(); i++) {
@@ -932,7 +938,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
-			double value = rng.nextDouble();
+			double value = randomDouble(rng);
 			TextExpression source = Literals.of(String.valueOf(value));
 			NumericalExpression instance = Conversions.toFloatingPoint(source);
 			assertThat(instance.computeAsDouble()).isEqualTo(value);
@@ -956,7 +962,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
-			NumericalExpression source = Literals.of(rng.nextDouble());
+			NumericalExpression source = Literals.of(randomDouble(rng));
 			assertThat(Conversions.toFloatingPoint(source)).isSameAs(source);
 		}
 
@@ -971,7 +977,7 @@ class ConversionsTest {
 			public Primitive<? extends Number> constant() { return new MutableDouble(1234.5678);}
 
 			@Override
-			public Primitive<? extends Number> random(RandomGenerator rng) { return new MutableDouble(rng.nextDouble()); }
+			public Primitive<? extends Number> random(RandomGenerator rng) { return new MutableDouble(randomDouble(rng)); }
 
 			@Override
 			public boolean nativeConstant() { return false; }
@@ -998,13 +1004,164 @@ class ConversionsTest {
 
 			@Override
 			public Primitive<? extends Number> random(RandomGenerator rng) {
-				return new MutableDouble(Math.floor(rng.nextDouble()));
+				return new MutableDouble(Math.floor(randomDouble(rng)));
 			}
 
 			@Override
 			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
 				Expression<?> source = Literals.of(value.longValue());
 				return Conversions.toFloatingPoint(source);
+			}
+		}
+
+	}
+
+	@Nested
+	class ToFloatingPointList {
+
+		@Test
+		@RandomizedTest
+		void testFromText(RandomGenerator rng) {
+			ListExpression<?, CharSequence> source = ArrayLiterals.of(
+					String.valueOf(randomDouble(rng)),
+					String.valueOf(randomDouble(rng)),
+					String.valueOf(randomDouble(rng)),
+					String.valueOf(randomDouble(rng)));
+			FloatingPointListExpression<?> instance = Conversions.toFloatingPointList(source);
+			assertThat(instance.size()).isEqualTo(4);
+			for (int i = 0; i < instance.size(); i++) {
+				assertThat(instance.getAsDouble(i)).as("Mismatch at index %d", _int(i))
+					.isEqualTo(StringPrimitives.parseDouble(source.get(i)));
+			}
+		}
+
+		@Test
+		@RandomizedTest
+		void testFromBoolean(RandomGenerator rng) {
+			assertFailedCast(() -> Conversions.toFloatingPointList(
+					ArrayLiterals.of(true, false, true, false)));
+		}
+
+		@Test
+		@RandomizedTest
+		void testFromInteger(RandomGenerator rng) {
+			IntegerListExpression<?> source = ArrayLiterals.of(
+					rng.nextInt(),
+					rng.nextInt(),
+					rng.nextInt(),
+					rng.nextInt());
+			FloatingPointListExpression<?> instance = Conversions.toFloatingPointList(source);
+			assertThat(instance.size()).isEqualTo(4);
+			for (int i = 0; i < instance.size(); i++) {
+				assertThat(instance.getAsDouble(i)).as("Mismatch at index %d", _int(i))
+					.isEqualTo(source.getAsLong(i));
+			}
+		}
+
+		@Test
+		@RandomizedTest
+		void testFromFloatingPoint(RandomGenerator rng) {
+			ListExpression<?, Primitive<Double>> source = ArrayLiterals.of(
+					randomDouble(rng),
+					randomDouble(rng),
+					randomDouble(rng),
+					randomDouble(rng));
+			assertThat(Conversions.toFloatingPointList(source)).isSameAs(source);
+		}
+
+		@Test
+		void testFromGeneric() {
+			assertFailedCast(() -> Conversions.toFloatingPointList(
+					ArrayLiterals.of(new Object(), "test", new Object())));
+		}
+
+		abstract class ToFloatingPointListTestBase implements FloatingPointListExpressionTest<double[]> {
+
+			@Override
+			public double[] constant() {
+				return new double[]{
+						0.0,
+						10.5,
+						10_000.123,
+						-1000.001
+				};
+			}
+
+			@Override
+			public double[] random(RandomGenerator rng) {
+				return new double[]{
+						randomDouble(rng),
+						randomDouble(rng),
+						randomDouble(rng),
+						randomDouble(rng)
+				};
+			}
+
+			@Override
+			public boolean nativeConstant() { return false; }
+
+			@Override
+			public Class<?> getTestTargetClass() { return FloatingPointListCast.class; }
+
+			@Override
+			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
+
+			@Override
+			public FloatingPointListExpression<double[]> createForSize(int size) {
+				double[] content = new double[size];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = (i+1000L)*1.1;
+				}
+				return createWithValue(content);
+			}
+		}
+
+		@Nested
+		class FromText extends ToFloatingPointListTestBase {
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public FloatingPointListExpression<double[]> createWithValue(double[] value) {
+				CharSequence[] content = new CharSequence[value.length];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = String.valueOf(value[i]);
+				}
+				return (FloatingPointListExpression<double[]>)
+						Conversions.toFloatingPointList(ArrayLiterals.of(content));
+			}
+		}
+
+		@Nested
+		class FromInteger extends ToFloatingPointListTestBase {
+			@Override
+			public double[] constant() {
+				return new double[]{
+						0.0,
+						10.0,
+						10_000.0,
+						-1000.0
+				};
+			}
+
+			@Override
+			public double[] random(RandomGenerator rng) {
+				return new double[]{
+						Math.floor(randomDouble(rng)),
+						Math.floor(randomDouble(rng)),
+						Math.floor(randomDouble(rng)),
+						Math.floor(randomDouble(rng))
+				};
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public FloatingPointListExpression<double[]> createWithValue(double[] value) {
+				long[] content = new long[value.length];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = (long) value[i];
+				}
+				return (FloatingPointListExpression<double[]>)
+						Conversions.toFloatingPointList(ArrayLiterals.of(content));
 			}
 		}
 
