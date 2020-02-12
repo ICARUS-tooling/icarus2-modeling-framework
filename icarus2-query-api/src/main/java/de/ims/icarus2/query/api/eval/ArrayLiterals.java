@@ -36,7 +36,9 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  * @author Markus Gärtner
  *
  */
-public class ArrayLiterals {
+public final class ArrayLiterals {
+
+	private ArrayLiterals() { /* no-op */ }
 
 	public static IntegerListExpression<long[]> of(long...array) {
 		return new LongArray(array);
@@ -71,7 +73,19 @@ public class ArrayLiterals {
 		return new DelegatingIntArray(source);
 	}
 
-	static final class ObjectArray<E> implements ListExpression<E[], E> {
+	static abstract class FixedArray<T, E> implements ListExpression<T, E> {
+
+		@Override
+		public boolean isConstant() { return true; }
+
+		@Override
+		public Expression<T> duplicate(EvaluationContext context) { return this; }
+
+		@Override
+		public boolean isFixedSize() { return true; }
+	}
+
+	static final class ObjectArray<E> extends FixedArray<E[], E> {
 
 		private final TypeInfo listType, elementType;
 
@@ -90,12 +104,6 @@ public class ArrayLiterals {
 		public TypeInfo getElementType() { return elementType; }
 
 		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<E[]> duplicate(EvaluationContext context) { return this; }
-
-		@Override
 		public int size() { return array.length; }
 
 		@Override
@@ -105,7 +113,8 @@ public class ArrayLiterals {
 		public E[] compute() { return array; }
 	}
 
-	static final class LongArray implements IntegerListExpression<long[]> {
+	static final class LongArray extends FixedArray<long[], Primitive<Long>>
+			implements IntegerListExpression<long[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(long[].class, true);
 
@@ -119,12 +128,6 @@ public class ArrayLiterals {
 
 		@Override
 		public TypeInfo getResultType() { return listType; }
-
-		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<long[]> duplicate(EvaluationContext context) { return this; }
 
 		@Override
 		public int size() { return array.length; }
@@ -142,7 +145,8 @@ public class ArrayLiterals {
 		public long[] compute() { return array; }
 	}
 
-	static final class IntArray implements IntegerListExpression<int[]> {
+	static final class IntArray extends FixedArray<int[], Primitive<Long>>
+			implements IntegerListExpression<int[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(int[].class, true);
 
@@ -156,12 +160,6 @@ public class ArrayLiterals {
 
 		@Override
 		public TypeInfo getResultType() { return listType; }
-
-		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<int[]> duplicate(EvaluationContext context) { return this; }
 
 		@Override
 		public int size() { return array.length; }
@@ -179,7 +177,8 @@ public class ArrayLiterals {
 		public int[] compute() { return array; }
 	}
 
-	static final class DelegatingIntArray implements IntegerListExpression<int[]> {
+	static final class DelegatingIntArray extends FixedArray<int[], Primitive<Long>>
+			implements IntegerListExpression<int[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(int[].class, true);
 
@@ -195,10 +194,7 @@ public class ArrayLiterals {
 		public TypeInfo getResultType() { return listType; }
 
 		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<int[]> duplicate(EvaluationContext context) { return this; }
+		public boolean isFixedSize() { return false; }
 
 		@Override
 		public int size() { return source.get().length; }
@@ -216,7 +212,8 @@ public class ArrayLiterals {
 		public int[] compute() { return source.get(); }
 	}
 
-	static final class ShortArray implements IntegerListExpression<short[]> {
+	static final class ShortArray extends FixedArray<short[], Primitive<Long>>
+			implements IntegerListExpression<short[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(short[].class, true);
 
@@ -230,12 +227,6 @@ public class ArrayLiterals {
 
 		@Override
 		public TypeInfo getResultType() { return listType; }
-
-		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<short[]> duplicate(EvaluationContext context) { return this; }
 
 		@Override
 		public int size() { return array.length; }
@@ -253,7 +244,8 @@ public class ArrayLiterals {
 		public short[] compute() { return array; }
 	}
 
-	static final class ByteArray implements IntegerListExpression<byte[]> {
+	static final class ByteArray extends FixedArray<byte[], Primitive<Long>>
+			implements IntegerListExpression<byte[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(byte[].class, true);
 
@@ -267,12 +259,6 @@ public class ArrayLiterals {
 
 		@Override
 		public TypeInfo getResultType() { return listType; }
-
-		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<byte[]> duplicate(EvaluationContext context) { return this; }
 
 		@Override
 		public int size() { return array.length; }
@@ -290,7 +276,8 @@ public class ArrayLiterals {
 		public byte[] compute() { return array; }
 	}
 
-	static final class DoubleArray implements FloatingPointListExpression<double[]> {
+	static final class DoubleArray extends FixedArray<double[], Primitive<Double>>
+			implements FloatingPointListExpression<double[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(double[].class, true);
 
@@ -304,12 +291,6 @@ public class ArrayLiterals {
 
 		@Override
 		public TypeInfo getResultType() { return listType; }
-
-		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<double[]> duplicate(EvaluationContext context) { return this; }
 
 		@Override
 		public int size() { return array.length; }
@@ -327,7 +308,8 @@ public class ArrayLiterals {
 		public double[] compute() { return array; }
 	}
 
-	static final class BooleanArray implements BooleanListExpression<boolean[]> {
+	static final class BooleanArray extends FixedArray<boolean[], Primitive<Boolean>>
+			implements BooleanListExpression<boolean[]> {
 
 		private static final TypeInfo listType = TypeInfo.of(boolean[].class, true);
 
@@ -341,12 +323,6 @@ public class ArrayLiterals {
 
 		@Override
 		public TypeInfo getResultType() { return listType; }
-
-		@Override
-		public boolean isConstant() { return true; }
-
-		@Override
-		public Expression<boolean[]> duplicate(EvaluationContext context) { return this; }
 
 		@Override
 		public int size() { return array.length; }

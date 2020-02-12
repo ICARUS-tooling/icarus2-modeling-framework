@@ -206,6 +206,9 @@ public class Conversions {
 			return this;
 		}
 
+		@Override
+		public boolean isFixedSize() { return source.isFixedSize(); }
+
 		protected abstract ListExpression<T,E> toConstant(ListExpression<?,?> source);
 
 	}

@@ -34,7 +34,6 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.strings.StringUtil;
@@ -76,17 +75,28 @@ public class SetPredicates {
 			}
 			return IntegerSetPredicate.of(mode, query, set);
 		} else if(query.isText()) {
-			return new TextSetPredicate((TextExpression) query, EvaluationUtils.ensureText(set));
+			return TextSetPredicate.of(mode, query, set);
 		}
-		//TODO
-		throw new UnsupportedOperationException();
+
+		throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+				"Unable to handle set predicate for type: "+queryType);
 	}
 
-
-	// expects 'query' to be a list expression
 	public static BooleanExpression allIn(ListExpression<?, ?> query, Expression<?>...set) {
-		//TODO
-		throw new UnsupportedOperationException();
+		Mode mode = Mode.EXPAND_EXHAUSTIVE;
+		TypeInfo queryType = query.getElementType();
+
+		if(TypeInfo.isNumerical(queryType)) {
+			if(TypeInfo.isFloatingPoint(queryType)) {
+				return FloatingPointSetPredicate.of(mode, query, set);
+			}
+			return IntegerSetPredicate.of(mode, query, set);
+		} else if(query.isText()) {
+			return TextSetPredicate.of(mode, query, set);
+		}
+
+		throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+				"Unable to handle [all in] set predicate for type: "+queryType);
 	}
 
 	private enum Mode {
@@ -624,11 +634,56 @@ public class SetPredicates {
 	 *
 	 */
 	static final class TextSetPredicate implements BooleanExpression {
-		private final Set<CharSequence> fixedElements;
-		private final TextExpression[] dynamicElements;
-		private final MutableBoolean value;
+		static TextSetPredicate of(Mode mode, Expression<?> target, Expression<?>[] elements) {
+			checkArgument("Need at least 1 element to check set containment", elements.length>0);
 
+			Set<CharSequence> fixedElements = new ObjectOpenCustomHashSet<>(STRATEGY);
+			List<ListExpression<?, CharSequence>> dynamicLists = new ArrayList<>();
+			List<TextExpression> dynamicElements = new ArrayList<>();
+
+			for (Expression<?> element : elements) {
+				if(element.isText()) {
+					TextExpression te = (TextExpression)element;
+
+					if(te.isConstant()) {
+						fixedElements.add(te.compute());
+					} else {
+						dynamicElements.add(te);
+					}
+				} else if(element.isList()) {
+					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
+					if(!TypeInfo.isText(elementType))
+						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+								"Not an text list type: "+elementType);
+
+					@SuppressWarnings("unchecked")
+					ListExpression<?, CharSequence> ie = (ListExpression<?, CharSequence>) element;
+					if(ie.isConstant()) {
+						ie.forEachItem(fixedElements::add);
+					} else {
+						dynamicLists.add(ie);
+					}
+				}
+			}
+
+			return new TextSetPredicate(mode, target, fixedElements,
+					dynamicElements.toArray(new TextExpression[0]),
+					dynamicLists.toArray(new ListExpression[0]));
+		}
+
+		private final Set<CharSequence> fixedElements;
+		/** Dynamic expressions producing integer list values */
+		private final ListExpression<?, CharSequence>[] dynamicLists;
+		/** Single-value dynamic expressions */
+		private final TextExpression[] dynamicElements;
+		/** Buffer for result value when using the wrapper {@link #compute()} method. */
+		private final MutableBoolean value;
+		/** Query value to match against */
 		private final TextExpression target;
+		/** Query value to match against if mode is expanding */
+		private final ListExpression<?, CharSequence> listTarget;
+		/** Indicator how to evaluate the predicate */
+		private final Mode mode;
 
 		private static final Strategy<CharSequence> STRATEGY = new Strategy<CharSequence>() {
 
@@ -641,51 +696,46 @@ public class SetPredicates {
 			}
 		};
 
-		TextSetPredicate(TextExpression target, TextExpression[] elements) {
-			requireNonNull(elements);
-			this.target = requireNonNull(target);
-			checkArgument("Need at least 1 element to check set containment", elements.length>0);
+		@SuppressWarnings("unchecked")
+		private TextSetPredicate(Mode mode, Expression<?> target, Set<CharSequence> fixedElements,
+				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+			requireNonNull(mode);
+			requireNonNull(target);
 
-			fixedElements = new ObjectOpenCustomHashSet<>(STRATEGY);
-			dynamicElements = filterConstant(Stream.of(elements), fixedElements);
+			this.mode = mode;
+			switch (mode) {
+			case SINGLE:
+				this.target = (TextExpression) target;
+				listTarget = null;
+				break;
+			case EXPAND:
+			case EXPAND_EXHAUSTIVE:
+				this.target = null;
+				listTarget = (ListExpression<?, CharSequence>)target;
+				break;
 
-			value = new MutableBoolean();
-		}
+			default:
+				throw forUnknownMode(mode);
+			}
 
-		/** Copy constructor */
-		private TextSetPredicate(TextExpression target, Set<CharSequence> fixedElements,
-				TextExpression[] dynamicElements) {
-			this.target = requireNonNull(target);
 			this.fixedElements = requireNonNull(fixedElements);
+			this.dynamicLists = requireNonNull(dynamicLists);
 			this.dynamicElements = requireNonNull(dynamicElements);
 			value = new MutableBoolean();
 		}
 
-		@VisibleForTesting
-		Set<CharSequence> getFixedElements() {
-			return fixedElements;
+		private QueryException forUnknownMode(Mode mode) {
+			return new QueryException(GlobalErrorCode.INTERNAL_ERROR, "Unknown mode: "+mode);
 		}
 
 		@VisibleForTesting
-		TextExpression[] getDynamicElements() {
-			return dynamicElements;
-		}
+		Set<CharSequence> getFixedElements() { return fixedElements; }
 
-		private static TextExpression[] filterConstant(Stream<TextExpression> elements,
-				Set<CharSequence> fixedElements) {
-			return elements
-					// Collect all the constant entries directly into the fixed set for lookup
-					.filter(element -> {
-						boolean constant = element.isConstant();
-						if(constant) {
-							// Decouple char sequences from whatever storage they use
-							fixedElements.add(element.compute().toString());
-						}
-						return !constant;
-					})
-					// The dynamic elements stay as they are
-					.toArray(TextExpression[]::new);
-		}
+		@VisibleForTesting
+		TextExpression[] getDynamicElements() { return dynamicElements; }
+
+		@VisibleForTesting
+		ListExpression<?, CharSequence>[] getDynamicLists() { return dynamicLists; }
 
 		@Override
 		public Primitive<Boolean> compute() {
@@ -695,58 +745,142 @@ public class SetPredicates {
 
 		private static boolean containsDynamic(CharSequence value, TextExpression[] elements) {
 			for (int i = 0; i < elements.length; i++) {
-				if(StringUtil.equals(elements[i].compute(), value)) {
+				if(StringUtil.equals(value, elements[i].compute())) {
 					return true;
 				}
 			}
 			return false;
 		}
 
+		private static boolean containsDynamicExpanded(CharSequence value, ListExpression<?, CharSequence>[] elements) {
+			for (int i = 0; i < elements.length; i++) {
+				ListProxy<CharSequence> iList = elements[i];
+				for (int j = 0; j < iList.size(); j++) {
+					if(StringUtil.equals(value, iList.get(j))) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		private static boolean containsAll(ListExpression<?, CharSequence> target, Set<CharSequence> fixedElements,
+				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+			int size = target.size();
+			for (int i = 0; i < size; i++) {
+				CharSequence value = target.get(i);
+				if(!containsSingle(value, fixedElements, dynamicElements, dynamicLists)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		private static boolean containsAny(ListExpression<?, CharSequence> target, Set<CharSequence> fixedElements,
+				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+			int size = target.size();
+			for (int i = 0; i < size; i++) {
+				CharSequence value = target.get(i);
+				if(containsSingle(value, fixedElements, dynamicElements, dynamicLists)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static boolean containsSingle(CharSequence value, Set<CharSequence> fixedElements,
+				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+			return (!fixedElements.isEmpty() && fixedElements.contains(value))
+					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
+					|| (dynamicLists.length>0 && containsDynamicExpanded(value, dynamicLists));
+		}
+
 		@Override
 		public boolean computeAsBoolean() {
-			CharSequence value = target.compute();
-			return (!fixedElements.isEmpty() && fixedElements.contains(value))
-					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements));
+			switch (mode) {
+			case SINGLE: return containsSingle(target.compute(), fixedElements,
+					dynamicElements, dynamicLists);
+
+			case EXPAND: return containsAny(listTarget, fixedElements, dynamicElements, dynamicLists);
+			case EXPAND_EXHAUSTIVE: return containsAll(listTarget, fixedElements, dynamicElements, dynamicLists);
+
+			default:
+				throw forUnknownMode(mode);
+			}
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			return new TextSetPredicate(
-					(TextExpression)target.duplicate(context),
+					mode,
+					target==null ? listTarget.duplicate(context) : target.duplicate(context),
 					new ObjectOpenCustomHashSet<>(fixedElements, STRATEGY),
 					Stream.of(dynamicElements)
 						.map(expression -> expression.duplicate(context))
-						.toArray(TextExpression[]::new));
+						.map(TextExpression.class::cast)
+						.toArray(TextExpression[]::new),
+					Stream.of(dynamicLists)
+						.map(expression -> expression.duplicate(context))
+						.map(ListExpression.class::cast)
+						.toArray(ListExpression[]::new));
 		}
 
+		/**
+		 * @see de.ims.icarus2.query.api.eval.Expression#optimize(de.ims.icarus2.query.api.eval.EvaluationContext)
+		 */
+		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
-			// Main optimization comes from the target expression
-			TextExpression newTarget = (TextExpression) target.optimize(context);
-			// If we don't have any dynamic part going on, optimize to constant directly
-			if(newTarget.isConstant() && dynamicElements.length==0) {
-				return Literals.of(fixedElements.contains(newTarget.compute()));
-			}
+			Expression<?> oldTarget = target==null ? listTarget : target;
+			Expression<?> newTarget = oldTarget.optimize(context);
 
 			/*
 			 * If we have at least 1 constant in the current set of dynamic elements,
 			 * we can shift that over to the fixed set.
 			 */
 			Set<CharSequence> fixedElements = new ObjectOpenCustomHashSet<>(this.fixedElements, STRATEGY);
-			TextExpression[] dynamicElements = filterConstant(
-					Stream.of(this.dynamicElements)
-						.map(expression -> expression.optimize(context))
-						.map(TextExpression.class::cast),
-					fixedElements);
+			TextExpression[] dynamicElements = Stream.of(this.dynamicElements)
+					.map(expression -> expression.optimize(context))
+					.map(TextExpression.class::cast)
+					.filter(ne -> {
+						if(ne.isConstant()) {
+							fixedElements.add(ne.compute());
+							return false;
+						}
+						return true;
+					})
+					.toArray(TextExpression[]::new);
+			ListExpression<?, CharSequence>[] dynamicLists = Stream.of(this.dynamicLists)
+					.map(expression -> expression.optimize(context))
+					.map(ListExpression.class::cast)
+					.filter(ile -> {
+						if(ile.isConstant()) {
+							ile.forEachItem(item -> fixedElements.add((CharSequence) item));
+							return false;
+						}
+						return true;
+					})
+					.toArray(ListExpression[]::new);
 
-			if(dynamicElements.length<this.dynamicElements.length) {
+			// Special case of full constant expression -> optimize into single boolean
+			if(newTarget.isConstant() && dynamicElements.length==0 && dynamicLists.length==0) {
+				switch (mode) {
+				case SINGLE: return Literals.of(containsSingle(
+						((TextExpression)newTarget).compute(), fixedElements,
+						dynamicElements, dynamicLists));
 
-				// Special case of full constant expression -> optimize into single boolean
-				if(newTarget.isConstant() && dynamicElements.length==0) {
-					return Literals.of(fixedElements.contains(newTarget.compute()));
+				case EXPAND: return Literals.of(containsAny((ListExpression<?, CharSequence>)newTarget,
+						fixedElements, dynamicElements, dynamicLists));
+				case EXPAND_EXHAUSTIVE: return Literals.of(
+						containsAll((ListExpression<?, CharSequence>)newTarget,
+								fixedElements, dynamicElements, dynamicLists));
+
+				default:
+					throw forUnknownMode(mode);
 				}
-
-				return new TextSetPredicate(newTarget, fixedElements, dynamicElements);
+			} else if(dynamicElements.length < this.dynamicElements.length
+					|| dynamicLists.length < this.dynamicLists.length) {
+				return new TextSetPredicate(mode, newTarget, fixedElements, dynamicElements, dynamicLists);
 			}
 
 			return this;

@@ -164,6 +164,9 @@ public class ExpressionTestUtils {
 			public long[] compute() { return array; }
 
 			@Override
+			public boolean isFixedSize() { return true; }
+
+			@Override
 			public TypeInfo getResultType() { return TypeInfo.of(long[].class, true); }
 
 			@Override
@@ -297,6 +300,9 @@ public class ExpressionTestUtils {
 
 			@Override
 			public long[] compute() { return source.get(); }
+
+			@Override
+			public boolean isFixedSize() { return false; }
 
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.of(long[].class, true); }

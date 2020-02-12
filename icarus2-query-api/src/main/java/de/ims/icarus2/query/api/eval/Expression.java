@@ -172,6 +172,11 @@ public interface Expression<T> {
 		 */
 		@Override
 		T compute();
+
+		/**
+		 * Returns whether the size of this list is constant, i.e. it behaves as an array.
+		 */
+		boolean isFixedSize();
 	}
 
 	public interface IntegerListExpression<T> extends ListExpression<T, Primitive<Long>>, ListProxy.OfInteger {
