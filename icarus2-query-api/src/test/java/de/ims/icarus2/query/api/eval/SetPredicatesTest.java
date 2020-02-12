@@ -29,7 +29,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
@@ -41,12 +43,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
-import de.ims.icarus2.query.api.eval.SetPredicates.FlatFloatingPointSetPredicate;
-import de.ims.icarus2.query.api.eval.SetPredicates.FlatIntegerSetPredicate;
-import de.ims.icarus2.query.api.eval.SetPredicates.FlatTextSetPredicate;
+import de.ims.icarus2.query.api.eval.SetPredicates.FloatingPointSetPredicate;
+import de.ims.icarus2.query.api.eval.SetPredicates.IntegerSetPredicate;
+import de.ims.icarus2.query.api.eval.SetPredicates.TextSetPredicate;
 import de.ims.icarus2.util.Mutable;
 import de.ims.icarus2.util.Mutable.MutableObject;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -88,7 +92,7 @@ class SetPredicatesTest {
 			public boolean nativeConstant() { return false; }
 
 			@Override
-			public Class<?> getTestTargetClass() { return FlatIntegerSetPredicate.class; }
+			public Class<?> getTestTargetClass() { return IntegerSetPredicate.class; }
 
 			private class FixedData {
 				final long target;
@@ -279,10 +283,10 @@ class SetPredicatesTest {
 				BooleanExpression pred = SetPredicates.in(target, set);
 
 				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
-				assertThat(optimized).isInstanceOf(FlatIntegerSetPredicate.class);
-				NumericalExpression[] optimizedSet = ((FlatIntegerSetPredicate)optimized).getDynamicElements();
+				assertThat(optimized).isInstanceOf(IntegerSetPredicate.class);
+				NumericalExpression[] optimizedSet = ((IntegerSetPredicate)optimized).getDynamicElements();
 				assertThat(optimizedSet).hasSize(1);
-				LongSet optimizedConstants = ((FlatIntegerSetPredicate)optimized).getFixedLongs();
+				LongSet optimizedConstants = ((IntegerSetPredicate)optimized).getFixedLongs();
 				assertThat(optimizedConstants).hasSize(3);
 			}
 
@@ -300,8 +304,8 @@ class SetPredicatesTest {
 				BooleanExpression pred = SetPredicates.in(target, set);
 
 				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
-				assertThat(optimized).isInstanceOf(FlatIntegerSetPredicate.class);
-				FlatIntegerSetPredicate intPred = (FlatIntegerSetPredicate)optimized;
+				assertThat(optimized).isInstanceOf(IntegerSetPredicate.class);
+				IntegerSetPredicate intPred = (IntegerSetPredicate)optimized;
 				assertThat(intPred.getDynamicElements()).isEmpty();
 				assertThat(intPred.getDynamicLists()).hasSize(1);
 				assertThat(intPred.getFixedLongs()).hasSize(6); // 2 + array of size 5 with 1 redundant
@@ -364,7 +368,7 @@ class SetPredicatesTest {
 			public boolean nativeConstant() { return false; }
 
 			@Override
-			public Class<?> getTestTargetClass() { return FlatFloatingPointSetPredicate.class; }
+			public Class<?> getTestTargetClass() { return FloatingPointSetPredicate.class; }
 
 			private class FixedData {
 				final double target;
@@ -485,10 +489,10 @@ class SetPredicatesTest {
 				BooleanExpression pred = SetPredicates.in(target, set);
 
 				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
-				assertThat(optimized).isInstanceOf(FlatFloatingPointSetPredicate.class);
-				NumericalExpression[] optimizedSet = ((FlatFloatingPointSetPredicate)optimized).getDynamicElements();
+				assertThat(optimized).isInstanceOf(FloatingPointSetPredicate.class);
+				NumericalExpression[] optimizedSet = ((FloatingPointSetPredicate)optimized).getDynamicElements();
 				assertThat(optimizedSet).hasSize(1);
-				DoubleSet optimizedConstants = ((FlatFloatingPointSetPredicate)optimized).getFixedDoubles();
+				DoubleSet optimizedConstants = ((FloatingPointSetPredicate)optimized).getFixedDoubles();
 				assertThat(optimizedConstants).hasSize(3);
 			}
 
@@ -535,7 +539,7 @@ class SetPredicatesTest {
 			public boolean nativeConstant() { return false; }
 
 			@Override
-			public Class<?> getTestTargetClass() { return FlatTextSetPredicate.class; }
+			public Class<?> getTestTargetClass() { return TextSetPredicate.class; }
 
 			private class FixedData {
 				final CharSequence target;
@@ -653,10 +657,10 @@ class SetPredicatesTest {
 				BooleanExpression pred = SetPredicates.in(target, set);
 
 				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
-				assertThat(optimized).isInstanceOf(FlatTextSetPredicate.class);
-				TextExpression[] optimizedSet = ((FlatTextSetPredicate)optimized).getDynamicElements();
+				assertThat(optimized).isInstanceOf(TextSetPredicate.class);
+				TextExpression[] optimizedSet = ((TextSetPredicate)optimized).getDynamicElements();
 				assertThat(optimizedSet).hasSize(1);
-				Set<CharSequence> optimizedConstants = ((FlatTextSetPredicate)optimized).getFixedElements();
+				Set<CharSequence> optimizedConstants = ((TextSetPredicate)optimized).getFixedElements();
 				assertThat(optimizedConstants).hasSize(3);
 			}
 
@@ -680,6 +684,292 @@ class SetPredicatesTest {
 
 	@Nested
 	class ForListTarget {
+
+		@Nested
+		class ForInteger implements BooleanExpressionTest {
+
+			@Override
+			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+				Expression<?>[] elements = {
+					Literals.of(123),
+					Literals.of(234),
+					Literals.of(345),
+					Literals.of(456),
+					Literals.of(567),
+					Literals.of(678),
+				};
+
+				IntegerListExpression<?> query = value.booleanValue() ?
+						ArrayLiterals.of(123, 567, 234, 345) :
+						ArrayLiterals.of(-1234, 100, Integer.MAX_VALUE, -999);
+
+				return SetPredicates.in(query, elements);
+			}
+
+			@Override
+			public boolean nativeConstant() { return false; }
+
+			@Override
+			public Class<?> getTestTargetClass() { return IntegerSetPredicate.class; }
+
+			private class FixedData {
+				final long[] target;
+				final List<long[]> set = new ArrayList<>();
+				final boolean result;
+				FixedData(boolean result, long...target) {
+					this.target = target;
+					this.result = result;
+				}
+
+				FixedData add(long...data) {
+					set.add(data);
+					return this;
+				}
+
+				Expression<?>[] wrap() {
+					return set.stream()
+							.map(data -> data.length==1 ? Literals.of(data[0]) : ArrayLiterals.of(data))
+							.toArray(Expression[]::new);
+				}
+			}
+
+			FixedData data(boolean result, long...target) {
+				return new FixedData(result, target);
+			}
+
+			private void assertSet(boolean allIn, Expression<?> target, Expression<?>[] elements, boolean result) {
+				BooleanExpression pred = allIn ? SetPredicates.allIn((ListExpression<?, ?>) target, elements)
+						: SetPredicates.in(target, elements);
+				assertThat(pred.computeAsBoolean()).isEqualTo(result);
+
+				BooleanExpression duplicate = (BooleanExpression) pred.duplicate(mock(EvaluationContext.class));
+				assertThat(duplicate.computeAsBoolean()).isEqualTo(result);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(optimized.computeAsBoolean()).isEqualTo(result);
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testStaticOnly() {
+				return Stream.of(
+						data(true, 1, 2).add(1, 4, 5).add(2).add(3),
+						data(true, 1, 2, 3, 4).add(10, 9, 8, 7).add(5).add(3, -1),
+						data(false, 2, 3).add(1, 4).add(9, 8, 7).add(6),
+						data(false, -1, 2, 3, 4).add(5, 6, 7).add(-2, -3)
+				).map(data -> dynamicTest(String.format("%s in %s -> %b",
+						displayString(data.target), data.set.toString(), _boolean(data.result)), () -> {
+							assertSet(false, ArrayLiterals.of(data.target), data.wrap(), data.result);
+				}));
+			}
+
+			@Test
+			void testStaticOnlyWithExpand_false() {
+				Expression<?>[] set = {
+						Literals.of(1),
+						ArrayLiterals.of(2, 3, 4, 5),
+						Literals.of(10),
+						ArrayLiterals.of(100_000, -1_000_000),
+				};
+				Expression<?> target = ArrayLiterals.of(11, 12, 999);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				assertThat(pred.computeAsBoolean()).isFalse();
+			}
+
+			@Test
+			void testStaticOnlyWithExpand_true() {
+				Expression<?>[] set = {
+						Literals.of(1),
+						ArrayLiterals.of(2, 3, 4, 5),
+						Literals.of(10),
+						ArrayLiterals.of(100_000, -1_000_000),
+				};
+				Expression<?> target = ArrayLiterals.of(11, 4, 999);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				assertThat(pred.computeAsBoolean()).isTrue();
+			}
+
+			@Test
+			void testDynamicTarget() {
+				Expression<?>[] set = {
+						Literals.of(1),
+						Literals.of(2),
+						Literals.of(10),
+						Literals.of(100_000),
+				};
+				Mutable<long[]> dummy = new MutableObject<>(new long[] {4});
+				Expression<?> target = dynamicLongs(dummy::get);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				dummy.set(new long[] {999, 99, 2, -10});
+				assertThat(pred.computeAsBoolean()).isTrue();
+
+				dummy.set(new long[] {999, 99, 50, -10});
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				dummy.set(new long[] {999, 99, -2, -10, 100_000});
+				assertThat(pred.computeAsBoolean()).isTrue();
+			}
+
+			@Test
+			void testDynamicTargetWithExpand() {
+				Expression<?>[] set = {
+						Literals.of(1),
+						ArrayLiterals.of(2, 3, 4, 5),
+						Literals.of(10),
+						ArrayLiterals.of(100_000, -1_000_000),
+				};
+				Mutable<long[]> dummy = new MutableObject<>(new long[] {-4});
+				Expression<?> target = dynamicLongs(dummy::get);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				dummy.set(new long[] {999, 99, 4, -10});
+				assertThat(pred.computeAsBoolean()).isTrue();
+
+				dummy.set(new long[] {-999, 99, 0});
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				dummy.set(new long[] {99_999, -999, 0, -1_000_000});
+				assertThat(pred.computeAsBoolean()).isTrue();
+
+				dummy.set(new long[] {0, -1, -10, 1});
+				assertThat(pred.computeAsBoolean()).isTrue();
+			}
+
+			@Test
+			void testDynamicSet() {
+				MutableLong v1 = new MutableLong(2);
+				MutableLong v2 = new MutableLong(10_000);
+				Expression<?>[] set = {
+						Literals.of(1),
+						dynamic(v1::longValue),
+						Literals.of(11),
+						dynamic(v2::longValue),
+				};
+				Expression<?> target = ArrayLiterals.of(-1, 5, 10);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				v1.setLong(10);
+				assertThat(pred.computeAsBoolean()).isTrue();
+
+				v1.setLong(50);
+				assertThat(pred.computeAsBoolean()).isFalse();
+
+				v2.setLong(5);
+				assertThat(pred.computeAsBoolean()).isTrue();
+			}
+
+			@Test
+			void testUnoptimizable() {
+				MutableLong v1 = new MutableLong(2);
+				MutableLong v2 = new MutableLong(10_000);
+				Expression<?>[] set = {
+						Literals.of(1),
+						dynamic(v1::longValue),
+						Literals.of(11),
+						dynamic(v2::longValue),
+				};
+				Expression<?> target = ArrayLiterals.of(-1, 5, 10);
+				BooleanExpression pred = SetPredicates.in(target, set);
+				assertThat(pred.optimize(mock(EvaluationContext.class))).isSameAs(pred);
+			}
+
+			@Test
+			void testUnoptimizableWithExpand() {
+				Mutable<long[]> v1 = new MutableObject<>(new long[0]);
+				Mutable<long[]> v2 = new MutableObject<>(new long[0]);
+				Expression<?>[] set = {
+						Literals.of(1),
+						dynamicLongs(v1::get),
+						Literals.of(11),
+						dynamicLongs(v2::get),
+				};
+				Expression<?> target = ArrayLiterals.of(-1, 5, 10);
+				BooleanExpression pred = SetPredicates.in(target, set);
+				assertThat(pred.optimize(mock(EvaluationContext.class))).isSameAs(pred);
+			}
+
+			@Test
+			void testOptimizable() {
+				MutableLong v2 = new MutableLong(10_000);
+				Expression<?>[] set = {
+						Literals.of(1),
+						optimizable(2),
+						Literals.of(11),
+						dynamic(v2::longValue),
+				};
+				Mutable<long[]> dummy = new MutableObject<>(new long[] {0, 12, -999});
+				Expression<?> target = dynamicLongs(dummy::get);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(optimized).isInstanceOf(IntegerSetPredicate.class);
+				NumericalExpression[] optimizedSet = ((IntegerSetPredicate)optimized).getDynamicElements();
+				assertThat(optimizedSet).hasSize(1);
+				LongSet optimizedConstants = ((IntegerSetPredicate)optimized).getFixedLongs();
+				assertThat(optimizedConstants).hasSize(3);
+			}
+
+			@Test
+			void testOptimizableWithExpand() {
+				Mutable<long[]> v2 = new MutableObject<>(new long[] {10_000, -1_000_000});
+				Expression<?>[] set = {
+						Literals.of(1),
+						optimizableLongs(1, 2, 3, 4, 5),
+						Literals.of(11),
+						dynamicLongs(v2::get),
+				};
+				Mutable<long[]> dummy = new MutableObject<>(new long[] {0, 12, -999});
+				Expression<?> target = dynamicLongs(dummy::get);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(optimized).isInstanceOf(IntegerSetPredicate.class);
+				IntegerSetPredicate intPred = (IntegerSetPredicate)optimized;
+				assertThat(intPred.getDynamicElements()).isEmpty();
+				assertThat(intPred.getDynamicLists()).hasSize(1);
+				assertThat(intPred.getFixedLongs()).hasSize(6); // 2 + array of size 5 with 1 redundant
+			}
+
+			@Test
+			void testOptimizableToConstant() {
+				Expression<?>[] set = {
+						Literals.of(1),
+						optimizable(2),
+						Literals.of(11),
+						optimizable(10_000),
+				};
+				Expression<?> target = optimizableLongs(0, -1, 999);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(Literals.isLiteral(optimized)).isTrue();
+				assertThat(optimized.computeAsBoolean()).isFalse();
+			}
+
+			@Test
+			void testOptimizableToConstantWithExpand() {
+				Expression<?>[] set = {
+						Literals.of(1),
+						optimizableLongs(1, 2, 3, 4, 5),
+						Literals.of(11),
+						optimizableLongs(10_000, -1_000_000, 123456),
+				};
+				Expression<?> target = optimizableLongs(0, -1, 4, -4, 999);
+				BooleanExpression pred = SetPredicates.in(target, set);
+
+				BooleanExpression optimized = (BooleanExpression) pred.optimize(mock(EvaluationContext.class));
+				assertThat(Literals.isLiteral(optimized)).isTrue();
+				assertThat(optimized.computeAsBoolean()).isTrue();
+			}
+		}
 		//TODO
 	}
 

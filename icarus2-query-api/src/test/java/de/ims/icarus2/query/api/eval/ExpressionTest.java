@@ -36,6 +36,7 @@ import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.test.ApiGuardedTest;
+import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.annotations.RandomizedTest;
@@ -49,7 +50,8 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  * @author Markus Gärtner
  *
  */
-public interface ExpressionTest<T, E extends Expression<T>> extends ApiGuardedTest<E> {
+public interface ExpressionTest<T, E extends Expression<T>>
+		extends ApiGuardedTest<E>, GenericTest<E> {
 
 	T constant();
 
