@@ -15,6 +15,7 @@ import static java.util.Objects.requireNonNull;
 public class Expressions {
 
 
+	/** Wraps a single value into a constant expression. */
 	public static <T> Expression<T> constant(T value) {
 		return new ConstantValue<>(value);
 	}

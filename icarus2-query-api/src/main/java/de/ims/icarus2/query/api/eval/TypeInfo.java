@@ -121,6 +121,10 @@ public class TypeInfo {
 		return info==FLOATING_POINT;
 	}
 
+	public static boolean isInteger(TypeInfo info) {
+		return info==INTEGER;
+	}
+
 	public static boolean isBoolean(TypeInfo info) {
 		return info==BOOLEAN;
 	}
