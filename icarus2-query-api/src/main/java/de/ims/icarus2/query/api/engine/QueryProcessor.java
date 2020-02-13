@@ -63,6 +63,8 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
+import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
@@ -90,6 +92,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.FilledEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.LaneStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
@@ -338,6 +341,11 @@ public class QueryProcessor {
 			IqlPayload payload = new IqlPayload();
 			genId(payload);
 
+			// If payload is a named stream, store identifier
+			if(ctx.name!=null) {
+				payload.setName(textOf(ctx.name));
+			}
+
 			// Handle bindings
 			BindingsListContext blctx = ctx.bindingsList();
 			if(blctx!=null) {
@@ -353,38 +361,29 @@ public class QueryProcessor {
 				payload.setConstraint(processConstraint(sctx.constraint()));
 			}
 
-			if(sctx.nodeStatement()!=null) {
+			if(sctx.laneStatementsList()!=null) {
+				int count = 0;
+				for(LaneStatementContext lsctx : sctx.laneStatementsList().laneStatement()) {
+					payload.addLane(processLaneStatement(lsctx));
+					count++;
+				}
+				payload.setQueryType(count > 1 ?
+						QueryType.MULTI_LANE : QueryType.SINGLE_LANE);
+
+				if(count==1) {
+					//TODO technically this is wrong, as LANE declarations can be used to control the structure/container context
+					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+							"Can omit 'LANE' declaration if using only a single lane.");
+				}
+			} else if(sctx.nodeStatement()!=null) {
 				// Structure statement [sequence,tree,graph]
-				NodeStatementContext nsctx = sctx.nodeStatement();
-				payload.setAligned(sctx.ALIGNED()!=null);
+				IqlLane lane = new IqlLane();
+				genId(lane);
 
-				processNodeStatement(nsctx, null).forEach(payload::addElement);
+				processLaneStatement0(lane, sctx.ALIGNED()!=null, sctx.nodeStatement());
 
-				QueryType queryType = QueryType.SEQUENCE;
-				if(treeFeaturesUsed) {
-					queryType = QueryType.TREE;
-				} else if(graphFeaturesUsed) {
-					queryType = QueryType.GRAPH;
-				}
-
-				payload.setQueryType(queryType);
-
-				//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-				if(payload.isAligned() && countExistentialElements(payload.getElements())<2) {
-					reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
-							"For 'ALIGNED' feature to be effective the query needs at least"
-							+ " two distinct nodes that are existentially quantified.");
-				}
-				if(queryType==QueryType.TREE && !treeFeaturesUsed) {
-					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-							"Tree query does not contain any actual tree definition. For matching"
-							+ " individual unrelated notes the simple sequence type is sufficient.");
-				}
-				if(queryType==QueryType.GRAPH && !graphFeaturesUsed) {
-					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-							"Graph query does not contain any actual graph features (edges)."
-							+ " For matching simple structrues, consider using TREE or sequence queries.");
-				}
+				payload.addLane(lane);
+				payload.setQueryType(QueryType.SINGLE_LANE);
 			} else {
 				// Simple plain statement
 				payload.setQueryType(QueryType.PLAIN);
@@ -398,6 +397,46 @@ public class QueryProcessor {
 				throw new QueryProcessingException("Failed to process payload - encountered errors", reportBuilder.build());
 
 			return payload;
+		}
+
+		private IqlLane processLaneStatement(LaneStatementContext ctx) {
+			IqlLane lane = new IqlLane();
+			genId(lane);
+
+			lane.setName(extractMemberName(ctx.member()));
+
+			processLaneStatement0(lane, ctx.ALIGNED()!=null, ctx.nodeStatement());
+
+			return lane;
+		}
+
+		private void processLaneStatement0(IqlLane lane, boolean aligned,
+				NodeStatementContext ctx) {
+
+			lane.setAligned(aligned);
+
+			try {
+				processNodeStatement(ctx, null).forEach(lane::addElement);
+
+				LaneType laneType = LaneType.SEQUENCE;
+				if(treeFeaturesUsed) {
+					laneType = LaneType.TREE;
+				} else if(graphFeaturesUsed) {
+					laneType = LaneType.GRAPH;
+				}
+
+				lane.setLaneType(laneType);
+			} finally {
+				treeFeaturesUsed = false;
+				graphFeaturesUsed = false;
+			}
+
+			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
+			if(lane.isAligned() && countExistentialElements(lane.getElements())<2) {
+				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
+						"For 'ALIGNED' feature to be effective the query needs at least"
+						+ " two distinct nodes that are existentially quantified.");
+			}
 		}
 
 		private int countExistentialElements(List<IqlElement> elements) {
@@ -445,6 +484,10 @@ public class QueryProcessor {
 			member.setName(textOf(ctx.Identifier()));
 
 			return member;
+		}
+
+		private String extractMemberName(MemberContext ctx) {
+			return textOf(ctx.Identifier());
 		}
 
 		private IqlConstraint processConstraint(ConstraintContext ctx) {

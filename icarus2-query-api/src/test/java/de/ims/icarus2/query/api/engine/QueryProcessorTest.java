@@ -57,6 +57,8 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
+import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
@@ -151,9 +153,9 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-			"((x>0));((x>0))",
-			"[][((x>0))][];((x>0))",
-			"[][][] HAVING ((x>0));((x>0))",
+			"FIND ((x>0));((x>0))",
+			"FIND [][((x>0))][];((x>0))",
+			"FIND [][][] HAVING ((x>0));((x>0))",
 		})
 		void testSuperfluousExpressionNesting(String rawPayload, String offendingPart) {
 			assertReportHasWarnings(expectReport(rawPayload),
@@ -162,10 +164,10 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-			"0-[];0-",
-			"[]0-[][];0-",
-			"TREE [0-[]];0-",
-			"GRAPH []---0-[];0-",
+			"FIND 0-[];0-",
+			"FIND []0-[][];0-",
+			"FIND [0-[]];0-",
+			"FIND []---0-[];0-",
 		})
 		void testInvalidAtMostQuantifier(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -175,15 +177,15 @@ class QueryProcessorTest {
 		@ParameterizedTest
 		@ValueSource(strings = {"all", "ALL", "*"})
 		void testUniversallyQuantifiedRoot(String quantifier) {
-			String rawPayload = quantifier+"[]";
+			String rawPayload = "FIND "+quantifier+"[]";
 			assertReportHasErrors(expectReport(rawPayload),
 					pair(QueryErrorCode.INCORRECT_USE, list(msgContains("universally"))));
 		}
 
 		@ParameterizedTest
 		@ValueSource(strings = {
-				"ALIGNED TREE [![]]",
-				"ALIGNED GRAPH [],![]---[]",
+				"FIND ALIGNED [![]]",
+				"FIND ALIGNED [],![]---[]",
 		})
 		void testInsufficientNodesForAlignment(String rawPayload) {
 			assertReportHasWarnings(expectReport(rawPayload),
@@ -192,9 +194,9 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"[]-->[],[[]];GRAPH;[[]]",
-				"[]-->[],[],4+[],[[]],[];GRAPH;[[]]",
-				"[]-->[],3-[x<5],[[]],1..2[]--[rel==\"dom\"]->[];GRAPH;[[]]",
+				"FIND []-->[],[[]];GRAPH;[[]]",
+				"FIND []-->[],[],4+[],[[]],[];GRAPH;[[]]",
+				"FIND []-->[],3-[x<5],[[]],1..2[]--[rel==\"dom\"]->[];GRAPH;[[]]",
 		})
 		void testUnexpectedChildren(String rawPayload, String type, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -206,9 +208,9 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"[[]], []-->[];TREE;[]-->[]",
-				"[],[[]],4+[],[]-->[],[];TREE;[]-->[]",
-				"[[]![x()]],[]-->[],3-[$t: pos!=\"NN\" 4+[]];TREE;[]-->[]",
+				"FIND [[]], []-->[];TREE;[]-->[]",
+				"FIND [],[[]],4+[],[]-->[],[];TREE;[]-->[]",
+				"FIND [[]![x()]],[]-->[],3-[$t: pos!=\"NN\" 4+[]];TREE;[]-->[]",
 		})
 		void testUnexpectedEdge(String rawPayload, String type, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -220,11 +222,11 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"4..3[];4..3",
-				"2..2[];2..2",
-				"<4..3>[];4..3",
-				"TREE [[] 4..3[]];4..3",
-				"GRAPH [], 4..3[]-->[], 5-[];4..3",
+				"FIND 4..3[];4..3",
+				"FIND 2..2[];2..2",
+				"FIND <4..3>[];4..3",
+				"FIND [[] 4..3[]];4..3",
+				"FIND [], 4..3[]-->[], 5-[];4..3",
 		})
 		void testInvalidQuantifierRange(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -233,8 +235,8 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"GRAPH 2..3[]-->4-[];2..3[]-->4-[]",
-				"GRAPH [],![]-->4-[],3+[];![]-->4-[]",
+				"FIND 2..3[]-->4-[];2..3[]-->4-[]",
+				"FIND [],![]-->4-[],3+[];![]-->4-[]",
 		})
 		void testCompetingQuantifiers(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -243,8 +245,8 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"GRAPH []< -[]--[];< -",
-				"GRAPH []--[]- >[];- >",
+				"FIND []< -[]--[];< -",
+				"FIND []--[]- >[];- >",
 		})
 		void testNonContinuousEdgePart(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -253,8 +255,8 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
-				"TREE ![![]];![]",
-				"TREE ![3+[] ![x<4]];![x<4]",
+				"FIND ![![]];![]",
+				"FIND ![3+[] ![x<4]];![x<4]",
 		})
 		void testDoubleNegation(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
@@ -448,8 +450,7 @@ class QueryProcessorTest {
 			assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.ALL);
 			assertThat(payload.getBindings()).isEmpty();
 			assertThat(payload.getConstraint()).isEmpty();
-			assertThat(payload.getElements()).isEmpty();
-			assertThat(payload.isAligned()).isFalse();
+			assertThat(payload.getLanes()).isEmpty();
 		}
 
 
@@ -484,11 +485,11 @@ class QueryProcessorTest {
 		}
 
 		@SafeVarargs
-		private final void assertElements(IqlPayload payload, Consumer<IqlElement>...asserters) {
-			List<IqlElement> elements = payload.getElements();
-			assertThat(elements).hasSize(asserters.length);
+		private final void assertLanes(IqlPayload payload, Consumer<IqlLane>...asserters) {
+			List<IqlLane> lanes = payload.getLanes();
+			assertThat(lanes).hasSize(asserters.length);
 			for (int i = 0; i < asserters.length; i++) {
-				asserters[i].accept(elements.get(i));
+				asserters[i].accept(lanes.get(i));
 			}
 		}
 
@@ -505,6 +506,18 @@ class QueryProcessorTest {
 			} else {
 				assertThat(element.getConstraint()).isEmpty();
 			}
+		}
+
+		@SafeVarargs
+		private final Consumer<IqlLane> lane(LaneType type, Consumer<IqlElement>...asserters) {
+			return lane -> {
+				assertThat(lane.getLaneType()).isSameAs(type);
+				List<IqlElement> elements = lane.getElements();
+				assertThat(elements).hasSize(asserters.length);
+				for (int i = 0; i < asserters.length; i++) {
+					asserters[i].accept(elements.get(i));
+				}
+			};
 		}
 
 		private Consumer<IqlElement> node() {
@@ -526,7 +539,7 @@ class QueryProcessorTest {
 			};
 		}
 
-		// ISSUE: won't work as the nodeAssert itself will assume its own amount of wuantifiers and fail
+		// ISSUE: won't work as the nodeAssert itself will assume its own amount of quantifiers and fail
 //		private Consumer<IqlElement> quantify(Consumer<IqlElement> nodeAssert,
 //				@SuppressWarnings("unchecked") Consumer<IqlQuantifier>...qAsserters) {
 //			return element -> {
@@ -629,8 +642,7 @@ class QueryProcessorTest {
 
 			private void assertPlain(IqlPayload payload) {
 				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.PLAIN);
-				assertThat(payload.getElements()).isEmpty();
-				assertThat(payload.isAligned()).isFalse();
+				assertThat(payload.getLanes()).isEmpty();
 			}
 
 			@Nested
@@ -638,7 +650,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testPredicate() {
-					String rawPayload = "$token1.val>0";
+					String rawPayload = "FIND $token1.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload);
@@ -647,7 +659,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testConjunctiveChain() {
-					String rawPayload = "$token1.val>0 && func() !=true && ($edge.dist()<5+4)";
+					String rawPayload = "FIND $token1.val>0 && func() !=true && ($edge.dist()<5+4)";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload);
@@ -659,7 +671,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testDisjunctiveChain() {
-					String rawPayload = "$token1.val>0 || func() !=true || ($edge.dist()<5+4)";
+					String rawPayload = "FIND $token1.val>0 || func() !=true || ($edge.dist()<5+4)";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload);
@@ -671,7 +683,7 @@ class QueryProcessorTest {
 
 				@Test
 				void testMixedExpression() {
-					String rawPayload = "$token1.val>0 || func() !=true && ($edge.dist()<5+4)";
+					String rawPayload = "FIND $token1.val>0 || func() !=true && ($edge.dist()<5+4)";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertPlain(payload);
 					assertBindings(payload);
@@ -732,9 +744,13 @@ class QueryProcessorTest {
 		class WhenSequence {
 
 			private void assertSequence(IqlPayload payload) {
-				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.SEQUENCE);
-				assertThat(payload.getElements()).isNotEmpty();
-				assertThat(payload.isAligned()).isFalse();
+				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.SINGLE_LANE);
+				List<IqlLane> lanes = payload.getLanes();
+				assertThat(lanes).hasSize(1);
+				IqlLane lane = lanes.get(0);
+				assertThat(lane.getLaneType()).isSameAs(LaneType.SEQUENCE);
+				assertThat(lane.getElements()).isNotEmpty();
+				assertThat(lane.isAligned()).isFalse();
 			}
 
 			@Nested
@@ -742,38 +758,38 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyUnnamedNode() {
-					String rawPayload = "[]";
+					String rawPayload = "FIND []";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
 				}
 
 				@Test
 				void testEmptyNamedNode() {
-					String rawPayload = "[$node1:]";
+					String rawPayload = "FIND [$node1:]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node("node1", null));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", null)));
 				}
 
 				@Test
 				void testFilledUnnamedNode() {
-					String rawPayload = "[pos!=\"NNP\"]";
+					String rawPayload = "FIND [pos!=\"NNP\"]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, pred("pos!=\"NNP\"")));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, pred("pos!=\"NNP\""))));
 				}
 
 				@Test
 				void testFilledNamedNode() {
-					String rawPayload = "[$node1: pos!=\"NNP\"]";
+					String rawPayload = "FIND [$node1: pos!=\"NNP\"]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node("node1", pred("pos!=\"NNP\"")));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", pred("pos!=\"NNP\""))));
 				}
 
 			}
@@ -784,41 +800,45 @@ class QueryProcessorTest {
 				@ParameterizedTest
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
 				void testEmptyExactQuantifiedNode(int quantifier) {
-					String rawPayload = quantifier+"[]";
+					String rawPayload = "FIND "+quantifier+"[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null, quant(QuantifierType.EXACT, quantifier)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.EXACT, quantifier))));
 				}
 
 				@ParameterizedTest
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
 				void testEmptyAtLeastQuantifiedNode(int quantifier) {
-					String rawPayload = quantifier+"+[]";
+					String rawPayload = "FIND "+quantifier+"+[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null, quant(QuantifierType.AT_LEAST, quantifier)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.AT_LEAST, quantifier))));
 				}
 
 				@ParameterizedTest
 				@ValueSource(ints = {1, 1000, Integer.MAX_VALUE})
 				void testEmptyAtMostQuantifiedNode(int quantifier) {
-					String rawPayload = quantifier+"-[]";
+					String rawPayload = "FIND "+quantifier+"-[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null, quant(QuantifierType.AT_MOST, quantifier)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.AT_MOST, quantifier))));
 				}
 
 				@ParameterizedTest
 				@ValueSource(strings = {"not", "NOT", "!"})
 				void testEmptyNegatedNode(String quantifier) {
-					String rawPayload = quantifier+"[]";
+					String rawPayload = "FIND "+quantifier+"[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null, quant(QuantifierType.EXACT, 0)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.EXACT, 0))));
 				}
 
 				@ParameterizedTest
@@ -828,59 +848,63 @@ class QueryProcessorTest {
 					"0, "+Integer.MAX_VALUE
 				})
 				void testEmptyRangeQuantifiedNode(int lower, int upper) {
-					String rawPayload = lower+".."+upper+"[]";
+					String rawPayload = "FIND "+lower+".."+upper+"[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null, quant(lower, upper)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(lower, upper))));
 				}
 
 				@Test
 				void testEmptyMultiQuantifiedNode() {
-					String rawPayload = "2|10|5..7|1000+[]";
+					String rawPayload = "FIND 2|10|5..7|1000+[]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null,
-							quant(QuantifierType.EXACT, 2),
-							quant(QuantifierType.EXACT, 10),
-							quant(5, 7),
-							quant(QuantifierType.AT_LEAST, 1000)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null,
+								quant(QuantifierType.EXACT, 2),
+								quant(QuantifierType.EXACT, 10),
+								quant(5, 7),
+								quant(QuantifierType.AT_LEAST, 1000))));
 				}
 
 				@Test
 				void testFilledQuantifiedNode() {
-					String rawPayload = "2|10|5..7|1000+[$node1: pos!=\"NNP\"]";
+					String rawPayload = "FIND 2|10|5..7|1000+[$node1: pos!=\"NNP\"]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node("node1", pred("pos!=\"NNP\""),
-							quant(QuantifierType.EXACT, 2),
-							quant(QuantifierType.EXACT, 10),
-							quant(5, 7),
-							quant(QuantifierType.AT_LEAST, 1000)));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node("node1", pred("pos!=\"NNP\""),
+								quant(QuantifierType.EXACT, 2),
+								quant(QuantifierType.EXACT, 10),
+								quant(5, 7),
+								quant(QuantifierType.AT_LEAST, 1000))));
 				}
 
 				@Test
 				void testEmptyUnnamedNodeSequence() {
-					String rawPayload = "[][][]";
+					String rawPayload = "FIND [][][]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload, node(null, null), node(null, null), node(null, null));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null), node(null, null), node(null, null)));
 				}
 
 				@Test
 				void testEmptyUnnamedQuantifiedNodeSequence() {
-					String rawPayload = "4-[] 2..10[] <3|5+>[] ![]";
+					String rawPayload = "FIND 4-[] 2..10[] <3|5+>[] ![]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertElements(payload,
+					assertLanes(payload, lane(LaneType.SEQUENCE,
 							node(null, null, quant(QuantifierType.AT_MOST, 4)),
 							node(null, null, quant(2, 10)),
 							node(null, null, quant(QuantifierType.EXACT, 3), quant(QuantifierType.AT_LEAST, 5)),
-							node(null, null, quant(QuantifierType.EXACT, 0)));
+							node(null, null, quant(QuantifierType.EXACT, 0))));
 				}
 
 			}
@@ -894,7 +918,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
-					assertElements(payload, node(null, null));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
 				}
 
 				@Test
@@ -903,7 +927,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
-					assertElements(payload, node("token", null));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node("token", null)));
 				}
 
 				@Test
@@ -912,7 +936,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
-					assertElements(payload, node("token1", null), node("token2", null));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node("token1", null), node("token2", null)));
 				}
  			}
 
@@ -931,10 +956,10 @@ class QueryProcessorTest {
 					assertBindings(payload,
 							bind("corpus::layer1", true, "token1", "token2"),
 							bind("corpus::phrase", false, "p"));
-					assertElements(payload,
+					assertLanes(payload, lane(LaneType.SEQUENCE,
 							node("token1", pred("pos!=\"NNP\"")),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
-							node("token2", pred("length()>12")));
+							node("token2", pred("length()>12"))));
 					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
 							pred("$p.contains($token1)"),
 							pred("!$p.contains($token2)")));
@@ -946,10 +971,14 @@ class QueryProcessorTest {
 		@Nested
 		class WhenTree {
 
-			private void assertTree(IqlPayload payload, boolean aigned) {
-				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.TREE);
-				assertThat(payload.getElements()).isNotEmpty();
-				assertThat(payload.isAligned()).isEqualTo(aigned);
+			private void assertTree(IqlPayload payload, boolean aligned) {
+				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.SINGLE_LANE);
+				List<IqlLane> lanes = payload.getLanes();
+				assertThat(lanes).hasSize(1);
+				IqlLane lane = lanes.get(0);
+				assertThat(lane.getLaneType()).isSameAs(LaneType.TREE);
+				assertThat(lane.getElements()).isNotEmpty();
+				assertThat(lane.isAligned()).isEqualTo(aligned);
 			}
 
 			@Nested
@@ -957,29 +986,30 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyNestedNode() {
-					String rawPayload = "[[]]";
+					String rawPayload = "FIND [[]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
-					assertElements(payload, tree(null, null, node()));
+					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node())));
 				}
 
 				@Test
 				void testEmptyNestedSiblings() {
-					String rawPayload = "[[][]]";
+					String rawPayload = "FIND [[][]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
-					assertElements(payload, tree(null, null, node(), node()));
+					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node(), node())));
 				}
 
 				@Test
 				void testEmptyNestedChain() {
-					String rawPayload = "[[[]]]";
+					String rawPayload = "FIND [[[]]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
-					assertElements(payload, tree(null, null, tree(null, null, node())));
+					assertLanes(payload, lane(LaneType.TREE,
+							tree(null, null, tree(null, null, node()))));
 				}
 			}
 
@@ -989,11 +1019,12 @@ class QueryProcessorTest {
 				@ParameterizedTest
 				@ValueSource(strings = {"all", "ALL", "*"})
 				void testEmptyAllQuantifiedNode(String quantifier) {
-					String rawPayload = "["+quantifier+"[]]";
+					String rawPayload = "FIND ["+quantifier+"[]]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
 					assertTree(payload, false);
 					assertBindings(payload);
-					assertElements(payload, tree(null, null, node(null, null, quantAll())));
+					assertLanes(payload, lane(LaneType.TREE,
+							tree(null, null, node(null, null, quantAll()))));
 				}
 			}
 
@@ -1013,14 +1044,14 @@ class QueryProcessorTest {
 					assertBindings(payload,
 							bind("corpus::layer1", true, "token1", "token2"),
 							bind("corpus::phrase", false, "p"));
-					assertElements(payload,
+					assertLanes(payload, lane(LaneType.TREE,
 							tree(null, null,
 									node(null, null, quant(QuantifierType.AT_MOST, 5)),
 									node("token1", pred("pos!=\"NNP\""))),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
 							tree("token2", pred("length()>12"),
 									node(null, pred("pos==\"DET\""), quantNone()),
-									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3))));
+									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3)))));
 					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
 							pred("$p.contains($token1)"),
 							pred("!$p.contains($token2)")));

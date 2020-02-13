@@ -41,6 +41,8 @@ public final class IqlProperties {
 
 	public static final String BINDINGS = IQL_NS_PREFIX+"bindings";
 
+	public static final String LANES = IQL_NS_PREFIX+"lanes";
+
 	public static final String KEY = IQL_NS_PREFIX+"key";
 
 	public static final String VALUE = IQL_NS_PREFIX+"value";
@@ -120,6 +122,8 @@ public final class IqlProperties {
 	public static final String REFERENCE_TYPE = IQL_NS_PREFIX+"referenceType";
 
 	public static final String QUERY_TYPE = IQL_NS_PREFIX+"queryType";
+
+	public static final String LANE_TYPE = IQL_NS_PREFIX+"laneType";
 
 	public static final String SOURCE = IQL_NS_PREFIX+"source";
 

@@ -57,6 +57,8 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlImport;
+import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
@@ -168,6 +170,7 @@ public class IqlQueryGenerator {
 		case EXPRESSION: prepareExpression((IqlExpression) element, build, config); break;
 		case GROUP: prepareGroup((IqlGroup) element, build, config); break;
 		case IMPORT: prepareImport((IqlImport) element, build, config); break;
+		case LANE: prepareLane((IqlLane) element, build, config); break;
 		case LAYER: prepareLayer((IqlLayer) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
@@ -380,6 +383,23 @@ public class IqlQueryGenerator {
 		build.addFieldChange(imp::setOptional, "optional", Boolean.TRUE);
 	}
 
+	private void prepareLane(IqlLane lane, IncrementalBuild<?> build, Config config) {
+		prepareUnique0(lane, build, config);
+
+		// mandatory data
+		lane.setLaneType(LaneType.SEQUENCE);
+		lane.addElement(generateFull(IqlType.NODE, config));
+
+		build.addFieldChange(lane::setAligned, "aligned", Boolean.TRUE);
+		build.addFieldChange(lane::setName, "name", index("name"));
+		for(LaneType laneType : LaneType.values()) {
+			build.addEnumFieldChange(lane::setLaneType, "laneType", laneType);
+		}
+		for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT); i++) {
+			build.addNestedChange("elements", IqlType.NODE, config, lane, lane::addElement);
+		}
+	}
+
 	private void prepareLayer(IqlLayer layer, IncrementalBuild<?> build, Config config) {
 		prepareAliasedReference0(layer, build, config);
 
@@ -393,14 +413,13 @@ public class IqlQueryGenerator {
 		// mandatory data
 		payload.setQueryType(rng.random(QueryType.class));
 
-		build.addFieldChange(payload::setAligned, "aligned", Boolean.TRUE);
 		build.addFieldChange(payload::setName, "name", index("name"));
 		for(QueryType queryType : QueryType.values()) {
 			build.addEnumFieldChange(payload::setQueryType, "queryType", queryType);
 		}
 		build.addNestedChange("constraint", IqlType.PREDICATE, config, payload, payload::setConstraint);
-		for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT); i++) {
-			build.addNestedChange("elements", IqlType.NODE, config, payload, payload::addElement);
+		for (int i = 0; i < config.getCount(IqlType.LANE, DEFAULT_COUNT); i++) {
+			build.addNestedChange("lanes", IqlType.LANE, config, payload, payload::addLane);
 		}
 	}
 

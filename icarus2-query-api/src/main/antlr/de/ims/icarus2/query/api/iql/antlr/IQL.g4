@@ -108,7 +108,7 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (STREAM Identifier)? (WITH bindingsList FIND)? selectiveStatement EOF
+	| (STREAM name=Identifier)? (WITH bindingsList)? FIND selectiveStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -130,8 +130,16 @@ binding
 
 selectiveStatement
 	: constraint // plain
-	| ALIGNED? nodeStatement (HAVING constraint)?
+	| ((ALIGNED? nodeStatement) | laneStatementsList) (HAVING constraint)?
 	;	
+
+laneStatementsList
+	: laneStatement (AND laneStatement)*
+	;
+	
+laneStatement
+	: LANE member ALIGNED? nodeStatement
+	;
 	
 /**
  * Possible scenarios for node composition:
@@ -530,6 +538,7 @@ ORDER : 'ORDER' | 'order' ;
 ASC : 'ASC' | 'asc' ;
 DESC : 'DESC' | 'desc' ;
 STREAM : 'STREAM' | 'stream' ;
+LANE : 'LANE' | 'lane' ;
 
 // Keywords
 

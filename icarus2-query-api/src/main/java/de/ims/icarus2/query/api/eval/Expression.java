@@ -99,6 +99,10 @@ public interface Expression<T> {
 		return getResultType().isList();
 	}
 
+	default boolean isMember() {
+		return getResultType().isMember();
+	}
+
 	/**
 	 * Specialized expression with primitive numerical return value.
 	 *

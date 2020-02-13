@@ -58,4 +58,10 @@ public class EvaluationContext {
 	public boolean isSwitchSet(QuerySwitch qs) {
 		return switches.contains(qs.getKey());
 	}
+
+	public Environment getRootEnvironment() {
+
+	}
+
+	public Environment getActiveEnvironment()
 }

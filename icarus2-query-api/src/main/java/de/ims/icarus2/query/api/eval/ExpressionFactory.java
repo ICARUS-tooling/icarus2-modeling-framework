@@ -202,6 +202,12 @@ public class ExpressionFactory {
 				.toArray(NumericalExpression[]::new);
 	}
 
+	private TextExpression[] ensureText(Expression<?>[] source) {
+		return Stream.of(source)
+				.map(this::ensureText)
+				.toArray(TextExpression[]::new);
+	}
+
 	private ListExpression<?, ?> ensureList(Expression<?> source) {
 		if(!source.isList())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
@@ -321,11 +327,14 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processPathAccess(PathAccessContext ctx) {
+		Expression<?> source = processExpression0(ctx.source);
 		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
 
 	Expression<?> processMethodInvocation(MethodInvocationContext ctx) {
+		Expression<?>[] arguments = processExpressionList(ctx.arguments);
+		Expression<?> source = processExpression0(ctx.source);
 		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}
@@ -356,6 +365,20 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processAnnotationAccess(AnnotationAccessContext ctx) {
+		Expression<?>[] keys = processExpressionList(ctx.keys);
+
+		if(keys.length<1)
+			throw new QueryException(QueryErrorCode.INCORRECT_USE,
+					"Annotation access needs at least 1 key argument: "+textOf(ctx), asFragment(ctx));
+
+		if(keys.length==1) {
+			if(keys[0].isList()) {
+				//TODO
+			}
+			//TODO
+		}
+
+		ensureText(keys);
 		//TODO implement
 		return failForUnhandledAlternative(ctx);
 	}

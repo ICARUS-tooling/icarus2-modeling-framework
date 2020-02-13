@@ -53,42 +53,35 @@ public class IqlPayload extends IqlUnique {
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlBinding> bindings = new ArrayList<>();
 
+	@JsonProperty(IqlProperties.LANES)
+	@JsonInclude(Include.NON_EMPTY)
+	private final List<IqlLane> lanes = new ArrayList<>();
+
 	// Either plain or global constraints
 	@JsonProperty(IqlProperties.CONSTRAINT)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlConstraint> constraint = Optional.empty();
 
-	@JsonProperty(IqlProperties.ELEMENTS)
-	@JsonInclude(Include.NON_EMPTY)
-	private final List<IqlElement> elements = new ArrayList<>();
-
-	@JsonProperty(IqlProperties.ALIGNED)
-	@JsonInclude(Include.NON_DEFAULT)
-	private boolean aligned = false;
-
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.PAYLOAD;
-	}
+	public IqlType getType() { return IqlType.PAYLOAD; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(queryType, IqlProperties.QUERY_TYPE);
-		checkCondition(!(constraint==null && elements.isEmpty()), "constraint/elements",
-				"must either define a global 'constraint' or 'elements'");
+		checkOptionalStringNotEmpty(name, IqlProperties.NAME);
 
-		//TODO 'aligned' flag only supported for tree or graph statement
+		if(queryType==QueryType.ALL) {
+			checkCondition(constraint==null && lanes.isEmpty(), "constraint/lanes",
+					"must not define a global 'constraint' or 'lanes' entry if query type is 'all'");
+		}
+
+		checkCondition(constraint!=null || !lanes.isEmpty(), "constraint/lanes",
+				"must either define a global 'constraint' or at least one 'lanes' entry");
 
 		checkCollection(bindings);
 		checkOptionalNested(constraint);
-		checkCollection(elements);
+		checkCollection(lanes);
 	}
 
 	public QueryType getQueryType() { return queryType; }
@@ -97,11 +90,9 @@ public class IqlPayload extends IqlUnique {
 
 	public List<IqlBinding> getBindings() { return CollectionUtils.unmodifiableListProxy(bindings); }
 
+	public List<IqlLane> getLanes() { return CollectionUtils.unmodifiableListProxy(lanes); }
+
 	public Optional<IqlConstraint> getConstraint() { return constraint; }
-
-	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
-
-	public boolean isAligned() { return aligned; }
 
 
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
@@ -110,39 +101,31 @@ public class IqlPayload extends IqlUnique {
 
 	public void addBinding(IqlBinding binding) { bindings.add(requireNonNull(binding)); }
 
+	public void addLane(IqlLane lane) { lanes.add(requireNonNull(lane)); }
+
 	public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
-
-	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
-
-	public void setAligned(boolean aligned) { this.aligned = aligned; }
 
 	public enum QueryType {
 		/**
 		 * Return all elements of the corpus for specified primary layer.
 		 * Cannot have any constraints defined at all!
 		 */
-		ALL("all", false, false, false),
+		ALL("all", false, false),
 		/** Define basic constraints for bound members */
-		PLAIN("plain", false, false, false),
-		/** Define sequential flat nodes */
-		SEQUENCE("sequence", true, false, false),
+		PLAIN("plain", true, false),
+		/** Contains a single lane to match */
+		SINGLE_LANE("singleLane", true, true),
 		/** Define structural constraints via nested tree nodes */
-		TREE("tree", true, true, false),
-		/**
-		 * Use full power of graph-based constraints via definition
-		 * of arbitrary nodes and edges.
-		 */
-		GRAPH("graph", true, false, true),
+		MULTI_LANE("multiLane", true, true),
 		;
 
 		private final String label;
-		private final boolean allowNodes, allowChildren, allowEdges;
+		private final boolean allowConstraints, allowElements;
 
-		private QueryType(String label, boolean allowNodes, boolean allowChildren, boolean allowEdges) {
+		private QueryType(String label, boolean allowConstraints, boolean allowElements) {
 			this.label = label;
-			this.allowNodes = allowNodes;
-			this.allowChildren = allowChildren;
-			this.allowEdges = allowEdges;
+			this.allowConstraints = allowConstraints;
+			this.allowElements = allowElements;
 		}
 
 		@JsonValue
@@ -150,10 +133,8 @@ public class IqlPayload extends IqlUnique {
 			return label;
 		}
 
-		public boolean isAllowNodes() { return allowNodes; }
+		public boolean isAllowConstraints() { return allowConstraints; }
 
-		public boolean isAllowChildren() { return allowChildren; }
-
-		public boolean isAllowEdges() { return allowEdges; }
+		public boolean isAllowElements() { return allowElements; }
 	}
 }

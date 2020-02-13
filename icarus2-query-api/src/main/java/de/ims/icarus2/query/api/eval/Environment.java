@@ -23,7 +23,8 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import de.ims.icarus2.util.Wrapper;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 
 /**
  * @author Markus Gärtner
@@ -73,13 +74,25 @@ public interface Environment {
 	 * @author Markus Gärtner
 	 *
 	 */
-	interface NsEntry extends Wrapper<Object> {
-		/** Info about the (expected) type of the entry. */
-		TypeInfo getType();
+	interface NsEntry {
+		/**
+		 * Info about the object type or return type of the field or method
+		 * described by this entry.
+		 */
+		TypeInfo getValueType();
 
-		/** Fetches and returns the actual content of this entry. */
-		@Override
-		Object get();
+		/** Returns the kind of target this entry describes. */
+		EntryType getEntryType();
+
+		/**
+		 * Returns the types of arguments consumed by the method described by
+		 * this entry. If this entry describes a field or other non-method
+		 * target, this method will throw a {@link QueryException}.
+		 *
+		 * @throws QueryException of type {@link QueryErrorCode#INCORRECT_USE}
+		 * if this entry does not describe a {@link EntryType#METHOD method}.
+		 */
+		TypeInfo[] getArgumenTypes();
 
 		/** Returns the namespace this entry belongs to. */
 		Environment getSource();
