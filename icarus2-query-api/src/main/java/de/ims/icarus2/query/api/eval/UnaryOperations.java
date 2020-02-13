@@ -93,6 +93,16 @@ public class UnaryOperations {
 		@Override
 		public double computeAsDouble() { return computeAsLong(); }
 
+		@Override
+		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+			NumericalExpression newSource = (NumericalExpression) source.optimize(context);
+			if(newSource.isConstant()) {
+				return Literals.of(~newSource.computeAsLong());
+			}
+
+			return this;
+		}
+
 	}
 
 	static class IntegerNegation implements NumericalExpression {
@@ -124,6 +134,16 @@ public class UnaryOperations {
 
 		@Override
 		public double computeAsDouble() { return -source.computeAsDouble(); }
+
+		@Override
+		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+			NumericalExpression newSource = (NumericalExpression) source.optimize(context);
+			if(newSource.isConstant()) {
+				return Literals.of(-newSource.computeAsLong());
+			}
+
+			return this;
+		}
 
 	}
 
@@ -157,6 +177,16 @@ public class UnaryOperations {
 		@Override
 		public double computeAsDouble() { return -source.computeAsDouble(); }
 
+		@Override
+		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+			NumericalExpression newSource = (NumericalExpression) source.optimize(context);
+			if(newSource.isConstant()) {
+				return Literals.of(-newSource.computeAsDouble());
+			}
+
+			return this;
+		}
+
 	}
 
 	static class BooleanNegation implements BooleanExpression {
@@ -185,6 +215,16 @@ public class UnaryOperations {
 
 		@Override
 		public boolean computeAsBoolean() { return !source.computeAsBoolean(); }
+
+		@Override
+		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			BooleanExpression newSource = (BooleanExpression) source.optimize(context);
+			if(newSource.isConstant()) {
+				return Literals.of(!newSource.computeAsBoolean());
+			}
+
+			return this;
+		}
 
 	}
 }

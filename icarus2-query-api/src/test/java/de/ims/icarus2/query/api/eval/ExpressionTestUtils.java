@@ -23,9 +23,11 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
@@ -117,6 +119,31 @@ public class ExpressionTestUtils {
 
 			@Override
 			public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+				return Literals.of(value);
+			}
+		};
+	}
+
+	static BooleanExpression optimizable(boolean value) {
+		return new BooleanExpression() {
+			final MutableBoolean buffer = new MutableBoolean(value);
+
+			@Override
+			public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Primitive<Boolean> compute() { return buffer; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+
+			@Override
+			public boolean computeAsBoolean() { return value; }
+
+			@Override
+			public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
 				return Literals.of(value);
 			}
 		};
