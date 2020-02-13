@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -301,6 +302,30 @@ public class ExpressionTestUtils {
 
 			@Override
 			public double computeAsDouble() { return source.getAsDouble(); }
+		};
+	}
+
+	static BooleanExpression dynamic(BooleanSupplier source) {
+		return new BooleanExpression() {
+
+			final MutableBoolean value = new MutableBoolean();
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+
+			@Override
+			public BooleanExpression duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public Primitive<Boolean> compute() {
+				value.setBoolean(computeAsBoolean());
+				return value;
+			}
+
+			@Override
+			public boolean computeAsBoolean() { return source.getAsBoolean(); }
 		};
 	}
 

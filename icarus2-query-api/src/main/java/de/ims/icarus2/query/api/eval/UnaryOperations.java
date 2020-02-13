@@ -172,7 +172,8 @@ public class UnaryOperations {
 		}
 
 		@Override
-		public long computeAsLong() { return -source.computeAsLong(); }
+		public long computeAsLong() { throw EvaluationUtils.forUnsupportedCast(
+				TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
 
 		@Override
 		public double computeAsDouble() { return -source.computeAsDouble(); }

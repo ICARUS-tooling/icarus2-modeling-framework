@@ -4,6 +4,7 @@
 package de.ims.icarus2.query.api.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,9 @@ import de.ims.icarus2.query.api.eval.UnaryOperations.BooleanNegation;
 import de.ims.icarus2.query.api.eval.UnaryOperations.FloatingPointNegation;
 import de.ims.icarus2.query.api.eval.UnaryOperations.IntegerBitwiseNegation;
 import de.ims.icarus2.query.api.eval.UnaryOperations.IntegerNegation;
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
+import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
+import de.ims.icarus2.util.MutablePrimitives.MutableLong;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
 /**
@@ -51,6 +55,14 @@ class UnaryOperationsTest {
 		void testMinus(long value) {
 			assertThat(UnaryOperations.minus(Literals.of(value)).computeAsLong()).isEqualTo(-value);
 		}
+
+		@Test
+		void testUnomptimizable() {
+			MutableLong value = new MutableLong(999);
+			NumericalExpression expression = ExpressionTestUtils.dynamic(value::longValue);
+			expression = UnaryOperations.minus(expression);
+			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
+		}
 	}
 
 	@Nested
@@ -81,6 +93,14 @@ class UnaryOperationsTest {
 		void testMinus(double value) {
 			assertThat(UnaryOperations.minus(Literals.of(value)).computeAsDouble()).isEqualTo(-value);
 		}
+
+		@Test
+		void testUnomptimizable() {
+			MutableDouble value = new MutableDouble(999.888);
+			NumericalExpression expression = ExpressionTestUtils.dynamic(value::doubleValue);
+			expression = UnaryOperations.minus(expression);
+			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
+		}
 	}
 
 
@@ -100,8 +120,24 @@ class UnaryOperationsTest {
 
 		@Test
 		void testNot() {
+			assertThat(UnaryOperations.not(ExpressionTestUtils.optimizable(true))
+					.computeAsBoolean()).isEqualTo(false);
+			assertThat(UnaryOperations.not(ExpressionTestUtils.optimizable(false))
+					.computeAsBoolean()).isEqualTo(true);
+		}
+
+		@Test
+		void testConstant() {
 			assertThat(UnaryOperations.not(Literals.of(true)).computeAsBoolean()).isEqualTo(false);
 			assertThat(UnaryOperations.not(Literals.of(false)).computeAsBoolean()).isEqualTo(true);
+		}
+
+		@Test
+		void testUnomptimizable() {
+			MutableBoolean value = new MutableBoolean(true);
+			BooleanExpression expression = ExpressionTestUtils.dynamic(value::booleanValue);
+			expression = UnaryOperations.not(expression);
+			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
 		}
 	}
 
@@ -128,6 +164,14 @@ class UnaryOperationsTest {
 		})
 		void testMinus(long value) {
 			assertThat(UnaryOperations.bitwiseNot(Literals.of(value)).computeAsLong()).isEqualTo(~value);
+		}
+
+		@Test
+		void testUnomptimizable() {
+			MutableLong value = new MutableLong(999);
+			NumericalExpression expression = ExpressionTestUtils.dynamic(value::longValue);
+			expression = UnaryOperations.bitwiseNot(expression);
+			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
 		}
 	}
 }
