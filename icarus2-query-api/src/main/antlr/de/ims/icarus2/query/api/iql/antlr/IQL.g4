@@ -324,7 +324,7 @@ expression
 	 * Annotation can only occur after direct references, function calls or lists.
 	 * Arguments must evaluate to string values.
 	 */
-	| soruce=expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE keys=expressionList RBRACE	# annotationAccess
+	| source=expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE keys=expressionList RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| source=expression not? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
