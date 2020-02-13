@@ -19,30 +19,53 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import java.util.Optional;
+
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.Wrapper;
 
 /**
  * @author Markus Gärtner
  *
  */
-public interface Namespace {
+public interface Environment {
 
-	default Namespace getParent() {
-		return null;
+	default Optional<Environment> getParent() {
+		return Optional.empty();
 	}
+
+	/**
+	 * Tries to resolve the given {@code name} to a field or no-args method
+	 * equivalent. Using the {@code resultFilter} argument, returned expressions
+	 * can be restricted to be return type compatible to a desired target type.
+	 */
+	Expression<?> resolve(String name, @Nullable TypeFilter filter, EvaluationContext context);
+
+	/**
+	 * Tries to resolve the given {@code name} to a method that takes the
+	 * specified {@code arguments} as input. The {@code context} defines
+	 * whether or not it is allowed to apply value conversion, value expansion
+	 * or any other kind of syntactic sugar operations.
+	 * If the {@code resultFilter} argument is provided, it will be used to
+	 * restrict the pool of methods to be considered to those that return
+	 * a compatible value.
+	 */
+	Expression<?> resolve(String name, @Nullable TypeFilter resultFilter,
+			Expression<?>[] arguments, EvaluationContext context);
 
 	/**
 	 * Try to resolve the specified {@code name} to an entry in this namespace.
 	 */
-	default NsEntry lookup(String name) {
-		return lookup(name, TypeFilter.ALL);
-	}
+//	default NsEntry lookup(String name) {
+//		return lookup(name, TypeFilter.ALL);
+//	}
 
 	/**
 	 * Try to resolve the specified {@code name} to an entry in this namespace
 	 * that satisfies the specified filter. This will return
 	 */
-	NsEntry lookup(String name, TypeFilter filter);
+//	NsEntry lookup(String name, TypeFilter filter);
 
 	/**
 	 * An individual type-aware entry in a namespace.
@@ -59,6 +82,13 @@ public interface Namespace {
 		Object get();
 
 		/** Returns the namespace this entry belongs to. */
-		Namespace getSource();
+		Environment getSource();
+	}
+
+	public enum EntryType {
+		FIELD,
+		METHOD,
+		UNDEFINED,
+		;
 	}
 }

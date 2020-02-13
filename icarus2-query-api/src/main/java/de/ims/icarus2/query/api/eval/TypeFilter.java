@@ -38,6 +38,11 @@ public interface TypeFilter extends Predicate<TypeInfo> {
 	public static final TypeFilter MEMBERS = info -> info.isMember();
 	public static final TypeFilter LISTS = info -> info.isList();
 
+	public static final TypeFilter INTEGER = TypeInfo::isInteger;
+	public static final TypeFilter FLOATING_POINT = TypeInfo::isFloatingPoint;
+	public static final TypeFilter BOOLEAN = TypeInfo::isBoolean;
+	public static final TypeFilter TEXT = TypeInfo::isText;
+
 	public static TypeFilter noneOf(TypeInfo...infos) {
 		final Set<TypeInfo> filter = set(infos);
 		return info -> !filter.contains(info);
@@ -49,7 +54,7 @@ public interface TypeFilter extends Predicate<TypeInfo> {
 	}
 
 	public static TypeFilter exactly(TypeInfo exact) {
-		return info -> info==exact;
+		return info -> exact.equals(info);
 	}
 
 	//TODO make utility classes to filter individuals or batches

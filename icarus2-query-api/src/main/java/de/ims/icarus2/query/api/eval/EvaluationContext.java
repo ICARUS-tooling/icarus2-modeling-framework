@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import de.ims.icarus2.query.api.QuerySwitch;
-import de.ims.icarus2.query.api.eval.Namespace.NsEntry;
+import de.ims.icarus2.query.api.eval.Environment.NsEntry;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 

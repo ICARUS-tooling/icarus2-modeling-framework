@@ -130,6 +130,7 @@ public class TypeInfo {
 	}
 
 	public static boolean isText(TypeInfo info) {
+		// We can't simply check info==TEXT, as more types might implement CharSequence
 		return CharSequence.class.isAssignableFrom(info.type);
 	}
 
@@ -154,6 +155,8 @@ public class TypeInfo {
 	// Former "String" proxy, now adjusted for proper unicode support
 	/** We use {@code CharSequence}, as defined by {@link ValueType#STRING} */
 	public static final TypeInfo TEXT = new TypeInfo(CharSequence.class, null, false, false);
+	/** String offers both CharSequence and Comparable features, so warrants an extra type */
+	//TODO unify with TEXT, once we added Comparator ops for TEXT in BinaryOperations
 	public static final TypeInfo STRING = new TypeInfo(String.class, null, false, false);
 
 	// Low-level members
