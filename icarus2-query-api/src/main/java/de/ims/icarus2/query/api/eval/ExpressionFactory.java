@@ -47,12 +47,12 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
 import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ArrayAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BitwiseOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BooleanLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.CastExpressionContext;
@@ -65,6 +65,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionListContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.FloatingPointLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ForEachContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.IntegerLiteralContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MethodInvocationContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MultiplicativeOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NullLiteralContext;
@@ -102,7 +103,7 @@ public class ExpressionFactory {
 		handlers.put(PrimaryExpressionContext.class, ctx -> processPrimary((PrimaryExpressionContext)ctx));
 		handlers.put(PathAccessContext.class, ctx -> processPathAccess((PathAccessContext) ctx));
 		handlers.put(MethodInvocationContext.class, ctx -> processMethodInvocation((MethodInvocationContext) ctx));
-		handlers.put(ArrayAccessContext.class, ctx -> processArrayAccess((ArrayAccessContext) ctx));
+		handlers.put(ListAccessContext.class, ctx -> processListAccess((ListAccessContext) ctx));
 		handlers.put(AnnotationAccessContext.class, ctx -> processAnnotationAccess((AnnotationAccessContext) ctx));
 		handlers.put(CastExpressionContext.class, ctx -> processCastExpression((CastExpressionContext) ctx));
 		handlers.put(WrappingExpressionContext.class, ctx -> processWrappingExpression((WrappingExpressionContext) ctx));
@@ -193,6 +194,27 @@ public class ExpressionFactory {
 		//TODO take string conversion into account!!
 		//TODO maybe validate via instanceof ?
 		return (TextExpression)source;
+	}
+
+	private NumericalExpression[] ensureInteger(Expression<?>[] source) {
+		return Stream.of(source)
+				.map(this::ensureInteger)
+				.toArray(NumericalExpression[]::new);
+	}
+
+	private ListExpression<?, ?> ensureList(Expression<?> source) {
+		if(!source.isList())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a list type: "+source.getResultType());
+		return (ListExpression<?, ?>)source;
+	}
+
+	private IntegerListExpression<?> ensureIntegerList(Expression<?> source) {
+		ListExpression<?, ?> list = ensureList(source);
+		if(!TypeInfo.isInteger(list.getElementType()))
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not an integer list type: "+source.getResultType());
+		return (IntegerListExpression<?>)list;
 	}
 
 	private BooleanExpression maybeNegate(BooleanExpression source, boolean negate) {
@@ -308,9 +330,29 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(ctx);
 	}
 
-	Expression<?> processArrayAccess(ArrayAccessContext ctx) {
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+	Expression<?> processListAccess(ListAccessContext ctx) {
+		ListExpression<?, ?> source = ensureList(processExpression0(ctx.source));
+		Expression<?>[] indices = processExpressionList(ctx.indices);
+
+		if(indices.length<1)
+			throw new QueryException(QueryErrorCode.INCORRECT_USE,
+					"List access needs at least 1 index argument: "+textOf(ctx), asFragment(ctx));
+
+		// Special handling for access expressions with only 1 argument
+		if(indices.length==1) {
+			// Single argument can still be a list
+			if(indices[0].isList()) {
+				IntegerListExpression<?> index = ensureIntegerList(indices[0]);
+				return ListAccess.filter(source, index);
+			}
+			// Single non-list argument -> pick element (ListAccess will choose best implementation for type)
+			NumericalExpression index = ensureNumerical(indices[0]);
+			return ListAccess.atIndex(source, index);
+		}
+
+		// Generic case: list of index functions -> let ListAccess pick the best implementation
+		NumericalExpression[] index = ensureInteger(indices);
+		return ListAccess.filter(source, ListAccess.wrapIndices(index));
 	}
 
 	Expression<?> processAnnotationAccess(AnnotationAccessContext ctx) {
@@ -488,7 +530,7 @@ public class ExpressionFactory {
 		if(TypeInfo.isNumerical(left.getResultType()) && TypeInfo.isNumerical(right.getResultType())) {
 			return processNumericalComparison(ctx, ensureNumerical(left), ensureNumerical(right));
 		} else if(TypeInfo.isComparable(left.getResultType()) && TypeInfo.isComparable(right.getResultType())) {
-			//TODO try to infer type compatibility between the two comparables
+			//TODO try to infer/ensure type compatibility between the two comparables
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Expression<Comparable> leftComp = (Expression<Comparable>)left;
 			@SuppressWarnings({ "rawtypes", "unchecked" })

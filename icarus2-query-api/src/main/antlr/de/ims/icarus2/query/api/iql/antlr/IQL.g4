@@ -309,22 +309,22 @@ expressionList
 */
 expression
 	: primary																		# primaryExpression
-	| expression DOT Identifier														# pathAccess
+	| source=expression DOT Identifier														# pathAccess
 	/*
 	 * Function calls can only occur after direct references.
 	 * Arguments may evaluate to any type (a cast exception may be thrown).
 	 */
-	| expression {isAny(-1,Identifier)}? LPAREN expressionList? RPAREN 				# methodInvocation
+	| source=expression {isAny(-1,Identifier)}? LPAREN arguments=expressionList? RPAREN 				# methodInvocation
 	/*
-	 * Array indices can only occur after direct references, array access, function calls or annotations.
+	 * List indices can only occur after direct references, list access, function calls or annotations.
 	 * Arguments must evaluate to an 'int' type.
 	 */
-	| expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACK expressionList RBRACK		# arrayAccess
+	| source=expression {isAny(-1,Identifier,RPAREN,RBRACE,RBRACK)}? LBRACK indices=expressionList RBRACK		# listAccess
 	/*
-	 * Annotation can only occur after direct references, function calls or arrays.
+	 * Annotation can only occur after direct references, function calls or lists.
 	 * Arguments must evaluate to string values.
 	 */
-	| expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE expressionList RBRACE	# annotationAccess
+	| soruce=expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE keys=expressionList RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
 	| source=expression not? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
