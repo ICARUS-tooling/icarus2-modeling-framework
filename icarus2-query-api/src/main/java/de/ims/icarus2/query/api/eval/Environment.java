@@ -20,8 +20,7 @@
 package de.ims.icarus2.query.api.eval;
 
 import java.util.Optional;
-
-import javax.annotation.Nullable;
+import java.util.Set;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
@@ -37,25 +36,6 @@ public interface Environment {
 	}
 
 	/**
-	 * Tries to resolve the given {@code name} to a field or no-args method
-	 * equivalent. Using the {@code resultFilter} argument, returned expressions
-	 * can be restricted to be return type compatible to a desired target type.
-	 */
-	Expression<?> resolve(String name, @Nullable TypeFilter filter, EvaluationContext context);
-
-	/**
-	 * Tries to resolve the given {@code name} to a method that takes the
-	 * specified {@code arguments} as input. The {@code context} defines
-	 * whether or not it is allowed to apply value conversion, value expansion
-	 * or any other kind of syntactic sugar operations.
-	 * If the {@code resultFilter} argument is provided, it will be used to
-	 * restrict the pool of methods to be considered to those that return
-	 * a compatible value.
-	 */
-	Expression<?> resolve(String name, @Nullable TypeFilter resultFilter,
-			Expression<?>[] arguments, EvaluationContext context);
-
-	/**
 	 * Try to resolve the specified {@code name} to an entry in this namespace.
 	 */
 //	default NsEntry lookup(String name) {
@@ -67,6 +47,8 @@ public interface Environment {
 	 * that satisfies the specified filter. This will return
 	 */
 //	NsEntry lookup(String name, TypeFilter filter);
+
+	Set<NsEntry> getEntries();
 
 	/**
 	 * An individual type-aware entry in a namespace.

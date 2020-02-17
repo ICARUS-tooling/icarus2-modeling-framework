@@ -403,7 +403,7 @@ public class QueryProcessor {
 			IqlLane lane = new IqlLane();
 			genId(lane);
 
-			lane.setName(extractMemberName(ctx.member()));
+			lane.setName(extractMemberName(ctx.memberLabel()));
 
 			processLaneStatement0(lane, ctx.ALIGNED()!=null, ctx.nodeStatement());
 

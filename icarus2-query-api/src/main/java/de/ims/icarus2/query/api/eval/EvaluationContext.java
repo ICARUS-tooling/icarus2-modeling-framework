@@ -23,7 +23,11 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.eval.Environment.NsEntry;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -63,5 +67,46 @@ public class EvaluationContext {
 
 	}
 
-	public Environment getActiveEnvironment()
+	public Set<Environment> getActiveEnvironments() {
+
+	}
+
+	public Environment enter(Class<?> context) {
+
+	}
+
+	public void exit(Class<?> context) {
+
+	}
+
+	/**
+	 * Tries to resolve the given {@code name} to a field or no-args method
+	 * equivalent. Using the {@code resultFilter} argument, returned expressions
+	 * can be restricted to be return type compatible to a desired target type.
+	 */
+	public Expression<?> resolve(String name, @Nullable TypeFilter filter) {
+
+	}
+
+	/**
+	 * Tries to resolve the given {@code name} to a method that takes the
+	 * specified {@code arguments} as input.
+	 * If the {@code resultFilter} argument is provided, it will be used to
+	 * restrict the pool of methods to be considered to those that return
+	 * a compatible value.
+	 */
+	public Expression<?> resolve(String name, @Nullable TypeFilter resultFilter,
+			Expression<?>[] arguments) {
+
+	}
+
+	/**
+	 * Returns a lookup function for the specified annotation key. Note that the
+	 * {@code key} has to be unique
+	 * @param key
+	 * @return
+	 */
+	public <T> Function<Item, T> annotationSource(String key) {
+
+	}
 }
