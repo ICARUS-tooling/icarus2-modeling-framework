@@ -440,7 +440,6 @@ Currently supported switches:
 |    Name                     |   Description                          |
 |:--------------------------- |:-------------------------------------- |
 | iql.string.case.off         | Turns of case sensitivity when performing string operations such as equality checks. |
-| iql.string.case.lower       | Another approach to case insensitivity, this switch turns all strings into lower case. |
 | iql.expansion.off           | Effectively shuts down [value expansion](#712-value-expansion). |
 | iql.string2bool.off         | Deactivates the interpretation of strings as boolean values as described [here](#8-constraints). |
 | iql.int2bool.off            | Deactivates the interpretation of integers as boolean values as described [here](#8-constraints). |
@@ -454,7 +453,7 @@ Currently supported switches:
 
 ### 9.4. Properties
 
-In addition to switches, that allow to turn certain IQL feature son or off, a more fine-grained configuration can be performed using named properties. These take the form of a classic assignment of ``name = value`` and support any of the basic [literals](#4-literals).
+In addition to switches, that allow to turn certain IQL features on or off, a more fine-grained configuration can be performed using named properties. These take the form of a classic assignment of ``name = value`` and support any of the basic [literals](#4-literals).
 
 ## 11. Query Statement Section
 
