@@ -23,6 +23,8 @@ import static de.ims.icarus2.query.api.iql.IqlUtils.fragment;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -31,7 +33,11 @@ import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.QuerySwitch;
+import de.ims.icarus2.query.api.eval.EvaluationContext;
+import de.ims.icarus2.query.api.eval.EvaluationContext.RootContextBuilder;
 import de.ims.icarus2.query.api.iql.IqlQuery;
+import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 
@@ -62,12 +68,27 @@ public class QueryEngine {
 
 		// Read and parse query content
 		IqlQuery query = readQuery(rawQuery);
-		new QueryProcessor().parseQuery(query);
 
-		// Ensure we only ever consider validated queries
+		List<IqlStream> streams = query.getStreams();
+		if(streams.size()>1)
+			throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
+					"Queries on multiple corpus streams not yet supported");
+
+		// Now process the single stream content into full IQL elements
+		IqlStream stream = streams.get(0);
+		final boolean ignoreWarnings = query.isSwitchSet(QuerySwitch.WARNINGS_OFF);
+		new QueryProcessor(ignoreWarnings).parseStream(stream);
+
+		// Ensure we only ever consider validated queries (check after parsing stream(s) !!)
 		query.checkIntegrity();
 
-		//TODO build the evaluation context and parse all the expressions
+		// Now build context for our single stream
+		RootContextBuilder contextBuilder = EvaluationContext.rootBuilder();
+		//TODO allow extensions to configure builder
+
+
+
+		//TODO build the evaluation contexts and parse all the expressions
 
 		throw new UnsupportedOperationException();
 	}

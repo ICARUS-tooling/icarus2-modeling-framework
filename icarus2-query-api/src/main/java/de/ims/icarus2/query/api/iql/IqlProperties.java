@@ -57,7 +57,9 @@ public final class IqlProperties {
 
 	public static final String CHECKSUM = IQL_NS_PREFIX+"checksum";
 
-	public static final String CORPORA = IQL_NS_PREFIX+"corpora";
+	public static final String CORPUS = IQL_NS_PREFIX+"corpus";
+
+	public static final String STREAMS = IQL_NS_PREFIX+"streams";
 
 	public static final String LAYERS = IQL_NS_PREFIX+"layers";
 
@@ -65,7 +67,7 @@ public final class IqlProperties {
 
 	public static final String ALL_MEMBERS = IQL_NS_PREFIX+"allMembers";
 
-	public static final String SCOPES = IQL_NS_PREFIX+"scopes";
+	public static final String SCOPE = IQL_NS_PREFIX+"scope";
 
 	public static final String RAW_PAYLOAD = IQL_NS_PREFIX+"rawPayload";
 

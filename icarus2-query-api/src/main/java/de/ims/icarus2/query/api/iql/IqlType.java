@@ -57,6 +57,7 @@ public enum IqlType {
 	ELEMENT_DISJUNCTION("ElementDisjunction", "choice", IqlElement.IqlElementDisjunction.class),
 	RESULT("Result", null, IqlResult.class),
 	SORTING("Sorting", null, IqlSorting.class),
+	STREAM("Stream", "stream", IqlStream.class),
 	RESULT_INSTRUCTION("ResultInstruction", "res", IqlResultInstruction.class),
 	;
 

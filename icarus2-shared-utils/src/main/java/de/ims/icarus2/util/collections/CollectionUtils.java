@@ -381,6 +381,15 @@ public final class CollectionUtils {
 		return true;
 	}
 
+	/**
+	 * Returns the first element returned by {@code source's} {@link Collection#iterator() iterator}.
+	 * @param source
+	 * @return
+	 */
+	public static <E> E first(Collection<E> source) {
+		return source.iterator().next();
+	}
+
 	@SafeVarargs
 	public static <K extends Object, V extends Object> V firstSet(Map<K, V> map, K...keys) {
 		for(K key : keys) {

@@ -108,7 +108,7 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (STREAM name=Identifier)? (WITH bindingsList)? FIND selectiveStatement EOF
+	| (WITH bindingsList)? FIND selectiveStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -538,7 +538,6 @@ LIMIT : 'LIMIT' | 'limit' ;
 ORDER : 'ORDER' | 'order' ;
 ASC : 'ASC' | 'asc' ;
 DESC : 'DESC' | 'desc' ;
-STREAM : 'STREAM' | 'stream' ;
 LANE : 'LANE' | 'lane' ;
 
 // Keywords

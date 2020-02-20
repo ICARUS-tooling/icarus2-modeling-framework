@@ -41,6 +41,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -59,21 +60,22 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
- * Utility class(es) to store the final configuration and bindings for a query evaluation.
+ * Utility class(es) to store the final configuration and bindings for a query evaluation
+ * on a single stream/corpus.
  *
  * @author Markus Gärtner
  *
  */
 public abstract class EvaluationContext {
 
-	public static Builder builder() {
-		return new Builder(null); // Root context
+	public static RootContextBuilder rootBuilder() {
+		return new RootContextBuilder();
 	}
 
 	private static class RootContext extends EvaluationContext {
 
-		/** Maps the usable raw names or aliases to corpus entries. */
-		private final Map<String, Corpus> corpora;
+		/** The corpus this context refers to. */
+		private final Corpus corpus;
 
 		/** Maps the usable raw names or aliases to layer entries. */
 		private final Map<String, Layer> layers;
@@ -89,7 +91,6 @@ public abstract class EvaluationContext {
 
 			//TODO
 		}
-
 	}
 
 	private static class SubContext extends EvaluationContext {
@@ -98,6 +99,10 @@ public abstract class EvaluationContext {
 
 		private final IqlLane lane;
 		private final IqlProperElement element;
+
+		/** Lazily constructed lookup to map from annotation keys to actual sources */
+		private Map<String, AnnotationManifest> annotationLookup;
+		private List<AnnotationLayer> catchAllLayers;
 
 		private SubContext(SubContextBuilder builder) {
 			super(builder);
@@ -114,9 +119,29 @@ public abstract class EvaluationContext {
 
 	//TODO add mechanism to register callbacks for stages of matching process?
 
-	private EvaluationContext(BuilderBase builder) {
+	private EvaluationContext(BuilderBase<?,?> builder) {
 		requireNonNull(builder);
 		//TODO
+	}
+
+	public boolean isRoot() {
+		return !getParent().isPresent();
+	}
+
+	public RootContext getRootContext() {
+		EvaluationContext ctx = this;
+		while(!ctx.isRoot()) {
+			ctx = getParent().get();
+		}
+		return (RootContext) ctx;
+	}
+
+	public SubContext getLastSubContext() {
+		EvaluationContext ctx = this;
+		while(!ctx.isRoot()) {
+			ctx = getParent().get();
+		}
+		return (RootContext) ctx;
 	}
 
 	/**
@@ -137,14 +162,6 @@ public abstract class EvaluationContext {
 		//TODO
 	}
 
-	protected RootContext getRootContext() {
-
-	}
-
-	protected SubContext getLastSubContext() {
-		return null;
-	}
-
 	private static <T, C extends EvaluationContext> Optional<T> getInheritable(C ctx,
 			Function<C, T> getter) {
 		while(ctx!=null) {
@@ -152,21 +169,21 @@ public abstract class EvaluationContext {
 			if(value!=null) {
 				return Optional.of(value);
 			}
-			ctx = ctx.parent;
+			ctx = ctx.getParent().orElse(null);
 		}
 		return Optional.empty();
 	}
 
 	public Optional<IqlLane> getLane() {
-		return getInheritable(this, ctx -> ctx.lane);
+		return Optional.empty();
 	}
 
 	public Optional<IqlProperElement> getElement() {
-		return getInheritable(this, ctx -> ctx.element);
+		return Optional.empty();
 	}
 
 	public Optional<EvaluationContext> getParent() {
-		return Optional.ofNullable(parent);
+		return Optional.empty();
 	}
 
 	public Optional<Corpus> resolveCorpus(String name) {
@@ -391,11 +408,17 @@ public abstract class EvaluationContext {
 	public static class RootContextBuilder extends BuilderBase<RootContextBuilder, RootContext>
 			implements EngineConfigurator{
 
-		/** Maps the usable raw names or aliases to corpus entries. */
-		private Map<String, Corpus> corpora = new Object2ObjectOpenHashMap<>(); //TODO keep nul ltill populated
+		private Corpus corpus;
 
 		/** Maps the usable raw names or aliases to layer entries. */
-		private Map<String, Layer> layers = new Object2ObjectOpenHashMap<>();
+		private final Map<String, Layer> namedLayers = new Object2ObjectOpenHashMap<>();
+
+		/**
+		 *  Contains additional layers that have not received a dedicated reference in the
+		 *  original query definition. This includes for instance those layers that got
+		 *  added transitively via dependencies on other (named) layers.
+		 */
+		private Scope scope;
 
 		/** Flags that have been switched on for the query. */
 		private final Set<String> switches = new ObjectOpenHashSet<>();

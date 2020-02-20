@@ -47,7 +47,6 @@ import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.iql.AntlrUtils;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
@@ -70,13 +69,13 @@ import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
-import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlReference.ReferenceType;
 import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
+import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlUnique;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingContext;
@@ -111,6 +110,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnsignedSimpleQuantifierCont
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.id.StaticIdentity;
 
 /**
  * Helper for processing the actual content of a query.
@@ -121,37 +121,45 @@ import de.ims.icarus2.util.id.Identity;
 @NotThreadSafe
 public class QueryProcessor {
 
+	private static final Identity REPORT_IDENTITY = new StaticIdentity(
+			QueryProcessor.class.getSimpleName(), "Query Processor");
+
 	private final IqlObjectIdGenerator idGenerator = new IqlObjectIdGenerator();
+
+	private final ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(REPORT_IDENTITY);
+
+	private final boolean ignoreWarnings;
+
+	QueryProcessor(boolean ignoreWarnings) {
+		this.ignoreWarnings = ignoreWarnings;
+	}
 
 	/**
 	 * Parses the the embedded textual representations
 	 * for query payload, grouping and query instructions,
 	 * the latter two if defined.
 	 *
-	 * @param query the raw query
+	 * @param stream the raw query
 	 * @throws QueryException if any of the sections to be processed
 	 * has already been processed previously or if there was an error
 	 * when parsing them.
 	 */
-	public void parseQuery(IqlQuery query) {
-		requireNonNull(query);
-		checkState("Query processed", !query.isProcessed());
+	public void parseStream(IqlStream stream) {
+		requireNonNull(stream);
+		checkState("Query processed", !stream.isProcessed());
 
-		String rawGrouping = query.getRawGrouping().orElse(null);
+		String rawGrouping = stream.getRawGrouping().orElse(null);
 		if(!isNullOrEmpty(rawGrouping)) {
-			processGrouping(rawGrouping).forEach(query::addGrouping);
+			processGrouping(rawGrouping).forEach(stream::addGrouping);
 		}
-		String rawResult = query.getRawResult().orElse(null);
+		String rawResult = stream.getRawResult().orElse(null);
 		if(!isNullOrEmpty(rawResult)) {
-			processResult(rawResult, query.getResult());
+			processResult(rawResult, stream.getResult(), stream.isPrimary());
 		}
 
-		final boolean ignoreWarnings = query.isSwitchSet(QuerySwitch.WARNINGS_OFF);
-		for(String rawPayload : query.getRawPayload()) {
-			query.addPayload(processPayload(rawPayload, ignoreWarnings));
-		}
+		stream.setPayload(processPayload(stream.getRawPayload()));
 
-		query.markProcessed();
+		stream.markProcessed();
 	}
 
 	@VisibleForTesting
@@ -167,19 +175,19 @@ public class QueryProcessor {
 	}
 
 	@VisibleForTesting
-	void processResult(String rawResult, IqlResult result) {
+	void processResult(String rawResult, IqlResult result, boolean primary) {
 		checkNotEmpty(rawResult);
 
 		IQLParser parser = createParser(rawResult, "rawResult");
 		try {
-			new ResultProcessor().processResult(parser.resultStatement(), result);
+			new ResultProcessor().processResult(parser.resultStatement(), result, primary);
 		} catch(RecognitionException e) {
 			throw asSyntaxException(e, "Failed to parse 'rawResult'");
 		}
 	}
 
 	@VisibleForTesting
-	IqlPayload processPayload(String rawPayload, boolean ignoreWarnings) {
+	IqlPayload processPayload(String rawPayload) {
 		checkNotEmpty(rawPayload);
 
 		IQLParser parser = createParser(rawPayload, "rawPayload");
@@ -193,7 +201,7 @@ public class QueryProcessor {
 				return payload;
 			}
 
-			return new PayloadProcessor(ignoreWarnings).processPayloadStatement(ctx);
+			return new PayloadProcessor().processPayloadStatement(ctx);
 
 		} catch(RecognitionException e) {
 			throw asSyntaxException(e, "Failed to parse 'rawPayload'");
@@ -257,7 +265,9 @@ public class QueryProcessor {
 	}
 
 	private class ResultProcessor {
-		private void processResult(ResultStatementContext ctx, IqlResult result) {
+
+
+		private void processResult(ResultStatementContext ctx, IqlResult result, boolean primary) {
 			// Optional limit (pure int)
 			Optional.ofNullable(ctx.limit)
 				.map(AntlrUtils::textOf)
@@ -275,6 +285,13 @@ public class QueryProcessor {
 				sortings.forEach(result::addSorting);
 			}
 
+			if(!primary && (result.isPercent() || result.getLimit().isPresent()
+					|| !result.getSortings().isEmpty())) {
+				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
+						"Non-primary result statement contains sorting/percent/limit declarations: {}",
+						textOf(ctx));
+
+			}
 			//TODO do we need to run an integrity check on 'result' here?
 		}
 
@@ -286,27 +303,10 @@ public class QueryProcessor {
 		}
 	}
 
-	private class PayloadProcessor implements Identity {
-
-		private final ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(this);
-
-		private final boolean ignoreWarnings;
+	private class PayloadProcessor {
 
 		private boolean treeFeaturesUsed = false;
 		private boolean graphFeaturesUsed = false;
-
-		PayloadProcessor(boolean ignoreWarnings) {
-			this.ignoreWarnings = ignoreWarnings;
-		}
-
-		@Override
-		public Optional<String> getId() { return Optional.of(getClass().getSimpleName()); }
-
-		@Override
-		public Optional<String> getName() { return Optional.of("Payload Processor"); }
-
-		@Override
-		public Optional<String> getDescription() { return Optional.empty(); }
 
 		/** Unwraps arbitrarily nested wrapping expression to the deepest nested one */
 		private ExpressionContext unwrap(ExpressionContext ctx) {
@@ -340,11 +340,6 @@ public class QueryProcessor {
 		private IqlPayload processPayloadStatement(PayloadStatementContext ctx) {
 			IqlPayload payload = new IqlPayload();
 			genId(payload);
-
-			// If payload is a named stream, store identifier
-			if(ctx.name!=null) {
-				payload.setName(textOf(ctx.name));
-			}
 
 			// Handle bindings
 			BindingsListContext blctx = ctx.bindingsList();

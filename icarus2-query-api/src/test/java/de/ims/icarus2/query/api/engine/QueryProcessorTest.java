@@ -93,7 +93,7 @@ class QueryProcessorTest {
 
 		private Report<ReportItem> expectReport(String rawPayload) {
 			QueryProcessingException exception = assertThrows(QueryProcessingException.class,
-					() -> new QueryProcessor().processPayload(rawPayload, false));
+					() -> new QueryProcessor(false).processPayload(rawPayload));
 			assertThat(exception.getErrorCode()).isSameAs(QueryErrorCode.REPORT);
 			return exception.getReport();
 		}
@@ -309,7 +309,7 @@ class QueryProcessorTest {
 		@Test
 		void testProcessGroupingBare() {
 			String rawGrouping = "GROUP BY $token.value LABEL \"tok\"";
-			List<IqlGroup> groupings = new QueryProcessor().processGrouping(rawGrouping);
+			List<IqlGroup> groupings = new QueryProcessor(false).processGrouping(rawGrouping);
 			assertThat(groupings)
 				.isNotNull()
 				.hasSize(1);
@@ -329,7 +329,7 @@ class QueryProcessorTest {
 		})
 		void testProcessGroupingWithDefaults(String defaultValue) {
 			String rawGrouping = "GROUP BY $token.value LABEL \"tok\" DEFAULT "+defaultValue;
-			List<IqlGroup> groupings = new QueryProcessor().processGrouping(rawGrouping);
+			List<IqlGroup> groupings = new QueryProcessor(false).processGrouping(rawGrouping);
 			assertThat(groupings)
 				.isNotNull()
 				.hasSize(1);
@@ -339,7 +339,7 @@ class QueryProcessorTest {
 		@Test
 		void testProcessGroupingWithFilter() {
 			String rawGrouping = "GROUP BY $token.value FILTER ON (x*2) > 123 LABEL \"tok\"";
-			List<IqlGroup> groupings = new QueryProcessor().processGrouping(rawGrouping);
+			List<IqlGroup> groupings = new QueryProcessor(false).processGrouping(rawGrouping);
 			assertThat(groupings)
 				.isNotNull()
 				.hasSize(1);
@@ -349,7 +349,7 @@ class QueryProcessorTest {
 		@Test
 		void testProcessFullGrouping() {
 			String rawGrouping = "GROUP BY $token.value FILTER ON (x*2) > 123 LABEL \"tok\" DEFAULT 456";
-			List<IqlGroup> groupings = new QueryProcessor().processGrouping(rawGrouping);
+			List<IqlGroup> groupings = new QueryProcessor(false).processGrouping(rawGrouping);
 			assertThat(groupings)
 				.isNotNull()
 				.hasSize(1);
@@ -359,7 +359,7 @@ class QueryProcessorTest {
 		@Test
 		void testStackedGrouping() {
 			String rawGrouping = "GROUP BY $token.value LABEL \"tok\", BY @var1 LABEL \"anno\"";
-			List<IqlGroup> groupings = new QueryProcessor().processGrouping(rawGrouping);
+			List<IqlGroup> groupings = new QueryProcessor(false).processGrouping(rawGrouping);
 			assertThat(groupings)
 				.isNotNull()
 				.hasSize(2);
@@ -381,7 +381,7 @@ class QueryProcessorTest {
 		void testProcessResultLimit() {
 			String rawResult = "LIMIT 123";
 			IqlResult result = new IqlResult();
-			new QueryProcessor().processResult(rawResult, result);
+			new QueryProcessor(false).processResult(rawResult, result, true);
 			assertThat(result.getLimit())
 				.isPresent()
 				.hasValue(123);
@@ -395,7 +395,7 @@ class QueryProcessorTest {
 		void testProcessResultLimitPercent() {
 			String rawResult = "LIMIT 50%";
 			IqlResult result = new IqlResult();
-			new QueryProcessor().processResult(rawResult, result);
+			new QueryProcessor(false).processResult(rawResult, result, true);
 			assertThat(result.getLimit())
 				.isPresent()
 				.hasValue(50);
@@ -410,7 +410,7 @@ class QueryProcessorTest {
 		void testProcessResultSorting(Order order) {
 			String rawResult = "ORDER BY $token.value "+order.getLabel();
 			IqlResult result = new IqlResult();
-			new QueryProcessor().processResult(rawResult, result);
+			new QueryProcessor(false).processResult(rawResult, result, true);
 			assertThat(result.getLimit())
 				.isEmpty();
 			assertThat(result.isPercent())
@@ -424,7 +424,7 @@ class QueryProcessorTest {
 		void testProcessStackedResult() {
 			String rawResult = "LIMIT 66% ORDER BY exp1 ASC, exp2 DESC, exp3 ASC";
 			IqlResult result = new IqlResult();
-			new QueryProcessor().processResult(rawResult, result);
+			new QueryProcessor(false).processResult(rawResult, result, true);
 			assertThat(result.getLimit())
 				.isPresent()
 				.hasValue(66);
@@ -446,7 +446,7 @@ class QueryProcessorTest {
 		@ParameterizedTest
 		@ValueSource(strings = {"all", "ALL"})
 		void testAll(String rawPayload) {
-			IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+			IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 			assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.ALL);
 			assertThat(payload.getBindings()).isEmpty();
 			assertThat(payload.getConstraint()).isEmpty();
@@ -651,7 +651,7 @@ class QueryProcessorTest {
 				@Test
 				void testPredicate() {
 					String rawPayload = "FIND $token1.val>0";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
 					assertConstraint(payload, pred("$token1.val>0"));
@@ -660,7 +660,7 @@ class QueryProcessorTest {
 				@Test
 				void testConjunctiveChain() {
 					String rawPayload = "FIND $token1.val>0 && func() !=true && ($edge.dist()<5+4)";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
 					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
@@ -672,7 +672,7 @@ class QueryProcessorTest {
 				@Test
 				void testDisjunctiveChain() {
 					String rawPayload = "FIND $token1.val>0 || func() !=true || ($edge.dist()<5+4)";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
 					assertConstraint(payload, term(BooleanOperation.DISJUNCTION,
@@ -684,7 +684,7 @@ class QueryProcessorTest {
 				@Test
 				void testMixedExpression() {
 					String rawPayload = "FIND $token1.val>0 || func() !=true && ($edge.dist()<5+4)";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
 					assertConstraint(payload, term(BooleanOperation.DISJUNCTION,
@@ -702,7 +702,7 @@ class QueryProcessorTest {
 				@Test
 				void testBoundPredicate() {
 					String rawPayload = "WITH $token FROM corpus::layer1 FIND $token.val>0";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
 					assertConstraint(payload, pred("$token.val>0"));
@@ -711,7 +711,7 @@ class QueryProcessorTest {
 				@Test
 				void testMultiBoundPredicate() {
 					String rawPayload = "WITH $token1,$token2 FROM corpus::layer1 FIND $token1.val+$token2.val>0";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
@@ -720,7 +720,7 @@ class QueryProcessorTest {
 				@Test
 				void testDistinctMultiBoundPredicate() {
 					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 FIND $token1.val+$token2.val>0";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload, bind("corpus::layer1", true, "token1", "token2"));
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
@@ -729,7 +729,7 @@ class QueryProcessorTest {
 				@Test
 				void testMultiLayerBoundPredicate() {
 					String rawPayload = "WITH $token1 FROM corpus::layer1 AND $token2 FROM corpus::layer2 FIND $token1.val+$token2.val>0";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload,
 							bind("corpus::layer1", false, "token1"),
@@ -759,7 +759,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyUnnamedNode() {
 					String rawPayload = "FIND []";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
@@ -768,7 +768,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyNamedNode() {
 					String rawPayload = "FIND [$node1:]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", null)));
@@ -777,7 +777,7 @@ class QueryProcessorTest {
 				@Test
 				void testFilledUnnamedNode() {
 					String rawPayload = "FIND [pos!=\"NNP\"]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, pred("pos!=\"NNP\""))));
@@ -786,7 +786,7 @@ class QueryProcessorTest {
 				@Test
 				void testFilledNamedNode() {
 					String rawPayload = "FIND [$node1: pos!=\"NNP\"]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", pred("pos!=\"NNP\""))));
@@ -801,7 +801,7 @@ class QueryProcessorTest {
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
 				void testEmptyExactQuantifiedNode(int quantifier) {
 					String rawPayload = "FIND "+quantifier+"[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -812,7 +812,7 @@ class QueryProcessorTest {
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})
 				void testEmptyAtLeastQuantifiedNode(int quantifier) {
 					String rawPayload = "FIND "+quantifier+"+[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -823,7 +823,7 @@ class QueryProcessorTest {
 				@ValueSource(ints = {1, 1000, Integer.MAX_VALUE})
 				void testEmptyAtMostQuantifiedNode(int quantifier) {
 					String rawPayload = "FIND "+quantifier+"-[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -834,7 +834,7 @@ class QueryProcessorTest {
 				@ValueSource(strings = {"not", "NOT", "!"})
 				void testEmptyNegatedNode(String quantifier) {
 					String rawPayload = "FIND "+quantifier+"[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -849,7 +849,7 @@ class QueryProcessorTest {
 				})
 				void testEmptyRangeQuantifiedNode(int lower, int upper) {
 					String rawPayload = "FIND "+lower+".."+upper+"[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -859,7 +859,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyMultiQuantifiedNode() {
 					String rawPayload = "FIND 2|10|5..7|1000+[]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -873,7 +873,7 @@ class QueryProcessorTest {
 				@Test
 				void testFilledQuantifiedNode() {
 					String rawPayload = "FIND 2|10|5..7|1000+[$node1: pos!=\"NNP\"]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -887,7 +887,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyUnnamedNodeSequence() {
 					String rawPayload = "FIND [][][]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -897,7 +897,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyUnnamedQuantifiedNodeSequence() {
 					String rawPayload = "FIND 4-[] 2..10[] <3|5+>[] ![]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -915,7 +915,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyUnnamedNode() {
 					String rawPayload = "WITH $token FROM corpus::layer1 FIND []";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
 					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
@@ -924,7 +924,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyNamedNode() {
 					String rawPayload = "WITH $token FROM corpus::layer1 FIND [$token:]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token"));
 					assertLanes(payload, lane(LaneType.SEQUENCE, node("token", null)));
@@ -933,7 +933,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyNamedNodes() {
 					String rawPayload = "WITH $token1,$token2 FROM corpus::layer1 FIND [$token1:][$token2:]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
 					assertLanes(payload, lane(LaneType.SEQUENCE,
@@ -951,7 +951,7 @@ class QueryProcessorTest {
 							+ "FIND [$token1: pos!=\"NNP\"] 4+[] [$token2: length()>12] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload,
 							bind("corpus::layer1", true, "token1", "token2"),
@@ -987,7 +987,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyNestedNode() {
 					String rawPayload = "FIND [[]]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload, false);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node())));
@@ -996,7 +996,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyNestedSiblings() {
 					String rawPayload = "FIND [[][]]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload, false);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node(), node())));
@@ -1005,7 +1005,7 @@ class QueryProcessorTest {
 				@Test
 				void testEmptyNestedChain() {
 					String rawPayload = "FIND [[[]]]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload, false);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
@@ -1020,7 +1020,7 @@ class QueryProcessorTest {
 				@ValueSource(strings = {"all", "ALL", "*"})
 				void testEmptyAllQuantifiedNode(String quantifier) {
 					String rawPayload = "FIND ["+quantifier+"[]]";
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload, false);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
@@ -1039,7 +1039,7 @@ class QueryProcessorTest {
 							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);
-					IqlPayload payload = new QueryProcessor().processPayload(rawPayload, false);
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload, true);
 					assertBindings(payload,
 							bind("corpus::layer1", true, "token1", "token2"),

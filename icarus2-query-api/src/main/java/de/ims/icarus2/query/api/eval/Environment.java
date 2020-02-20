@@ -22,6 +22,8 @@ package de.ims.icarus2.query.api.eval;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 
@@ -53,6 +55,12 @@ public interface Environment {
 	Set<NsEntry> getEntries();
 
 	/**
+	 * Returns the type that serves as the context of this namespace/environment.
+	 * If this is a root environment, the method returns an empty optional.
+	 */
+	Optional<Class<?>> getContext();
+
+	/**
 	 * An individual type-aware entry in a namespace/environment.
 	 *
 	 * @author Markus Gärtner
@@ -64,6 +72,22 @@ public interface Environment {
 		 * described by this entry.
 		 */
 		TypeInfo getValueType();
+
+		/** Returns the primary identifier for this entry */
+		String getName();
+
+		/**
+		 * Returns a set of alternative identifiers usable to reference this entry.
+		 * Aliases have a special role for methods with zero arguments, as they allow
+		 * field-style references as syntactic sugar:
+		 * <pre>
+		 * someObject.getName()
+		 * vs.
+		 * someObject.name
+		 * </pre>
+		 */
+		//TODO write about array shortcuts via aliases
+		Set<String> getAliases();
 
 		/** Returns the kind of target this entry describes. */
 		EntryType getEntryType();
@@ -81,7 +105,18 @@ public interface Environment {
 		/** Returns the namespace this entry belongs to. */
 		Environment getSource();
 
-		Expression<?> instantiate();
+		/**
+		 * Obtains a shared or newly instantiated expression to fetch or compute
+		 * the target of this entry. It is the entry's job to perform sanity checks
+		 * in order to ensure that the provided {@code target} and {@code arguments}
+		 * expressions are type-compatible with the underlying method.
+		 *
+		 * @param target the instance to invoke a method on or to fetch a field from,
+		 * or {@code null} if this entry points to a static field or method.
+		 * @param arguments optional arguments to pass to the method invokation
+		 * @return
+		 */
+		Expression<?> instantiate(@Nullable Expression<?> target, Expression<?>...arguments);
 	}
 
 	public enum EntryType {

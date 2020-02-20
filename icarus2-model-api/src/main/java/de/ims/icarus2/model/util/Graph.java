@@ -270,9 +270,7 @@ public class Graph<E extends Object> {
 	// CONSTRUCTORS
 
 	Graph(Class<E> contentClass, int type) {
-		requireNonNull(contentClass);
-
-		this.contentClass = contentClass;
+		this.contentClass = requireNonNull(contentClass);
 		this.type = type;
 	}
 

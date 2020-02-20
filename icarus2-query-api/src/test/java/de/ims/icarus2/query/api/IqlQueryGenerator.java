@@ -60,6 +60,7 @@ import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlLayer;
+import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
@@ -76,6 +77,7 @@ import de.ims.icarus2.query.api.iql.IqlResultInstruction;
 import de.ims.icarus2.query.api.iql.IqlScope;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
+import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUnique;
 import de.ims.icarus2.test.Dummy;
@@ -183,6 +185,7 @@ public class IqlQueryGenerator {
 		case RESULT_INSTRUCTION: prepareResultInstruction((IqlResultInstruction) element, build, config); break;
 		case SCOPE: prepareScope((IqlScope) element, build, config); break;
 		case SORTING: prepareSorting((IqlSorting) element, build, config); break;
+		case STREAM: prepareStream((IqlStream) element, build, config); break;
 		case TERM: prepareTerm((IqlTerm) element, build, config); break;
 		case TREE_NODE: prepareTreeNode((IqlTreeNode) element, build, config); break;
 
@@ -206,13 +209,18 @@ public class IqlQueryGenerator {
 		unique.setId(config.idGenerator.generateId(unique));
 	}
 
-	private void prepareAliasedReference0(IqlAliasedReference reference, IncrementalBuild<?> build, Config config) {
+	private void prepareNamedReference0(IqlNamedReference reference, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(reference, build, config);
 
 		// mandatory data
 		reference.setName(index("name"));
 
 		build.addFieldChange(reference::setName, "name", index("name"));
+	}
+
+	private void prepareAliasedReference0(IqlAliasedReference reference, IncrementalBuild<?> build, Config config) {
+		prepareNamedReference0(reference, build, config);
+
 		build.addFieldChange(reference::setAlias, "alias", index("alias"));
 	}
 
@@ -264,7 +272,7 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareCorpus(IqlCorpus corpus, IncrementalBuild<?> build, Config config) {
-		prepareAliasedReference0(corpus, build, config);
+		prepareNamedReference0(corpus, build, config);
 	}
 
 	private void prepareData(IqlData data, IncrementalBuild<?> build, Config config) {
@@ -457,44 +465,45 @@ public class IqlQueryGenerator {
 		build.addFieldChange(quantifier::setValue, "value", index());
 	}
 
+	private void prepareStream(IqlStream stream, IncrementalBuild<?> build, Config config) {
+		prepareUnique0(stream, build, config);
+
+		// mandatory data
+		stream.setRawPayload(index("some-raw-payload"));
+		stream.setCorpus(generateFull(IqlType.CORPUS, config));
+		stream.setResult(generateFull(IqlType.RESULT, config));
+
+		build.addFieldChange(stream::setRawGrouping, "rawGrouping", index("grouping-data"));
+		build.addFieldChange(stream::setRawResult, "rawResult", index("result-data"));
+		build.addNestedChange("processedResult", IqlType.RESULT, config, stream, stream::setResult);
+		build.addNestedChange("corpora", IqlType.CORPUS, config, stream, stream::setCorpus);
+		build.addNestedChange("scope", IqlType.SCOPE, config, stream, stream::setScope);
+		build.addFieldChange(stream::setRawPayload, "rawPayload", index("payload-data"));
+		build.addNestedChange("payload", IqlType.PAYLOAD, config, stream, stream::setPayload);
+		build.addFieldChange(stream::setPrimary, "primary", Boolean.TRUE);
+		for (int i = 0; i < config.getCount(IqlType.LAYER, DEFAULT_COUNT); i++) {
+			build.addNestedChange("layers", IqlType.LAYER, config, stream, stream::addLayer);
+		}
+		for (int i = 0; i < config.getCount(IqlType.GROUP, DEFAULT_COUNT); i++) {
+			build.addNestedChange("grouping", IqlType.GROUP, config, stream, stream::addGrouping);
+		}
+	}
+
 	private void prepareQuery(IqlQuery query, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(query, build, config);
 
 		// mandatory data
-		query.addRawPayload(index("some-raw-payload"));
-		query.addCorpus(generateFull(IqlType.CORPUS, config));
-		query.setResult(generateFull(IqlType.RESULT, config));
+		query.addStream(generateFull(IqlType.STREAM, config));
 
 		build.addFieldChange(query::setDialect, "dialect", index("dialect"));
-		build.addFieldChange(query::setRawGrouping, "rawGrouping", index("grouping-data"));
-		build.addFieldChange(query::setRawResult, "rawResult", index("result-data"));
-		build.addNestedChange("processedResult", IqlType.RESULT, config, query, query::setResult);
 		for (int i = 0; i < config.getCount(IqlType.IMPORT, DEFAULT_COUNT); i++) {
 			build.addNestedChange("imports", IqlType.IMPORT, config, query, query::addImport);
 		}
 		for (int i = 0; i < config.getCount(IqlType.PROPERTY, DEFAULT_COUNT); i++) {
 			build.addNestedChange("setup", IqlType.PROPERTY, config, query, query::addSetup);
 		}
-		for (int i = 0; i < config.getCount(IqlType.CORPUS, DEFAULT_COUNT); i++) {
-			build.addNestedChange("corpora", IqlType.CORPUS, config, query, query::addCorpus);
-		}
-		for (int i = 0; i < config.getCount(IqlType.LAYER, DEFAULT_COUNT); i++) {
-			build.addNestedChange("layers", IqlType.LAYER, config, query, query::addLayer);
-		}
-		for (int i = 0; i < config.getCount(IqlType.SCOPE, DEFAULT_COUNT); i++) {
-			build.addNestedChange("scope", IqlType.SCOPE, config, query, query::addScope);
-		}
-		for (int i = 0; i < config.getCount(IqlType.GROUP, DEFAULT_COUNT); i++) {
-			build.addNestedChange("grouping", IqlType.GROUP, config, query, query::addGrouping);
-		}
 		for (int i = 0; i < config.getCount(IqlType.DATA, DEFAULT_COUNT); i++) {
 			build.addNestedChange("embeddedData", IqlType.DATA, config, query, query::addEmbeddedData);
-		}
-		for (int i = 0; i < config.getCount(IqlType.PAYLOAD, DEFAULT_COUNT); i++) {
-			build.addFieldChange(query::addRawPayload, "rawPayload", index("payload-data"));
-		}
-		for (int i = 0; i < config.getCount(IqlType.PAYLOAD, DEFAULT_COUNT); i++) {
-			build.addNestedChange("payload", IqlType.PAYLOAD, config, query, query::addPayload);
 		}
 	}
 
@@ -542,7 +551,6 @@ public class IqlQueryGenerator {
 		// mandatory data
 		scope.addLayer(generateFull(IqlType.LAYER, config));
 
-		build.addFieldChange(scope::setPrimary, "primary", Boolean.TRUE);
 		for (int i = 0; i < config.getCount(IqlType.LAYER, DEFAULT_COUNT); i++) {
 			build.addNestedChange("layer", IqlType.LAYER, config, scope, scope::addLayer);
 		}

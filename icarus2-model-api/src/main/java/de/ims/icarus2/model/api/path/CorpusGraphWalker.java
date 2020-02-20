@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public class CorpusGraphWalker {
 
 	private final CorpusGraph graph;

@@ -48,6 +48,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
+@Deprecated
 public class CorpusGraph {
 
 	private final CorpusManifest corpus;

@@ -23,7 +23,7 @@ package de.ims.icarus2.query.api.iql;
  * @author Markus Gärtner
  *
  */
-public class IqlCorpus extends IqlAliasedReference {
+public class IqlCorpus extends IqlNamedReference {
 
 	//TODO extra fields?
 
