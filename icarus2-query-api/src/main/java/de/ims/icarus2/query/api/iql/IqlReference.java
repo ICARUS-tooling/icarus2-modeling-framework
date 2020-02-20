@@ -49,9 +49,6 @@ public class IqlReference extends IqlUnique {
 
 	public void setReferenceType(ReferenceType referenceType) { this.referenceType = requireNonNull(referenceType); }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
@@ -59,13 +56,8 @@ public class IqlReference extends IqlUnique {
 		checkNotNull(referenceType, "referenceType");
 	}
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.REFERENCE;
-	}
+	public IqlType getType() { return IqlType.REFERENCE; }
 
 	public enum ReferenceType {
 

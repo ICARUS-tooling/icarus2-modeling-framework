@@ -49,13 +49,8 @@ public class IqlLayer extends IqlAliasedReference {
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean allMembers = false;
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.LAYER;
-	}
+	public IqlType getType() { return IqlType.LAYER; }
 
 	public boolean isPrimary() { return primary; }
 

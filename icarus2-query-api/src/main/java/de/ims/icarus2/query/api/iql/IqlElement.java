@@ -86,17 +86,9 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-		 */
 		@Override
-		public IqlType getType() {
-			return IqlType.NODE;
-		}
+		public IqlType getType() { return IqlType.NODE; }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlElement#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
@@ -152,17 +144,9 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonInclude(Include.NON_EMPTY)
 		private List<IqlElement> children = new ArrayList<>();
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-		 */
 		@Override
-		public IqlType getType() {
-			return IqlType.TREE_NODE;
-		}
+		public IqlType getType() { return IqlType.TREE_NODE; }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlElement.IqlNode#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
@@ -188,17 +172,9 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonProperty(IqlProperties.EDGE_TYPE)
 		private EdgeType edgeType;
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-		 */
 		@Override
-		public IqlType getType() {
-			return IqlType.EDGE;
-		}
+		public IqlType getType() { return IqlType.EDGE; }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
@@ -270,17 +246,9 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonProperty(IqlProperties.ALTERNATIVES)
 		private final List<List<IqlElement>> alternatives = new ArrayList<>();
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-		 */
 		@Override
-		public IqlType getType() {
-			return IqlType.ELEMENT_DISJUNCTION;
-		}
+		public IqlType getType() { return IqlType.ELEMENT_DISJUNCTION; }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
@@ -311,13 +279,9 @@ public abstract class IqlElement extends IqlUnique {
 
 		private final String label;
 
-		private EdgeType(String label) {
-			this.label = label;
-		}
+		private EdgeType(String label) { this.label = label; }
 
 		@JsonValue
-		public String getLabel() {
-			return label;
-		}
+		public String getLabel() { return label; }
 	}
 }

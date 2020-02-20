@@ -64,17 +64,9 @@ public class IqlResult extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlSorting> sortings = new ArrayList<>();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.RESULT;
-	}
+	public IqlType getType() { return IqlType.RESULT; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

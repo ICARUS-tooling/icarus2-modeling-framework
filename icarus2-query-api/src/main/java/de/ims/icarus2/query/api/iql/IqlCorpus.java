@@ -27,11 +27,6 @@ public class IqlCorpus extends IqlAliasedReference {
 
 	//TODO extra fields?
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.CORPUS;
-	}
+	public IqlType getType() { return IqlType.CORPUS; }
 }

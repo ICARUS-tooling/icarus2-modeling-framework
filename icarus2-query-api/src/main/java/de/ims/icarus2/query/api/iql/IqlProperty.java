@@ -48,13 +48,8 @@ public class IqlProperty extends AbstractIqlQueryElement {
 	private Optional<Object> value = Optional.empty();
 
 	@Override
-	public IqlType getType() {
-		return IqlType.PROPERTY;
-	}
+	public IqlType getType() { return IqlType.PROPERTY; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

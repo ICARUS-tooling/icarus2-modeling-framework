@@ -42,9 +42,6 @@ public abstract class IqlUnique extends AbstractIqlQueryElement {
 
 	public void setId(String id) { this.id = checkNotEmpty(id); }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

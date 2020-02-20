@@ -51,17 +51,9 @@ public class IqlScope extends IqlAliasedReference {
 	@JsonProperty(IqlProperties.LAYERS)
 	private List<IqlLayer> layers = new ArrayList<>();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.SCOPE;
-	}
+	public IqlType getType() { return IqlType.SCOPE; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlAliasedReference#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

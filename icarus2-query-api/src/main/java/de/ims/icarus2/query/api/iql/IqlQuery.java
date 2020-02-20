@@ -141,17 +141,9 @@ public class IqlQuery extends IqlUnique {
 	@JsonIgnore
 	private boolean processed = false;
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.QUERY;
-	}
+	public IqlType getType() { return IqlType.QUERY; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
@@ -171,9 +163,7 @@ public class IqlQuery extends IqlUnique {
 		checkCollection(grouping);
 	}
 
-	public boolean isProcessed() {
-		return processed;
-	}
+	public boolean isProcessed() { return processed; }
 
 	public void markProcessed() {
 		checkState("ALready processed", !processed);

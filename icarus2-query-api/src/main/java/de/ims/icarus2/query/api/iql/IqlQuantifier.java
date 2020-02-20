@@ -53,17 +53,9 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt upperBound = OptionalInt.empty();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.QUANTIFIER;
-	}
+	public IqlType getType() { return IqlType.QUANTIFIER; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

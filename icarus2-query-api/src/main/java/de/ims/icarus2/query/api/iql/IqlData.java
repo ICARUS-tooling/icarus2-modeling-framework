@@ -48,17 +48,9 @@ public class IqlData extends IqlUnique {
 	@JsonInclude(Include.NON_EMPTY)
 	private Optional<String> checksum = Optional.empty();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.DATA;
-	}
+	public IqlType getType() { return IqlType.DATA; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

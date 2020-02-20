@@ -42,17 +42,9 @@ public class IqlExpression extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<Class<?>> returnType = Optional.empty();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.EXPRESSION;
-	}
+	public IqlType getType() { return IqlType.EXPRESSION; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

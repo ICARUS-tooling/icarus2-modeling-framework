@@ -48,17 +48,9 @@ public class IqlGroup extends IqlUnique {
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlExpression> defaultValue = Optional.empty();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.GROUP;
-	}
+	public IqlType getType() { return IqlType.GROUP; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

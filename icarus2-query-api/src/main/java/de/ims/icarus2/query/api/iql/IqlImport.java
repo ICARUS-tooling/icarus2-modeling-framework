@@ -33,13 +33,8 @@ public class IqlImport extends IqlAliasedReference {
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean optional = false;
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.IMPORT;
-	}
+	public IqlType getType() { return IqlType.IMPORT; }
 
 	public boolean isOptional() { return optional; }
 

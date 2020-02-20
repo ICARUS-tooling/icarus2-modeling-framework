@@ -36,17 +36,9 @@ public class IqlSorting extends AbstractIqlQueryElement {
 	@JsonProperty(IqlProperties.ORDER)
 	private Order order;
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.SORTING;
-	}
+	public IqlType getType() { return IqlType.SORTING; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.AbstractIqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

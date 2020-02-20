@@ -61,17 +61,9 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	@JsonProperty(IqlProperties.MEMBERS)
 	private final List<IqlReference> members = new ArrayList<>();
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.BINDING;
-	}
+	public IqlType getType() { return IqlType.BINDING; }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();

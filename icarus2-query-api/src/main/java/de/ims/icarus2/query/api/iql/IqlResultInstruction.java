@@ -30,11 +30,6 @@ public class IqlResultInstruction extends IqlUnique {
 
 	//TODO define actual content based on the antlr grammar for results
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-	 */
 	@Override
-	public IqlType getType() {
-		return IqlType.RESULT_INSTRUCTION;
-	}
+	public IqlType getType() { return IqlType.RESULT_INSTRUCTION; }
 }
