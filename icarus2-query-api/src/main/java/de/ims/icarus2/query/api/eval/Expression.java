@@ -91,6 +91,14 @@ public interface Expression<T> {
 		return TypeInfo.isNumerical(getResultType());
 	}
 
+	default boolean isInteger() {
+		return TypeInfo.isInteger(getResultType());
+	}
+
+	default boolean isFloatingPoint() {
+		return TypeInfo.isFloatingPoint(getResultType());
+	}
+
 	default boolean isBoolean() {
 		return TypeInfo.isBoolean(getResultType());
 	}
@@ -103,64 +111,55 @@ public interface Expression<T> {
 		return getResultType().isMember();
 	}
 
+
 	/**
-	 * Specialized expression with primitive numerical return value.
-	 *
-	 * @author Markus Gärtner
+	 * Primitive equivalent of {@link #compute()} that avoids object generation and
+	 * primitive wrapping.
+	 * @return
+	 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
+	 * value cannot directly be converted to a {@code long} value.
 	 */
-	public interface NumericalExpression extends Expression<Primitive<? extends Number>> {
-
-		/**
-		 * Primitive equivalent of {@link #compute()} that avoids object generation and
-		 * primitive wrapping.
-		 * @return
-		 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
-		 * value cannot directly be converted to a {@code long} value.
-		 */
-		long computeAsLong();
-
-		/**
-		 * Primitive equivalent of {@link #compute()} that avoids object generation and
-		 * primitive wrapping.
-		 * @return
-		 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
-		 * value cannot directly be converted to a {@code double} value.
-		 */
-		double computeAsDouble();
-
-		/** REturns true iff this expression is a floating point expression */
-		default boolean isFPE() {
-			return TypeInfo.isFloatingPoint(getResultType());
-		}
+	default long computeAsLong() {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.INTEGER);
 	}
 
 	/**
-	 * Specialized expression with primitive return value.
-	 *
-	 * @author Markus Gärtner
-	 *
+	 * Primitive equivalent of {@link #compute()} that avoids object generation and
+	 * primitive wrapping.
+	 * @return
+	 * @throws QueryException of type {@link QueryErrorCode#TYPE_MISMATCH} if the computed
+	 * value cannot directly be converted to a {@code double} value.
 	 */
-	public interface BooleanExpression extends Expression<Primitive<Boolean>> {
-		boolean computeAsBoolean();
+	default double computeAsDouble() {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.FLOATING_POINT);
+	}
 
-		@Override
-		default TypeInfo getResultType() {
-			return TypeInfo.BOOLEAN;
-		}
+	default boolean computeAsBoolean() {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.BOOLEAN);
 	}
 
 	/**
-	 * Specialized expression with unicode text value.
+	 * Marker interface to signal that the implementation returns some primitive
+	 * wrapper, i.e an instance of {@link Primitive}.
 	 *
 	 * @author Markus Gärtner
-	 *
 	 */
-	public interface TextExpression extends Expression<CharSequence> {
+	public interface PrimitiveExpression {
+		// marker interface
+	}
 
-		@Override
-		default TypeInfo getResultType() {
-			return TypeInfo.TEXT;
-		}
+	/**
+	 * Marker interface to signal that the expression is operating on some shared backend
+	 * data, i.e. an annotation storage, and as such could represent a bottleneck in terms
+	 * of performance when parallelizing the evaluation process.
+	 * <p>
+	 * Currently we only mark implementations and don't take special actions or perform
+	 * analysis, but the foundation is there.
+	 *
+	 * @author Markus Gärtner
+	 */
+	public interface SharedExpression {
+		// marker interface
 	}
 
 	/** Gives list-style access to the underlying data */

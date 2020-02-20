@@ -11,5 +11,7 @@ import de.ims.icarus2.query.api.eval.Environment;
  */
 public class AbstractEnvironment implements Environment {
 
-	private static class
+	private static class Entry implements NsEntry {
+
+	}
 }

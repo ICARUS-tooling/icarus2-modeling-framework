@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
@@ -35,7 +33,7 @@ class UnaryOperationsTest {
 	class IntegerMinus implements IntegerExpressionTest {
 
 		@Override
-		public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+		public Expression<?> createWithValue(Primitive<? extends Number> value) {
 			return UnaryOperations.minus(ExpressionTestUtils.optimizable(-value.longValue()));
 		}
 
@@ -59,7 +57,7 @@ class UnaryOperationsTest {
 		@Test
 		void testUnomptimizable() {
 			MutableLong value = new MutableLong(999);
-			NumericalExpression expression = ExpressionTestUtils.dynamic(value::longValue);
+			Expression<?> expression = ExpressionTestUtils.dynamic(value::longValue);
 			expression = UnaryOperations.minus(expression);
 			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
 		}
@@ -69,7 +67,7 @@ class UnaryOperationsTest {
 	class FlaotingPointMinus implements FloatingPointExpressionTest {
 
 		@Override
-		public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+		public Expression<?> createWithValue(Primitive<? extends Number> value) {
 			return UnaryOperations.minus(ExpressionTestUtils.optimizable(-value.doubleValue()));
 		}
 
@@ -97,7 +95,7 @@ class UnaryOperationsTest {
 		@Test
 		void testUnomptimizable() {
 			MutableDouble value = new MutableDouble(999.888);
-			NumericalExpression expression = ExpressionTestUtils.dynamic(value::doubleValue);
+			Expression<?> expression = ExpressionTestUtils.dynamic(value::doubleValue);
 			expression = UnaryOperations.minus(expression);
 			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
 		}
@@ -108,7 +106,7 @@ class UnaryOperationsTest {
 	class BooleanNot implements BooleanExpressionTest {
 
 		@Override
-		public BooleanExpression createWithValue(Primitive<Boolean> value) {
+		public Expression<Primitive<Boolean>> createWithValue(Primitive<Boolean> value) {
 			return UnaryOperations.not(ExpressionTestUtils.optimizable(!value.booleanValue()));
 		}
 
@@ -135,7 +133,7 @@ class UnaryOperationsTest {
 		@Test
 		void testUnomptimizable() {
 			MutableBoolean value = new MutableBoolean(true);
-			BooleanExpression expression = ExpressionTestUtils.dynamic(value::booleanValue);
+			Expression<Primitive<Boolean>> expression = ExpressionTestUtils.dynamic(value::booleanValue);
 			expression = UnaryOperations.not(expression);
 			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
 		}
@@ -145,7 +143,7 @@ class UnaryOperationsTest {
 	class IntegerBitwiseNot implements IntegerExpressionTest {
 
 		@Override
-		public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+		public Expression<?> createWithValue(Primitive<? extends Number> value) {
 			return UnaryOperations.bitwiseNot(ExpressionTestUtils.optimizable(~value.longValue()));
 		}
 
@@ -169,7 +167,7 @@ class UnaryOperationsTest {
 		@Test
 		void testUnomptimizable() {
 			MutableLong value = new MutableLong(999);
-			NumericalExpression expression = ExpressionTestUtils.dynamic(value::longValue);
+			Expression<?> expression = ExpressionTestUtils.dynamic(value::longValue);
 			expression = UnaryOperations.bitwiseNot(expression);
 			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
 		}

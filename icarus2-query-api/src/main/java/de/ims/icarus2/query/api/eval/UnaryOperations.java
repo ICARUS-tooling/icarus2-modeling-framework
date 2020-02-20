@@ -21,8 +21,7 @@ package de.ims.icarus2.query.api.eval;
 
 import static java.util.Objects.requireNonNull;
 
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
+import de.ims.icarus2.query.api.eval.Expression.PrimitiveExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -34,9 +33,9 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  */
 public class UnaryOperations {
 
-	public static NumericalExpression minus(NumericalExpression source) {
+	public static Expression<?> minus(Expression<?> source) {
 		requireNonNull(source);
-		if(source.isFPE()) {
+		if(source.isFloatingPoint()) {
 			if(source.isConstant()) {
 				return Literals.of(-source.computeAsDouble());
 			}
@@ -47,7 +46,7 @@ public class UnaryOperations {
 		return new IntegerNegation(source);
 	}
 
-	public static BooleanExpression not(BooleanExpression source) {
+	public static Expression<Primitive<Boolean>> not(Expression<Primitive<Boolean>> source) {
 		requireNonNull(source);
 		if(source.isConstant()) {
 			return Literals.of(!source.computeAsBoolean());
@@ -55,7 +54,7 @@ public class UnaryOperations {
 		return new BooleanNegation(source);
 	}
 
-	public static NumericalExpression bitwiseNot(NumericalExpression source) {
+	public static Expression<?> bitwiseNot(Expression<?> source) {
 		requireNonNull(source);
 		if(source.isConstant()) {
 			return Literals.of(~source.computeAsLong());
@@ -63,12 +62,12 @@ public class UnaryOperations {
 		return new IntegerBitwiseNegation(source);
 	}
 
-	static class IntegerBitwiseNegation implements NumericalExpression {
+	static class IntegerBitwiseNegation implements Expression<Primitive<Long>>, PrimitiveExpression {
 
-		private final NumericalExpression source;
+		private final Expression<?> source;
 		private final MutableLong value;
 
-		IntegerBitwiseNegation(NumericalExpression source) {
+		IntegerBitwiseNegation(Expression<?> source) {
 			this.source = requireNonNull(source);
 			value = new MutableLong();
 		}
@@ -77,14 +76,14 @@ public class UnaryOperations {
 		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 		@Override
-		public Primitive<? extends Number> compute() {
+		public Primitive<Long> compute() {
 			value.setLong(computeAsLong());
 			return value;
 		}
 
 		@Override
-		public NumericalExpression duplicate(EvaluationContext context) {
-			return new IntegerBitwiseNegation((NumericalExpression) source.duplicate(context));
+		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
+			return new IntegerBitwiseNegation(source.duplicate(context));
 		}
 
 		@Override
@@ -94,8 +93,8 @@ public class UnaryOperations {
 		public double computeAsDouble() { return computeAsLong(); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
-			NumericalExpression newSource = (NumericalExpression) source.optimize(context);
+		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
+			Expression<?> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(~newSource.computeAsLong());
 			}
@@ -105,12 +104,12 @@ public class UnaryOperations {
 
 	}
 
-	static class IntegerNegation implements NumericalExpression {
+	static class IntegerNegation implements Expression<Primitive<Long>>, PrimitiveExpression {
 
-		private final NumericalExpression source;
+		private final Expression<?> source;
 		private final MutableLong value;
 
-		IntegerNegation(NumericalExpression source) {
+		IntegerNegation(Expression<?> source) {
 			this.source = requireNonNull(source);
 			value = new MutableLong();
 		}
@@ -119,14 +118,14 @@ public class UnaryOperations {
 		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 		@Override
-		public Primitive<? extends Number> compute() {
+		public Primitive<Long> compute() {
 			value.setLong(computeAsLong());
 			return value;
 		}
 
 		@Override
-		public NumericalExpression duplicate(EvaluationContext context) {
-			return new IntegerNegation((NumericalExpression) source.duplicate(context));
+		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
+			return new IntegerNegation(source.duplicate(context));
 		}
 
 		@Override
@@ -136,8 +135,8 @@ public class UnaryOperations {
 		public double computeAsDouble() { return -source.computeAsDouble(); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
-			NumericalExpression newSource = (NumericalExpression) source.optimize(context);
+		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
+			Expression<?> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(-newSource.computeAsLong());
 			}
@@ -147,12 +146,12 @@ public class UnaryOperations {
 
 	}
 
-	static class FloatingPointNegation implements NumericalExpression {
+	static class FloatingPointNegation implements Expression<Primitive<Double>>, PrimitiveExpression {
 
-		private final NumericalExpression source;
+		private final Expression<?> source;
 		private final MutableDouble value;
 
-		FloatingPointNegation(NumericalExpression source) {
+		FloatingPointNegation(Expression<?> source) {
 			this.source = requireNonNull(source);
 			value = new MutableDouble();
 		}
@@ -161,14 +160,14 @@ public class UnaryOperations {
 		public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
 
 		@Override
-		public Primitive<? extends Number> compute() {
+		public Primitive<Double> compute() {
 			value.setDouble(computeAsDouble());
 			return value;
 		}
 
 		@Override
-		public NumericalExpression duplicate(EvaluationContext context) {
-			return new FloatingPointNegation((NumericalExpression) source.duplicate(context));
+		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
+			return new FloatingPointNegation(source.duplicate(context));
 		}
 
 		@Override
@@ -179,8 +178,8 @@ public class UnaryOperations {
 		public double computeAsDouble() { return -source.computeAsDouble(); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
-			NumericalExpression newSource = (NumericalExpression) source.optimize(context);
+		public Expression<Primitive<Double>> optimize(EvaluationContext context) {
+			Expression<?> newSource =source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(-newSource.computeAsDouble());
 			}
@@ -190,12 +189,12 @@ public class UnaryOperations {
 
 	}
 
-	static class BooleanNegation implements BooleanExpression {
+	static class BooleanNegation implements Expression<Primitive<Boolean>>, PrimitiveExpression {
 
-		private final BooleanExpression source;
+		private final Expression<Primitive<Boolean>> source;
 		private final MutableBoolean value;
 
-		BooleanNegation(BooleanExpression source) {
+		BooleanNegation(Expression<Primitive<Boolean>> source) {
 			this.source = requireNonNull(source);
 			value = new MutableBoolean();
 		}
@@ -210,8 +209,8 @@ public class UnaryOperations {
 		}
 
 		@Override
-		public BooleanExpression duplicate(EvaluationContext context) {
-			return new BooleanNegation((BooleanExpression) source.duplicate(context));
+		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			return new BooleanNegation(source.duplicate(context));
 		}
 
 		@Override
@@ -219,7 +218,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
-			BooleanExpression newSource = (BooleanExpression) source.optimize(context);
+			Expression<Primitive<Boolean>> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(!newSource.computeAsBoolean());
 			}

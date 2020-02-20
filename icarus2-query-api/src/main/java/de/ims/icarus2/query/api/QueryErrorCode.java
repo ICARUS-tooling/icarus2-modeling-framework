@@ -134,6 +134,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 * An expression encountered an unsupported value type.
 	 */
 	TYPE_MISMATCH(301),
+
+	/**
+	 * An identifier or other reference was resolved to a target that is
+	 * incompatible within the current context.
+	 */
+	INCOMPATIBLE_REFERENCE(302),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;

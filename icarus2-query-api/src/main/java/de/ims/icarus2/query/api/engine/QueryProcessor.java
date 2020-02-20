@@ -380,7 +380,7 @@ public class QueryProcessor {
 				IqlLane lane = new IqlLane();
 				genId(lane);
 
-				processLaneStatement0(lane, sctx.ALIGNED()!=null, sctx.nodeStatement());
+				processLaneContent(lane, sctx.ALIGNED()!=null, sctx.nodeStatement());
 
 				payload.addLane(lane);
 				payload.setQueryType(QueryType.SINGLE_LANE);
@@ -403,19 +403,20 @@ public class QueryProcessor {
 			IqlLane lane = new IqlLane();
 			genId(lane);
 
-			lane.setName(extractMemberName(ctx.memberLabel()));
+			lane.setName(extractMemberName(ctx.member()));
 
-			processLaneStatement0(lane, ctx.ALIGNED()!=null, ctx.nodeStatement());
+			processLaneContent(lane, ctx.ALIGNED()!=null, ctx.nodeStatement());
 
 			return lane;
 		}
 
-		private void processLaneStatement0(IqlLane lane, boolean aligned,
+		private void processLaneContent(IqlLane lane, boolean aligned,
 				NodeStatementContext ctx) {
 
 			lane.setAligned(aligned);
 
 			try {
+				// Start the (recursive) node parsing with a 'null' parent
 				processNodeStatement(ctx, null).forEach(lane::addElement);
 
 				LaneType laneType = LaneType.SEQUENCE;
@@ -562,7 +563,8 @@ public class QueryProcessor {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx, IqlTreeNode parent) {
+		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx,
+				@Nullable IqlTreeNode parent) {
 			List<IqlNode> elements = new ArrayList<>();
 			for(NodeContext nctx : ctx.node()) {
 				elements.add(processNode(nctx, parent));
@@ -570,7 +572,8 @@ public class QueryProcessor {
 			return elements;
 		}
 
-		private List<IqlElement> processElementSequence(ElementSequenceContext ctx, IqlTreeNode parent) {
+		private List<IqlElement> processElementSequence(ElementSequenceContext ctx,
+				@Nullable IqlTreeNode parent) {
 			List<IqlElement> elements = new ArrayList<>();
 			for(ElementContext ectx : ctx.element()) {
 				elements.add(processElement(ectx, parent));
@@ -589,7 +592,7 @@ public class QueryProcessor {
 			}
 		}
 
-		private IqlNode processNode(NodeContext ctx, IqlTreeNode parent) {
+		private IqlNode processNode(NodeContext ctx, @Nullable IqlTreeNode parent) {
 			IqlNode node;
 			// Decide on type of node
 			if(ctx.nodeStatement()!=null) {
@@ -614,6 +617,15 @@ public class QueryProcessor {
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
 							"Double negation of nested nodes '{1}' - try to express query positively instead", textOf(ctx));
 				} else if(parent==null && node.isUniversallyQuantified()) {
+					//TODO need to revisit this limitation in the IQL specification!! (we might allow universal quantification here)
+					/* Info for todo: nodes are typically bound to items that are embedded into a
+					 * surrounding grouping (e.g. sentences) that provides a natural limitation for
+					 * the scope of universal quantification. So a universally node would read
+					 * 'find container (sentence) where _ALL_ items match this one'. As a result we
+					 * would move the sanity check one level up and ensure that there cannot be any
+					 * concurrent nodes (i.e. the universally quantified node must be the sole top
+					 * level node, either globally or within its node alternative group).
+					 */
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
 							"Cannot universally qualify top-level nodes: {1}", textOf(ctx));
 				}
@@ -687,7 +699,7 @@ public class QueryProcessor {
 			return quantifier;
 		}
 
-		private IqlElement processElement(ElementContext ctx, IqlTreeNode parent) {
+		private IqlElement processElement(ElementContext ctx, @Nullable IqlTreeNode parent) {
 			if(ctx.edge()!=null) {
 				if(treeFeaturesUsed) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -780,7 +792,8 @@ public class QueryProcessor {
 			return edge;
 		}
 
-		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx, IqlTreeNode parent) {
+		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx,
+				@Nullable IqlTreeNode parent) {
 			IqlElementDisjunction dis = new IqlElementDisjunction();
 			genId(dis);
 

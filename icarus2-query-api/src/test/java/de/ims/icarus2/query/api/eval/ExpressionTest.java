@@ -28,13 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
-import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
-import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
-import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
@@ -50,18 +44,18 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  * @author Markus Gärtner
  *
  */
-public interface ExpressionTest<T, E extends Expression<T>>
-		extends ApiGuardedTest<E>, GenericTest<E> {
+public interface ExpressionTest<T>
+		extends ApiGuardedTest<Expression<?>>, GenericTest<Expression<?>> {
 
 	T constant();
 
 	T random(RandomGenerator rng);
 
 	@Provider
-	E createWithValue(T value);
+	Expression<?> createWithValue(T value);
 
 	@Override
-	default E createTestInstance(TestSettings settings) {
+	default Expression<?> createTestInstance(TestSettings settings) {
 		return settings.process(createWithValue(constant()));
 	}
 
@@ -93,12 +87,13 @@ public interface ExpressionTest<T, E extends Expression<T>>
 	/**
 	 * Test method for {@link de.ims.icarus2.query.api.eval.Expression#compute()}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	@RandomizedTest
 	default void testCompute(RandomGenerator rng) {
 		T value = random(rng);
-		E instance = createWithValue(value);
-		assertThat(instance.compute()).satisfies(newVal -> equals(newVal, value));
+		Expression<?> instance = createWithValue(value);
+		assertThat(instance.compute()).satisfies(newVal -> equals((T) newVal, value));
 	}
 
 	/**
@@ -112,29 +107,31 @@ public interface ExpressionTest<T, E extends Expression<T>>
 	/**
 	 * Test method for {@link de.ims.icarus2.query.api.eval.Expression#optimize(de.ims.icarus2.query.api.eval.EvaluationContext)}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testOptimize() {
 		T value = constant();
-		E instance = createWithValue(value);
-		Expression<T> optimized = instance.optimize(context());
+		Expression<?> instance = createWithValue(value);
+		Expression<?> optimized = instance.optimize(context());
 		assertThat(optimized.isConstant()).isEqualTo(optimizeToConstant());
-		assertThat(optimized.compute()).satisfies(newVal -> equals(newVal, value));
+		assertThat(optimized.compute()).satisfies(newVal -> equals((T) newVal, value));
 	}
 
 	/**
 	 * Test method for {@link de.ims.icarus2.query.api.eval.Expression#duplicate(de.ims.icarus2.query.api.eval.EvaluationContext)}.
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	default void testDuplicate() {
 		T value = constant();
-		E instance = createWithValue(value);
-		Expression<T> clone = instance.duplicate(context());
+		Expression<?> instance = createWithValue(value);
+		Expression<?> clone = instance.duplicate(context());
 		if(nativeConstant()) {
 			assertThat(clone).isSameAs(instance);
 		} else {
 			assertThat(clone).isNotSameAs(instance);
 		}
-		assertThat(clone.compute()).satisfies(newVal -> equals(newVal, value));
+		assertThat(clone.compute()).satisfies(newVal -> equals((T) newVal, value));
 	}
 
 	/**
@@ -161,7 +158,27 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		assertThat(create().isBoolean()).isEqualTo(TypeInfo.isBoolean(getExpectedType()));
 	}
 
-	public interface TextExpressionTest extends ExpressionTest<CharSequence, TextExpression> {
+	@Test
+	@RandomizedTest
+	default void testComputeAsLong(RandomGenerator rng) {
+		assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+				() -> create().computeAsLong());
+	}
+
+	@Test
+	@RandomizedTest
+	default void testComputeAsDouble(RandomGenerator rng) {
+		assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+				() -> create().computeAsDouble());
+	}
+
+	@Test
+	default void testComputeAsBoolean() {
+		assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
+				() -> create().computeAsBoolean());
+	}
+
+	public interface TextExpressionTest extends ExpressionTest<CharSequence> {
 
 		@Override
 		default TypeInfo getExpectedType() { return TypeInfo.TEXT; }
@@ -180,13 +197,14 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		@RandomizedTest
 		default void testComputeAsChars(RandomGenerator rng) {
 			CharSequence origin = random(rng);
-			TextExpression instance = createWithValue(origin);
+			@SuppressWarnings("unchecked")
+			Expression<CharSequence> instance = (Expression<CharSequence>) createWithValue(origin);
 			CharSequence chars = instance.compute();
 			assertThat(chars).hasToString(origin.toString());
 		}
 	}
 
-	public interface BooleanExpressionTest extends ExpressionTest<Primitive<Boolean>, BooleanExpression> {
+	public interface BooleanExpressionTest extends ExpressionTest<Primitive<Boolean>> {
 
 		@Override
 		default TypeInfo getExpectedType() { return TypeInfo.BOOLEAN; }
@@ -197,6 +215,7 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		@Override
 		default Primitive<Boolean> random(RandomGenerator rng) { return new MutableBoolean(rng.nextBoolean()); }
 
+		@Override
 		@Test
 		default void testComputeAsBoolean() {
 			assertThat(createWithValue(new MutableBoolean(true)).computeAsBoolean()).isTrue();
@@ -204,7 +223,7 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		}
 	}
 
-	public interface IntegerExpressionTest extends ExpressionTest<Primitive<? extends Number>, NumericalExpression> {
+	public interface IntegerExpressionTest extends ExpressionTest<Primitive<? extends Number>> {
 
 		@Override
 		default TypeInfo getExpectedType() { return TypeInfo.INTEGER; }
@@ -216,6 +235,7 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		@Override
 		default Primitive<? extends Number> random(RandomGenerator rng) { return new MutableLong(rng.nextInt()); }
 
+		@Override
 		@Test
 		@RandomizedTest
 		default void testComputeAsLong(RandomGenerator rng) {
@@ -223,6 +243,7 @@ public interface ExpressionTest<T, E extends Expression<T>>
 			assertThat(createWithValue(value).computeAsLong()).isEqualTo(value.longValue());
 		}
 
+		@Override
 		@Test
 		@RandomizedTest
 		default void testComputeAsDouble(RandomGenerator rng) {
@@ -231,7 +252,7 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		}
 	}
 
-	public interface FloatingPointExpressionTest extends ExpressionTest<Primitive<? extends Number>, NumericalExpression> {
+	public interface FloatingPointExpressionTest extends ExpressionTest<Primitive<? extends Number>> {
 
 		@Override
 		default TypeInfo getExpectedType() { return TypeInfo.FLOATING_POINT; }
@@ -243,14 +264,7 @@ public interface ExpressionTest<T, E extends Expression<T>>
 		@Override
 		default Primitive<? extends Number> random(RandomGenerator rng) { return new MutableDouble(rng.nextFloat()); }
 
-		@Test
-		@RandomizedTest
-		default void testComputeAsLong(RandomGenerator rng) {
-			Primitive<? extends Number> value = random(rng);
-			assertIcarusException(QueryErrorCode.TYPE_MISMATCH,
-					() -> createWithValue(value).computeAsLong());
-		}
-
+		@Override
 		@Test
 		@RandomizedTest
 		default void testComputeAsDouble(RandomGenerator rng) {
@@ -267,13 +281,21 @@ public interface ExpressionTest<T, E extends Expression<T>>
 	 * @param <V> element type of list object
 	 * @param <E> type of list expression under test
 	 */
-	public interface ListExpressionTest<T, V, E extends ListExpression<T, V>>
-			extends ExpressionTest<T, E> {
+	public interface ListExpressionTest<T, V> extends ExpressionTest<T> {
 
 		@Provider
-		E createForSize(int size);
+		ListExpression<T, V> createForSize(int size);
 
 		TypeInfo getExpectedElementType();
+
+		@SuppressWarnings("unchecked")
+		@Override
+		default ListExpression<T, V> create() {
+			return (ListExpression<T, V>) ExpressionTest.super.create();
+		}
+
+		@Override
+		ListExpression<T, V> createWithValue(T value);
 
 		/**
 		 * Test method for {@link de.ims.icarus2.query.api.eval.Expression.ListExpression#getElementType()}.
@@ -291,28 +313,28 @@ public interface ExpressionTest<T, E extends Expression<T>>
 	}
 
 	public interface TextListExpressionTest<T>
-			extends ListExpressionTest<T, CharSequence, ListExpression<T, CharSequence>> {
+			extends ListExpressionTest<T, CharSequence> {
 
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
 	}
 
 	public interface IntegerListExpressionTest<T>
-			extends ListExpressionTest<T, Primitive<Long>, IntegerListExpression<T>> {
+			extends ListExpressionTest<T, Primitive<Long>> {
 
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.INTEGER; }
 	}
 
 	public interface FloatingPointListExpressionTest<T>
-			extends ListExpressionTest<T, Primitive<Double>, FloatingPointListExpression<T>> {
+			extends ListExpressionTest<T, Primitive<Double>> {
 
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.FLOATING_POINT; }
 	}
 
 	public interface BooleanListExpressionTest<T>
-			extends ListExpressionTest<T, Primitive<Boolean>, BooleanListExpression<T>> {
+			extends ListExpressionTest<T, Primitive<Boolean>> {
 
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.BOOLEAN; }

@@ -24,9 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
@@ -63,7 +60,7 @@ class LiteralsTest {
 	@Test
 	void testOfCharSequence() {
 		String value = "test";
-		TextExpression expression = Literals.of(value);
+		Expression<CharSequence> expression = Literals.of(value);
 		assertThat(expression.compute()).hasToString(value);
 	}
 
@@ -96,7 +93,7 @@ class LiteralsTest {
 		assertThat(Literals.of(value).computeAsDouble()).isEqualTo(value);
 	}
 
-	abstract class TestBase<T, E extends Expression<T>> implements ExpressionTest<T, E> {
+	abstract class TestBase<T> implements ExpressionTest<T> {
 
 		@Override
 		public boolean nativeConstant() { return true; }
@@ -108,7 +105,7 @@ class LiteralsTest {
 	}
 
 	@Nested
-	class NullLiteralTest extends TestBase<Object, Expression<Object>> {
+	class NullLiteralTest extends TestBase<Object> {
 
 		@Override
 		public Object constant() { return null; }
@@ -135,40 +132,40 @@ class LiteralsTest {
 	}
 
 	@Nested
-	class StringLiteralTest extends TestBase<CharSequence, TextExpression> implements TextExpressionTest {
+	class StringLiteralTest extends TestBase<CharSequence> implements TextExpressionTest {
 
 		@Override
-		public TextExpression createWithValue(CharSequence value) { return Literals.of(value); }
+		public Expression<CharSequence> createWithValue(CharSequence value) { return Literals.of(value); }
 
 		@Override
 		public Class<?> getTestTargetClass() { return StringLiteral.class; }
 	}
 
 	@Nested
-	class BooleanLiteralTest extends TestBase<Primitive<Boolean>, BooleanExpression> implements BooleanExpressionTest {
+	class BooleanLiteralTest extends TestBase<Primitive<Boolean>> implements BooleanExpressionTest {
 
 		@Override
-		public BooleanExpression createWithValue(Primitive<Boolean> value) { return Literals.of(value.booleanValue()); }
+		public Expression<Primitive<Boolean>> createWithValue(Primitive<Boolean> value) { return Literals.of(value.booleanValue()); }
 
 		@Override
 		public Class<?> getTestTargetClass() { return BooleanLiteral.class; }
 	}
 
 	@Nested
-	class IntegerLiteralTest extends TestBase<Primitive<? extends Number>, NumericalExpression> implements IntegerExpressionTest {
+	class IntegerLiteralTest extends TestBase<Primitive<? extends Number>> implements IntegerExpressionTest {
 
 		@Override
-		public NumericalExpression createWithValue(Primitive<? extends Number> value) { return Literals.of(value.longValue()); }
+		public Expression<?> createWithValue(Primitive<? extends Number> value) { return Literals.of(value.longValue()); }
 
 		@Override
 		public Class<?> getTestTargetClass() { return IntegerLiteral.class; }
 	}
 
 	@Nested
-	class FloatingPointLiteralTest extends TestBase<Primitive<? extends Number>, NumericalExpression> implements FloatingPointExpressionTest {
+	class FloatingPointLiteralTest extends TestBase<Primitive<? extends Number>> implements FloatingPointExpressionTest {
 
 		@Override
-		public NumericalExpression createWithValue(Primitive<? extends Number> value) { return Literals.of(value.doubleValue()); }
+		public Expression<?> createWithValue(Primitive<? extends Number> value) { return Literals.of(value.doubleValue()); }
 
 		@Override
 		public Class<?> getTestTargetClass() { return FloatingPointLiteral.class; }

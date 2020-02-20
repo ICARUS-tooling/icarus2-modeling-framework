@@ -35,6 +35,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.data.ContentType;
 import de.ims.icarus2.util.lang.ClassUtils;
 
@@ -89,7 +90,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 	 */
 	@Override
 	public String toString() {
-		return "AnnotationManifest@"+(key==null ? "<no-key>" : key); //$NON-NLS-1$ //$NON-NLS-2$
+		return "AnnotationManifest@"+(key==null ? "<no-key>" : key); //$NON-NLS-2$
 	}
 
 	/**
@@ -185,9 +186,10 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 
 	private void addAlias0(String alias) {
 		requireNonNull(alias);
+		ManifestUtils.checkId(alias);
 
 		if(aliases.contains(alias))
-			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Alias already registered: "+alias); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Alias already registered: "+alias);
 
 		aliases.add(alias);
 	}
@@ -205,7 +207,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 		requireNonNull(alias);
 
 		if(aliases==null || !aliases.remove(alias))
-			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown alias: "+alias); //$NON-NLS-1$
+			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Unknown alias: "+alias);
 	}
 
 	/**
@@ -280,7 +282,7 @@ public class AnnotationManifestImpl extends AbstractMemberManifest<AnnotationMan
 
 //		if(result==null)
 //			throw new ModelException(ModelError.MANIFEST_MISSING_TYPE,
-//					"No value type available for annotation manifest: "+getId()); //$NON-NLS-1$
+//					"No value type available for annotation manifest: "+getId());
 
 		return result;
 	}

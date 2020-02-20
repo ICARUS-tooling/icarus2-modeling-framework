@@ -36,22 +36,24 @@ public interface Environment {
 	}
 
 	/**
-	 * Try to resolve the specified {@code name} to an entry in this namespace.
+	 * Returns the relative priority of this environment compared to others
+	 * of the same scope.
+	 * <p>
+	 * The priority value is used when resolving references in a query to
+	 * entries in the active environment(s). If a reference is resolved to
+	 * entries from multiple environments, the one with the highest priority
+	 * is preferred.
+	 *
+	 * @return
 	 */
-//	default NsEntry lookup(String name) {
-//		return lookup(name, TypeFilter.ALL);
-//	}
-
-	/**
-	 * Try to resolve the specified {@code name} to an entry in this namespace
-	 * that satisfies the specified filter. This will return
-	 */
-//	NsEntry lookup(String name, TypeFilter filter);
+	default Priority getPriority() {
+		return Priority.DEFAULT;
+	}
 
 	Set<NsEntry> getEntries();
 
 	/**
-	 * An individual type-aware entry in a namespace.
+	 * An individual type-aware entry in a namespace/environment.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -78,12 +80,23 @@ public interface Environment {
 
 		/** Returns the namespace this entry belongs to. */
 		Environment getSource();
+
+		Expression<?> instantiate();
 	}
 
 	public enum EntryType {
 		FIELD,
 		METHOD,
 		UNDEFINED,
+		;
+	}
+
+	public enum Priority {
+		LOWEST,
+		LOW,
+		DEFAULT,
+		HIGH,
+		HIGHEST,
 		;
 	}
 }

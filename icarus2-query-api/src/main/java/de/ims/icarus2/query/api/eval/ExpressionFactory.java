@@ -46,11 +46,8 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.EqualityPred;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BitwiseOpContext;
@@ -79,6 +76,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -161,51 +159,52 @@ public class ExpressionFactory {
 				"Unknown alterative: "+ctx.getClass().getCanonicalName(), asFragment(ctx));
 	}
 
-	private NumericalExpression ensureNumerical(Expression<?> source) {
+	private Expression<?> ensureNumerical(Expression<?> source) {
 		if(!source.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a numerical type: "+source.getResultType());
 		//TODO maybe validate via instanceof ?
-		return (NumericalExpression)source;
+		return source;
 	}
 
-	private NumericalExpression ensureInteger(Expression<?> source) {
-		NumericalExpression nexp = ensureNumerical(source);
-		if(nexp.isFPE())
+	private Expression<?> ensureInteger(Expression<?> source) {
+		if(source.isInteger())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-					"Not an integer expression: "+nexp.getResultType());
-		return nexp;
+					"Not an integer expression: "+source.getResultType());
+		return source;
 	}
 
-	private BooleanExpression ensureBoolean(Expression<?> source) {
+	@SuppressWarnings("unchecked")
+	private Expression<Primitive<Boolean>> ensureBoolean(Expression<?> source) {
 		if(!source.isBoolean())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a boolean type: "+source.getResultType());
 		//TODO take switches and general boolean type conversion into account!!
 		//TODO maybe validate via instanceof ?
-		return (BooleanExpression)source;
+		return (Expression<Primitive<Boolean>>)source;
 	}
 
 	//TODO add argument to enable conversion
-	private TextExpression ensureText(Expression<?> source) {
+	@SuppressWarnings("unchecked")
+	private Expression<CharSequence> ensureText(Expression<?> source) {
 		if(!source.isText())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a text type: "+source.getResultType());
 		//TODO take string conversion into account!!
 		//TODO maybe validate via instanceof ?
-		return (TextExpression)source;
+		return (Expression<CharSequence>)source;
 	}
 
-	private NumericalExpression[] ensureInteger(Expression<?>[] source) {
+	private Expression<?>[] ensureInteger(Expression<?>[] source) {
 		return Stream.of(source)
 				.map(this::ensureInteger)
-				.toArray(NumericalExpression[]::new);
+				.toArray(Expression[]::new);
 	}
 
-	private TextExpression[] ensureText(Expression<?>[] source) {
+	private Expression<CharSequence>[] ensureText(Expression<?>[] source) {
 		return Stream.of(source)
 				.map(this::ensureText)
-				.toArray(TextExpression[]::new);
+				.toArray(Expression[]::new);
 	}
 
 	private ListExpression<?, ?> ensureList(Expression<?> source) {
@@ -223,7 +222,7 @@ public class ExpressionFactory {
 		return (IntegerListExpression<?>)list;
 	}
 
-	private BooleanExpression maybeNegate(BooleanExpression source, boolean negate) {
+	private Expression<Primitive<Boolean>> maybeNegate(Expression<Primitive<Boolean>> source, boolean negate) {
 		return negate ? UnaryOperations.not(source) : source;
 	}
 
@@ -247,7 +246,7 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(pctx);
 	}
 
-	private TextExpression processStringLiteral(TerminalNode node) {
+	private Expression<CharSequence> processStringLiteral(TerminalNode node) {
 		String content = textOf(node);
 		// If needed, unescape the content first
 		if(content.indexOf('\\')!=-1) {
@@ -284,11 +283,11 @@ public class ExpressionFactory {
 		return Literals.ofNull();
 	}
 
-	private BooleanExpression processBooleanLiteral(BooleanLiteralContext ctx) {
+	private Expression<Primitive<Boolean>> processBooleanLiteral(BooleanLiteralContext ctx) {
 		return Literals.of(ctx.TRUE()!=null);
 	}
 
-	private NumericalExpression processIntegerLiteral(IntegerLiteralContext ctx) {
+	private Expression<?> processIntegerLiteral(IntegerLiteralContext ctx) {
 		String content = textOf(ctx);
 		content = cleanNumberLiteral(content);
 
@@ -301,7 +300,7 @@ public class ExpressionFactory {
 		}
 	}
 
-	private NumericalExpression processFloatingPointLiteral(FloatingPointLiteralContext ctx) {
+	private Expression<?> processFloatingPointLiteral(FloatingPointLiteralContext ctx) {
 		String content = textOf(ctx);
 		content = cleanNumberLiteral(content);
 
@@ -355,12 +354,12 @@ public class ExpressionFactory {
 				return ListAccess.filter(source, index);
 			}
 			// Single non-list argument -> pick element (ListAccess will choose best implementation for type)
-			NumericalExpression index = ensureNumerical(indices[0]);
+			Expression<?> index = ensureNumerical(indices[0]);
 			return ListAccess.atIndex(source, index);
 		}
 
 		// Generic case: list of index functions -> let ListAccess pick the best implementation
-		NumericalExpression[] index = ensureInteger(indices);
+		Expression<?>[] index = ensureInteger(indices);
 		return ListAccess.filter(source, ListAccess.wrapIndices(index));
 	}
 
@@ -419,7 +418,7 @@ public class ExpressionFactory {
 		Expression<?> target = processExpression0(ctx.source);
 		Expression<?>[] elements = processExpressionList(ctx.set);
 
-		BooleanExpression setPred;
+		Expression<Primitive<Boolean>> setPred;
 
 		if(ctx.all()!=null) {
 			if(!target.isList())
@@ -449,8 +448,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processMultiplicativeOp(MultiplicativeOpContext ctx) {
-		NumericalExpression left = ensureNumerical(processExpression0(ctx.left));
-		NumericalExpression right = ensureNumerical(processExpression0(ctx.right));
+		Expression<?> left = ensureNumerical(processExpression0(ctx.left));
+		Expression<?> right = ensureNumerical(processExpression0(ctx.right));
 
 		AlgebraicOp op = null;
 		if(ctx.STAR()!=null) {
@@ -487,7 +486,7 @@ public class ExpressionFactory {
 				ensureNumerical(left), ensureNumerical(right));
 	}
 
-	private TextExpression processStringConcatenation(AdditiveOpContext ctx) {
+	private Expression<CharSequence> processStringConcatenation(AdditiveOpContext ctx) {
 		/*
 		 * Additive op in IQL is left associative, so we gonna add elements to
 		 * the buffer starting from the right while descending down the parse tree.
@@ -506,7 +505,7 @@ public class ExpressionFactory {
 		// Reverse list before processing
 		Collections.reverse(items);
 
-		TextExpression[] elements = items.stream()
+		Expression<CharSequence>[] elements = items.stream()
 				// Basic processing
 				.map(this::processExpression0)
 				// Make sure we only concatenate strings
@@ -518,14 +517,14 @@ public class ExpressionFactory {
 					}
 					return Stream.of(exp);
 				})
-				.toArray(TextExpression[]::new);
+				.toArray(Expression[]::new);
 
 		return StringConcatenation.concat(elements);
 	}
 
 	Expression<?> processBitwiseOp(BitwiseOpContext ctx) {
-		NumericalExpression left = ensureInteger(processExpression0(ctx.left));
-		NumericalExpression right = ensureInteger(processExpression0(ctx.right));
+		Expression<?> left = ensureInteger(processExpression0(ctx.left));
+		Expression<?> right = ensureInteger(processExpression0(ctx.right));
 
 		AlgebraicOp op = null;
 		if(ctx.AMP()!=null) {
@@ -566,8 +565,8 @@ public class ExpressionFactory {
 				+ " both implement java.lang.Comparable: "+textOf(ctx), asFragment(ctx));
 	}
 
-	private BooleanExpression processNumericalComparison(ComparisonOpContext ctx,
-			NumericalExpression left, NumericalExpression right) {
+	private Expression<Primitive<Boolean>> processNumericalComparison(ComparisonOpContext ctx,
+			Expression<?> left, Expression<?> right) {
 		NumericalComparator comp = null;
 		if(ctx.LT()!=null) {
 			comp = NumericalComparator.LESS;
@@ -585,7 +584,7 @@ public class ExpressionFactory {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private BooleanExpression processComparableComparison(ComparisonOpContext ctx,
+	private Expression<Primitive<Boolean>> processComparableComparison(ComparisonOpContext ctx,
 			Expression<Comparable> left, Expression<Comparable> right) {
 		ComparableComparator comp = null;
 		if(ctx.LT()!=null) {
@@ -604,8 +603,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processStringOp(StringOpContext ctx) {
-		TextExpression target = ensureText(processExpression0(ctx.left));
-		TextExpression query = ensureText(processExpression0(ctx.right));
+		Expression<CharSequence> target = ensureText(processExpression0(ctx.left));
+		Expression<CharSequence> query = ensureText(processExpression0(ctx.right));
 
 		StringOp op = null;
 		boolean negate = false;
@@ -624,7 +623,7 @@ public class ExpressionFactory {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		BooleanExpression expression = isAllowUnicode() ?
+		Expression<Primitive<Boolean>> expression = isAllowUnicode() ?
 				BinaryOperations.unicodeOp(op, getStringMode(), target, query)
 				: BinaryOperations.asciiOp(op, getStringMode(), target, query);
 
@@ -635,7 +634,7 @@ public class ExpressionFactory {
 		Expression<?> left = processExpression0(ctx.left);
 		Expression<?> right = processExpression0(ctx.right);
 
-		BooleanExpression expression;
+		Expression<Primitive<Boolean>> expression;
 
 		if(left.isNumerical() && right.isNumerical()) {
 			// Strictly numerical check
@@ -662,8 +661,8 @@ public class ExpressionFactory {
 			} else
 				return failForUnhandledAlternative(ctx);
 
-			TextExpression target = ensureText(left);
-			TextExpression query = ensureText(right);
+			Expression<CharSequence> target = ensureText(left);
+			Expression<CharSequence> query = ensureText(right);
 
 			expression = isAllowUnicode() ?
 					BinaryOperations.unicodeOp(op, getStringMode(), target, query)

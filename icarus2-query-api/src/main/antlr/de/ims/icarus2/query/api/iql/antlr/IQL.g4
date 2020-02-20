@@ -138,6 +138,7 @@ laneStatementsList
 	;
 	
 laneStatement
+	//TODO exchange ALIGNED with a set of modes, such as (ORDERED, ADJACENT,...)
 	: LANE member ALIGNED? nodeStatement
 	;
 	

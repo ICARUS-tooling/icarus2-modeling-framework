@@ -290,6 +290,10 @@ public final class StringUtil {
 	// If the hash function of String should ever be changed this needs to be addressed!
 
 	public static int hash(CharSequence cs) {
+		// String instances cache their hash codes, so we can utilize that!
+		if(cs.getClass()==String.class) {
+			return cs.hashCode();
+		}
 
 		int h = 0;
 

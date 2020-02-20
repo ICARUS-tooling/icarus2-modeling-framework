@@ -8,19 +8,14 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
-import java.lang.reflect.Array;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -47,11 +42,11 @@ public final class ListAccess {
 		// TODO maybe switch to a more elaborate strategy for computing the result type
 		TypeInfo type = source[0].getResultType();
 		if(TypeInfo.isBoolean(type)) {
-			return new BooleanWrapper(EvaluationUtils.ensureBoolean(source));
+			return new BooleanListWrapper(EvaluationUtils.ensureBoolean(source));
 		} else if(TypeInfo.isFloatingPoint(type)) {
-			return new FloatingPointWrapper(EvaluationUtils.ensureFloatingPoint(source));
+			return new FloatingPointListWrapper(EvaluationUtils.ensureFloatingPoint(source));
 		} else if(TypeInfo.isNumerical(type)) {
-			return new IntegerWrapper(EvaluationUtils.ensureInteger(source));
+			return new IntegerListWrapper(EvaluationUtils.ensureInteger(source));
 		}
 
 		return new ObjectWrapper<>(source);
@@ -85,8 +80,8 @@ public final class ListAccess {
 
 	// INTEGER METHODS
 
-	public static NumericalExpression atIndex(IntegerListExpression<?> source,
-			NumericalExpression index) {
+	public static Expression<?> atIndex(IntegerListExpression<?> source,
+			Expression<?> index) {
 		return new IntegerAccess(source, index);
 	}
 
@@ -95,14 +90,14 @@ public final class ListAccess {
 		return new IntegerBatchAccess(source, index);
 	}
 
-	public static IntegerListExpression<long[]> wrapIndices(NumericalExpression...source) {
-		return new IntegerWrapper(source);
+	public static IntegerListExpression<long[]> wrapIndices(Expression<?>...source) {
+		return new IntegerListWrapper(source);
 	}
 
 	// FLOATING POINT METHODS
 
-	public static NumericalExpression atIndex(FloatingPointListExpression<?> source,
-			NumericalExpression index) {
+	public static Expression<?> atIndex(FloatingPointListExpression<?> source,
+			Expression<?> index) {
 		return new FloatingPointAccess(source, index);
 	}
 
@@ -113,8 +108,8 @@ public final class ListAccess {
 
 	// BOOLEAN METHODS
 
-	public static BooleanExpression atIndex(BooleanListExpression<?> source,
-			NumericalExpression index) {
+	public static Expression<Primitive<Boolean>> atIndex(BooleanListExpression<?> source,
+			Expression<?> index) {
 		return new BooleanAccess(source, index);
 	}
 
@@ -126,7 +121,7 @@ public final class ListAccess {
 	// OBJECT METHODS
 
 	public static Expression<?> atIndex(ListExpression<?, ?> source,
-			NumericalExpression index) {
+			Expression<?> index) {
 		TypeInfo type = source.getElementType();
 		if(TypeInfo.isBoolean(type)) {
 			return atIndex((BooleanListExpression<?>)source, index);
@@ -154,11 +149,11 @@ public final class ListAccess {
 	}
 
 	/** Provides access to a single array element */
-	static final class IntegerAccess implements NumericalExpression {
+	static final class IntegerAccess implements Expression<Primitive<Long>> {
 		private final IntegerListExpression<?> source;
-		private final NumericalExpression index;
+		private final Expression<?> index;
 
-		public IntegerAccess(IntegerListExpression<?> source, NumericalExpression index) {
+		public IntegerAccess(IntegerListExpression<?> source, Expression<?> index) {
 			this.source = requireNonNull(source);
 			this.index = requireNonNull(index);
 		}
@@ -171,7 +166,7 @@ public final class ListAccess {
 		}
 
 		@Override
-		public Primitive<? extends Number> compute() { return source.get(index()); }
+		public Primitive<Long> compute() { return source.get(index()); }
 
 		@Override
 		public long computeAsLong() { return source.getAsLong(index()); }
@@ -180,16 +175,16 @@ public final class ListAccess {
 		public double computeAsDouble() { return computeAsLong(); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			return new IntegerAccess(
 					(IntegerListExpression<?>)source.duplicate(context),
-					(NumericalExpression)index.duplicate(context));
+					index.duplicate(context));
 		}
 
 		@Override
-		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
 			IntegerListExpression<?> newSource = (IntegerListExpression<?>) source.optimize(context);
-			NumericalExpression newIndex = (NumericalExpression) index.optimize(context);
+			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Literals.of(newSource.getAsLong(strictToInt(newIndex.computeAsLong())));
@@ -286,13 +281,13 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class IntegerWrapper implements IntegerListExpression<long[]> {
-		private final NumericalExpression[] source;
+	static final class IntegerListWrapper implements IntegerListExpression<long[]> {
+		private final Expression<?>[] source;
 		private final long[] buffer;
 
 		private static final TypeInfo type = TypeInfo.of(long[].class, true);
 
-		public IntegerWrapper(NumericalExpression[] source) {
+		public IntegerListWrapper(Expression<?>[] source) {
 			this.source = requireNonNull(source);
 			buffer = new long[source.length];
 		}
@@ -306,7 +301,7 @@ public final class ListAccess {
 		@Override
 		public boolean isFixedSize() { return true; }
 
-		private static void fillBuffer(long[] buffer, NumericalExpression[] source) {
+		private static void fillBuffer(long[] buffer, Expression<?>[] source) {
 			for (int i = 0; i < buffer.length; i++) {
 				buffer[i] = source[i].computeAsLong();
 			}
@@ -327,18 +322,16 @@ public final class ListAccess {
 
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
-			return new IntegerWrapper(Stream.of(source)
+			return new IntegerListWrapper(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
-						.map(NumericalExpression.class::cast)
-						.toArray(NumericalExpression[]::new));
+						.toArray(Expression<?>[]::new));
 		}
 
 		@Override
 		public Expression<long[]> optimize(EvaluationContext context) {
-			NumericalExpression[] newSource = Stream.of(source)
+			Expression<?>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
-					.map(NumericalExpression.class::cast)
-					.toArray(NumericalExpression[]::new);
+					.toArray(Expression<?>[]::new);
 
 			// Optimize to constant
 			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
@@ -348,16 +341,16 @@ public final class ListAccess {
 			}
 
 			// We could check whether any of the index expressions has changed...
-			return new IntegerWrapper(newSource);
+			return new IntegerListWrapper(newSource);
 		}
 	}
 
 	/** Provides access to a single array element */
-	static final class FloatingPointAccess implements NumericalExpression {
+	static final class FloatingPointAccess implements Expression<Primitive<Double>> {
 		private final FloatingPointListExpression<?> source;
-		private final NumericalExpression index;
+		private final Expression<?> index;
 
-		public FloatingPointAccess(FloatingPointListExpression<?> source, NumericalExpression index) {
+		public FloatingPointAccess(FloatingPointListExpression<?> source, Expression<?> index) {
 			this.source = requireNonNull(source);
 			this.index = requireNonNull(index);
 		}
@@ -370,7 +363,7 @@ public final class ListAccess {
 		}
 
 		@Override
-		public Primitive<? extends Number> compute() { return source.get(index()); }
+		public Primitive<Double> compute() { return source.get(index()); }
 
 		@Override
 		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
@@ -379,16 +372,16 @@ public final class ListAccess {
 		public double computeAsDouble() { return source.getAsDouble(index()); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 			return new FloatingPointAccess(
 					(FloatingPointListExpression<?>)source.duplicate(context),
-					(NumericalExpression)index.duplicate(context));
+					index.duplicate(context));
 		}
 
 		@Override
-		public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+		public Expression<Primitive<Double>> optimize(EvaluationContext context) {
 			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) source.optimize(context);
-			NumericalExpression newIndex = (NumericalExpression) index.optimize(context);
+			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Literals.of(newSource.getAsDouble(strictToInt(newIndex.computeAsLong())));
@@ -485,13 +478,13 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class FloatingPointWrapper implements FloatingPointListExpression<double[]> {
-		private final NumericalExpression[] source;
+	static final class FloatingPointListWrapper implements FloatingPointListExpression<double[]> {
+		private final Expression<?>[] source;
 		private final double[] buffer;
 
 		private static final TypeInfo type = TypeInfo.of(double[].class, true);
 
-		public FloatingPointWrapper(NumericalExpression[] source) {
+		public FloatingPointListWrapper(Expression<?>[] source) {
 			this.source = requireNonNull(source);
 			buffer = new double[source.length];
 		}
@@ -505,7 +498,7 @@ public final class ListAccess {
 		@Override
 		public boolean isFixedSize() { return true; }
 
-		private static void fillBuffer(double[] buffer, NumericalExpression[] source) {
+		private static void fillBuffer(double[] buffer, Expression<?>[] source) {
 			for (int i = 0; i < buffer.length; i++) {
 				buffer[i] = source[i].computeAsDouble();
 			}
@@ -526,18 +519,16 @@ public final class ListAccess {
 
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
-			return new FloatingPointWrapper(Stream.of(source)
+			return new FloatingPointListWrapper(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
-						.map(NumericalExpression.class::cast)
-						.toArray(NumericalExpression[]::new));
+						.toArray(Expression<?>[]::new));
 		}
 
 		@Override
 		public Expression<double[]> optimize(EvaluationContext context) {
-			NumericalExpression[] newSource = Stream.of(source)
+			Expression<?>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
-					.map(NumericalExpression.class::cast)
-					.toArray(NumericalExpression[]::new);
+					.toArray(Expression<?>[]::new);
 
 			// Optimize to constant
 			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
@@ -547,16 +538,16 @@ public final class ListAccess {
 			}
 
 			// We could check whether any of the index expressions has changed...
-			return new FloatingPointWrapper(newSource);
+			return new FloatingPointListWrapper(newSource);
 		}
 	}
 
 	/** Provides access to a single array element */
-	static final class BooleanAccess implements BooleanExpression {
+	static final class BooleanAccess implements Expression<Primitive<Boolean>> {
 		private final BooleanListExpression<?> source;
-		private final NumericalExpression index;
+		private final Expression<?> index;
 
-		public BooleanAccess(BooleanListExpression<?> source, NumericalExpression index) {
+		public BooleanAccess(BooleanListExpression<?> source, Expression<?> index) {
 			this.source = requireNonNull(source);
 			this.index = requireNonNull(index);
 		}
@@ -578,13 +569,13 @@ public final class ListAccess {
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			return new BooleanAccess(
 					(BooleanListExpression<?>)source.duplicate(context),
-					(NumericalExpression)index.duplicate(context));
+					(Expression<?>)index.duplicate(context));
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
 			BooleanListExpression<?> newSource = (BooleanListExpression<?>) source.optimize(context);
-			NumericalExpression newIndex = (NumericalExpression) index.optimize(context);
+			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Literals.of(newSource.getAsBoolean(strictToInt(newIndex.computeAsLong())));
@@ -681,13 +672,13 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class BooleanWrapper implements BooleanListExpression<boolean[]> {
-		private final BooleanExpression[] source;
+	static final class BooleanListWrapper implements BooleanListExpression<boolean[]> {
+		private final Expression<?>[] source;
 		private final boolean[] buffer;
 
 		private static final TypeInfo type = TypeInfo.of(boolean[].class, true);
 
-		public BooleanWrapper(BooleanExpression[] source) {
+		public BooleanListWrapper(Expression<?>[] source) {
 			this.source = requireNonNull(source);
 			buffer = new boolean[source.length];
 		}
@@ -701,7 +692,7 @@ public final class ListAccess {
 		@Override
 		public boolean isFixedSize() { return true; }
 
-		private static void fillBuffer(boolean[] buffer, BooleanExpression[] source) {
+		private static void fillBuffer(boolean[] buffer, Expression<?>[] source) {
 			for (int i = 0; i < buffer.length; i++) {
 				buffer[i] = source[i].computeAsBoolean();
 			}
@@ -713,26 +704,25 @@ public final class ListAccess {
 			return buffer;
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public Primitive<Boolean> get(int index) { return source[index].compute(); }
+		public Primitive<Boolean> get(int index) { return (Primitive<Boolean>) source[index].compute(); }
 
 		@Override
 		public boolean getAsBoolean(int index) { return source[index].computeAsBoolean(); }
 
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
-			return new BooleanWrapper(Stream.of(source)
+			return new BooleanListWrapper(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
-						.map(BooleanExpression.class::cast)
-						.toArray(BooleanExpression[]::new));
+						.toArray(Expression[]::new));
 		}
 
 		@Override
 		public Expression<boolean[]> optimize(EvaluationContext context) {
-			BooleanExpression[] newSource = Stream.of(source)
+			Expression<Primitive<Boolean>>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
-					.map(BooleanExpression.class::cast)
-					.toArray(BooleanExpression[]::new);
+					.toArray(Expression[]::new);
 
 			// Optimize to constant
 			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
@@ -742,16 +732,16 @@ public final class ListAccess {
 			}
 
 			// We could check whether any of the index expressions has changed...
-			return new BooleanWrapper(newSource);
+			return new BooleanListWrapper(newSource);
 		}
 	}
 
 	/** Provides access to a single array element */
 	static final class ObjectAccess<T> implements Expression<T> {
 		private final ListExpression<?, T> source;
-		private final NumericalExpression index;
+		private final Expression<?> index;
 
-		public ObjectAccess(ListExpression<?, T> source, NumericalExpression index) {
+		public ObjectAccess(ListExpression<?, T> source, Expression<?> index) {
 			this.source = requireNonNull(source);
 			this.index = requireNonNull(index);
 		}
@@ -767,14 +757,14 @@ public final class ListAccess {
 		public Expression<T> duplicate(EvaluationContext context) {
 			return new ObjectAccess<>(
 					(ListExpression<?, T>)source.duplicate(context),
-					(NumericalExpression)index.duplicate(context));
+					(Expression<?>)index.duplicate(context));
 		}
 
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
 			@SuppressWarnings("unchecked")
 			ListExpression<?, T> newSource = (ListExpression<?, T>) source.optimize(context);
-			NumericalExpression newIndex = (NumericalExpression) index.optimize(context);
+			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Expressions.constant(newSource.get(strictToInt(newIndex.computeAsLong())));
@@ -785,20 +775,6 @@ public final class ListAccess {
 			}
 
 			return this;
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <E> E[] arrayOf(TypeInfo type, int size) {
-		return (E[]) Array.newInstance(type.getType().getComponentType(), size);
-	}
-
-	private static TypeInfo arrayType(TypeInfo elementType) {
-		try {
-			return TypeInfo.of(Class.forName("[L"+elementType.getType().getCanonicalName()), true);
-		} catch (ClassNotFoundException e) {
-			throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
-					"Unable to obtain array type for: "+elementType);
 		}
 	}
 
@@ -814,8 +790,8 @@ public final class ListAccess {
 			this.source = requireNonNull(source);
 			this.index = requireNonNull(index);
 			elementType = source.getElementType();
-			type = arrayType(elementType);
-			buffer = index.isFixedSize() ? arrayOf(type, index.size()) : null;
+			type = EvaluationUtils.arrayType(elementType);
+			buffer = index.isFixedSize() ? EvaluationUtils.arrayOf(type, index.size()) : null;
 		}
 
 		@Override
@@ -843,7 +819,7 @@ public final class ListAccess {
 		 */
 		@Override
 		public E[] compute() {
-			E[] buffer = index.isFixedSize() ? this.buffer : arrayOf(elementType, source.size());
+			E[] buffer = index.isFixedSize() ? this.buffer : EvaluationUtils.arrayOf(elementType, source.size());
 			fillBuffer(buffer, source, index);
 			return buffer;
 		}
@@ -869,7 +845,7 @@ public final class ListAccess {
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {
-				E[] array = arrayOf(elementType, newIndex.size());
+				E[] array = EvaluationUtils.arrayOf(elementType, newIndex.size());
 				fillBuffer(array, newSource, newIndex);
 				return ArrayLiterals.ofGeneric(array);
 			}
@@ -893,8 +869,8 @@ public final class ListAccess {
 		public ObjectWrapper(Expression<E>[] source) {
 			this.source = requireNonNull(source);
 			elementType = source[0].getResultType();
-			type = arrayType(elementType);
-			buffer = arrayOf(type, source.length);
+			type = EvaluationUtils.arrayType(elementType);
+			buffer = EvaluationUtils.arrayOf(type, source.length);
 		}
 
 		@Override
@@ -941,7 +917,7 @@ public final class ListAccess {
 
 			// Optimize to constant
 			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
-				E[] array = arrayOf(elementType, newSource.length);
+				E[] array = EvaluationUtils.arrayOf(elementType, newSource.length);
 				fillBuffer(array, newSource);
 				return ArrayLiterals.ofGeneric(array);
 			}

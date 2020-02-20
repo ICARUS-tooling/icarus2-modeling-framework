@@ -56,8 +56,6 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.EqualityPred;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
@@ -132,7 +130,7 @@ class BinaryOperationsTest {
 	}
 
 	/**
-	 * Test class for {@link de.ims.icarus2.query.api.eval.BinaryOperations#numericalOp(de.ims.icarus2.query.api.eval.BinaryOperations.AlgebraicOp, de.ims.icarus2.query.api.eval.Expression.NumericalExpression, de.ims.icarus2.query.api.eval.Expression.NumericalExpression)}.
+	 * Test class for {@link de.ims.icarus2.query.api.eval.BinaryOperations#numericalOp(de.ims.icarus2.query.api.eval.BinaryOperations.AlgebraicOp, de.ims.icarus2.query.api.eval.Expression.Expression<?>, de.ims.icarus2.query.api.eval.Expression.Expression<?>)}.
 	 */
 	@Nested
 	class ForNumericalOps {
@@ -175,7 +173,7 @@ class BinaryOperationsTest {
 
 			/** Use ADD as basic op for testing general behavior */
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+			public Expression<?> createWithValue(Primitive<? extends Number> value) {
 				long result = value.longValue();
 				long left = result-10;
 				long right = 10;
@@ -188,7 +186,7 @@ class BinaryOperationsTest {
 			@Override
 			public Class<?> getTestTargetClass() { return BinaryLongOperation.class; }
 
-			private NumericalExpression create(AlgebraicOp op, long left, long right) {
+			private Expression<?> create(AlgebraicOp op, long left, long right) {
 				return BinaryOperations.numericalOp(op, Literals.of(left), Literals.of(right));
 			}
 
@@ -201,24 +199,25 @@ class BinaryOperationsTest {
 			private final long int_max = Integer.MAX_VALUE;
 
 			/** Wrap op into test instance and verify result on original, duplicated and optimized */
+			@SuppressWarnings("unchecked")
 			private DynamicNode assertIntOp(AlgebraicOp op, IntOpData data) {
 				return dynamicTest(String.format("%s %s %s [= %s]",
 						displayString(data.left), op, displayString(data.right), displayString(data.result)), () -> {
-					NumericalExpression expression = create(op, data.left, data.right);
-					assertThat(expression.isFPE()).isFalse();
+					Expression<?> expression = create(op, data.left, data.right);
+					assertThat(expression.isFloatingPoint()).isFalse();
 					assertThat(expression.computeAsLong()).isEqualTo(data.result);
 					assertThat(expression.computeAsDouble()).isEqualTo(data.result);
-					assertThat(expression.compute().longValue()).isEqualTo(data.result);
+					assertThat(((Primitive<? extends Number>)expression.compute()).longValue()).isEqualTo(data.result);
 
-					NumericalExpression duplicate = (NumericalExpression) expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 					assertThat(duplicate.computeAsLong()).isEqualTo(data.result);
 					assertThat(duplicate.computeAsDouble()).isEqualTo(data.result);
-					assertThat(duplicate.compute().longValue()).isEqualTo(data.result);
+					assertThat(((Primitive<? extends Number>)duplicate.compute()).longValue()).isEqualTo(data.result);
 
-					NumericalExpression optimized = (NumericalExpression) expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 					assertThat(optimized.computeAsLong()).isEqualTo(data.result);
 					assertThat(optimized.computeAsDouble()).isEqualTo(data.result);
-					assertThat(optimized.compute().longValue()).isEqualTo(data.result);
+					assertThat(((Primitive<? extends Number>)optimized.compute()).longValue()).isEqualTo(data.result);
 				});
 			}
 
@@ -448,7 +447,7 @@ class BinaryOperationsTest {
 
 			/** Use ADD as basic op for testing general behavior */
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+			public Expression<?> createWithValue(Primitive<? extends Number> value) {
 				double result = value.doubleValue();
 				double left = result-10;
 				double right = 10;
@@ -461,7 +460,7 @@ class BinaryOperationsTest {
 			@Override
 			public Class<?> getTestTargetClass() { return BinaryDoubleOperation.class; }
 
-			private NumericalExpression create(AlgebraicOp op, double left, double right) {
+			private Expression<?> create(AlgebraicOp op, double left, double right) {
 				return BinaryOperations.numericalOp(op, Literals.of(left), Literals.of(right));
 			}
 
@@ -474,21 +473,22 @@ class BinaryOperationsTest {
 			private final double float_max = Float.MAX_VALUE;
 
 			/** Wrap op into test instance and verify result on original, duplicated and optimized */
+			@SuppressWarnings("unchecked")
 			private DynamicNode assertDoubleOp(AlgebraicOp op, DoubleOpData data) {
 				return dynamicTest(String.format("%s %s %s [= %s]",
 						displayString(data.left), op, displayString(data.right), displayString(data.result)), () -> {
-					NumericalExpression expression = create(op, data.left, data.right);
-					assertThat(expression.isFPE()).isTrue();
+					Expression<?> expression = create(op, data.left, data.right);
+					assertThat(expression.isFloatingPoint()).isTrue();
 					assertThat(expression.computeAsDouble()).isEqualTo(data.result);
-					assertThat(expression.compute().doubleValue()).isEqualTo(data.result);
+					assertThat(((Primitive<? extends Number>)expression.compute()).doubleValue()).isEqualTo(data.result);
 
-					NumericalExpression duplicate = (NumericalExpression) expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 					assertThat(duplicate.computeAsDouble()).isEqualTo(data.result);
-					assertThat(duplicate.compute().doubleValue()).isEqualTo(data.result);
+					assertThat(((Primitive<? extends Number>)duplicate.compute()).doubleValue()).isEqualTo(data.result);
 
-					NumericalExpression optimized = (NumericalExpression) expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 					assertThat(optimized.computeAsDouble()).isEqualTo(data.result);
-					assertThat(optimized.compute().doubleValue()).isEqualTo(data.result);
+					assertThat(((Primitive<? extends Number>)optimized.compute()).doubleValue()).isEqualTo(data.result);
 				});
 			}
 
@@ -609,7 +609,7 @@ class BinaryOperationsTest {
 	}
 
 	/**
-	 * Test class for {@link de.ims.icarus2.query.api.eval.BinaryOperations#numericalPred(de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator, de.ims.icarus2.query.api.eval.Expression.NumericalExpression, de.ims.icarus2.query.api.eval.Expression.NumericalExpression)}.
+	 * Test class for {@link de.ims.icarus2.query.api.eval.BinaryOperations#numericalPred(de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator, de.ims.icarus2.query.api.eval.Expression.Expression<?>, de.ims.icarus2.query.api.eval.Expression.Expression<?>)}.
 	 */
 	@Nested
 	class ForNumericalPreds {
@@ -652,7 +652,7 @@ class BinaryOperationsTest {
 
 			/** Use EQUALS as basic op for testing general behavior */
 			@Override
-			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			public Expression<?> createWithValue(Primitive<Boolean> value) {
 				long left = 10;
 				long right = value.booleanValue() ? 10 : 11;
 				return create(NumericalComparator.EQUALS, left, right);
@@ -664,7 +664,7 @@ class BinaryOperationsTest {
 			@Override
 			public Class<?> getTestTargetClass() { return BinaryNumericalPredicate.class; }
 
-			private BooleanExpression create(NumericalComparator pred, long left, long right) {
+			private Expression<?> create(NumericalComparator pred, long left, long right) {
 				return BinaryOperations.numericalPred(pred, Literals.of(left), Literals.of(right));
 			}
 
@@ -680,17 +680,17 @@ class BinaryOperationsTest {
 			private DynamicNode assertIntPred(NumericalComparator pred, IntPredData data) {
 				return dynamicTest(String.format("%s %s %s [= %b]",
 						displayString(data.left), pred, displayString(data.right), _boolean(data.result)), () -> {
-					BooleanExpression expression = create(pred, data.left, data.right);
+					Expression<?> expression = create(pred, data.left, data.right);
 					assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
-					assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
+					assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-					BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 					assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
-					assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
+					assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-					BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 					assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
-					assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
+					assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 				});
 			}
 
@@ -840,7 +840,7 @@ class BinaryOperationsTest {
 
 			/** Use EQUALS as basic op for testing general behavior */
 			@Override
-			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			public Expression<?> createWithValue(Primitive<Boolean> value) {
 				double left = 10.5;
 				double right = value.booleanValue() ? 10.5 : 10.8;
 				return create(NumericalComparator.EQUALS, left, right);
@@ -852,7 +852,7 @@ class BinaryOperationsTest {
 			@Override
 			public Class<?> getTestTargetClass() { return BinaryNumericalPredicate.class; }
 
-			private BooleanExpression create(NumericalComparator pred, double left, double right) {
+			private Expression<?> create(NumericalComparator pred, double left, double right) {
 				return BinaryOperations.numericalPred(pred, Literals.of(left), Literals.of(right));
 			}
 
@@ -868,17 +868,17 @@ class BinaryOperationsTest {
 			private DynamicNode assertDoublePred(NumericalComparator pred, DoublePredData data) {
 				return dynamicTest(String.format("%s %s %s [= %b]",
 						displayString(data.left), pred, displayString(data.right), _boolean(data.result)), () -> {
-					BooleanExpression expression = create(pred, data.left, data.right);
+					Expression<?> expression = create(pred, data.left, data.right);
 					assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
-					assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
+					assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-					BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 					assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
-					assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
+					assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-					BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 					assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
-					assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
+					assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 				});
 			}
 
@@ -1068,7 +1068,7 @@ class BinaryOperationsTest {
 
 		/** Use EQUALS as basic op for testing general behavior */
 		@Override
-		public BooleanExpression createWithValue(Primitive<Boolean> value) {
+		public Expression<?> createWithValue(Primitive<Boolean> value) {
 			String left = "test1";
 			String right = value.booleanValue() ? "test1" : "test234";
 			return create(ComparableComparator.EQUALS, left, right);
@@ -1083,7 +1083,7 @@ class BinaryOperationsTest {
 		@Override
 		public boolean optimizeToConstant() { return false; }
 
-		private BooleanExpression create(ComparableComparator pred, Object left, Object right) {
+		private Expression<?> create(ComparableComparator pred, Object left, Object right) {
 			return BinaryOperations.comparablePred(pred, ExpressionTestUtils.raw(left), ExpressionTestUtils.raw(right));
 		}
 
@@ -1095,17 +1095,17 @@ class BinaryOperationsTest {
 		private DynamicNode assertComparablePred(ComparableComparator pred, GenericPredData data) {
 			return dynamicTest(String.format("%s %s %s [= %b]",
 					data.left, pred, data.right, _boolean(data.result)), () -> {
-				BooleanExpression expression = create(pred, data.left, data.right);
+				Expression<?> expression = create(pred, data.left, data.right);
 				assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
-				assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
+				assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-				BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+				Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 				assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
-				assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
+				assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-				BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+				Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 				assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
-				assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
+				assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 			});
 		}
 
@@ -1274,7 +1274,7 @@ class BinaryOperationsTest {
 
 		/** Use EQUALS as basic op for testing general behavior */
 		@Override
-		public BooleanExpression createWithValue(Primitive<Boolean> value) {
+		public Expression<?> createWithValue(Primitive<Boolean> value) {
 			String left = "test1";
 			String right = value.booleanValue() ? "test1" : "test234";
 			return create(EqualityPred.EQUALS, left, right);
@@ -1289,7 +1289,7 @@ class BinaryOperationsTest {
 		@Override
 		public boolean optimizeToConstant() { return false; }
 
-		private BooleanExpression create(EqualityPred pred, Object left, Object right) {
+		private Expression<?> create(EqualityPred pred, Object left, Object right) {
 			return BinaryOperations.equalityPred(pred, ExpressionTestUtils.raw(left), ExpressionTestUtils.raw(right));
 		}
 
@@ -1301,17 +1301,17 @@ class BinaryOperationsTest {
 		private DynamicNode assertEqualityPred(EqualityPred pred, GenericPredData data) {
 			return dynamicTest(String.format("%s %s %s [= %b]",
 					data.left, pred, data.right, _boolean(data.result)), () -> {
-				BooleanExpression expression = create(pred, data.left, data.right);
+				Expression<?> expression = create(pred, data.left, data.right);
 				assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
-				assertThat(expression.compute().booleanValue()).isEqualTo(data.result);
+				assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-				BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+				Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 				assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
-				assertThat(duplicate.compute().booleanValue()).isEqualTo(data.result);
+				assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-				BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+				Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 				assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
-				assertThat(optimized.compute().booleanValue()).isEqualTo(data.result);
+				assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 			});
 		}
 
@@ -1408,18 +1408,18 @@ class BinaryOperationsTest {
 			);
 		}
 
-		private BooleanExpression create(StringOp op, StringMode mode, String left, String right) {
+		private Expression<?> create(StringOp op, StringMode mode, String left, String right) {
 			return BinaryOperations.unicodeOp(op, mode, Literals.of(left), Literals.of(right));
 		}
 
 		private void assertUnicodeOp(StringOp op, StringMode mode, String left, String right, boolean equals) {
-			BooleanExpression expression = create(op, mode, left, right);
+			Expression<?> expression = create(op, mode, left, right);
 			assertThat(expression.computeAsBoolean()).isEqualTo(equals);
 
-			BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+			Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 			assertThat(duplicate.computeAsBoolean()).isEqualTo(equals);
 
-			BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+			Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 			assertThat(optimized.computeAsBoolean()).isEqualTo(equals);
 		}
 
@@ -1575,18 +1575,18 @@ class BinaryOperationsTest {
 			);
 		}
 
-		private BooleanExpression create(StringOp op, StringMode mode, String left, String right) {
+		private Expression<?> create(StringOp op, StringMode mode, String left, String right) {
 			return BinaryOperations.asciiOp(op, mode, Literals.of(left), Literals.of(right));
 		}
 
 		private void assertAsciiOp(StringOp op, StringMode mode, String left, String right, boolean equals) {
-			BooleanExpression expression = create(op, mode, left, right);
+			Expression<?> expression = create(op, mode, left, right);
 			assertThat(expression.computeAsBoolean()).isEqualTo(equals);
 
-			BooleanExpression duplicate = (BooleanExpression) expression.duplicate(mock(EvaluationContext.class));
+			Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
 			assertThat(duplicate.computeAsBoolean()).isEqualTo(equals);
 
-			BooleanExpression optimized = (BooleanExpression) expression.optimize(mock(EvaluationContext.class));
+			Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
 			assertThat(optimized.computeAsBoolean()).isEqualTo(equals);
 		}
 

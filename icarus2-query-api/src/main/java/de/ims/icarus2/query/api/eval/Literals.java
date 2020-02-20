@@ -19,12 +19,9 @@
  */
 package de.ims.icarus2.query.api.eval;
 
-import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static java.util.Objects.requireNonNull;
 
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.query.api.eval.Expression.PrimitiveExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -72,11 +69,11 @@ public final class Literals {
 		public Object compute() { return null; }
 	}
 
-	public static TextExpression of(CharSequence value) {
+	public static Expression<CharSequence> of(CharSequence value) {
 		return new StringLiteral(value);
 	}
 
-	static final class StringLiteral extends Literal<CharSequence> implements TextExpression {
+	static final class StringLiteral extends Literal<CharSequence> {
 
 		private final CharSequence value;
 
@@ -85,17 +82,21 @@ public final class Literals {
 		}
 
 		@Override
+		public TypeInfo getResultType() { return TypeInfo.TEXT; }
+
+		@Override
 		public CharSequence compute() { return value; }
 	}
 
-	public static BooleanExpression of(boolean value) {
+	public static Expression<Primitive<Boolean>> of(boolean value) {
 		return value ? TRUE : FALSE;
 	}
 
 	private static final BooleanLiteral TRUE = new BooleanLiteral(true);
 	private static final BooleanLiteral FALSE = new BooleanLiteral(false);
 
-	static final class BooleanLiteral extends Literal<Primitive<Boolean>> implements BooleanExpression {
+	static final class BooleanLiteral extends Literal<Primitive<Boolean>>
+			implements PrimitiveExpression  {
 
 		private final MutableBoolean value;
 
@@ -104,17 +105,21 @@ public final class Literals {
 		}
 
 		@Override
+		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+
+		@Override
 		public Primitive<Boolean> compute() { return value; }
 
 		@Override
 		public boolean computeAsBoolean() { return value.booleanValue(); }
 	}
 
-	public static NumericalExpression of(long value) {
+	public static Expression<Primitive<Long>> of(long value) {
 		return new IntegerLiteral(value);
 	}
 
-	static final class IntegerLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
+	static final class IntegerLiteral extends Literal<Primitive<Long>>
+			implements PrimitiveExpression {
 
 		private final MutableLong value;
 
@@ -135,11 +140,12 @@ public final class Literals {
 		public double computeAsDouble() { return value.doubleValue(); }
 	}
 
-	public static NumericalExpression of(double value) {
+	public static Expression<Primitive<Double>> of(double value) {
 		return new FloatingPointLiteral(value);
 	}
 
-	static final class FloatingPointLiteral extends Literal<Primitive<? extends Number>> implements NumericalExpression {
+	static final class FloatingPointLiteral extends Literal<Primitive<Double>>
+			implements PrimitiveExpression  {
 
 		private final MutableDouble value;
 
@@ -152,9 +158,6 @@ public final class Literals {
 
 		@Override
 		public Primitive<Double> compute() { return value; }
-
-		@Override
-		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
 
 		@Override
 		public double computeAsDouble() { return value.doubleValue(); }

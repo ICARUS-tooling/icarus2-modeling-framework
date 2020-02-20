@@ -32,8 +32,8 @@ import com.google.common.annotations.VisibleForTesting;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
+import de.ims.icarus2.query.api.eval.Expression.PrimitiveExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.strings.StringUtil;
@@ -61,7 +61,7 @@ public class SetPredicates {
 	 *  (last option might also be better wrapped instead of making the implementation overhead)
 	 */
 
-	public static BooleanExpression in(Expression<?> query, Expression<?>...set) {
+	public static Expression<Primitive<Boolean>> in(Expression<?> query, Expression<?>...set) {
 		Mode mode = Mode.SINGLE;
 		TypeInfo queryType = query.getResultType();
 		if(queryType.isList()) {
@@ -82,7 +82,7 @@ public class SetPredicates {
 				"Unable to handle set predicate for type: "+queryType);
 	}
 
-	public static BooleanExpression allIn(ListExpression<?, ?> query, Expression<?>...set) {
+	public static Expression<Primitive<Boolean>> allIn(ListExpression<?, ?> query, Expression<?>...set) {
 		Mode mode = Mode.EXPAND_EXHAUSTIVE;
 		TypeInfo queryType = query.getElementType();
 
@@ -119,35 +119,28 @@ public class SetPredicates {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static final class IntegerSetPredicate implements BooleanExpression {
+	static final class IntegerSetPredicate implements Expression<Primitive<Boolean>>,
+			PrimitiveExpression {
 
 		static IntegerSetPredicate of(Mode mode, Expression<?> target, Expression<?>[] elements) {
 			checkArgument("Need at least 1 element to check set containment", elements.length>0);
 
 			LongSet fixedLongs = new LongOpenHashSet();
 			List<IntegerListExpression<?>> dynamicLists = new ArrayList<>();
-			List<NumericalExpression> dynamicElements = new ArrayList<>();
+			List<Expression<?>> dynamicElements = new ArrayList<>();
 
 			for (Expression<?> element : elements) {
-				if(element.isNumerical()) {
-					NumericalExpression ne = (NumericalExpression)element;
-					if(ne.isFPE())
-						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-								"Not an integer type: "+ne.getResultType());
-
-					if(ne.isConstant()) {
-						fixedLongs.add(ne.computeAsLong());
+				if(element.isInteger()) {
+					if(element.isConstant()) {
+						fixedLongs.add(element.computeAsLong());
 					} else {
-						dynamicElements.add(ne);
+						dynamicElements.add(element);
 					}
 				} else if(element.isList()) {
 					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
-					if(!TypeInfo.isNumerical(elementType))
+					if(!TypeInfo.isInteger(elementType))
 						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-								"Not an numerical list type: "+elementType);
-					if(TypeInfo.isFloatingPoint(elementType))
-						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-								"Not an integer type: "+elementType);
+								"Not an integer list type: "+elementType);
 
 					IntegerListExpression<?> ie = (IntegerListExpression<?>) element;
 					if(ie.isConstant()) {
@@ -159,7 +152,7 @@ public class SetPredicates {
 			}
 
 			return new IntegerSetPredicate(mode, target, fixedLongs,
-					dynamicElements.toArray(new NumericalExpression[0]),
+					dynamicElements.toArray(new Expression[0]),
 					dynamicLists.toArray(new IntegerListExpression[0]));
 		}
 
@@ -168,25 +161,25 @@ public class SetPredicates {
 		/** Dynamic expressions producing integer list values */
 		private final IntegerListExpression<?>[] dynamicLists;
 		/** Single-value dynamic expressions */
-		private final NumericalExpression[] dynamicElements;
+		private final Expression<?>[] dynamicElements;
 		/** Buffer for result value when using the wrapper {@link #compute()} method. */
 		private final MutableBoolean value;
 		/** Query value to match against */
-		private final NumericalExpression target;
+		private final Expression<?> target;
 		/** Query value to match against if mode is expanding */
 		private final IntegerListExpression<?> listTarget;
 		/** Indicator how to evaluate the predicate */
 		private final Mode mode;
 
 		private IntegerSetPredicate(Mode mode, Expression<?> target, LongSet fixedLongs,
-				NumericalExpression[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
 			requireNonNull(mode);
 			requireNonNull(target);
 
 			this.mode = mode;
 			switch (mode) {
 			case SINGLE:
-				this.target = (NumericalExpression) target;
+				this.target = target;
 				listTarget = null;
 				break;
 			case EXPAND:
@@ -209,11 +202,14 @@ public class SetPredicates {
 			return new QueryException(GlobalErrorCode.INTERNAL_ERROR, "Unknown mode: "+mode);
 		}
 
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+
 		@VisibleForTesting
 		LongSet getFixedLongs() { return fixedLongs; }
 
 		@VisibleForTesting
-		NumericalExpression[] getDynamicElements() { return dynamicElements; }
+		Expression<?>[] getDynamicElements() { return dynamicElements; }
 
 		@VisibleForTesting
 		IntegerListExpression<?>[] getDynamicLists() { return dynamicLists; }
@@ -224,7 +220,7 @@ public class SetPredicates {
 			return value;
 		}
 
-		private static boolean containsDynamic(long value, NumericalExpression[] elements) {
+		private static boolean containsDynamic(long value, Expression<?>[] elements) {
 			for (int i = 0; i < elements.length; i++) {
 				if(elements[i].computeAsLong()==value) {
 					return true;
@@ -246,7 +242,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsAll(IntegerListExpression<?> target, LongSet fixedLongs,
-				NumericalExpression[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
 			int size = target.size();
 			for (int i = 0; i < size; i++) {
 				long value = target.getAsLong(i);
@@ -258,7 +254,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsAny(IntegerListExpression<?> target, LongSet fixedLongs,
-				NumericalExpression[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
 			int size = target.size();
 			for (int i = 0; i < size; i++) {
 				long value = target.getAsLong(i);
@@ -270,7 +266,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsSingle(long value, LongSet fixedLongs,
-				NumericalExpression[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
 			return (!fixedLongs.isEmpty() && fixedLongs.contains(value))
 					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
 					|| (dynamicLists.length>0 && containsDynamicExpanded(value, dynamicLists));
@@ -298,8 +294,8 @@ public class SetPredicates {
 					new LongOpenHashSet(fixedLongs),
 					Stream.of(dynamicElements)
 						.map(expression -> expression.duplicate(context))
-						.map(NumericalExpression.class::cast)
-						.toArray(NumericalExpression[]::new),
+						.map(Expression.class::cast)
+						.toArray(Expression[]::new),
 					Stream.of(dynamicLists)
 						.map(expression -> expression.duplicate(context))
 						.map(IntegerListExpression.class::cast)
@@ -316,9 +312,8 @@ public class SetPredicates {
 			 * we can shift that over to the fixed set.
 			 */
 			LongSet fixedLongs = new LongOpenHashSet(this.fixedLongs);
-			NumericalExpression[] dynamicElements = Stream.of(this.dynamicElements)
+			Expression<?>[] dynamicElements = Stream.of(this.dynamicElements)
 					.map(expression -> expression.optimize(context))
-					.map(NumericalExpression.class::cast)
 					.filter(ne -> {
 						if(ne.isConstant()) {
 							fixedLongs.add(ne.computeAsLong());
@@ -326,7 +321,7 @@ public class SetPredicates {
 						}
 						return true;
 					})
-					.toArray(NumericalExpression[]::new);
+					.toArray(Expression[]::new);
 			IntegerListExpression<?>[] dynamicLists = Stream.of(this.dynamicLists)
 					.map(expression -> expression.optimize(context))
 					.map(IntegerListExpression.class::cast)
@@ -343,7 +338,7 @@ public class SetPredicates {
 			if(newTarget.isConstant() && dynamicElements.length==0 && dynamicLists.length==0) {
 				switch (mode) {
 				case SINGLE: return Literals.of(containsSingle(
-						((NumericalExpression)newTarget).computeAsLong(), fixedLongs,
+						newTarget.computeAsLong(), fixedLongs,
 						dynamicElements, dynamicLists));
 
 				case EXPAND: return Literals.of(containsAny((IntegerListExpression<?>)newTarget,
@@ -377,25 +372,22 @@ public class SetPredicates {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static final class FloatingPointSetPredicate implements BooleanExpression {
+	static final class FloatingPointSetPredicate implements Expression<Primitive<Boolean>>,
+			PrimitiveExpression {
+
 		static FloatingPointSetPredicate of(Mode mode, Expression<?> target, Expression<?>[] elements) {
 			checkArgument("Need at least 1 element to check set containment", elements.length>0);
 
 			DoubleSet fixedDoubles = new DoubleOpenHashSet();
 			List<FloatingPointListExpression<?>> dynamicLists = new ArrayList<>();
-			List<NumericalExpression> dynamicElements = new ArrayList<>();
+			List<Expression<?>> dynamicElements = new ArrayList<>();
 
 			for (Expression<?> element : elements) {
-				if(element.isNumerical()) {
-					NumericalExpression ne = (NumericalExpression)element;
-					if(!ne.isFPE())
-						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
-								"Not a floating point type: "+ne.getResultType());
-
-					if(ne.isConstant()) {
-						fixedDoubles.add(ne.computeAsDouble());
+				if(element.isFloatingPoint()) {
+					if(element.isConstant()) {
+						fixedDoubles.add(element.computeAsDouble());
 					} else {
-						dynamicElements.add(ne);
+						dynamicElements.add(element);
 					}
 				} else if(element.isList()) {
 					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
@@ -416,7 +408,7 @@ public class SetPredicates {
 			}
 
 			return new FloatingPointSetPredicate(mode, target, fixedDoubles,
-					dynamicElements.toArray(new NumericalExpression[0]),
+					dynamicElements.toArray(new Expression[0]),
 					dynamicLists.toArray(new FloatingPointListExpression[0]));
 		}
 
@@ -425,25 +417,25 @@ public class SetPredicates {
 		/** Dynamic expressions producing integer list values */
 		private final FloatingPointListExpression<?>[] dynamicLists;
 		/** Single-value dynamic expressions */
-		private final NumericalExpression[] dynamicElements;
+		private final Expression<?>[] dynamicElements;
 		/** Buffer for result value when using the wrapper {@link #compute()} method. */
 		private final MutableBoolean value;
 		/** Query value to match against */
-		private final NumericalExpression target;
+		private final Expression<?> target;
 		/** Query value to match against if mode is expanding */
 		private final FloatingPointListExpression<?> listTarget;
 		/** Indicator how to evaluate the predicate */
 		private final Mode mode;
 
 		private FloatingPointSetPredicate(Mode mode, Expression<?> target, DoubleSet fixedDoubles,
-				NumericalExpression[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
 			requireNonNull(mode);
 			requireNonNull(target);
 
 			this.mode = mode;
 			switch (mode) {
 			case SINGLE:
-				this.target = (NumericalExpression) target;
+				this.target = target;
 				listTarget = null;
 				break;
 			case EXPAND:
@@ -466,11 +458,14 @@ public class SetPredicates {
 			return new QueryException(GlobalErrorCode.INTERNAL_ERROR, "Unknown mode: "+mode);
 		}
 
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+
 		@VisibleForTesting
 		DoubleSet getFixedDoubles() { return fixedDoubles; }
 
 		@VisibleForTesting
-		NumericalExpression[] getDynamicElements() { return dynamicElements; }
+		Expression<?>[] getDynamicElements() { return dynamicElements; }
 
 		@VisibleForTesting
 		FloatingPointListExpression<?>[] getDynamicLists() { return dynamicLists; }
@@ -481,7 +476,7 @@ public class SetPredicates {
 			return value;
 		}
 
-		private static boolean containsDynamic(double value, NumericalExpression[] elements) {
+		private static boolean containsDynamic(double value, Expression<?>[] elements) {
 			for (int i = 0; i < elements.length; i++) {
 				if(elements[i].computeAsDouble()==value) {
 					return true;
@@ -503,7 +498,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsAll(FloatingPointListExpression<?> target, DoubleSet fixedDoubles,
-				NumericalExpression[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
 			int size = target.size();
 			for (int i = 0; i < size; i++) {
 				double value = target.getAsDouble(i);
@@ -515,7 +510,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsAny(FloatingPointListExpression<?> target, DoubleSet fixedDoubles,
-				NumericalExpression[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
 			int size = target.size();
 			for (int i = 0; i < size; i++) {
 				double value = target.getAsDouble(i);
@@ -527,7 +522,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsSingle(double value, DoubleSet fixedDoubles,
-				NumericalExpression[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
+				Expression<?>[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
 			return (!fixedDoubles.isEmpty() && fixedDoubles.contains(value))
 					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
 					|| (dynamicLists.length>0 && containsDynamicExpanded(value, dynamicLists));
@@ -555,8 +550,8 @@ public class SetPredicates {
 					new DoubleOpenHashSet(fixedDoubles),
 					Stream.of(dynamicElements)
 						.map(expression -> expression.duplicate(context))
-						.map(NumericalExpression.class::cast)
-						.toArray(NumericalExpression[]::new),
+						.map(Expression.class::cast)
+						.toArray(Expression[]::new),
 					Stream.of(dynamicLists)
 						.map(expression -> expression.duplicate(context))
 						.map(FloatingPointListExpression.class::cast)
@@ -573,9 +568,8 @@ public class SetPredicates {
 			 * we can shift that over to the fixed set.
 			 */
 			DoubleSet fixedDoubles = new DoubleOpenHashSet(this.fixedDoubles);
-			NumericalExpression[] dynamicElements = Stream.of(this.dynamicElements)
+			Expression<?>[] dynamicElements = Stream.of(this.dynamicElements)
 					.map(expression -> expression.optimize(context))
-					.map(NumericalExpression.class::cast)
 					.filter(ne -> {
 						if(ne.isConstant()) {
 							fixedDoubles.add(ne.computeAsDouble());
@@ -583,7 +577,7 @@ public class SetPredicates {
 						}
 						return true;
 					})
-					.toArray(NumericalExpression[]::new);
+					.toArray(Expression[]::new);
 			FloatingPointListExpression<?>[] dynamicLists = Stream.of(this.dynamicLists)
 					.map(expression -> expression.optimize(context))
 					.map(FloatingPointListExpression.class::cast)
@@ -600,7 +594,7 @@ public class SetPredicates {
 			if(newTarget.isConstant() && dynamicElements.length==0 && dynamicLists.length==0) {
 				switch (mode) {
 				case SINGLE: return Literals.of(containsSingle(
-						((NumericalExpression)newTarget).computeAsDouble(), fixedDoubles,
+						newTarget.computeAsDouble(), fixedDoubles,
 						dynamicElements, dynamicLists));
 
 				case EXPAND: return Literals.of(containsAny((FloatingPointListExpression<?>)newTarget,
@@ -633,17 +627,19 @@ public class SetPredicates {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static final class TextSetPredicate implements BooleanExpression {
+	static final class TextSetPredicate implements Expression<Primitive<Boolean>> {
+
 		static TextSetPredicate of(Mode mode, Expression<?> target, Expression<?>[] elements) {
 			checkArgument("Need at least 1 element to check set containment", elements.length>0);
 
 			Set<CharSequence> fixedElements = new ObjectOpenCustomHashSet<>(STRATEGY);
 			List<ListExpression<?, CharSequence>> dynamicLists = new ArrayList<>();
-			List<TextExpression> dynamicElements = new ArrayList<>();
+			List<Expression<CharSequence>> dynamicElements = new ArrayList<>();
 
 			for (Expression<?> element : elements) {
 				if(element.isText()) {
-					TextExpression te = (TextExpression)element;
+					@SuppressWarnings("unchecked")
+					Expression<CharSequence> te = (Expression<CharSequence>)element;
 
 					if(te.isConstant()) {
 						fixedElements.add(te.compute());
@@ -667,7 +663,7 @@ public class SetPredicates {
 			}
 
 			return new TextSetPredicate(mode, target, fixedElements,
-					dynamicElements.toArray(new TextExpression[0]),
+					dynamicElements.toArray(new Expression[0]),
 					dynamicLists.toArray(new ListExpression[0]));
 		}
 
@@ -675,11 +671,11 @@ public class SetPredicates {
 		/** Dynamic expressions producing integer list values */
 		private final ListExpression<?, CharSequence>[] dynamicLists;
 		/** Single-value dynamic expressions */
-		private final TextExpression[] dynamicElements;
+		private final Expression<CharSequence>[] dynamicElements;
 		/** Buffer for result value when using the wrapper {@link #compute()} method. */
 		private final MutableBoolean value;
 		/** Query value to match against */
-		private final TextExpression target;
+		private final Expression<CharSequence> target;
 		/** Query value to match against if mode is expanding */
 		private final ListExpression<?, CharSequence> listTarget;
 		/** Indicator how to evaluate the predicate */
@@ -698,14 +694,14 @@ public class SetPredicates {
 
 		@SuppressWarnings("unchecked")
 		private TextSetPredicate(Mode mode, Expression<?> target, Set<CharSequence> fixedElements,
-				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
 			requireNonNull(mode);
 			requireNonNull(target);
 
 			this.mode = mode;
 			switch (mode) {
 			case SINGLE:
-				this.target = (TextExpression) target;
+				this.target = (Expression<CharSequence>) target;
 				listTarget = null;
 				break;
 			case EXPAND:
@@ -728,11 +724,14 @@ public class SetPredicates {
 			return new QueryException(GlobalErrorCode.INTERNAL_ERROR, "Unknown mode: "+mode);
 		}
 
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+
 		@VisibleForTesting
 		Set<CharSequence> getFixedElements() { return fixedElements; }
 
 		@VisibleForTesting
-		TextExpression[] getDynamicElements() { return dynamicElements; }
+		Expression<CharSequence>[] getDynamicElements() { return dynamicElements; }
 
 		@VisibleForTesting
 		ListExpression<?, CharSequence>[] getDynamicLists() { return dynamicLists; }
@@ -743,7 +742,7 @@ public class SetPredicates {
 			return value;
 		}
 
-		private static boolean containsDynamic(CharSequence value, TextExpression[] elements) {
+		private static boolean containsDynamic(CharSequence value, Expression<CharSequence>[] elements) {
 			for (int i = 0; i < elements.length; i++) {
 				if(StringUtil.equals(value, elements[i].compute())) {
 					return true;
@@ -765,7 +764,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsAll(ListExpression<?, CharSequence> target, Set<CharSequence> fixedElements,
-				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
 			int size = target.size();
 			for (int i = 0; i < size; i++) {
 				CharSequence value = target.get(i);
@@ -777,7 +776,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsAny(ListExpression<?, CharSequence> target, Set<CharSequence> fixedElements,
-				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
 			int size = target.size();
 			for (int i = 0; i < size; i++) {
 				CharSequence value = target.get(i);
@@ -789,7 +788,7 @@ public class SetPredicates {
 		}
 
 		private static boolean containsSingle(CharSequence value, Set<CharSequence> fixedElements,
-				TextExpression[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
 			return (!fixedElements.isEmpty() && fixedElements.contains(value))
 					|| (dynamicElements.length>0 && containsDynamic(value, dynamicElements))
 					|| (dynamicLists.length>0 && containsDynamicExpanded(value, dynamicLists));
@@ -817,8 +816,7 @@ public class SetPredicates {
 					new ObjectOpenCustomHashSet<>(fixedElements, STRATEGY),
 					Stream.of(dynamicElements)
 						.map(expression -> expression.duplicate(context))
-						.map(TextExpression.class::cast)
-						.toArray(TextExpression[]::new),
+						.toArray(Expression[]::new),
 					Stream.of(dynamicLists)
 						.map(expression -> expression.duplicate(context))
 						.map(ListExpression.class::cast)
@@ -839,9 +837,8 @@ public class SetPredicates {
 			 * we can shift that over to the fixed set.
 			 */
 			Set<CharSequence> fixedElements = new ObjectOpenCustomHashSet<>(this.fixedElements, STRATEGY);
-			TextExpression[] dynamicElements = Stream.of(this.dynamicElements)
+			Expression<CharSequence>[] dynamicElements = Stream.of(this.dynamicElements)
 					.map(expression -> expression.optimize(context))
-					.map(TextExpression.class::cast)
 					.filter(ne -> {
 						if(ne.isConstant()) {
 							fixedElements.add(ne.compute());
@@ -849,7 +846,7 @@ public class SetPredicates {
 						}
 						return true;
 					})
-					.toArray(TextExpression[]::new);
+					.toArray(Expression[]::new);
 			ListExpression<?, CharSequence>[] dynamicLists = Stream.of(this.dynamicLists)
 					.map(expression -> expression.optimize(context))
 					.map(ListExpression.class::cast)
@@ -866,7 +863,7 @@ public class SetPredicates {
 			if(newTarget.isConstant() && dynamicElements.length==0 && dynamicLists.length==0) {
 				switch (mode) {
 				case SINGLE: return Literals.of(containsSingle(
-						((TextExpression)newTarget).compute(), fixedElements,
+						((Expression<CharSequence>)newTarget).compute(), fixedElements,
 						dynamicElements, dynamicLists));
 
 				case EXPAND: return Literals.of(containsAny((ListExpression<?, CharSequence>)newTarget,

@@ -33,13 +33,11 @@ import java.util.function.ToLongFunction;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
+import de.ims.icarus2.query.api.eval.Expression.PrimitiveExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -74,9 +72,10 @@ import de.ims.icarus2.util.strings.StringPrimitives;
  */
 public class Conversions {
 
-	public static TextExpression toText(Expression<?> source) {
-		if(source instanceof TextExpression) {
-			return (TextExpression) source;
+	@SuppressWarnings("unchecked")
+	public static Expression<CharSequence> toText(Expression<?> source) {
+		if(source.isText()) {
+			return (Expression<CharSequence>) source;
 		}
 		return new TextCast(source, converterFrom(source));
 	}
@@ -89,9 +88,10 @@ public class Conversions {
 		return new TextListCast(source, converterFromList(source));
 	}
 
-	public static BooleanExpression toBoolean(Expression<?> source) {
-		if(source instanceof BooleanExpression) {
-			return (BooleanExpression) source;
+	@SuppressWarnings("unchecked")
+	public static Expression<Primitive<Boolean>> toBoolean(Expression<?> source) {
+		if(source.isBoolean()) {
+			return (Expression<Primitive<Boolean>>) source;
 		}
 		return new BooleanCast(source, converterFrom(source));
 	}
@@ -103,9 +103,9 @@ public class Conversions {
 		return new BooleanListCast(source, converterFromList(source));
 	}
 
-	public static NumericalExpression toInteger(Expression<?> source) {
-		if(source instanceof NumericalExpression && !((NumericalExpression) source).isFPE()) {
-			return (NumericalExpression) source;
+	public static Expression<?> toInteger(Expression<?> source) {
+		if(source.isInteger()) {
+			return source;
 		}
 		return new IntegerCast(source, converterFrom(source));
 	}
@@ -117,9 +117,9 @@ public class Conversions {
 		return new IntegerListCast(source, converterFromList(source));
 	}
 
-	public static NumericalExpression toFloatingPoint(Expression<?> source) {
-		if(source instanceof NumericalExpression && ((NumericalExpression) source).isFPE()) {
-			return (NumericalExpression) source;
+	public static Expression<?> toFloatingPoint(Expression<?> source) {
+		if(source.isFloatingPoint()) {
+			return source;
 		}
 		return new FloatingPointCast(source, converterFrom(source));
 	}
@@ -133,7 +133,7 @@ public class Conversions {
 
 	private static Converter converterFrom(Expression<?> expression) {
 		if(expression.isNumerical()) {
-			return ((NumericalExpression)expression).isFPE() ?
+			return expression.isFloatingPoint() ?
 					Converter.FROM_FLOAT : Converter.FROM_INTEGER;
 		} else if(expression.isBoolean()) {
 			return Converter.FROM_BOOLEAN;
@@ -213,7 +213,8 @@ public class Conversions {
 
 	}
 
-	static final class IntegerCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
+	static final class IntegerCast extends CastExpression<Primitive<Long>>
+			implements PrimitiveExpression {
 
 		private final MutableLong value;
 		private final ToLongFunction<Expression<?>> cast;
@@ -244,12 +245,12 @@ public class Conversions {
 		public double computeAsDouble() { return computeAsLong(); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			return new IntegerCast(source.duplicate(context), cast);
 		}
 
 		@Override
-		protected Expression<Primitive<? extends Number>> toConstant(Expression<?> source) {
+		protected Expression<Primitive<Long>> toConstant(Expression<?> source) {
 			return Literals.of(cast.applyAsLong(source));
 		}
 
@@ -309,7 +310,8 @@ public class Conversions {
 		public int size() { return source.size(); }
 	}
 
-	static final class FloatingPointCast extends CastExpression<Primitive<? extends Number>> implements NumericalExpression {
+	static final class FloatingPointCast extends CastExpression<Primitive<Double>>
+			implements PrimitiveExpression {
 
 		private final MutableDouble value;
 		private final ToDoubleFunction<Expression<?>> cast;
@@ -340,12 +342,12 @@ public class Conversions {
 		public double computeAsDouble() { return cast.applyAsDouble(source); }
 
 		@Override
-		public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 			return new FloatingPointCast(source.duplicate(context), cast);
 		}
 
 		@Override
-		protected Expression<Primitive<? extends Number>> toConstant(Expression<?> source) {
+		protected Expression<Primitive<Double>> toConstant(Expression<?> source) {
 			return Literals.of(cast.applyAsDouble(source));
 		}
 
@@ -405,7 +407,8 @@ public class Conversions {
 		public int size() { return source.size(); }
 	}
 
-	static final class BooleanCast extends CastExpression<Primitive<Boolean>> implements BooleanExpression {
+	static final class BooleanCast extends CastExpression<Primitive<Boolean>>
+			implements PrimitiveExpression {
 
 		private final MutableBoolean value;
 		private final Predicate<Expression<?>> cast;
@@ -498,7 +501,7 @@ public class Conversions {
 		public int size() { return source.size(); }
 	}
 
-	static final class TextCast extends CastExpression<CharSequence> implements TextExpression {
+	static final class TextCast extends CastExpression<CharSequence> implements Expression<CharSequence> {
 
 		private final Function<Expression<?>, CharSequence> cast;
 
@@ -579,32 +582,33 @@ public class Conversions {
 
 	/** Provides conversion from a specific type to the 4 casting targets */
 	private enum Converter {
+		@SuppressWarnings("unchecked")
 		FROM_TEXT(TypeInfo.TEXT,
-				exp -> StringPrimitives.parseLong(((TextExpression)exp).compute()),
-				exp -> StringPrimitives.parseDouble(((TextExpression)exp).compute()),
-				exp -> string2Boolean(((TextExpression)exp).compute()),
+				exp -> StringPrimitives.parseLong(((Expression<CharSequence>)exp).compute()),
+				exp -> StringPrimitives.parseDouble(((Expression<CharSequence>)exp).compute()),
+				exp -> string2Boolean(((Expression<CharSequence>)exp).compute()),
 				null
 		),
 
 		FROM_INTEGER(TypeInfo.INTEGER,
 				null,
-				exp -> (double)((NumericalExpression)exp).computeAsLong(),
-				exp -> int2Boolean(((NumericalExpression)exp).computeAsLong()),
-				exp -> String.valueOf(((NumericalExpression)exp).computeAsLong())
+				exp -> (double)exp.computeAsLong(),
+				exp -> int2Boolean(exp.computeAsLong()),
+				exp -> String.valueOf(exp.computeAsLong())
 		),
 
 		FROM_FLOAT(TypeInfo.FLOATING_POINT,
-				exp -> (long)((NumericalExpression)exp).computeAsDouble(),
+				exp -> (long)exp.computeAsDouble(),
 				null,
-				exp -> float2Boolean(((NumericalExpression)exp).computeAsDouble()),
-				exp -> String.valueOf(((NumericalExpression)exp).computeAsDouble())
+				exp -> float2Boolean(exp.computeAsDouble()),
+				exp -> String.valueOf(exp.computeAsDouble())
 		),
 
 		FROM_BOOLEAN(TypeInfo.BOOLEAN,
 				null,
 				null,
 				null,
-				exp -> String.valueOf(((BooleanExpression)exp).computeAsBoolean())
+				exp -> String.valueOf(exp.computeAsBoolean())
 		),
 
 		FROM_GENERIC(TypeInfo.GENERIC,

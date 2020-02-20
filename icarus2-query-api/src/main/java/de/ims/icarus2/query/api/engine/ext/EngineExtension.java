@@ -15,14 +15,24 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.query.api.engine.ext;
 
+import de.ims.icarus2.query.api.engine.QueryEngine;
+
 /**
+ * Implements an extension to the {@link QueryEngine} that can add new
+ * functionality or modify existing configurations.
+ *
  * @author Markus Gärtner
  *
  */
 public interface EngineExtension {
 
+	/**
+	 * Allows configuration of a
+	 * @param configurator the interface to customizing the engine (bubild)
+	 */
+	void configureContext(EngineConfigurator configurator);
 }

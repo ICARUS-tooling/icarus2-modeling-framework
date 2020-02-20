@@ -27,7 +27,6 @@ import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.Mutable;
@@ -40,7 +39,7 @@ import de.ims.icarus2.util.strings.StringUtil;
  */
 class StringConcatenationTest implements TextExpressionTest {
 
-	private static TextExpression literal(String s) {
+	private static Expression<CharSequence> literal(String s) {
 		return Literals.of(s);
 	}
 
@@ -48,7 +47,7 @@ class StringConcatenationTest implements TextExpressionTest {
 	public CharSequence constant() {return "x1 x2 x3"; }
 
 	/**
-	 * @see de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest#random(de.ims.icarus2.test.random.RandomGenerator)
+	 * @see de.ims.icarus2.query.api.eval.ExpressionTest.Expression<CharSequence>Test#random(de.ims.icarus2.test.random.RandomGenerator)
 	 */
 	@Override
 	public CharSequence random(RandomGenerator rng) {
@@ -69,8 +68,8 @@ class StringConcatenationTest implements TextExpressionTest {
 	 * @see de.ims.icarus2.query.api.eval.ExpressionTest#createWithValue(java.lang.Object)
 	 */
 	@Override
-	public TextExpression createWithValue(CharSequence value) {
-		List<TextExpression> buffer = new ArrayList<>();
+	public Expression<CharSequence> createWithValue(CharSequence value) {
+		List<Expression<CharSequence>> buffer = new ArrayList<>();
 
 		String[] blocks = value.toString().split(" ");
 		for (int i = 0; i < blocks.length; i++) {
@@ -80,7 +79,8 @@ class StringConcatenationTest implements TextExpressionTest {
 			buffer.add(Literals.of(blocks[i]));
 		}
 
-		TextExpression[] elements = new TextExpression[buffer.size()];
+		@SuppressWarnings("unchecked")
+		Expression<CharSequence>[] elements = new Expression[buffer.size()];
 		buffer.toArray(elements);
 
 		return StringConcatenation.concat(elements);
@@ -100,22 +100,27 @@ class StringConcatenationTest implements TextExpressionTest {
 	@Nested
 	class WithData {
 
+		@SuppressWarnings("unchecked")
+		private Expression<CharSequence>[] values(Expression<?>...expressions) {
+			return (Expression<CharSequence>[])expressions;
+		}
+
 		@Test
 		void testPartialOptimization() {
-			TextExpression[] elements = {
+			Expression<CharSequence>[] elements = values(
 				ExpressionTestUtils.fixed("begin"),
 				ExpressionTestUtils.optimizable(" "),
-				literal("end"),
-			};
+				literal("end")
+			);
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
 
 			assertThat(instance.getElements()).isEqualTo(elements);
 
-			TextExpression optimized = instance.optimize(context());
+			Expression<CharSequence> optimized = instance.optimize(context());
 			assertThat(optimized).isInstanceOf(StringConcatenation.class);
 
-			TextExpression[] newElements = ((StringConcatenation)optimized).getElements();
+			Expression<CharSequence>[] newElements = ((StringConcatenation)optimized).getElements();
 			assertThat(newElements).hasSize(2);
 			assertThat(newElements[0]).isSameAs(elements[0]);
 			assertThat(Literals.isLiteral(newElements[1])).isTrue();
@@ -125,20 +130,20 @@ class StringConcatenationTest implements TextExpressionTest {
 
 		@Test
 		void testIntermediateAggregation() {
-			TextExpression[] elements = {
+			Expression<CharSequence>[] elements = values(
 				ExpressionTestUtils.optimizable("begin"),
 				ExpressionTestUtils.optimizable(" "),
-				ExpressionTestUtils.fixed("end"),
-			};
+				ExpressionTestUtils.fixed("end")
+			);
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
 
 			assertThat(instance.getElements()).isEqualTo(elements);
 
-			TextExpression optimized = instance.optimize(context());
+			Expression<CharSequence> optimized = instance.optimize(context());
 			assertThat(optimized).isInstanceOf(StringConcatenation.class);
 
-			TextExpression[] newElements = ((StringConcatenation)optimized).getElements();
+			Expression<CharSequence>[] newElements = ((StringConcatenation)optimized).getElements();
 			assertThat(newElements).hasSize(2);
 			assertThat(Literals.isLiteral(newElements[0])).isTrue();
 			assertThat(newElements[1]).isSameAs(elements[2]);
@@ -148,11 +153,11 @@ class StringConcatenationTest implements TextExpressionTest {
 
 		@Test
 		void testNonOptimizable() {
-			TextExpression[] elements = {
+			Expression<CharSequence>[] elements = values(
 				ExpressionTestUtils.fixed("begin"),
 				ExpressionTestUtils.fixed(" "),
-				ExpressionTestUtils.fixed("end"),
-			};
+				ExpressionTestUtils.fixed("end")
+			);
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
 			assertThat(instance.optimize(context())).isSameAs(instance);
@@ -162,11 +167,11 @@ class StringConcatenationTest implements TextExpressionTest {
 		void testDynamic() {
 			Mutable<String> buffer = new MutableObject<>(" ");
 
-			TextExpression[] elements = {
+			Expression<CharSequence>[] elements = values(
 				ExpressionTestUtils.optimizable("begin"),
 				ExpressionTestUtils.dynamicText(() -> buffer),
-				ExpressionTestUtils.fixed("end"),
-			};
+				ExpressionTestUtils.fixed("end")
+			);
 
 			StringConcatenation instance = StringConcatenation.concat(elements);
 			assertThat(instance.compute()).hasToString("begin end");

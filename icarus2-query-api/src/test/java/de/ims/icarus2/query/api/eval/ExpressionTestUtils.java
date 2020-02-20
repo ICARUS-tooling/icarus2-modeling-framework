@@ -24,10 +24,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -64,8 +61,8 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static TextExpression fixed(String text) {
-		return new TextExpression() {
+	static Expression<CharSequence> fixed(String text) {
+		return new Expression<CharSequence>() {
 			final CharSequence value = text;
 
 			@Override
@@ -75,11 +72,14 @@ public class ExpressionTestUtils {
 
 			@Override
 			public CharSequence compute() { return value; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.TEXT; }
 		};
 	}
 
-	static TextExpression optimizable(String text) {
-		return new TextExpression() {
+	static Expression<CharSequence> optimizable(String text) {
+		return new Expression<CharSequence>() {
 			final CharSequence value = text;
 
 			@Override
@@ -94,20 +94,23 @@ public class ExpressionTestUtils {
 			public Expression<CharSequence> optimize(EvaluationContext context) {
 				return Literals.of(value);
 			}
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.TEXT; }
 		};
 	}
 
-	static NumericalExpression optimizable(long value) {
-		return new NumericalExpression() {
+	static Expression<?> optimizable(long value) {
+		return new Expression<Primitive<Long>>() {
 			final MutableLong buffer = new MutableLong(value);
 
 			@Override
-			public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+			public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 				return this;
 			}
 
 			@Override
-			public Primitive<? extends Number> compute() { return buffer; }
+			public Primitive<Long> compute() { return buffer; }
 
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.INTEGER; }
@@ -119,14 +122,14 @@ public class ExpressionTestUtils {
 			public double computeAsDouble() { return value; }
 
 			@Override
-			public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+			public Expression<Primitive<Long>> optimize(EvaluationContext context) {
 				return Literals.of(value);
 			}
 		};
 	}
 
-	static BooleanExpression optimizable(boolean value) {
-		return new BooleanExpression() {
+	static Expression<Primitive<Boolean>> optimizable(boolean value) {
+		return new Expression<Primitive<Boolean>>() {
 			final MutableBoolean buffer = new MutableBoolean(value);
 
 			@Override
@@ -150,17 +153,17 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static NumericalExpression optimizable(double value) {
-		return new NumericalExpression() {
+	static Expression<?> optimizable(double value) {
+		return new Expression<Primitive<Double>>() {
 			final MutableDouble buffer = new MutableDouble(value);
 
 			@Override
-			public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
+			public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 				return this;
 			}
 
 			@Override
-			public Primitive<? extends Number> compute() { return buffer; }
+			public Primitive<Double> compute() { return buffer; }
 
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
@@ -173,7 +176,7 @@ public class ExpressionTestUtils {
 			public double computeAsDouble() { return value; }
 
 			@Override
-			public Expression<Primitive<? extends Number>> optimize(EvaluationContext context) {
+			public Expression<Primitive<Double>> optimize(EvaluationContext context) {
 				return Literals.of(value);
 			}
 		};
@@ -216,7 +219,7 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static <T> TextExpression dynamicText(Supplier<T> dummy) {
+	static <T> Expression<CharSequence> dynamicText(Supplier<T> dummy) {
 		Expression<T> expression = new Expression<T>() {
 
 			@Override
@@ -250,8 +253,8 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static NumericalExpression dynamic(LongSupplier source) {
-		return new NumericalExpression() {
+	static Expression<?> dynamic(LongSupplier source) {
+		return new Expression<Primitive<? extends Number>>() {
 
 			final MutableLong value = new MutableLong();
 
@@ -259,7 +262,7 @@ public class ExpressionTestUtils {
 			public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
 			@Override
-			public NumericalExpression duplicate(EvaluationContext context) {
+			public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
 				return this;
 			}
 
@@ -277,8 +280,8 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static NumericalExpression dynamic(DoubleSupplier source) {
-		return new NumericalExpression() {
+	static Expression<?> dynamic(DoubleSupplier source) {
+		return new Expression<Primitive<? extends Number>>() {
 
 			final MutableDouble value = new MutableDouble();
 
@@ -286,7 +289,7 @@ public class ExpressionTestUtils {
 			public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
 
 			@Override
-			public NumericalExpression duplicate(EvaluationContext context) {
+			public Expression<Primitive<? extends Number>> duplicate(EvaluationContext context) {
 				return this;
 			}
 
@@ -305,8 +308,8 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static BooleanExpression dynamic(BooleanSupplier source) {
-		return new BooleanExpression() {
+	static Expression<Primitive<Boolean>> dynamic(BooleanSupplier source) {
+		return new Expression<Primitive<Boolean>>() {
 
 			final MutableBoolean value = new MutableBoolean();
 
@@ -314,7 +317,7 @@ public class ExpressionTestUtils {
 			public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
 
 			@Override
-			public BooleanExpression duplicate(EvaluationContext context) {
+			public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 				return this;
 			}
 
@@ -329,15 +332,18 @@ public class ExpressionTestUtils {
 		};
 	}
 
-	static TextExpression dynamic(Supplier<? extends CharSequence> source) {
-		return new TextExpression() {
+	static Expression<CharSequence> dynamic(Supplier<? extends CharSequence> source) {
+		return new Expression<CharSequence>() {
 			@Override
-			public TextExpression duplicate(EvaluationContext context) {
+			public Expression<CharSequence> duplicate(EvaluationContext context) {
 				return this;
 			}
 
 			@Override
 			public CharSequence compute() { return source.get(); }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.TEXT; }
 		};
 	}
 

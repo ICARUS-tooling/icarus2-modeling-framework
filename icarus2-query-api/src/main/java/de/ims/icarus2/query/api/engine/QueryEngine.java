@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.query.api.engine;
 
-import static de.ims.icarus2.query.api.iql.IqlUtils.createMapper;
 import static de.ims.icarus2.query.api.iql.IqlUtils.fragment;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
@@ -33,6 +32,7 @@ import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.iql.IqlQuery;
+import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 
 /**
@@ -58,7 +58,7 @@ public class QueryEngine {
 		corpusManager = builder.getCorpusManager();
 	}
 
-	public QueryJob query(Query rawQuery) {
+	public QueryJob evaluateQuery(Query rawQuery) {
 
 		// Read and parse query content
 		IqlQuery query = readQuery(rawQuery);
@@ -66,6 +66,8 @@ public class QueryEngine {
 
 		// Ensure we only ever consider validated queries
 		query.checkIntegrity();
+
+		//TODO build the evaluation context and parse all the expressions
 
 		throw new UnsupportedOperationException();
 	}
@@ -113,7 +115,7 @@ public class QueryEngine {
 		}
 
 		public Builder useDefaultMapper() {
-			return mapper(createMapper());
+			return mapper(IqlUtils.createMapper());
 		}
 
 		public ObjectMapper getMapper() {

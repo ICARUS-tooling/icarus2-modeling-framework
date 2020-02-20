@@ -39,13 +39,10 @@ import de.ims.icarus2.query.api.eval.Conversions.IntegerCast;
 import de.ims.icarus2.query.api.eval.Conversions.IntegerListCast;
 import de.ims.icarus2.query.api.eval.Conversions.TextCast;
 import de.ims.icarus2.query.api.eval.Conversions.TextListCast;
-import de.ims.icarus2.query.api.eval.Expression.BooleanExpression;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
-import de.ims.icarus2.query.api.eval.Expression.NumericalExpression;
-import de.ims.icarus2.query.api.eval.Expression.TextExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
@@ -82,31 +79,31 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
-			TextExpression source = Literals.of(rng.randomUnicodeString(10));
+			Expression<CharSequence> source = Literals.of(rng.randomUnicodeString(10));
 			assertThat(Conversions.toText(source)).isSameAs(source);
 		}
 
 		@Test
 		@RandomizedTest
 		void testFromBoolean(RandomGenerator rng) {
-			BooleanExpression source = Literals.of(rng.nextBoolean());
-			TextExpression instance = Conversions.toText(source);
+			Expression<Primitive<Boolean>> source = Literals.of(rng.nextBoolean());
+			Expression<CharSequence> instance = Conversions.toText(source);
 			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsBoolean()));
 		}
 
 		@Test
 		@RandomizedTest
 		void testFromInteger(RandomGenerator rng) {
-			NumericalExpression source = Literals.of(rng.nextInt());
-			TextExpression instance = Conversions.toText(source);
+			Expression<?> source = Literals.of(rng.nextInt());
+			Expression<CharSequence> instance = Conversions.toText(source);
 			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsLong()));
 		}
 
 		@Test
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
-			NumericalExpression source = Literals.of(randomDouble(rng));
-			TextExpression instance = Conversions.toText(source);
+			Expression<?> source = Literals.of(randomDouble(rng));
+			Expression<CharSequence> instance = Conversions.toText(source);
 			assertThat(instance.compute()).hasToString(String.valueOf(source.computeAsDouble()));
 		}
 
@@ -115,7 +112,7 @@ class ConversionsTest {
 		void testFromGeneric(RandomGenerator rng) {
 			String value = rng.randomUnicodeString(10);
 			Expression<Object> source = ExpressionTestUtils.generic(value);
-			TextExpression instance = Conversions.toText(source);
+			Expression<CharSequence> instance = Conversions.toText(source);
 			assertThat(instance.compute()).hasToString(value);
 		}
 
@@ -140,7 +137,7 @@ class ConversionsTest {
 			}
 
 			@Override
-			public TextExpression createWithValue(CharSequence value) {
+			public Expression<CharSequence> createWithValue(CharSequence value) {
 				Expression<?> source = Literals.of(StringPrimitives.parseBoolean(value));
 				return Conversions.toText(source);
 			}
@@ -158,7 +155,7 @@ class ConversionsTest {
 			}
 
 			@Override
-			public TextExpression createWithValue(CharSequence value) {
+			public Expression<CharSequence> createWithValue(CharSequence value) {
 				Expression<?> source = Literals.of(StringPrimitives.parseLong(value));
 				return Conversions.toText(source);
 			}
@@ -176,7 +173,7 @@ class ConversionsTest {
 			}
 
 			@Override
-			public TextExpression createWithValue(CharSequence value) {
+			public Expression<CharSequence> createWithValue(CharSequence value) {
 				Expression<?> source = Literals.of(StringPrimitives.parseDouble(value));
 				return Conversions.toText(source);
 			}
@@ -194,7 +191,7 @@ class ConversionsTest {
 			}
 
 			@Override
-			public TextExpression createWithValue(CharSequence value) {
+			public Expression<CharSequence> createWithValue(CharSequence value) {
 				Expression<?> source = ExpressionTestUtils.generic(value.toString());
 				return Conversions.toText(source);
 			}
@@ -514,7 +511,7 @@ class ConversionsTest {
 		@Nested
 		class FromString extends ToBooleanTestBase {
 			@Override
-			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			public Expression<Primitive<Boolean>> createWithValue(Primitive<Boolean> value) {
 				Expression<?> source = Literals.of(value.booleanValue() ? "test" : "");
 				return Conversions.toBoolean(source);
 			}
@@ -523,7 +520,7 @@ class ConversionsTest {
 		@Nested
 		class FromInteger extends ToBooleanTestBase {
 			@Override
-			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			public Expression<Primitive<Boolean>> createWithValue(Primitive<Boolean> value) {
 				Expression<?> source = Literals.of(value.booleanValue() ? 1234 : 0);
 				return Conversions.toBoolean(source);
 			}
@@ -532,7 +529,7 @@ class ConversionsTest {
 		@Nested
 		class FromFloatingPoint extends ToBooleanTestBase {
 			@Override
-			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			public Expression<Primitive<Boolean>> createWithValue(Primitive<Boolean> value) {
 				Expression<?> source = Literals.of(value.booleanValue() ? 1234.5678 : 0.0);
 				return Conversions.toBoolean(source);
 			}
@@ -541,7 +538,7 @@ class ConversionsTest {
 		@Nested
 		class FromGeneric extends ToBooleanTestBase {
 			@Override
-			public BooleanExpression createWithValue(Primitive<Boolean> value) {
+			public Expression<Primitive<Boolean>> createWithValue(Primitive<Boolean> value) {
 				Expression<?> source = value.booleanValue() ? ExpressionTestUtils.generic("test") : Literals.ofNull();
 				return Conversions.toBoolean(source);
 			}
@@ -658,7 +655,7 @@ class ConversionsTest {
 			public TypeInfo getExpectedType() { return TypeInfo.of(boolean[].class, true); }
 
 			@Override
-			public BooleanListExpression<boolean[]> createForSize(int size) {
+			public ListExpression<boolean[], Primitive<Boolean>> createForSize(int size) {
 				boolean[] content = new boolean[size];
 				for (int i = 0; i < content.length; i++) {
 					content[i] = i%2==0;
@@ -731,8 +728,8 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
 			long value = rng.nextInt();
-			TextExpression source = Literals.of(String.valueOf(value));
-			NumericalExpression instance = Conversions.toInteger(source);
+			Expression<CharSequence> source = Literals.of(String.valueOf(value));
+			Expression<?> instance = Conversions.toInteger(source);
 			assertThat(instance.computeAsLong()).isEqualTo(value);
 		}
 
@@ -745,7 +742,7 @@ class ConversionsTest {
 		@Test
 		@RandomizedTest
 		void testFromInteger(RandomGenerator rng) {
-			NumericalExpression source = Literals.of(rng.nextInt());
+			Expression<?> source = Literals.of(rng.nextInt());
 			assertThat(Conversions.toInteger(source)).isSameAs(source);
 		}
 
@@ -753,8 +750,8 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
 			double value = randomDouble(rng);
-			NumericalExpression source = Literals.of(value);
-			NumericalExpression instance = Conversions.toInteger(source);
+			Expression<?> source = Literals.of(value);
+			Expression<?> instance = Conversions.toInteger(source);
 			assertThat(instance.computeAsLong()).isEqualTo((long) value);
 		}
 
@@ -782,7 +779,7 @@ class ConversionsTest {
 		class FromText extends ToIntegerTestBase {
 
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+			public Expression<?> createWithValue(Primitive<? extends Number> value) {
 				Expression<?> source = Literals.of(String.valueOf(value.longValue()));
 				return Conversions.toInteger(source);
 			}
@@ -792,7 +789,7 @@ class ConversionsTest {
 		class FromFloatingPoint extends ToIntegerTestBase {
 
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+			public Expression<?> createWithValue(Primitive<? extends Number> value) {
 				double val = value.longValue();
 				val += Math.signum(val)*0.0001;
 
@@ -892,7 +889,7 @@ class ConversionsTest {
 			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
 
 			@Override
-			public IntegerListExpression<long[]> createForSize(int size) {
+			public ListExpression<long[], Primitive<Long>> createForSize(int size) {
 				long[] content = new long[size];
 				for (int i = 0; i < content.length; i++) {
 					content[i] = i+1000L;
@@ -939,8 +936,8 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromText(RandomGenerator rng) {
 			double value = randomDouble(rng);
-			TextExpression source = Literals.of(String.valueOf(value));
-			NumericalExpression instance = Conversions.toFloatingPoint(source);
+			Expression<CharSequence> source = Literals.of(String.valueOf(value));
+			Expression<?> instance = Conversions.toFloatingPoint(source);
 			assertThat(instance.computeAsDouble()).isEqualTo(value);
 		}
 
@@ -954,15 +951,15 @@ class ConversionsTest {
 		@RandomizedTest
 		void testFromInteger(RandomGenerator rng) {
 			long value = rng.nextInt();
-			NumericalExpression source = Literals.of(value);
-			NumericalExpression instance = Conversions.toFloatingPoint(source);
+			Expression<?> source = Literals.of(value);
+			Expression<?> instance = Conversions.toFloatingPoint(source);
 			assertThat(instance.computeAsDouble()).isEqualTo(value);
 		}
 
 		@Test
 		@RandomizedTest
 		void testFromFloatingPoint(RandomGenerator rng) {
-			NumericalExpression source = Literals.of(randomDouble(rng));
+			Expression<?> source = Literals.of(randomDouble(rng));
 			assertThat(Conversions.toFloatingPoint(source)).isSameAs(source);
 		}
 
@@ -990,7 +987,7 @@ class ConversionsTest {
 		class FromText extends ToFloatingPointTestBase {
 
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+			public Expression<?> createWithValue(Primitive<? extends Number> value) {
 				Expression<?> source = Literals.of(String.valueOf(value.doubleValue()));
 				return Conversions.toFloatingPoint(source);
 			}
@@ -1008,7 +1005,7 @@ class ConversionsTest {
 			}
 
 			@Override
-			public NumericalExpression createWithValue(Primitive<? extends Number> value) {
+			public Expression<?> createWithValue(Primitive<? extends Number> value) {
 				Expression<?> source = Literals.of(value.longValue());
 				return Conversions.toFloatingPoint(source);
 			}
@@ -1107,7 +1104,7 @@ class ConversionsTest {
 			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
 
 			@Override
-			public FloatingPointListExpression<double[]> createForSize(int size) {
+			public ListExpression<double[], Primitive<Double>> createForSize(int size) {
 				double[] content = new double[size];
 				for (int i = 0; i < content.length; i++) {
 					content[i] = (i+1000L)*1.1;
