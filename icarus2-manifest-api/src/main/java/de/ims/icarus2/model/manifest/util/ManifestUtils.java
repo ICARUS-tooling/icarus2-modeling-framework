@@ -23,6 +23,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
@@ -192,7 +194,7 @@ public class ManifestUtils {
 	 * @param id
 	 * @return
 	 */
-	public static String extractHostId(String id) {
+	public static @Nullable String extractHostId(String id) {
 		int idx = id.indexOf(ID_SEPARATOR);
 		return idx==-1 ? null : id.substring(0, idx);
 	}

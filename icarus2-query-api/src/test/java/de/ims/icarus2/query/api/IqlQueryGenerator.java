@@ -276,14 +276,12 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareData(IqlData data, IncrementalBuild<?> build, Config config) {
-		prepareUnique0(data, build, config);
+		prepareNamedReference0(data, build, config);
 
 		// mandatory data
-		data.setVariable(index("variable"));
 		data.setContent(index("content"));
 		data.setCodec(index("codec"));
 
-		build.addFieldChange(data::setVariable, "variable", index("variable"));
 		build.addFieldChange(data::setContent, "content", index("content"));
 		build.addFieldChange(data::setCodec, "codec", index("codec"));
 		build.addFieldChange(data::setChecksum, "checksum", index("checksum"));
@@ -386,7 +384,7 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareImport(IqlImport imp, IncrementalBuild<?> build, Config config) {
-		prepareAliasedReference0(imp, build, config);
+		prepareNamedReference0(imp, build, config);
 
 		build.addFieldChange(imp::setOptional, "optional", Boolean.TRUE);
 	}
@@ -546,7 +544,7 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareScope(IqlScope scope, IncrementalBuild<?> build, Config config) {
-		prepareAliasedReference0(scope, build, config);
+		prepareUnique0(scope, build, config);
 
 		// mandatory data
 		scope.addLayer(generateFull(IqlType.LAYER, config));

@@ -25,6 +25,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,14 +39,15 @@ import javax.annotation.Nullable;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
@@ -80,16 +82,44 @@ public abstract class EvaluationContext {
 		/** Maps the usable raw names or aliases to layer entries. */
 		private final Map<String, Layer> layers;
 
-		/** Flags that have been switched on for the query. */
-		private final Set<String> switches = new ObjectOpenHashSet<>();
+		private final Set<String> aliases;
 
-		/** Additional properties that have been set for this query. */
-		private final Map<String, Object> properties = new Object2ObjectOpenHashMap<>();
+		private final Scope scope;
+
+		/** Flags that have been switched on for the query. */
+		private final Set<String> switches;
+
+		/** Additional properties that have been set for the query. */
+		private final Map<String, Object> properties;
 
 		private RootContext(RootContextBuilder builder) {
 			super(builder);
 
-			//TODO
+			this.corpus = builder.corpus;
+			this.scope = builder.scope;
+			this.switches = new ObjectOpenHashSet<>(builder.switches);
+			this.properties = new Object2ObjectOpenHashMap<>(builder.properties);
+
+			this.layers = null; //TODO
+			this.aliases = null; //TODO
+
+			//TODO process layers and create proper lookup structures
+		}
+
+
+		@Override
+		public boolean isSwitchSet(String name) {
+			return switches.contains(checkNotEmpty(name));
+		}
+	}
+
+	private static class AnnotationLink {
+		private final AnnotationManifest manifest;
+		private final AnnotationLayer layer;
+
+		public AnnotationLink(AnnotationManifest manifest, AnnotationLayer layer) {
+			this.manifest = requireNonNull(manifest);
+			this.layer = requireNonNull(layer);
 		}
 	}
 
@@ -101,19 +131,47 @@ public abstract class EvaluationContext {
 		private final IqlProperElement element;
 
 		/** Lazily constructed lookup to map from annotation keys to actual sources */
-		private Map<String, AnnotationManifest> annotationLookup;
+		private Map<String, AnnotationLink> annotationLookup;
 		private List<AnnotationLayer> catchAllLayers;
+
+		private final Map<String, ItemLayer> bindings;
 
 		private SubContext(SubContextBuilder builder) {
 			super(builder);
 
 			this.parent = builder.parent;
+			this.lane = builder.lane;
+			this.element = builder.element;
+			this.bindings = new Object2ObjectOpenHashMap<>(builder.bindings);
 
 			//TODO
 		}
+
+		private static @Nullable <T> T getInheritable(SubContext ctx,
+				Function<SubContext, T> getter) {
+			while(ctx!=null) {
+				T value = getter.apply(ctx);
+				if(value!=null) {
+					return value;
+				}
+				ctx = ctx.parent instanceof SubContext ? (SubContext)ctx.parent : null;
+			}
+			return null;
+		}
+
+		@Override
+		public Optional<EvaluationContext> getParent() { return Optional.of(parent); }
+
+		@Override
+		public boolean isSwitchSet(String name) { return getRootContext().isSwitchSet(name); }
 	}
 
 	private final Stack<ContextInfo> trace = new ObjectArrayList<>();
+
+	/** Flag to signal that this context shouldn't be used any further */
+	private volatile boolean disposed = false;
+
+	private final List<Environment> environments;
 
 	//TODO add mechanisms to obtain root namespace and to navigate namespace hierarchies
 
@@ -121,6 +179,9 @@ public abstract class EvaluationContext {
 
 	private EvaluationContext(BuilderBase<?,?> builder) {
 		requireNonNull(builder);
+
+		this.environments = new ArrayList<>(builder.environments);
+
 		//TODO
 	}
 
@@ -128,20 +189,12 @@ public abstract class EvaluationContext {
 		return !getParent().isPresent();
 	}
 
-	public RootContext getRootContext() {
+	public @Nullable EvaluationContext getRootContext() {
 		EvaluationContext ctx = this;
 		while(!ctx.isRoot()) {
-			ctx = getParent().get();
+			ctx = getParent().orElse(null);
 		}
-		return (RootContext) ctx;
-	}
-
-	public SubContext getLastSubContext() {
-		EvaluationContext ctx = this;
-		while(!ctx.isRoot()) {
-			ctx = getParent().get();
-		}
-		return (RootContext) ctx;
+		return ctx;
 	}
 
 	/**
@@ -159,64 +212,20 @@ public abstract class EvaluationContext {
 	 * any of method on this instance can cause an exception.
 	 */
 	public void dispose() {
-		//TODO
+		disposed = true;
 	}
 
-	private static <T, C extends EvaluationContext> Optional<T> getInheritable(C ctx,
-			Function<C, T> getter) {
-		while(ctx!=null) {
-			T value = getter.apply(ctx);
-			if(value!=null) {
-				return Optional.of(value);
-			}
-			ctx = ctx.getParent().orElse(null);
-		}
-		return Optional.empty();
-	}
+	public Optional<IqlLane> getLane() { return Optional.empty(); }
 
-	public Optional<IqlLane> getLane() {
-		return Optional.empty();
-	}
+	public Optional<IqlProperElement> getElement() { return Optional.empty(); }
 
-	public Optional<IqlProperElement> getElement() {
-		return Optional.empty();
-	}
+	public Optional<EvaluationContext> getParent() { return Optional.empty(); }
 
-	public Optional<EvaluationContext> getParent() {
-		return Optional.empty();
-	}
 
-	public Optional<Corpus> resolveCorpus(String name) {
-		return getInheritable(this, ctx -> ctx.lookupCorpus(name));
-	}
-
-	private Corpus lookupCorpus(String name) {
-		return corpora==null ? null : corpora.get(name);
-	}
-
-	public Optional<Layer> resolveLayer(String name) {
-		return getInheritable(this, ctx -> ctx.lookupLayer(name));
-	}
-
-	private Layer lookupLayer(String name) {
-		return layers==null ? null : layers.get(name);
-	}
-
-	public boolean isSwitchSet(String name) {
-		return switches.contains(checkNotEmpty(name));
-	}
+	public abstract boolean isSwitchSet(String name);
 
 	public boolean isSwitchSet(QuerySwitch qs) {
-		return switches.contains(qs.getKey());
-	}
-
-	/**
-	 * Returns the environment that provides all the globally available fields and methods
-	 * that can be used inside expressions.
-	 * @return
-	 */
-	public Environment getRootEnvironment() {
-
+		return isSwitchSet(qs.getKey());
 	}
 
 	/**
@@ -228,21 +237,25 @@ public abstract class EvaluationContext {
 	 * @return
 	 */
 	public List<Environment> getActiveEnvironments() {
-
+		//TODO implement
+		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * Enter the scope of the given {@code context} class and translate it into a
-	 * new {@link Environment}.
+	 * Enter the scope of the given {@code context} class and translate it into an available
+	 * {@link Environment}.
+	 *
 	 * @param context
 	 * @return
 	 */
-	public Environment enter(Class<?> context) {
-
+	public Optional<Environment> enter(Class<?> context) {
+		//TODO implement
+		throw new UnsupportedOperationException();
 	}
 
 	public void exit(Class<?> context) {
-
+		//TODO implement
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -255,7 +268,8 @@ public abstract class EvaluationContext {
 	 * the given {@code filter} (if present).
 	 */
 	public Expression<?> resolve(String name, @Nullable TypeFilter filter) {
-
+		//TODO implement
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -271,7 +285,8 @@ public abstract class EvaluationContext {
 	 */
 	public Expression<?> resolve(String name, @Nullable TypeFilter resultFilter,
 			Expression<?>[] arguments) {
-
+		//TODO implement
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -288,7 +303,7 @@ public abstract class EvaluationContext {
 		requireNonNull(key);
 
 		//TODO do we need to use the Optional.orElseThrow() method here?
-		Map<String, Layer> layers = getInheritable(this, ctx -> ctx.layers).get();
+		Map<String, Layer> layers = Collections.emptyMap(); //TODO
 
 		// Option 1: aliased or directly referenced layer
 		Layer layer = layers.get(key);
@@ -307,32 +322,61 @@ public abstract class EvaluationContext {
 
 			}
 		}
+
+		return null; //TODO
 	}
 
 	private AnnotationInfo fromDefault(String key, AnnotationLayer layer) {
 		AnnotationLayerManifest layerManifest = layer.getManifest();
 		Optional<String> defaultKey = layerManifest.getDefaultKey();
+
+		String actualKey;
+
 		if(defaultKey.isPresent()) {
-			String actualKey = defaultKey.get();
-			return fromManifest(key, layerManifest.getAnnotationManifest(
-					actualKey).orElseThrow(ManifestException.missing(layerManifest,
-							"annotation manifest for key "+actualKey)));
+			actualKey = defaultKey.get();
+		} else {
+			Set<String> keys = layerManifest.getAvailableKeys();
+			if(keys.size()>1)
+				throw new QueryException(QueryErrorCode.INCORRECT_USE, String.format(
+						"Annotation key '%s' points to layer with more than 1 annotation manifest: %s",
+								key, getName(layer)));
+
+			actualKey = keys.iterator().next();
 		}
 
-		Set<String> keys = layerManifest.getAvailableKeys();
-		if(keys.size()>1)
-			throw new QueryException(QueryErrorCode.INCORRECT_USE, String.format(
-					"Annotation key '%s' points to layer with more than 1 annotation manifest: %s",
-							key, getName(layer)));
-
-		String actualKey = keys.iterator().next();
-		return fromManifest(key, layerManifest.getAnnotationManifest(actualKey)
-				.orElseThrow(ManifestException.missing(layerManifest,
-				"annotation manifest for key "+actualKey)));
+		return fromManifest(key,
+				ManifestUtils.require(layerManifest, m -> m.getAnnotationManifest(actualKey), "annotation manifest"),
+				layer.getAnnotationStorage());
 	}
 
-	private AnnotationInfo fromManifest(String key, AnnotationManifest manifest) {
+	/**
+	 * Produces a type-aware {@link AnnotationInfo} that will be able to access
+	 * annotations for the given manifest from the specified storage.
+	 *
+	 * @param rawKey
+	 * @param manifest
+	 * @param storage
+	 * @return
+	 */
+	private AnnotationInfo fromManifest(String rawKey, AnnotationManifest manifest,
+			AnnotationStorage storage) {
+		final String key = ManifestUtils.require(manifest, AnnotationManifest::getKey, "key");
+		AnnotationInfo info = new AnnotationInfo(rawKey, key, manifest.getValueType(),
+				EvaluationUtils.typeFor(manifest.getValueType()));
 
+		if(TypeInfo.isInteger(info.type)) {
+			info.integerSource = item -> storage.getLong(item, key);
+		} else if(TypeInfo.isFloatingPoint(info.type)) {
+			info.floatingPointSource = item -> storage.getDouble(item, key);
+		} else if(TypeInfo.isBoolean(info.type)) {
+			info.booleanSource = item -> storage.getBoolean(item, key);
+		} else if(TypeInfo.isText(info.type)) {
+			info.objectSource = item -> storage.getString(item, key);
+		} else {
+			info.objectSource = item -> storage.getValue(item, key);
+		}
+
+		return info;
 	}
 
 	public static class AnnotationInfo {
@@ -392,11 +436,24 @@ public abstract class EvaluationContext {
 	private static final class ContextInfo {
 		private final Class<?> type;
 		private final Environment environment;
+
+		ContextInfo(Class<?> type, Environment environment) {
+			this.type = requireNonNull(type);
+			this.environment = environment;
+		}
 	}
 
 	public static abstract class BuilderBase<B extends BuilderBase<B, C>, C extends EvaluationContext>
 			extends AbstractBuilder<B, C> {
 		//TODO
+
+		private final List<Environment> environments = new ArrayList<>();
+
+		public B registerEnvironment(Environment environment) {
+			// TODO Auto-generated method stub
+
+			return thisAsCast();
+		}
 
 		@Override
 		protected void validate() {
@@ -405,7 +462,7 @@ public abstract class EvaluationContext {
 		}
 	}
 
-	public static class RootContextBuilder extends BuilderBase<RootContextBuilder, RootContext>
+	public static final class RootContextBuilder extends BuilderBase<RootContextBuilder, RootContext>
 			implements EngineConfigurator{
 
 		private Corpus corpus;
@@ -426,40 +483,56 @@ public abstract class EvaluationContext {
 		/** Additional properties that have been set for this query. */
 		private final Map<String, Object> properties = new Object2ObjectOpenHashMap<>();
 
+		public RootContextBuilder namedLayer(String alias, Layer layer) {
+			requireNonNull(alias);
+			requireNonNull(layer);
+			checkState("Alias already used: "+alias, !namedLayers.containsKey(alias));
+			namedLayers.put(alias, layer);
+			return this;
+		}
+
+		public RootContextBuilder scope(Scope scope) {
+			requireNonNull(scope);
+			checkState("Scope already set", this.scope==null);
+			this.scope = scope;
+			return this;
+		}
+
+		public RootContextBuilder corpus(Corpus corpus) {
+			requireNonNull(corpus);
+			checkState("Corpus already set", this.corpus==null);
+			this.corpus = corpus;
+			return this;
+		}
+
 		/** {@inheritDoc} */
 		@Override
-		public void setProperty(String key, Object value) {
+		public RootContextBuilder setProperty(String key, Object value) {
 			requireNonNull(key);
 			if(value==null) {
 				properties.remove(key);
 			} else {
 				properties.put(key, value);
 			}
+			return this;
 		}
 
 		/** {@inheritDoc} */
 		@Override
-		public void setSwitch(String name, boolean active) {
+		public RootContextBuilder setSwitch(String name, boolean active) {
 			requireNonNull(name);
 			if(active) {
 				switches.add(name);
 			} else {
 				switches.remove(name);
 			}
+			return this;
 		}
 
-		/** {@inheritDoc} */
 		@Override
-		public void registerEnvironment(Environment environment) {
+		protected void validate() {
 			// TODO Auto-generated method stub
-
-		}
-
-		/** {@inheritDoc} */
-		@Override
-		public void registerEnvironment(Class<?> context, Environment environment) {
-			// TODO Auto-generated method stub
-
+			super.validate();
 		}
 
 		@Override
@@ -467,12 +540,45 @@ public abstract class EvaluationContext {
 
 	}
 
-	public static class SubContextBuilder extends BuilderBase<SubContextBuilder, SubContext> {
+	public static final class SubContextBuilder extends BuilderBase<SubContextBuilder, SubContext> {
 
 		private final EvaluationContext parent;
 
+		private IqlLane lane;
+		private IqlProperElement element;
+		private Map<String, ItemLayer> bindings = new Object2ObjectOpenHashMap<>();
+
 		private SubContextBuilder(EvaluationContext parent) {
 			this.parent = requireNonNull(parent);
+		}
+
+		public SubContextBuilder lane(IqlLane lane) {
+			requireNonNull(lane);
+			checkState("Lane already set", this.lane==null);
+			this.lane = lane;
+			return this;
+		}
+
+		public SubContextBuilder element(IqlProperElement element) {
+			requireNonNull(element);
+			checkState("Element already set", this.element==null);
+			this.element = element;
+			return this;
+		}
+
+		public SubContextBuilder bind(String name, ItemLayer layer) {
+			requireNonNull(name);
+			requireNonNull(layer);
+			checkNotEmpty(name);
+			checkState("Name already bound: "+name, !bindings.containsKey(name));
+			bindings.put(name, layer);
+			return this;
+		}
+
+		@Override
+		protected void validate() {
+			// TODO Auto-generated method stub
+			super.validate();
 		}
 
 		@Override

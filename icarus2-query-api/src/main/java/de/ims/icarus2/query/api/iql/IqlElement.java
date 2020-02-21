@@ -67,9 +67,6 @@ public abstract class IqlElement extends IqlUnique {
 
 		public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();

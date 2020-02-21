@@ -21,21 +21,19 @@ public interface EngineConfigurator {
 	 * @param key
 	 * @param value
 	 */
-	void setProperty(String key, @Nullable Object value);
+	EngineConfigurator setProperty(String key, @Nullable Object value);
 
 	/**
 	 * Switch on or off the specified switch.
 	 * @param name
 	 * @param active
 	 */
-	void setSwitch(String name, boolean active);
+	EngineConfigurator setSwitch(String name, boolean active);
 
 	/**
-	 * Adds a new global environment.
+	 * Adds a new environment.
 	 *
 	 * @param environment
 	 */
-	void registerEnvironment(Environment environment);
-
-	void registerEnvironment(Class<?> context, Environment environment);
+	EngineConfigurator registerEnvironment(Environment environment);
 }

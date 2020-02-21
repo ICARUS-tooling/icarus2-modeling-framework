@@ -53,6 +53,7 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.LayerType;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.Options;
@@ -181,7 +182,7 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * @return
 	 */
 	default Scope createCompleteScope() {
-		ScopeBuilder builder = new ScopeBuilder(this);
+		ScopeBuilder builder = ScopeBuilder.of(this);
 
 		forEachRootContext(builder::addContext);
 		forEachCustomContext(builder::addContext);
@@ -311,6 +312,9 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * to resolve the given {@code qualifiedLayerId} to external layers that are
 	 * linked via aliases of {@link ContextManifest#getPrerequisites() prerequisites}.
 	 * @return
+	 *
+	 * @see ManifestUtils#extractHostId(String)
+	 * @see ManifestUtils#extractElementId(String)
 	 */
 	<L extends Layer> L getLayer(String qualifiedLayerId, boolean nativeOnly);
 

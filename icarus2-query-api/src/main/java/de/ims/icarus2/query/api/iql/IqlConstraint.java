@@ -54,9 +54,6 @@ public abstract class IqlConstraint extends IqlUnique {
 
 	public void setSolvedAs(boolean solvedAs) { this.solvedAs = Optional.ofNullable(setOrFallback(solvedAs, false)); }
 
-	/**
-	 * @see de.ims.icarus2.query.api.iql.IqlUnique#checkIntegrity()
-	 */
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
@@ -69,21 +66,13 @@ public abstract class IqlConstraint extends IqlUnique {
 		@JsonProperty(IqlProperties.EXPRESSION)
 		private IqlExpression expression;
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-		 */
 		@Override
-		public IqlType getType() {
-			return IqlType.PREDICATE;
-		}
+		public IqlType getType() { return IqlType.PREDICATE; }
 
 		public IqlExpression getExpression() { return expression; }
 
 		public void setExpression(IqlExpression expression) { this.expression = requireNonNull(expression); }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlConstraint#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
@@ -99,13 +88,8 @@ public abstract class IqlConstraint extends IqlUnique {
 		@JsonProperty(IqlProperties.OPERATION)
 		private BooleanOperation operation;
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlQueryElement#getType()
-		 */
 		@Override
-		public IqlType getType() {
-			return IqlType.TERM;
-		}
+		public IqlType getType() { return IqlType.TERM; }
 
 		public List<IqlConstraint> getItems() { return CollectionUtils.unmodifiableListProxy(items); }
 
@@ -115,9 +99,6 @@ public abstract class IqlConstraint extends IqlUnique {
 
 		public void setOperation(BooleanOperation operation) { this.operation = requireNonNull(operation); }
 
-		/**
-		 * @see de.ims.icarus2.query.api.iql.IqlConstraint#checkIntegrity()
-		 */
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
@@ -133,13 +114,9 @@ public abstract class IqlConstraint extends IqlUnique {
 
 		private final String label;
 
-		private BooleanOperation(String label) {
-			this.label = label;
-		}
+		private BooleanOperation(String label) { this.label = label; }
 
 		@JsonValue
-		public String getLabel() {
-			return label;
-		}
+		public String getLabel() { return label; }
 	}
 }

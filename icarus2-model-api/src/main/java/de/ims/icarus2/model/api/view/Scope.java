@@ -50,7 +50,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
 public class Scope {
 
 	public static Scope withLayers(Corpus corpus, String...layerIds) {
-		ScopeBuilder builder = new ScopeBuilder(corpus);
+		ScopeBuilder builder = ScopeBuilder.of(corpus);
 
 		for(String layerId : layerIds) {
 			Layer layer = corpus.getLayer(layerId, true);

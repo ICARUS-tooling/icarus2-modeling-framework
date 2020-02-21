@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.api.view;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,19 +33,24 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class ScopeBuilder {
 
+	public static ScopeBuilder of(Corpus source) {
+		return new ScopeBuilder(source);
+	}
+
+	public static ScopeBuilder of(Scope source) {
+		return new ScopeBuilder(source);
+	}
+
 	private List<Layer> layers = new ArrayList<>();
 	private List<Context> contexts = new ArrayList<>();
 	private ItemLayer primaryLayer;
 	private final Corpus corpus;
 
-	public ScopeBuilder(Corpus corpus) {
-		if (corpus == null)
-			throw new NullPointerException("Invalid corpus"); //$NON-NLS-1$
-
-		this.corpus = corpus;
+	private ScopeBuilder(Corpus corpus) {
+		this.corpus = requireNonNull(corpus);
 	}
 
-	public ScopeBuilder(Scope source) {
+	private ScopeBuilder(Scope source) {
 		if (source == null)
 			throw new NullPointerException("Invalid source"); //$NON-NLS-1$
 

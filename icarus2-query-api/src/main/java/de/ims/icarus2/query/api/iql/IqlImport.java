@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Markus Gärtner
  *
  */
-public class IqlImport extends IqlAliasedReference {
+public class IqlImport extends IqlNamedReference {
 
 	@JsonProperty(IqlProperties.OPTIONAL)
 	@JsonInclude(Include.NON_DEFAULT)

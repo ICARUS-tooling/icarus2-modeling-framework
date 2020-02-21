@@ -33,7 +33,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class IqlScope extends IqlAliasedReference {
+public class IqlScope extends IqlUnique {
 
 	/**
 	 * Defines the members of this scope.

@@ -25,6 +25,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -118,12 +119,18 @@ public class IqlQuery extends IqlUnique {
 
 	//TODO add the 'forEach' style methods for all list properties
 
+	public void forEachImport(Consumer<? super IqlImport> action) { imports.forEach(action); }
+
+	public void forEachSetup(Consumer<? super IqlProperty> action) { setup.forEach(action); }
+
+	public void forEachStream(Consumer<? super IqlStream> action) { streams.forEach(action); }
+
+	public void forEachEmbeddedData(Consumer<? super IqlData> action) { embeddedData.forEach(action); }
+
 	// Utility methods
 
 	/** Returns whether this query is meant to evaluate multiple independent data streams. */
-	public boolean isMultiStream() {
-		return streams.size()>1;
-	}
+	public boolean isMultiStream() { return streams.size()>1; }
 
 	public Optional<IqlProperty> getProperty(String key) {
 		checkNotEmpty(key);
@@ -142,9 +149,7 @@ public class IqlQuery extends IqlUnique {
 	 * @param qs
 	 * @return
 	 */
-	public boolean isSwitchSet(QuerySwitch qs) {
-		return isSwitchSet(qs.getKey());
-	}
+	public boolean isSwitchSet(QuerySwitch qs) { return isSwitchSet(qs.getKey()); }
 
 	/**
 	 * Returns {@code true} iff a switch property with the specified {@link IqlProperty#getKey() key}

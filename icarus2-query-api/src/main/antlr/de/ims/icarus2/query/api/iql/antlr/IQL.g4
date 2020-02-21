@@ -368,6 +368,7 @@ reference
 	;
 	
 /** Addressing a layer/context or other embedded member via the identifiers of its environment */
+//TODO limit the qualification depth? In the ICARUS2 framework we only ever use context::layer
 qualifiedIdentifier
 	: Identifier (DOUBLE_COLON Identifier)*
 	;

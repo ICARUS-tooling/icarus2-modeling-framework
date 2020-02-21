@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Markus Gärtner
  *
  */
-public class IqlData extends IqlUnique {
+public class IqlData extends IqlNamedReference {
 
 	@JsonProperty(IqlProperties.CONTENT)
 	private String content;
@@ -40,9 +40,6 @@ public class IqlData extends IqlUnique {
 	/** Defines how to interpret the 'content' string */
 	@JsonProperty(IqlProperties.CODEC)
 	private String codec;
-
-	@JsonProperty(IqlProperties.VARIABLE)
-	private String variable;
 
 	@JsonProperty(IqlProperties.CHECKSUM)
 	@JsonInclude(Include.NON_EMPTY)
@@ -56,7 +53,6 @@ public class IqlData extends IqlUnique {
 		super.checkIntegrity();
 		checkStringNotEmpty(content, IqlProperties.CONTENT);
 		checkStringNotEmpty(codec, IqlProperties.CODEC);
-		checkStringNotEmpty(variable, IqlProperties.VARIABLE);
 
 		checkOptionalStringNotEmpty(checksum, IqlProperties.CHECKSUM);
 	}
@@ -65,15 +61,11 @@ public class IqlData extends IqlUnique {
 
 	public String getCodec() { return codec; }
 
-	public String getVariable() { return variable; }
-
 	public Optional<String> getChecksum() { return checksum; }
 
 	public void setContent(String content) { this.content = requireNonNull(content); }
 
 	public void setCodec(String codec) { this.codec = requireNonNull(codec); }
-
-	public void setVariable(String variable) { this.variable = requireNonNull(variable); }
 
 	public void setChecksum(String checksum) { this.checksum = Optional.of(checkNotEmpty(checksum)); }
 }
