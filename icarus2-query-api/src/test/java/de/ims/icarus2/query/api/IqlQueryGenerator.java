@@ -59,6 +59,7 @@ import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlLane.NodeArrangement;
 import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
@@ -396,7 +397,9 @@ public class IqlQueryGenerator {
 		lane.setLaneType(LaneType.SEQUENCE);
 		lane.addElement(generateFull(IqlType.NODE, config));
 
-		build.addFieldChange(lane::setAligned, "aligned", Boolean.TRUE);
+		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
+			build.addEnumFieldChange(lane::setNodeArrangement, "nodeArrangement", nodeArrangement);
+		}
 		for(LaneType laneType : LaneType.values()) {
 			build.addEnumFieldChange(lane::setLaneType, "laneType", laneType);
 		}

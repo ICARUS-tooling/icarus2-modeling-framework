@@ -37,6 +37,11 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class IqlLane extends IqlNamedReference {
 
+	/**
+	 * Special name reserved for signaling that a lane is introduced as a proxy,
+	 * i.e. the original query did not contain a lane statement, but only the
+	 * elements and/or constraints.
+	 */
 	public static final String PROXY_NAME = "lane_proxy";
 
 	@JsonProperty(IqlProperties.LANE_TYPE)
@@ -45,15 +50,15 @@ public class IqlLane extends IqlNamedReference {
 	@JsonProperty(IqlProperties.ELEMENTS)
 	private final List<IqlElement> elements = new ArrayList<>();
 
-	@JsonProperty(IqlProperties.ALIGNED)
+	@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
 	@JsonInclude(Include.NON_DEFAULT)
-	private boolean aligned = false;
+	private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
 
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(laneType, IqlProperties.LANE_TYPE);
-		//TODO 'aligned' flag only supported for tree or graph statement
+		//TODO 'nodeArrangement' flag only supported for tree or graph statement
 
 		checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
 	}
@@ -65,14 +70,14 @@ public class IqlLane extends IqlNamedReference {
 
 	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
-	public boolean isAligned() { return aligned; }
+	public NodeArrangement getNodeArrangement() { return nodeArrangement; }
 
 
 	public void setLaneType(LaneType laneType) { this.laneType = requireNonNull(laneType); }
 
 	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
 
-	public void setAligned(boolean aligned) { this.aligned = aligned; }
+	public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = requireNonNull(nodeArrangement); }
 
 	/** Returns {@code true} iff this lane has been assigned the {@link #PROXY_NAME proxy name} */
 	public boolean isProxy() {
@@ -111,5 +116,23 @@ public class IqlLane extends IqlNamedReference {
 		public boolean isAllowChildren() { return allowChildren; }
 
 		public boolean isAllowEdges() { return allowEdges; }
+	}
+
+	public enum NodeArrangement {
+		UNSPECIFIED("unspecified"),
+		ORDERED("ordered"),
+		ADJACENT("adjacent")
+		;
+
+		private final String label;
+
+		private NodeArrangement(String label) {
+			this.label = label;
+		}
+
+		@JsonValue
+		public String getLabel() {
+			return label;
+		}
 	}
 }

@@ -130,7 +130,7 @@ binding
 
 selectiveStatement
 	: constraint // plain
-	| ((ALIGNED? nodeStatement) | laneStatementsList) (HAVING constraint)?
+	| ((nodeArrangement? nodeStatement) | laneStatementsList) (HAVING constraint)?
 	;	
 
 laneStatementsList
@@ -139,7 +139,12 @@ laneStatementsList
 	
 laneStatement
 	//TODO exchange ALIGNED with a set of modes, such as (ORDERED, ADJACENT,...)
-	: LANE member ALIGNED? nodeStatement
+	: LANE member nodeArrangement? nodeStatement
+	;
+	
+nodeArrangement
+	: ORDERED
+	| ADJACENT
 	;
 	
 /**
@@ -522,7 +527,8 @@ FROM : 'FROM' | 'from' ;
 ALL : 'ALL' | 'all' ;
 NOT : 'NOT' | 'not' ;
 IN : 'IN' | 'in' ;
-ALIGNED : 'ALIGNED' | 'aligned';
+ADJACENT : 'ADJACENT' | 'adjacent';
+ORDERED : 'ORDERED' | 'ordered';
 GRAPH : 'GRAPH' | 'graph' ;
 HAVING : 'HAVING' | 'having' ;
 RANGE : 'RANGE' | 'range' ;

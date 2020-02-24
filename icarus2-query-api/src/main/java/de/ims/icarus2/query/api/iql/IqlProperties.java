@@ -109,7 +109,7 @@ public final class IqlProperties {
 
 	public static final String ELEMENTS = IQL_NS_PREFIX+"elements";
 
-	public static final String ALIGNED = IQL_NS_PREFIX+"aligned";
+	public static final String NODE_ARRANGEMENT = IQL_NS_PREFIX+"nodeArrangement";
 
 	public static final String CONSTRAINT = IQL_NS_PREFIX+"constraint";
 

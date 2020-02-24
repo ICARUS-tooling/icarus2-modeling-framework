@@ -59,6 +59,7 @@ import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlLane.NodeArrangement;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
@@ -184,8 +185,8 @@ class QueryProcessorTest {
 
 		@ParameterizedTest
 		@ValueSource(strings = {
-				"FIND ALIGNED [![]]",
-				"FIND ALIGNED [],![]---[]",
+				"FIND ORDERED [![]]",
+				"FIND ORDERED [],![]---[]",
 		})
 		void testInsufficientNodesForAlignment(String rawPayload) {
 			assertReportHasWarnings(expectReport(rawPayload),
@@ -750,7 +751,7 @@ class QueryProcessorTest {
 				IqlLane lane = lanes.get(0);
 				assertThat(lane.getLaneType()).isSameAs(LaneType.SEQUENCE);
 				assertThat(lane.getElements()).isNotEmpty();
-				assertThat(lane.isAligned()).isFalse();
+				assertThat(lane.getNodeArrangement()).isNotEqualTo(NodeArrangement.ORDERED);
 			}
 
 			@Nested
@@ -971,14 +972,14 @@ class QueryProcessorTest {
 		@Nested
 		class WhenTree {
 
-			private void assertTree(IqlPayload payload, boolean aligned) {
+			private void assertTree(IqlPayload payload, NodeArrangement nodeArrangement) {
 				assertThat(payload).extracting(IqlPayload::getQueryType).isEqualTo(QueryType.SINGLE_LANE);
 				List<IqlLane> lanes = payload.getLanes();
 				assertThat(lanes).hasSize(1);
 				IqlLane lane = lanes.get(0);
 				assertThat(lane.getLaneType()).isSameAs(LaneType.TREE);
 				assertThat(lane.getElements()).isNotEmpty();
-				assertThat(lane.isAligned()).isEqualTo(aligned);
+				assertThat(lane.getNodeArrangement()).isEqualTo(nodeArrangement);
 			}
 
 			@Nested
@@ -988,7 +989,7 @@ class QueryProcessorTest {
 				void testEmptyNestedNode() {
 					String rawPayload = "FIND [[]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, false);
+					assertTree(payload, NodeArrangement.UNSPECIFIED);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node())));
 				}
@@ -997,7 +998,7 @@ class QueryProcessorTest {
 				void testEmptyNestedSiblings() {
 					String rawPayload = "FIND [[][]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, false);
+					assertTree(payload, NodeArrangement.UNSPECIFIED);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node(), node())));
 				}
@@ -1006,7 +1007,7 @@ class QueryProcessorTest {
 				void testEmptyNestedChain() {
 					String rawPayload = "FIND [[[]]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, false);
+					assertTree(payload, NodeArrangement.UNSPECIFIED);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
 							tree(null, null, tree(null, null, node()))));
@@ -1021,7 +1022,7 @@ class QueryProcessorTest {
 				void testEmptyAllQuantifiedNode(String quantifier) {
 					String rawPayload = "FIND ["+quantifier+"[]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, false);
+					assertTree(payload, NodeArrangement.UNSPECIFIED);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
 							tree(null, null, node(null, null, quantAll()))));
@@ -1035,12 +1036,12 @@ class QueryProcessorTest {
 				void testFilledNodes() {
 					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 "
 							+ "AND $p FROM corpus::phrase "
-							+ "FIND ALIGNED [5-[][$token1: pos!=\"NNP\"]] 4+[] "
+							+ "FIND ORDERED [5-[][$token1: pos!=\"NNP\"]] 4+[] "
 							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, true);
+					assertTree(payload, NodeArrangement.ORDERED);
 					assertBindings(payload,
 							bind("corpus::layer1", true, "token1", "token2"),
 							bind("corpus::phrase", false, "p"));

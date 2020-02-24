@@ -64,6 +64,7 @@ import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlLane.NodeArrangement;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
@@ -96,6 +97,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeAlternativesContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeArrangementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeGroupingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeSequenceContext;
@@ -376,7 +378,7 @@ public class QueryProcessor {
 				genId(lane);
 				lane.setName(IqlLane.PROXY_NAME);
 
-				processLaneContent(lane, sctx.ALIGNED()!=null, sctx.nodeStatement());
+				processLaneContent(lane, sctx.nodeArrangement(), sctx.nodeStatement());
 
 				payload.addLane(lane);
 				payload.setQueryType(QueryType.SINGLE_LANE);
@@ -401,15 +403,29 @@ public class QueryProcessor {
 
 			lane.setName(extractMemberName(ctx.member()));
 
-			processLaneContent(lane, ctx.ALIGNED()!=null, ctx.nodeStatement());
+			processLaneContent(lane, ctx.nodeArrangement(), ctx.nodeStatement());
 
 			return lane;
 		}
 
-		private void processLaneContent(IqlLane lane, boolean aligned,
+		private NodeArrangement processNodeArrangement(NodeArrangementContext ctx) {
+			if(ctx==null) {
+				return NodeArrangement.UNSPECIFIED;
+			}
+
+			if(ctx.ORDERED()!=null) {
+				return NodeArrangement.ORDERED;
+			} else if(ctx.ADJACENT()!=null) {
+				return NodeArrangement.ADJACENT;
+			}
+
+			return failForUnhandledAlternative(ctx);
+		}
+
+		private void processLaneContent(IqlLane lane, NodeArrangementContext nctx,
 				NodeStatementContext ctx) {
 
-			lane.setAligned(aligned);
+			lane.setNodeArrangement(processNodeArrangement(nctx));
 
 			try {
 				// Start the (recursive) node parsing with a 'null' parent
@@ -429,9 +445,10 @@ public class QueryProcessor {
 			}
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(lane.isAligned() && countExistentialElements(lane.getElements())<2) {
+			if(lane.getNodeArrangement()!=NodeArrangement.UNSPECIFIED
+					&& countExistentialElements(lane.getElements())<2) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
-						"For 'ALIGNED' feature to be effective the query needs at least"
+						"For node arrangement feature to be effective the query needs at least"
 						+ " two distinct nodes that are existentially quantified.");
 			}
 		}
