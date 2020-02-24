@@ -37,6 +37,8 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class IqlLane extends IqlNamedReference {
 
+	public static final String PROXY_NAME = "lane_proxy";
+
 	@JsonProperty(IqlProperties.LANE_TYPE)
 	private LaneType laneType;
 
@@ -71,6 +73,11 @@ public class IqlLane extends IqlNamedReference {
 	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
 
 	public void setAligned(boolean aligned) { this.aligned = aligned; }
+
+	/** Returns {@code true} iff this lane has been assigned the {@link #PROXY_NAME proxy name} */
+	public boolean isProxy() {
+		return PROXY_NAME.equals(getName());
+	}
 
 	public enum LaneType {
 		/** Define sequential flat nodes */

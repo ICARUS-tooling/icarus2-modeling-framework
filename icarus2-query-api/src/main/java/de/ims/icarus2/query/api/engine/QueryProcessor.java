@@ -374,6 +374,7 @@ public class QueryProcessor {
 				// Structure statement [sequence,tree,graph]
 				IqlLane lane = new IqlLane();
 				genId(lane);
+				lane.setName(IqlLane.PROXY_NAME);
 
 				processLaneContent(lane, sctx.ALIGNED()!=null, sctx.nodeStatement());
 
