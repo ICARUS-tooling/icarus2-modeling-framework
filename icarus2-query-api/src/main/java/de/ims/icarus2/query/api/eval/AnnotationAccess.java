@@ -19,8 +19,10 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
@@ -62,8 +64,11 @@ public class AnnotationAccess {
 			Expression<CharSequence> key) {
 
 		if(key.isConstant()) {
-			String annitationKey = key.compute().toString();
-			AnnotationInfo info = context.findAnnotation(annitationKey);
+			String annotationKey = key.compute().toString();
+			checkNotEmpty(annotationKey);
+			AnnotationInfo info = context.findAnnotation(annotationKey).orElseThrow(
+					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+							"No annotation available for key: "+annotationKey));
 			TypeInfo type = info.getType();
 			if(type.isList())
 				throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -150,6 +155,7 @@ public class AnnotationAccess {
 	private static AnnotationInfo[] findAnnotations(EvaluationContext context, String[] keys) {
 		return Stream.of(keys)
 				.map(context::findAnnotation)
+				.map(Optional::get)
 				.toArray(AnnotationInfo[]::new);
 	}
 
