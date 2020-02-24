@@ -459,8 +459,9 @@ public class Graph<E extends Object> {
 
 			mapper.accept(source, target -> {
 				if(filter.test(target)) {
-					node.addOutgoing(target);
-					node(target, true).addIncoming(source);
+//					node.addOutgoing(target);
+//					node(target, true).addIncoming(source);
+					addLink(source, target);
 					buffer.add(target);
 				}
 			});
