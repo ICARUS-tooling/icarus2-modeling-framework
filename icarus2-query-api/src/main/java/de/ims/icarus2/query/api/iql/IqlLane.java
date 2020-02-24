@@ -19,12 +19,10 @@
  */
 package de.ims.icarus2.query.api.iql;
 
-import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -37,14 +35,10 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class IqlLane extends IqlUnique {
+public class IqlLane extends IqlNamedReference {
 
 	@JsonProperty(IqlProperties.LANE_TYPE)
 	private LaneType laneType;
-
-	@JsonProperty(IqlProperties.NAME)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<String> name = Optional.empty();
 
 	@JsonProperty(IqlProperties.ELEMENTS)
 	private final List<IqlElement> elements = new ArrayList<>();
@@ -57,7 +51,6 @@ public class IqlLane extends IqlUnique {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(laneType, IqlProperties.LANE_TYPE);
-		checkOptionalStringNotEmpty(name, IqlProperties.NAME);
 		//TODO 'aligned' flag only supported for tree or graph statement
 
 		checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
@@ -68,16 +61,12 @@ public class IqlLane extends IqlUnique {
 
 	public LaneType getLaneType() { return laneType; }
 
-	public Optional<String> getName() { return name; }
-
 	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
 	public boolean isAligned() { return aligned; }
 
 
 	public void setLaneType(LaneType laneType) { this.laneType = requireNonNull(laneType); }
-
-	public void setName(String name) { this.name = Optional.of(checkNotEmpty(name)); }
 
 	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
 

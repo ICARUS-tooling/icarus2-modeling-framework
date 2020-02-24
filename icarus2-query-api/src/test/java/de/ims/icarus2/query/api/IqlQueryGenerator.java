@@ -390,14 +390,13 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareLane(IqlLane lane, IncrementalBuild<?> build, Config config) {
-		prepareUnique0(lane, build, config);
+		prepareNamedReference0(lane, build, config);
 
 		// mandatory data
 		lane.setLaneType(LaneType.SEQUENCE);
 		lane.addElement(generateFull(IqlType.NODE, config));
 
 		build.addFieldChange(lane::setAligned, "aligned", Boolean.TRUE);
-		build.addFieldChange(lane::setName, "name", index("name"));
 		for(LaneType laneType : LaneType.values()) {
 			build.addEnumFieldChange(lane::setLaneType, "laneType", laneType);
 		}

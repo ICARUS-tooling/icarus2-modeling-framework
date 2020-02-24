@@ -55,6 +55,7 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonProperty(IqlProperties.LABEL)
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<String> label = Optional.empty();
+
 		@JsonProperty(IqlProperties.CONSTRAINT)
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<IqlConstraint> constraint = Optional.empty();
