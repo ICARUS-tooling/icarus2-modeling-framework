@@ -86,7 +86,7 @@ public class AnnotationAccess {
 
 		//TODO delegate to implementation that looks up annotation layer at evaluation time
 		throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
-				"Dynamic lookup of annotation layers not supported");
+				"Dynamic lookup of annotation layers not supported (yet)");
 	}
 
 	public static Expression<?> of(Expression<? extends Item> item, EvaluationContext context,
@@ -99,7 +99,7 @@ public class AnnotationAccess {
 
 		//TODO delegate to implementation that looks up annotation layer at evaluation time
 		throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
-				"Dynamic lookup of annotation layers not supported");
+				"Dynamic lookup of annotation layers not supported (yet)");
 	}
 
 	public static ListExpression<?, ?> of(Expression<? extends Item> item,
@@ -113,10 +113,9 @@ public class AnnotationAccess {
 
 		//TODO delegate to implementation that looks up annotation layer at evaluation time
 		throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
-				"Dynamic lookup of annotation layers not supported");
+				"Dynamic lookup of annotation layers not supported (yet)");
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static ListExpression<?, ?> multiLookupOf(EvaluationContext context,
 			Expression<? extends Item> item, String[] annotationKeys) {
 		AnnotationInfo[] infos = findAnnotations(context, annotationKeys);
@@ -127,7 +126,7 @@ public class AnnotationAccess {
 					.map(AnnotationInfo::getIntegerSource)
 					.toArray(ToLongFunction[]::new));
 		} else if(TypeInfo.isFloatingPoint(type)) {
-			return new MultiKeyDouble(item, Stream.of(infos)
+			return new MultiKeyFloatingPoint(item, Stream.of(infos)
 					.map(AnnotationInfo::getFloatingPointSource)
 					.toArray(ToDoubleFunction[]::new));
 		} else if(TypeInfo.isBoolean(type)) {
@@ -135,7 +134,10 @@ public class AnnotationAccess {
 					.map(AnnotationInfo::getBooleanSource)
 					.toArray(Predicate[]::new));
 		}
-		return new MultiKeyObject(type, item, wrapGeneric(infos));
+
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		ListExpression<?, ?> result = new MultiKeyObject(type, item, wrapGeneric(infos));
+		return result;
 	}
 
 	private static String[] annotationKeysFor(ListExpression<?, CharSequence> keys) {
@@ -363,7 +365,7 @@ public class AnnotationAccess {
 
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
-			return new MultiKeyObject<>(type, item.duplicate(context), lookups);
+			return new MultiKeyObject<>(elementType, item.duplicate(context), lookups);
 		}
 	}
 
@@ -417,7 +419,7 @@ public class AnnotationAccess {
 		}
 	}
 
-	static final class MultiKeyDouble implements FloatingPointListExpression<double[]>, SharedExpression {
+	static final class MultiKeyFloatingPoint implements FloatingPointListExpression<double[]>, SharedExpression {
 
 		private final Expression<? extends Item> item;
 		private final ToDoubleFunction<Item>[] lookups;
@@ -426,7 +428,7 @@ public class AnnotationAccess {
 
 		private static final TypeInfo type = TypeInfo.of(double[].class, true);
 
-		MultiKeyDouble(Expression<? extends Item> item, ToDoubleFunction<Item>[] lookups) {
+		MultiKeyFloatingPoint(Expression<? extends Item> item, ToDoubleFunction<Item>[] lookups) {
 			this.item = requireNonNull(item);
 			this.lookups = requireNonNull(lookups);
 			buffer = new double[lookups.length];
@@ -463,7 +465,7 @@ public class AnnotationAccess {
 
 		@Override
 		public FloatingPointListExpression<double[]> duplicate(EvaluationContext context) {
-			return new MultiKeyDouble(item.duplicate(context), lookups);
+			return new MultiKeyFloatingPoint(item.duplicate(context), lookups);
 		}
 	}
 

@@ -414,6 +414,9 @@ class ArrayLiteralsTest {
 		public boolean nativeConstant() { return true; }
 
 		@Override
+		public boolean expectFixedSize() { return false; }
+
+		@Override
 		public Class<?> getTestTargetClass() { return DelegatingIntArray.class; }
 
 		@Override

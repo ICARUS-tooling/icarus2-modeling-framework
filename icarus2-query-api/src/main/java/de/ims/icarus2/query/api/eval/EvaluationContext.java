@@ -697,7 +697,7 @@ public abstract class EvaluationContext {
 		ToDoubleFunction<Item> floatingPointSource;
 		Predicate<Item> booleanSource;
 
-		private AnnotationInfo(String rawKey, String key, ValueType valueType, TypeInfo type) {
+		AnnotationInfo(String rawKey, String key, ValueType valueType, TypeInfo type) {
 			this.rawKey = requireNonNull(rawKey);
 			this.key = requireNonNull(key);
 			this.valueType = requireNonNull(valueType);

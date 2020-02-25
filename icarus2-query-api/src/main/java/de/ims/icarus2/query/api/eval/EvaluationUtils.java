@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.types.ValueType.MatrixType;
@@ -226,12 +225,8 @@ public class EvaluationUtils {
 	}
 
 	public static TypeInfo arrayType(TypeInfo elementType) {
-		try {
-			return TypeInfo.of(Class.forName("[L"+elementType.getType().getCanonicalName()), true);
-		} catch (ClassNotFoundException e) {
-			throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
-					"Unable to obtain array type for: "+elementType);
-		}
+		Object dummy = Array.newInstance(elementType.getType(), 0);
+		return TypeInfo.of(dummy.getClass(), true);
 	}
 
 	public static Pattern pattern(String regex, StringMode mode, boolean allowUnicode) {

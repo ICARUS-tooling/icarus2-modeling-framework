@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -28,6 +29,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.GenericTest;
@@ -285,6 +289,10 @@ public interface ExpressionTest<T>
 
 		T sized(int size);
 
+		default boolean expectFixedSize() {
+			return true;
+		}
+
 		TypeInfo getExpectedElementType();
 
 		@SuppressWarnings("unchecked")
@@ -304,6 +312,14 @@ public interface ExpressionTest<T>
 			assertThat(create().getElementType()).isEqualTo(getExpectedElementType());
 		}
 
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.eval.Expression.ListExpression#isFixedSize()}.
+		 */
+		@Test
+		default void testIsFixedSize() {
+			assertThat(create().isFixedSize()).isEqualTo(expectFixedSize());
+		}
+
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 10_000})
 		default void testSize(int size) {
@@ -314,29 +330,150 @@ public interface ExpressionTest<T>
 	public interface TextListExpressionTest<T>
 			extends ListExpressionTest<T, CharSequence> {
 
+		@Provider
+		ListExpression<T, CharSequence> createWithValue(CharSequence[] source);
+
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
+
+		@RandomizedTest
+		@Test
+		default void testGet(RandomGenerator rng) {
+			CharSequence[] values = new CharSequence[] {
+					rng.randomString(5),
+					rng.randomString(10),
+					rng.randomString(7),
+					rng.randomString(15),
+					rng.randomString(25),
+			};
+			ListExpression<T, CharSequence> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.get(i))
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
 	}
 
 	public interface IntegerListExpressionTest<T>
 			extends ListExpressionTest<T, Primitive<Long>> {
 
+		@Provider
+		IntegerListExpression<T> createWithValue(long[] source);
+
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.INTEGER; }
+
+		@RandomizedTest
+		@Test
+		default void testGet(RandomGenerator rng) {
+			long[] values = rng.ints(10).mapToLong(i->i).toArray();
+			IntegerListExpression<T> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.get(i).longValue())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
+
+		@RandomizedTest
+		@Test
+		default void testGetAsLong(RandomGenerator rng) {
+			long[] values = rng.ints(10).mapToLong(i->i).toArray();
+			IntegerListExpression<T> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.getAsLong(i))
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
 	}
 
 	public interface FloatingPointListExpressionTest<T>
 			extends ListExpressionTest<T, Primitive<Double>> {
 
+		@Provider
+		FloatingPointListExpression<T> createWithValue(double[] source);
+
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.FLOATING_POINT; }
+
+		@RandomizedTest
+		@Test
+		default void testGet(RandomGenerator rng) {
+			double[] values = rng.ints(10).mapToDouble(i->i).toArray();
+			FloatingPointListExpression<T> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.get(i).doubleValue())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
+
+		@RandomizedTest
+		@Test
+		default void testGetAsLong(RandomGenerator rng) {
+			double[] values = rng.ints(10).mapToDouble(i->i).toArray();
+			FloatingPointListExpression<T> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.getAsDouble(i))
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
 	}
 
 	public interface BooleanListExpressionTest<T>
 			extends ListExpressionTest<T, Primitive<Boolean>> {
 
+		@Provider
+		BooleanListExpression<T> createWithValue(boolean[] source);
+
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.BOOLEAN; }
+
+		@RandomizedTest
+		@Test
+		default void testGet(RandomGenerator rng) {
+			boolean[] values = new boolean[] {
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+			};
+			BooleanListExpression<T> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.get(i).booleanValue())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
+
+		@RandomizedTest
+		@Test
+		default void testGetAsLong(RandomGenerator rng) {
+			boolean[] values = new boolean[] {
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+					rng.nextBoolean(),
+			};
+			BooleanListExpression<T> list = createWithValue(values);
+			assertThat(list.size()).isEqualTo(values.length);
+			for (int i = 0; i < values.length; i++) {
+				assertThat(list.getAsBoolean(i))
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(values[i]);
+			}
+		}
 	}
 
 	//TODO add a list expression test once we finalized that interface

@@ -58,7 +58,10 @@ public class TypeInfo {
 			return STRING;
 		}
 
-		return new TypeInfo(type, null, false, false);
+		boolean isMember = Item.class.isAssignableFrom(type);
+		//TODO do we want to determine 'isList' flag here as well?
+
+		return new TypeInfo(type, null, isMember, false);
 	}
 
 	private final Class<?> type;

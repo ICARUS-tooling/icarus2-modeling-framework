@@ -275,8 +275,9 @@ public class ExpressionTestUtils {
 		return Conversions.toText(expression);
 	}
 
-	static Expression<?> raw(Object dummy) {
-		return new Expression<Object>() {
+	@SuppressWarnings("unchecked")
+	static <T> Expression<T> raw(Object dummy) {
+		return (Expression<T>) new Expression<Object>() {
 
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.of(dummy.getClass()); }
@@ -382,6 +383,21 @@ public class ExpressionTestUtils {
 
 			@Override
 			public TypeInfo getResultType() { return TypeInfo.TEXT; }
+		};
+	}
+
+	static <T> Expression<T> dynamicGeneric(Supplier<T> source) {
+		return new Expression<T>() {
+			@Override
+			public Expression<T> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public T compute() { return source.get(); }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.GENERIC; }
 		};
 	}
 
