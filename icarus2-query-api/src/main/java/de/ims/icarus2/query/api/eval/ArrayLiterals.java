@@ -56,6 +56,10 @@ public final class ArrayLiterals {
 		return new ByteArray(array);
 	}
 
+	public static FloatingPointListExpression<float[]> of(float...array) {
+		return new FloatArray(array);
+	}
+
 	public static FloatingPointListExpression<double[]> of(double...array) {
 		return new DoubleArray(array);
 	}
@@ -92,7 +96,7 @@ public final class ArrayLiterals {
 		private final E[] array;
 
 		ObjectArray(E[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 			listType = TypeInfo.of(array.getClass(), true);
 			elementType = TypeInfo.of(array.getClass().getComponentType());
 		}
@@ -123,7 +127,7 @@ public final class ArrayLiterals {
 		private final MutableLong value = new MutableLong();
 
 		LongArray(long[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 		}
 
 		@Override
@@ -155,7 +159,7 @@ public final class ArrayLiterals {
 		private final MutableLong value = new MutableLong();
 
 		IntArray(int[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 		}
 
 		@Override
@@ -222,7 +226,7 @@ public final class ArrayLiterals {
 		private final MutableLong value = new MutableLong();
 
 		ShortArray(short[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 		}
 
 		@Override
@@ -254,7 +258,7 @@ public final class ArrayLiterals {
 		private final MutableLong value = new MutableLong();
 
 		ByteArray(byte[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 		}
 
 		@Override
@@ -276,6 +280,38 @@ public final class ArrayLiterals {
 		public byte[] compute() { return array; }
 	}
 
+	static final class FloatArray extends FixedArray<float[], Primitive<Double>>
+			implements FloatingPointListExpression<float[]> {
+
+		private static final TypeInfo listType = TypeInfo.of(float[].class, true);
+
+		private final float[] array;
+
+		private final MutableDouble value = new MutableDouble();
+
+		FloatArray(float[] array) {
+			this.array = array.clone();
+		}
+
+		@Override
+		public TypeInfo getResultType() { return listType; }
+
+		@Override
+		public int size() { return array.length; }
+
+		@Override
+		public Primitive<Double> get(int index) {
+			value.setDouble(array[index]);
+			return value;
+		}
+
+		@Override
+		public double getAsDouble(int index) { return array[index]; }
+
+		@Override
+		public float[] compute() { return array; }
+	}
+
 	static final class DoubleArray extends FixedArray<double[], Primitive<Double>>
 			implements FloatingPointListExpression<double[]> {
 
@@ -286,7 +322,7 @@ public final class ArrayLiterals {
 		private final MutableDouble value = new MutableDouble();
 
 		DoubleArray(double[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 		}
 
 		@Override
@@ -318,7 +354,7 @@ public final class ArrayLiterals {
 		private final MutableBoolean value = new MutableBoolean();
 
 		BooleanArray(boolean[] array) {
-			this.array = requireNonNull(array);
+			this.array = array.clone();
 		}
 
 		@Override

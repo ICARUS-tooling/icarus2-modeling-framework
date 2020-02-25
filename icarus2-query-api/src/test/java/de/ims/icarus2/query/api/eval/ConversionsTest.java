@@ -311,11 +311,10 @@ class ConversionsTest {
 			}
 
 			@Override
-			public ListExpression<CharSequence[], CharSequence> createForSize(int size) {
-				CharSequence[] content = IntStream.range(0, size)
+			public CharSequence[] sized(int size) {
+				return IntStream.range(0, size)
 						.mapToObj(i -> String.valueOf(i%2==0))
 						.toArray(CharSequence[]::new);
-				return createWithValue(content);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -353,11 +352,10 @@ class ConversionsTest {
 			}
 
 			@Override
-			public ListExpression<CharSequence[], CharSequence> createForSize(int size) {
-				CharSequence[] content = IntStream.range(0, size)
-						.mapToObj(i -> String.valueOf(i+1000))
+			public CharSequence[] sized(int size) {
+				return IntStream.range(0, size)
+						.mapToObj(i -> String.valueOf(i%2==0))
 						.toArray(CharSequence[]::new);
-				return createWithValue(content);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -395,11 +393,10 @@ class ConversionsTest {
 			}
 
 			@Override
-			public ListExpression<CharSequence[], CharSequence> createForSize(int size) {
-				CharSequence[] content = IntStream.range(0, size)
-						.mapToObj(i -> String.valueOf(i+1000))
+			public CharSequence[] sized(int size) {
+				return IntStream.range(0, size)
+						.mapToObj(i -> String.valueOf(i%2==0))
 						.toArray(CharSequence[]::new);
-				return createWithValue(content);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -438,11 +435,10 @@ class ConversionsTest {
 			}
 
 			@Override
-			public ListExpression<CharSequence[], CharSequence> createForSize(int size) {
-				CharSequence[] content = IntStream.range(0, size)
-						.mapToObj(i -> "item_"+String.valueOf(i+1000))
+			public CharSequence[] sized(int size) {
+				return IntStream.range(0, size)
+						.mapToObj(i -> String.valueOf(i%2==0))
 						.toArray(CharSequence[]::new);
-				return createWithValue(content);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -646,6 +642,15 @@ class ConversionsTest {
 			}
 
 			@Override
+			public boolean[] sized(int size) {
+				boolean[] content = new boolean[size];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = i%2==0;
+				}
+				return content;
+			}
+
+			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
@@ -653,15 +658,6 @@ class ConversionsTest {
 
 			@Override
 			public TypeInfo getExpectedType() { return TypeInfo.of(boolean[].class, true); }
-
-			@Override
-			public ListExpression<boolean[], Primitive<Boolean>> createForSize(int size) {
-				boolean[] content = new boolean[size];
-				for (int i = 0; i < content.length; i++) {
-					content[i] = i%2==0;
-				}
-				return createWithValue(content);
-			}
 		}
 
 		@Nested
@@ -880,6 +876,15 @@ class ConversionsTest {
 			}
 
 			@Override
+			public long[] sized(int size) {
+				long[] content = new long[size];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = i+1000L;
+				}
+				return content;
+			}
+
+			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
@@ -887,15 +892,6 @@ class ConversionsTest {
 
 			@Override
 			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
-
-			@Override
-			public ListExpression<long[], Primitive<Long>> createForSize(int size) {
-				long[] content = new long[size];
-				for (int i = 0; i < content.length; i++) {
-					content[i] = i+1000L;
-				}
-				return createWithValue(content);
-			}
 		}
 
 		@Nested
@@ -1095,6 +1091,15 @@ class ConversionsTest {
 			}
 
 			@Override
+			public double[] sized(int size) {
+				double[] content = new double[size];
+				for (int i = 0; i < content.length; i++) {
+					content[i] = (i+1000L)*1.1;
+				}
+				return content;
+			}
+
+			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
@@ -1102,15 +1107,6 @@ class ConversionsTest {
 
 			@Override
 			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
-
-			@Override
-			public ListExpression<double[], Primitive<Double>> createForSize(int size) {
-				double[] content = new double[size];
-				for (int i = 0; i < content.length; i++) {
-					content[i] = (i+1000L)*1.1;
-				}
-				return createWithValue(content);
-			}
 		}
 
 		@Nested

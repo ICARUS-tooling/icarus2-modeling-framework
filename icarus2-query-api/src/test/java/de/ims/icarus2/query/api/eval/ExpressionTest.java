@@ -283,8 +283,7 @@ public interface ExpressionTest<T>
 	 */
 	public interface ListExpressionTest<T, V> extends ExpressionTest<T> {
 
-		@Provider
-		ListExpression<T, V> createForSize(int size);
+		T sized(int size);
 
 		TypeInfo getExpectedElementType();
 
@@ -308,7 +307,7 @@ public interface ExpressionTest<T>
 		@ParameterizedTest
 		@ValueSource(ints = {1, 10, 10_000})
 		default void testSize(int size) {
-			assertThat(createForSize(size).size()).isEqualTo(size);
+			assertThat(createWithValue(sized(size)).size()).isEqualTo(size);
 		}
 	}
 
