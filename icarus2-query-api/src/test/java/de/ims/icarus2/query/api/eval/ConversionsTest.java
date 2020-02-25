@@ -354,7 +354,7 @@ class ConversionsTest {
 			@Override
 			public CharSequence[] sized(int size) {
 				return IntStream.range(0, size)
-						.mapToObj(i -> String.valueOf(i%2==0))
+						.mapToObj(i -> String.valueOf(i))
 						.toArray(CharSequence[]::new);
 			}
 
@@ -395,7 +395,7 @@ class ConversionsTest {
 			@Override
 			public CharSequence[] sized(int size) {
 				return IntStream.range(0, size)
-						.mapToObj(i -> String.valueOf(i%2==0))
+						.mapToObj(i -> String.valueOf(i+0.5))
 						.toArray(CharSequence[]::new);
 			}
 
