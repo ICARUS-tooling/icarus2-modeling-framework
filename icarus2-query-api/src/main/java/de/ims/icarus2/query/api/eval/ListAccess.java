@@ -51,7 +51,6 @@ public final class ListAccess {
 	// GENERIC METHODS
 
 	/** Wraps a collection of individual expressions into a single list expression */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static ListExpression<?, ?> wrap(Expression<?>[] source) {
 		requireNonNull(source);
 		checkArgument("Source expressions array must not be empty", source.length>0);
@@ -66,7 +65,9 @@ public final class ListAccess {
 			return new IntegerListWrapper(EvaluationUtils.ensureInteger(source));
 		}
 
-		return new ObjectWrapper(source);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		ListExpression<?, ?> result = new ObjectWrapper(source);
+		return result;
 	}
 
 	/** Unwraps a list expression into an array of individual expressions */
