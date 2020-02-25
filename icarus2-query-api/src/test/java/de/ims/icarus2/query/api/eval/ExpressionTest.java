@@ -336,16 +336,12 @@ public interface ExpressionTest<T>
 		@Override
 		default TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
 
+		CharSequence[] randomForGet(RandomGenerator rng);
+
 		@RandomizedTest
 		@Test
 		default void testGet(RandomGenerator rng) {
-			CharSequence[] values = new CharSequence[] {
-					rng.randomString(5),
-					rng.randomString(10),
-					rng.randomString(7),
-					rng.randomString(15),
-					rng.randomString(25),
-			};
+			CharSequence[] values = randomForGet(rng);
 			ListExpression<T, CharSequence> list = createWithValue(values);
 			assertThat(list.size()).isEqualTo(values.length);
 			for (int i = 0; i < values.length; i++) {

@@ -311,6 +311,9 @@ class ConversionsTest {
 			}
 
 			@Override
+			public CharSequence[] randomForGet(RandomGenerator rng) { return random(rng); }
+
+			@Override
 			public CharSequence[] sized(int size) {
 				return IntStream.range(0, size)
 						.mapToObj(i -> String.valueOf(i%2==0))
@@ -350,6 +353,9 @@ class ConversionsTest {
 						String.valueOf(rng.nextInt())
 				};
 			}
+
+			@Override
+			public CharSequence[] randomForGet(RandomGenerator rng) { return random(rng); }
 
 			@Override
 			public CharSequence[] sized(int size) {
@@ -393,6 +399,9 @@ class ConversionsTest {
 			}
 
 			@Override
+			public CharSequence[] randomForGet(RandomGenerator rng) { return random(rng); }
+
+			@Override
 			public CharSequence[] sized(int size) {
 				return IntStream.range(0, size)
 						.mapToObj(i -> String.valueOf(i+0.5))
@@ -433,6 +442,9 @@ class ConversionsTest {
 						rng.randomUnicodeString(20)
 				};
 			}
+
+			@Override
+			public CharSequence[] randomForGet(RandomGenerator rng) { return random(rng); }
 
 			@Override
 			public CharSequence[] sized(int size) {
