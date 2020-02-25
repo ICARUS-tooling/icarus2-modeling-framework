@@ -394,8 +394,9 @@ public class Graph<E extends Object> {
 			if(children!=null && !children.isEmpty()) {
 				for(E target : children) {
 					if(filter.test(target)) {
-						node.addOutgoing(target);
-						node(target, true).addIncoming(source);
+//						node.addOutgoing(target);
+//						node(target, true).addIncoming(source);
+						addLink(source, target);
 						buffer.add(target);
 					}
 				}
@@ -425,8 +426,9 @@ public class Graph<E extends Object> {
 			if(children!=null && children.length>0) {
 				for(E target : children) {
 					if(filter.test(target)) {
-						node.addOutgoing(target);
-						node(target, true).addIncoming(source);
+//						node.addOutgoing(target);
+//						node(target, true).addIncoming(source);
+						addLink(source, target);
 						buffer.add(target);
 					}
 				}
@@ -606,7 +608,7 @@ public class Graph<E extends Object> {
 		;
 	}
 
-	public void walkTree(TraversalPolicy policy, Set<E> startingNodes, BiConsumer<Graph<E>, ? super E> action) {
+	public void walkTree(TraversalPolicy policy, Set<? extends E> startingNodes, BiConsumer<Graph<E>, ? super E> action) {
 		requireNonNull(policy);
 		requireNonNull(action);
 		requireNonNull(startingNodes);
@@ -641,7 +643,7 @@ public class Graph<E extends Object> {
 		}
 	}
 
-	public void walkTree(TraversalPolicy policy, Set<E> startingNodes, Consumer<? super E> action) {
+	public void walkTree(TraversalPolicy policy, Set<? extends E> startingNodes, Consumer<? super E> action) {
 		requireNonNull(policy);
 		requireNonNull(action);
 		requireNonNull(startingNodes);
@@ -687,7 +689,8 @@ public class Graph<E extends Object> {
 	 * @param startingNodes
 	 * @param visitor
 	 */
-	public void walkGraph(Set<E> startingNodes, BiPredicate<Graph<E>, ? super E> visitor) {
+	public void walkGraph(Set<? extends E> startingNodes, boolean reverse,
+			BiPredicate<Graph<E>, ? super E> visitor) {
 		requireNonNull(visitor);
 		requireNonNull(startingNodes);
 		checkArgument("No starting nodes", !startingNodes.isEmpty());
@@ -709,14 +712,14 @@ public class Graph<E extends Object> {
 			// Mark node as VISITED
 			node.setFlag(FLAG_VISITED, true);
 
-			// Only if visitor allows it will we follow outgoing links
+			// Only if visitor allows it will we follow further links
 			if(doContinue) {
-				Set<E> outgoing = node.outgoing();
-				if(outgoing!=null) {
-					for(E out : outgoing) {
-						Node<E> nodeOut = node(out, false, true);
-						if(!nodeOut.flagSet(FLAG_VISITED)) {
-							buffer.add(nodeOut);
+				Set<E> nodes = reverse ? node.incoming() : node.outgoing();
+				if(nodes!=null) {
+					for(E n : nodes) {
+						Node<E> next = node(n, false, true);
+						if(!next.flagSet(FLAG_VISITED)) {
+							buffer.add(next);
 						}
 					}
 				}
@@ -724,7 +727,8 @@ public class Graph<E extends Object> {
 		}
 	}
 
-	public void walkGraph(Set<E> startingNodes, Predicate<? super E> visitor) {
+	public void walkGraph(Set<? extends E> startingNodes, boolean reverse,
+			Predicate<? super E> visitor) {
 		requireNonNull(visitor);
 		requireNonNull(startingNodes);
 		checkArgument("No starting nodes", !startingNodes.isEmpty());
@@ -746,14 +750,14 @@ public class Graph<E extends Object> {
 			// Mark node as VISITED
 			node.setFlag(FLAG_VISITED, true);
 
-			// Only if visitor allows it will we follow outgoing links
+			// Only if visitor allows it will we follow further links
 			if(doContinue) {
-				Set<E> outgoing = node.outgoing();
-				if(outgoing!=null) {
-					for(E out : outgoing) {
-						Node<E> nodeOut = node(out, false, true);
-						if(!nodeOut.flagSet(FLAG_VISITED)) {
-							buffer.add(nodeOut);
+				Set<E> nodes = reverse ? node.incoming() : node.outgoing();
+				if(nodes!=null) {
+					for(E n : nodes) {
+						Node<E> next = node(n, false, true);
+						if(!next.flagSet(FLAG_VISITED)) {
+							buffer.add(next);
 						}
 					}
 				}

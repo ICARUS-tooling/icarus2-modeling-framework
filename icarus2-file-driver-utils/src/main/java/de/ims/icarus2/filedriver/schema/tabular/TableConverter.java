@@ -654,7 +654,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		// Find all (indirect) dependencies of the group within entire context
 		final Graph<Layer> graph = Graph.layerGraph(group, Graph.layersForContext(context));
 
-		graph.walkGraph(group.getLayers(), layer -> {
+		graph.walkGraph(group.getLayers(), false, layer -> {
 
 			// Only care about item layers that are located within our current context
 			if(layer.getContext()==context && (ModelUtils.isItemLayer(layer))) {
