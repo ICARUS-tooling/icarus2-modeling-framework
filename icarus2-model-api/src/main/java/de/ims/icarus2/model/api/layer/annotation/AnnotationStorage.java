@@ -59,9 +59,9 @@ public interface AnnotationStorage {
 	 * @throws NullPointerException if either the {@code item} or {@code key}
 	 * is {@code null}
 	 */
-	Object getValue(Item item, String key);
+	@Nullable Object getValue(Item item, String key);
 
-	default String getString(Item item, String key) {
+	default @Nullable String getString(Item item, String key) {
 		return (String) getValue(item, key);
 	}
 
