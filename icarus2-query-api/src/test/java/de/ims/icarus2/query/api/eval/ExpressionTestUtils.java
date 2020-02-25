@@ -24,6 +24,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -219,6 +220,43 @@ public class ExpressionTestUtils {
 		};
 	}
 
+	static FloatingPointListExpression<double[]> optimizableDoubles(double...array) {
+		return new FloatingPointListExpression<double[]>() {
+			private final MutableDouble value = new MutableDouble();
+
+			@Override
+			public FloatingPointListExpression<double[]> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public double[] compute() { return array; }
+
+			@Override
+			public boolean isFixedSize() { return true; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.of(long[].class, true); }
+
+			@Override
+			public FloatingPointListExpression<double[]> optimize(EvaluationContext context) {
+				return ArrayLiterals.of(array);
+			}
+
+			@Override
+			public int size() { return array.length; }
+
+			@Override
+			public Primitive<Double> get(int index) {
+				value.setDouble(array[index]);
+				return value;
+			}
+
+			@Override
+			public double getAsDouble(int index) { return array[index]; }
+		};
+	}
+
 	static <T> Expression<CharSequence> dynamicText(Supplier<T> dummy) {
 		Expression<T> expression = new Expression<T>() {
 
@@ -376,6 +414,38 @@ public class ExpressionTestUtils {
 
 			@Override
 			public long getAsLong(int index) { return source.get()[index]; }
+		};
+	}
+
+	static FloatingPointListExpression<double[]> dynamicDoubles(Supplier<double[]> source) {
+		return new FloatingPointListExpression<double[]>() {
+			private final MutableDouble value = new MutableDouble();
+
+			@Override
+			public FloatingPointListExpression<double[]> duplicate(EvaluationContext context) {
+				return this;
+			}
+
+			@Override
+			public double[] compute() { return source.get(); }
+
+			@Override
+			public boolean isFixedSize() { return false; }
+
+			@Override
+			public TypeInfo getResultType() { return TypeInfo.of(double[].class, true); }
+
+			@Override
+			public int size() { return source.get().length; }
+
+			@Override
+			public Primitive<Double> get(int index) {
+				value.setDouble(getAsDouble(index));
+				return value;
+			}
+
+			@Override
+			public double getAsDouble(int index) { return source.get()[index]; }
 		};
 	}
 
