@@ -20,33 +20,40 @@
 package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.DependencyType;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -61,12 +68,13 @@ import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlReference;
+import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.set.DataSet;
-import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * Utility class(es) to store the final configuration and bindings for a query evaluation
@@ -107,6 +115,12 @@ public abstract class EvaluationContext {
 		/** Additional properties that have been set for the query. */
 		private final Map<String, Object> properties;
 
+		/**
+		 * For every item layer in the scope lists all the annotation layers that
+		 * can produce annotations for items in that layer, including catch-all layers.
+		 */
+		private final Map<ItemLayer, Set<AnnotationLayer>> annotationSources;
+
 		private RootContext(RootContextBuilder builder) {
 			super(builder);
 
@@ -129,8 +143,33 @@ public abstract class EvaluationContext {
 									getName(layer), getName(previous), key));
 			}
 
-			// Create a complete dependency graph of all (and only those) the layers included in the scope
-			layerGraph = Graph.layerGraph(scope.getLayers(), scope::containsLayer);
+			// Create a complete dependency graph of all (and only those) layers included in the scope
+			layerGraph = Graph.layerGraph(scope.getLayers(), scope::containsLayer, DependencyType.STRONG);
+
+			annotationSources = new Reference2ObjectOpenHashMap<>();
+
+			// For every annotation layer record the dependency tree
+			for(AnnotationLayer aLayer : scope.getLayers().stream()
+					.filter(ModelUtils::isAnnotationLayer)
+					.map(AnnotationLayer.class::cast)
+					.toArray(AnnotationLayer[]::new)) {
+
+				// Transitive closure of dependency relation if any form of deep annotations is allowed
+				AnnotationLayerManifest manifest = aLayer.getManifest();
+				boolean allowsTransitiveAnnotation =
+						manifest.isAnnotationFlagSet(AnnotationFlag.DEEP_ANNOTATION)
+						|| manifest.isAnnotationFlagSet(AnnotationFlag.ELEMENT_ANNOTATION)
+						|| manifest.isAnnotationFlagSet(AnnotationFlag.EDGE_ANNOTATION)
+						|| manifest.isAnnotationFlagSet(AnnotationFlag.NODE_ANNOTATION);
+
+				layerGraph.walkGraph(singleton(aLayer), false, layer -> {
+					if(ModelUtils.isItemLayer(layer)) {
+						ItemLayer iLayer = (ItemLayer)layer;
+						annotationSources.computeIfAbsent(iLayer, k -> new ReferenceOpenHashSet<>()).add(aLayer);
+					}
+					return layer==aLayer || allowsTransitiveAnnotation;
+				});
+			}
 		}
 
 		private static String key(Layer layer) {
@@ -139,6 +178,9 @@ public abstract class EvaluationContext {
 
 		@Override
 		protected Graph<Layer> getLayerGraph() { return layerGraph; }
+
+		@Override
+		protected Map<ItemLayer, Set<AnnotationLayer>> getAnnotationSources() { return annotationSources; }
 
 		@Override
 		public Optional<Layer> findLayer(String name) {
@@ -172,6 +214,14 @@ public abstract class EvaluationContext {
 			this.layer = requireNonNull(layer);
 			this.isAlias = isAlias;
 		}
+
+		public AnnotationManifest getManifest() { return manifest; }
+
+		public AnnotationLayer getLayer() { return layer; }
+
+		public boolean isAlias() { return isAlias; }
+
+		public boolean isNotAlias() { return !isAlias; }
 	}
 
 	private static class LaneInfo {
@@ -194,10 +244,13 @@ public abstract class EvaluationContext {
 		public ElementInfo(IqlProperElement element, List<ItemLayer> layers) {
 			this.element = requireNonNull(element);
 			this.layers = requireNonNull(layers);
+			checkArgument(!layers.isEmpty());
 		}
 
 		public IqlProperElement getElement() { return element; }
 		public List<ItemLayer> getLayers() { return layers; }
+
+		public boolean isEdge() { return element.getType()==IqlType.EDGE; }
 	}
 
 	private static ItemLayer ensureItemLayer(Layer layer) {
@@ -218,11 +271,17 @@ public abstract class EvaluationContext {
 		/** Maps member labels to layers */
 		private final Map<String, ItemLayer> bindings;
 
-		/** Lazily constructed lookup to map from annotation keys to actual sources */
-		private Map<String, AnnotationLink> annotationLookup;
+		/**
+		 * Lazily constructed lookup to map from annotation keys to actual sources.
+		 * This map contains all the annotations that target instances of this context's
+		 * element and that can be referenced by name.
+		  */
+		private Map<String, List<AnnotationLink>> annotationLookup;
 
 		/** Layers that allow unknown keys for annotations */
 		private List<AnnotationLayer> catchAllLayers;
+
+		private final Map<String, AnnotationInfo> annotationCache = new Object2ObjectOpenHashMap<>();
 
 		private SubContext(SubContextBuilder builder) {
 			super(builder);
@@ -233,7 +292,7 @@ public abstract class EvaluationContext {
 
 
 			lane = resolve(builder.lane);
-			element = resolve(builder.element, lane);
+			element = resolve(builder.element);
 		}
 
 		private LaneInfo resolve(IqlLane lane) {
@@ -241,15 +300,31 @@ public abstract class EvaluationContext {
 				return null;
 			}
 
-			String name = lane.getName();
-			Layer layer = requireLayer(name);
+			// If lane is a proxy, we have no other lanes and need to use the scope's primary layer
+			if(lane.isProxy()) {
+				return new LaneInfo(lane, getScope().getPrimaryLayer());
+			}
+
+			// Non-proxy lane means we need  to resolve the names layer
+			Layer layer = requireLayer(lane.getName());
 
 			return new LaneInfo(lane, ensureItemLayer(layer));
 		}
 
-		private ElementInfo resolve(IqlProperElement element, LaneInfo lane) {
+		private ElementInfo resolve(IqlProperElement element) {
 			if(element==null) {
 				return null;
+			}
+
+			LaneInfo laneInfo = requireLaneInfo();
+
+			// Edges can only be referenced from the surrounding structure
+			if(element.getType()==IqlType.EDGE) {
+				ItemLayer layer = laneInfo.getLayer();
+				if(!ModelUtils.isStructureLayer(layer))
+					throw EvaluationUtils.forIncorrectUse(
+							"Edge outside of structure layer scope in lane: %s", getName(layer));
+				return new ElementInfo(element, list(layer));
 			}
 
 			String label = element.getLabel().orElse(null);
@@ -259,10 +334,10 @@ public abstract class EvaluationContext {
 			}
 
 			// Unbound element can stem from any base layer of current lane
-			DataSet<ItemLayer> baseLayers = lane.getLayer().getBaseLayers();
+			DataSet<ItemLayer> baseLayers = laneInfo.getLayer().getBaseLayers();
 			if(baseLayers.isEmpty())
-				throw new QueryException(QueryErrorCode.INCORRECT_USE,
-						"Cannot use non-aggregating layer as lane: "+getName(lane.getLayer()));
+				throw EvaluationUtils.forIncorrectUse("Cannot use non-aggregating layer as lane: %s",
+						getName(laneInfo.getLayer()));
 
 			return new ElementInfo(element, baseLayers.toList());
 		}
@@ -270,15 +345,8 @@ public abstract class EvaluationContext {
 		private ItemLayer forMemberLabel(String label) {
 			ItemLayer layer = bindings.get(label);
 			if(layer==null)
-				throw new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
-						"No layer bound to label: "+label);
+				throw EvaluationUtils.forUnknownIdentifier(label, "layer");
 			return layer;
-		}
-
-		private void ensureLayerLookups() {
-			if(catchAllLayers==null || annotationLookup==null) {
-
-			}
 		}
 
 		private LaneInfo requireLaneInfo() {
@@ -291,6 +359,53 @@ public abstract class EvaluationContext {
 			return getInheritable(this, ctx -> ctx.element).orElseThrow(
 					() -> new QueryException(GlobalErrorCode.INTERNAL_ERROR,
 					"No element available"));
+		}
+
+		private void ensureLayerLookups() {
+			if(catchAllLayers==null || annotationLookup==null) {
+				Map<ItemLayer, Set<AnnotationLayer>> annotationSources = getAnnotationSources();
+
+				List<AnnotationLayer> catchAllLayers = new ArrayList<>();
+				Map<String, List<AnnotationLink>> annotationLookup = new Object2ObjectOpenHashMap<>();
+				ElementInfo elementInfo = requireElementInfo();
+
+				Consumer<AnnotationLayer> feedLayer = layer -> {
+					layer.getManifest().forEachAnnotationManifest(manifest -> {
+						// Fetch raw key
+						String key = ManifestUtils.require(manifest, AnnotationManifest::getKey, "key");
+						// Store a "hard" link via raw key
+						annotationLookup.computeIfAbsent(key, k -> new ArrayList<>())
+							.add(new AnnotationLink(manifest, layer, false));
+						// For every alias store a soft link
+						manifest.forEachAlias(alias -> annotationLookup.computeIfAbsent(alias, k -> new ArrayList<>())
+								.add(new AnnotationLink(manifest, layer, true)));
+					});
+					// Keep track of every annotation layer that allows unknown keys
+					if(layer.getManifest().isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS)) {
+						catchAllLayers.add(layer);
+					}
+				};
+
+				boolean isEdge = elementInfo.isEdge();
+
+				for(ItemLayer iLayer : elementInfo.getLayers()) {
+					for(AnnotationLayer aLayer : annotationSources.getOrDefault(iLayer, Collections.emptySet())) {
+
+						AnnotationLayerManifest manifest = aLayer.getManifest();
+
+						// Edges can only receive annotations from specially marked annotation layers
+						if(!isEdge || manifest.isAnnotationFlagSet(AnnotationFlag.DEEP_ANNOTATION)
+								|| manifest.isAnnotationFlagSet(AnnotationFlag.ELEMENT_ANNOTATION)
+								|| manifest.isAnnotationFlagSet(AnnotationFlag.EDGE_ANNOTATION)) {
+							feedLayer.accept(aLayer);
+						}
+					}
+				}
+
+				// Only transfer collections over if they're not empty
+				this.catchAllLayers = catchAllLayers.isEmpty() ? Collections.emptyList() : catchAllLayers;
+				this.annotationLookup = annotationLookup.isEmpty() ? Collections.emptyMap() : annotationLookup;
+			}
 		}
 
 		private static @Nullable <T> Optional<T> getInheritable(SubContext ctx,
@@ -320,19 +435,134 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Optional<AnnotationInfo> findAnnotation(String key) {
-			// TODO Auto-generated method stub
-			return super.findAnnotation(key);
+			checkNotEmpty(key);
+
+			// Give our cache a chance first
+			AnnotationInfo info = annotationCache.get(key);
+			if(info!=null) {
+				return Optional.of(info);
+			}
+
+			// No luck with the cache -> run actual search now
+			ensureLayerLookups();
+			// The provided key might be a qualified identifier!!
+			final String layerId = ManifestUtils.extractHostId(key);
+			String rawKey = key;
+			AnnotationLayer expectedLayer;
+			if(layerId!=null) {
+				key = ManifestUtils.extractElementId(key);
+				// If layer is explicitly stated, it must resolve
+				Layer layer = findLayer(layerId).orElseThrow(
+						() -> EvaluationUtils.forUnknownIdentifier(layerId, "annotation layer"));
+				if(!ModelUtils.isAnnotationLayer(layer))
+					throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE, String.format(
+							"Specified layer id '%s' does not resovle to an annotation layer: %s",
+							layerId, getName(layer)));
+				expectedLayer = (AnnotationLayer) layer;
+			} else {
+				expectedLayer = null;
+			}
+
+			// If present use the explicitly specified layer as filter
+			List<AnnotationLink> hits = annotationLookup.getOrDefault(key, Collections.emptyList())
+					.stream()
+					.filter(link -> layerId==null || link.getLayer()==expectedLayer)
+					.collect(Collectors.toList());
+
+			AnnotationInfo result = null;
+
+			if(hits.size()==1) {
+				// Easy mode: only 1 annotation in total linked to key
+				result = fromLink(rawKey, hits.get(0));
+			} if(!hits.isEmpty()) {
+				// Filter only proper (non aliased) entries
+				List<AnnotationLink> properLinks = hits.stream()
+						.filter(AnnotationLink::isNotAlias)
+						.collect(Collectors.toList());
+
+				if(properLinks.size()==1) {
+					// Key uniquely matches a single proper annotation
+					result = fromLink(rawKey, properLinks.get(0));
+				} else if(!properLinks.isEmpty()) {
+					// Key not unique, one of the only error occasions in this resolution process
+					String[] names = properLinks.stream()
+							.map(ModelUtils::getName)
+							.toArray(String[]::new);
+					throw new QueryException(ManifestErrorCode.MANIFEST_DUPLICATE_ID,
+							String.format("Key '%s' is ambiguous and links to multiple annotations: %s",
+									rawKey, Arrays.toString(names)));
+				}
+			}
+
+			// Directly accessible links failed, now we need to try catch-all layers
+
+			/*
+			 *  Can't do the shortcut and grab 'expectedLayer' directly, as we still need
+			 *  to make sure that we only consider layers that can target this context's element.
+			 */
+			List<AnnotationLayer> layers = catchAllLayers.stream()
+					.filter(layer -> layerId==null || layer==expectedLayer)
+					.collect(Collectors.toList());
+
+			if(layers.size()==1) {
+				result = forCatchAll(rawKey, key, layers.get(0));
+			} else if(!layers.isEmpty()) {
+				String[] names = layers.stream()
+						.map(ModelUtils::getName)
+						.toArray(String[]::new);
+				throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE,
+						String.format("Key '%s' can be handled by multiple cath-all layers: %s",
+								rawKey, Arrays.toString(names)));
+			}
+
+			if(layerId!=null && result==null)
+				throw new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER, String.format(
+						"Qualified identifier '%s' could not be resolved to an annotation", rawKey));
+
+			return Optional.ofNullable(result);
+		}
+
+		private static AnnotationInfo fromLink(String rawKey, AnnotationLink link) {
+			AnnotationManifest manifest = link.getManifest();
+			final String key = ManifestUtils.require(manifest, AnnotationManifest::getKey, "key");
+			AnnotationInfo info = new AnnotationInfo(rawKey, key, manifest.getValueType(),
+					EvaluationUtils.typeFor(manifest.getValueType()));
+
+			createSources(info, link.getLayer().getAnnotationStorage());
+
+			return info;
+		}
+
+		private static AnnotationInfo forCatchAll(String rawKey, String key,
+				AnnotationLayer layer) {
+			AnnotationInfo info = new AnnotationInfo(rawKey, key,
+					ValueType.UNKNOWN, TypeInfo.GENERIC);
+
+			createSources(info, layer.getAnnotationStorage());
+
+			return info;
+		}
+
+		private static void createSources(AnnotationInfo info, AnnotationStorage storage) {
+			String key = info.key;
+			if(TypeInfo.isInteger(info.type)) {
+				info.integerSource = item -> storage.getLong(item, key);
+			} else if(TypeInfo.isFloatingPoint(info.type)) {
+				info.floatingPointSource = item -> storage.getDouble(item, key);
+			} else if(TypeInfo.isBoolean(info.type)) {
+				info.booleanSource = item -> storage.getBoolean(item, key);
+			} else if(TypeInfo.isText(info.type)) {
+				info.objectSource = item -> storage.getString(item, key);
+			} else {
+				info.objectSource = item -> storage.getValue(item, key);
+			}
 		}
 	}
 
-	private final Stack<Class<?>> trace = new ObjectArrayList<>();
-
 	/** Flag to signal that this context shouldn't be used any further */
-	private volatile boolean disposed = false;
+	private volatile boolean disabled = false;
 
 	private final List<Environment> environments;
-
-	//TODO add mechanisms to obtain root namespace and to navigate namespace hierarchies
 
 	//TODO add mechanism to register callbacks for stages of matching process?
 
@@ -373,12 +603,10 @@ public abstract class EvaluationContext {
 	 * any of method on this instance can cause an exception.
 	 */
 	public void dispose() {
-		disposed = true;
+		disabled = true;
 
 		// Ensure our basic state is reset
 		environments.clear();
-		while(!trace.isEmpty()) trace.pop();
-
 		// Let subclasses do their housekeeping
 		cleanup();
 	}
@@ -398,11 +626,14 @@ public abstract class EvaluationContext {
 
 	public Layer requireLayer(String name) {
 		return findLayer(name).orElseThrow(
-				() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
-						"Cannot resolve name to layer: "+name));
+				() -> EvaluationUtils.forUnknownIdentifier(name, "layer"));
 	}
 
 	protected Graph<Layer> getLayerGraph() { return getRootContext().getLayerGraph(); }
+
+	protected Map<ItemLayer, Set<AnnotationLayer>> getAnnotationSources() {
+		return getRootContext().getAnnotationSources();
+	}
 
 	public boolean isSwitchSet(QuerySwitch qs) {
 		return isSwitchSet(qs.getKey());
@@ -422,23 +653,6 @@ public abstract class EvaluationContext {
 	}
 
 	/**
-	 * Enter the scope of the given {@code context} class and translate it into an available
-	 * {@link Environment}.
-	 *
-	 * @param context
-	 * @return
-	 */
-	public void enter(Class<?> context) {
-		//TODO implement
-		throw new UnsupportedOperationException();
-	}
-
-	public void exit(Class<?> context) {
-		//TODO implement
-		throw new UnsupportedOperationException();
-	}
-
-	/**
 	 * Tries to resolve the given {@code name} to a field or no-args method
 	 * equivalent. Using the {@code resultFilter} argument, returned expressions
 	 * can be restricted to be return type compatible to a desired target type.
@@ -447,7 +661,8 @@ public abstract class EvaluationContext {
 	 * the specified {@code name} could not be resolved to a target that satisfies
 	 * the given {@code filter} (if present).
 	 */
-	public Expression<?> resolve(String name, @Nullable TypeFilter filter) {
+	public Expression<?> resolve(@Nullable Class<?> scope, String name,
+			@Nullable TypeFilter filter) {
 		//TODO implement
 		throw new UnsupportedOperationException();
 	}
@@ -463,114 +678,19 @@ public abstract class EvaluationContext {
 	 * the specified {@code name} could not be resolved to a method that satisfies
 	 * the given {@code argument} specification and {@code resultFilter} (if present).
 	 */
-	public Expression<?> resolve(String name, @Nullable TypeFilter resultFilter,
-			Expression<?>[] arguments) {
+	public Expression<?> resolve(@Nullable Class<?> scope, String name,
+			@Nullable TypeFilter resultFilter, Expression<?>[] arguments) {
 		//TODO implement
 		throw new UnsupportedOperationException();
 	}
 
 	public Optional<AnnotationInfo> findAnnotation(String key) { return Optional.empty(); }
 
-	/**
-	 * Tries to resolve the specified annotation {@code key} to a unique source of
-	 * annotation values and all associated info data.
-	 * <p>
-	 * Note that this method will only consider those annotation sources that are
-	 * available through the scope defined by the current
-	 *
-	 * @param key
-	 * @return
-	 */
-	public AnnotationInfo findAnnotation0(String key) {
-		requireNonNull(key);
-
-		//TODO do we need to use the Optional.orElseThrow() method here?
-		Map<String, Layer> layers = Collections.emptyMap(); //TODO
-
-		// Option 1: aliased or directly referenced layer
-		Layer layer = layers.get(key);
-		if(layer!=null) {
-			if(!ModelUtils.isAnnotationLayer(layer))
-				throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE, String.format(
-						"Not an annotation layer for key '%s': %s", key, getName(layer)));
-
-			return fromDefault(key, (AnnotationLayer) layer);
-		}
-
-		List<AnnotationManifest> manifests = new ArrayList<>();
-		for (Layer l : layers.values()) {
-			if(ModelUtils.isAnnotationLayer(l)) {
-				AnnotationLayer annotationLayer = (AnnotationLayer)l;
-
-			}
-		}
-
-		return null; //TODO
-	}
-
-	private AnnotationInfo fromDefault(String key, AnnotationLayer layer) {
-		AnnotationLayerManifest layerManifest = layer.getManifest();
-		Optional<String> defaultKey = layerManifest.getDefaultKey();
-
-		String actualKey;
-
-		if(defaultKey.isPresent()) {
-			actualKey = defaultKey.get();
-		} else {
-			Set<String> keys = layerManifest.getAvailableKeys();
-			if(keys.size()>1)
-				throw new QueryException(QueryErrorCode.INCORRECT_USE, String.format(
-						"Annotation key '%s' points to layer with more than 1 annotation manifest: %s",
-								key, getName(layer)));
-
-			actualKey = keys.iterator().next();
-		}
-
-		return fromManifest(key,
-				ManifestUtils.require(layerManifest, m -> m.getAnnotationManifest(actualKey), "annotation manifest"),
-				layer.getAnnotationStorage());
-	}
-
-	/**
-	 * Produces a type-aware {@link AnnotationInfo} that will be able to access
-	 * annotations for the given manifest from the specified storage.
-	 *
-	 * @param rawKey
-	 * @param manifest
-	 * @param storage
-	 * @return
-	 */
-	private AnnotationInfo fromManifest(String rawKey, AnnotationManifest manifest,
-			AnnotationStorage storage) {
-		final String key = ManifestUtils.require(manifest, AnnotationManifest::getKey, "key");
-		AnnotationInfo info = new AnnotationInfo(rawKey, key, manifest.getValueType(),
-				EvaluationUtils.typeFor(manifest.getValueType()));
-
-		if(TypeInfo.isInteger(info.type)) {
-			info.integerSource = item -> storage.getLong(item, key);
-		} else if(TypeInfo.isFloatingPoint(info.type)) {
-			info.floatingPointSource = item -> storage.getDouble(item, key);
-		} else if(TypeInfo.isBoolean(info.type)) {
-			info.booleanSource = item -> storage.getBoolean(item, key);
-		} else if(TypeInfo.isText(info.type)) {
-			info.objectSource = item -> storage.getString(item, key);
-		} else {
-			info.objectSource = item -> storage.getValue(item, key);
-		}
-
-		return info;
-	}
-
 	public static class AnnotationInfo {
 		private final String rawKey;
 		private final String key;
 		private final ValueType valueType;
 		private final TypeInfo type;
-
-		// HARD BINDING
-		private AnnotationManifest manifest;
-		private AnnotationStorage storage;
-		// END HARD BINDING
 
 		Function<Item, Object> objectSource;
 		ToLongFunction<Item> integerSource;
@@ -613,16 +733,6 @@ public abstract class EvaluationContext {
 			return booleanSource;
 		}
 
-	}
-
-	private static final class ContextInfo {
-		private final Class<?> type;
-		private final Environment environment;
-
-		ContextInfo(Class<?> type, Environment environment) {
-			this.type = requireNonNull(type);
-			this.environment = environment;
-		}
 	}
 
 	public static abstract class BuilderBase<B extends BuilderBase<B, C>, C extends EvaluationContext>

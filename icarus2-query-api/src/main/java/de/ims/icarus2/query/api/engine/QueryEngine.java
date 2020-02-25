@@ -51,6 +51,7 @@ import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.engine.ext.EngineExtension;
 import de.ims.icarus2.query.api.eval.EvaluationContext;
 import de.ims.icarus2.query.api.eval.EvaluationContext.RootContextBuilder;
+import de.ims.icarus2.query.api.eval.EvaluationUtils;
 import de.ims.icarus2.query.api.eval.ExpressionFactory;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlData;
@@ -157,8 +158,7 @@ public class QueryEngine {
 				for(IqlData data : payload) {
 					String name = data.getName();
 					if(embeddedData.containsKey(name))
-						throw new QueryException(QueryErrorCode.INCORRECT_USE,
-								"Duplicate name for embedded data: "+name);
+						throw EvaluationUtils.forIncorrectUse("Duplicate name for embedded data: %s", name);
 
 					embeddedData.put(name, decode(data));
 				}

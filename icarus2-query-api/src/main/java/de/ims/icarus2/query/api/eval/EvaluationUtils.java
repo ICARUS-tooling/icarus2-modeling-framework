@@ -150,19 +150,28 @@ public class EvaluationUtils {
 		return left.isFloatingPoint() || right.isFloatingPoint();
 	}
 
-	static QueryException forUnsupportedFloatingPoint(String op) {
+	public static QueryException forUnsupportedFloatingPoint(String op) {
 		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
 				"Operation does not support floating point types: "+op);
 	}
 
-	static QueryException forUnsupportedCast(TypeInfo source, TypeInfo target) {
+	public static QueryException forUnsupportedCast(TypeInfo source, TypeInfo target) {
 		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
 				String.format("Cannot return %s as %s", source, target));
 	}
 
-	static QueryException forEmptyStringLiteral(String context) {
+	public static QueryException forEmptyStringLiteral(String context) {
 		return new QueryException(QueryErrorCode.INVALID_LITERAL,
 				String.format("Emty string not allowed in context: %s", context));
+	}
+
+	public static QueryException forUnknownIdentifier(String name, String target) {
+		return new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+				String.format("Failed to resolve name to a valid %s: %s", target, name));
+	}
+
+	public static QueryException forIncorrectUse(String msg, Object...args) {
+		return new QueryException(QueryErrorCode.INCORRECT_USE, String.format(msg, args));
 	}
 
 	public static boolean string2Boolean(CharSequence value) {

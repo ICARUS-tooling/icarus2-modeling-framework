@@ -42,6 +42,7 @@ public class IqlLane extends IqlNamedReference {
 	 * i.e. the original query did not contain a lane statement, but only the
 	 * elements and/or constraints.
 	 */
+	//TODO need a better mechanism for indicating proxy state
 	public static final String PROXY_NAME = "lane_proxy";
 
 	@JsonProperty(IqlProperties.LANE_TYPE)
