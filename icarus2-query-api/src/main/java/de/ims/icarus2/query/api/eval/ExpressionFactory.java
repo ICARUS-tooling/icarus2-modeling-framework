@@ -69,6 +69,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.NullLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PathAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryExpressionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.QualifiedIdentifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ReferenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetPredicateContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
@@ -318,11 +319,17 @@ public class ExpressionFactory {
 
 		} else if(ctx.member()!=null) {
 
+		} else if(ctx.Identifier()!=null) {
+
 		} else if(ctx.qualifiedIdentifier()!=null) {
 
 		}
 
 		return failForUnhandledAlternative(ctx);
+	}
+
+	private QualifiedIdentifier processQualifiedIdentifier(QualifiedIdentifierContext ctx) {
+		return QualifiedIdentifier.of(textOf(ctx), textOf(ctx.hostId), textOf(ctx.elementId));
 	}
 
 	Expression<?> processPathAccess(PathAccessContext ctx) {

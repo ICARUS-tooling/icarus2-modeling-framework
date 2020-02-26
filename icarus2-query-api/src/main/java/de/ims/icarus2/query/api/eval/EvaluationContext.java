@@ -44,18 +44,22 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.DependencyType;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.Graph;
@@ -70,6 +74,7 @@ import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.Mutable;
 import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -231,10 +236,70 @@ public abstract class EvaluationContext {
 		public LaneInfo(IqlLane lane, ItemLayer layer) {
 			this.lane = requireNonNull(lane);
 			this.layer = requireNonNull(layer);
+
 		}
 
 		public IqlLane getLane() { return lane; }
 		public ItemLayer getLayer() { return layer; }
+	}
+
+	private static class ContainerStore implements Mutable<Container>, Expression<Container> {
+
+		static ContainerStore from(LaneInfo info) {
+			if(info==null) {
+				return null;
+			}
+			TypeInfo type;
+
+			ManifestType layerType = info.getLayer().getManifest().getManifestType();
+			switch (layerType) {
+			case FRAGMENT_LAYER_MANIFEST:
+			case ITEM_LAYER_MANIFEST: type = TypeInfo.CONTAINER; break;
+
+			case STRUCTURE_LAYER_MANIFEST: type = TypeInfo.STRUCTURE; break;
+
+			default:
+				throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
+						"Unknown layer type: "+layerType);
+			}
+
+			return new ContainerStore(type);
+		}
+
+		private Container container;
+		private final TypeInfo type;
+
+		private ContainerStore(TypeInfo type) {
+			this.type = requireNonNull(type);
+		}
+
+		@Override
+		public Container get() { return container; }
+
+		@Override
+		public void set(Object value) { setContainer((Container) value);}
+
+		public void setContainer(Container container) { this.container = requireNonNull(container); }
+
+		@Override
+		public void clear() { container = null;}
+
+		@Override
+		public boolean isPrimitive() { return false; }
+
+		@Override
+		public boolean isEmpty() { return container!=null; }
+
+		@Override
+		public TypeInfo getResultType() { return type; }
+
+		@Override
+		public Container compute() { return container; }
+
+		@Override
+		public Expression<Container> duplicate(EvaluationContext context) {
+			return new ContainerStore(type);
+		}
 	}
 
 	private static class ElementInfo {
@@ -253,6 +318,68 @@ public abstract class EvaluationContext {
 		public boolean isEdge() { return element.getType()==IqlType.EDGE; }
 	}
 
+	private static class ItemStore implements Mutable<Item>, Expression<Item> {
+
+		static ItemStore from(ElementInfo info) {
+			if(info==null) {
+				return null;
+			}
+			TypeInfo type;
+			if(info.isEdge()) {
+				type = TypeInfo.EDGE;
+			} else {
+				Set<ManifestType> layerTypes = info.getLayers().stream()
+						.map(ItemLayer::getManifest)
+						.map(TypedManifest::getManifestType)
+						.distinct()
+						.collect(Collectors.toSet());
+
+				if(layerTypes.size()==1 && layerTypes.contains(ManifestType.FRAGMENT_LAYER_MANIFEST)) {
+					type = TypeInfo.FRAGMENT;
+				} else {
+					// "Fall-through" type if we get mixed sources or not enough info
+					type = TypeInfo.ITEM;
+				}
+			}
+			return new ItemStore(type);
+		}
+
+		private ItemStore(TypeInfo type) {
+			this.type = requireNonNull(type);
+		}
+
+		private Item item;
+		private final TypeInfo type;
+
+		@Override
+		public Item get() { return item; }
+
+		@Override
+		public void set(Object value) { setItem((Item) value);}
+
+		public void setItem(Item item) { this.item = requireNonNull(item); }
+
+		@Override
+		public void clear() { item = null;}
+
+		@Override
+		public boolean isPrimitive() { return false; }
+
+		@Override
+		public boolean isEmpty() { return item!=null; }
+
+		@Override
+		public TypeInfo getResultType() { return type; }
+
+		@Override
+		public Item compute() { return item; }
+
+		@Override
+		public Expression<Item> duplicate(EvaluationContext context) {
+			return new ItemStore(type);
+		}
+	}
+
 	private static ItemLayer ensureItemLayer(Layer layer) {
 		if(!ModelUtils.isItemLayer(layer))
 			throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE,
@@ -267,6 +394,9 @@ public abstract class EvaluationContext {
 
 		private final LaneInfo lane;
 		private final ElementInfo element;
+
+		private final ContainerStore containerStore;
+		private final ItemStore itemStore;
 
 		/** Maps member labels to layers */
 		private final Map<String, ItemLayer> bindings;
@@ -290,9 +420,11 @@ public abstract class EvaluationContext {
 			parent = builder.parent;
 			bindings = new Object2ObjectOpenHashMap<>(builder.bindings);
 
-
 			lane = resolve(builder.lane);
 			element = resolve(builder.element);
+
+			containerStore = ContainerStore.from(lane);
+			itemStore = ItemStore.from(element);
 		}
 
 		private LaneInfo resolve(IqlLane lane) {
@@ -433,24 +565,36 @@ public abstract class EvaluationContext {
 			return getInheritable(this, ctx -> ctx.element).map(ElementInfo::getElement);
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public Optional<AnnotationInfo> findAnnotation(String key) {
-			checkNotEmpty(key);
+		public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() {
+			return getInheritable(this, ctx -> (T)ctx.containerStore);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public <T extends Expression<Item> & Mutable<Item>> Optional<T> getElementStore() {
+			return Optional.ofNullable((T)itemStore);
+		}
+
+		@Override
+		public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) {
+			requireNonNull(identifier);
+
+			String rawKey = identifier.getRawText();
 
 			// Give our cache a chance first
-			AnnotationInfo info = annotationCache.get(key);
+			AnnotationInfo info = annotationCache.get(rawKey);
 			if(info!=null) {
 				return Optional.of(info);
 			}
 
 			// No luck with the cache -> run actual search now
 			ensureLayerLookups();
-			// The provided key might be a qualified identifier!!
-			final String layerId = ManifestUtils.extractHostId(key);
-			String rawKey = key;
+			String key = identifier.getElement();
 			AnnotationLayer expectedLayer;
-			if(layerId!=null) {
-				key = ManifestUtils.extractElementId(key);
+			if(identifier.hasHost()) {
+				String layerId = identifier.getHost().get();
 				// If layer is explicitly stated, it must resolve
 				Layer layer = findLayer(layerId).orElseThrow(
 						() -> EvaluationUtils.forUnknownIdentifier(layerId, "annotation layer"));
@@ -466,7 +610,7 @@ public abstract class EvaluationContext {
 			// If present use the explicitly specified layer as filter
 			List<AnnotationLink> hits = annotationLookup.getOrDefault(key, Collections.emptyList())
 					.stream()
-					.filter(link -> layerId==null || link.getLayer()==expectedLayer)
+					.filter(link -> !identifier.hasHost() || link.getLayer()==expectedLayer)
 					.collect(Collectors.toList());
 
 			AnnotationInfo result = null;
@@ -501,7 +645,7 @@ public abstract class EvaluationContext {
 			 *  to make sure that we only consider layers that can target this context's element.
 			 */
 			List<AnnotationLayer> layers = catchAllLayers.stream()
-					.filter(layer -> layerId==null || layer==expectedLayer)
+					.filter(layer -> !identifier.hasHost() || layer==expectedLayer)
 					.collect(Collectors.toList());
 
 			if(layers.size()==1) {
@@ -515,9 +659,13 @@ public abstract class EvaluationContext {
 								rawKey, Arrays.toString(names)));
 			}
 
-			if(layerId!=null && result==null)
+			if(identifier.hasHost() && result==null)
 				throw new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER, String.format(
 						"Qualified identifier '%s' could not be resolved to an annotation", rawKey));
+
+			if(result!=null) {
+				annotationCache.put(rawKey, result);
+			}
 
 			return Optional.ofNullable(result);
 		}
@@ -624,6 +772,10 @@ public abstract class EvaluationContext {
 
 	public Optional<Layer> findLayer(String name) { return getRootContext().findLayer(name); }
 
+	public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() { return Optional.empty(); }
+
+	public <T extends Expression<Item> & Mutable<Item>> Optional<T> getElementStore() { return Optional.empty(); }
+
 	public Layer requireLayer(String name) {
 		return findLayer(name).orElseThrow(
 				() -> EvaluationUtils.forUnknownIdentifier(name, "layer"));
@@ -684,7 +836,7 @@ public abstract class EvaluationContext {
 		throw new UnsupportedOperationException();
 	}
 
-	public Optional<AnnotationInfo> findAnnotation(String key) { return Optional.empty(); }
+	public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) { return Optional.empty(); }
 
 	public static class AnnotationInfo {
 		private final String rawKey;

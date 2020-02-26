@@ -162,6 +162,19 @@ public interface Expression<T> {
 		// marker interface
 	}
 
+	/**
+	 * Signals that an expression is designed as a temporary helper during the matcher
+	 * construction process. Implementations of this interface are not meant to be used
+	 * in the actual evaluation phase and are expected to throw an exception when trying
+	 * to use any of the computation methods, such as {@link Expression#compute()}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public interface ProxyExpression {
+		// marker interface
+	}
+
 	/** Gives list-style access to the underlying data */
 	public interface ListExpression<T, E> extends Expression<T>, ListProxy<E> {
 

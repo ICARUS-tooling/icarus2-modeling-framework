@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.Function;
@@ -26,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 
+import de.ims.icarus2.query.api.eval.Expression.ProxyExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -118,5 +120,32 @@ public class Expressions {
 			value.setBoolean(source.test(target));
 			return value;
 		}
+	}
+
+	public static Expression<?> pathProxy(Expression<?> source, String name) {
+		return new PathProxy<>(source, name);
+	}
+
+	public static final class PathProxy<T> implements Expression<T>, ProxyExpression {
+		private final Expression<?> source;
+		private final String name;
+
+		public PathProxy(Expression<?> source, String name) {
+			this.source = requireNonNull(source);
+			this.name = checkNotEmpty(name);
+		}
+
+		public String getName() { return name; }
+
+		public Expression<?> getSource() { return source; }
+
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.GENERIC; }
+
+		@Override
+		public T compute() { throw EvaluationUtils.forProxyCall(); }
+
+		@Override
+		public Expression<T> duplicate(EvaluationContext context) { throw EvaluationUtils.forProxyCall(); }
 	}
 }

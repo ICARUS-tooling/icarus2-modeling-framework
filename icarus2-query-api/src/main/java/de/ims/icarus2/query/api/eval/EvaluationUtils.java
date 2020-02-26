@@ -173,6 +173,11 @@ public class EvaluationUtils {
 		return new QueryException(QueryErrorCode.INCORRECT_USE, String.format(msg, args));
 	}
 
+	public static QueryException forProxyCall() {
+		return new QueryException(QueryErrorCode.PROXY_CALL,
+				"Path proxy cannot be used for actual evaluation.");
+	}
+
 	public static boolean string2Boolean(CharSequence value) {
 		return value!=null && value.length()>0;
 	}

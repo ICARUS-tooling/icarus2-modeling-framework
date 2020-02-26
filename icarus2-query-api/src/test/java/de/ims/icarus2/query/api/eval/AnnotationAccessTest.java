@@ -28,7 +28,7 @@ import static de.ims.icarus2.util.collections.CollectionUtils.feedItems;
 import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
@@ -98,15 +98,16 @@ class AnnotationAccessTest {
 		checkArgument(infos.length>0);
 		Map<String, AnnotationInfo> lookup = new Object2ObjectOpenHashMap<>();
 		for(AnnotationInfo info : infos) {
-			if(lookup.putIfAbsent(info.getKey(), info)!=null)
+			if(lookup.putIfAbsent(info.getRawKey(), info)!=null)
 				throw new InternalError("Duplicate key: "+info.getKey());
 		}
 
 		EvaluationContext context = mock(EvaluationContext.class);
 
 		doAnswer(inv -> {
-			return Optional.ofNullable(lookup.get(inv.getArgument(0)));
-		}).when(context).findAnnotation(anyString());
+			QualifiedIdentifier identifier = inv.getArgument(0);
+			return Optional.ofNullable(lookup.get(identifier.getRawText()));
+		}).when(context).findAnnotation(any());
 
 		return context;
 	}

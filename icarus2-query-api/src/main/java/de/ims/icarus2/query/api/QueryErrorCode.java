@@ -140,6 +140,13 @@ public enum QueryErrorCode implements ErrorCode {
 	 * incompatible within the current context.
 	 */
 	INCOMPATIBLE_REFERENCE(302),
+
+	/**
+	 * An expression that only exists as proxy has been survived till
+	 * the actual evaluation phase and one of its unsupported methods
+	 * has been called.
+	 */
+	PROXY_CALL(303),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;

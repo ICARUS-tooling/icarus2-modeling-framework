@@ -155,7 +155,7 @@ public class TypeInfo {
 	/** Represents the primitive type {@code boolean}. */
 	public static final TypeInfo BOOLEAN = new TypeInfo(Primitive.class, boolean.class, false, false);
 
-	// Former "String" proxy, now adjusted for proper unicode support
+	// Former "String" proxy, now adjusted for flexibility
 	/** We use {@code CharSequence}, as defined by {@link ValueType#STRING} */
 	public static final TypeInfo TEXT = new TypeInfo(CharSequence.class, null, false, false);
 	/** String offers both CharSequence and Comparable features, so warrants an extra type */

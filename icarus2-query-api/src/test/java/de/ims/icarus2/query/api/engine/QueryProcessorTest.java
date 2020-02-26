@@ -702,39 +702,39 @@ class QueryProcessorTest {
 
 				@Test
 				void testBoundPredicate() {
-					String rawPayload = "WITH $token FROM corpus::layer1 FIND $token.val>0";
+					String rawPayload = "WITH $token FROM layer1 FIND $token.val>0";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
-					assertBindings(payload, bind("corpus::layer1", false, "token"));
+					assertBindings(payload, bind("layer1", false, "token"));
 					assertConstraint(payload, pred("$token.val>0"));
 				}
 
 				@Test
 				void testMultiBoundPredicate() {
-					String rawPayload = "WITH $token1,$token2 FROM corpus::layer1 FIND $token1.val+$token2.val>0";
+					String rawPayload = "WITH $token1,$token2 FROM layer1 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
-					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
+					assertBindings(payload, bind("layer1", false, "token1", "token2"));
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
 				@Test
 				void testDistinctMultiBoundPredicate() {
-					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 FIND $token1.val+$token2.val>0";
+					String rawPayload = "WITH DISTINCT $token1,$token2 FROM layer1 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
-					assertBindings(payload, bind("corpus::layer1", true, "token1", "token2"));
+					assertBindings(payload, bind("layer1", true, "token1", "token2"));
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
 				@Test
 				void testMultiLayerBoundPredicate() {
-					String rawPayload = "WITH $token1 FROM corpus::layer1 AND $token2 FROM corpus::layer2 FIND $token1.val+$token2.val>0";
+					String rawPayload = "WITH $token1 FROM layer1 AND $token2 FROM layer2 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload,
-							bind("corpus::layer1", false, "token1"),
-							bind("corpus::layer2", false, "token2"));
+							bind("layer1", false, "token1"),
+							bind("layer2", false, "token2"));
 					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
 				}
 
@@ -915,28 +915,28 @@ class QueryProcessorTest {
 
 				@Test
 				void testEmptyUnnamedNode() {
-					String rawPayload = "WITH $token FROM corpus::layer1 FIND []";
+					String rawPayload = "WITH $token FROM layer1 FIND []";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
-					assertBindings(payload, bind("corpus::layer1", false, "token"));
+					assertBindings(payload, bind("layer1", false, "token"));
 					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
 				}
 
 				@Test
 				void testEmptyNamedNode() {
-					String rawPayload = "WITH $token FROM corpus::layer1 FIND [$token:]";
+					String rawPayload = "WITH $token FROM layer1 FIND [$token:]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
-					assertBindings(payload, bind("corpus::layer1", false, "token"));
+					assertBindings(payload, bind("layer1", false, "token"));
 					assertLanes(payload, lane(LaneType.SEQUENCE, node("token", null)));
 				}
 
 				@Test
 				void testEmptyNamedNodes() {
-					String rawPayload = "WITH $token1,$token2 FROM corpus::layer1 FIND [$token1:][$token2:]";
+					String rawPayload = "WITH $token1,$token2 FROM layer1 FIND [$token1:][$token2:]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
-					assertBindings(payload, bind("corpus::layer1", false, "token1", "token2"));
+					assertBindings(payload, bind("layer1", false, "token1", "token2"));
 					assertLanes(payload, lane(LaneType.SEQUENCE,
 							node("token1", null), node("token2", null)));
 				}
@@ -947,16 +947,16 @@ class QueryProcessorTest {
 
 				@Test
 				void testFilledNodes() {
-					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 "
-							+ "AND $p FROM corpus::phrase "
+					String rawPayload = "WITH DISTINCT $token1,$token2 FROM layer1 "
+							+ "AND $p FROM phrase "
 							+ "FIND [$token1: pos!=\"NNP\"] 4+[] [$token2: length()>12] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload,
-							bind("corpus::layer1", true, "token1", "token2"),
-							bind("corpus::phrase", false, "p"));
+							bind("layer1", true, "token1", "token2"),
+							bind("phrase", false, "p"));
 					assertLanes(payload, lane(LaneType.SEQUENCE,
 							node("token1", pred("pos!=\"NNP\"")),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
@@ -1034,8 +1034,8 @@ class QueryProcessorTest {
 
 				@Test
 				void testFilledNodes() {
-					String rawPayload = "WITH DISTINCT $token1,$token2 FROM corpus::layer1 "
-							+ "AND $p FROM corpus::phrase "
+					String rawPayload = "WITH DISTINCT $token1,$token2 FROM layer1 "
+							+ "AND $p FROM phrase "
 							+ "FIND ORDERED [5-[][$token1: pos!=\"NNP\"]] 4+[] "
 							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
@@ -1043,8 +1043,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload, NodeArrangement.ORDERED);
 					assertBindings(payload,
-							bind("corpus::layer1", true, "token1", "token2"),
-							bind("corpus::phrase", false, "p"));
+							bind("layer1", true, "token1", "token2"),
+							bind("phrase", false, "p"));
 					assertLanes(payload, lane(LaneType.TREE,
 							tree(null, null,
 									node(null, null, quant(QuantifierType.AT_MOST, 5)),

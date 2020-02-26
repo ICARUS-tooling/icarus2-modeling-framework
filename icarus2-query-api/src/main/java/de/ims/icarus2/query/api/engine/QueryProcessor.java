@@ -481,7 +481,7 @@ public class QueryProcessor {
 		private IqlBinding processBinding(BindingContext ctx) {
 			IqlBinding binding = new IqlBinding();
 
-			binding.setTarget(textOf(ctx.qualifiedIdentifier()));
+			binding.setTarget(textOf(ctx.Identifier()));
 			binding.setDistinct(ctx.DISTINCT()!=null);
 			for(MemberContext mctx : ctx.member()) {
 				binding.addMember(processMember(mctx));

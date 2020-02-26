@@ -125,7 +125,7 @@ bindingsList
  * who already are structurally distinct), but can still be used to make that fact explicit.
  */
 binding
-	: DISTINCT? member (COMMA member)* FROM qualifiedIdentifier
+	: DISTINCT? member (COMMA member)* FROM Identifier
 	;
 
 selectiveStatement
@@ -369,13 +369,13 @@ primary
 reference
 	: variableName
 	| member
-	| qualifiedIdentifier
+	| Identifier
+	| qualifiedIdentifier // always points to annotations
 	;
 	
-/** Addressing a layer/context or other embedded member via the identifiers of its environment */
-//TODO limit the qualification depth? In the ICARUS2 framework we only ever use context::layer
+/** Addressing an annotation via layer::key */
 qualifiedIdentifier
-	: Identifier (DOUBLE_COLON Identifier)*
+	: hostId=Identifier DOUBLE_COLON elementId=Identifier
 	;
 	
 loopExpresseion

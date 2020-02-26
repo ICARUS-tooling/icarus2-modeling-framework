@@ -66,7 +66,8 @@ public class AnnotationAccess {
 		if(key.isConstant()) {
 			String annotationKey = key.compute().toString();
 			checkNotEmpty(annotationKey);
-			AnnotationInfo info = context.findAnnotation(annotationKey).orElseThrow(
+			AnnotationInfo info = context.findAnnotation(
+					QualifiedIdentifier.parseIdentifier(annotationKey)).orElseThrow(
 					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 							"No annotation available for key: "+annotationKey));
 			TypeInfo type = info.getType();
@@ -156,6 +157,7 @@ public class AnnotationAccess {
 
 	private static AnnotationInfo[] findAnnotations(EvaluationContext context, String[] keys) {
 		return Stream.of(keys)
+				.map(QualifiedIdentifier::parseIdentifier)
 				.map(context::findAnnotation)
 				.map(Optional::get)
 				.toArray(AnnotationInfo[]::new);
