@@ -66,13 +66,12 @@ public class StructureLayerManifestImpl extends AbstractItemLayerManifestBase<St
 		Hierarchy<ContainerManifestBase<?>> hierarchy = getContainerHierarchy().orElse(null);
 
 		// Bail early if there's not enough data to even host a structure manifest
-		if(hierarchy==null || hierarchy.getDepth()<2) {
-			//TODO this also returns null when a structure was illegally set on root position in the hierarchy
+		if(hierarchy==null || hierarchy.isEmpty()) {
 			return Optional.empty();
 		}
 
 		// Find and return first structure manifest
-		for(int level=1; level<hierarchy.getDepth(); level++) {
+		for(int level=0; level<hierarchy.getDepth(); level++) {
 			ContainerManifestBase<?> manifest = hierarchy.atLevel(level);
 			if(manifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 				return Optional.of((StructureManifest) manifest);

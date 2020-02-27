@@ -1720,7 +1720,7 @@ public class TestUtils {
 		for(K value : values) {
 			boolean expected = modifier.apply(instance, value).booleanValue();
 			assertEquals(expected, predicate.test(instance),
-					() -> {return "predicate failed for value "+msgGen.apply(value);});
+					() -> "predicate failed for value "+msgGen.apply(value));
 		}
 	}
 

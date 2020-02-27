@@ -33,6 +33,10 @@ import de.ims.icarus2.util.collections.LazyCollection;
  */
 public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 
+	/**
+	 * Helper constant to indicate the root level when accessing or trying to
+	 * access a element in a hierarchy.
+	 */
 	public static final int ROOT = 0;
 
 	E getRoot();

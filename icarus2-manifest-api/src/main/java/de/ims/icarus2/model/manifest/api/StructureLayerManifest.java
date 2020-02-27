@@ -45,17 +45,14 @@ public interface StructureLayerManifest extends ItemLayerManifestBase<StructureL
 	/**
 	 * Returns the first manifest within the {@link #getContainerHierarchy() container hierarchy}
 	 * that is of type {@link ManifestType#STRUCTURE_MANIFEST}.
-	 * Note that a structure layer always contains a regular container
-	 * as root of its container hierarchy. Only on the subsequent levels
-	 * the structures themselves can be hosted!
 	 *
 	 * @return
 	 * @throws ManifestException of type {@link ManifestErrorCode#MANIFEST_MISSING_MEMBER} if there
-	 * are 2 or more elements in the container hierarchy and none of them were of type
+	 * are elements in the container hierarchy and none of them were of type
 	 * {@link ManifestType#STRUCTURE_MANIFEST}.
 	 *
 	 * @see #getRootContainerManifest()
-	 * @see #getContextManifest()
+	 * @see #getContainerHierarchy()
 	 */
 	@AccessRestriction(AccessMode.READ)
 	Optional<StructureManifest> getRootStructureManifest();
