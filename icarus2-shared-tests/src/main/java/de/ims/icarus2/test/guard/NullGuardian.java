@@ -102,7 +102,7 @@ public class NullGuardian<T> extends Guardian<T> {
 	Stream<DynamicNode> createTests(TestReporter testReporter) {
 		Collection<MethodCache> methodCaches = classCache.getMethodCaches();
 		List<DynamicNode> tests = methodCaches.stream()
-				.filter(c -> c.getMethod().isAccessible())
+//				.filter(c -> c.getMethod().isAccessible())
 				.filter(c -> !c.hasAnnotation(Unguarded.class))
 				.sorted((m1, m2) -> m1.getMethod().getName().compareTo(m2.getMethod().getName()))
 				.map(this::createTestsForMethod)

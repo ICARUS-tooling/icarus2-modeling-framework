@@ -81,6 +81,8 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  */
 class PropertyGuardian<T> extends Guardian<T> {
 
+	private static final boolean DEBUG = false;
+
 	/**
 	 * Final pairing of setter and getter methods for each property.
 	 */
@@ -109,25 +111,6 @@ class PropertyGuardian<T> extends Guardian<T> {
 			"is", "get", "set",
 	};
 
-	public static final Predicate<? super Method> PROPERTY_FILTER = (m) -> {
-		boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
-		boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
-//			boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
-		boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
-		boolean hasParams = m.getParameterCount()>0;
-		boolean hasSingleParam = m.getParameterCount()==1; // setters
-		boolean isVoidReturn = m.getReturnType()==void.class;
-		boolean isChainable = !isVoidReturn && m.getReturnType().isAssignableFrom(m.getDeclaringClass());
-
-//			System.out.printf("stat=%b, pub=%b, abs=%b, obj=%b, params=%b, single=%b, void=%b, chain=%b: %s%n",
-//					isStatic, isPublic, isAbstract, isObjMethod, hasParams, hasSingleParam, isVoidReturn, isChainable, m);
-
-		return !isStatic && isPublic && !isObjMethod // Filter out via basic properties
-				&& ((hasSingleParam && isVoidReturn)
-					|| (hasSingleParam && isChainable)
-					|| (!hasParams && !isVoidReturn));
-	};
-
 	private static boolean isStrictName(String name) {
 		for(String prefix : strictPrefixes) {
 			if(name.length()>prefix.length()
@@ -152,24 +135,26 @@ class PropertyGuardian<T> extends Guardian<T> {
 				.build();
 	}
 
-	private Predicate<? super Method> createPropertyMethodFilter(final boolean strict) {
+	@SuppressWarnings("boxing")
+	static Predicate<? super Method> createPropertyMethodFilter(final boolean strict) {
 		return (m) -> {
 			boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
 			boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
-//			boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
+			boolean isAbstract = Modifier.isAbstract(m.getModifiers());  // must not be abstract
 			boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
 			boolean hasParams = m.getParameterCount()>0;
 			boolean hasSingleParam = m.getParameterCount()==1; // setters
 			boolean isVoidReturn = m.getReturnType()==void.class;
 			boolean isChainable = !isVoidReturn && m.getReturnType().isAssignableFrom(m.getDeclaringClass());
 
-//			System.out.printf("stat=%b, pub=%b, abs=%b, obj=%b, params=%b, single=%b, void=%b, chain=%b: %s%n",
-//					isStatic, isPublic, isAbstract, isObjMethod, hasParams, hasSingleParam, isVoidReturn, isChainable, m);
-
 			boolean isOk = !isStatic && isPublic && !isObjMethod // Filter out via basic properties
 					&& ((hasSingleParam && isVoidReturn)
 						|| (hasSingleParam && isChainable)
 						|| (!hasParams && !isVoidReturn));
+
+			if(DEBUG)
+				System.out.printf("isOk=%b stat=%b, pub=%b, abs=%b, obj=%b, params=%b, single=%b, void=%b, chain=%b: %s%n",
+					isOk, isStatic, isPublic, isAbstract, isObjMethod, hasParams, hasSingleParam, isVoidReturn, isChainable, m);
 
 			if(isOk && strict) {
 				isOk &= isStrictName(m.getName());
@@ -301,7 +286,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 			if(defaultValue==null) {
 				defaultValue = getDefaultReturnValue(property, returnType);
 
-//				System.out.printf("default value for '%s': %s%n", property, defaultValue);
+				if(DEBUG)
+					System.out.printf("default value for '%s': %s%n", property, defaultValue);
 			}
 		}
 
@@ -323,7 +309,7 @@ class PropertyGuardian<T> extends Guardian<T> {
 				config.getter.getReturnType().getName());
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "boxing" })
 	private DynamicNode createTestsForProperty(PropertyConfig config) {
 		MethodCache getterMethodCache = classCache.getMethodCache(config.getter);
 		MethodCache setterMethodCache = classCache.getMethodCache(config.setter);
@@ -442,7 +428,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 			setterTest = dynamicTest("setter",
 					() -> {
 						T instance = createInstance();
-//						System.out.printf("'%s', nullable=%b%n", config.setter, allowNullParam);
+						if(DEBUG)
+							System.out.printf("'%s', nullable=%b%n", config.setter, allowNullParam);
 
 						// Special case for boolean, as we know possible parameter values
 						if(Boolean.class.equals(paramClass) || Boolean.TYPE.equals(paramClass)) {
@@ -562,7 +549,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 			} else {
 				getters.put(property, method);
 
-//				System.out.printf("Adding getter for '%s': %s%n", property, method);
+				if(DEBUG)
+					System.out.printf("Adding getter for '%s': %s%n", property, method);
 			}
 		};
 
@@ -574,7 +562,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 			} else {
 				setters.put(property, method);
 
-//				System.out.printf("Adding setter for '%s': %s%n", property, method);
+				if(DEBUG)
+					System.out.printf("Adding setter for '%s': %s%n", property, method);
 			}
 		};
 
@@ -596,7 +585,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 			}
 		};
 
-//		System.out.println("Methods: "+classCache.getMethods());
+		if(DEBUG)
+			System.out.println("Methods: "+classCache.getMethods());
 
 		for(MethodCache methodCache : classCache.getMethodCaches()) {
 
@@ -632,7 +622,8 @@ class PropertyGuardian<T> extends Guardian<T> {
 				if(type!=null) {
 					String property = extractPropertyName(method, type);
 					mapByType.accept(type, property, method);
-				}
+				} else if(DEBUG)
+					System.out.println("Unable to resolve type for: "+method);
 			}
 		}
 
@@ -665,13 +656,27 @@ class PropertyGuardian<T> extends Guardian<T> {
 	private String extractPropertyName(Method method, MethodType type) {
 		String name = method.getName();
 		if(type==MethodType.BUILDER) {
-			return name;
+			int begin = findPropertyBegin(name);
+			return begin==-1 ? name : extractPropertyName(name, begin);
 		}
 
 		int begin = type==MethodType.GETTER ? "get".length() : "set".length();
 		if(name.startsWith("is")) {
 			begin = "is".length();
 		}
+		return extractPropertyName(name, begin);
+	}
+
+	private int findPropertyBegin(String name) {
+		for (int i = 1; i < name.length(); i++) {
+			if(Character.isUpperCase(name.charAt(i))) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private String extractPropertyName(String name, int begin) {
 		return Character.toLowerCase(name.charAt(begin))
 				+name.substring(begin+1);
 	}

@@ -34,9 +34,9 @@ class PropertyGuardianTest {
 	@Nested
 	class PropertyFilterTest {
 
-		private void assertFilteredMethods(String...expected) {
-			String[] actual = Stream.of(Dummy1.class.getMethods())
-				.filter(PropertyGuardian.PROPERTY_FILTER)
+		private void assertFilteredMethods(Class<?> clazz, boolean strict, String...expected) {
+			String[] actual = Stream.of(clazz.getMethods())
+				.filter(PropertyGuardian.createPropertyMethodFilter(strict))
 				.map(Method::getName)
 				.toArray(String[]::new);
 
@@ -48,14 +48,13 @@ class PropertyGuardianTest {
 
 		@Test
 		void testFindPropertyMethods() {
-			assertFilteredMethods("setter1", "getter1");
+			assertFilteredMethods(Dummy1.class, false, "setter1", "getter1");
 		}
 
-//		@Test
-//		void tmp() {
-//			Stream.of(Dummy1.class.getMethods())
-//					.forEach(m -> System.out.println(m.getName()+": "+m.getReturnType()));
-//		}
+		@Test
+		void testFindPropertyMethodsStrict() {
+			assertFilteredMethods(Dummy2.class, true, "setVal1", "getVal1");
+		}
 	}
 
 	// DUMMY CLASSES
@@ -65,6 +64,14 @@ class PropertyGuardianTest {
 		public void setter2(String s, int x) { /* no-op */ }
 
 		public String getter1() { return "result1"; }
+		public String getter2(String s) { return s; }
+	}
+
+	public static class Dummy2 {
+		public void setVal1(String s) { /* no-op */ }
+		public void setter2(String s, int x) { /* no-op */ }
+
+		public String getVal1() { return "result1"; }
 		public String getter2(String s) { return s; }
 	}
 }
