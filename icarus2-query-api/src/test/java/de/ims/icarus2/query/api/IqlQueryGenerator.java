@@ -41,6 +41,7 @@ import java.util.stream.IntStream;
 import de.ims.icarus2.model.manifest.ManifestGenerator;
 import de.ims.icarus2.query.api.iql.IqlAliasedReference;
 import de.ims.icarus2.query.api.iql.IqlBinding;
+import de.ims.icarus2.query.api.iql.IqlBinding.MemberType;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
@@ -65,6 +66,7 @@ import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
+import de.ims.icarus2.query.api.iql.IqlProperties;
 import de.ims.icarus2.query.api.iql.IqlProperty;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
@@ -216,13 +218,13 @@ public class IqlQueryGenerator {
 		// mandatory data
 		reference.setName(index("name"));
 
-		build.addFieldChange(reference::setName, "name", index("name"));
+		build.addFieldChange(reference::setName, IqlProperties.NAME, index("name"));
 	}
 
 	private void prepareAliasedReference0(IqlAliasedReference reference, IncrementalBuild<?> build, Config config) {
 		prepareNamedReference0(reference, build, config);
 
-		build.addFieldChange(reference::setAlias, "alias", index("alias"));
+		build.addFieldChange(reference::setAlias, IqlProperties.ALIAS, index("alias"));
 	}
 
 	private void prepareBinding(IqlBinding binding, IncrementalBuild<?> build, Config config) {
@@ -231,21 +233,25 @@ public class IqlQueryGenerator {
 		// mandatory data
 		binding.setTarget(index("target"));
 		binding.addMember(generateFull(IqlType.REFERENCE, config));
+		binding.setMemberType(MemberType.ITEM);
 
-		build.addFieldChange(binding::setDistinct, "distint", Boolean.TRUE);
-		build.addFieldChange(binding::setDistinct, "distint", Boolean.FALSE);
-		build.addFieldChange(binding::setTarget, "target", index("target"));
+		build.addFieldChange(binding::setDistinct, IqlProperties.DISTINCT, Boolean.TRUE);
+		build.addFieldChange(binding::setDistinct, IqlProperties.DISTINCT, Boolean.FALSE);
+		build.addFieldChange(binding::setTarget, IqlProperties.TARGET, index("target"));
 
 		for (int i = 0; i < config.getCount(IqlType.REFERENCE, DEFAULT_COUNT); i++) {
-			build.addNestedChange("member", IqlType.REFERENCE, config, binding, binding::addMember);
+			build.addNestedChange(IqlProperties.MEMBERS, IqlType.REFERENCE, config, binding, binding::addMember);
+		}
+		for( MemberType memberType : MemberType.values()) {
+			build.addEnumFieldChange(binding::setMemberType, IqlProperties.MEMBER_TYPE, memberType);
 		}
 	}
 
 	private void prepareConstraint0(IqlConstraint constraint, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(constraint, build, config);
 
-		build.addFieldChange(constraint::setSolved, "solved", Boolean.TRUE);
-		build.addFieldChange(constraint::setSolvedAs, "solvedAs", Boolean.TRUE);
+		build.addFieldChange(constraint::setSolved, IqlProperties.SOLVED, Boolean.TRUE);
+		build.addFieldChange(constraint::setSolvedAs, IqlProperties.SOLVED_AS, Boolean.TRUE);
 	}
 
 	private void preparePredicate(IqlConstraint.IqlPredicate predicate, IncrementalBuild<?> build, Config config) {
@@ -254,7 +260,7 @@ public class IqlQueryGenerator {
 		// mandatory data
 		predicate.setExpression(generateFull(IqlType.EXPRESSION, config));
 
-		build.addNestedChange("expression", IqlType.EXPRESSION, config, predicate, predicate::setExpression);
+		build.addNestedChange(IqlProperties.EXPRESSION, IqlType.EXPRESSION, config, predicate, predicate::setExpression);
 	}
 
 	private void prepareTerm(IqlConstraint.IqlTerm term, IncrementalBuild<?> build, Config config) {
@@ -265,10 +271,10 @@ public class IqlQueryGenerator {
 		term.setOperation(rng.random(BooleanOperation.class));
 
 		for (int i = 0; i < config.getCount(IqlType.PREDICATE, DEFAULT_COUNT); i++) {
-			build.addNestedChange("items", IqlType.PREDICATE, config, term, term::addItem);
+			build.addNestedChange(IqlProperties.ITEMS, IqlType.PREDICATE, config, term, term::addItem);
 		}
 		for(BooleanOperation operation : BooleanOperation.values()) {
-			build.addEnumFieldChange(term::setOperation, "operation", operation);
+			build.addEnumFieldChange(term::setOperation, IqlProperties.OPERATION, operation);
 		}
 	}
 
@@ -283,29 +289,29 @@ public class IqlQueryGenerator {
 		data.setContent(index("content"));
 		data.setCodec(index("codec"));
 
-		build.addFieldChange(data::setContent, "content", index("content"));
-		build.addFieldChange(data::setCodec, "codec", index("codec"));
-		build.addFieldChange(data::setChecksum, "checksum", index("checksum"));
+		build.addFieldChange(data::setContent, IqlProperties.CONTENT, index("content"));
+		build.addFieldChange(data::setCodec, IqlProperties.CODEC, index("codec"));
+		build.addFieldChange(data::setChecksum, IqlProperties.CHECKSUM, index("checksum"));
 	}
 
 	private void prepareElement0(IqlElement element, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(element, build, config);
 
-		build.addFieldChange(element::setConsumed, "consumed", Boolean.TRUE);
+		build.addFieldChange(element::setConsumed, IqlProperties.CONSUMED, Boolean.TRUE);
 	}
 
 	private void prepareProperElement0(IqlProperElement element, IncrementalBuild<?> build, Config config) {
 		prepareElement0(element, build, config);
 
 		build.addFieldChange(element::setLabel, "label", index("label"));
-		build.addNestedChange("constraint", IqlType.PREDICATE, config, element, element::setConstraint);
+		build.addNestedChange(IqlProperties.CONSTRAINT, IqlType.PREDICATE, config, element, element::setConstraint);
 	}
 
 	private void prepareNode(IqlNode node, IncrementalBuild<?> build, Config config) {
 		prepareProperElement0(node, build, config);
 
 		for (int i = 0; i < config.getCount(IqlType.QUANTIFIER, DEFAULT_COUNT); i++) {
-			build.addNestedChange("quantifier", IqlType.QUANTIFIER, config, node, node::addQuantifier);
+			build.addNestedChange(IqlProperties.QUANTIFIER_TYPE, IqlType.QUANTIFIER, config, node, node::addQuantifier);
 		}
 	}
 
@@ -314,7 +320,7 @@ public class IqlQueryGenerator {
 
 		if(config.tryNested(IqlType.TREE_NODE)) {
 			for (int i = 0; i < config.getCount(IqlType.TREE_NODE, DEFAULT_COUNT); i++) {
-				build.addNestedChange("children", IqlType.TREE_NODE, config, treeNode, treeNode::addChild);
+				build.addNestedChange(IqlProperties.CHILDREN, IqlType.TREE_NODE, config, treeNode, treeNode::addChild);
 			}
 			config.endNested(IqlType.TREE_NODE);
 		}
@@ -329,10 +335,10 @@ public class IqlQueryGenerator {
 		edge.setTarget(generateFull(IqlType.NODE, config));
 
 		for(EdgeType edgeType : EdgeType.values()) {
-			build.addEnumFieldChange(edge::setEdgeType, "edgeType", edgeType);
+			build.addEnumFieldChange(edge::setEdgeType, IqlProperties.EDGE_TYPE, edgeType);
 		}
-		build.addNestedChange("source", IqlType.NODE, config, edge, edge::setSource);
-		build.addNestedChange("target", IqlType.NODE, config, edge, edge::setTarget);
+		build.addNestedChange(IqlProperties.SOURCE, IqlType.NODE, config, edge, edge::setSource);
+		build.addNestedChange(IqlProperties.TARGET, IqlType.NODE, config, edge, edge::setTarget);
 	}
 
 	private void prepareElementDisjunction(IqlElementDisjunction dis, IncrementalBuild<?> build, Config config) {
@@ -352,8 +358,8 @@ public class IqlQueryGenerator {
 		// mandatory data
 		expression.setContent(String.format("someTargetValue<(%s-%s(%d))", index("value"), index("func"), index()));
 
-		build.addFieldChange(expression::setReturnType, "returnType", Dummy.class);
-		build.addFieldChange(expression::setContent, "content",
+		build.addFieldChange(expression::setReturnType, IqlProperties.RETURN_TYPE, Dummy.class);
+		build.addFieldChange(expression::setContent, IqlProperties.CONTENT,
 				String.format("%s(123, %s)~\"val%d\"", index("func"), index("value"), index()));
 	}
 
@@ -372,22 +378,22 @@ public class IqlQueryGenerator {
 		group.setGroupBy(generateFull(IqlType.EXPRESSION, config));
 		group.setLabel(index("label"));
 
-		build.addNestedChange("groupBy", IqlType.EXPRESSION, config, group, group::setGroupBy);
-		build.addNestedChange("filterOn", IqlType.EXPRESSION, config, group, group::setFilterOn);
-		build.addFieldChange(group::setLabel, "label", index("label"));
+		build.addNestedChange(IqlProperties.GROUP_BY, IqlType.EXPRESSION, config, group, group::setGroupBy);
+		build.addNestedChange(IqlProperties.FILTER_ON, IqlType.EXPRESSION, config, group, group::setFilterOn);
+		build.addFieldChange(group::setLabel, IqlProperties.LABEL, index("label"));
 		// Include all typical value types!
-		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(index("value"), build, config));
-		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(true, build, config));
-		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(false, build, config));
-		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(Integer.MAX_VALUE, build, config));
-		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(Long.MAX_VALUE, build, config));
-		build.addFieldChange(group::setDefaultValue, "defaultValue", expression(Double.MAX_VALUE, build, config));
+		build.addFieldChange(group::setDefaultValue, IqlProperties.DEFAULT_VALUE, expression(index("value"), build, config));
+		build.addFieldChange(group::setDefaultValue, IqlProperties.DEFAULT_VALUE, expression(true, build, config));
+		build.addFieldChange(group::setDefaultValue, IqlProperties.DEFAULT_VALUE, expression(false, build, config));
+		build.addFieldChange(group::setDefaultValue, IqlProperties.DEFAULT_VALUE, expression(Integer.MAX_VALUE, build, config));
+		build.addFieldChange(group::setDefaultValue, IqlProperties.DEFAULT_VALUE, expression(Long.MAX_VALUE, build, config));
+		build.addFieldChange(group::setDefaultValue, IqlProperties.DEFAULT_VALUE, expression(Double.MAX_VALUE, build, config));
 	}
 
 	private void prepareImport(IqlImport imp, IncrementalBuild<?> build, Config config) {
 		prepareNamedReference0(imp, build, config);
 
-		build.addFieldChange(imp::setOptional, "optional", Boolean.TRUE);
+		build.addFieldChange(imp::setOptional, IqlProperties.OPTIONAL, Boolean.TRUE);
 	}
 
 	private void prepareLane(IqlLane lane, IncrementalBuild<?> build, Config config) {
@@ -398,21 +404,21 @@ public class IqlQueryGenerator {
 		lane.addElement(generateFull(IqlType.NODE, config));
 
 		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
-			build.addEnumFieldChange(lane::setNodeArrangement, "nodeArrangement", nodeArrangement);
+			build.addEnumFieldChange(lane::setNodeArrangement, IqlProperties.NODE_ARRANGEMENT, nodeArrangement);
 		}
 		for(LaneType laneType : LaneType.values()) {
-			build.addEnumFieldChange(lane::setLaneType, "laneType", laneType);
+			build.addEnumFieldChange(lane::setLaneType, IqlProperties.LANE_TYPE, laneType);
 		}
 		for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT); i++) {
-			build.addNestedChange("elements", IqlType.NODE, config, lane, lane::addElement);
+			build.addNestedChange(IqlProperties.ELEMENTS, IqlType.NODE, config, lane, lane::addElement);
 		}
 	}
 
 	private void prepareLayer(IqlLayer layer, IncrementalBuild<?> build, Config config) {
 		prepareAliasedReference0(layer, build, config);
 
-		build.addFieldChange(layer::setPrimary, "primary", Boolean.TRUE);
-		build.addFieldChange(layer::setAllMembers, "allMembers", Boolean.TRUE);
+		build.addFieldChange(layer::setPrimary, IqlProperties.PRIMARY, Boolean.TRUE);
+		build.addFieldChange(layer::setAllMembers, IqlProperties.ALL_MEMBERS, Boolean.TRUE);
 	}
 
 	private void preparePayload(IqlPayload payload, IncrementalBuild<?> build, Config config) {
@@ -421,13 +427,13 @@ public class IqlQueryGenerator {
 		// mandatory data
 		payload.setQueryType(rng.random(QueryType.class));
 
-		build.addFieldChange(payload::setName, "name", index("name"));
+		build.addFieldChange(payload::setName, IqlProperties.NAME, index("name"));
 		for(QueryType queryType : QueryType.values()) {
-			build.addEnumFieldChange(payload::setQueryType, "queryType", queryType);
+			build.addEnumFieldChange(payload::setQueryType, IqlProperties.QUERY_TYPE, queryType);
 		}
-		build.addNestedChange("constraint", IqlType.PREDICATE, config, payload, payload::setConstraint);
+		build.addNestedChange(IqlProperties.CONSTRAINT, IqlType.PREDICATE, config, payload, payload::setConstraint);
 		for (int i = 0; i < config.getCount(IqlType.LANE, DEFAULT_COUNT); i++) {
-			build.addNestedChange("lanes", IqlType.LANE, config, payload, payload::addLane);
+			build.addNestedChange(IqlProperties.LANES, IqlType.LANE, config, payload, payload::addLane);
 		}
 	}
 
@@ -438,14 +444,14 @@ public class IqlQueryGenerator {
 		// mandatory data
 		property.setKey(index("key"));
 
-		build.addFieldChange(property::setKey, "key", index("key"));
+		build.addFieldChange(property::setKey, IqlProperties.KEY, index("key"));
 		// Include all typical value types!
-		build.addFieldChange(property::setValue, "value", index("value"));
-		build.addFieldChange(property::setValue, "value", true);
-		build.addFieldChange(property::setValue, "value", false);
-		build.addFieldChange(property::setValue, "value", Integer.MAX_VALUE);
-		build.addFieldChange(property::setValue, "value", Long.MAX_VALUE);
-		build.addFieldChange(property::setValue, "value", Double.MAX_VALUE);
+		build.addFieldChange(property::setValue, IqlProperties.VALUE, index("value"));
+		build.addFieldChange(property::setValue, IqlProperties.VALUE, true);
+		build.addFieldChange(property::setValue, IqlProperties.VALUE, false);
+		build.addFieldChange(property::setValue, IqlProperties.VALUE, Integer.MAX_VALUE);
+		build.addFieldChange(property::setValue, IqlProperties.VALUE, Long.MAX_VALUE);
+		build.addFieldChange(property::setValue, IqlProperties.VALUE, Double.MAX_VALUE);
 	}
 
 	@SuppressWarnings("boxing")
@@ -457,12 +463,12 @@ public class IqlQueryGenerator {
 		quantifier.setValue(index());
 
 		for(QuantifierType quantifierType : QuantifierType.values()) {
-			build.addEnumFieldChange(quantifier::setQuantifierType, "quantifierType", quantifierType);
+			build.addEnumFieldChange(quantifier::setQuantifierType, IqlProperties.QUANTIFIER_TYPE, quantifierType);
 		}
 
-		build.addFieldChange(quantifier::setLowerBound, "lowerBound", index());
-		build.addFieldChange(quantifier::setUpperBound, "upperBound", index());
-		build.addFieldChange(quantifier::setValue, "value", index());
+		build.addFieldChange(quantifier::setLowerBound, IqlProperties.LOWER_BOUND, index());
+		build.addFieldChange(quantifier::setUpperBound, IqlProperties.UPPER_BOUND, index());
+		build.addFieldChange(quantifier::setValue, IqlProperties.VALUE, index());
 	}
 
 	private void prepareStream(IqlStream stream, IncrementalBuild<?> build, Config config) {
@@ -473,19 +479,19 @@ public class IqlQueryGenerator {
 		stream.setCorpus(generateFull(IqlType.CORPUS, config));
 		stream.setResult(generateFull(IqlType.RESULT, config));
 
-		build.addFieldChange(stream::setRawGrouping, "rawGrouping", index("grouping-data"));
-		build.addFieldChange(stream::setRawResult, "rawResult", index("result-data"));
-		build.addNestedChange("processedResult", IqlType.RESULT, config, stream, stream::setResult);
-		build.addNestedChange("corpora", IqlType.CORPUS, config, stream, stream::setCorpus);
-		build.addNestedChange("scope", IqlType.SCOPE, config, stream, stream::setScope);
-		build.addFieldChange(stream::setRawPayload, "rawPayload", index("payload-data"));
-		build.addNestedChange("payload", IqlType.PAYLOAD, config, stream, stream::setPayload);
-		build.addFieldChange(stream::setPrimary, "primary", Boolean.TRUE);
+		build.addFieldChange(stream::setRawGrouping, IqlProperties.RAW_GROUPING, index("grouping-data"));
+		build.addFieldChange(stream::setRawResult, IqlProperties.RAW_RESULT, index("result-data"));
+		build.addNestedChange(IqlProperties.RESULT, IqlType.RESULT, config, stream, stream::setResult);
+		build.addNestedChange(IqlProperties.CORPUS, IqlType.CORPUS, config, stream, stream::setCorpus);
+		build.addNestedChange(IqlProperties.SCOPE, IqlType.SCOPE, config, stream, stream::setScope);
+		build.addFieldChange(stream::setRawPayload, IqlProperties.RAW_PAYLOAD, index("payload-data"));
+		build.addNestedChange(IqlProperties.PAYLOAD, IqlType.PAYLOAD, config, stream, stream::setPayload);
+		build.addFieldChange(stream::setPrimary, IqlProperties.PRIMARY, Boolean.TRUE);
 		for (int i = 0; i < config.getCount(IqlType.LAYER, DEFAULT_COUNT); i++) {
-			build.addNestedChange("layers", IqlType.LAYER, config, stream, stream::addLayer);
+			build.addNestedChange(IqlProperties.LAYERS, IqlType.LAYER, config, stream, stream::addLayer);
 		}
 		for (int i = 0; i < config.getCount(IqlType.GROUP, DEFAULT_COUNT); i++) {
-			build.addNestedChange("grouping", IqlType.GROUP, config, stream, stream::addGrouping);
+			build.addNestedChange(IqlProperties.GROUPING, IqlType.GROUP, config, stream, stream::addGrouping);
 		}
 	}
 
@@ -495,15 +501,15 @@ public class IqlQueryGenerator {
 		// mandatory data
 		query.addStream(generateFull(IqlType.STREAM, config));
 
-		build.addFieldChange(query::setDialect, "dialect", index("dialect"));
+		build.addFieldChange(query::setDialect, IqlProperties.DIALECT, index("dialect"));
 		for (int i = 0; i < config.getCount(IqlType.IMPORT, DEFAULT_COUNT); i++) {
-			build.addNestedChange("imports", IqlType.IMPORT, config, query, query::addImport);
+			build.addNestedChange(IqlProperties.IMPORTS, IqlType.IMPORT, config, query, query::addImport);
 		}
 		for (int i = 0; i < config.getCount(IqlType.PROPERTY, DEFAULT_COUNT); i++) {
-			build.addNestedChange("setup", IqlType.PROPERTY, config, query, query::addSetup);
+			build.addNestedChange(IqlProperties.SETUP, IqlType.PROPERTY, config, query, query::addSetup);
 		}
 		for (int i = 0; i < config.getCount(IqlType.DATA, DEFAULT_COUNT); i++) {
-			build.addNestedChange("embeddedData", IqlType.DATA, config, query, query::addEmbeddedData);
+			build.addNestedChange(IqlProperties.EMBEDDED_DATA, IqlType.DATA, config, query, query::addEmbeddedData);
 		}
 	}
 
@@ -514,9 +520,9 @@ public class IqlQueryGenerator {
 		reference.setName(index("name"));
 		reference.setReferenceType(rng.random(ReferenceType.class));
 
-		build.addFieldChange(reference::setName, "name", index("name"));
+		build.addFieldChange(reference::setName, IqlProperties.NAME, index("name"));
 		for(ReferenceType referenceType : ReferenceType.values()) {
-			build.addEnumFieldChange(reference::setReferenceType, "referenceType", referenceType);
+			build.addEnumFieldChange(reference::setReferenceType, IqlProperties.REFERENCE_TYPE, referenceType);
 		}
 	}
 
@@ -527,15 +533,15 @@ public class IqlQueryGenerator {
 		// mandatory data
 		result.addResultType(rng.random(ResultType.class));
 
-		build.addFieldChange(result::setLimit, "limit", Long.MAX_VALUE);
+		build.addFieldChange(result::setLimit, IqlProperties.LIMIT, Long.MAX_VALUE);
 		for(ResultType resultType : ResultType.values()) {
-			build.addEnumFieldChange(result::addResultType, "resultTypes", resultType);
+			build.addEnumFieldChange(result::addResultType, IqlProperties.RESULT_TYPES, resultType);
 		}
 		for (int i = 0; i < config.getCount(IqlType.RESULT_INSTRUCTION, DEFAULT_COUNT); i++) {
-			build.addNestedChange("resultInstructions", IqlType.RESULT_INSTRUCTION, config, result, result::addResultInstruction);
+			build.addNestedChange(IqlProperties.RESULT_INSTRUCTIONS, IqlType.RESULT_INSTRUCTION, config, result, result::addResultInstruction);
 		}
 		for (int i = 0; i < config.getCount(IqlType.SORTING, DEFAULT_COUNT); i++) {
-			build.addNestedChange("sortings", IqlType.SORTING, config, result, result::addSorting);
+			build.addNestedChange(IqlProperties.SORTINGS, IqlType.SORTING, config, result, result::addSorting);
 		}
 	}
 
@@ -552,7 +558,7 @@ public class IqlQueryGenerator {
 		scope.addLayer(generateFull(IqlType.LAYER, config));
 
 		for (int i = 0; i < config.getCount(IqlType.LAYER, DEFAULT_COUNT); i++) {
-			build.addNestedChange("layer", IqlType.LAYER, config, scope, scope::addLayer);
+			build.addNestedChange(IqlProperties.LAYERS, IqlType.LAYER, config, scope, scope::addLayer);
 		}
 	}
 
@@ -566,7 +572,7 @@ public class IqlQueryGenerator {
 		for(Order order : Order.values()) {
 			build.addEnumFieldChange(sorting::setOrder, "order", order);
 		}
-		build.addNestedChange("expression", IqlType.EXPRESSION, config, sorting, sorting::setExpression);
+		build.addNestedChange(IqlProperties.EXPRESSION, IqlType.EXPRESSION, config, sorting, sorting::setExpression);
 	}
 
 	private static String with(String field, Object obj) {

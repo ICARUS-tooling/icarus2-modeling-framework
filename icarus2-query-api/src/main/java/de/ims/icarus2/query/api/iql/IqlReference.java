@@ -61,20 +61,22 @@ public class IqlReference extends IqlUnique {
 
 	public enum ReferenceType {
 
-		REFERENCE("reference", '\0', false, true),
-		MEMBER("member", '$', false, false),
-		VARIABLE("variable", '@', true, false),
+		REFERENCE("reference", '\0', false, true, true),
+		MEMBER("member", '$', false, false, true),
+		VARIABLE("variable", '@', true, false, false),
 		;
 
 		private final String label;
 		private final char prefix;
-		private final boolean assignable, constant;
+		private final boolean assignable, constant, autoAssigned;
 
-		private ReferenceType(String label, char prefix, boolean assignable, boolean constant) {
+		private ReferenceType(String label, char prefix, boolean assignable,
+				boolean constant, boolean autoAssigned) {
 			this.label = label;
 			this.prefix = prefix;
 			this.assignable = assignable;
 			this.constant = constant;
+			this.autoAssigned = autoAssigned;
 		}
 
 		public char getPrefix() { return prefix; }
@@ -87,27 +89,8 @@ public class IqlReference extends IqlUnique {
 
 		/** Signals whether or not the underlying object reference will ever change. */
 		public boolean isConstant() { return constant; }
-	}
 
-	@Deprecated
-	public enum MemberType {
-
-		ITEM("item"),
-		EDGE("edge"),
-		FRAGMENT("fragment"),
-		CONTAINER("container"),
-		STRUCTURE("structure"),
-		;
-
-		private final String label;
-
-		private MemberType(String label) {
-			this.label = label;
-		}
-
-		@JsonValue
-		public String getLabel() {
-			return label;
-		}
+		/** Signals whether the reference will be automatically assigned by the framework. */
+		public boolean isAutoAssigned() { return autoAssigned; }
 	}
 }

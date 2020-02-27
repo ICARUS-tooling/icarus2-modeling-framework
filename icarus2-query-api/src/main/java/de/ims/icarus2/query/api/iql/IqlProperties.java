@@ -123,6 +123,8 @@ public final class IqlProperties {
 
 	public static final String REFERENCE_TYPE = IQL_NS_PREFIX+"referenceType";
 
+	public static final String MEMBER_TYPE = IQL_NS_PREFIX+"memberType";
+
 	public static final String QUERY_TYPE = IQL_NS_PREFIX+"queryType";
 
 	public static final String LANE_TYPE = IQL_NS_PREFIX+"laneType";

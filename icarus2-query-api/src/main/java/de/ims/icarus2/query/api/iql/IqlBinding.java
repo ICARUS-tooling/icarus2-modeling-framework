@@ -29,7 +29,9 @@ import java.util.function.Consumer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
+import de.ims.icarus2.query.api.eval.TypeInfo;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -55,6 +57,12 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	private String target;
 
 	/**
+	 * Specifies the member type to which bound elements must conform to.
+	 */
+	@JsonProperty(IqlProperties.MEMBER_TYPE)
+	private MemberType memberType;
+
+	/**
 	 * List of the actual member variables that should be bound
 	 * to the specified {@link #target target layer}.
 	 */
@@ -69,11 +77,14 @@ public class IqlBinding extends AbstractIqlQueryElement {
 		super.checkIntegrity();
 		checkStringNotEmpty(target, IqlProperties.TARGET);
 		checkCollectionNotEmpty(members, IqlProperties.MEMBERS);
+		checkNotNull(memberType, IqlProperties.MEMBER_TYPE);
 	}
 
 	public boolean isDistinct() { return distinct; }
 
 	public String getTarget() { return target; }
+
+	public MemberType getMemberType() { return memberType; }
 
 	public List<IqlReference> getMembers() { return CollectionUtils.unmodifiableListProxy(members); }
 
@@ -83,5 +94,29 @@ public class IqlBinding extends AbstractIqlQueryElement {
 
 	public void setTarget(String target) { this.target = checkNotEmpty(target); }
 
+	public void setMemberType(MemberType memberType) { this.memberType = requireNonNull(memberType); }
+
 	public void addMember(IqlReference member) { members.add(requireNonNull(member)); }
+
+	public enum MemberType {
+		ITEM("item", TypeInfo.ITEM),
+		EDGE("edge", TypeInfo.EDGE),
+		FRAGMENT("fragment", TypeInfo.FRAGMENT),
+		CONTAINER("container", TypeInfo.CONTAINER),
+		STRUCTURE("structure", TypeInfo.STRUCTURE),
+		;
+
+		private final TypeInfo type;
+		private final String label;
+
+		private MemberType(String label, TypeInfo type) {
+			this.type = requireNonNull(type);
+			this.label = requireNonNull(label);
+		}
+
+		@JsonValue
+		public String getLabel() { return label; }
+
+		public TypeInfo getType() { return type; }
+	}
 }
