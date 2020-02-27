@@ -63,7 +63,7 @@ public interface AnnotationLayer extends Layer, ManifestOwner<AnnotationLayerMan
 	 *
 	 * @return
 	 */
-	AnnotationStorage getAnnotationStorage();
+	@Nullable AnnotationStorage getAnnotationStorage();
 
 	/**
 	 * Defines the storage to be used for this layer.

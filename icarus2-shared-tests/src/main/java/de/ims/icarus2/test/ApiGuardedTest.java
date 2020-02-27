@@ -60,6 +60,7 @@ public interface ApiGuardedTest<T extends Object> extends TargetedTest<T> {
 			.testPropertiesIfApi()
 			.nullGuard(true)
 			.detectUnmarkedMethods(true)
+			.strictNameFilter(true)
 			.noArgsFallback(this::create);
 	}
 

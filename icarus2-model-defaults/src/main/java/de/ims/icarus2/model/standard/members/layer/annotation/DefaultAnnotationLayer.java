@@ -18,6 +18,8 @@ package de.ims.icarus2.model.standard.members.layer.annotation;
 
 import static java.util.Objects.requireNonNull;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage;
@@ -49,7 +51,7 @@ public class DefaultAnnotationLayer extends AbstractLayer<AnnotationLayerManifes
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer#getAnnotationStorage()
 	 */
 	@Override
-	public AnnotationStorage getAnnotationStorage() {
+	public @Nullable AnnotationStorage getAnnotationStorage() {
 		return storage;
 	}
 
