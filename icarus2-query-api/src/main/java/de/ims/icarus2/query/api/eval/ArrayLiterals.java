@@ -83,7 +83,10 @@ public final class ArrayLiterals {
 		public boolean isConstant() { return true; }
 
 		@Override
-		public Expression<T> duplicate(EvaluationContext context) { return this; }
+		public Expression<T> duplicate(EvaluationContext context) {
+			requireNonNull(context);
+			return this;
+		}
 
 		@Override
 		public boolean isFixedSize() { return true; }

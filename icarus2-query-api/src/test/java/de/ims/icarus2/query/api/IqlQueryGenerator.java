@@ -41,7 +41,6 @@ import java.util.stream.IntStream;
 import de.ims.icarus2.model.manifest.ManifestGenerator;
 import de.ims.icarus2.query.api.iql.IqlAliasedReference;
 import de.ims.icarus2.query.api.iql.IqlBinding;
-import de.ims.icarus2.query.api.iql.IqlBinding.MemberType;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
@@ -233,17 +232,15 @@ public class IqlQueryGenerator {
 		// mandatory data
 		binding.setTarget(index("target"));
 		binding.addMember(generateFull(IqlType.REFERENCE, config));
-		binding.setMemberType(MemberType.ITEM);
 
 		build.addFieldChange(binding::setDistinct, IqlProperties.DISTINCT, Boolean.TRUE);
 		build.addFieldChange(binding::setDistinct, IqlProperties.DISTINCT, Boolean.FALSE);
 		build.addFieldChange(binding::setTarget, IqlProperties.TARGET, index("target"));
+		build.addFieldChange(binding::setEdges, IqlProperties.EDGES, Boolean.TRUE);
+		build.addFieldChange(binding::setEdges, IqlProperties.EDGES, Boolean.FALSE);
 
 		for (int i = 0; i < config.getCount(IqlType.REFERENCE, DEFAULT_COUNT); i++) {
 			build.addNestedChange(IqlProperties.MEMBERS, IqlType.REFERENCE, config, binding, binding::addMember);
-		}
-		for( MemberType memberType : MemberType.values()) {
-			build.addEnumFieldChange(binding::setMemberType, IqlProperties.MEMBER_TYPE, memberType);
 		}
 	}
 

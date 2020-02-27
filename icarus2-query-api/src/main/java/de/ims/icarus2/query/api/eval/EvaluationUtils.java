@@ -42,6 +42,8 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
  */
 public class EvaluationUtils {
 
+	private EvaluationUtils() { /* no-op */ }
+
 	private static final Map<ValueType, TypeInfo> typeMap = new Reference2ReferenceOpenHashMap<>();
 
 	private static void registerType(ValueType valueType, TypeInfo type) {

@@ -79,6 +79,16 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 	private Boolean nullGuard;
 
 	/**
+	 * Allows extension of null guarding to protected and package private methods.
+	 * <p>
+	 * Private methods will not be guarded, as they represent strictly internal
+	 * contracts that should not be exposed.
+	 */
+	private Boolean nullGuardNonPublic;
+
+	private Boolean forceAccessible;
+
+	/**
 	 * Signals that a Guardian responsible for testing property
 	 * methods should automatically detect the methods to be tested.
 	 */
@@ -145,6 +155,18 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 	public ApiGuard<T> nullGuard(boolean nullGuard) {
 		assertNull(this.nullGuard, "nullGuard already set");
 		this.nullGuard = Boolean.valueOf(nullGuard);
+		return self();
+	}
+
+	public ApiGuard<T> nullGuardNonPublic(boolean nullGuardNonPublic) {
+		assertNull(this.nullGuardNonPublic, "nullGuardNonPublic already set");
+		this.nullGuardNonPublic = Boolean.valueOf(nullGuardNonPublic);
+		return self();
+	}
+
+	public ApiGuard<T> forceAccessible(boolean forceAccessible) {
+		assertNull(this.forceAccessible, "forceAccessible already set");
+		this.forceAccessible = Boolean.valueOf(forceAccessible);
 		return self();
 	}
 
@@ -228,6 +250,14 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 		return nullGuard!=null && nullGuard.booleanValue();
 	}
 
+	public boolean isNullGuardNonPublic() {
+		return nullGuardNonPublic!=null && nullGuardNonPublic.booleanValue();
+	}
+
+	public boolean isForceAccessible() {
+		return forceAccessible!=null && forceAccessible.booleanValue();
+	}
+
 	public boolean isDetectUnmarkedMethods() {
 		return detectUnmarkedMethods!=null && detectUnmarkedMethods.booleanValue();
 	}
@@ -257,6 +287,11 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 
 		if(noArgsConstructor!=null) {
 			final Constructor<T> constructor = noArgsConstructor;
+
+			if(isForceAccessible()) {
+				constructor.setAccessible(true);
+			}
+
 			creator = () -> {
 				try {
 					return constructor.newInstance();

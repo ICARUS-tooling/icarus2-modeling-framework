@@ -150,6 +150,8 @@ public class QueryProcessor {
 		requireNonNull(stream);
 		checkState("Query processed", !stream.isProcessed());
 
+		stream.setPayload(processPayload(stream.getRawPayload()));
+
 		String rawGrouping = stream.getRawGrouping().orElse(null);
 		if(!isNullOrEmpty(rawGrouping)) {
 			processGrouping(rawGrouping).forEach(stream::addGrouping);
@@ -158,8 +160,6 @@ public class QueryProcessor {
 		if(!isNullOrEmpty(rawResult)) {
 			processResult(rawResult, stream.getResult(), stream.isPrimary());
 		}
-
-		stream.setPayload(processPayload(stream.getRawPayload()));
 
 		stream.markProcessed();
 	}
@@ -309,6 +309,8 @@ public class QueryProcessor {
 
 		private boolean treeFeaturesUsed = false;
 		private boolean graphFeaturesUsed = false;
+
+
 
 		/** Unwraps arbitrarily nested wrapping expression to the deepest nested one */
 		private ExpressionContext unwrap(ExpressionContext ctx) {
@@ -483,6 +485,7 @@ public class QueryProcessor {
 
 			binding.setTarget(textOf(ctx.Identifier()));
 			binding.setDistinct(ctx.DISTINCT()!=null);
+			binding.setEdges(ctx.EDGES()!=null);
 			for(MemberContext mctx : ctx.member()) {
 				binding.addMember(processMember(mctx));
 			}
@@ -633,7 +636,7 @@ public class QueryProcessor {
 					//TODO need to revisit this limitation in the IQL specification!! (we might allow universal quantification here)
 					/* Info for todo: nodes are typically bound to items that are embedded into a
 					 * surrounding grouping (e.g. sentences) that provides a natural limitation for
-					 * the scope of universal quantification. So a universally node would read
+					 * the scope of universal quantification. So a universally quantified node would read
 					 * 'find container (sentence) where _ALL_ items match this one'. As a result we
 					 * would move the sanity check one level up and ensure that there cannot be any
 					 * concurrent nodes (i.e. the universally quantified node must be the sole top

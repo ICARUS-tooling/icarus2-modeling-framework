@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static java.util.Objects.requireNonNull;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -70,6 +72,7 @@ public interface Expression<T> {
 	 * The default implementation returns the expression itself.
 	 */
 	default Expression<T> optimize(EvaluationContext context) {
+		requireNonNull(context);
 		return this;
 	}
 
@@ -111,6 +114,9 @@ public interface Expression<T> {
 		return getResultType().isMember();
 	}
 
+	default boolean isProxy() {
+		return this instanceof ProxyExpression;
+	}
 
 	/**
 	 * Primitive equivalent of {@link #compute()} that avoids object generation and

@@ -83,6 +83,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerBitwiseNegation(source.duplicate(context));
 		}
 
@@ -94,6 +95,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(~newSource.computeAsLong());
@@ -125,6 +127,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerNegation(source.duplicate(context));
 		}
 
@@ -136,6 +139,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(-newSource.computeAsLong());
@@ -167,6 +171,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointNegation(source.duplicate(context));
 		}
 
@@ -179,6 +184,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Double>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> newSource =source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(-newSource.computeAsDouble());
@@ -210,6 +216,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new BooleanNegation(source.duplicate(context));
 		}
 
@@ -218,6 +225,7 @@ public class UnaryOperations {
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<Primitive<Boolean>> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return Literals.of(!newSource.computeAsBoolean());

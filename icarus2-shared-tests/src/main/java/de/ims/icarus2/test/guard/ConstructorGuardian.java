@@ -37,8 +37,12 @@ import de.ims.icarus2.test.reflect.RefUtils;
  */
 class ConstructorGuardian<T> extends Guardian<T> {
 
+	private final boolean forceAccessible;
+
 	public ConstructorGuardian(ApiGuard<T> apiGuard) {
 		super(apiGuard);
+
+		forceAccessible = apiGuard.isForceAccessible();
 	}
 
 	/**
@@ -65,6 +69,10 @@ class ConstructorGuardian<T> extends Guardian<T> {
 
 		if(variations.isEmpty()) {
 			return dynamicContainer(baseLabel+" - no null-guarded arguments", Collections.emptyList());
+		}
+
+		if(forceAccessible) {
+			constructor.setAccessible(true);
 		}
 
 		return dynamicContainer(

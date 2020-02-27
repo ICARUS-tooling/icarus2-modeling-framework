@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -58,6 +59,7 @@ import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
@@ -94,6 +96,27 @@ public abstract class EvaluationContext {
 		return new RootContextBuilder();
 	}
 
+	private enum ContextType {
+		ROOT,
+		LANE,
+		ELEMENT,
+		;
+	}
+
+	private static class BindingInfo {
+		private final ItemLayer layer;
+		private final boolean edges;
+
+		public BindingInfo(ItemLayer layer, boolean edges) {
+			this.layer = requireNonNull(layer);
+			this.edges = edges;
+		}
+
+		public ItemLayer getLayer() { return layer; }
+
+		public boolean isEdges() { return edges; }
+	}
+
 	private static class RootContext extends EvaluationContext {
 
 		/** The corpus this context refers to. */
@@ -126,6 +149,15 @@ public abstract class EvaluationContext {
 		 */
 		private final Map<ItemLayer, Set<AnnotationLayer>> annotationSources;
 
+		/**
+		 * Dynamically populated lookup for variable expressions.
+		 */
+		private final Map<String, Assignable<?>> variables = new Object2ObjectOpenHashMap<>();
+		/** Maps member labels to layers */
+		private final Map<String, BindingInfo> bindings;
+		/** Maps member names to */
+		private final Map<String, Assignable<? extends Item>> members;
+
 		private RootContext(RootContextBuilder builder) {
 			super(builder);
 
@@ -136,6 +168,7 @@ public abstract class EvaluationContext {
 
 			layers = new Object2ObjectOpenHashMap<>(builder.namedLayers);
 			aliases = new ObjectOpenHashSet<>(builder.namedLayers.keySet());
+			bindings = new Object2ObjectOpenHashMap<>(builder.bindings);
 
 			for(Layer layer : scope.getLayers()) {
 				String key = key(layer);
@@ -175,7 +208,59 @@ public abstract class EvaluationContext {
 					return layer==aLayer || allowsTransitiveAnnotation;
 				});
 			}
+
+			members = new Object2ObjectOpenHashMap<>();
+			for(Entry<String, BindingInfo> entry : bindings.entrySet()) {
+				TypeInfo type;
+			}
 		}
+
+		private TypeInfo resolveMemberType(BindingInfo info) {
+			// Easy mode: specifically declared edge type means we don't need to run further checks
+			if(info.isEdges()) {
+				return TypeInfo.EDGE;
+			}
+
+			ItemLayer layer = info.getLayer();
+
+			if(ModelUtils.isFragmentLayer(layer)) {
+				// Fragment layers can only contain fragments as top-level elements
+				return TypeInfo.FRAGMENT;
+			} else if(ModelUtils.isStructureLayer(layer)) {
+				// Structure layer can only contain structures as top-level elements
+				//TODO verify that assumption!!
+				return TypeInfo.STRUCTURE;
+			}
+
+			/*
+			 * Leftover cases: Layer can contain structures, containers or bare items
+			 * as top-level elements. We need to inspect the manifest to answer this
+			 * question properly.
+			 */
+
+			Optional<ContainerManifestBase<?>> root = layer.getManifest().getRootContainerManifest();
+			if(root.isPresent()) {
+				if(root.get().getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
+					return TypeInfo.STRUCTURE;
+				}
+				return TypeInfo.CONTAINER;
+			}
+
+			return TypeInfo.ITEM;
+		}
+
+		@Override
+		protected ContextType getType() { return ContextType.ROOT; }
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public LaneContextBuilder derive() { return new LaneContextBuilder(this); }
+
+		@Override
+		public Corpus getCorpus() { return corpus; }
+
+		@Override
+		public Scope getScope() { return scope; }
 
 		private static String key(Layer layer) {
 			return ManifestUtils.requireId(layer.getManifest());
@@ -203,10 +288,9 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		public Corpus getCorpus() { return corpus; }
-
-		@Override
-		public Scope getScope() { return scope; }
+		public Assignable<?> getVariable(String name) {
+			return variables.computeIfAbsent(name, k -> References.variable());
+		}
 	}
 
 	private static class AnnotationLink {
@@ -298,6 +382,7 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Expression<Container> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new ContainerStore(type);
 		}
 	}
@@ -376,6 +461,7 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Expression<Item> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new ItemStore(type);
 		}
 	}
@@ -387,50 +473,34 @@ public abstract class EvaluationContext {
 		return (ItemLayer) layer;
 	}
 
-	private static class SubContext extends EvaluationContext {
+	private static class LaneContext extends EvaluationContext {
 
-		/** Uplink to another SubContext or an instance of RootContext */
-		private final EvaluationContext parent;
-
+		/** Uplink to the mandatory RootContext */
+		private final RootContext parent;
 		private final LaneInfo lane;
-		private final ElementInfo element;
-
 		private final ContainerStore containerStore;
-		private final ItemStore itemStore;
 
-		/** Maps member labels to layers */
-		private final Map<String, ItemLayer> bindings;
-
-		/**
-		 * Lazily constructed lookup to map from annotation keys to actual sources.
-		 * This map contains all the annotations that target instances of this context's
-		 * element and that can be referenced by name.
-		  */
-		private Map<String, List<AnnotationLink>> annotationLookup;
-
-		/** Layers that allow unknown keys for annotations */
-		private List<AnnotationLayer> catchAllLayers;
-
-		private final Map<String, AnnotationInfo> annotationCache = new Object2ObjectOpenHashMap<>();
-
-		private SubContext(SubContextBuilder builder) {
+		private LaneContext(LaneContextBuilder builder) {
 			super(builder);
 
-			// First assign the fields we need for resolving other parts
 			parent = builder.parent;
-			bindings = new Object2ObjectOpenHashMap<>(builder.bindings);
 
 			lane = resolve(builder.lane);
-			element = resolve(builder.element);
-
 			containerStore = ContainerStore.from(lane);
-			itemStore = ItemStore.from(element);
 		}
 
+		@Override
+		protected ContextType getType() { return ContextType.ROOT; }
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public ElementContextBuilder derive() { return new ElementContextBuilder(this); }
+
+		@Override
+		public Optional<EvaluationContext> getParent() { return Optional.of(parent); }
+
 		private LaneInfo resolve(IqlLane lane) {
-			if(lane==null) {
-				return null;
-			}
+			requireNonNull(lane);
 
 			// If lane is a proxy, we have no other lanes and need to use the scope's primary layer
 			if(lane.isProxy()) {
@@ -443,10 +513,60 @@ public abstract class EvaluationContext {
 			return new LaneInfo(lane, ensureItemLayer(layer));
 		}
 
+		@Override
+		public Optional<IqlLane> getLane() {
+			return Optional.of(lane.getLane());
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() {
+			return Optional.ofNullable((T)containerStore);
+		}
+	}
+
+	private static class ElementContext extends EvaluationContext {
+
+		/** Uplink to an arbitrary ElementContext */
+		private final EvaluationContext parent;
+
+		private final ElementInfo element;
+
+		private final ItemStore itemStore;
+
+		/**
+		 * Lazily constructed lookup to map from annotation keys to actual sources.
+		 * This map contains all the annotations that target instances of this context's
+		 * element and that can be referenced by name.
+		  */
+		private Map<String, List<AnnotationLink>> annotationLookup;
+
+		/** Layers that allow unknown keys for annotations */
+		private List<AnnotationLayer> catchAllLayers;
+
+		/** Maps variable names to assignable expressions */
+		private final Map<String, AnnotationInfo> annotationCache = new Object2ObjectOpenHashMap<>();
+
+		private ElementContext(ElementContextBuilder builder) {
+			super(builder);
+
+			// First assign the fields we need for resolving other parts
+			parent = builder.parent;
+
+			element = resolve(builder.element);
+
+			itemStore = ItemStore.from(element);
+		}
+
+		@Override
+		protected ContextType getType() { return ContextType.ROOT; }
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public ElementContextBuilder derive() { return new ElementContextBuilder(this); }
+
 		private ElementInfo resolve(IqlProperElement element) {
-			if(element==null) {
-				return null;
-			}
+			requireNonNull(element);
 
 			LaneInfo laneInfo = requireLaneInfo();
 
@@ -461,8 +581,10 @@ public abstract class EvaluationContext {
 
 			String label = element.getLabel().orElse(null);
 			if(label!=null) {
+				ItemLayer layer = resolveMember(label).orElseThrow(
+						() -> EvaluationUtils.forUnknownIdentifier(label, "layer"));
 				// Explicitly bound element -> can only have 1 source layer
-				return new ElementInfo(element, list(forMemberLabel(label)));
+				return new ElementInfo(element, list(layer));
 			}
 
 			// Unbound element can stem from any base layer of current lane
@@ -474,17 +596,11 @@ public abstract class EvaluationContext {
 			return new ElementInfo(element, baseLayers.toList());
 		}
 
-		private ItemLayer forMemberLabel(String label) {
-			ItemLayer layer = bindings.get(label);
-			if(layer==null)
-				throw EvaluationUtils.forUnknownIdentifier(label, "layer");
-			return layer;
-		}
-
 		private LaneInfo requireLaneInfo() {
-			return getInheritable(this, ctx -> ctx.lane).orElseThrow(
-					() -> new QueryException(GlobalErrorCode.INTERNAL_ERROR,
-					"No lane available"));
+			LaneInfo lane = ((LaneContext)getLaneContext()).lane;
+			if(lane==null)
+				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR, "No lane info available");
+			return lane;
 		}
 
 		private ElementInfo requireElementInfo() {
@@ -540,14 +656,14 @@ public abstract class EvaluationContext {
 			}
 		}
 
-		private static @Nullable <T> Optional<T> getInheritable(SubContext ctx,
-				Function<SubContext, T> getter) {
+		private static @Nullable <T> Optional<T> getInheritable(ElementContext ctx,
+				Function<ElementContext, T> getter) {
 			while(ctx!=null) {
 				T value = getter.apply(ctx);
 				if(value!=null) {
 					return Optional.of(value);
 				}
-				ctx = ctx.parent instanceof SubContext ? (SubContext)ctx.parent : null;
+				ctx = ctx.parent instanceof ElementContext ? (ElementContext)ctx.parent : null;
 			}
 			return Optional.empty();
 		}
@@ -556,19 +672,8 @@ public abstract class EvaluationContext {
 		public Optional<EvaluationContext> getParent() { return Optional.of(parent); }
 
 		@Override
-		public Optional<IqlLane> getLane() {
-			return getInheritable(this, ctx -> ctx.lane).map(LaneInfo::getLane);
-		}
-
-		@Override
 		public Optional<IqlProperElement> getElement() {
 			return getInheritable(this, ctx -> ctx.element).map(ElementInfo::getElement);
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() {
-			return getInheritable(this, ctx -> (T)ctx.containerStore);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -722,15 +827,33 @@ public abstract class EvaluationContext {
 		//TODO
 	}
 
-	public boolean isRoot() {
-		return !getParent().isPresent();
-	}
+	protected abstract ContextType getType();
 
+	public boolean isRoot() { return getType()==ContextType.ROOT; }
+
+	public boolean isLane() { return getType()==ContextType.LANE; }
+
+	public boolean isElement() { return getType()==ContextType.ELEMENT; }
+
+	@SuppressWarnings("null")
 	public @Nullable EvaluationContext getRootContext() {
 		EvaluationContext ctx = this;
 		while(!ctx.isRoot()) {
 			ctx = getParent().orElse(null);
 		}
+		if(ctx==null || !ctx.isRoot())
+			throw new QueryException(GlobalErrorCode.ILLEGAL_STATE,  "No root context available");
+		return ctx;
+	}
+
+	@SuppressWarnings("null")
+	public @Nullable EvaluationContext getLaneContext() {
+		EvaluationContext ctx = this;
+		while(!ctx.isLane()) {
+			ctx = getParent().orElse(null);
+		}
+		if(ctx==null || !ctx.isLane())
+			throw new QueryException(GlobalErrorCode.ILLEGAL_STATE,  "No lane context available");
 		return ctx;
 	}
 
@@ -740,9 +863,7 @@ public abstract class EvaluationContext {
 	 * contexts etc...
 	 * @return
 	 */
-	public SubContextBuilder derive() {
-		return new SubContextBuilder(this);
-	}
+	public abstract <B extends BuilderBase<B, EvaluationContext>> B derive();
 
 	protected void cleanup() { /* no-op */ }
 
@@ -772,7 +893,9 @@ public abstract class EvaluationContext {
 
 	public Optional<Layer> findLayer(String name) { return getRootContext().findLayer(name); }
 
-	public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() { return Optional.empty(); }
+	public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() {
+		return getLaneContext().getContainerStore();
+	}
 
 	public <T extends Expression<Item> & Mutable<Item>> Optional<T> getElementStore() { return Optional.empty(); }
 
@@ -786,6 +909,13 @@ public abstract class EvaluationContext {
 	protected Map<ItemLayer, Set<AnnotationLayer>> getAnnotationSources() {
 		return getRootContext().getAnnotationSources();
 	}
+
+	//TODO rethink the entire variable scoping concept
+	public Assignable<?> getVariable(String name) { return getRootContext().getVariable(name); }
+
+	public Optional<ItemLayer> resolveMember(String name) { return getRootContext().resolveMember(name); }
+
+	public Optional<Expression<? extends Item>> getMember(String name) { return getRootContext().getMember(name); }
 
 	public boolean isSwitchSet(QuerySwitch qs) {
 		return isSwitchSet(qs.getKey());
@@ -926,6 +1056,8 @@ public abstract class EvaluationContext {
 
 		/** Additional properties that have been set for this query. */
 		private final Map<String, Object> properties = new Object2ObjectOpenHashMap<>();
+		/** Fixed bindings from identifiers to item layers or their elements */
+		private final Map<String, BindingInfo> bindings = new Object2ObjectOpenHashMap<>();
 
 		public RootContextBuilder namedLayer(String alias, Layer layer) {
 			requireNonNull(alias);
@@ -973,60 +1105,31 @@ public abstract class EvaluationContext {
 			return this;
 		}
 
-		@Override
-		protected void validate() {
-			// TODO Auto-generated method stub
-			super.validate();
-		}
-
-		@Override
-		protected RootContext create() { return new RootContext(this); }
-
-	}
-
-	public static final class SubContextBuilder extends BuilderBase<SubContextBuilder, SubContext> {
-
-		private final EvaluationContext parent;
-
-		private IqlLane lane;
-		private IqlProperElement element;
-		private Map<String, ItemLayer> bindings = new Object2ObjectOpenHashMap<>();
-
-		private SubContextBuilder(EvaluationContext parent) {
-			this.parent = requireNonNull(parent);
-		}
-
-		public SubContextBuilder lane(IqlLane lane) {
-			requireNonNull(lane);
-			checkState("Lane already set", this.lane==null);
-			this.lane = lane;
-			return this;
-		}
-
-		public SubContextBuilder element(IqlProperElement element) {
-			requireNonNull(element);
-			checkState("Element already set", this.element==null);
-			this.element = element;
-			return this;
-		}
-
-		public SubContextBuilder bind(String name, ItemLayer layer) {
+		public RootContextBuilder bind(String name, ItemLayer layer, boolean edges) {
 			requireNonNull(name);
 			requireNonNull(layer);
 			checkNotEmpty(name);
 			checkState("Name already bound: "+name, !bindings.containsKey(name));
-			bindings.put(name, layer);
+			bindings.put(name, new BindingInfo(layer, edges));
 			return this;
 		}
 
-		public SubContextBuilder bind(IqlBinding binding) {
+		public RootContextBuilder bind(IqlBinding binding) {
 			requireNonNull(binding);
-			ItemLayer targetLayer = ensureItemLayer(parent.requireLayer(binding.getTarget()));
+
+			String target = binding.getTarget();
+			Layer layer = namedLayers.get(target);
+			if(layer==null)
+				throw EvaluationUtils.forUnknownIdentifier(target, "bound layer");
+			if(!ModelUtils.isItemLayer(layer))
+				throw EvaluationUtils.forIncorrectUse("Binding target for '%s' must be an item layer - got %s",
+						target, layer.getManifest().getManifestType());
+			ItemLayer targetLayer = (ItemLayer)layer;
 
 			for(IqlReference ref : binding.getMembers()) {
 				String name = ref.getName();
 				checkState("Name already bound: "+name, !bindings.containsKey(name));
-				bindings.put(name, targetLayer);
+				bindings.put(name, new BindingInfo(targetLayer, binding.isEdges()));
 			}
 			return this;
 		}
@@ -1038,7 +1141,64 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		protected SubContext create() { return new SubContext(this); }
+		protected RootContext create() { return new RootContext(this); }
+
+	}
+
+	public static final class LaneContextBuilder extends BuilderBase<LaneContextBuilder, LaneContext> {
+
+		private final RootContext parent;
+
+		private IqlLane lane;
+
+		private LaneContextBuilder(RootContext parent) {
+			this.parent = requireNonNull(parent);
+		}
+
+		public LaneContextBuilder lane(IqlLane lane) {
+			requireNonNull(lane);
+			checkState("Lane already set", this.lane==null);
+			this.lane = lane;
+			return this;
+		}
+
+		@Override
+		protected void validate() {
+			// TODO Auto-generated method stub
+			super.validate();
+		}
+
+		@Override
+		protected LaneContext create() { return new LaneContext(this); }
+
+	}
+
+	public static final class ElementContextBuilder extends BuilderBase<ElementContextBuilder, ElementContext> {
+
+		private final EvaluationContext parent;
+
+		private IqlProperElement element;
+
+		private ElementContextBuilder(EvaluationContext parent) {
+			this.parent = requireNonNull(parent);
+		}
+
+		public ElementContextBuilder element(IqlProperElement element) {
+			requireNonNull(element);
+			checkState("Element already set", this.element==null);
+			this.element = element;
+			return this;
+		}
+
+		@Override
+		protected void validate() {
+			super.validate();
+
+			checkState("Element not set", element!=null);
+		}
+
+		@Override
+		protected ElementContext create() { return new ElementContext(this); }
 
 	}
 }

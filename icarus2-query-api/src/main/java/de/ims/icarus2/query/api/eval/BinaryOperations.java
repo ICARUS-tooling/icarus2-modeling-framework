@@ -181,6 +181,8 @@ public class BinaryOperations {
 		 */
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
+			requireNonNull(context);
+
 			@SuppressWarnings("unchecked")
 			E newLeft = (E) left.duplicate(context);
 			@SuppressWarnings("unchecked")
@@ -204,6 +206,8 @@ public class BinaryOperations {
 		 */
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
+			requireNonNull(context);
+
 			@SuppressWarnings("unchecked")
 			E newLeft = (E) left.optimize(context);
 			@SuppressWarnings("unchecked")

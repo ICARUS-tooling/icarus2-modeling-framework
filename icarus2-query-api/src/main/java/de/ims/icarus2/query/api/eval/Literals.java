@@ -44,7 +44,10 @@ public final class Literals {
 	static abstract class Literal<T> implements Expression<T> {
 
 		@Override
-		public Expression<T> duplicate(EvaluationContext ctx) { return this; }
+		public Expression<T> duplicate(EvaluationContext context) {
+			requireNonNull(context);
+			return this;
+		}
 
 		/** Literals are inherently constant */
 		@Override

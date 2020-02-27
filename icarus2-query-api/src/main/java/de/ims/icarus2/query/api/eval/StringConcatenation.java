@@ -67,6 +67,7 @@ public class StringConcatenation implements Expression<CharSequence> {
 	 */
 	@Override
 	public StringConcatenation duplicate(EvaluationContext context) {
+		requireNonNull(context);
 		return new StringConcatenation(Stream.of(elements)
 				.map(ex -> ex.duplicate(context))
 				.toArray(Expression[]::new));
@@ -80,6 +81,7 @@ public class StringConcatenation implements Expression<CharSequence> {
 	 */
 	@Override
 	public Expression<CharSequence> optimize(EvaluationContext context) {
+		requireNonNull(context);
 		List<Expression<CharSequence>> newElements = new ArrayList<>(elements.length);
 		StringBuilder buffer = new StringBuilder();
 		boolean hasChanged = false;

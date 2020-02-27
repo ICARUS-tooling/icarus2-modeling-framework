@@ -316,7 +316,7 @@ public class ExpressionFactory {
 
 	private Expression<?> processReference(ReferenceContext ctx) {
 		if(ctx.variableName()!=null) {
-
+			return context.getVariable(textOf(ctx.variableName().Identifier()));
 		} else if(ctx.member()!=null) {
 
 		} else if(ctx.Identifier()!=null) {

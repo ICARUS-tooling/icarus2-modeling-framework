@@ -173,6 +173,7 @@ public class Conversions {
 
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> newSource = source.optimize(context);
 			if(newSource.isConstant()) {
 				return toConstant(newSource);
@@ -199,6 +200,7 @@ public class Conversions {
 
 		@Override
 		public ListExpression<T,E> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			ListExpression<?,?> newSource = (ListExpression<?, ?>) source.optimize(context);
 			if(newSource.isConstant()) {
 				return toConstant(newSource);
@@ -246,6 +248,7 @@ public class Conversions {
 
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerCast(source.duplicate(context), cast);
 		}
 
@@ -280,6 +283,10 @@ public class Conversions {
 		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
 		@Override
 		public long[] compute() {
+			return compute(source);
+		}
+
+		private long[] compute(ListExpression<?,?> source) {
 			long[] array = new long[source.size()];
 			for (int i = 0; i < array.length; i++) {
 				array[i] = cast.applyAsLong(source, i);
@@ -289,12 +296,13 @@ public class Conversions {
 
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerListCast((ListExpression<?, ?>)source.duplicate(context), cast);
 		}
 
 		@Override
 		protected ListExpression<long[], Primitive<Long>> toConstant(ListExpression<?,?> source) {
-			return ArrayLiterals.of(compute());
+			return ArrayLiterals.of(compute(source));
 		}
 
 		@Override
@@ -343,6 +351,7 @@ public class Conversions {
 
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointCast(source.duplicate(context), cast);
 		}
 
@@ -377,6 +386,10 @@ public class Conversions {
 		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
 		@Override
 		public double[] compute() {
+			return compute(source);
+		}
+
+		private double[] compute(ListExpression<?,?> source) {
 			double[] array = new double[source.size()];
 			for (int i = 0; i < array.length; i++) {
 				array[i] = cast.applyAsDouble(source, i);
@@ -386,12 +399,13 @@ public class Conversions {
 
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointListCast((ListExpression<?, ?>)source.duplicate(context), cast);
 		}
 
 		@Override
 		protected ListExpression<double[], Primitive<Double>> toConstant(ListExpression<?,?> source) {
-			return ArrayLiterals.of(compute());
+			return ArrayLiterals.of(compute(source));
 		}
 
 		@Override
@@ -437,6 +451,7 @@ public class Conversions {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new BooleanCast(source.duplicate(context), cast);
 		}
 
@@ -471,6 +486,10 @@ public class Conversions {
 		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
 		@Override
 		public boolean[] compute() {
+			return compute(source);
+		}
+
+		private boolean[] compute(ListExpression<?,?> source) {
 			boolean[] array = new boolean[source.size()];
 			for (int i = 0; i < array.length; i++) {
 				array[i] = cast.test(source, i);
@@ -480,12 +499,13 @@ public class Conversions {
 
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new BooleanListCast((ListExpression<?, ?>)source.duplicate(context), cast);
 		}
 
 		@Override
 		protected ListExpression<boolean[], Primitive<Boolean>> toConstant(ListExpression<?,?> source) {
-			return ArrayLiterals.of(compute());
+			return ArrayLiterals.of(compute(source));
 		}
 
 		@Override
@@ -523,6 +543,7 @@ public class Conversions {
 
 		@Override
 		public Expression<CharSequence> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new TextCast(source.duplicate(context), cast);
 		}
 
@@ -553,6 +574,10 @@ public class Conversions {
 		//TODO suuuper expensive and inefficient, but we can't rly do anything about it?
 		@Override
 		public CharSequence[] compute() {
+			return compute(source);
+		}
+
+		private CharSequence[] compute(ListExpression<?,?> source) {
 			CharSequence[] array = new CharSequence[source.size()];
 			for (int i = 0; i < array.length; i++) {
 				array[i] = cast.applyAsText(source, i);
@@ -565,12 +590,13 @@ public class Conversions {
 
 		@Override
 		public Expression<CharSequence[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new TextListCast((ListExpression<?, ?>)source.duplicate(context), cast);
 		}
 
 		@Override
 		protected ListExpression<CharSequence[], CharSequence> toConstant(ListExpression<?,?> source) {
-			return ArrayLiterals.ofGeneric(compute());
+			return ArrayLiterals.ofGeneric(compute(source));
 		}
 
 		@Override

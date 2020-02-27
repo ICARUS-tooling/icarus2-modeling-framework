@@ -101,7 +101,7 @@ standaloneExpression : expression EOF ;
 /** 
  * Actual selector part of a query:
  * 
- * Bindings can be sued to simplify the subsequent part of the query.
+ * Bindings can (and must!!) be used to simplify the subsequent part of the query.
  * Local constraints are the only obligatory part and define the basic
  * complexity for evaluating the query. Global constraints are optional and 
  * can cause unlimited increase in complexity!
@@ -123,9 +123,13 @@ bindingsList
  * NOT match the same target. Depending on the localConstraint used in the query, this
  * might be redundant (e.g. when using the member references as identifiers for tree nodes
  * who already are structurally distinct), but can still be used to make that fact explicit.
+ * 
+ * The 'EDGES' keyword declares the binding to target edges in the specified layer instead of
+ * fragments or other 'first class' item derivatives. Note that edges are always distinct and
+ * as such a combination of the 'EDGES' and 'DISTINCT' keywords is not possible!
  */
 binding
-	: DISTINCT? member (COMMA member)* FROM Identifier
+	: (DISTINCT | EDGES)? member (COMMA member)* FROM Identifier
 	;
 
 selectiveStatement
@@ -523,6 +527,7 @@ TREE : 'TREE' | 'tree' ;
 OR : 'OR' | 'or' ;
 AND : 'AND' | 'and' ;
 AS : 'AS' | 'as' ;
+EDGES : 'EDGES' | 'edges' ;
 FROM : 'FROM' | 'from' ;
 ALL : 'ALL' | 'all' ;
 NOT : 'NOT' | 'not' ;

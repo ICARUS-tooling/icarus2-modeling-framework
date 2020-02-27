@@ -38,6 +38,7 @@ import de.ims.icarus2.test.GenericTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -50,6 +51,13 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  */
 public interface ExpressionTest<T>
 		extends ApiGuardedTest<Expression<?>>, GenericTest<Expression<?>> {
+
+	@Override
+	default void configureApiGuard(ApiGuard<Expression<?>> apiGuard) {
+		ApiGuardedTest.super.configureApiGuard(apiGuard);
+
+		apiGuard.forceAccessible(true);
+	}
 
 	T constant();
 

@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 
+import de.ims.icarus2.apiguard.Unguarded;
 import de.ims.icarus2.query.api.eval.Expression.ProxyExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -65,7 +66,10 @@ public class Expressions {
 		public T compute() { return value; }
 
 		@Override
-		public Expression<T> duplicate(EvaluationContext context) { return this; }
+		public Expression<T> duplicate(EvaluationContext context) {
+			requireNonNull(context);
+			return this;
+		}
 
 		@Override
 		public boolean isConstant() { return true; }
@@ -146,6 +150,7 @@ public class Expressions {
 		public T compute() { throw EvaluationUtils.forProxyCall(); }
 
 		@Override
+		@Unguarded("No supposed to be called")
 		public Expression<T> duplicate(EvaluationContext context) { throw EvaluationUtils.forProxyCall(); }
 	}
 }

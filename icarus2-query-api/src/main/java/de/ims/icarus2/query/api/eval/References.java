@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import de.ims.icarus2.model.api.members.item.Item;
+
 /**
  * @author Markus Gärtner
  *
@@ -26,6 +28,16 @@ package de.ims.icarus2.query.api.eval;
 public final class References {
 
 	private References() { /* no-op */ }
+
+	public static Assignable<?> variable() {
+		//TODO implement
+		throw new UnsupportedOperationException();
+	}
+
+	public static Assignable<? extends Item> member(String label, TypeInfo type) {
+		//TODO implement
+		throw new UnsupportedOperationException();
+	}
 
 	//TODO
 }

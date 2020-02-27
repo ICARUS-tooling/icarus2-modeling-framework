@@ -288,6 +288,7 @@ public class SetPredicates {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerSetPredicate(
 					mode,
 					target==null ? listTarget.duplicate(context) : target.duplicate(context),
@@ -304,6 +305,7 @@ public class SetPredicates {
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> oldTarget = target==null ? listTarget : target;
 			Expression<?> newTarget = oldTarget.optimize(context);
 
@@ -544,6 +546,7 @@ public class SetPredicates {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointSetPredicate(
 					mode,
 					target==null ? listTarget.duplicate(context) : target.duplicate(context),
@@ -560,6 +563,7 @@ public class SetPredicates {
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> oldTarget = target==null ? listTarget : target;
 			Expression<?> newTarget = oldTarget.optimize(context);
 
@@ -810,6 +814,7 @@ public class SetPredicates {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new TextSetPredicate(
 					mode,
 					target==null ? listTarget.duplicate(context) : target.duplicate(context),
@@ -829,6 +834,7 @@ public class SetPredicates {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?> oldTarget = target==null ? listTarget : target;
 			Expression<?> newTarget = oldTarget.optimize(context);
 

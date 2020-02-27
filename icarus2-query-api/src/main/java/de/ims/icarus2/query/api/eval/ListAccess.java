@@ -194,6 +194,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerAccess(
 					(IntegerListExpression<?>)source.duplicate(context),
 					index.duplicate(context));
@@ -201,6 +202,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			IntegerListExpression<?> newSource = (IntegerListExpression<?>) source.optimize(context);
 			Expression<?> newIndex = index.optimize(context);
 
@@ -272,6 +274,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerBatchAccess(
 					(IntegerListExpression<?>)source.duplicate(context),
 					(IntegerListExpression<?>)index.duplicate(context));
@@ -279,6 +282,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<long[]> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			IntegerListExpression<?> newSource = (IntegerListExpression<?>) source.optimize(context);
 			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
 
@@ -340,6 +344,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new IntegerListWrapper(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
 						.toArray(Expression<?>[]::new));
@@ -347,6 +352,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<long[]> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
 					.toArray(Expression<?>[]::new);
@@ -391,6 +397,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointAccess(
 					(FloatingPointListExpression<?>)source.duplicate(context),
 					index.duplicate(context));
@@ -398,6 +405,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<Primitive<Double>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) source.optimize(context);
 			Expression<?> newIndex = index.optimize(context);
 
@@ -469,6 +477,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointBatchAccess(
 					(FloatingPointListExpression<?>)source.duplicate(context),
 					(IntegerListExpression<?>)index.duplicate(context));
@@ -476,6 +485,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<double[]> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) source.optimize(context);
 			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
 
@@ -537,6 +547,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new FloatingPointListWrapper(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
 						.toArray(Expression<?>[]::new));
@@ -544,6 +555,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<double[]> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<?>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
 					.toArray(Expression<?>[]::new);
@@ -585,6 +597,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new BooleanAccess(
 					(BooleanListExpression<?>)source.duplicate(context),
 					(Expression<?>)index.duplicate(context));
@@ -592,6 +605,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			BooleanListExpression<?> newSource = (BooleanListExpression<?>) source.optimize(context);
 			Expression<?> newIndex = index.optimize(context);
 
@@ -663,6 +677,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new BooleanBatchAccess(
 					(BooleanListExpression<?>)source.duplicate(context),
 					(IntegerListExpression<?>)index.duplicate(context));
@@ -670,6 +685,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<boolean[]> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			BooleanListExpression<?> newSource = (BooleanListExpression<?>) source.optimize(context);
 			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
 
@@ -731,6 +747,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new BooleanListWrapper(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
 						.toArray(Expression[]::new));
@@ -738,6 +755,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<boolean[]> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<Primitive<Boolean>>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
 					.toArray(Expression[]::new);
@@ -773,6 +791,7 @@ public final class ListAccess {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new ObjectAccess<>(
 					(ListExpression<?, T>)source.duplicate(context),
 					(Expression<?>)index.duplicate(context));
@@ -780,6 +799,7 @@ public final class ListAccess {
 
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			@SuppressWarnings("unchecked")
 			ListExpression<?, T> newSource = (ListExpression<?, T>) source.optimize(context);
 			Expression<?> newIndex = index.optimize(context);
@@ -850,6 +870,7 @@ public final class ListAccess {
 		@SuppressWarnings("unchecked")
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new ObjectBatchAccess<>(
 					(ListExpression<?, E>)source.duplicate(context),
 					(IntegerListExpression<?>)index.duplicate(context));
@@ -857,6 +878,7 @@ public final class ListAccess {
 
 		@Override
 		public ListExpression<E[], E> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			@SuppressWarnings("unchecked")
 			ListExpression<?, E> newSource = (ListExpression<?, E>) source.optimize(context);
 			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
@@ -920,6 +942,7 @@ public final class ListAccess {
 
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
+			requireNonNull(context);
 			return new ObjectWrapper<>(Stream.of(source)
 						.map(ne -> ne.duplicate(context))
 						.map(Expression.class::cast)
@@ -928,6 +951,7 @@ public final class ListAccess {
 
 		@Override
 		public ListExpression<E[], E> optimize(EvaluationContext context) {
+			requireNonNull(context);
 			Expression<E>[] newSource = Stream.of(source)
 					.map(ne -> ne.optimize(context))
 					.map(Expression.class::cast)

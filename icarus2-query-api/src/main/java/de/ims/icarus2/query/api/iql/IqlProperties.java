@@ -97,6 +97,8 @@ public final class IqlProperties {
 
 	public static final String DISTINCT = IQL_NS_PREFIX+"distinct";
 
+	public static final String EDGES = IQL_NS_PREFIX+"edges";
+
 	public static final String MEMBERS = IQL_NS_PREFIX+"members";
 
 	public static final String TARGET = IQL_NS_PREFIX+"target";
@@ -122,8 +124,6 @@ public final class IqlProperties {
 	public static final String EDGE_TYPE = IQL_NS_PREFIX+"edgeType";
 
 	public static final String REFERENCE_TYPE = IQL_NS_PREFIX+"referenceType";
-
-	public static final String MEMBER_TYPE = IQL_NS_PREFIX+"memberType";
 
 	public static final String QUERY_TYPE = IQL_NS_PREFIX+"queryType";
 

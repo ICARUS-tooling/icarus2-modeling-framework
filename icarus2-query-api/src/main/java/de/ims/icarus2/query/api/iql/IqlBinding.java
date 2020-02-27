@@ -57,10 +57,14 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	private String target;
 
 	/**
-	 * Specifies the member type to which bound elements must conform to.
+	 * Declares this binding to target edges in the specified structure.
+	 * <p>
+	 * Note that the {@link #getTarget()} of this binding must resolve to
+	 * a structure layer in order for this to work!
 	 */
-	@JsonProperty(IqlProperties.MEMBER_TYPE)
-	private MemberType memberType;
+	@JsonProperty(IqlProperties.EDGES)
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean edges = false;
 
 	/**
 	 * List of the actual member variables that should be bound
@@ -77,14 +81,13 @@ public class IqlBinding extends AbstractIqlQueryElement {
 		super.checkIntegrity();
 		checkStringNotEmpty(target, IqlProperties.TARGET);
 		checkCollectionNotEmpty(members, IqlProperties.MEMBERS);
-		checkNotNull(memberType, IqlProperties.MEMBER_TYPE);
 	}
 
 	public boolean isDistinct() { return distinct; }
 
-	public String getTarget() { return target; }
+	public boolean isEdges() { return edges; }
 
-	public MemberType getMemberType() { return memberType; }
+	public String getTarget() { return target; }
 
 	public List<IqlReference> getMembers() { return CollectionUtils.unmodifiableListProxy(members); }
 
@@ -92,12 +95,13 @@ public class IqlBinding extends AbstractIqlQueryElement {
 
 	public void setDistinct(boolean distinct) { this.distinct = distinct; }
 
-	public void setTarget(String target) { this.target = checkNotEmpty(target); }
+	public void setEdges(boolean edges) { this.edges = edges; }
 
-	public void setMemberType(MemberType memberType) { this.memberType = requireNonNull(memberType); }
+	public void setTarget(String target) { this.target = checkNotEmpty(target); }
 
 	public void addMember(IqlReference member) { members.add(requireNonNull(member)); }
 
+	@Deprecated
 	public enum MemberType {
 		ITEM("item", TypeInfo.ITEM),
 		EDGE("edge", TypeInfo.EDGE),

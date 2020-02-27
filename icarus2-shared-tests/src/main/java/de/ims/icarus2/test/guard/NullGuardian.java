@@ -47,6 +47,8 @@ public class NullGuardian<T> extends Guardian<T> {
 
 	private final ClassCache<T> classCache;
 
+	private final boolean forceAccessible;
+
 	private Supplier<? extends T> creator;
 
 	private static final Set<String> methodBlacklist = new HashSet<>();
@@ -54,31 +56,40 @@ public class NullGuardian<T> extends Guardian<T> {
 		Collections.addAll(methodBlacklist, "equals");
 	}
 
-	public static final Predicate<? super Method> METHOD_FILTER = (m) -> {
-		boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
-		boolean isPublic = Modifier.isPublic(m.getModifiers());  // must be public
-		boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
-		boolean hasNoParams = m.getParameterCount()==0;
+	static Predicate<? super Method> createMethodFilter(boolean includeNonPublic) {
+		return (m) -> {
+			boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
+			boolean isObjMethod = m.getDeclaringClass()==Object.class; // ignore all original Object methods
+			boolean hasNoParams = m.getParameterCount()==0;
 
-		// Early filtering of unfit methods before we access the parameter array
-		if(isStatic || !isPublic || isObjMethod || hasNoParams) {
-			return false;
-		}
-
-		if(methodBlacklist.contains(m.getName())) {
-			return false;
-		}
-
-		// Check if we have at least 1 non.primitive parameter
-		for(Class<?> paramClass : m.getParameterTypes()) {
-			if(!paramClass.isPrimitive()) {
-				return true;
+			// Early filtering of unfit methods before we access the parameter array
+			if(isStatic || isObjMethod || hasNoParams) {
+				return false;
 			}
-		}
 
-		// All parameters are primitives
-		return false;
-	};
+			if(includeNonPublic) {
+				if(Modifier.isPrivate(m.getModifiers())) {
+					return false;
+				}
+			} else if(!Modifier.isPublic(m.getModifiers())) {
+				return false;
+			}
+
+			if(methodBlacklist.contains(m.getName())) {
+				return false;
+			}
+
+			// Check if we have at least 1 non.primitive parameter
+			for(Class<?> paramClass : m.getParameterTypes()) {
+				if(!paramClass.isPrimitive()) {
+					return true;
+				}
+			}
+
+			// All parameters are primitives
+			return false;
+		};
+	}
 
 	/**
 	 * @param apiGuard
@@ -87,10 +98,11 @@ public class NullGuardian<T> extends Guardian<T> {
 		super(apiGuard);
 
 		creator = apiGuard.instanceCreator(false);
+		forceAccessible = apiGuard.isForceAccessible();
 
 		classCache = ClassCache.<T>builder()
 				.targetClass(targetClass)
-				.methodFilter(METHOD_FILTER)
+				.methodFilter(createMethodFilter(apiGuard.isNullGuardNonPublic()))
 //				.log(System.out::println)
 				.build();
 	}
@@ -116,6 +128,10 @@ public class NullGuardian<T> extends Guardian<T> {
 
 	private DynamicNode createTestsForMethod(MethodCache methodCache) {
 		Method method = methodCache.getMethod();
+		if(forceAccessible) {
+			method.setAccessible(true);
+		}
+
 		T instance = creator.get(); // we use the same instance for an entire sequence
 		Collection<ParamConfig> variations = variateNullParameter(instance, method, methodCache);
 		String baseLabel = RefUtils.toSimpleString(method);
