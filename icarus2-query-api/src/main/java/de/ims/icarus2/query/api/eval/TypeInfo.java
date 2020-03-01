@@ -28,8 +28,12 @@ import java.util.Objects;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.FragmentLayer;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
+import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Fragment;
@@ -116,6 +120,16 @@ public class TypeInfo {
 	/** Returns {@code true} if this type describes a structure that allows index-based access. */
 	public boolean isList() { return list; }
 
+	/**
+	 * Returns {@code true} if this info's {@link #getType() type} is
+	 * {@link Class#isAssignableFrom(Class) assignable} from the {@code other}'s type.
+	 * @param other
+	 * @return
+	 */
+	public boolean isCompatible(TypeInfo other) {
+		return (isPrimitive() && primitiveType==other.primitiveType) ||type.isAssignableFrom(other.type);
+	}
+
 	public static boolean isNumerical(TypeInfo info) {
 		return info==INTEGER || info==FLOATING_POINT;
 	}
@@ -174,6 +188,10 @@ public class TypeInfo {
 	public static final TypeInfo CONTEXT = new TypeInfo(Context.class, null, true, false);
 	public static final TypeInfo LAYER_GROUP = new TypeInfo(LayerGroup.class, null, true, false);
 	public static final TypeInfo LAYER = new TypeInfo(Layer.class, null, true, false);
+	public static final TypeInfo ITEM_LAYER = new TypeInfo(ItemLayer.class, null, true, false);
+	public static final TypeInfo STRUCTURE_LAYER = new TypeInfo(StructureLayer.class, null, true, false);
+	public static final TypeInfo FRAGMENT_LAYER = new TypeInfo(FragmentLayer.class, null, true, false);
+	public static final TypeInfo ANNOTATION_LAYER = new TypeInfo(AnnotationLayer.class, null, true, false);
 
 	// Frequently used helpers
 	public static final TypeInfo LIST = new TypeInfo(List.class, null, false, true);
