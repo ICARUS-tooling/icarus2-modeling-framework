@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -62,6 +63,9 @@ public class AnnotationAccess {
 
 	public static Expression<?> of(Expression<? extends Item> item, EvaluationContext context,
 			Expression<CharSequence> key) {
+		requireNonNull(item);
+		requireNonNull(context);
+		requireNonNull(key);
 
 		if(key.isConstant()) {
 			String annotationKey = key.compute().toString();
@@ -70,19 +74,7 @@ public class AnnotationAccess {
 					QualifiedIdentifier.parseIdentifier(annotationKey)).orElseThrow(
 					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 							"No annotation available for key: "+annotationKey));
-			TypeInfo type = info.getType();
-			if(type.isList())
-				throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
-						"List types not supported as annotation results: "+type);
-
-			if(TypeInfo.isInteger(type)) {
-				return new SingleKeyInteger(item, info.getIntegerSource());
-			} else if(TypeInfo.isFloatingPoint(type)) {
-				return new SingleKeyFloatingPoint(item, info.getFloatingPointSource());
-			} else if(TypeInfo.isBoolean(type)) {
-				return new SingleKeyBoolean(item, info.getBooleanSource());
-			}
-			return new SingleKeyObject<>(type, item, info.getObjectSource());
+			return of(item, info);
 		}
 
 		//TODO delegate to implementation that looks up annotation layer at evaluation time
@@ -90,8 +82,36 @@ public class AnnotationAccess {
 				"Dynamic lookup of annotation layers not supported (yet)");
 	}
 
+	public static Expression<?> of(Expression<? extends Item> item, AnnotationInfo info) {
+		requireNonNull(item);
+		requireNonNull(info);
+
+		TypeInfo type = info.getType();
+		if(type.isList())
+			throw new QueryException(QueryErrorCode.UNSUPPORTED_FEATURE,
+					"List types not supported as annotation results: "+type);
+
+		if(TypeInfo.isInteger(type)) {
+			return new SingleKeyInteger(item, info.getIntegerSource());
+		} else if(TypeInfo.isFloatingPoint(type)) {
+			return new SingleKeyFloatingPoint(item, info.getFloatingPointSource());
+		} else if(TypeInfo.isBoolean(type)) {
+			return new SingleKeyBoolean(item, info.getBooleanSource());
+		}
+		return new SingleKeyObject<>(type, item, info.getObjectSource());
+	}
+
 	public static Expression<?> of(Expression<? extends Item> item, EvaluationContext context,
 			Expression<CharSequence>[] keys) {
+		requireNonNull(item);
+		requireNonNull(context);
+		requireNonNull(keys);
+		checkArgument("Keys array must not be empty", keys.length>0);
+
+		// No point in the array overhead for a single argument
+		if(keys.length==1) {
+			return of(item, context, keys[0]);
+		}
 
 		if(Stream.of(keys).allMatch(Expression::isConstant)) {
 			String[] annotationKeys = annotationKeysFor(keys);
