@@ -22,12 +22,17 @@ package de.ims.icarus2.query.api.eval;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
+import java.util.stream.Stream;
+
+import org.antlr.v4.runtime.ParserRuleContext;
 
 import de.ims.icarus2.apiguard.Unguarded;
+import de.ims.icarus2.query.api.eval.Environment.NsEntry;
 import de.ims.icarus2.query.api.eval.Expression.ProxyExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -126,22 +131,30 @@ public class Expressions {
 		}
 	}
 
-	public static Expression<?> pathProxy(Expression<?> source, String name) {
-		return new PathProxy<>(source, name);
+	public static Expression<?> pathProxy(Expression<?> source, String name, ParserRuleContext context) {
+		return new PathProxy<>(requireNonNull(source), name, context);
+	}
+
+	public static Expression<?> pathProxy(String name, ParserRuleContext context) {
+		return new PathProxy<>(null, name, context);
 	}
 
 	public static final class PathProxy<T> implements Expression<T>, ProxyExpression {
-		private final Expression<?> source;
+		private final Optional<Expression<?>> source;
 		private final String name;
+		private final ParserRuleContext context;
 
-		public PathProxy(Expression<?> source, String name) {
-			this.source = requireNonNull(source);
+		private PathProxy(Expression<?> source, String name, ParserRuleContext context) {
+			this.source = Optional.ofNullable(source);
 			this.name = checkNotEmpty(name);
+			this.context = context;
 		}
 
 		public String getName() { return name; }
 
-		public Expression<?> getSource() { return source; }
+		public Optional<Expression<?>> getSource() { return source; }
+
+		public ParserRuleContext getContext() { return context; }
 
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.GENERIC; }
@@ -152,5 +165,155 @@ public class Expressions {
 		@Override
 		@Unguarded("No supposed to be called")
 		public Expression<T> duplicate(EvaluationContext context) { throw EvaluationUtils.forProxyCall(); }
+	}
+
+	private static abstract class Proxy<V,T> implements Expression<T> {
+		private final NsEntry entry;
+		private final Expression<?>[] arguments;
+		protected final Expression<V> source;
+
+		@SuppressWarnings("unchecked")
+		protected Proxy(NsEntry entry, Expression<?> source, Expression<?>[] arguments) {
+			this.entry = requireNonNull(entry);
+			this.source = (Expression<V>) source;
+			this.arguments = arguments;
+		}
+
+		@SuppressWarnings("rawtypes")
+		private static final Expression[] NO_ARGS = {};
+
+		@Override
+		public TypeInfo getResultType() { return entry.getValueType(); }
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Expression<T> duplicate(EvaluationContext context) {
+			Expression<V> newSource = source==null ? null : source.duplicate(context);
+			Expression<?>[] newArguments = arguments==null ? NO_ARGS : Stream.of(arguments)
+					.map(exp -> exp.duplicate(context))
+					.toArray(Expression[]::new);
+
+			return (Expression<T>) entry.instantiate(newSource, newArguments);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Expression<T> optimize(EvaluationContext context) {
+			Expression<V> newSource = source==null ? null : source.optimize(context);
+
+			Expression<?>[] newArguments = new Expression[entry.argumentCount()];
+			boolean argsChanged = false;
+			for (int i = 0; i < newArguments.length; i++) {
+				newArguments[i] = arguments[i].optimize(context);
+				argsChanged |= newArguments[i] != arguments[i];
+			}
+
+			if(newSource!=source || argsChanged) {
+				return (Expression<T>) entry.instantiate(newSource, newArguments);
+			}
+
+			return this;
+		}
+	}
+
+	public static <V,T> Expression<?> wrapObj(NsEntry entry, Function<V, T> objFunc,
+			Expression<?> source, Expression<?>...arguments) {
+		return new ObjProxy<>(entry, objFunc, source, arguments);
+	}
+
+	private static final class ObjProxy<V,T> extends Proxy<V, T> {
+
+		private final Function<V, T> objFunc;
+
+		private ObjProxy(NsEntry entry, Function<V, T> objFunc, Expression<?> source, Expression<?>...arguments) {
+			super(entry, source, arguments);
+			this.objFunc = requireNonNull(objFunc);
+		}
+
+		@Override
+		public T compute() { return objFunc.apply(source.compute()); }
+	}
+
+	public static <V> Expression<Primitive<Long>> wrapInt(NsEntry entry, ToLongFunction<V> intFunc,
+			Expression<?> source, Expression<?>...arguments) {
+		return new IntProxy<>(entry, intFunc, source, arguments);
+	}
+
+	private static final class IntProxy<V> extends Proxy<V, Primitive<Long>> {
+
+		private final ToLongFunction<V> intFunc;
+		private final MutableLong value = new MutableLong();
+
+		private IntProxy(NsEntry entry, ToLongFunction<V> intFunc, Expression<?> source, Expression<?>...arguments) {
+			super(entry, source, arguments);
+			this.intFunc = requireNonNull(intFunc);
+		}
+
+		@Override
+		public Primitive<Long> compute() {
+			value.setLong(computeAsLong());
+			return value;
+		}
+
+		@Override
+		public long computeAsLong() { return intFunc.applyAsLong(source.compute()); }
+		@Override
+		public double computeAsDouble() { return computeAsLong(); }
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
+	}
+
+	public static <V> Expression<Primitive<Double>> wrapFloat(NsEntry entry, ToDoubleFunction<V> fpFunc,
+			Expression<?> source, Expression<?>...arguments) {
+		return new FPProxy<>(entry, fpFunc, source, arguments);
+	}
+
+	private static final class FPProxy<V> extends Proxy<V, Primitive<Double>> {
+
+		private final ToDoubleFunction<V> fpFunc;
+		private final MutableDouble value = new MutableDouble();
+
+		private FPProxy(NsEntry entry, ToDoubleFunction<V> fpFunc, Expression<?> source, Expression<?>...arguments) {
+			super(entry, source, arguments);
+			this.fpFunc = requireNonNull(fpFunc);
+		}
+
+		@Override
+		public Primitive<Double> compute() {
+			value.setDouble(computeAsDouble());
+			return value;
+		}
+
+		@Override
+		public double computeAsDouble() { return fpFunc.applyAsDouble(source.compute()); }
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
+	}
+
+	public static <V> Expression<Primitive<Boolean>> wrapBool(NsEntry entry, Predicate<V> boolFunc,
+			Expression<?> source, Expression<?>...arguments) {
+		return new BooleanProxy<>(entry, boolFunc, source, arguments);
+	}
+
+	private static final class BooleanProxy<V> extends Proxy<V, Primitive<Boolean>> {
+
+		private final Predicate<V> boolFunc;
+		private final MutableBoolean value = new MutableBoolean();
+
+		private BooleanProxy(NsEntry entry, Predicate<V> boolFunc, Expression<?> source, Expression<?>...arguments) {
+			super(entry, source, arguments);
+			this.boolFunc = requireNonNull(boolFunc);
+		}
+
+		@Override
+		public Primitive<Boolean> compute() {
+			value.setBoolean(computeAsBoolean());
+			return value;
+		}
+
+		@Override
+		public boolean computeAsBoolean() { return boolFunc.test(source.compute()); }
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
 	}
 }

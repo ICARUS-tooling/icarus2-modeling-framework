@@ -31,12 +31,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QuerySwitch;
@@ -46,8 +48,10 @@ import de.ims.icarus2.query.api.eval.BinaryOperations.EqualityPred;
 import de.ims.icarus2.query.api.eval.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringOp;
+import de.ims.icarus2.query.api.eval.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
+import de.ims.icarus2.query.api.eval.Expressions.PathProxy;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BitwiseOpContext;
@@ -69,7 +73,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.NullLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PathAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryExpressionContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.QualifiedIdentifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ReferenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetPredicateContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
@@ -89,7 +92,7 @@ public class ExpressionFactory {
 	/** Context and settings to be used for evaluating the query. */
 	private final EvaluationContext context;
 
-	private final Map<Class<? extends ParserRuleContext>, Function<ParserRuleContext, Expression<?>>>
+	private static final Map<Class<? extends ParserRuleContext>, BiFunction<ExpressionFactory,ParserRuleContext, Expression<?>>>
 		handlers = new Object2ObjectOpenHashMap<>();
 
 	public ExpressionFactory(EvaluationContext context) {
@@ -99,25 +102,25 @@ public class ExpressionFactory {
 	}
 
 	private void setupHandlers() {
-		handlers.put(PrimaryExpressionContext.class, ctx -> processPrimary((PrimaryExpressionContext)ctx));
-		handlers.put(PathAccessContext.class, ctx -> processPathAccess((PathAccessContext) ctx));
-		handlers.put(MethodInvocationContext.class, ctx -> processMethodInvocation((MethodInvocationContext) ctx));
-		handlers.put(ListAccessContext.class, ctx -> processListAccess((ListAccessContext) ctx));
-		handlers.put(AnnotationAccessContext.class, ctx -> processAnnotationAccess((AnnotationAccessContext) ctx));
-		handlers.put(CastExpressionContext.class, ctx -> processCastExpression((CastExpressionContext) ctx));
-		handlers.put(WrappingExpressionContext.class, ctx -> processWrappingExpression((WrappingExpressionContext) ctx));
-		handlers.put(SetPredicateContext.class, ctx -> processSetPredicate((SetPredicateContext) ctx));
-		handlers.put(UnaryOpContext.class, ctx -> processUnaryOp((UnaryOpContext) ctx));
-		handlers.put(MultiplicativeOpContext.class, ctx -> processMultiplicativeOp((MultiplicativeOpContext) ctx));
-		handlers.put(AdditiveOpContext.class, ctx -> processAdditiveOp((AdditiveOpContext) ctx));
-		handlers.put(BitwiseOpContext.class, ctx -> processBitwiseOp((BitwiseOpContext) ctx));
-		handlers.put(ComparisonOpContext.class, ctx -> processComparisonOp((ComparisonOpContext) ctx));
-		handlers.put(StringOpContext.class, ctx -> processStringOp((StringOpContext) ctx));
-		handlers.put(EqualityCheckContext.class, ctx -> processEqualityCheck((EqualityCheckContext) ctx));
-		handlers.put(ConjunctionContext.class, ctx -> processConjunction((ConjunctionContext) ctx));
-		handlers.put(DisjunctionContext.class, ctx -> processDisjunction((DisjunctionContext) ctx));
-		handlers.put(TernaryOpContext.class, ctx -> processTernaryOp((TernaryOpContext) ctx));
-		handlers.put(ForEachContext.class, ctx -> processForEach((ForEachContext) ctx));
+		handlers.put(PrimaryExpressionContext.class, (f,ctx) -> f.processPrimary((PrimaryExpressionContext)ctx));
+		handlers.put(PathAccessContext.class, (f,ctx) -> f.processPathAccess((PathAccessContext) ctx));
+		handlers.put(MethodInvocationContext.class, (f,ctx) -> f.processMethodInvocation((MethodInvocationContext) ctx));
+		handlers.put(ListAccessContext.class, (f,ctx) -> f.processListAccess((ListAccessContext) ctx));
+		handlers.put(AnnotationAccessContext.class, (f,ctx) -> f.processAnnotationAccess((AnnotationAccessContext) ctx));
+		handlers.put(CastExpressionContext.class, (f,ctx) -> f.processCastExpression((CastExpressionContext) ctx));
+		handlers.put(WrappingExpressionContext.class, (f,ctx) -> f.processWrappingExpression((WrappingExpressionContext) ctx));
+		handlers.put(SetPredicateContext.class, (f,ctx) -> f.processSetPredicate((SetPredicateContext) ctx));
+		handlers.put(UnaryOpContext.class, (f,ctx) -> f.processUnaryOp((UnaryOpContext) ctx));
+		handlers.put(MultiplicativeOpContext.class, (f,ctx) -> f.processMultiplicativeOp((MultiplicativeOpContext) ctx));
+		handlers.put(AdditiveOpContext.class, (f,ctx) -> f.processAdditiveOp((AdditiveOpContext) ctx));
+		handlers.put(BitwiseOpContext.class, (f,ctx) -> f.processBitwiseOp((BitwiseOpContext) ctx));
+		handlers.put(ComparisonOpContext.class, (f,ctx) -> f.processComparisonOp((ComparisonOpContext) ctx));
+		handlers.put(StringOpContext.class, (f,ctx) -> f.processStringOp((StringOpContext) ctx));
+		handlers.put(EqualityCheckContext.class, (f,ctx) -> f.processEqualityCheck((EqualityCheckContext) ctx));
+		handlers.put(ConjunctionContext.class, (f,ctx) -> f.processConjunction((ConjunctionContext) ctx));
+		handlers.put(DisjunctionContext.class, (f,ctx) -> f.processDisjunction((DisjunctionContext) ctx));
+		handlers.put(TernaryOpContext.class, (f,ctx) -> f.processTernaryOp((TernaryOpContext) ctx));
+		handlers.put(ForEachContext.class, (f,ctx) -> f.processForEach((ForEachContext) ctx));
 	}
 
 	private boolean isAllowUnicode() {
@@ -132,29 +135,66 @@ public class ExpressionFactory {
 		return stringMode;
 	}
 
-	private Function<ParserRuleContext, Expression<?>> handlerFor(ParserRuleContext ctx) {
+	private static BiFunction<ExpressionFactory,ParserRuleContext, Expression<?>> handlerFor(ParserRuleContext ctx) {
 		return Optional.ofNullable(handlers.get(ctx.getClass()))
 				.orElseThrow(() -> new QueryException(QueryErrorCode.AST_ERROR,
 						"Unknown query fragment: "+ctx.getClass().getCanonicalName(), asFragment(ctx)));
 	}
 
 	public Expression<?> processExpression(ExpressionContext ctx) {
-		Expression<?> expression = processExpression0(ctx);
+		Expression<?> expression = processAndResolveExpression0(ctx);
 		//TODO call optimize() already?
 		return expression;
 	}
 
-	private Expression<?> processExpression0(ExpressionContext ctx) {
-		return handlerFor(ctx).apply(ctx);
+	private Expression<?> processExpression0(ExpressionContext ctx, boolean resolveProxy) {
+		Expression<?> expression = handlerFor(ctx).apply(this, ctx);
+
+		if(expression.isProxy() && resolveProxy) {
+			expression = resolveProxy(expression);
+		}
+
+		return expression;
+	}
+
+	private Expression<?> processAndResolveExpression0(ExpressionContext ctx) {
+		return processExpression0(ctx, true);
+	}
+
+	private Expression<?> resolveProxy(Expression<?> proxy) {
+		if(proxy instanceof PathProxy) {
+			// All we can do here is delegate to the context to resolve the path
+			PathProxy<?> path = (PathProxy<?>) proxy;
+			Expression<?> source = path.getSource().orElse(null);
+			String name = path.getName();
+
+			// Simple identifiers inside element context can resolve to annotation keys
+			Optional<Assignable<? extends Item>> item = context.getElementStore();
+			if(source==null && item.isPresent()) {
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
+				Optional<AnnotationInfo> annotation = context.findAnnotation(identifier);
+				if(annotation.isPresent()) {
+					return AnnotationAccess.of(item.get(), annotation.get());
+				}
+			}
+
+			//TODO can we infer expected type efficiently for better filtering?
+			return context.resolve(source, name, TypeFilter.ALL).orElseThrow(
+					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+							"Failed to resolve reference: "+name, asFragment(path.getContext())));
+		}
+
+		throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+				"Unknown proxy class: "+proxy.getClass());
 	}
 
 	Expression<?>[] processExpressionList(ExpressionListContext ctx) {
 		return ctx.expression().stream()
-				.map(this::processExpression0)
+				.map(this::processAndResolveExpression0)
 				.toArray(Expression[]::new);
 	}
 
-	/** Insurance against changes in the IQL grammar that we missed */
+	/** Insurance against future changes in the IQL grammar that we missed */
 	private <T> T failForUnhandledAlternative(ParserRuleContext ctx) {
 		throw new QueryException(QueryErrorCode.AST_ERROR,
 				"Unknown alterative: "+ctx.getClass().getCanonicalName(), asFragment(ctx));
@@ -164,7 +204,6 @@ public class ExpressionFactory {
 		if(!source.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a numerical type: "+source.getResultType());
-		//TODO maybe validate via instanceof ?
 		return source;
 	}
 
@@ -172,6 +211,7 @@ public class ExpressionFactory {
 		if(source.isInteger())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not an integer expression: "+source.getResultType());
+		//TODO take switches and general integer type conversion into account!!
 		return source;
 	}
 
@@ -181,7 +221,6 @@ public class ExpressionFactory {
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a boolean type: "+source.getResultType());
 		//TODO take switches and general boolean type conversion into account!!
-		//TODO maybe validate via instanceof ?
 		return (Expression<Primitive<Boolean>>)source;
 	}
 
@@ -192,8 +231,15 @@ public class ExpressionFactory {
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a text type: "+source.getResultType());
 		//TODO take string conversion into account!!
-		//TODO maybe validate via instanceof ?
 		return (Expression<CharSequence>)source;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Expression<? extends Item> ensureItem(Expression<?> source) {
+		if(!source.isMember())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a mmeber type: "+source.getResultType());
+		return (Expression<? extends Item>)source;
 	}
 
 	private Expression<?>[] ensureInteger(Expression<?>[] source) {
@@ -316,37 +362,60 @@ public class ExpressionFactory {
 
 	private Expression<?> processReference(ReferenceContext ctx) {
 		if(ctx.variableName()!=null) {
+			// Grab identifier and let context resolve actual variable (might create one)
 			return context.getVariable(textOf(ctx.variableName().Identifier()));
 		} else if(ctx.member()!=null) {
-
+			// Grab identifier and let context resolve it to member expression
+			String name = textOf(ctx.member().Identifier());
+			return context.getMember(name).orElseThrow(
+					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+							"No member available for name: "+name, asFragment(ctx)));
 		} else if(ctx.Identifier()!=null) {
-
+			// Wrap into source-less path proxy for delayed resolution
+			return Expressions.pathProxy(textOf(ctx.Identifier()), ctx);
 		} else if(ctx.qualifiedIdentifier()!=null) {
-
+			// Fetch key and current item context and create annotation access
+			String key = textOf(ctx.qualifiedIdentifier());
+			Expression<? extends Item> item = context.getElementStore().orElseThrow(
+					() -> new QueryException(QueryErrorCode.INCORRECT_USE,
+							"No surrounding item context available", asFragment(ctx)));
+			return AnnotationAccess.of(item, context, Literals.of(key));
 		}
 
 		return failForUnhandledAlternative(ctx);
 	}
 
-	private QualifiedIdentifier processQualifiedIdentifier(QualifiedIdentifierContext ctx) {
-		return QualifiedIdentifier.of(textOf(ctx), textOf(ctx.hostId), textOf(ctx.elementId));
-	}
-
 	Expression<?> processPathAccess(PathAccessContext ctx) {
-		Expression<?> source = processExpression0(ctx.source);
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		Expression<?> source = processAndResolveExpression0(ctx.source);
+
+		// We only wrap into proxy here for delayed resolution
+		return Expressions.pathProxy(source, textOf(ctx.Identifier()), ctx);
 	}
 
 	Expression<?> processMethodInvocation(MethodInvocationContext ctx) {
 		Expression<?>[] arguments = processExpressionList(ctx.arguments);
-		Expression<?> source = processExpression0(ctx.source);
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		Expression<?> source = processExpression0(ctx.source, false);
+
+		String name;
+
+		if(source instanceof PathProxy) {
+			// Unwrap proxy
+			PathProxy<?> path = (PathProxy<?>) source;
+			name = path.getName();
+			source = path.getSource().orElse(null);
+		} else
+			throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+					"Unknown proxy class: "+source.getClass(), asFragment(ctx));
+
+		// Delegate to context
+		//TODO can we infer result type efficiently for better filtering?
+		return context.resolve(source, name, TypeFilter.ALL, arguments).orElseThrow(
+				() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+						"Failed to resolve method: "+name, asFragment(ctx)));
 	}
 
 	Expression<?> processListAccess(ListAccessContext ctx) {
-		ListExpression<?, ?> source = ensureList(processExpression0(ctx.source));
+		ListExpression<?, ?> source = ensureList(processAndResolveExpression0(ctx.source));
 		Expression<?>[] indices = processExpressionList(ctx.indices);
 
 		if(indices.length<1)
@@ -371,26 +440,19 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processAnnotationAccess(AnnotationAccessContext ctx) {
-		Expression<?>[] keys = processExpressionList(ctx.keys);
+		Expression<?> source = processAndResolveExpression0(ctx.source);
+		Expression<?>[] arguments = processExpressionList(ctx.keys);
 
-		if(keys.length<1)
+		if(arguments.length<1)
 			throw new QueryException(QueryErrorCode.INCORRECT_USE,
 					"Annotation access needs at least 1 key argument: "+textOf(ctx), asFragment(ctx));
 
-		if(keys.length==1) {
-			if(keys[0].isList()) {
-				//TODO
-			}
-			//TODO
-		}
-
-		ensureText(keys);
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		// AnnotationAccess handles the single-argument specialization
+		return AnnotationAccess.of(ensureItem(source), context, ensureText(arguments));
 	}
 
 	Expression<?> processCastExpression(CastExpressionContext ctx) {
-		Expression<?> source = processExpression0(ctx.expression());
+		Expression<?> source = processAndResolveExpression0(ctx.expression());
 
 		TypeContext tctx = ctx.type();
 
@@ -408,7 +470,7 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processWrappingExpression(WrappingExpressionContext ctx) {
-		return processExpression0(unwrap(ctx));
+		return processAndResolveExpression0(unwrap(ctx));
 	}
 
 	/** Unwraps until a non wrapper context is encountered */
@@ -422,7 +484,7 @@ public class ExpressionFactory {
 
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {
 
-		Expression<?> target = processExpression0(ctx.source);
+		Expression<?> target = processAndResolveExpression0(ctx.source);
 		Expression<?>[] elements = processExpressionList(ctx.set);
 
 		Expression<Primitive<Boolean>> setPred;
@@ -441,7 +503,7 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processUnaryOp(UnaryOpContext ctx) {
-		Expression<?> source = processExpression0(ctx.expression());
+		Expression<?> source = processAndResolveExpression0(ctx.expression());
 
 		if(ctx.EXMARK()!=null || ctx.NOT()!=null) {
 			return UnaryOperations.not(ensureBoolean(source));
@@ -455,8 +517,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processMultiplicativeOp(MultiplicativeOpContext ctx) {
-		Expression<?> left = ensureNumerical(processExpression0(ctx.left));
-		Expression<?> right = ensureNumerical(processExpression0(ctx.right));
+		Expression<?> left = ensureNumerical(processAndResolveExpression0(ctx.left));
+		Expression<?> right = ensureNumerical(processAndResolveExpression0(ctx.right));
 
 		AlgebraicOp op = null;
 		if(ctx.STAR()!=null) {
@@ -473,8 +535,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processAdditiveOp(AdditiveOpContext ctx) {
-		Expression<?> left = processExpression0(ctx.left);
-		Expression<?> right = processExpression0(ctx.right);
+		Expression<?> left = processAndResolveExpression0(ctx.left);
+		Expression<?> right = processAndResolveExpression0(ctx.right);
 
 		AlgebraicOp op = null;
 		if(ctx.PLUS()!=null) {
@@ -514,7 +576,7 @@ public class ExpressionFactory {
 
 		Expression<CharSequence>[] elements = items.stream()
 				// Basic processing
-				.map(this::processExpression0)
+				.map(this::processAndResolveExpression0)
 				// Make sure we only concatenate strings
 				.map(this::ensureText)
 				// Expand nested concatenations for optimization
@@ -530,8 +592,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processBitwiseOp(BitwiseOpContext ctx) {
-		Expression<?> left = ensureInteger(processExpression0(ctx.left));
-		Expression<?> right = ensureInteger(processExpression0(ctx.right));
+		Expression<?> left = ensureInteger(processAndResolveExpression0(ctx.left));
+		Expression<?> right = ensureInteger(processAndResolveExpression0(ctx.right));
 
 		AlgebraicOp op = null;
 		if(ctx.AMP()!=null) {
@@ -553,8 +615,8 @@ public class ExpressionFactory {
 
 	Expression<?> processComparisonOp(ComparisonOpContext ctx) {
 
-		Expression<?> left = processExpression0(ctx.left);
-		Expression<?> right = processExpression0(ctx.right);
+		Expression<?> left = processAndResolveExpression0(ctx.left);
+		Expression<?> right = processAndResolveExpression0(ctx.right);
 
 		if(TypeInfo.isNumerical(left.getResultType()) && TypeInfo.isNumerical(right.getResultType())) {
 			return processNumericalComparison(ctx, ensureNumerical(left), ensureNumerical(right));
@@ -610,8 +672,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processStringOp(StringOpContext ctx) {
-		Expression<CharSequence> target = ensureText(processExpression0(ctx.left));
-		Expression<CharSequence> query = ensureText(processExpression0(ctx.right));
+		Expression<CharSequence> target = ensureText(processAndResolveExpression0(ctx.left));
+		Expression<CharSequence> query = ensureText(processAndResolveExpression0(ctx.right));
 
 		StringOp op = null;
 		boolean negate = false;
@@ -638,8 +700,8 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processEqualityCheck(EqualityCheckContext ctx) {
-		Expression<?> left = processExpression0(ctx.left);
-		Expression<?> right = processExpression0(ctx.right);
+		Expression<?> left = processAndResolveExpression0(ctx.left);
+		Expression<?> right = processAndResolveExpression0(ctx.right);
 
 		Expression<Primitive<Boolean>> expression;
 

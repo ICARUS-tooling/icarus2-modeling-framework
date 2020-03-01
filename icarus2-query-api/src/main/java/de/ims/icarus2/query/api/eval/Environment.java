@@ -89,8 +89,18 @@ public interface Environment {
 		//TODO write about array shortcuts via aliases
 		Set<String> getAliases();
 
+		default boolean hasAlias(String alias) {
+			return getAliases().contains(alias);
+		}
+
 		/** Returns the kind of target this entry describes. */
 		EntryType getEntryType();
+
+		/**
+		 * Returns the number of arguments or {@code 0} if this entry does not
+		 * describe a method.
+		 */
+		int argumentCount();
 
 		/**
 		 * Returns the types of arguments consumed by the method described by
@@ -100,7 +110,7 @@ public interface Environment {
 		 * @throws QueryException of type {@link QueryErrorCode#INCORRECT_USE}
 		 * if this entry does not describe a {@link EntryType#METHOD method}.
 		 */
-		TypeInfo[] getArgumenTypes();
+		TypeInfo argumenTypeAt(int index);
 
 		/** Returns the namespace this entry belongs to. */
 		Environment getSource();
@@ -127,11 +137,11 @@ public interface Environment {
 	}
 
 	public enum Priority {
-		LOWEST,
-		LOW,
-		DEFAULT,
-		HIGH,
 		HIGHEST,
+		HIGH,
+		DEFAULT,
+		LOW,
+		LOWEST,
 		;
 	}
 }

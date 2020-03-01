@@ -76,7 +76,6 @@ import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.Mutable;
 import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -129,9 +128,6 @@ public abstract class EvaluationContext {
 		 */
 		private final Map<String, Layer> layers;
 
-		/** Stores all the alias names assigned to layers by the query */
-		private final Set<String> aliases;
-
 		private final Scope scope;
 
 		/** Efficient lookup for collecting  */
@@ -155,7 +151,8 @@ public abstract class EvaluationContext {
 		private final Map<String, Assignable<?>> variables = new Object2ObjectOpenHashMap<>();
 		/** Maps member labels to layers */
 		private final Map<String, BindingInfo> bindings;
-		/** Maps member names to */
+		/** Maps member names to assignable expressions */
+		//TODO make sure that any implementation properly duplicates on the target context
 		private final Map<String, Assignable<? extends Item>> members;
 
 		private RootContext(RootContextBuilder builder) {
@@ -167,7 +164,6 @@ public abstract class EvaluationContext {
 			properties = new Object2ObjectOpenHashMap<>(builder.properties);
 
 			layers = new Object2ObjectOpenHashMap<>(builder.namedLayers);
-			aliases = new ObjectOpenHashSet<>(builder.namedLayers.keySet());
 			bindings = new Object2ObjectOpenHashMap<>(builder.bindings);
 
 			for(Layer layer : scope.getLayers()) {
@@ -211,7 +207,8 @@ public abstract class EvaluationContext {
 
 			members = new Object2ObjectOpenHashMap<>();
 			for(Entry<String, BindingInfo> entry : bindings.entrySet()) {
-				TypeInfo type;
+				TypeInfo type = resolveMemberType(entry.getValue());
+				members.put(entry.getKey(), References.member(entry.getKey(), type));
 			}
 		}
 
@@ -240,12 +237,14 @@ public abstract class EvaluationContext {
 
 			Optional<ContainerManifestBase<?>> root = layer.getManifest().getRootContainerManifest();
 			if(root.isPresent()) {
+				// SOme kind of nested hierarchy, so must be container or structure
 				if(root.get().getManifestType()==ManifestType.STRUCTURE_MANIFEST) {
 					return TypeInfo.STRUCTURE;
 				}
 				return TypeInfo.CONTAINER;
 			}
 
+			// Nothing fancy, layer only holds generic items
 			return TypeInfo.ITEM;
 		}
 
@@ -289,8 +288,68 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Assignable<?> getVariable(String name) {
-			return variables.computeIfAbsent(name, k -> References.variable());
+			return variables.computeIfAbsent(name, References::variable);
 		}
+
+		@Override
+		public Optional<Assignable<? extends Item>> getMember(String name) {
+			return Optional.ofNullable(members.get(requireNonNull(name)));
+		}
+
+		@Override
+		public Optional<ItemLayer> resolveMember(String name) {
+			return Optional.ofNullable(bindings.get(requireNonNull(name)))
+					.map(BindingInfo::getLayer);
+		}
+	}
+
+	public static class AnnotationInfo {
+		private final String rawKey;
+		private final String key;
+		private final ValueType valueType;
+		private final TypeInfo type;
+
+		Function<Item, Object> objectSource;
+		ToLongFunction<Item> integerSource;
+		ToDoubleFunction<Item> floatingPointSource;
+		Predicate<Item> booleanSource;
+
+		AnnotationInfo(String rawKey, String key, ValueType valueType, TypeInfo type) {
+			this.rawKey = requireNonNull(rawKey);
+			this.key = requireNonNull(key);
+			this.valueType = requireNonNull(valueType);
+			this.type = requireNonNull(type);
+		}
+
+		public String getRawKey() { return rawKey; }
+
+		public String getKey() { return key; }
+
+		public ValueType getValueType() { return valueType; }
+
+		public TypeInfo getType() { return type; }
+
+
+		public Function<Item, Object> getObjectSource() {
+			checkState("No object source defined", objectSource!=null);
+			return objectSource;
+		}
+
+		public ToLongFunction<Item> getIntegerSource() {
+			checkState("No integer source defined", integerSource!=null);
+			return integerSource;
+		}
+
+		public ToDoubleFunction<Item> getFloatingPointSource() {
+			checkState("No floating point source defined", floatingPointSource!=null);
+			return floatingPointSource;
+		}
+
+		public Predicate<Item> getBooleanSource() {
+			checkState("No boolean source defined", booleanSource!=null);
+			return booleanSource;
+		}
+
 	}
 
 	private static class AnnotationLink {
@@ -307,8 +366,6 @@ public abstract class EvaluationContext {
 		public AnnotationManifest getManifest() { return manifest; }
 
 		public AnnotationLayer getLayer() { return layer; }
-
-		public boolean isAlias() { return isAlias; }
 
 		public boolean isNotAlias() { return !isAlias; }
 	}
@@ -327,7 +384,7 @@ public abstract class EvaluationContext {
 		public ItemLayer getLayer() { return layer; }
 	}
 
-	private static class ContainerStore implements Mutable<Container>, Expression<Container> {
+	private static class ContainerStore implements Assignable<Container> {
 
 		static ContainerStore from(LaneInfo info) {
 			if(info==null) {
@@ -358,10 +415,7 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		public Container get() { return container; }
-
-		@Override
-		public void set(Object value) { setContainer((Container) value);}
+		public void assign(Object value) { setContainer((Container) value);}
 
 		public void setContainer(Container container) { this.container = requireNonNull(container); }
 
@@ -369,21 +423,17 @@ public abstract class EvaluationContext {
 		public void clear() { container = null;}
 
 		@Override
-		public boolean isPrimitive() { return false; }
-
-		@Override
-		public boolean isEmpty() { return container!=null; }
-
-		@Override
 		public TypeInfo getResultType() { return type; }
 
 		@Override
 		public Container compute() { return container; }
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Container> duplicate(EvaluationContext context) {
-			requireNonNull(context);
-			return new ContainerStore(type);
+			return (Expression<Container>) context.getContainerStore().orElseThrow(
+					() -> EvaluationUtils.forInternalError(
+					"Target context does not provide container store"));
 		}
 	}
 
@@ -403,7 +453,7 @@ public abstract class EvaluationContext {
 		public boolean isEdge() { return element.getType()==IqlType.EDGE; }
 	}
 
-	private static class ItemStore implements Mutable<Item>, Expression<Item> {
+	private static class ItemStore implements Assignable<Item> {
 
 		static ItemStore from(ElementInfo info) {
 			if(info==null) {
@@ -437,10 +487,7 @@ public abstract class EvaluationContext {
 		private final TypeInfo type;
 
 		@Override
-		public Item get() { return item; }
-
-		@Override
-		public void set(Object value) { setItem((Item) value);}
+		public void assign(Object value) { setItem((Item) value);}
 
 		public void setItem(Item item) { this.item = requireNonNull(item); }
 
@@ -448,21 +495,17 @@ public abstract class EvaluationContext {
 		public void clear() { item = null;}
 
 		@Override
-		public boolean isPrimitive() { return false; }
-
-		@Override
-		public boolean isEmpty() { return item!=null; }
-
-		@Override
 		public TypeInfo getResultType() { return type; }
 
 		@Override
 		public Item compute() { return item; }
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Item> duplicate(EvaluationContext context) {
-			requireNonNull(context);
-			return new ItemStore(type);
+			return (Expression<Item>) context.getElementStore().orElseThrow(
+					() -> EvaluationUtils.forInternalError(
+					"Target context does not provide element store"));
 		}
 	}
 
@@ -518,11 +561,8 @@ public abstract class EvaluationContext {
 			return Optional.of(lane.getLane());
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() {
-			return Optional.ofNullable((T)containerStore);
-		}
+		public Optional<Assignable<? extends Container>> getContainerStore() { return Optional.ofNullable(containerStore); }
 	}
 
 	private static class ElementContext extends EvaluationContext {
@@ -676,11 +716,8 @@ public abstract class EvaluationContext {
 			return getInheritable(this, ctx -> ctx.element).map(ElementInfo::getElement);
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends Expression<Item> & Mutable<Item>> Optional<T> getElementStore() {
-			return Optional.ofNullable((T)itemStore);
-		}
+		public Optional<Assignable<? extends Item>> getElementStore() { return Optional.ofNullable(itemStore); }
 
 		@Override
 		public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) {
@@ -815,16 +852,14 @@ public abstract class EvaluationContext {
 	/** Flag to signal that this context shouldn't be used any further */
 	private volatile boolean disabled = false;
 
-	private final List<Environment> environments;
+	private final EnvironmentCache environmentCache;
 
 	//TODO add mechanism to register callbacks for stages of matching process?
 
 	private EvaluationContext(BuilderBase<?,?> builder) {
 		requireNonNull(builder);
 
-		this.environments = new ArrayList<>(builder.environments);
-
-		//TODO
+		environmentCache = EnvironmentCache.of(builder.environments);
 	}
 
 	protected abstract ContextType getType();
@@ -875,9 +910,9 @@ public abstract class EvaluationContext {
 		disabled = true;
 
 		// Ensure our basic state is reset
-		environments.clear();
+		environmentCache.dispose();
 		// Let subclasses do their housekeeping
-		cleanup();
+		cleanup(); //TODO have subclasses actually override this!!
 	}
 
 	public Optional<IqlLane> getLane() { return Optional.empty(); }
@@ -893,16 +928,16 @@ public abstract class EvaluationContext {
 
 	public Optional<Layer> findLayer(String name) { return getRootContext().findLayer(name); }
 
-	public <T extends Expression<Container> & Mutable<Container>> Optional<T> getContainerStore() {
-		return getLaneContext().getContainerStore();
-	}
-
-	public <T extends Expression<Item> & Mutable<Item>> Optional<T> getElementStore() { return Optional.empty(); }
-
 	public Layer requireLayer(String name) {
 		return findLayer(name).orElseThrow(
 				() -> EvaluationUtils.forUnknownIdentifier(name, "layer"));
 	}
+
+	public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) { return Optional.empty(); }
+
+	public Optional<Assignable<? extends Container>> getContainerStore() { return getLaneContext().getContainerStore(); }
+
+	public Optional<Assignable<? extends Item>> getElementStore() { return Optional.empty(); }
 
 	protected Graph<Layer> getLayerGraph() { return getRootContext().getLayerGraph(); }
 
@@ -915,7 +950,7 @@ public abstract class EvaluationContext {
 
 	public Optional<ItemLayer> resolveMember(String name) { return getRootContext().resolveMember(name); }
 
-	public Optional<Expression<? extends Item>> getMember(String name) { return getRootContext().getMember(name); }
+	public Optional<Assignable<? extends Item>> getMember(String name) { return getRootContext().getMember(name); }
 
 	public boolean isSwitchSet(QuerySwitch qs) {
 		return isSwitchSet(qs.getKey());
@@ -929,6 +964,7 @@ public abstract class EvaluationContext {
 	 * the importance of subsequent entries decreasing.
 	 * @return
 	 */
+	@Deprecated
 	public List<Environment> getActiveEnvironments() {
 		//TODO implement
 		throw new UnsupportedOperationException();
@@ -942,11 +978,28 @@ public abstract class EvaluationContext {
 	 * @throws QueryException of type {@link QueryErrorCode#UNKNOWN_IDENTIFIER} iff
 	 * the specified {@code name} could not be resolved to a target that satisfies
 	 * the given {@code filter} (if present).
+	 *
+	 * @param scope the optional context that defines the scope of resolution
+	 * @param name the identifier to be used for resolution
+	 * @param filter optional restriction on the allowed types of obejcts to be resolved
 	 */
-	public Expression<?> resolve(@Nullable Class<?> scope, String name,
+	public Optional<Expression<?>> resolve(@Nullable Expression<?> scope, String name,
 			@Nullable TypeFilter filter) {
-		//TODO implement
-		throw new UnsupportedOperationException();
+		checkNotEmpty(name);
+
+		EvaluationContext ctx = this;
+		while(ctx!=null) {
+			if(ctx.environmentCache!=null) {
+				Expression<?> result = ctx.environmentCache.resolve(scope, name, filter);
+				if(result!=null) {
+					return Optional.of(result);
+				}
+			}
+
+			ctx = ctx.getParent().orElse(null);
+		}
+
+		return Optional.empty();
 	}
 
 	/**
@@ -960,78 +1013,41 @@ public abstract class EvaluationContext {
 	 * the specified {@code name} could not be resolved to a method that satisfies
 	 * the given {@code argument} specification and {@code resultFilter} (if present).
 	 */
-	public Expression<?> resolve(@Nullable Class<?> scope, String name,
+	public Optional<Expression<?>> resolve(@Nullable Expression<?> scope, String name,
 			@Nullable TypeFilter resultFilter, Expression<?>[] arguments) {
-		//TODO implement
-		throw new UnsupportedOperationException();
-	}
+		checkNotEmpty(name);
 
-	public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) { return Optional.empty(); }
+		EvaluationContext ctx = this;
+		while(ctx!=null) {
+			if(ctx.environmentCache!=null) {
+				Expression<?> result = ctx.environmentCache.resolve(scope, name, resultFilter, arguments);
+				if(result!=null) {
+					return Optional.of(result);
+				}
+			}
 
-	public static class AnnotationInfo {
-		private final String rawKey;
-		private final String key;
-		private final ValueType valueType;
-		private final TypeInfo type;
-
-		Function<Item, Object> objectSource;
-		ToLongFunction<Item> integerSource;
-		ToDoubleFunction<Item> floatingPointSource;
-		Predicate<Item> booleanSource;
-
-		AnnotationInfo(String rawKey, String key, ValueType valueType, TypeInfo type) {
-			this.rawKey = requireNonNull(rawKey);
-			this.key = requireNonNull(key);
-			this.valueType = requireNonNull(valueType);
-			this.type = requireNonNull(type);
+			ctx = ctx.getParent().orElse(null);
 		}
 
-		public String getRawKey() { return rawKey; }
-
-		public String getKey() { return key; }
-
-		public ValueType getValueType() { return valueType; }
-
-		public TypeInfo getType() { return type; }
-
-
-		public Function<Item, Object> getObjectSource() {
-			checkState("No object source defined", objectSource!=null);
-			return objectSource;
-		}
-
-		public ToLongFunction<Item> getIntegerSource() {
-			checkState("No integer source defined", integerSource!=null);
-			return integerSource;
-		}
-
-		public ToDoubleFunction<Item> getFloatingPointSource() {
-			checkState("No floating point source defined", floatingPointSource!=null);
-			return floatingPointSource;
-		}
-
-		public Predicate<Item> getBooleanSource() {
-			checkState("No boolean source defined", booleanSource!=null);
-			return booleanSource;
-		}
-
+		return Optional.empty();
 	}
 
 	public static abstract class BuilderBase<B extends BuilderBase<B, C>, C extends EvaluationContext>
 			extends AbstractBuilder<B, C> {
-		//TODO
 
-		private final List<Environment> environments = new ArrayList<>();
+		private final Set<Environment> environments = new ReferenceOpenHashSet<>();
 
 		public B registerEnvironment(Environment environment) {
-			// TODO Auto-generated method stub
+			requireNonNull(environment);
+			checkState("Environment already added: "+environment, !environments.contains(environment));
+			environments.add(environment);
 
 			return thisAsCast();
 		}
 
 		@Override
 		protected void validate() {
-			// TODO Auto-generated method stub
+			// nothing to do here, but keep for next feature iteration
 			super.validate();
 		}
 	}
@@ -1136,8 +1152,9 @@ public abstract class EvaluationContext {
 
 		@Override
 		protected void validate() {
-			// TODO Auto-generated method stub
 			super.validate();
+			checkState("Corpus not set", corpus!=null);
+			checkState("Scope not set", scope!=null);
 		}
 
 		@Override
@@ -1164,8 +1181,9 @@ public abstract class EvaluationContext {
 
 		@Override
 		protected void validate() {
-			// TODO Auto-generated method stub
 			super.validate();
+
+			checkState("Lane not set", lane!=null);
 		}
 
 		@Override

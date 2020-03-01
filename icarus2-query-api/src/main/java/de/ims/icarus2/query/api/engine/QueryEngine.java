@@ -14,9 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- */
 package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;

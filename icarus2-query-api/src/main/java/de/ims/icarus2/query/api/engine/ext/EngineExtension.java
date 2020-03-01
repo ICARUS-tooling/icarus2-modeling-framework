@@ -31,8 +31,9 @@ import de.ims.icarus2.query.api.engine.QueryEngine;
 public interface EngineExtension {
 
 	/**
-	 * Allows configuration of a
-	 * @param configurator the interface to customizing the engine (bubild)
+	 * Allows configuration of an active {@link QueryEngine}.
+	 *
+	 * @param configurator the interface to customizing the engine.
 	 */
 	void configureContext(EngineConfigurator configurator);
 }

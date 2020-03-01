@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.types.ValueType.MatrixType;
@@ -178,6 +179,10 @@ public class EvaluationUtils {
 	public static QueryException forProxyCall() {
 		return new QueryException(QueryErrorCode.PROXY_CALL,
 				"Path proxy cannot be used for actual evaluation.");
+	}
+
+	public static QueryException forInternalError(String msg, Object...args) {
+		return new QueryException(GlobalErrorCode.INTERNAL_ERROR, String.format(msg, args));
 	}
 
 	public static boolean string2Boolean(CharSequence value) {

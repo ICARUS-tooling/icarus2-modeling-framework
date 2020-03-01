@@ -101,7 +101,7 @@ public abstract class AbstractEnvironment implements Environment {
 	 */
 	@FunctionalInterface
 	protected interface Instantiator {
-		Expression<?> instantiate(@Nullable Expression<?> target, Expression<?>...arguments);
+		Expression<?> instantiate(NsEntry entry, @Nullable Expression<?> target, Expression<?>...arguments);
 	}
 
 	public static class Entry implements NsEntry {
@@ -141,14 +141,17 @@ public abstract class AbstractEnvironment implements Environment {
 		public Set<String> getAliases() { return aliases; }
 
 		@Override
-		public TypeInfo[] getArgumenTypes() { return argumentTypes; }
+		public int argumentCount() { return argumentTypes.length; }
+
+		@Override
+		public TypeInfo argumenTypeAt(int index) { return argumentTypes[index]; }
 
 		@Override
 		public Environment getSource() { return source; }
 
 		@Override
 		public synchronized Expression<?> instantiate(Expression<?> target, Expression<?>... arguments) {
-			return instantiator.instantiate(target, arguments);
+			return instantiator.instantiate(this, target, arguments);
 		}
 
 	}
@@ -196,7 +199,7 @@ public abstract class AbstractEnvironment implements Environment {
 
 		public EntryBuilder argumentTypes(TypeInfo...argumentTypes) {
 			requireNonNull(argumentTypes);
-			checkArgument("Argument types must be empty", argumentTypes.length>0);
+			checkArgument("Argument types must not be empty", argumentTypes.length>0);
 			checkState("Argument types already set", this.argumentTypes==null);
 			this.argumentTypes = argumentTypes;
 			return this;
@@ -206,7 +209,9 @@ public abstract class AbstractEnvironment implements Environment {
 			argumentTypes = NO_ARGS;
 			return this;
 		}
-		public TypeInfo[] getArgumentTypes() { return argumentTypes; }
+		public TypeInfo[] getArgumentTypes() {
+			return argumentTypes==null ? NO_ARGS : argumentTypes;
+		}
 
 		public EntryBuilder aliases(String...aliases) {
 			requireNonNull(aliases);
@@ -226,6 +231,20 @@ public abstract class AbstractEnvironment implements Environment {
 		public Instantiator getInstantiator() { return instantiator; }
 
 		public Environment getSource() { return source; }
+
+		// Shorthand methods
+
+		public EntryBuilder method(String name, TypeInfo resultType, TypeInfo...argumentTypes) {
+			name(name).entryType(EntryType.METHOD).valueType(resultType);
+			if(argumentTypes.length>0) {
+				argumentTypes(argumentTypes);
+			}
+			return this;
+		}
+
+		public EntryBuilder field(String name, TypeInfo type) {
+			return name(name).entryType(EntryType.FIELD).valueType(type);
+		}
 
 		@Override
 		protected void validate() {
