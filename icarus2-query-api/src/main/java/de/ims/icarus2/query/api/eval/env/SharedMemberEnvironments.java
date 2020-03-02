@@ -33,6 +33,14 @@ import de.ims.icarus2.query.api.eval.TypeInfo;
  */
 public class SharedMemberEnvironments {
 
+	public static Environment[] all() {
+		return new Environment[] {
+				forCorpusMember(),
+				forItem(),
+				//TODO
+		};
+	}
+
 	public static Environment forCorpusMember() {
 		return CorpusMemberEnvironment.getInstance();
 	}
@@ -70,7 +78,6 @@ public class SharedMemberEnvironments {
 		protected void createEntries() {
 			entryBuilder()
 				.method("getCorpus", TypeInfo.CORPUS)
-				.noArgs()
 				.aliases("corpus")
 				.instantiator((e, t, args) -> wrapObj(e, CorpusMember::getCorpus, t, args))
 				.commitAndReset();
@@ -116,37 +123,31 @@ public class SharedMemberEnvironments {
 			EntryBuilder builder = entryBuilder();
 
 			builder.method("getContainer", TypeInfo.CONTAINER)
-				.noArgs()
 				.aliases("container", "host")
 				.instantiator((e, t, args) -> wrapObj(e, Item::getContainer, t, args))
 				.commitAndReset();
 
 			builder.method("getLayer", TypeInfo.LAYER)
-				.noArgs()
 				.aliases("layer")
 				.instantiator((e, t, args) -> wrapObj(e, Item::getLayer, t, args))
 				.commitAndReset();
 
 			builder.method("getBeginOffset", TypeInfo.INTEGER)
-				.noArgs()
 				.aliases("offset", "begin", "beginOffset")
 				.instantiator((e, t, args) -> wrapInt(e, Item::getBeginOffset, t, args))
 				.commitAndReset();
 
 			builder.method("getEndOffset", TypeInfo.INTEGER)
-				.noArgs()
 				.aliases("end", "endOffset")
 				.instantiator((e, t, args) -> wrapInt(e, Item::getEndOffset, t, args))
 				.commitAndReset();
 
 			builder.method("getIndex", TypeInfo.INTEGER)
-				.noArgs()
 				.aliases("index", "position")
 				.instantiator((e, t, args) -> wrapInt(e, Item::getIndex, t, args))
 				.commitAndReset();
 
 			builder.method("getId", TypeInfo.INTEGER)
-				.noArgs()
 				.aliases("id")
 				.instantiator((e, t, args) -> wrapInt(e, Item::getId, t, args))
 				.commitAndReset();

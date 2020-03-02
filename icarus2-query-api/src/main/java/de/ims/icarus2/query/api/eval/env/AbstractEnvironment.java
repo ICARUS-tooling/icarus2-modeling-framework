@@ -24,7 +24,9 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,6 +38,7 @@ import de.ims.icarus2.query.api.eval.Environment;
 import de.ims.icarus2.query.api.eval.Expression;
 import de.ims.icarus2.query.api.eval.TypeInfo;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -126,6 +129,33 @@ public abstract class AbstractEnvironment implements Environment {
 			valueType = builder.getValueType();
 			argumentTypes = builder.getArgumentTypes();
 			instantiator = builder.getInstantiator();
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("name", name)
+					.add("scope", source.isGlobal() ? "<global>" : source.getContext().get().getName())
+					.add("type", entryType)
+					.add("valueType", valueType)
+					.add("args", Arrays.toString(argumentTypes))
+					.build();
+		}
+
+		/**
+		 * {@link Entry} instances are meant to be unique immutable data objects, therefore
+		 * we use reference equality as basis for this method.
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			return obj==this;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(source, entryType, valueType, name, aliases, argumentTypes);
 		}
 
 		@Override
@@ -238,6 +268,8 @@ public abstract class AbstractEnvironment implements Environment {
 			name(name).entryType(EntryType.METHOD).valueType(resultType);
 			if(argumentTypes.length>0) {
 				argumentTypes(argumentTypes);
+			} else {
+				noArgs();
 			}
 			return this;
 		}

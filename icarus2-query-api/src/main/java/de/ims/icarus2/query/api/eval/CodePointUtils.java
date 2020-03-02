@@ -156,41 +156,11 @@ public final class CodePointUtils {
         return false;
 	}
 
-//	/**
-//	 * Runs a basic character-wise check on whether {@code target} contains the
-//	 * specified {@code query} string while ignoring case.
-//	 */
-//	public static boolean containsCodePoints(CodePointSequence target, CodePointSequence query,
-//			IntBiPredicate comparator) {
-//        int first = query.codePointAt(0);
-//        int count = query.codePointCount();
-//        int max = target.codePointCount() - count;
-//
-//        for (int i = 0; i <= max; i++) {
-//            /* Look for first code point. */
-//            while (!comparator.test(target.codePointAt(i), first) && ++i <= max) {
-//            	// no-op
-//            }
-//
-//            /* Found first character, now look at the rest of query */
-//            if (i <= max) {
-//                int j = i + 1;
-//                int end = j + count - 1;
-//                for (int k = 1; j < end && comparator.test(target.codePointAt(j),
-//                		query.codePointAt(k)); j++, k++) {
-//                	// no-op
-//                }
-//
-//                if (j == end) {
-//                    /* Found whole query. */
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//	}
+    public static int codePointCount(CharSequence seq) {
+    	return codePointCount(seq, 0, seq.length());
+    }
 
-	/** Number of codepoint between beginIndex (inclusive) and endIndex (exclusive */
+	/** Number of codepoints between beginIndex (inclusive) and endIndex (exclusive) */
     public static int codePointCount(CharSequence seq, int beginIndex, int endIndex) {
         int length = seq.length();
         if (beginIndex < 0 || endIndex > length || beginIndex > endIndex)
@@ -206,7 +176,7 @@ public final class CodePointUtils {
     }
 
 	/**
-	 * Runs a basic character-wise check on whether {@code target} contains the
+	 * Runs a basic codepoint-wise check on whether {@code target} contains the
 	 * specified {@code query} string while ignoring case.
 	 */
 	public static boolean containsCodePoints(CharSequence target, CharSequence query,

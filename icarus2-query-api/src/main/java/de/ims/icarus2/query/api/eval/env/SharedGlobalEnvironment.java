@@ -19,11 +19,9 @@
  */
 package de.ims.icarus2.query.api.eval.env;
 
-import static de.ims.icarus2.query.api.eval.Expressions.wrapBool;
-
-import de.ims.icarus2.query.api.eval.Expression;
 import de.ims.icarus2.query.api.eval.Expressions;
 import de.ims.icarus2.query.api.eval.TypeInfo;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
 /**
  * @author Markus Gärtner
@@ -58,22 +56,14 @@ public class SharedGlobalEnvironment extends AbstractEnvironment {
 	protected void createEntries() {
 		EntryBuilder builder = entryBuilder();
 
-		//TODO move those entries to an environment focused on java.lang.Object
-		builder.method("toString", TypeInfo.TEXT)
-			.noArgs()
-			.instantiator((e, t, args) -> Expressions.<Object,String>wrapObj(e, Object::toString, t, args))
+		// Math utils
+
+		builder.method("abs", TypeInfo.INTEGER, TypeInfo.INTEGER)
+			.instantiator((e, t, args) -> Expressions.<Primitive<Long>>wrapInt(e,
+					p -> Math.abs(p.longValue()), t, args))
 			.commitAndReset();
 
-		builder.method("equals", TypeInfo.BOOLEAN)
-			.argumentTypes(TypeInfo.GENERIC)
-			.instantiator((e, t, args) -> {
-				Expression<?> other = args[0];
-				return wrapBool(e, obj -> obj.equals(other.compute()), t, args);
-			})
-			.commitAndReset();
-
-
-		// TODO add more
+		// TODO add more entries
 	}
 
 }
