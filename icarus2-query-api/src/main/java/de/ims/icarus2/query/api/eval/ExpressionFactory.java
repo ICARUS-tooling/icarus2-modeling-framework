@@ -95,13 +95,7 @@ public class ExpressionFactory {
 	private static final Map<Class<? extends ParserRuleContext>, BiFunction<ExpressionFactory,ParserRuleContext, Expression<?>>>
 		handlers = new Object2ObjectOpenHashMap<>();
 
-	public ExpressionFactory(EvaluationContext context) {
-		this.context = requireNonNull(context);
-
-		setupHandlers();
-	}
-
-	private void setupHandlers() {
+	static {
 		handlers.put(PrimaryExpressionContext.class, (f,ctx) -> f.processPrimary((PrimaryExpressionContext)ctx));
 		handlers.put(PathAccessContext.class, (f,ctx) -> f.processPathAccess((PathAccessContext) ctx));
 		handlers.put(MethodInvocationContext.class, (f,ctx) -> f.processMethodInvocation((MethodInvocationContext) ctx));
@@ -122,6 +116,10 @@ public class ExpressionFactory {
 		handlers.put(TernaryOpContext.class, (f,ctx) -> f.processTernaryOp((TernaryOpContext) ctx));
 		handlers.put(ForEachContext.class, (f,ctx) -> f.processForEach((ForEachContext) ctx));
 	}
+
+	public ExpressionFactory(EvaluationContext context) { this.context = requireNonNull(context); }
+
+	public EvaluationContext getContext() { return context; }
 
 	private boolean isAllowUnicode() {
 		return !context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF);

@@ -359,7 +359,7 @@ public class AnnotationAccess {
 			type = EvaluationUtils.arrayType(elementType);
 			this.item = requireNonNull(item);
 			this.lookups = requireNonNull(lookups);
-			buffer = EvaluationUtils.arrayOf(type, lookups.length);
+			buffer = EvaluationUtils.arrayOf(elementType, lookups.length);
 		}
 
 		@Override

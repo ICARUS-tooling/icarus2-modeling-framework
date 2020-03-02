@@ -420,7 +420,7 @@ public interface ExpressionTest<T>
 
 		@RandomizedTest
 		@Test
-		default void testGetAsLong(RandomGenerator rng) {
+		default void testGetAsDouble(RandomGenerator rng) {
 			double[] values = rng.ints(10).mapToDouble(i->i).toArray();
 			FloatingPointListExpression<T> list = createWithValue(values);
 			assertThat(list.size()).isEqualTo(values.length);

@@ -233,8 +233,8 @@ public class EvaluationUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <E> E[] arrayOf(TypeInfo type, int size) {
-		return (E[]) Array.newInstance(type.getType().getComponentType(), size);
+	public static <E> E[] arrayOf(TypeInfo elementType, int size) {
+		return (E[]) Array.newInstance(elementType.getType(), size);
 	}
 
 	public static TypeInfo arrayType(TypeInfo elementType) {

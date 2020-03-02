@@ -543,7 +543,7 @@ public final class ListAccess {
 		public Primitive<Double> get(int index) { return (Primitive<Double>) source[index].compute(); }
 
 		@Override
-		public double getAsDouble(int index) { return source[index].computeAsLong(); }
+		public double getAsDouble(int index) { return source[index].computeAsDouble(); }
 
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
@@ -783,7 +783,7 @@ public final class ListAccess {
 		}
 
 		@Override
-		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
+		public TypeInfo getResultType() { return source.getElementType(); }
 
 		@Override
 		public T compute() { return source.get(strictToInt(index.computeAsLong())); }
@@ -829,7 +829,7 @@ public final class ListAccess {
 			this.index = requireNonNull(index);
 			elementType = source.getElementType();
 			type = EvaluationUtils.arrayType(elementType);
-			buffer = index.isFixedSize() ? EvaluationUtils.arrayOf(type, index.size()) : null;
+			buffer = index.isFixedSize() ? EvaluationUtils.arrayOf(elementType, index.size()) : null;
 		}
 
 		@Override
@@ -853,7 +853,7 @@ public final class ListAccess {
 
 		/**
 		 * If the underlying index expression is not of fixed size, this method will
-		 * allocate a new long array for every invocation!
+		 * allocate a new array for every invocation!
 		 */
 		@Override
 		public E[] compute() {
@@ -910,7 +910,7 @@ public final class ListAccess {
 			this.source = requireNonNull(source);
 			elementType = source[0].getResultType();
 			type = EvaluationUtils.arrayType(elementType);
-			buffer = EvaluationUtils.arrayOf(type, source.length);
+			buffer = EvaluationUtils.arrayOf(elementType, source.length);
 		}
 
 		@Override

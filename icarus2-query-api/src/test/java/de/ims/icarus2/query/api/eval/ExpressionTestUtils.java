@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
@@ -36,6 +38,38 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  *
  */
 public class ExpressionTestUtils {
+
+	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, Object expected) {
+		assertThat(exp.compute()).isEqualTo(expected);
+
+		assertThat(exp.duplicate(ctx).compute()).isEqualTo(expected);
+
+		assertThat(exp.optimize(ctx).compute()).isEqualTo(expected);
+	}
+
+	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, long expected) {
+		assertThat(exp.computeAsLong()).isEqualTo(expected);
+
+		assertThat(exp.duplicate(ctx).computeAsLong()).isEqualTo(expected);
+
+		assertThat(exp.optimize(ctx).computeAsLong()).isEqualTo(expected);
+	}
+
+	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, double expected) {
+		assertThat(exp.computeAsDouble()).isEqualTo(expected);
+
+		assertThat(exp.duplicate(ctx).computeAsDouble()).isEqualTo(expected);
+
+		assertThat(exp.optimize(ctx).computeAsDouble()).isEqualTo(expected);
+	}
+
+	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, boolean expected) {
+		assertThat(exp.computeAsBoolean()).isEqualTo(expected);
+
+		assertThat(exp.duplicate(ctx).computeAsBoolean()).isEqualTo(expected);
+
+		assertThat(exp.optimize(ctx).computeAsBoolean()).isEqualTo(expected);
+	}
 
 	static Object dummy(String toStringValue) {
 		return new Object() {
