@@ -73,7 +73,9 @@ public final class ListAccess {
 	/** Unwraps a list expression into an array of individual expressions */
 	public static <E> Expression<E>[] unwrap(ListExpression<?, E> source) {
 		requireNonNull(source);
-		checkArgument("Source list must not be empty", source.size()>0);
+		if(source.size()==0) {
+			return EvaluationUtils.noArgs();
+		}
 
 		IntFunction<Expression<?>> mapper;
 

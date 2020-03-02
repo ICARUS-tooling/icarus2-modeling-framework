@@ -46,6 +46,13 @@ public class EvaluationUtils {
 
 	private EvaluationUtils() { /* no-op */ }
 
+	public static final Expression<?>[] NO_ARGS = {};
+
+	@SuppressWarnings("unchecked")
+	public static <T> Expression<T>[] noArgs() {
+		return (Expression<T>[]) NO_ARGS;
+	}
+
 	private static final Map<ValueType, TypeInfo> typeMap = new Reference2ReferenceOpenHashMap<>();
 
 	private static void registerType(ValueType valueType, TypeInfo type) {

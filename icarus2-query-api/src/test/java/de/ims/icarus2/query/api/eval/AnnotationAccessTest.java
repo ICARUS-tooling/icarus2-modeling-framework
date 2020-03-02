@@ -40,7 +40,6 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -61,12 +60,12 @@ import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerListExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.ListExpressionTest;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.BooleanArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.DoubleArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.LongArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.TextArrayMixin;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.Mutable;
@@ -359,28 +358,7 @@ class AnnotationAccessTest {
 	class ForMultipleKeys {
 
 		@Nested
-		class ForObject implements ListExpressionTest<CharSequence[], CharSequence> {
-
-			@Override
-			public CharSequence[] constant() {
-				return new CharSequence[]{
-					"test1",
-					"test2",
-					"test3",
-				};
-			}
-
-			@Override
-			public CharSequence[] random(RandomGenerator rng) {
-				return new CharSequence[]{
-						rng.randomString(15),
-						rng.randomString(5),
-						rng.randomString(10),
-					};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(CharSequence[].class, true); }
+		class ForObject implements TextArrayMixin {
 
 			@Override
 			public boolean nativeConstant() { return false; }
@@ -390,16 +368,6 @@ class AnnotationAccessTest {
 
 			@Override
 			public Class<?> getTestTargetClass() { return MultiKeyObject.class; }
-
-			@Override
-			public String[] sized(int size) {
-				return IntStream.range(0, size)
-						.mapToObj(i -> "item_"+i)
-						.toArray(String[]::new);
-			}
-
-			@Override
-			public TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -425,31 +393,7 @@ class AnnotationAccessTest {
 		}
 
 		@Nested
-		class ForInteger implements IntegerListExpressionTest<long[]> {
-
-			@Override
-			public long[] constant() {
-				return new long[]{
-					123,
-					10_000_000,
-					Long.MIN_VALUE,
-				};
-			}
-
-			@Override
-			public long[] random(RandomGenerator rng) {
-				return new long[]{
-						rng.nextInt(),
-						rng.nextInt(),
-						rng.nextInt(),
-						rng.nextInt(),
-						rng.nextInt(),
-					};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
-
+		class ForInteger implements LongArrayMixin {
 			@Override
 			public boolean nativeConstant() { return false; }
 
@@ -458,14 +402,6 @@ class AnnotationAccessTest {
 
 			@Override
 			public Class<?> getTestTargetClass() { return MultiKeyInteger.class; }
-
-			@Override
-			public long[] sized(int size) {
-				return LongStream.range(0, size).toArray();
-			}
-
-			@Override
-			public TypeInfo getExpectedElementType() { return TypeInfo.INTEGER; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -491,30 +427,7 @@ class AnnotationAccessTest {
 		}
 
 		@Nested
-		class ForFloatingPoint implements FloatingPointListExpressionTest<double[]> {
-
-			@Override
-			public double[] constant() {
-				return new double[]{
-					123.456,
-					-10_000_000.1,
-					Double.MAX_VALUE,
-				};
-			}
-
-			@Override
-			public double[] random(RandomGenerator rng) {
-				return new double[]{
-						rng.nextFloat(),
-						rng.nextFloat(),
-						rng.nextFloat(),
-						rng.nextFloat(),
-						rng.nextFloat(),
-					};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
+		class ForFloatingPoint implements DoubleArrayMixin {
 
 			@Override
 			public boolean nativeConstant() { return false; }
@@ -524,14 +437,6 @@ class AnnotationAccessTest {
 
 			@Override
 			public Class<?> getTestTargetClass() { return MultiKeyFloatingPoint.class; }
-
-			@Override
-			public double[] sized(int size) {
-				return LongStream.range(0, size).mapToDouble(i->i+0.5).toArray();
-			}
-
-			@Override
-			public TypeInfo getExpectedElementType() { return TypeInfo.FLOATING_POINT; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -557,32 +462,7 @@ class AnnotationAccessTest {
 		}
 
 		@Nested
-		class ForBoolean implements BooleanListExpressionTest<boolean[]> {
-
-			@Override
-			public boolean[] constant() {
-				return new boolean[]{
-					true,
-					false,
-					false,
-					true,
-					false
-				};
-			}
-
-			@Override
-			public boolean[] random(RandomGenerator rng) {
-				return new boolean[]{
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-					};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(boolean[].class, true); }
+		class ForBoolean implements BooleanArrayMixin {
 
 			@Override
 			public boolean nativeConstant() { return false; }
@@ -592,18 +472,6 @@ class AnnotationAccessTest {
 
 			@Override
 			public Class<?> getTestTargetClass() { return MultiKeyBoolean.class; }
-
-			@Override
-			public boolean[] sized(int size) {
-				boolean[] values = new boolean[size];
-				for (int i = 0; i < values.length; i++) {
-					values[i] = i%3==0;
-				}
-				return values;
-			}
-
-			@Override
-			public TypeInfo getExpectedElementType() { return TypeInfo.BOOLEAN; }
 
 			@SuppressWarnings("unchecked")
 			@Override

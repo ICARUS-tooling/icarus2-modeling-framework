@@ -44,13 +44,13 @@ import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.TextExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.TextListExpressionTest;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.BooleanArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.DoubleArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.LongArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.TextArrayMixin;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
@@ -276,16 +276,13 @@ class ConversionsTest {
 			}
 		}
 
-		abstract class ToTextListTestBase implements TextListExpressionTest<CharSequence[]> {
+		abstract class ToTextListTestBase implements TextArrayMixin {
 
 			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
 			public Class<?> getTestTargetClass() { return TextListCast.class; }
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(CharSequence[].class, true); }
 		}
 
 		@Nested
@@ -309,9 +306,6 @@ class ConversionsTest {
 						String.valueOf(rng.nextBoolean())
 				};
 			}
-
-			@Override
-			public CharSequence[] randomForGet(RandomGenerator rng) { return random(rng); }
 
 			@Override
 			public CharSequence[] sized(int size) {
@@ -631,45 +625,14 @@ class ConversionsTest {
 			}
 		}
 
-		abstract class ToBooleanListTestBase implements BooleanListExpressionTest<boolean[]> {
+		abstract class ToBooleanListTestBase implements BooleanArrayMixin {
 
-			@Override
-			public boolean[] constant() {
-				return new boolean[]{
-						true,
-						false,
-						false,
-						true
-				};
-			}
-
-			@Override
-			public boolean[] random(RandomGenerator rng) {
-				return new boolean[]{
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean()
-				};
-			}
-
-			@Override
-			public boolean[] sized(int size) {
-				boolean[] content = new boolean[size];
-				for (int i = 0; i < content.length; i++) {
-					content[i] = i%2==0;
-				}
-				return content;
-			}
 
 			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
 			public Class<?> getTestTargetClass() { return BooleanListCast.class; }
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(boolean[].class, true); }
 		}
 
 		@Nested
@@ -865,45 +828,13 @@ class ConversionsTest {
 					ArrayLiterals.ofGeneric(new Object(), "test", new Object())));
 		}
 
-		abstract class ToIntegerListTestBase implements IntegerListExpressionTest<long[]> {
-
-			@Override
-			public long[] constant() {
-				return new long[]{
-						0,
-						10,
-						10_000,
-						-1000
-				};
-			}
-
-			@Override
-			public long[] random(RandomGenerator rng) {
-				return new long[]{
-						rng.nextInt(),
-						rng.nextInt(),
-						rng.nextInt(),
-						rng.nextInt()
-				};
-			}
-
-			@Override
-			public long[] sized(int size) {
-				long[] content = new long[size];
-				for (int i = 0; i < content.length; i++) {
-					content[i] = i+1000L;
-				}
-				return content;
-			}
+		abstract class ToIntegerListTestBase implements LongArrayMixin {
 
 			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
 			public Class<?> getTestTargetClass() { return IntegerListCast.class; }
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
 		}
 
 		@Nested
@@ -1080,45 +1011,13 @@ class ConversionsTest {
 					ArrayLiterals.ofGeneric(new Object(), "test", new Object())));
 		}
 
-		abstract class ToFloatingPointListTestBase implements FloatingPointListExpressionTest<double[]> {
-
-			@Override
-			public double[] constant() {
-				return new double[]{
-						0.0,
-						10.5,
-						10_000.123,
-						-1000.001
-				};
-			}
-
-			@Override
-			public double[] random(RandomGenerator rng) {
-				return new double[]{
-						randomDouble(rng),
-						randomDouble(rng),
-						randomDouble(rng),
-						randomDouble(rng)
-				};
-			}
-
-			@Override
-			public double[] sized(int size) {
-				double[] content = new double[size];
-				for (int i = 0; i < content.length; i++) {
-					content[i] = (i+1000L)*1.1;
-				}
-				return content;
-			}
+		abstract class ToFloatingPointListTestBase implements DoubleArrayMixin {
 
 			@Override
 			public boolean nativeConstant() { return false; }
 
 			@Override
 			public Class<?> getTestTargetClass() { return FloatingPointListCast.class; }
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
 		}
 
 		@Nested

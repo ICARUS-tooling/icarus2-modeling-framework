@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.dynamicLongs;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,12 +36,12 @@ import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.BooleanListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.FloatingPointListExpressionTest;
 import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.IntegerListExpressionTest;
-import de.ims.icarus2.query.api.eval.ExpressionTest.ListExpressionTest;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.BooleanArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.DoubleArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.LongArrayMixin;
+import de.ims.icarus2.query.api.eval.ExpressionTestMixins.TextArrayMixin;
 import de.ims.icarus2.query.api.eval.ListAccess.BooleanAccess;
 import de.ims.icarus2.query.api.eval.ListAccess.BooleanBatchAccess;
 import de.ims.icarus2.query.api.eval.ListAccess.BooleanListWrapper;
@@ -162,45 +163,13 @@ class ListAccessTest {
 	class Filter {
 
 		@Nested
-		class ForInteger implements IntegerListExpressionTest<long[]> {
-
-			@Override
-			public long[] sized(int size) {
-				return LongStream.range(0, size).toArray();
-			}
-
-			@Override
-			public long[] constant() {
-				return new long[] {
-						0,
-						1,
-						Integer.MAX_VALUE,
-						Long.MAX_VALUE,
-						Integer.MIN_VALUE,
-						Long.MIN_VALUE,
-				};
-			}
-
-			@Override
-			public long[] random(RandomGenerator rng) {
-				return new long[] {
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForInteger implements LongArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return IntegerBatchAccess.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@Override
 			public IntegerListExpression<long[]> createWithValue(long[] source) {
@@ -216,45 +185,13 @@ class ListAccessTest {
 		}
 
 		@Nested
-		class ForFloatingPoint implements FloatingPointListExpressionTest<double[]> {
-
-			@Override
-			public double[] sized(int size) {
-				return DoubleStream.iterate(1.0, i -> -i*2.5).limit(size).toArray();
-			}
-
-			@Override
-			public double[] constant() {
-				return new double[] {
-						0.1,
-						1.1,
-						Integer.MAX_VALUE+0.5,
-						Long.MAX_VALUE-0.5,
-						Integer.MIN_VALUE+.05,
-						Long.MIN_VALUE+0.5,
-				};
-			}
-
-			@Override
-			public double[] random(RandomGenerator rng) {
-				return new double[] {
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForFloatingPoint implements DoubleArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return FloatingPointBatchAccess.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@Override
 			public FloatingPointListExpression<double[]> createWithValue(double[] source) {
@@ -270,49 +207,13 @@ class ListAccessTest {
 		}
 
 		@Nested
-		class ForBoolean implements BooleanListExpressionTest<boolean[]> {
-
-			@Override
-			public boolean[] sized(int size) {
-				boolean[] data = new boolean[size];
-				for (int i = 0; i < data.length; i++) {
-					data[i] = i%2==0;
-				}
-				return data;
-			}
-
-			@Override
-			public boolean[] constant() {
-				return new boolean[] {
-						false,
-						true,
-						true,
-						false,
-						true,
-						false,
-				};
-			}
-
-			@Override
-			public boolean[] random(RandomGenerator rng) {
-				return new boolean[] {
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(boolean[].class, true); }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForBoolean implements BooleanArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return BooleanBatchAccess.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@Override
 			public BooleanListExpression<boolean[]> createWithValue(boolean[] source) {
@@ -331,50 +232,13 @@ class ListAccessTest {
 		}
 
 		@Nested
-		class ForObject implements ListExpressionTest<CharSequence[], CharSequence> {
-
-			@Override
-			public CharSequence[] sized(int size) {
-				return IntStream.range(0, size)
-					.mapToObj(i -> "item_"+i)
-					.toArray(CharSequence[]::new);
-			}
-
-			@Override
-			public CharSequence[] constant() {
-				return new CharSequence[] {
-						"test",
-						"test2",
-						CodePointUtilsTest.test,
-						CodePointUtilsTest.test_hebrew,
-						CodePointUtilsTest.test_mixed2,
-						CodePointUtilsTest.test_mixed3,
-				};
-			}
-
-			@Override
-			public CharSequence[] random(RandomGenerator rng) {
-				return new CharSequence[] {
-						rng.randomUnicodeString(10),
-						rng.randomUnicodeString(5),
-						rng.randomUnicodeString(15),
-						rng.randomUnicodeString(22),
-						rng.randomUnicodeString(25),
-						rng.randomUnicodeString(2),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(CharSequence[].class, true); }
-
-			@Override
-			public TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForObject implements TextArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return ObjectBatchAccess.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -398,45 +262,13 @@ class ListAccessTest {
 	class Wrapper {
 
 		@Nested
-		class ForInteger implements IntegerListExpressionTest<long[]> {
-
-			@Override
-			public long[] sized(int size) {
-				return LongStream.range(0, size).toArray();
-			}
-
-			@Override
-			public long[] constant() {
-				return new long[] {
-						0,
-						1,
-						Integer.MAX_VALUE,
-						Long.MAX_VALUE,
-						Integer.MIN_VALUE,
-						Long.MIN_VALUE,
-				};
-			}
-
-			@Override
-			public long[] random(RandomGenerator rng) {
-				return new long[] {
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-						rng.nextLong(),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(long[].class, true); }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForInteger implements LongArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return IntegerListWrapper.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -450,45 +282,13 @@ class ListAccessTest {
 		}
 
 		@Nested
-		class ForFloatingPoint implements FloatingPointListExpressionTest<double[]> {
-
-			@Override
-			public double[] sized(int size) {
-				return DoubleStream.iterate(1.0, i -> -i*2.5).limit(size).toArray();
-			}
-
-			@Override
-			public double[] constant() {
-				return new double[] {
-						0.1,
-						1.1,
-						Integer.MAX_VALUE+0.5,
-						Long.MAX_VALUE-0.5,
-						Integer.MIN_VALUE+.05,
-						Long.MIN_VALUE+0.5,
-				};
-			}
-
-			@Override
-			public double[] random(RandomGenerator rng) {
-				return new double[] {
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-						rng.nextDouble(),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(double[].class, true); }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForFloatingPoint implements DoubleArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return FloatingPointListWrapper.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -502,49 +302,13 @@ class ListAccessTest {
 		}
 
 		@Nested
-		class ForBoolean implements BooleanListExpressionTest<boolean[]> {
-
-			@Override
-			public boolean[] sized(int size) {
-				boolean[] data = new boolean[size];
-				for (int i = 0; i < data.length; i++) {
-					data[i] = i%2==0;
-				}
-				return data;
-			}
-
-			@Override
-			public boolean[] constant() {
-				return new boolean[] {
-						false,
-						true,
-						true,
-						false,
-						true,
-						false,
-				};
-			}
-
-			@Override
-			public boolean[] random(RandomGenerator rng) {
-				return new boolean[] {
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-						rng.nextBoolean(),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(boolean[].class, true); }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForBoolean implements BooleanArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return BooleanListWrapper.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -559,50 +323,13 @@ class ListAccessTest {
 		}
 
 		@Nested
-		class ForObject implements ListExpressionTest<CharSequence[], CharSequence> {
-
-			@Override
-			public CharSequence[] sized(int size) {
-				return IntStream.range(0, size)
-					.mapToObj(i -> "item_"+i)
-					.toArray(CharSequence[]::new);
-			}
-
-			@Override
-			public CharSequence[] constant() {
-				return new CharSequence[] {
-						"test",
-						"test2",
-						CodePointUtilsTest.test,
-						CodePointUtilsTest.test_hebrew,
-						CodePointUtilsTest.test_mixed2,
-						CodePointUtilsTest.test_mixed3,
-				};
-			}
-
-			@Override
-			public CharSequence[] random(RandomGenerator rng) {
-				return new CharSequence[] {
-						rng.randomUnicodeString(10),
-						rng.randomUnicodeString(5),
-						rng.randomUnicodeString(15),
-						rng.randomUnicodeString(22),
-						rng.randomUnicodeString(25),
-						rng.randomUnicodeString(2),
-				};
-			}
-
-			@Override
-			public TypeInfo getExpectedType() { return TypeInfo.of(CharSequence[].class, true); }
-
-			@Override
-			public TypeInfo getExpectedElementType() { return TypeInfo.TEXT; }
-
-			@Override
-			public boolean nativeConstant() { return false; }
+		class ForObject implements TextArrayMixin {
 
 			@Override
 			public Class<?> getTestTargetClass() { return ObjectWrapper.class; }
+
+			@Override
+			public boolean nativeConstant() { return false; }
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -675,6 +402,11 @@ class ListAccessTest {
 					.as("Mismatch at index %d", _int(i))
 					.isEqualTo(array[i]);
 			}
+		}
+
+		@Test
+		void unwrapEmpty() {
+			assertThat(ListAccess.unwrap(dynamicLongs(() -> new long[0]))).isEmpty();
 		}
 	}
 }
