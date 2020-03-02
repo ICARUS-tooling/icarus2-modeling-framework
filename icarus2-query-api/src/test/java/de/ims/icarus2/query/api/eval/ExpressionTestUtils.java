@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.function.BooleanSupplier;
@@ -26,8 +27,10 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -38,6 +41,8 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  *
  */
 public class ExpressionTestUtils {
+
+	// Simple expression assertions
 
 	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, Object expected) {
 		assertThat(exp.compute()).isEqualTo(expected);
@@ -69,6 +74,92 @@ public class ExpressionTestUtils {
 		assertThat(exp.duplicate(ctx).computeAsBoolean()).isEqualTo(expected);
 
 		assertThat(exp.optimize(ctx).computeAsBoolean()).isEqualTo(expected);
+	}
+
+	// Liste expression assertions
+
+	public static void assertListExpression(ListExpression<?,?> exp, EvaluationContext ctx, Object...expected) {
+		ListExpression<?,?> optimized = (ListExpression<?, ?>) exp.optimize(ctx);
+		ListExpression<?,?> duplicated = (ListExpression<?, ?>) exp.duplicate(ctx);
+
+		assertThat(exp.size()).isEqualTo(expected.length);
+		assertThat(optimized.size()).isEqualTo(exp.size());
+		assertThat(duplicated.size()).isEqualTo(exp.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertThat(exp.get(i))
+				.as("Mismatch in original expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(duplicated.get(i))
+				.as("Mismatch in duplicate at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(optimized.get(i))
+				.as("Mismatch in optimized expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+		}
+	}
+
+	public static void assertListExpression(IntegerListExpression<?> exp, EvaluationContext ctx, long...expected) {
+		IntegerListExpression<?> optimized = (IntegerListExpression<?>) exp.optimize(ctx);
+		IntegerListExpression<?> duplicated = (IntegerListExpression<?>) exp.duplicate(ctx);
+
+		assertThat(exp.size()).isEqualTo(expected.length);
+		assertThat(optimized.size()).isEqualTo(exp.size());
+		assertThat(duplicated.size()).isEqualTo(exp.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertThat(exp.getAsLong(i))
+				.as("Mismatch in original expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(duplicated.getAsLong(i))
+				.as("Mismatch in duplicate at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(optimized.getAsLong(i))
+				.as("Mismatch in optimized expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+		}
+	}
+
+	public static void assertListExpression(FloatingPointListExpression<?> exp, EvaluationContext ctx, double...expected) {
+		FloatingPointListExpression<?> optimized = (FloatingPointListExpression<?>) exp.optimize(ctx);
+		FloatingPointListExpression<?> duplicated = (FloatingPointListExpression<?>) exp.duplicate(ctx);
+
+		assertThat(exp.size()).isEqualTo(expected.length);
+		assertThat(optimized.size()).isEqualTo(exp.size());
+		assertThat(duplicated.size()).isEqualTo(exp.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertThat(exp.getAsDouble(i))
+				.as("Mismatch in original expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(duplicated.getAsDouble(i))
+				.as("Mismatch in duplicate at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(optimized.getAsDouble(i))
+				.as("Mismatch in optimized expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+		}
+	}
+
+	public static void assertListExpression(BooleanListExpression<?> exp, EvaluationContext ctx, boolean...expected) {
+		BooleanListExpression<?> optimized = (BooleanListExpression<?>) exp.optimize(ctx);
+		BooleanListExpression<?> duplicated = (BooleanListExpression<?>) exp.duplicate(ctx);
+
+		assertThat(exp.size()).isEqualTo(expected.length);
+		assertThat(optimized.size()).isEqualTo(exp.size());
+		assertThat(duplicated.size()).isEqualTo(exp.size());
+
+		for (int i = 0; i < expected.length; i++) {
+			assertThat(exp.getAsBoolean(i))
+				.as("Mismatch in original expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(duplicated.getAsBoolean(i))
+				.as("Mismatch in duplicate at %d", _int(i))
+				.isEqualTo(expected[i]);
+			assertThat(optimized.getAsBoolean(i))
+				.as("Mismatch in optimized expression at %d", _int(i))
+				.isEqualTo(expected[i]);
+		}
 	}
 
 	static Object dummy(String toStringValue) {

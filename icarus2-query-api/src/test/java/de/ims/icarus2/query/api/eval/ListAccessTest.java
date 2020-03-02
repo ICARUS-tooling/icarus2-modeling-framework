@@ -19,9 +19,11 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.dynamicLongs;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -156,6 +158,45 @@ class ListAccessTest {
 
 			@Override
 			public Class<?> getTestTargetClass() { return ObjectAccess.class; }
+
+			@Test
+			@RandomizedTest
+			void testIntegerSpecialization(RandomGenerator rng) {
+				long[] array = rng.longs().limit(10).toArray();
+				int index = rng.random(0, array.length);
+
+				Expression<?> exp = ListAccess.atIndex(
+						(ListExpression<?, ?>)ArrayLiterals.of(array), Literals.of(index));
+				assertThat(exp.isInteger()).isTrue();
+				assertThat(exp.computeAsLong()).isEqualTo(array[index]);
+			}
+
+			@Test
+			@RandomizedTest
+			void testFloatingPointSpecialization(RandomGenerator rng) {
+				double[] array = rng.doubles().limit(10).toArray();
+				int index = rng.random(0, array.length);
+
+				Expression<?> exp = ListAccess.atIndex(
+						(ListExpression<?, ?>)ArrayLiterals.of(array), Literals.of(index));
+				assertThat(exp.isFloatingPoint()).isTrue();
+				assertThat(exp.computeAsDouble()).isEqualTo(array[index]);
+			}
+
+			@Test
+			@RandomizedTest
+			void testBooleanSpecialization(RandomGenerator rng) {
+				boolean[] array = new boolean[10];
+				for (int i = 0; i < array.length; i++) {
+					array[i] = rng.nextBoolean();
+				}
+				int index = rng.random(0, array.length);
+
+				Expression<?> exp = ListAccess.atIndex(
+						(ListExpression<?, ?>)ArrayLiterals.of(array), Literals.of(index));
+				assertThat(exp.isBoolean()).isTrue();
+				assertThat(exp.computeAsBoolean()).isEqualTo(array[index]);
+			}
 		}
 	}
 
@@ -254,6 +295,57 @@ class ListAccessTest {
 
 				return (ListExpression<CharSequence[], CharSequence>)
 						ListAccess.filter(ArrayLiterals.ofGeneric(array), ArrayLiterals.of(indices));
+			}
+
+			@Test
+			@RandomizedTest
+			void testIntegerSpecialization(RandomGenerator rng) {
+				long[] array = rng.longs().limit(20).toArray();
+				int[] indices = rng.ints(0, array.length).distinct().limit(10).toArray();
+				long[] expected = IntStream.of(indices).mapToLong(i -> array[i]).toArray();
+
+				ListExpression<?,?> exp = ListAccess.filter(
+						(ListExpression<?, ?>)ArrayLiterals.of(array), ArrayLiterals.of(indices));
+				assertThat(exp.isList()).isTrue();
+				assertThat(TypeInfo.isInteger(exp.getElementType())).isTrue();
+
+				assertListExpression((IntegerListExpression<?>)exp, mock(EvaluationContext.class), expected);
+			}
+
+			@Test
+			@RandomizedTest
+			void testFloatingPointSpecialization(RandomGenerator rng) {
+				double[] array = rng.doubles().limit(20).toArray();
+				int[] indices = rng.ints(0, array.length).distinct().limit(10).toArray();
+				double[] expected = IntStream.of(indices).mapToDouble(i -> array[i]).toArray();
+
+				ListExpression<?,?> exp = ListAccess.filter(
+						(ListExpression<?, ?>)ArrayLiterals.of(array), ArrayLiterals.of(indices));
+				assertThat(exp.isList()).isTrue();
+				assertThat(TypeInfo.isFloatingPoint(exp.getElementType())).isTrue();
+
+				assertListExpression((FloatingPointListExpression<?>)exp, mock(EvaluationContext.class), expected);
+			}
+
+			@Test
+			@RandomizedTest
+			void testBooleanSpecialization(RandomGenerator rng) {
+				boolean[] array = new boolean[20];
+				for (int i = 0; i < array.length; i++) {
+					array[i] = rng.nextBoolean();
+				}
+				int[] indices = rng.ints(0, array.length).distinct().limit(10).toArray();
+				boolean[] expected = new boolean[indices.length];
+				for (int i = 0; i < expected.length; i++) {
+					expected[i] = array[indices[i]];
+				}
+
+				ListExpression<?,?> exp = ListAccess.filter(
+						(ListExpression<?, ?>)ArrayLiterals.of(array), ArrayLiterals.of(indices));
+				assertThat(exp.isList()).isTrue();
+				assertThat(TypeInfo.isBoolean(exp.getElementType())).isTrue();
+
+				assertListExpression((BooleanListExpression<?>)exp, mock(EvaluationContext.class), expected);
 			}
 		}
 	}
