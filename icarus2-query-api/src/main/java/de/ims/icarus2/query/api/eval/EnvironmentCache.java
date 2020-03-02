@@ -32,16 +32,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.ims.icarus2.query.api.eval.Environment.EntryType;
 import de.ims.icarus2.query.api.eval.Environment.NsEntry;
-import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 
@@ -51,10 +46,16 @@ import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
  */
 public class EnvironmentCache {
 
-	private static final Logger log = LoggerFactory.getLogger(EnvironmentCache.class);
-
-	public static @Nullable EnvironmentCache of(Collection<Environment> environments) {
-		if(environments.isEmpty()) {
+	/**
+	 * If given list of environments is {@code null} or empty, returns {@code null},
+	 * otherwise returns  new instance of {@link EnvironmentCache} with {@code environments}
+	 * as argument.
+	 *
+	 * @param environments
+	 * @return
+	 */
+	public static @Nullable EnvironmentCache of(@Nullable Collection<Environment> environments) {
+		if(environments==null || environments.isEmpty()) {
 			return null;
 		}
 		return new EnvironmentCache(environments);
@@ -102,16 +103,19 @@ public class EnvironmentCache {
 		entriesByName.computeIfAbsent(name, k -> new ReferenceLinkedOpenHashSet<>()).add(entry);
 	}
 
+	private static Predicate<NsEntry> filterFieldCandidates() {
+		return e -> e.getEntryType()==EntryType.FIELD || e.argumentCount()==0;
+	}
+
 	private static final Predicate<NsEntry> ALL = e -> true;
 	private static final Predicate<NsEntry> GLOBAL_ONLY = e -> !e.getSource().getContext().isPresent();
 
-	private static Predicate<NsEntry> filterByScope(Expression<?> scope) {
+	private static Predicate<NsEntry> filterByScope(TypeInfo scope) {
 		if(scope==null) {
 			return GLOBAL_ONLY;
 		}
 
-		TypeInfo type = scope.getResultType();
-		Class<?> clazz = type.getType();
+		Class<?> clazz = scope.getType();
 
 		return e ->  {
 			Class<?> context = e.getSource().getContext().orElse(null);
@@ -120,7 +124,7 @@ public class EnvironmentCache {
 	}
 
 	private static Predicate<NsEntry> filterByType(TypeFilter filter) {
-		if(filter==null || filter==TypeFilter.ALL) {
+		if(filter==TypeFilter.ALL) {
 			return ALL;
 		}
 
@@ -130,43 +134,19 @@ public class EnvironmentCache {
 	private static final Comparator<NsEntry> PRIORITY_ORDER = (e1, e2) ->
 		e1.getSource().getPriority().compareTo(e2.getSource().getPriority());
 
-	private List<NsEntry> fieldCandidates(Expression<?> scope, String name, TypeFilter filter) {
+	private List<NsEntry> fieldCandidates(TypeInfo scope, String name, TypeFilter filter) {
 		return entriesByName.getOrDefault(name, Collections.emptySet()).stream()
+				.filter(filterFieldCandidates())
 				.filter(filterByScope(scope))
 				.filter(filterByType(filter))
 				.sorted(PRIORITY_ORDER)
 				.collect(Collectors.toList());
 	}
 
-	public Expression<?> resolve(@Nullable Expression<?> scope, String name,
-			@Nullable TypeFilter filter) {
-		requireNonNull(name);
-		filter = filterOrAll(filter);
-
-		ensureLookup();
-		List<NsEntry> candidates = fieldCandidates(scope, name, filter);
-
-		if(candidates.isEmpty()) {
-			return null;
-		}
-
-		if(candidates.size()>1) {
-			log.debug("Ambiguous name '{}' leading to entries: {}", name,
-					CollectionUtils.toString(candidates));
-		}
-
-		return candidates.get(0).instantiate(scope);
-	}
-
 	/**
 	 *
 	 */
-	private static Predicate<NsEntry> filterByArguments(Expression<?>[] arguments) {
-
-		final TypeInfo[] argumentTypes = Stream.of(arguments)
-				.map(Expression::getResultType)
-				.toArray(TypeInfo[]::new);
-
+	private static Predicate<NsEntry> filterByArguments(TypeInfo[] argumentTypes) {
 		return e -> {
 			// Shortcut for zero-argument methods that 'collide' with fields
 			if(argumentTypes.length==0 && (e.argumentCount()==0 || e.getEntryType()==EntryType.FIELD)) {
@@ -188,8 +168,8 @@ public class EnvironmentCache {
 		};
 	}
 
-	private List<NsEntry> methodCandidates(Expression<?> scope, String name,
-			TypeFilter resultFilter, Expression<?>[] arguments) {
+	private List<NsEntry> methodCandidates(TypeInfo scope, String name,
+			TypeFilter resultFilter, TypeInfo[] arguments) {
 		return entriesByName.getOrDefault(name, Collections.emptySet()).stream()
 				.filter(filterByScope(scope))
 				.filter(filterByType(resultFilter))
@@ -198,24 +178,25 @@ public class EnvironmentCache {
 				.collect(Collectors.toList());
 	}
 
-	public Expression<?> resolve(@Nullable Expression<?> scope, String name,
-			@Nullable TypeFilter resultFilter, Expression<?>[] arguments) {
+	public List<NsEntry> resolve(@Nullable TypeInfo scope, String name,
+			@Nullable TypeFilter resultFilter, TypeInfo...argumentTypes) {
 		requireNonNull(name);
-		requireNonNull(arguments);
+		requireNonNull(argumentTypes);
 		resultFilter = filterOrAll(resultFilter);
 
 		ensureLookup();
-		List<NsEntry> candidates = methodCandidates(scope, name, resultFilter, arguments);
+		List<NsEntry> candidates = null;
 
-		if(candidates.isEmpty()) {
-			return null;
+		if(argumentTypes.length==0) {
+			candidates = fieldCandidates(scope, name, resultFilter);
 		}
 
-		if(candidates.size()>1) {
-			log.debug("Ambiguous method name '{}' leading to entries: {}", name,
-					CollectionUtils.toString(candidates));
+		if(candidates==null || candidates.isEmpty()) {
+			candidates = methodCandidates(scope, name, resultFilter, argumentTypes);
 		}
 
-		return candidates.get(0).instantiate(scope, arguments);
+		return candidates;
 	}
+
+	//TODO add methods for fuzzy candidate search. will be needed for auto-complete/recommenders.
 }

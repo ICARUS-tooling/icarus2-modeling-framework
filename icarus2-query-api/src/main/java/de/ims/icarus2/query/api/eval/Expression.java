@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -26,6 +27,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import de.ims.icarus2.util.lang.Primitives;
 
 /**
  * Models the basic building blocks for evaluating and accessing corpus data through the
@@ -127,6 +129,15 @@ public interface Expression<T> {
 	 */
 	default long computeAsLong() {
 		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.INTEGER);
+	}
+
+	/**
+	 * Utility default method to support situations where strictly {@code int} values
+	 * are desired. Delegates to {@link #computeAsLong()} and converts to an integer
+	 * via {@link Primitives#strictToInt(long)}.
+	 */
+	default int computeAsInt() {
+		return strictToInt(computeAsLong());
 	}
 
 	/**

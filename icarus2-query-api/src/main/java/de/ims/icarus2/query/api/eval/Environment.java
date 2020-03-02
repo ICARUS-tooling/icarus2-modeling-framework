@@ -60,6 +60,10 @@ public interface Environment {
 	 */
 	Optional<Class<?>> getContext();
 
+	default boolean isGlobal() {
+		return !getContext().isPresent();
+	}
+
 	/**
 	 * An individual type-aware entry in a namespace/environment.
 	 *
@@ -67,6 +71,8 @@ public interface Environment {
 	 *
 	 */
 	interface NsEntry {
+		//TODO add method to fetch description
+
 		/**
 		 * Info about the object type or return type of the field or method
 		 * described by this entry.

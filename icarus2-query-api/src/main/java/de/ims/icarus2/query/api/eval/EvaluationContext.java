@@ -41,8 +41,12 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -70,12 +74,14 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.engine.ext.EngineConfigurator;
+import de.ims.icarus2.query.api.eval.Environment.NsEntry;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -90,6 +96,8 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  *
  */
 public abstract class EvaluationContext {
+
+	private static final Logger log = LoggerFactory.getLogger(EvaluationContext.class);
 
 	public static RootContextBuilder rootBuilder() {
 		return new RootContextBuilder();
@@ -963,6 +971,9 @@ public abstract class EvaluationContext {
 	 * is considered the most important one for any resolution process, with
 	 * the importance of subsequent entries decreasing.
 	 * @return
+	 *
+	 * @deprecated we discarded the idea of a changing set of active environments
+	 * in favor of a cache implementation that searches for applicable environments.
 	 */
 	@Deprecated
 	public List<Environment> getActiveEnvironments() {
@@ -970,10 +981,27 @@ public abstract class EvaluationContext {
 		throw new UnsupportedOperationException();
 	}
 
+	private static final TypeInfo[] NO_ARGS = {};
+
+	private TypeInfo[] argTypes(@Nullable Expression<?>[] arguments) {
+		if(arguments==null || arguments.length==0) {
+			return NO_ARGS;
+		}
+		return Stream.of(arguments)
+				.map(Expression::getResultType)
+				.toArray(TypeInfo[]::new);
+
+	}
+
+	private @Nullable TypeInfo type(@Nullable Expression<?> exp) {
+		return exp==null ? null : exp.getResultType();
+	}
+
 	/**
-	 * Tries to resolve the given {@code name} to a field or no-args method
-	 * equivalent. Using the {@code resultFilter} argument, returned expressions
+	 * Tries to resolve the given {@code name} to a field or method.
+	 * Using the {@code resultFilter} argument, returned expressions
 	 * can be restricted to be return type compatible to a desired target type.
+	 * If the
 	 *
 	 * @throws QueryException of type {@link QueryErrorCode#UNKNOWN_IDENTIFIER} iff
 	 * the specified {@code name} could not be resolved to a target that satisfies
@@ -982,47 +1010,26 @@ public abstract class EvaluationContext {
 	 * @param scope the optional context that defines the scope of resolution
 	 * @param name the identifier to be used for resolution
 	 * @param filter optional restriction on the allowed types of obejcts to be resolved
-	 */
-	public Optional<Expression<?>> resolve(@Nullable Expression<?> scope, String name,
-			@Nullable TypeFilter filter) {
-		checkNotEmpty(name);
-
-		EvaluationContext ctx = this;
-		while(ctx!=null) {
-			if(ctx.environmentCache!=null) {
-				Expression<?> result = ctx.environmentCache.resolve(scope, name, filter);
-				if(result!=null) {
-					return Optional.of(result);
-				}
-			}
-
-			ctx = ctx.getParent().orElse(null);
-		}
-
-		return Optional.empty();
-	}
-
-	/**
-	 * Tries to resolve the given {@code name} to a method that takes the
-	 * specified {@code arguments} as input.
-	 * If the {@code resultFilter} argument is provided, it will be used to
-	 * restrict the pool of methods to be considered to those that return
-	 * a compatible value.
 	 *
 	 * @throws QueryException of type {@link QueryErrorCode#UNKNOWN_IDENTIFIER} iff
 	 * the specified {@code name} could not be resolved to a method that satisfies
 	 * the given {@code argument} specification and {@code resultFilter} (if present).
 	 */
 	public Optional<Expression<?>> resolve(@Nullable Expression<?> scope, String name,
-			@Nullable TypeFilter resultFilter, Expression<?>[] arguments) {
+			@Nullable TypeFilter filter, Expression<?>...arguments) {
 		checkNotEmpty(name);
 
 		EvaluationContext ctx = this;
 		while(ctx!=null) {
 			if(ctx.environmentCache!=null) {
-				Expression<?> result = ctx.environmentCache.resolve(scope, name, resultFilter, arguments);
-				if(result!=null) {
-					return Optional.of(result);
+				List<NsEntry> candidates = ctx.environmentCache.resolve(
+						type(scope), name, filter, argTypes(arguments));
+
+				if(candidates.size()>1) {
+					log.debug("Ambiguous method name '{}' leading to entries: {}", name,
+							CollectionUtils.toString(candidates));
+				} else if(!candidates.isEmpty()) {
+					return Optional.of(candidates.get(0).instantiate(scope, arguments));
 				}
 			}
 

@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
@@ -252,5 +253,11 @@ public class EvaluationUtils {
 		}
 
 		return Pattern.compile(regex, flags);
+	}
+
+	public static <T> Expression<T> argAt(Expression<T>[] args, int index) {
+		requireNonNull(args, "No arguments available");
+		checkArgument("Insufficient arguments", args.length>index);
+		return args[index];
 	}
 }

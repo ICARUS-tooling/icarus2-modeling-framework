@@ -60,6 +60,8 @@ public class TypeInfo {
 
 		if(type==String.class) {
 			return STRING;
+		} else if(type==Object.class) {
+			return GENERIC;
 		}
 
 		boolean isMember = Item.class.isAssignableFrom(type);
@@ -123,11 +125,15 @@ public class TypeInfo {
 	/**
 	 * Returns {@code true} if this info's {@link #getType() type} is
 	 * {@link Class#isAssignableFrom(Class) assignable} from the {@code other}'s type.
+	 * <p>
+	 * For {@link #isPrimitive() primitive} class compatibility is checked via equality
+	 * of the primitive type.
+	 *
 	 * @param other
 	 * @return
 	 */
 	public boolean isCompatible(TypeInfo other) {
-		return (isPrimitive() && primitiveType==other.primitiveType) ||type.isAssignableFrom(other.type);
+		return isPrimitive() ? primitiveType==other.primitiveType : type.isAssignableFrom(other.type);
 	}
 
 	public static boolean isNumerical(TypeInfo info) {
