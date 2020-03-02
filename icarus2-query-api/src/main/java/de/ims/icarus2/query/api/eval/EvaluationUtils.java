@@ -255,7 +255,7 @@ public class EvaluationUtils {
 		return Pattern.compile(regex, flags);
 	}
 
-	public static <T> Expression<T> argAt(Expression<T>[] args, int index) {
+	public static Expression<?> argAt(Expression<?>[] args, int index) {
 		requireNonNull(args, "No arguments available");
 		checkArgument("Insufficient arguments", args.length>index);
 		return args[index];
