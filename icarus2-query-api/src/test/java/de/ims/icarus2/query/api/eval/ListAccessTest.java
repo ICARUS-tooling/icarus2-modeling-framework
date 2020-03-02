@@ -19,7 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -52,6 +53,7 @@ import de.ims.icarus2.query.api.eval.ListAccess.IntegerListWrapper;
 import de.ims.icarus2.query.api.eval.ListAccess.ObjectAccess;
 import de.ims.icarus2.query.api.eval.ListAccess.ObjectBatchAccess;
 import de.ims.icarus2.query.api.eval.ListAccess.ObjectWrapper;
+import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 
@@ -614,4 +616,65 @@ class ListAccessTest {
 		}
 	}
 
+	@Nested
+	class Unwrapper {
+
+		@Test
+		@RandomizedTest
+		void testInteger(RandomGenerator rng) {
+			long[] array = rng.randomLongs(10, Long.MIN_VALUE, Long.MAX_VALUE);
+			Expression<?>[] elements = ListAccess.unwrap(ArrayLiterals.of(array));
+			assertThat(elements).hasSize(array.length);
+			for (int i = 0; i < elements.length; i++) {
+				assertThat(elements[i].computeAsLong())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(array[i]);
+			}
+		}
+
+		@Test
+		@RandomizedTest
+		void testFloatingPoint(RandomGenerator rng) {
+			double[] array = rng.randomDoubles(10);
+			Expression<?>[] elements = ListAccess.unwrap(ArrayLiterals.of(array));
+			assertThat(elements).hasSize(array.length);
+			for (int i = 0; i < elements.length; i++) {
+				assertThat(elements[i].computeAsDouble())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(array[i]);
+			}
+		}
+
+		@Test
+		@RandomizedTest
+		void testBoolean(RandomGenerator rng) {
+			boolean[] array = new boolean[10];
+			for (int i = 0; i < array.length; i++) {
+				array[i] = rng.nextBoolean();
+			}
+			Expression<?>[] elements = ListAccess.unwrap(ArrayLiterals.of(array));
+			assertThat(elements).hasSize(array.length);
+			for (int i = 0; i < elements.length; i++) {
+				assertThat(elements[i].computeAsBoolean())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(array[i]);
+			}
+		}
+
+		@Test
+		@RandomizedTest
+		void testGeneric(RandomGenerator rng) {
+			CharSequence[] array = new CharSequence[10];
+			for (int i = 0; i < array.length; i++) {
+				array[i] = rng.randomUnicodeString(10);
+			}
+			Expression<?>[] elements = ListAccess.unwrap(ArrayLiterals.ofGeneric(array));
+			assertThat(elements).hasSize(array.length);
+			for (int i = 0; i < elements.length; i++) {
+				assertThat(elements[i].compute())
+					.as("Mismatch at index %d", _int(i))
+					.isEqualTo(array[i]);
+			}
+		}
+	}
 }
