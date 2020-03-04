@@ -73,7 +73,7 @@ public class EnvironmentCache {
 	}
 
 	public void dispose() {
-		populated.set(true);
+		populated.set(true); // this will prevent future (re)loading
 		environments.clear();
 		entriesByName.clear();
 	}

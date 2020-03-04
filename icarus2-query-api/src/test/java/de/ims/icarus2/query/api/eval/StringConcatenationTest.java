@@ -113,7 +113,7 @@ class StringConcatenationTest implements TextExpressionTest {
 				literal("end")
 			);
 
-			StringConcatenation instance = StringConcatenation.concat(elements);
+			StringConcatenation instance = (StringConcatenation) StringConcatenation.concat(elements);
 
 			assertThat(instance.getElements()).isEqualTo(elements);
 
@@ -136,7 +136,7 @@ class StringConcatenationTest implements TextExpressionTest {
 				ExpressionTestUtils.fixed("end")
 			);
 
-			StringConcatenation instance = StringConcatenation.concat(elements);
+			StringConcatenation instance = (StringConcatenation) StringConcatenation.concat(elements);
 
 			assertThat(instance.getElements()).isEqualTo(elements);
 
@@ -159,7 +159,7 @@ class StringConcatenationTest implements TextExpressionTest {
 				ExpressionTestUtils.fixed("end")
 			);
 
-			StringConcatenation instance = StringConcatenation.concat(elements);
+			StringConcatenation instance = (StringConcatenation) StringConcatenation.concat(elements);
 			assertThat(instance.optimize(context())).isSameAs(instance);
 		}
 
@@ -173,7 +173,7 @@ class StringConcatenationTest implements TextExpressionTest {
 				ExpressionTestUtils.fixed("end")
 			);
 
-			StringConcatenation instance = StringConcatenation.concat(elements);
+			StringConcatenation instance = (StringConcatenation) StringConcatenation.concat(elements);
 			assertThat(instance.compute()).hasToString("begin end");
 
 			buffer.set("...");

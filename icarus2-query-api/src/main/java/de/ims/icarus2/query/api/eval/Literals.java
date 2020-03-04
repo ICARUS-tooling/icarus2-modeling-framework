@@ -72,15 +72,26 @@ public final class Literals {
 		public Object compute() { return null; }
 	}
 
+	private static final Expression<CharSequence> EMPTY_STRING = new StringLiteral("");
+
+	public static Expression<CharSequence> emptyString() {
+		return EMPTY_STRING;
+	}
+
 	public static Expression<CharSequence> of(CharSequence value) {
-		return new StringLiteral(value);
+		if(value.length()==0) {
+			return emptyString();
+		}
+
+		return new StringLiteral(value.toString());
 	}
 
 	static final class StringLiteral extends Literal<CharSequence> {
 
-		private final CharSequence value;
+		// We use String here instead of CharSequence to ensure immutability
+		private final String value;
 
-		StringLiteral(CharSequence value) {
+		StringLiteral(String value) {
 			this.value = requireNonNull(value);
 		}
 

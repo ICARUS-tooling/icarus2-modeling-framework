@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -50,6 +51,8 @@ public final class References {
 		private Member(String name, TypeInfo type) {
 			this.name = checkNotEmpty(name);
 			this.type = requireNonNull(type);
+			// Sanity check against (accidentally) setting incompatible type
+			checkArgument("Not an Item type: "+type, Item.class.isAssignableFrom(type.getType()));
 		}
 
 		@Override
@@ -67,7 +70,8 @@ public final class References {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Item> duplicate(EvaluationContext context) {
-			return (Expression<Item>) context.getMember(name).orElseThrow(() -> EvaluationUtils.forInternalError(
+			return (Expression<Item>) context.getMember(name).orElseThrow(
+					() -> EvaluationUtils.forInternalError(
 					"Context is missing member store for name: %s", name));
 		}
 	}

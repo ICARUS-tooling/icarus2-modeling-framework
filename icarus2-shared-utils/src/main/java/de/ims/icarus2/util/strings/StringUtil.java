@@ -1011,22 +1011,23 @@ public final class StringUtil {
 	 * Replaces all occurrences of {@code c} in {@code source} with the string
 	 * {@code r}.
 	 * @param source
-	 * @param c
+	 * @param s
 	 * @param r
 	 * @return
 	 */
-	public static String replaceAll(String source, char c, String r) {
+	public static String replaceAll(String source, char s, String r) {
 		requireNonNull(source);
 		requireNonNull(r);
 
-		if(source.indexOf(c)==-1) {
+		if(source.indexOf(s)==-1) {
 			return source;
 		}
 
 		StringBuilder sb = new StringBuilder(source.length()+10*r.length()); //TODO smart estimation?
 
 		for (int i = 0; i < source.length(); i++) {
-			if(source.charAt(i)==c) {
+			char c = source.charAt(i);
+			if(source.charAt(i)==s) {
 				sb.append(r);
 			} else {
 				sb.append(c);

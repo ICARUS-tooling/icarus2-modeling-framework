@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 public class StringConcatenation implements Expression<CharSequence> {
 
-	public static StringConcatenation concat(Expression<CharSequence>[] elements) {
+	public static Expression<CharSequence> concat(Expression<CharSequence>[] elements) {
 		return new StringConcatenation(elements.clone()); // defensive copy
 	}
 
@@ -113,7 +113,9 @@ public class StringConcatenation implements Expression<CharSequence> {
 		assert newElements.size()<=elements.length;
 		hasChanged |= newElements.size()!=elements.length;
 
-		if(newElements.size()==1) {
+		if(newElements.isEmpty()) {
+			return Literals.emptyString();
+		} if(newElements.size()==1) {
 			return newElements.get(0);
 		} else if(hasChanged || newElements.size()<elements.length) {
 			return new StringConcatenation(newElements.toArray(new Expression[newElements.size()]));

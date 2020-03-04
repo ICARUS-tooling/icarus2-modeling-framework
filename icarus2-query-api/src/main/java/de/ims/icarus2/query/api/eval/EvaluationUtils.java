@@ -20,6 +20,8 @@
 package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives._char;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
@@ -52,6 +54,67 @@ public class EvaluationUtils {
 	public static <T> Expression<T>[] noArgs() {
 		return (Expression<T>[]) NO_ARGS;
 	}
+
+	public static String unquote(String s) {
+		int start = s.startsWith("\"") ? 1 : 0;
+		int end = s.length();
+		if(s.endsWith("\"")) {
+			end--;
+		}
+		return s.substring(start, end);
+	}
+
+	public static String quote(String s) {
+		if(s.startsWith("\"") && s.endsWith("\"")) {
+			return s;
+		}
+
+		StringBuilder sb = new StringBuilder(s.length()+2);
+		if(!s.startsWith("\"")) {
+			sb.append('"');
+		}
+		sb.append(s);
+		if(!s.endsWith("\"")) {
+			sb.append('"');
+		}
+
+		return sb.toString();
+	}
+
+	public static String unescape(String s) {
+		requireNonNull(s);
+		if(s.indexOf('\\')!=-1) {
+			StringBuilder sb = new StringBuilder(s.length());
+			boolean escaped = false;
+			for (int i = 0; i < s.length(); i++) {
+				char c = s.charAt(i);
+				if(escaped) {
+					char r;
+					switch (c) {
+					case '\\': r = '\\'; break;
+					case 'r' : r = '\r'; break;
+					case 'n':  r = '\n'; break;
+					case 't':  r = '\t'; break;
+
+					default:
+						throw new QueryException(QueryErrorCode.INVALID_LITERAL,String.format(
+								"Unexpected escape sequence in '%s' at index %d: %s",
+								s, _int(i), _char(c)));
+					}
+					sb.append(r);
+					escaped = false;
+				} else if(c=='\\') {
+					escaped = true;
+				} else {
+					sb.append(c);
+				}
+			}
+			s = sb.toString();
+		}
+		return s;
+	}
+
+	//TODO add utility method to escape string for IQL
 
 	private static final Map<ValueType, TypeInfo> typeMap = new Reference2ReferenceOpenHashMap<>();
 

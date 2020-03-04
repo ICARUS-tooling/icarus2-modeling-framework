@@ -218,14 +218,14 @@ public class Expressions {
 
 	public static <V,T> Expression<?> wrapObj(NsEntry entry, Function<V, T> objFunc,
 			Expression<?> source, Expression<?>...arguments) {
-		return new ObjProxy<>(entry, objFunc, source, arguments);
+		return new ObjectProxy<>(entry, objFunc, source, arguments);
 	}
 
-	private static final class ObjProxy<V,T> extends Proxy<V, T> {
+	private static final class ObjectProxy<V,T> extends Proxy<V, T> {
 
 		private final Function<V, T> objFunc;
 
-		private ObjProxy(NsEntry entry, Function<V, T> objFunc, Expression<?> source, Expression<?>...arguments) {
+		private ObjectProxy(NsEntry entry, Function<V, T> objFunc, Expression<?> source, Expression<?>...arguments) {
 			super(entry, source, arguments);
 			this.objFunc = requireNonNull(objFunc);
 		}
@@ -236,15 +236,15 @@ public class Expressions {
 
 	public static <V> Expression<Primitive<Long>> wrapInt(NsEntry entry, ToLongFunction<V> intFunc,
 			Expression<?> source, Expression<?>...arguments) {
-		return new IntProxy<>(entry, intFunc, source, arguments);
+		return new IntegerProxy<>(entry, intFunc, source, arguments);
 	}
 
-	private static final class IntProxy<V> extends Proxy<V, Primitive<Long>> {
+	private static final class IntegerProxy<V> extends Proxy<V, Primitive<Long>> {
 
 		private final ToLongFunction<V> intFunc;
 		private final MutableLong value = new MutableLong();
 
-		private IntProxy(NsEntry entry, ToLongFunction<V> intFunc, Expression<?> source, Expression<?>...arguments) {
+		private IntegerProxy(NsEntry entry, ToLongFunction<V> intFunc, Expression<?> source, Expression<?>...arguments) {
 			super(entry, source, arguments);
 			this.intFunc = requireNonNull(intFunc);
 		}
@@ -265,15 +265,15 @@ public class Expressions {
 
 	public static <V> Expression<Primitive<Double>> wrapFloat(NsEntry entry, ToDoubleFunction<V> fpFunc,
 			Expression<?> source, Expression<?>...arguments) {
-		return new FPProxy<>(entry, fpFunc, source, arguments);
+		return new FloatingPointProxy<>(entry, fpFunc, source, arguments);
 	}
 
-	private static final class FPProxy<V> extends Proxy<V, Primitive<Double>> {
+	private static final class FloatingPointProxy<V> extends Proxy<V, Primitive<Double>> {
 
 		private final ToDoubleFunction<V> fpFunc;
 		private final MutableDouble value = new MutableDouble();
 
-		private FPProxy(NsEntry entry, ToDoubleFunction<V> fpFunc, Expression<?> source, Expression<?>...arguments) {
+		private FloatingPointProxy(NsEntry entry, ToDoubleFunction<V> fpFunc, Expression<?> source, Expression<?>...arguments) {
 			super(entry, source, arguments);
 			this.fpFunc = requireNonNull(fpFunc);
 		}

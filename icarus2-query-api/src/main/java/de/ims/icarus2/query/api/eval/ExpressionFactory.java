@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
@@ -293,34 +295,8 @@ public class ExpressionFactory {
 
 	private Expression<CharSequence> processStringLiteral(TerminalNode node) {
 		String content = textOf(node);
-		// If needed, unescape the content first
-		if(content.indexOf('\\')!=-1) {
-			StringBuilder sb = new StringBuilder(content.length());
-			boolean escaped = false;
-			for (int i = 0; i < content.length(); i++) {
-				char c = content.charAt(i);
-				if(c=='\\') {
-					escaped = true;
-				} else if(escaped) {
-					char r;
-					switch (c) {
-					case '\\': r = '\\'; break;
-					case 'r' : r = '\r'; break;
-					case 'n':  r = '\n'; break;
-					case 't':  r = '\t'; break;
-
-					default:
-						throw new QueryException(QueryErrorCode.INVALID_LITERAL,String.format(
-								"Unexpected escape sequence in '%s' at index %d: %s",
-								content, _int(i), _char(c)));
-					}
-					sb.append(r);
-				} else {
-					sb.append(c);
-				}
-			}
-			content = sb.toString();
-		}
+		content = unquote(content);
+		content = unescape(content);
 		return Literals.of(content);
 	}
 

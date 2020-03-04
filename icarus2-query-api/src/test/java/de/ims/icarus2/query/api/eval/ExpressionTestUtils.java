@@ -22,6 +22,7 @@ package de.ims.icarus2.query.api.eval;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
@@ -44,12 +45,14 @@ public class ExpressionTestUtils {
 
 	// Simple expression assertions
 
-	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, Object expected) {
-		assertThat(exp.compute()).isEqualTo(expected);
+	@SuppressWarnings("unchecked")
+	public static <T> void assertExpression(Expression<?> exp, EvaluationContext ctx, T expected,
+			BiPredicate<T, T> equality) {
+		assertThat(exp.compute()).satisfies(result -> equality.test((T) result, expected));
 
-		assertThat(exp.duplicate(ctx).compute()).isEqualTo(expected);
+		assertThat(exp.duplicate(ctx).compute()).satisfies(result -> equality.test((T) result, expected));
 
-		assertThat(exp.optimize(ctx).compute()).isEqualTo(expected);
+		assertThat(exp.optimize(ctx).compute()).satisfies(result -> equality.test((T) result, expected));
 	}
 
 	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, long expected) {
