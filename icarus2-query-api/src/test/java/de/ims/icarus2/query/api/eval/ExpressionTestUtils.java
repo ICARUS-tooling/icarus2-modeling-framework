@@ -81,7 +81,9 @@ public class ExpressionTestUtils {
 
 	// Liste expression assertions
 
-	public static void assertListExpression(ListExpression<?,?> exp, EvaluationContext ctx, Object...expected) {
+	@SuppressWarnings("unchecked")
+	public static <T> void assertListExpression(ListExpression<?,T> exp, EvaluationContext ctx,
+			BiPredicate<T, T> equality, T...expected) {
 		ListExpression<?,?> optimized = (ListExpression<?, ?>) exp.optimize(ctx);
 		ListExpression<?,?> duplicated = (ListExpression<?, ?>) exp.duplicate(ctx);
 
@@ -90,15 +92,16 @@ public class ExpressionTestUtils {
 		assertThat(duplicated.size()).isEqualTo(exp.size());
 
 		for (int i = 0; i < expected.length; i++) {
+			T target = expected[i];
 			assertThat(exp.get(i))
 				.as("Mismatch in original expression at %d", _int(i))
-				.isEqualTo(expected[i]);
+				.satisfies(item -> equality.test(item, target));
 			assertThat(duplicated.get(i))
 				.as("Mismatch in duplicate at %d", _int(i))
-				.isEqualTo(expected[i]);
+				.satisfies(item -> equality.test((T)item, target));
 			assertThat(optimized.get(i))
 				.as("Mismatch in optimized expression at %d", _int(i))
-				.isEqualTo(expected[i]);
+				.satisfies(item -> equality.test((T)item, target));
 		}
 	}
 

@@ -367,7 +367,12 @@ primary
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
+	| array
 	| reference	
+	;
+	
+array
+	: LBRACE expressionList RBRACE
 	;
 	
 reference

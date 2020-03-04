@@ -40,33 +40,98 @@ public final class ArrayLiterals {
 
 	private ArrayLiterals() { /* no-op */ }
 
+	// LONG
+
+	private static final IntegerListExpression<long[]> EMPTY_LONG_ARRAY = new LongArray(new long[0]);
+
+	public static IntegerListExpression<long[]> emptyLongArray() { return EMPTY_LONG_ARRAY; }
+
 	public static IntegerListExpression<long[]> of(long...array) {
+		if(array.length==0) {
+			return emptyLongArray();
+		}
 		return new LongArray(array);
 	}
 
+	//INT
+
+	private static final IntegerListExpression<int[]> EMPTY_INT_ARRAY = new IntArray(new int[0]);
+
+	public static IntegerListExpression<int[]> emptyIntArray() { return EMPTY_INT_ARRAY; }
+
 	public static IntegerListExpression<int[]> of(int...array) {
+		if(array.length==0) {
+			return emptyIntArray();
+		}
 		return new IntArray(array);
 	}
 
+	// SHORT
+
+	private static final IntegerListExpression<short[]> EMPTY_SHORT_ARRAY = new ShortArray(new short[0]);
+
+	public static IntegerListExpression<short[]> emptyShortArray() { return EMPTY_SHORT_ARRAY; }
+
 	public static IntegerListExpression<short[]> of(short...array) {
+		if(array.length==0) {
+			return emptyShortArray();
+		}
 		return new ShortArray(array);
 	}
 
+	// BYTE
+
+	private static final IntegerListExpression<byte[]> EMPTY_BYTE_ARRAY = new ByteArray(new byte[0]);
+
+	public static IntegerListExpression<byte[]> emptyByteArray() { return EMPTY_BYTE_ARRAY; }
+
 	public static IntegerListExpression<byte[]> of(byte...array) {
+		if(array.length==0) {
+			return emptyByteArray();
+		}
 		return new ByteArray(array);
 	}
 
+	// FLOAT
+
+	private static final FloatingPointListExpression<float[]> EMPTY_FLOAT_ARRAY = new FloatArray(new float[0]);
+
+	public static FloatingPointListExpression<float[]> emptyFloatArray() { return EMPTY_FLOAT_ARRAY; }
+
 	public static FloatingPointListExpression<float[]> of(float...array) {
+		if(array.length==0) {
+			return emptyFloatArray();
+		}
 		return new FloatArray(array);
 	}
 
+	// DOUBLE
+
+	private static final FloatingPointListExpression<double[]> EMPTY_DOUBLE_ARRAY = new DoubleArray(new double[0]);
+
+	public static FloatingPointListExpression<double[]> emptyDoubleArray() { return EMPTY_DOUBLE_ARRAY; }
+
 	public static FloatingPointListExpression<double[]> of(double...array) {
+		if(array.length==0) {
+			return emptyDoubleArray();
+		}
 		return new DoubleArray(array);
 	}
 
+	// BOOLEAN
+
+	private static final BooleanListExpression<boolean[]> EMPTY_BOOLEAN_ARRAY = new BooleanArray(new boolean[0]);
+
+	public static BooleanListExpression<boolean[]> emptyBooleanArray() { return EMPTY_BOOLEAN_ARRAY; }
+
 	public static BooleanListExpression<boolean[]> of(boolean...array) {
+		if(array.length==0) {
+			return emptyBooleanArray();
+		}
 		return new BooleanArray(array);
 	}
+
+	// GENERIC
 
 	public static <E> ListExpression<E[], E> ofGeneric(
 			@SuppressWarnings("unchecked") E...array) {

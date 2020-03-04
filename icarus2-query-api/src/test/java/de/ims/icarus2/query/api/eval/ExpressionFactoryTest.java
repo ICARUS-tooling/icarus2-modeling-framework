@@ -22,6 +22,7 @@ package de.ims.icarus2.query.api.eval;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.quote;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertExpression;
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,10 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
 import java.util.Objects;
+import java.util.function.IntConsumer;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -41,8 +46,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StandaloneExpressionContext;
+import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.strings.StringUtil;
 
 /**
@@ -161,6 +172,100 @@ class ExpressionFactoryTest {
 				Expression<?> exp = parse(input);
 				assertThat(exp.isBoolean()).isTrue();
 				assertExpression(exp, context, result);
+			}
+		}
+
+		@Nested
+		class ForArrays {
+
+			@SuppressWarnings("unchecked")
+			@CsvSource(delimiter=';', value = {
+				"{null}; 1",
+				"{null, null}; 2",
+				"{NULL}; 1",
+				"{NULL, null}; 2",
+				"{null, null, null, null}; 4",
+			})
+			@ParameterizedTest
+			void testNullArray(String input, int size) {
+				Object[] target = Stream.generate(() -> null).limit(size).toArray();
+				Expression<?> exp = parse(input);
+				assertThat(exp.isList()).isTrue();
+				assertListExpression((ListExpression<?, Object>)exp, context, Objects::equals, target);
+			}
+
+			private Stream<DynamicNode> makeTests(IntConsumer action) {
+				return IntStream.range(1, 10).mapToObj(size -> dynamicTest(String.valueOf(size),
+						() -> action.accept(size)));
+			}
+
+			@SuppressWarnings("unchecked")
+			@TestFactory
+			@RandomizedTest
+			Stream<DynamicNode> testStringArray(RandomGenerator rng) {
+				return makeTests(size -> {
+					String[] expected = IntStream.range(0, size)
+							.mapToObj(i -> "item_"+i)
+							.map(EvaluationUtils::quote)
+							.toArray(String[]::new);
+					String[] elements = Stream.of(expected)
+							.map(EvaluationUtils::quote)
+							.toArray(String[]::new);
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression((ListExpression<?, CharSequence>)exp,
+							context, StringUtil::equals, expected);
+				});
+			}
+
+			@TestFactory
+			@RandomizedTest
+			Stream<DynamicNode> testIntegerArray(RandomGenerator rng) {
+				return makeTests(size -> {
+					long[] expected = rng.longs(size).toArray();
+					String[] elements = LongStream.of(expected)
+							.mapToObj(String::valueOf)
+							.toArray(String[]::new);
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression((IntegerListExpression<?>)exp, context, expected);
+				});
+			}
+
+			@TestFactory
+			@RandomizedTest
+			Stream<DynamicNode> testFloatingPointArray(RandomGenerator rng) {
+				return makeTests(size -> {
+					double[] expected = rng.doubles(size).toArray();
+					String[] elements = DoubleStream.of(expected)
+							.mapToObj(String::valueOf)
+							.toArray(String[]::new);
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression((FloatingPointListExpression<?>)exp, context, expected);
+				});
+			}
+
+			@TestFactory
+			@RandomizedTest
+			Stream<DynamicNode> testBooleanArray(RandomGenerator rng) {
+				return makeTests(size -> {
+					boolean[] expected = new boolean[size];
+					String[] elements = new String[size];
+
+					for (int i = 0; i < elements.length; i++) {
+						expected[i] = i%2==0;
+						elements[i] = String.valueOf(expected[i]);
+					}
+
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression((BooleanListExpression<?>)exp, context, expected);
+				});
 			}
 		}
 

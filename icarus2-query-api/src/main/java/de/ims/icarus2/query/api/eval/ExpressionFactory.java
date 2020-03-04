@@ -24,8 +24,6 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
-import static de.ims.icarus2.util.lang.Primitives._char;
-import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -56,6 +54,7 @@ import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expressions.PathProxy;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ArrayContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BitwiseOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BooleanLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.CastExpressionContext;
@@ -286,6 +285,8 @@ public class ExpressionFactory {
 			return processIntegerLiteral(pctx.integerLiteral());
 		} else if(pctx.StringLiteral()!=null) {
 			return processStringLiteral(pctx.StringLiteral());
+		} else if(pctx.array()!=null) {
+			return processArray(pctx.array());
 		} else if(pctx.reference()!=null) {
 			return processReference(pctx.reference());
 		}
@@ -357,6 +358,14 @@ public class ExpressionFactory {
 		}
 
 		return failForUnhandledAlternative(ctx);
+	}
+
+	private ListExpression<?,?> processArray(ArrayContext ctx) {
+		Expression<?>[] elements = processExpressionList(ctx.expressionList());
+
+		//TODO ensure we have only compatible types (potentially forcing conversions)
+
+		return ListAccess.wrap(elements);
 	}
 
 	Expression<?> processPathAccess(PathAccessContext ctx) {

@@ -57,6 +57,7 @@ public final class ListAccess {
 
 		// TODO maybe switch to a more elaborate strategy for computing the result type
 		TypeInfo type = source[0].getResultType();
+
 		if(TypeInfo.isBoolean(type)) {
 			return new BooleanListWrapper(EvaluationUtils.ensureBoolean(source));
 		} else if(TypeInfo.isFloatingPoint(type)) {
