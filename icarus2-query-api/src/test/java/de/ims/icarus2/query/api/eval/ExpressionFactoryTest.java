@@ -19,16 +19,22 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBooleanList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPointList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castTextList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.quote;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static de.ims.icarus2.util.strings.StringUtil.formatDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntConsumer;
 import java.util.stream.DoubleStream;
@@ -46,9 +52,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
-import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
-import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.SetPredicates.FloatingPointSetPredicate;
 import de.ims.icarus2.query.api.eval.SetPredicates.IntegerSetPredicate;
@@ -198,12 +201,17 @@ class ExpressionFactoryTest {
 				assertListExpression((ListExpression<?, Object>)exp, context, Objects::equals, target);
 			}
 
+			private String format(double d) {
+				String s = formatDecimal(d);
+				s = s.replace(',', '_');
+				return s;
+			}
+
 			private Stream<DynamicNode> makeTests(IntConsumer action) {
 				return IntStream.range(1, 10).mapToObj(size -> dynamicTest(String.valueOf(size),
 						() -> action.accept(size)));
 			}
 
-			@SuppressWarnings("unchecked")
 			@TestFactory
 			@RandomizedTest
 			Stream<DynamicNode> testStringArray(RandomGenerator rng) {
@@ -218,8 +226,7 @@ class ExpressionFactoryTest {
 					String input = "{"+String.join(",", elements)+"}";
 					Expression<?> exp = parse(input);
 					assertThat(exp.isList()).isTrue();
-					assertListExpression((ListExpression<?, CharSequence>)exp,
-							context, StringUtil::equals, expected);
+					assertListExpression(castTextList(exp), context, StringUtil::equals, expected);
 				});
 			}
 
@@ -234,7 +241,7 @@ class ExpressionFactoryTest {
 					String input = "{"+String.join(",", elements)+"}";
 					Expression<?> exp = parse(input);
 					assertThat(exp.isList()).isTrue();
-					assertListExpression((IntegerListExpression<?>)exp, context, expected);
+					assertListExpression(castIntegerList(exp), context, expected);
 				});
 			}
 
@@ -249,7 +256,7 @@ class ExpressionFactoryTest {
 					String input = "{"+String.join(",", elements)+"}";
 					Expression<?> exp = parse(input);
 					assertThat(exp.isList()).isTrue();
-					assertListExpression((FloatingPointListExpression<?>)exp, context, expected);
+					assertListExpression(castFloatingPointList(exp), context, expected);
 				});
 			}
 
@@ -268,7 +275,227 @@ class ExpressionFactoryTest {
 					String input = "{"+String.join(",", elements)+"}";
 					Expression<?> exp = parse(input);
 					assertThat(exp.isList()).isTrue();
-					assertListExpression((BooleanListExpression<?>)exp, context, expected);
+					assertListExpression(castBooleanList(exp), context, expected);
+				});
+			}
+
+			/*
+			 * Conversion priorities:
+			 * text >> boolean >> floating point >> integer
+			 */
+
+			@TestFactory
+			Stream<DynamicNode> testStringAutoCast() {
+				String[] expected = {
+						"test",
+						"123",
+						"123.5",
+						"false",
+						"TRUE",
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+					String[] elements = expected.clone();
+					for (int i = 0; i < expected.length; i++) {
+						if(i==0 || i!=index) {
+							elements[i] = quote(elements[i]);
+						}
+					}
+
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression(castTextList(exp), context, StringUtil::equals, expected);
+				}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testBooleanAutoCast() {
+				boolean[] expected = {
+						true,
+						false,
+						false,
+						false,
+						true,
+						true,
+				};
+
+				String[] castable = {
+						"TRUE",
+						"FALSE",
+						"0",
+						"0.0",
+						"123",
+						"-123.456",
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+					String[] elements = new String[expected.length];
+					for (int i = 0; i < expected.length; i++) {
+						elements[i] = String.valueOf(expected[i]);
+						if(i==index) {
+							elements[i] = castable[i];
+						}
+					}
+
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression(castBooleanList(exp), context, expected);
+				}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testFloatingPointAutoCast() {
+				double[] expected = {
+						1.01,
+						2.5,
+						123,
+						Integer.MAX_VALUE,
+						Integer.MIN_VALUE,
+				};
+
+				String[] castable = {
+						String.valueOf(1.01),
+						String.valueOf(2.5),
+						String.valueOf(123),
+						String.valueOf(Integer.MAX_VALUE),
+						String.valueOf(Integer.MIN_VALUE),
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+					String[] elements = new String[expected.length];
+					for (int i = 0; i < expected.length; i++) {
+						elements[i] = format(expected[i]);
+						if(i==index) {
+							elements[i] = castable[i];
+						}
+					}
+
+					String input = "{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression(castFloatingPointList(exp), context, expected);
+				}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testStringForcedCast() {
+				String[] expected = {
+						"123",
+						"123.5",
+						"false",
+						"TRUE",
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(
+						size -> dynamicTest(String.valueOf(size), () -> {
+					String[] elements = Arrays.copyOf(expected, size);
+					String input = "string[]{"+String.join(",", elements)+"}";
+					Expression<?> exp = parse(input);
+					assertThat(exp.isList()).isTrue();
+					assertListExpression(castTextList(exp), context, StringUtil::equals, elements);
+				}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testBooleanForcedCast() {
+				boolean[] expected = {
+						true,
+						false,
+						false,
+						false,
+						true,
+						true,
+				};
+
+				String[] castable = {
+						"\"not empty\"",
+						"\"\"",
+						"0",
+						"0.0",
+						"123",
+						"-123.456",
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(size -> {
+					String[] elements = Arrays.copyOf(castable, size);
+					boolean[] values = Arrays.copyOf(expected, size);
+
+					String input = "boolean[]{"+String.join(",", elements)+"}";
+
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isList()).isTrue();
+						assertListExpression(castBooleanList(exp), context, values);
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testFloatingPointForcedCast() {
+				double[] expected = {
+						1.01,
+						2.5,
+						123,
+						Integer.MAX_VALUE,
+						Integer.MIN_VALUE,
+				};
+
+				String[] castable = {
+						String.valueOf(1.01),
+						String.valueOf(2.5),
+						String.valueOf(123),
+						String.valueOf(Integer.MAX_VALUE),
+						String.valueOf(Integer.MIN_VALUE),
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(size -> {
+					String[] elements = Arrays.copyOf(castable, size);
+					double[] values = Arrays.copyOf(expected, size);
+
+					String input = "float[]{"+String.join(",", elements)+"}";
+
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isList()).isTrue();
+						assertListExpression(castFloatingPointList(exp), context, values);
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testIntegerForcedCast() {
+				long[] expected = {
+						1,
+						2,
+						123,
+						Integer.MAX_VALUE,
+						Integer.MIN_VALUE,
+				};
+
+				String[] castable = {
+						String.valueOf(1.01),
+						String.valueOf(2.5),
+						String.valueOf(123),
+						String.valueOf(Integer.MAX_VALUE),
+						String.valueOf(Integer.MIN_VALUE),
+				};
+
+				return IntStream.range(0, expected.length).mapToObj(size -> {
+					String[] elements = Arrays.copyOf(castable, size);
+					long[] values = Arrays.copyOf(expected, size);
+
+					String input = "int[]{"+String.join(",", elements)+"}";
+
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isList()).isTrue();
+						assertListExpression(castIntegerList(exp), context, values);
+					});
 				});
 			}
 		}
