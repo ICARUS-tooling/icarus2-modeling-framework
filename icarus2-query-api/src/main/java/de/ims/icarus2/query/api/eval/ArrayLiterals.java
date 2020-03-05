@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.arrayType;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.Supplier;
@@ -39,6 +40,18 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
 public final class ArrayLiterals {
 
 	private ArrayLiterals() { /* no-op */ }
+
+	@SuppressWarnings("rawtypes")
+	public static ListExpression<?, ?> emptyArray(TypeInfo elementType) {
+		if(TypeInfo.isInteger(elementType)) {
+			return emptyLongArray();
+		} else if(TypeInfo.isFloatingPoint(elementType)) {
+			return emptyDoubleArray();
+		} else if(TypeInfo.isBoolean(elementType)) {
+			return emptyBooleanArray();
+		}
+		return new ObjectArray(elementType);
+	}
 
 	// LONG
 
@@ -167,6 +180,13 @@ public final class ArrayLiterals {
 			this.array = array.clone();
 			listType = TypeInfo.of(array.getClass(), true);
 			elementType = TypeInfo.of(array.getClass().getComponentType());
+		}
+
+		@SuppressWarnings("unchecked")
+		ObjectArray(TypeInfo elementType) {
+			this.array = (E[]) new Object[0];
+			listType = arrayType(elementType);
+			this.elementType = elementType;
 		}
 
 		@Override

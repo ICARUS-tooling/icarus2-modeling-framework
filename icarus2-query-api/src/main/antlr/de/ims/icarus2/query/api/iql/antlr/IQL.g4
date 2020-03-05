@@ -372,7 +372,7 @@ primary
 	;
 	
 listStatement
-	: (type LBRACK RBRACK)? LBRACE expressionList RBRACE
+	: (type LBRACK RBRACK)? LBRACE expressionList? RBRACE
 	;
 	
 reference

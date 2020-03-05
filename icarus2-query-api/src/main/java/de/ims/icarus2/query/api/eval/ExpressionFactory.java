@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.NO_ARGS;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBoolean;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castComparable;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
@@ -424,14 +425,15 @@ public class ExpressionFactory {
 	}
 
 	private ListExpression<?,?> processList(ListStatementContext ctx) {
-		Expression<?>[] elements = processExpressionList(ctx.expressionList());
+		Expression<?>[] elements = ctx.expressionList()!=null ?
+				processExpressionList(ctx.expressionList()) : NO_ARGS;
 
 		TypeInfo elementType = null;
 
 		if(ctx.type()!=null) {
 			// Honor explicit type definition
 			elementType = processType(ctx.type());
-		} else {
+		} else if(elements.length>0) {
 			// Otherwise try best-effort option to derive type info
 			Set<TypeInfo> types = collectTypes(elements);
 
@@ -441,6 +443,12 @@ public class ExpressionFactory {
 			} else {
 				elementType = CollectionUtils.first(types);
 			}
+		} else
+			throw new QueryException(QueryErrorCode.INCORRECT_USE,
+					"Empty array is missing explicit type declaration", asFragment(ctx));
+
+		if(elements.length==0) {
+			return ArrayLiterals.emptyArray(elementType);
 		}
 
 		// Force conversion if needed
