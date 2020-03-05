@@ -125,7 +125,9 @@ public interface ExpressionTest<T>
 		T value = constant();
 		Expression<?> instance = createWithValue(value);
 		Expression<?> optimized = instance.optimize(context());
-		assertThat(optimized.isConstant()).isEqualTo(optimizeToConstant());
+		if(optimizeToConstant()) {
+			assertThat(optimized.isConstant()).isTrue();
+		}
 		assertThat(optimized.compute()).satisfies(newVal -> equals((T) newVal, value));
 	}
 

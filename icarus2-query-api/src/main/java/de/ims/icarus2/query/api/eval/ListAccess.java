@@ -394,7 +394,7 @@ public final class ListAccess {
 			}
 
 			// Optimize to constant
-			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
 				long[] array = new long[newSource.length];
 				fillBuffer(array, newSource);
 				return ArrayLiterals.of(array);
@@ -605,7 +605,7 @@ public final class ListAccess {
 			}
 
 			// Optimize to constant
-			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
 				double[] array = new double[newSource.length];
 				fillBuffer(array, newSource);
 				return ArrayLiterals.of(array);
@@ -813,7 +813,7 @@ public final class ListAccess {
 			}
 
 			// Optimize to constant
-			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
 				boolean[] array = new boolean[newSource.length];
 				fillBuffer(array, newSource);
 				return ArrayLiterals.of(array);
@@ -1025,7 +1025,7 @@ public final class ListAccess {
 				}
 			}
 
-			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
 				// Optimize to constant
 				E[] array = EvaluationUtils.arrayOf(elementType, newSource.length);
 				fillBuffer(array, newSource);
