@@ -24,6 +24,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBoolean;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castComparable;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castItem;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.collectTypes;
@@ -329,7 +330,7 @@ public class ExpressionFactory {
 		if(!TypeInfo.isInteger(list.getElementType()))
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not an integer list type: "+source.getResultType());
-		return (IntegerListExpression<?>)list;
+		return castIntegerList(list);
 	}
 
 	private static Expression<Primitive<Boolean>> maybeNegate(Expression<Primitive<Boolean>> source, boolean negate) {

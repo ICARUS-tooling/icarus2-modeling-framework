@@ -29,13 +29,19 @@ import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertExpression
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.strings.StringUtil.formatDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.IntConsumer;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -500,6 +506,75 @@ class ExpressionFactoryTest {
 			}
 		}
 
+		@Nested
+		class ForListAccess {
+
+			private void prepareContext(String name, TypeInfo elementType, Expression<?> exp) {
+				doReturn(Optional.of(exp)).when(context).resolve(isNull(), eq(name), any());
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testText() {
+				CharSequence[] array = IntStream.range(0, 10)
+						.mapToObj(i -> "item_"+i)
+						.toArray(CharSequence[]::new);
+				prepareContext("array", TypeInfo.TEXT, ArrayLiterals.ofGeneric(array));
+
+				return IntStream.range(0, array.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+							String input = String.format("array[%d]", _int(index));
+							Expression<?> parsed = parse(input);
+							assertThat(parsed.isText()).isTrue();
+							assertExpression(parsed, context, array[index], StringUtil::equals);
+						}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testInteger() {
+				long[] array = LongStream.range(0, 10).toArray();
+				prepareContext("array", TypeInfo.INTEGER, ArrayLiterals.of(array));
+
+				return IntStream.range(0, array.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+							String input = String.format("array[%d]", _int(index));
+							Expression<?> parsed = parse(input);
+							assertThat(parsed.isInteger()).isTrue();
+							assertExpression(parsed, context, array[index]);
+						}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testFloatingPoint() {
+				double[] array = DoubleStream.iterate(0.6, v -> v+0.7).limit(10).toArray();
+				prepareContext("array", TypeInfo.FLOATING_POINT, ArrayLiterals.of(array));
+
+				return IntStream.range(0, array.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+							String input = String.format("array[%d]", _int(index));
+							Expression<?> parsed = parse(input);
+							assertThat(parsed.isFloatingPoint()).isTrue();
+							assertExpression(parsed, context, array[index]);
+						}));
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testBoolean() {
+				boolean[] array = new boolean[10];
+				for (int i = 0; i < array.length; i++) {
+					array[i] = i%3==1;
+				}
+				prepareContext("array", TypeInfo.BOOLEAN, ArrayLiterals.of(array));
+
+				return IntStream.range(0, array.length).mapToObj(
+						index -> dynamicTest(String.valueOf(index), () -> {
+							String input = String.format("array[%d]", _int(index));
+							Expression<?> parsed = parse(input);
+							assertThat(parsed.isBoolean()).isTrue();
+							assertExpression(parsed, context, array[index]);
+						}));
+			}
+		}
+
 		@ParameterizedTest
 		@CsvSource({
 			// Simple formulas
@@ -515,7 +590,7 @@ class ExpressionFactoryTest {
 			"12/3+2, 6"
 			//TODO
 		})
-		void testMathematicalInteger(String input, long result) {
+		void testFormulasInteger(String input, long result) {
 			Expression<?> exp = parse(input);
 			assertThat(exp.isInteger()).isTrue();
 			assertExpression(exp, context, result);
