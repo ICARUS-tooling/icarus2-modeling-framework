@@ -286,6 +286,20 @@ public class ExpressionFactory {
 				.toArray(Expression[]::new);
 	}
 
+	@SuppressWarnings("unused")
+	@Deprecated
+	private Expression<?>[] ensureExpandableInteger(Expression<?>[] source) {
+		return Stream.of(source)
+				.map(exp -> {
+					if(exp.isList()) {
+						return ensureIntegerList(exp);
+					}
+
+					return ensureInteger(exp);
+				})
+				.toArray(Expression[]::new);
+	}
+
 	private Expression<Primitive<Double>>[] ensureFloatingPoint(Expression<?>[] source) {
 		return Stream.of(source)
 				.map(this::ensureFloatingPoint)

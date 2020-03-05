@@ -58,6 +58,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.SetPredicates.FloatingPointSetPredicate;
 import de.ims.icarus2.query.api.eval.SetPredicates.IntegerSetPredicate;
@@ -513,6 +516,8 @@ class ExpressionFactoryTest {
 				doReturn(Optional.of(exp)).when(context).resolve(isNull(), eq(name), any());
 			}
 
+			// SINGLE ACCESS
+
 			@TestFactory
 			Stream<DynamicNode> testText() {
 				CharSequence[] array = IntStream.range(0, 10)
@@ -572,6 +577,157 @@ class ExpressionFactoryTest {
 							assertThat(parsed.isBoolean()).isTrue();
 							assertExpression(parsed, context, array[index]);
 						}));
+			}
+
+			// FILTERS
+
+			@TestFactory
+			Stream<DynamicNode> testTextFilter() {
+				CharSequence[] array = IntStream.range(0, 10)
+						.mapToObj(i -> "item_"+i)
+						.toArray(CharSequence[]::new);
+				prepareContext("array", TypeInfo.TEXT, ArrayLiterals.ofGeneric(array));
+
+				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
+					int[] filter = IntStream.range(0, size).toArray();
+					String input = String.format("array%s", Arrays.toString(filter));
+
+					return dynamicTest(input, () -> {
+						Expression<?> parsed = parse(input);
+						assertThat(parsed.isList()).isTrue();
+						assertThat(parsed).isInstanceOf(ListExpression.class);
+						assertListExpression(castTextList(parsed), context,
+								StringUtil::equals, Arrays.copyOf(array, size));
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testIntegerFilter() {
+				long[] array = LongStream.range(0, 10).toArray();
+				prepareContext("array", TypeInfo.INTEGER, ArrayLiterals.of(array));
+
+				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
+					int[] filter = IntStream.range(0, size).toArray();
+					String input = String.format("array%s", Arrays.toString(filter));
+
+					return dynamicTest(input, () -> {
+						Expression<?> parsed = parse(input);
+						assertThat(parsed.isList()).isTrue();
+						assertThat(parsed).isInstanceOf(IntegerListExpression.class);
+						assertListExpression(castIntegerList(parsed), context, Arrays.copyOf(array, size));
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testFloatingPointFilter() {
+				double[] array = DoubleStream.iterate(0.6, v -> v+0.7).limit(10).toArray();
+				prepareContext("array", TypeInfo.FLOATING_POINT, ArrayLiterals.of(array));
+
+				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
+					int[] filter = IntStream.range(0, size).toArray();
+					String input = String.format("array%s", Arrays.toString(filter));
+
+					return dynamicTest(input, () -> {
+						Expression<?> parsed = parse(input);
+						assertThat(parsed.isList()).isTrue();
+						assertThat(parsed).isInstanceOf(FloatingPointListExpression.class);
+						assertListExpression(castFloatingPointList(parsed), context, Arrays.copyOf(array, size));
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testBooleanFilter() {
+				boolean[] array = new boolean[10];
+				for (int i = 0; i < array.length; i++) {
+					array[i] = i%3==1;
+				}
+				prepareContext("array", TypeInfo.BOOLEAN, ArrayLiterals.of(array));
+
+				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
+					int[] filter = IntStream.range(0, size).toArray();
+					String input = String.format("array%s", Arrays.toString(filter));
+
+					return dynamicTest(input, () -> {
+						Expression<?> parsed = parse(input);
+						assertThat(parsed.isList()).isTrue();
+						assertThat(parsed).isInstanceOf(BooleanListExpression.class);
+						assertListExpression(castBooleanList(parsed), context, Arrays.copyOf(array, size));
+					});
+				});
+			}
+
+			// EXPANDED
+
+			@Test
+			void testTextExpansion() {
+				CharSequence[] array = IntStream.range(0, 10)
+						.mapToObj(i -> "item_"+i)
+						.toArray(CharSequence[]::new);
+				prepareContext("array", TypeInfo.TEXT, ArrayLiterals.ofGeneric(array));
+				int[] filter = {2, 7};
+				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+
+				String input = "array[indices]";
+				CharSequence[] expected = new CharSequence[]{array[filter[0]], array[filter[1]]};
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isList()).isTrue();
+				assertThat(parsed).isInstanceOf(ListExpression.class);
+				assertListExpression(castTextList(parsed), context, StringUtil::equals, expected);
+			}
+
+			@Test
+			void testIntegerExpansion() {
+				long[] array = LongStream.range(0, 10).toArray();
+				prepareContext("array", TypeInfo.INTEGER, ArrayLiterals.of(array));
+				int[] filter = {2, 7};
+				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+
+				String input = "array[indices]";
+				long[] expected = new long[]{array[filter[0]], array[filter[1]]};
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isList()).isTrue();
+				assertThat(parsed).isInstanceOf(IntegerListExpression.class);
+				assertListExpression(castIntegerList(parsed), context, expected);
+			}
+
+			@Test
+			void testFloatingPointExpansion() {
+				double[] array = DoubleStream.iterate(0.6, v -> v+0.7).limit(10).toArray();
+				prepareContext("array", TypeInfo.FLOATING_POINT, ArrayLiterals.of(array));
+				int[] filter = {2, 7};
+				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+
+				String input = "array[indices]";
+				double[] expected = new double[]{array[filter[0]], array[filter[1]]};
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isList()).isTrue();
+				assertThat(parsed).isInstanceOf(FloatingPointListExpression.class);
+				assertListExpression(castFloatingPointList(parsed), context, expected);
+			}
+
+			@Test
+			void testBooleanExpansion() {
+				boolean[] array = new boolean[10];
+				for (int i = 0; i < array.length; i++) {
+					array[i] = i%3==1;
+				}
+				prepareContext("array", TypeInfo.BOOLEAN, ArrayLiterals.of(array));
+				int[] filter = {2, 7};
+				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+
+				String input = "array[indices]";
+				boolean[] expected = new boolean[]{array[filter[0]], array[filter[1]]};
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isList()).isTrue();
+				assertThat(parsed).isInstanceOf(BooleanListExpression.class);
+				assertListExpression(castBooleanList(parsed), context, expected);
 			}
 		}
 
@@ -672,7 +828,7 @@ class ExpressionFactoryTest {
 			"{0.0, -1.5} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
 			"{0.0} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true"
 		})
-		void testFlaotingPointSetPredicate(String input, boolean result) {
+		void testFloatingPointSetPredicate(String input, boolean result) {
 			Expression<?> exp = parse(input);
 			assertThat(exp.isBoolean()).isTrue();
 			assertThat(unwrapNegation(exp)).isInstanceOf(FloatingPointSetPredicate.class);
