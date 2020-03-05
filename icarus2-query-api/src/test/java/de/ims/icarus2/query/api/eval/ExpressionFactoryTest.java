@@ -50,6 +50,10 @@ import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.eval.Expression.ListExpression;
+import de.ims.icarus2.query.api.eval.SetPredicates.FloatingPointSetPredicate;
+import de.ims.icarus2.query.api.eval.SetPredicates.IntegerSetPredicate;
+import de.ims.icarus2.query.api.eval.SetPredicates.TextSetPredicate;
+import de.ims.icarus2.query.api.eval.UnaryOperations.BooleanNegation;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StandaloneExpressionContext;
 import de.ims.icarus2.test.annotations.RandomizedTest;
@@ -290,6 +294,13 @@ class ExpressionFactoryTest {
 			assertExpression(exp, context, result);
 		}
 
+		private Expression<?> unwrapNegation(Expression<?> exp) {
+			if(exp instanceof BooleanNegation) {
+				exp = ((BooleanNegation)exp).getSource();
+			}
+			return exp;
+		}
+
 		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
@@ -300,10 +311,10 @@ class ExpressionFactoryTest {
 			"2 not in {1, 3, 4,-10}; true",
 			"2 not in {1, 2, 3, 4,-10}; false",
 			// with formulas
-			"2*2  in {1, 3, 4,-10}; true",
+			"2*2 in {1, 3, 4,-10}; true",
 			"2+4 not in {1, 2, 3, 4,-10}; true",
 			"2+2 not in {1, 2, 3, 4,-10}; false",
-			"2*2  in {1, 3, 5-1,-10}; true",
+			"2*2 in {1, 3, 5-1,-10}; true",
 			"2+4 not in {1, 2, 6/2, 4,-10}; true",
 			"2+1 not in {1, 2, 6/2, 4,-10}; false",
 			// expanded containment
@@ -324,6 +335,7 @@ class ExpressionFactoryTest {
 		void testIntegerSetPredicate(String input, boolean result) {
 			Expression<?> exp = parse(input);
 			assertThat(exp.isBoolean()).isTrue();
+			assertThat(unwrapNegation(exp)).isInstanceOf(IntegerSetPredicate.class);
 			assertExpression(exp, context, result);
 		}
 
@@ -336,6 +348,13 @@ class ExpressionFactoryTest {
 			// negated simple containment
 			"2.1 not in {1.5, 2.2, 3.01, 4.001, -10.5}; true",
 			"2.1 not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			// with formulas
+			"2*2.1 in {1.0, 3.01, 4.2, -10.5}; true",
+			"2+4.3 not in {1.0, 2, 3.3, 4.001, -10.5}; true",
+			"2+2.1 not in {1.0, 2, 3.3, 4.1, -10.5}; false",
+			"2*2.1 in {1, 3, 5-0.8, -10.5}; true",
+			"2+4.1 not in {1.0, 2.2, 6/2.1, 4.001, -10.5}; true",
+			"2+1.5 not in {1.0, 2.2, 7.0/2, 4.001, -10.5}; false",
 			// expanded containment
 			"{0.0, 2.1} in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
 			"{0.0, -1.5} in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
@@ -354,6 +373,45 @@ class ExpressionFactoryTest {
 		void testFlaotingPointSetPredicate(String input, boolean result) {
 			Expression<?> exp = parse(input);
 			assertThat(exp.isBoolean()).isTrue();
+			assertThat(unwrapNegation(exp)).isInstanceOf(FloatingPointSetPredicate.class);
+			assertExpression(exp, context, result);
+		}
+
+		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+			// simple containment
+			"\"x\" in {\"x\", \"y\", \"z\"}; true",
+			"\"x\" in {\"xx\", \"y\", \"z\"}; false",
+			// negated simple containment
+			"\"x\" not in {\"xx\", \"y\", \"z\"}; true",
+			"\"x\" not in {\"x\", \"y\", \"z\"}; false",
+			// with formulas
+			"\"x\"+\"2\" in {\"x2\", \"y\", \"z\"}; true",
+			"\"x\"+\"2\" not in {\"x\", \"y\", \"z\"}; true",
+			"\"x\"+\"2\" not in {\"x2\", \"y\", \"z\"}; false",
+			"\"x\"+\"2\" in {\"x\"+\"2\", \"y\", \"z\"}; true",
+			"\"x\"+\"2\" not in {\"x\", \"y\"+\"2\", \"z\"}; true",
+			"\"x\"+\"2\" not in {\"x\"+\"2\", \"y\", \"z\"}; false",
+			// expanded containment
+			"{\"x\", \"y2\"} in {\"x\", \"y\", \"z\"}; true",
+			"{\"x2\", \"y2\"} in {\"x\", \"y\", \"z\"}; false",
+			// negated expanded containment
+			"{\"x\", \"y2\"} not in {\"x\", \"y\", \"z\"}; false",
+			"{\"x2\", \"y2\"} not in {\"x\", \"y\", \"z\"}; true",
+			// 'all in'
+			"{\"x\", \"y\"} all in {\"x\", \"y\", \"z\"}; true",
+			"{\"x\", \"y2\"} all in {\"x\", \"y\", \"z\"}; false",
+			// 'all not in'
+			"{\"x\", \"y\"} all not in {\"x\", \"y\", \"z\"}; false",
+			"{\"x\", \"y2\"} all not in {\"x\", \"y\", \"z\"}; false",
+			"{\"x2\", \"y2\"} all not in {\"x\", \"y\", \"z\"}; true",
+			"{\"x2\"} all not in {\"x\", \"y\", \"z\"}; true"
+		})
+		void testTextSetPredicate(String input, boolean result) {
+			Expression<?> exp = parse(input);
+			assertThat(exp.isBoolean()).isTrue();
+			assertThat(unwrapNegation(exp)).isInstanceOf(TextSetPredicate.class);
 			assertExpression(exp, context, result);
 		}
 
