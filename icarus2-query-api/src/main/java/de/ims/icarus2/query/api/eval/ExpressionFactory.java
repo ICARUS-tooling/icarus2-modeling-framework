@@ -19,6 +19,14 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBoolean;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castComparable;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castItem;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.collectTypes;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.decideType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
@@ -31,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -82,6 +91,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -124,6 +134,10 @@ public class ExpressionFactory {
 
 	private boolean isAllowUnicode() {
 		return !context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF);
+	}
+
+	private boolean isAllowAutoCast() {
+		return !context.isSwitchSet(QuerySwitch.AUTOCAST_OFF);
 	}
 
 	private StringMode getStringMode() {
@@ -194,7 +208,7 @@ public class ExpressionFactory {
 	}
 
 	/** Insurance against future changes in the IQL grammar that we missed */
-	private <T> T failForUnhandledAlternative(ParserRuleContext ctx) {
+	private static <T> T failForUnhandledAlternative(ParserRuleContext ctx) {
 		throw new QueryException(QueryErrorCode.AST_ERROR,
 				"Unknown alterative: "+ctx.getClass().getCanonicalName(), asFragment(ctx));
 	}
@@ -203,47 +217,82 @@ public class ExpressionFactory {
 		if(!source.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a numerical type: "+source.getResultType());
+		// No explicit autocast possible here
 		return source;
 	}
 
-	private Expression<?> ensureInteger(Expression<?> source) {
-		if(source.isInteger())
+	private Expression<Primitive<Long>> ensureInteger(Expression<?> source) {
+		if(!source.isInteger()) {
+			if(isAllowAutoCast()) {
+				return Conversions.toInteger(source);
+			}
+
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not an integer expression: "+source.getResultType());
-		//TODO take switches and general integer type conversion into account!!
-		return source;
+		}
+		return castInteger(source);
 	}
 
-	@SuppressWarnings("unchecked")
+	private Expression<Primitive<Double>> ensureFloatingPoint(Expression<?> source) {
+		if(!source.isFloatingPoint()) {
+			if(isAllowAutoCast()) {
+				return Conversions.toFloatingPoint(source);
+			}
+
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Not a floating point expression: "+source.getResultType());
+		}
+		return castFloatingPoint(source);
+	}
+
 	private Expression<Primitive<Boolean>> ensureBoolean(Expression<?> source) {
-		if(!source.isBoolean())
+		if(!source.isBoolean()) {
+			if(isAllowAutoCast()) {
+				return Conversions.toBoolean(source);
+			}
+
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a boolean type: "+source.getResultType());
-		//TODO take switches and general boolean type conversion into account!!
-		return (Expression<Primitive<Boolean>>)source;
+		}
+		return castBoolean(source);
 	}
 
 	//TODO add argument to enable conversion
-	@SuppressWarnings("unchecked")
 	private Expression<CharSequence> ensureText(Expression<?> source) {
-		if(!source.isText())
+		if(!source.isText()) {
+			if(isAllowAutoCast()) {
+				return Conversions.toText(source);
+			}
+
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a text type: "+source.getResultType());
+		}
 		//TODO take string conversion into account!!
-		return (Expression<CharSequence>)source;
+		return castText(source);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Expression<? extends Item> ensureItem(Expression<?> source) {
 		if(!source.isMember())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a mmeber type: "+source.getResultType());
-		return (Expression<? extends Item>)source;
+		return castItem(source);
 	}
 
-	private Expression<?>[] ensureInteger(Expression<?>[] source) {
+	private Expression<Primitive<Long>>[] ensureInteger(Expression<?>[] source) {
 		return Stream.of(source)
 				.map(this::ensureInteger)
+				.toArray(Expression[]::new);
+	}
+
+	private Expression<Primitive<Double>>[] ensureFloatingPoint(Expression<?>[] source) {
+		return Stream.of(source)
+				.map(this::ensureFloatingPoint)
+				.toArray(Expression[]::new);
+	}
+
+	private Expression<Primitive<Boolean>>[] ensureBoolean(Expression<?>[] source) {
+		return Stream.of(source)
+				.map(this::ensureBoolean)
 				.toArray(Expression[]::new);
 	}
 
@@ -251,6 +300,20 @@ public class ExpressionFactory {
 		return Stream.of(source)
 				.map(this::ensureText)
 				.toArray(Expression[]::new);
+	}
+
+	private Expression<?>[] ensureType(TypeInfo type, Expression<?>[] source) {
+		if(TypeInfo.isInteger(type)) {
+			return ensureInteger(source);
+		} else if(TypeInfo.isFloatingPoint(type)) {
+			return ensureFloatingPoint(source);
+		} else if(TypeInfo.isBoolean(type)) {
+			return ensureBoolean(source);
+		} else if(TypeInfo.isText(type)) {
+			return ensureText(source);
+		}
+
+		return source;
 	}
 
 	private ListExpression<?, ?> ensureList(Expression<?> source) {
@@ -268,7 +331,7 @@ public class ExpressionFactory {
 		return (IntegerListExpression<?>)list;
 	}
 
-	private Expression<Primitive<Boolean>> maybeNegate(Expression<Primitive<Boolean>> source, boolean negate) {
+	private static Expression<Primitive<Boolean>> maybeNegate(Expression<Primitive<Boolean>> source, boolean negate) {
 		return negate ? UnaryOperations.not(source) : source;
 	}
 
@@ -286,7 +349,7 @@ public class ExpressionFactory {
 		} else if(pctx.StringLiteral()!=null) {
 			return processStringLiteral(pctx.StringLiteral());
 		} else if(pctx.listStatement()!=null) {
-			return processArray(pctx.listStatement());
+			return processList(pctx.listStatement());
 		} else if(pctx.reference()!=null) {
 			return processReference(pctx.reference());
 		}
@@ -360,10 +423,28 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(ctx);
 	}
 
-	private ListExpression<?,?> processArray(ListStatementContext ctx) {
+	private ListExpression<?,?> processList(ListStatementContext ctx) {
 		Expression<?>[] elements = processExpressionList(ctx.expressionList());
 
-		//TODO ensure we have only compatible types (potentially forcing conversions)
+		TypeInfo elementType = null;
+
+		if(ctx.type()!=null) {
+			// Honor explicit type definition
+			elementType = processType(ctx.type());
+		} else {
+			// Otherwise try best-effort option to derive type info
+			Set<TypeInfo> types = collectTypes(elements);
+
+			if(types.size()>1) {
+				// Follow a strict type hierarchy
+				elementType = decideType(types);
+			} else {
+				elementType = CollectionUtils.first(types);
+			}
+		}
+
+		// Force conversion if needed
+		elements = ensureType(elementType, elements);
 
 		return ListAccess.wrap(elements);
 	}
@@ -434,22 +515,26 @@ public class ExpressionFactory {
 		return AnnotationAccess.of(ensureItem(source), context, ensureText(arguments));
 	}
 
-	Expression<?> processCastExpression(CastExpressionContext ctx) {
-		Expression<?> source = processAndResolveExpression0(ctx.expression());
-
-		TypeContext tctx = ctx.type();
-
-		if(tctx.BOOLEAN()!=null) {
-			return Conversions.toBoolean(source);
-		} else if(tctx.STRING()!=null) {
-			return Conversions.toText(source);
-		} else if(tctx.INT()!=null) {
-			return Conversions.toInteger(source);
-		} else if(tctx.FLOAT()!=null) {
-			return Conversions.toFloatingPoint(source);
+	private static TypeInfo processType(TypeContext ctx) {
+		if(ctx.BOOLEAN()!=null) {
+			return TypeInfo.BOOLEAN;
+		} else if(ctx.STRING()!=null) {
+			return TypeInfo.TEXT;
+		} else if(ctx.INT()!=null) {
+			return TypeInfo.INTEGER;
+		} else if(ctx.FLOAT()!=null) {
+			return TypeInfo.FLOATING_POINT;
 		}
 
 		return failForUnhandledAlternative(ctx);
+	}
+
+	Expression<?> processCastExpression(CastExpressionContext ctx) {
+		Expression<?> source = processAndResolveExpression0(ctx.expression());
+
+		TypeInfo type = processType(ctx.type());
+
+		return Conversions.to(type, source);
 	}
 
 	Expression<?> processWrappingExpression(WrappingExpressionContext ctx) {
@@ -613,10 +698,10 @@ public class ExpressionFactory {
 			return processNumericalComparison(ctx, ensureNumerical(left), ensureNumerical(right));
 		} else if(TypeInfo.isComparable(left.getResultType()) && TypeInfo.isComparable(right.getResultType())) {
 			//TODO try to infer/ensure type compatibility between the two comparables
-			@SuppressWarnings({ "rawtypes", "unchecked" })
-			Expression<Comparable> leftComp = (Expression<Comparable>)left;
-			@SuppressWarnings({ "rawtypes", "unchecked" })
-			Expression<Comparable> rightComp = (Expression<Comparable>)right;
+			@SuppressWarnings({ "rawtypes" })
+			Expression<Comparable> leftComp = castComparable(left);
+			@SuppressWarnings({ "rawtypes" })
+			Expression<Comparable> rightComp = castComparable(right);
 			return processComparableComparison(ctx, leftComp, rightComp);
 		}
 

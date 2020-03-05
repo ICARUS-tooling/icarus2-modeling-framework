@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castComparable;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkComparableType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkNumericalType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkTextType;
@@ -87,15 +89,13 @@ public class BinaryOperations {
 		return expression;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Expression<Primitive<Boolean>> comparablePred(ComparableComparator pred,
 			Expression<?> left, Expression<?> right) {
 		requireNonNull(pred);
 		checkComparableType(left);
 		checkComparableType(right);
 
-		return new BinaryObjectPredicate<>(
-				(Expression<Comparable>)left, (Expression<Comparable>)right, pred.getPred());
+		return new BinaryObjectPredicate<>(castComparable(left), castComparable(right), pred.getPred());
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -105,18 +105,15 @@ public class BinaryOperations {
 		return new BinaryObjectPredicate(left, right, pred.getPred());
 	}
 
-	@SuppressWarnings("unchecked")
 	public static Expression<Primitive<Boolean>> unicodeOp(StringOp op, StringMode mode,
 			Expression<?> left, Expression<?> right) {
 		requireNonNull(op);
 		checkTextType(left);
 		checkTextType(right);
 		switch (op) {
-		case EQUALS: return new UnicodeEquality(
-				(Expression<CharSequence>)left, (Expression<CharSequence>)right, mode.getCodePointComparator());
-		case CONTAINS: return new UnicodeContainment(
-				(Expression<CharSequence>)left, (Expression<CharSequence>)right, mode.getCodePointComparator());
-		case MATCHES: return new StringRegex((Expression<CharSequence>)left, (Expression<CharSequence>)right, mode, true);
+		case EQUALS: return new UnicodeEquality(castText(left), castText(right), mode.getCodePointComparator());
+		case CONTAINS: return new UnicodeContainment(castText(left), castText(right), mode.getCodePointComparator());
+		case MATCHES: return new StringRegex(castText(left), castText(right), mode, true);
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -124,18 +121,15 @@ public class BinaryOperations {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public static Expression<Primitive<Boolean>> asciiOp(StringOp op, StringMode mode,
 			Expression<?> left, Expression<?> right) {
 		requireNonNull(op);
 		checkTextType(left);
 		checkTextType(right);
 		switch (op) {
-		case EQUALS: return new CharsEquality(
-				(Expression<CharSequence>)left, (Expression<CharSequence>)right, mode.getCharComparator());
-		case CONTAINS: return new CharsContainment(
-				(Expression<CharSequence>)left, (Expression<CharSequence>)right, mode.getCharComparator());
-		case MATCHES: return new StringRegex((Expression<CharSequence>)left, (Expression<CharSequence>)right, mode, false);
+		case EQUALS: return new CharsEquality(castText(left), castText(right), mode.getCharComparator());
+		case CONTAINS: return new CharsContainment(castText(left), castText(right), mode.getCharComparator());
+		case MATCHES: return new StringRegex(castText(left), castText(right), mode, false);
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,

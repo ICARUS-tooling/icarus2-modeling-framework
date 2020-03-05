@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.eval;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.query.api.eval.Expression.PrimitiveExpression;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableDouble;
@@ -203,6 +205,11 @@ public class UnaryOperations {
 		BooleanNegation(Expression<Primitive<Boolean>> source) {
 			this.source = requireNonNull(source);
 			value = new MutableBoolean();
+		}
+
+		@VisibleForTesting
+		Expression<Primitive<Boolean>> getSource() {
+			return source;
 		}
 
 		@Override

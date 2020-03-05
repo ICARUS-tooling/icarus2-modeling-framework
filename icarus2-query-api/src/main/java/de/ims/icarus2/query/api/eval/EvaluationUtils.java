@@ -26,11 +26,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.types.ValueType.MatrixType;
 import de.ims.icarus2.model.manifest.types.ValueType.VectorType;
@@ -38,6 +40,12 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.BinaryOperations.StringMode;
+import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
+import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
+import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
+import de.ims.icarus2.query.api.eval.Expression.ListExpression;
+import de.ims.icarus2.util.MutablePrimitives.Primitive;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
 /**
@@ -149,6 +157,53 @@ public class EvaluationUtils {
 			type = TypeInfo.of(clazz);
 		}
 		return type;
+	}
+
+	@SuppressWarnings("unchecked")
+	static Expression<Primitive<Long>> castInteger(Expression<?> source) {
+		return (Expression<Primitive<Long>>) source;
+	}
+
+	@SuppressWarnings("unchecked")
+	static Expression<Primitive<Double>> castFloatingPoint(Expression<?> source) {
+		return (Expression<Primitive<Double>>) source;
+	}
+
+	@SuppressWarnings("unchecked")
+	static Expression<Primitive<Boolean>> castBoolean(Expression<?> source) {
+		return (Expression<Primitive<Boolean>>) source;
+	}
+
+	@SuppressWarnings("unchecked")
+	static Expression<CharSequence> castText(Expression<?> source) {
+		return (Expression<CharSequence>) source;
+	}
+
+	@SuppressWarnings("unchecked")
+	static Expression<Item> castItem(Expression<?> source) {
+		return (Expression<Item>) source;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	static Expression<Comparable> castComparable(Expression<?> source) {
+		return (Expression<Comparable>) source;
+	}
+
+	static IntegerListExpression<?> castIntegerList(Expression<?> source) {
+		return (IntegerListExpression<?>) source;
+	}
+
+	static FloatingPointListExpression<?> castFloatingPointList(Expression<?> source) {
+		return (FloatingPointListExpression<?>) source;
+	}
+
+	static BooleanListExpression<?> castBooleanList(Expression<?> source) {
+		return (BooleanListExpression<?>) source;
+	}
+
+	@SuppressWarnings("unchecked")
+	static ListExpression<?, CharSequence> castTextList(Expression<?> source) {
+		return (ListExpression<?, CharSequence>) source;
 	}
 
 	static void checkIntegerType(Expression<?> exp) {
@@ -329,5 +384,29 @@ public class EvaluationUtils {
 		requireNonNull(args, "No arguments available");
 		checkArgument("Insufficient arguments", args.length>index);
 		return args[index];
+	}
+
+	public static Set<TypeInfo> collectTypes(Expression<?>...expressions) {
+		Set<TypeInfo> types = new ObjectOpenHashSet<>();
+		for (Expression<?> expression : expressions) {
+			types.add(expression.getResultType());
+		}
+		return types;
+	}
+
+	private static final TypeInfo[] typePriority = {
+			TypeInfo.TEXT,
+			TypeInfo.BOOLEAN,
+			TypeInfo.FLOATING_POINT,
+			TypeInfo.INTEGER,
+	};
+
+	public static TypeInfo decideType(Set<TypeInfo> types) {
+		for(TypeInfo type : typePriority) {
+			if(types.contains(type)) {
+				return type;
+			}
+		}
+		return TypeInfo.GENERIC;
 	}
 }

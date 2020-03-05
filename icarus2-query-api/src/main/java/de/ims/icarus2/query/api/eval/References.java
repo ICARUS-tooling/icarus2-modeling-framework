@@ -67,12 +67,12 @@ public final class References {
 		@Override
 		public void clear() { item = null; }
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Item> duplicate(EvaluationContext context) {
-			return (Expression<Item>) context.getMember(name).orElseThrow(
-					() -> EvaluationUtils.forInternalError(
-					"Context is missing member store for name: %s", name));
+			return context.getMember(name)
+					.map(EvaluationUtils::castItem)
+					.orElseThrow(() -> EvaluationUtils.forInternalError(
+							"Context is missing member store for name: %s", name));
 		}
 	}
 

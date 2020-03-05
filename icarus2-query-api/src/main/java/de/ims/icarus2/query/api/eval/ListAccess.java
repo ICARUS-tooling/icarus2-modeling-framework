@@ -19,6 +19,9 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBoolean;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
@@ -56,18 +59,41 @@ public final class ListAccess {
 		checkArgument("Source expressions array must not be empty", source.length>0);
 
 		// TODO maybe switch to a more elaborate strategy for computing the result type
-		TypeInfo type = source[0].getResultType();
+		TypeInfo elementType = source[0].getResultType();
 
-		if(TypeInfo.isBoolean(type)) {
+		if(TypeInfo.isBoolean(elementType)) {
 			return new BooleanListWrapper(EvaluationUtils.ensureBoolean(source));
-		} else if(TypeInfo.isFloatingPoint(type)) {
+		} else if(TypeInfo.isFloatingPoint(elementType)) {
 			return new FloatingPointListWrapper(EvaluationUtils.ensureFloatingPoint(source));
-		} else if(TypeInfo.isNumerical(type)) {
+		} else if(TypeInfo.isNumerical(elementType)) {
+			return new IntegerListWrapper(EvaluationUtils.ensureInteger(source));
+		}
+
+		// Let object wrapper
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		ListExpression<?, ?> result = new ObjectWrapper(elementType, source);
+		return result;
+	}
+
+	/**
+	 * Wraps a collection of individual expressions into a single list expression
+	 * with an explicitly specified element type
+	 */
+	public static ListExpression<?, ?> wrap(TypeInfo elementType, Expression<?>[] source) {
+		requireNonNull(elementType);
+		requireNonNull(source);
+		checkArgument("Source expressions array must not be empty", source.length>0);
+
+		if(TypeInfo.isBoolean(elementType)) {
+			return new BooleanListWrapper(EvaluationUtils.ensureBoolean(source));
+		} else if(TypeInfo.isFloatingPoint(elementType)) {
+			return new FloatingPointListWrapper(EvaluationUtils.ensureFloatingPoint(source));
+		} else if(TypeInfo.isNumerical(elementType)) {
 			return new IntegerListWrapper(EvaluationUtils.ensureInteger(source));
 		}
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		ListExpression<?, ?> result = new ObjectWrapper(source);
+		ListExpression<?, ?> result = new ObjectWrapper(elementType, source);
 		return result;
 	}
 
@@ -338,9 +364,8 @@ public final class ListAccess {
 			return buffer;
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
-		public Primitive<Long> get(int index) { return (Primitive<Long>) source[index].compute(); }
+		public Primitive<Long> get(int index) { return castInteger(source[index]).compute(); }
 
 		@Override
 		public long getAsLong(int index) { return source[index].computeAsLong(); }
@@ -360,15 +385,24 @@ public final class ListAccess {
 					.map(ne -> ne.optimize(context))
 					.toArray(Expression<?>[]::new);
 
+			boolean sourceChanged = false;
+			for (int i = 0; i < newSource.length; i++) {
+				if(newSource[i] != source[i]) {
+					sourceChanged = true;
+					break;
+				}
+			}
+
 			// Optimize to constant
-			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
 				long[] array = new long[newSource.length];
 				fillBuffer(array, newSource);
 				return ArrayLiterals.of(array);
+			} else if(sourceChanged) {
+				return new IntegerListWrapper(newSource);
 			}
 
-			// We could check whether any of the index expressions has changed...
-			return new IntegerListWrapper(newSource);
+			return this;
 		}
 	}
 
@@ -541,9 +575,8 @@ public final class ListAccess {
 			return buffer;
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
-		public Primitive<Double> get(int index) { return (Primitive<Double>) source[index].compute(); }
+		public Primitive<Double> get(int index) { return castFloatingPoint(source[index]).compute(); }
 
 		@Override
 		public double getAsDouble(int index) { return source[index].computeAsDouble(); }
@@ -563,15 +596,24 @@ public final class ListAccess {
 					.map(ne -> ne.optimize(context))
 					.toArray(Expression<?>[]::new);
 
+			boolean sourceChanged = false;
+			for (int i = 0; i < newSource.length; i++) {
+				if(newSource[i] != source[i]) {
+					sourceChanged = true;
+					break;
+				}
+			}
+
 			// Optimize to constant
-			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
 				double[] array = new double[newSource.length];
 				fillBuffer(array, newSource);
 				return ArrayLiterals.of(array);
+			} else if(sourceChanged) {
+				return new FloatingPointListWrapper(newSource);
 			}
 
-			// We could check whether any of the index expressions has changed...
-			return new FloatingPointListWrapper(newSource);
+			return this;
 		}
 	}
 
@@ -741,9 +783,8 @@ public final class ListAccess {
 			return buffer;
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
-		public Primitive<Boolean> get(int index) { return (Primitive<Boolean>) source[index].compute(); }
+		public Primitive<Boolean> get(int index) { return castBoolean(source[index]).compute(); }
 
 		@Override
 		public boolean getAsBoolean(int index) { return source[index].computeAsBoolean(); }
@@ -763,15 +804,24 @@ public final class ListAccess {
 					.map(ne -> ne.optimize(context))
 					.toArray(Expression[]::new);
 
+			boolean sourceChanged = false;
+			for (int i = 0; i < newSource.length; i++) {
+				if(newSource[i] != source[i]) {
+					sourceChanged = true;
+					break;
+				}
+			}
+
 			// Optimize to constant
-			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
+			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
 				boolean[] array = new boolean[newSource.length];
 				fillBuffer(array, newSource);
 				return ArrayLiterals.of(array);
+			} else if(sourceChanged) {
+				return new BooleanListWrapper(newSource);
 			}
 
-			// We could check whether any of the index expressions has changed...
-			return new BooleanListWrapper(newSource);
+			return this;
 		}
 	}
 
@@ -909,9 +959,16 @@ public final class ListAccess {
 
 		private final TypeInfo type, elementType;
 
-		public ObjectWrapper(Expression<E>[] source) {
+//		public ObjectWrapper(Expression<E>[] source) {
+//			this.source = requireNonNull(source);
+//			elementType = source[0].getResultType();
+//			type = EvaluationUtils.arrayType(elementType);
+//			buffer = EvaluationUtils.arrayOf(elementType, source.length);
+//		}
+
+		public ObjectWrapper(TypeInfo elementType, Expression<E>[] source) {
 			this.source = requireNonNull(source);
-			elementType = source[0].getResultType();
+			this.elementType = requireNonNull(elementType);
 			type = EvaluationUtils.arrayType(elementType);
 			buffer = EvaluationUtils.arrayOf(elementType, source.length);
 		}
@@ -946,7 +1003,7 @@ public final class ListAccess {
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new ObjectWrapper<>(Stream.of(source)
+			return new ObjectWrapper<>(elementType, Stream.of(source)
 						.map(ne -> ne.duplicate(context))
 						.map(Expression.class::cast)
 						.toArray(Expression[]::new));
@@ -960,15 +1017,26 @@ public final class ListAccess {
 					.map(Expression.class::cast)
 					.toArray(Expression[]::new);
 
-			// Optimize to constant
-			if(Stream.of(newSource).allMatch(Expression::isConstant)) {
+			boolean sourceChanged = false;
+			for (int i = 0; i < newSource.length; i++) {
+				if(newSource[i] != source[i]) {
+					sourceChanged = true;
+					break;
+				}
+			}
+
+			if(sourceChanged && Stream.of(newSource).allMatch(Expression::isConstant)) {
+				// Optimize to constant
 				E[] array = EvaluationUtils.arrayOf(elementType, newSource.length);
 				fillBuffer(array, newSource);
 				return ArrayLiterals.ofGeneric(array);
+			} else if(sourceChanged) {
+				// Allow underlying optimizations to take effect
+				return new ObjectWrapper<>(elementType, newSource);
 			}
 
-			// We could check whether any of the index expressions has changed...
-			return new ObjectWrapper<>(newSource);
+			// Nothing changed
+			return this;
 		}
 	}
 }

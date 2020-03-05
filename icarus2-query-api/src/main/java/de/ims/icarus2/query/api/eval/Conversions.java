@@ -19,6 +19,14 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBoolean;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBooleanList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPointList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castTextList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.float2Boolean;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.int2Boolean;
@@ -72,26 +80,38 @@ import de.ims.icarus2.util.strings.StringPrimitives;
  */
 public class Conversions {
 
-	@SuppressWarnings("unchecked")
+	public static Expression<?> to(TypeInfo type, Expression<?> source) {
+		if(TypeInfo.isInteger(type)) {
+			return toInteger(source);
+		} else if(TypeInfo.isFloatingPoint(type)) {
+			return toFloatingPoint(source);
+		} else if(TypeInfo.isBoolean(type)) {
+			return toBoolean(source);
+		} else if(TypeInfo.isText(type)) {
+			return toText(source);
+		}
+
+		return source;
+	}
+
+
 	public static Expression<CharSequence> toText(Expression<?> source) {
 		if(source.isText()) {
-			return (Expression<CharSequence>) source;
+			return castText(source);
 		}
 		return new TextCast(source, converterFrom(source));
 	}
 
-	@SuppressWarnings("unchecked")
 	public static ListExpression<?, CharSequence> toTextList(ListExpression<?, ?> source) {
 		if(TypeInfo.isText(source.getElementType())) {
-			return (ListExpression<?, CharSequence>) source;
+			return castTextList(source);
 		}
 		return new TextListCast(source, converterFromList(source));
 	}
 
-	@SuppressWarnings("unchecked")
 	public static Expression<Primitive<Boolean>> toBoolean(Expression<?> source) {
 		if(source.isBoolean()) {
-			return (Expression<Primitive<Boolean>>) source;
+			return castBoolean(source);
 		}
 		return new BooleanCast(source, converterFrom(source));
 	}
@@ -103,9 +123,9 @@ public class Conversions {
 		return new BooleanListCast(source, converterFromList(source));
 	}
 
-	public static Expression<?> toInteger(Expression<?> source) {
+	public static Expression<Primitive<Long>> toInteger(Expression<?> source) {
 		if(source.isInteger()) {
-			return source;
+			return castInteger(source);
 		}
 		return new IntegerCast(source, converterFrom(source));
 	}
@@ -117,9 +137,9 @@ public class Conversions {
 		return new IntegerListCast(source, converterFromList(source));
 	}
 
-	public static Expression<?> toFloatingPoint(Expression<?> source) {
+	public static Expression<Primitive<Double>> toFloatingPoint(Expression<?> source) {
 		if(source.isFloatingPoint()) {
-			return source;
+			return castFloatingPoint(source);
 		}
 		return new FloatingPointCast(source, converterFrom(source));
 	}
@@ -156,6 +176,11 @@ public class Conversions {
 		}
 
 		return ListConverter.FROM_GENERIC;
+	}
+
+	public static boolean isCast(Expression<?> expression) {
+		return expression instanceof CastExpression
+				|| expression instanceof ListCastExpression;
 	}
 
 	private static abstract class CastExpression<T> implements Expression<T> {
@@ -608,11 +633,10 @@ public class Conversions {
 
 	/** Provides conversion from a specific type to the 4 casting targets */
 	private enum Converter {
-		@SuppressWarnings("unchecked")
 		FROM_TEXT(TypeInfo.TEXT,
-				exp -> StringPrimitives.parseLong(((Expression<CharSequence>)exp).compute()),
-				exp -> StringPrimitives.parseDouble(((Expression<CharSequence>)exp).compute()),
-				exp -> string2Boolean(((Expression<CharSequence>)exp).compute()),
+				exp -> StringPrimitives.parseLong(castText(exp).compute()),
+				exp -> StringPrimitives.parseDouble(castText(exp).compute()),
+				exp -> string2Boolean(castText(exp).compute()),
 				null
 		),
 
@@ -699,33 +723,32 @@ public class Conversions {
 
 	/** Provides conversion from a specific type to the 4 casting targets */
 	private enum ListConverter {
-		@SuppressWarnings("unchecked")
 		FROM_TEXT(TypeInfo.TEXT,
-				(exp, i) -> StringPrimitives.parseLong(((ListExpression<?, CharSequence>)exp).get(i)),
-				(exp, i) -> StringPrimitives.parseDouble(((ListExpression<?, CharSequence>)exp).get(i)),
-				(exp, i) -> string2Boolean(((ListExpression<?, CharSequence>)exp).get(i)),
+				(exp, i) -> StringPrimitives.parseLong(castTextList(exp).get(i)),
+				(exp, i) -> StringPrimitives.parseDouble(castTextList(exp).get(i)),
+				(exp, i) -> string2Boolean(castTextList(exp).get(i)),
 				null
 		),
 
 		FROM_INTEGER(TypeInfo.INTEGER,
 				null,
-				(exp, i) -> (double)((IntegerListExpression<?>)exp).getAsLong(i),
-				(exp, i) -> int2Boolean(((IntegerListExpression<?>)exp).getAsLong(i)),
-				(exp, i) -> String.valueOf(((IntegerListExpression<?>)exp).getAsLong(i))
+				(exp, i) -> (double)castIntegerList(exp).getAsLong(i),
+				(exp, i) -> int2Boolean(castIntegerList(exp).getAsLong(i)),
+				(exp, i) -> String.valueOf(castIntegerList(exp).getAsLong(i))
 		),
 
 		FROM_FLOAT(TypeInfo.FLOATING_POINT,
-				(exp, i) -> (long)((FloatingPointListExpression<?>)exp).getAsDouble(i),
+				(exp, i) -> (long)castFloatingPointList(exp).getAsDouble(i),
 				null,
-				(exp, i) -> float2Boolean(((FloatingPointListExpression<?>)exp).getAsDouble(i)),
-				(exp, i) -> String.valueOf(((FloatingPointListExpression<?>)exp).getAsDouble(i))
+				(exp, i) -> float2Boolean(castFloatingPointList(exp).getAsDouble(i)),
+				(exp, i) -> String.valueOf(castFloatingPointList(exp).getAsDouble(i))
 		),
 
 		FROM_BOOLEAN(TypeInfo.BOOLEAN,
 				null,
 				null,
 				null,
-				(exp, i) -> String.valueOf(((BooleanListExpression<?>)exp).getAsBoolean(i))
+				(exp, i) -> String.valueOf(castBooleanList(exp).getAsBoolean(i))
 		),
 
 		FROM_GENERIC(TypeInfo.GENERIC,

@@ -508,10 +508,9 @@ public abstract class EvaluationContext {
 		@Override
 		public Item compute() { return item; }
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Item> duplicate(EvaluationContext context) {
-			return (Expression<Item>) context.getElementStore().orElseThrow(
+			return context.getElementStore().map(EvaluationUtils::castItem).orElseThrow(
 					() -> EvaluationUtils.forInternalError(
 					"Target context does not provide element store"));
 		}

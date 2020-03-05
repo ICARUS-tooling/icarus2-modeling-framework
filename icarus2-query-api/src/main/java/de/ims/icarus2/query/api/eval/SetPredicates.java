@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castTextList;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
@@ -74,7 +76,7 @@ public class SetPredicates {
 				return FloatingPointSetPredicate.of(mode, query, set);
 			}
 			return IntegerSetPredicate.of(mode, query, set);
-		} else if(query.isText()) {
+		} else if(TypeInfo.isText(queryType)) {
 			return TextSetPredicate.of(mode, query, set);
 		}
 
@@ -91,7 +93,7 @@ public class SetPredicates {
 				return FloatingPointSetPredicate.of(mode, query, set);
 			}
 			return IntegerSetPredicate.of(mode, query, set);
-		} else if(query.isText()) {
+		} else if(TypeInfo.isText(queryType)) {
 			return TextSetPredicate.of(mode, query, set);
 		}
 
@@ -108,7 +110,7 @@ public class SetPredicates {
 				return FloatingPointSetPredicate.of(mode, query, set);
 			}
 			return IntegerSetPredicate.of(mode, query, set);
-		} else if(query.isText()) {
+		} else if(TypeInfo.isText(queryType)) {
 			return TextSetPredicate.of(mode, query, set);
 		}
 
@@ -694,8 +696,7 @@ public class SetPredicates {
 
 			for (Expression<?> element : elements) {
 				if(element.isText()) {
-					@SuppressWarnings("unchecked")
-					Expression<CharSequence> te = (Expression<CharSequence>)element;
+					Expression<CharSequence> te = castText(element);
 
 					if(te.isConstant()) {
 						fixedElements.add(te.compute());
@@ -748,7 +749,6 @@ public class SetPredicates {
 			}
 		};
 
-		@SuppressWarnings("unchecked")
 		private TextSetPredicate(Mode mode, Expression<?> target, Set<CharSequence> fixedElements,
 				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
 			requireNonNull(mode);
@@ -757,14 +757,14 @@ public class SetPredicates {
 			this.mode = mode;
 			switch (mode) {
 			case SINGLE:
-				this.target = (Expression<CharSequence>) target;
+				this.target = castText(target);
 				listTarget = null;
 				break;
 			case EXPAND:
 			case EXPAND_EXHAUSTIVE:
 			case EXPAND_EXHAUSTIVE_NEGATED:
 				this.target = null;
-				listTarget = (ListExpression<?, CharSequence>)target;
+				listTarget = castTextList(target);
 				break;
 
 			default:
