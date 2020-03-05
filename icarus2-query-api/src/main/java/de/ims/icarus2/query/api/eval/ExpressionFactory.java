@@ -54,7 +54,6 @@ import de.ims.icarus2.query.api.eval.Expression.ListExpression;
 import de.ims.icarus2.query.api.eval.Expressions.PathProxy;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ArrayContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BitwiseOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BooleanLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.CastExpressionContext;
@@ -68,6 +67,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.FloatingPointLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ForEachContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.IntegerLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListAccessContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MethodInvocationContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MultiplicativeOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NullLiteralContext;
@@ -285,8 +285,8 @@ public class ExpressionFactory {
 			return processIntegerLiteral(pctx.integerLiteral());
 		} else if(pctx.StringLiteral()!=null) {
 			return processStringLiteral(pctx.StringLiteral());
-		} else if(pctx.array()!=null) {
-			return processArray(pctx.array());
+		} else if(pctx.listStatement()!=null) {
+			return processArray(pctx.listStatement());
 		} else if(pctx.reference()!=null) {
 			return processReference(pctx.reference());
 		}
@@ -360,7 +360,7 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(ctx);
 	}
 
-	private ListExpression<?,?> processArray(ArrayContext ctx) {
+	private ListExpression<?,?> processArray(ListStatementContext ctx) {
 		Expression<?>[] elements = processExpressionList(ctx.expressionList());
 
 		//TODO ensure we have only compatible types (potentially forcing conversions)
@@ -468,21 +468,29 @@ public class ExpressionFactory {
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {
 
 		Expression<?> target = processAndResolveExpression0(ctx.source);
-		Expression<?>[] elements = processExpressionList(ctx.set);
+		Expression<?>[] elements = processExpressionList(ctx.listStatement().expressionList());
 
 		Expression<Primitive<Boolean>> setPred;
+		boolean negated = ctx.not()!=null;
+		boolean all = ctx.all()!=null;
 
-		if(ctx.all()!=null) {
+		if(all) {
 			if(!target.isList())
 				throw new QueryException(QueryErrorCode.INCORRECT_USE,
 						"Cannot use the 'ALL IN' set predicate with a non-list "
 						+ "target expression: "+textOf(ctx), asFragment(ctx));
-			setPred = SetPredicates.allIn((ListExpression<?, ?>) target, elements);
+
+			if(negated) {
+				setPred = SetPredicates.allNotIn((ListExpression<?, ?>) target, elements);
+			} else {
+				setPred = SetPredicates.allIn((ListExpression<?, ?>) target, elements);
+			}
 		} else {
 			setPred = SetPredicates.in(target, elements);
 		}
 
-		return maybeNegate(setPred, ctx.not()!=null);
+		// Outer negation only needed when we're not in the 'all not in' mode
+		return maybeNegate(setPred, negated && !all);
 	}
 
 	Expression<?> processUnaryOp(UnaryOpContext ctx) {

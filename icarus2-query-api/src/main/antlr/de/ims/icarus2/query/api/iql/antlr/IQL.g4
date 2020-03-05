@@ -345,7 +345,6 @@ expression
 	| source=expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE keys=expressionList RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
-	| source=expression not? IN all? LBRACE set=expressionList RBRACE 	# setPredicate
 	//TODO maybe replace 'NOT | EXMARK' by 'not' rule, but might interfere with priorities?
 	| (NOT | EXMARK | MINUS | TILDE) expression 									# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
@@ -357,6 +356,7 @@ expression
 	| <assoc=right> left=expression and right=expression 											# conjunction
 	| <assoc=right> left=expression or right=expression 											# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
+	| source=expression all? not? IN listStatement 	# setPredicate
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
 	;
@@ -367,11 +367,11 @@ primary
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
-	| array
+	| listStatement
 	| reference	
 	;
 	
-array
+listStatement
 	: LBRACE expressionList RBRACE
 	;
 	

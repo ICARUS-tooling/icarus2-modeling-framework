@@ -290,15 +290,68 @@ class ExpressionFactoryTest {
 			assertExpression(exp, context, result);
 		}
 
+		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
 		@ParameterizedTest
 		@CsvSource(delimiter=';', value={
+			// simple containment
 			"2 in {1, 2, 3, 4,-10}; true",
 			"2 in {1, 3, 4,-10}; false",
+			// negated simple containment
 			"2 not in {1, 3, 4,-10}; true",
 			"2 not in {1, 2, 3, 4,-10}; false",
-			//TODO find easy way to test the 'all in' expression with multiple source values
+			// with formulas
+			"2*2  in {1, 3, 4,-10}; true",
+			"2+4 not in {1, 2, 3, 4,-10}; true",
+			"2+2 not in {1, 2, 3, 4,-10}; false",
+			"2*2  in {1, 3, 5-1,-10}; true",
+			"2+4 not in {1, 2, 6/2, 4,-10}; true",
+			"2+1 not in {1, 2, 6/2, 4,-10}; false",
+			// expanded containment
+			"{0, 2} in {1, 2, 3, 4,-10}; true",
+			"{0, -1} in {1, 2, 3, 4,-10}; false",
+			// negated expanded containment
+			"{0, 2} not in {1, 2, 3, 4,-10}; false",
+			"{0, -1} not in {1, 2, 3, 4,-10}; true",
+			// 'all in'
+			"{3, 2} all in {1, 2, 3, 4,-10}; true",
+			"{0, 2} all in {1, 2, 3, 4,-10}; false",
+			// not 'all in'
+			"{3, 2} all not in {1, 2, 3, 4,-10}; false",
+			"{0, 2} all not in {1, 2, 3, 4,-10}; false",
+			"{0, -1} all not in {1, 2, 3, 4,-10}; true",
+			"{0} all not in {1, 2, 3, 4,-10}; true"
 		})
-		void testSetPredicate(String input, boolean result) {
+		void testIntegerSetPredicate(String input, boolean result) {
+			Expression<?> exp = parse(input);
+			assertThat(exp.isBoolean()).isTrue();
+			assertExpression(exp, context, result);
+		}
+
+		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
+		@ParameterizedTest
+		@CsvSource(delimiter=';', value={
+			// simple containment
+			"2.1 in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+			"2.1 in {1.5, 2.2, 3.01, 4.001, -10.5}; false",
+			// negated simple containment
+			"2.1 not in {1.5, 2.2, 3.01, 4.001, -10.5}; true",
+			"2.1 not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			// expanded containment
+			"{0.0, 2.1} in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+			"{0.0, -1.5} in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			// negated expanded containment
+			"{0.0, 2.1} not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			"{0.0, -1.0} not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+			// 'all in'
+			"{3.01, 2.1} all in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+			"{0.0, 2.1} all in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			// 'all not in'
+			"{3.3, 2.1} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			"{0.0, 2.1} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+			"{0.0, -1.5} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+			"{0.0} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true"
+		})
+		void testFlaotingPointSetPredicate(String input, boolean result) {
 			Expression<?> exp = parse(input);
 			assertThat(exp.isBoolean()).isTrue();
 			assertExpression(exp, context, result);

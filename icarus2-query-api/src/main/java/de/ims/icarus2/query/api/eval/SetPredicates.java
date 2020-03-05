@@ -99,10 +99,28 @@ public class SetPredicates {
 				"Unable to handle [all in] set predicate for type: "+queryType);
 	}
 
+	public static Expression<Primitive<Boolean>> allNotIn(ListExpression<?, ?> query, Expression<?>...set) {
+		Mode mode = Mode.EXPAND_EXHAUSTIVE_NEGATED;
+		TypeInfo queryType = query.getElementType();
+
+		if(TypeInfo.isNumerical(queryType)) {
+			if(TypeInfo.isFloatingPoint(queryType)) {
+				return FloatingPointSetPredicate.of(mode, query, set);
+			}
+			return IntegerSetPredicate.of(mode, query, set);
+		} else if(query.isText()) {
+			return TextSetPredicate.of(mode, query, set);
+		}
+
+		throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+				"Unable to handle [all not in] set predicate for type: "+queryType);
+	}
+
 	private enum Mode {
 		SINGLE,
 		EXPAND,
 		EXPAND_EXHAUSTIVE,
+		EXPAND_EXHAUSTIVE_NEGATED,
 		;
 	}
 
@@ -184,6 +202,7 @@ public class SetPredicates {
 				break;
 			case EXPAND:
 			case EXPAND_EXHAUSTIVE:
+			case EXPAND_EXHAUSTIVE_NEGATED:
 				this.target = null;
 				listTarget = (IntegerListExpression<?>)target;
 				break;
@@ -265,6 +284,18 @@ public class SetPredicates {
 			return false;
 		}
 
+		private static boolean containsNone(IntegerListExpression<?> target, LongSet fixedLongs,
+				Expression<?>[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
+			int size = target.size();
+			for (int i = 0; i < size; i++) {
+				long value = target.getAsLong(i);
+				if(containsSingle(value, fixedLongs, dynamicElements, dynamicLists)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		private static boolean containsSingle(long value, LongSet fixedLongs,
 				Expression<?>[] dynamicElements, IntegerListExpression<?>[] dynamicLists) {
 			return (!fixedLongs.isEmpty() && fixedLongs.contains(value))
@@ -280,6 +311,7 @@ public class SetPredicates {
 
 			case EXPAND: return containsAny(listTarget, fixedLongs, dynamicElements, dynamicLists);
 			case EXPAND_EXHAUSTIVE: return containsAll(listTarget, fixedLongs, dynamicElements, dynamicLists);
+			case EXPAND_EXHAUSTIVE_NEGATED: return containsNone(listTarget, fixedLongs, dynamicElements, dynamicLists);
 
 			default:
 				throw forUnknownMode(mode);
@@ -347,6 +379,9 @@ public class SetPredicates {
 						fixedLongs, dynamicElements, dynamicLists));
 				case EXPAND_EXHAUSTIVE: return Literals.of(
 						containsAll((IntegerListExpression<?>)newTarget,
+								fixedLongs, dynamicElements, dynamicLists));
+				case EXPAND_EXHAUSTIVE_NEGATED: return Literals.of(
+						containsNone((IntegerListExpression<?>)newTarget,
 								fixedLongs, dynamicElements, dynamicLists));
 
 				default:
@@ -442,6 +477,7 @@ public class SetPredicates {
 				break;
 			case EXPAND:
 			case EXPAND_EXHAUSTIVE:
+			case EXPAND_EXHAUSTIVE_NEGATED:
 				this.target = null;
 				listTarget = (FloatingPointListExpression<?>)target;
 				break;
@@ -523,6 +559,18 @@ public class SetPredicates {
 			return false;
 		}
 
+		private static boolean containsNone(FloatingPointListExpression<?> target, DoubleSet fixedDoubles,
+				Expression<?>[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
+			int size = target.size();
+			for (int i = 0; i < size; i++) {
+				double value = target.getAsDouble(i);
+				if(containsSingle(value, fixedDoubles, dynamicElements, dynamicLists)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		private static boolean containsSingle(double value, DoubleSet fixedDoubles,
 				Expression<?>[] dynamicElements, FloatingPointListExpression<?>[] dynamicLists) {
 			return (!fixedDoubles.isEmpty() && fixedDoubles.contains(value))
@@ -538,6 +586,7 @@ public class SetPredicates {
 
 			case EXPAND: return containsAny(listTarget, fixedDoubles, dynamicElements, dynamicLists);
 			case EXPAND_EXHAUSTIVE: return containsAll(listTarget, fixedDoubles, dynamicElements, dynamicLists);
+			case EXPAND_EXHAUSTIVE_NEGATED: return containsNone(listTarget, fixedDoubles, dynamicElements, dynamicLists);
 
 			default:
 				throw forUnknownMode(mode);
@@ -605,6 +654,9 @@ public class SetPredicates {
 						fixedDoubles, dynamicElements, dynamicLists));
 				case EXPAND_EXHAUSTIVE: return Literals.of(
 						containsAll((FloatingPointListExpression<?>)newTarget,
+								fixedDoubles, dynamicElements, dynamicLists));
+				case EXPAND_EXHAUSTIVE_NEGATED: return Literals.of(
+						containsNone((FloatingPointListExpression<?>)newTarget,
 								fixedDoubles, dynamicElements, dynamicLists));
 
 				default:
@@ -710,6 +762,7 @@ public class SetPredicates {
 				break;
 			case EXPAND:
 			case EXPAND_EXHAUSTIVE:
+			case EXPAND_EXHAUSTIVE_NEGATED:
 				this.target = null;
 				listTarget = (ListExpression<?, CharSequence>)target;
 				break;
@@ -791,6 +844,18 @@ public class SetPredicates {
 			return false;
 		}
 
+		private static boolean containsNone(ListExpression<?, CharSequence> target, Set<CharSequence> fixedElements,
+				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
+			int size = target.size();
+			for (int i = 0; i < size; i++) {
+				CharSequence value = target.get(i);
+				if(containsSingle(value, fixedElements, dynamicElements, dynamicLists)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		private static boolean containsSingle(CharSequence value, Set<CharSequence> fixedElements,
 				Expression<CharSequence>[] dynamicElements, ListExpression<?, CharSequence>[] dynamicLists) {
 			return (!fixedElements.isEmpty() && fixedElements.contains(value))
@@ -806,6 +871,7 @@ public class SetPredicates {
 
 			case EXPAND: return containsAny(listTarget, fixedElements, dynamicElements, dynamicLists);
 			case EXPAND_EXHAUSTIVE: return containsAll(listTarget, fixedElements, dynamicElements, dynamicLists);
+			case EXPAND_EXHAUSTIVE_NEGATED: return containsNone(listTarget, fixedElements, dynamicElements, dynamicLists);
 
 			default:
 				throw forUnknownMode(mode);
@@ -876,6 +942,9 @@ public class SetPredicates {
 						fixedElements, dynamicElements, dynamicLists));
 				case EXPAND_EXHAUSTIVE: return Literals.of(
 						containsAll((ListExpression<?, CharSequence>)newTarget,
+								fixedElements, dynamicElements, dynamicLists));
+				case EXPAND_EXHAUSTIVE_NEGATED: return Literals.of(
+						containsNone((ListExpression<?, CharSequence>)newTarget,
 								fixedElements, dynamicElements, dynamicLists));
 
 				default:
