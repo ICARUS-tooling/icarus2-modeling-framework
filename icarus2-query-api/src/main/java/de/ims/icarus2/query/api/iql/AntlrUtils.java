@@ -127,10 +127,19 @@ public final class AntlrUtils {
 	private static final String UNSPECIFIED_MSG = "Unspecified parsing error";
 
 	public static QueryFragment asFragment(RuleContext ctx) {
-		return Optional.ofNullable(ctx)
-				.map(RuleContext::getSourceInterval)
-				.map(iv -> new QueryFragment(ctx.getText(), iv.a, Math.max(iv.a, iv.b)))
-				.orElse(null);
+		if(ctx==null) {
+			return null;
+		}
+		if(ctx instanceof ParserRuleContext) {
+			ParserRuleContext prc = (ParserRuleContext) ctx;
+			Interval iv = prc.getSourceInterval();
+			if(iv!=Interval.INVALID) {
+				CharStream input = prc.getStart().getInputStream();
+				String text = input.getText(Interval.of(0, iv.b));
+				return new QueryFragment(text, Math.min(iv.a, iv.b), Math.max(iv.a, iv.b));
+			}
+		}
+		return null;
 	}
 
 	public static QueryException asSyntaxException(RecognitionException ex, String msg) {
