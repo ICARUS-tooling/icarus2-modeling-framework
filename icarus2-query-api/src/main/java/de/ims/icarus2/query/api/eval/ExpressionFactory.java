@@ -165,6 +165,10 @@ public class ExpressionFactory {
 	private Expression<?> processExpression0(ExpressionContext ctx, boolean resolveProxy) {
 		Expression<?> expression = handlerFor(ctx).apply(this, ctx);
 
+		if(expression==null)
+			throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+					"Failed to parse into proper expression: "+textOf(ctx), asFragment(ctx));
+
 		if(expression.isProxy() && resolveProxy) {
 			expression = resolveProxy(expression);
 		}

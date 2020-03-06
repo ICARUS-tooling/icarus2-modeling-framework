@@ -27,6 +27,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.quote;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertQueryException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -58,6 +59,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
@@ -68,6 +70,7 @@ import de.ims.icarus2.query.api.eval.SetPredicates.TextSetPredicate;
 import de.ims.icarus2.query.api.eval.UnaryOperations.BooleanNegation;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StandaloneExpressionContext;
+import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.strings.StringUtil;
@@ -109,6 +112,14 @@ class ExpressionFactoryTest {
 		void tearDown() {
 			context = null;
 			factory = null;
+		}
+
+		private void prepareRef(String name, Expression<?> exp) {
+			doReturn(Optional.of(exp)).when(context).resolve(isNull(), eq(name), any());
+		}
+
+		private void prepareVar(String name, Assignable<?> assignable) {
+			doReturn(assignable).when(context).getVariable(name);
 		}
 
 		private Expression<?> parse(String s) {
@@ -161,6 +172,15 @@ class ExpressionFactoryTest {
 				assertExpression(exp, context, result);
 			}
 
+			@Test
+			void testUnparsableInteger() {
+				char[] chars = new char[100];
+				Arrays.fill(chars, '9');
+				String input = new String(chars);
+
+				assertQueryException(QueryErrorCode.INVALID_LITERAL, () -> parse(input));
+			}
+
 			@CsvSource({
 				"1.0, 1.0",
 				"100.01, 100.01",
@@ -175,6 +195,17 @@ class ExpressionFactoryTest {
 				Expression<?> exp = parse(input);
 				assertThat(exp.isFloatingPoint()).isTrue();
 				assertExpression(exp, context, result);
+			}
+
+			@PostponedTest("ignored until we figure out why Double.parseDouble() doesn't fail on overflow")
+			@Test
+			void testUnparsableFloatingPoint() {
+				char[] chars = new char[100];
+				Arrays.fill(chars, '9');
+				chars[89] = '.';
+				String input = new String(chars);
+
+				assertQueryException(QueryErrorCode.INVALID_LITERAL, () -> parse(input));
 			}
 
 			@CsvSource({
@@ -507,14 +538,46 @@ class ExpressionFactoryTest {
 					});
 				});
 			}
+
+			@Test
+			void testEmptyStringArray() {
+				Expression<?> exp = parse("string[]{}");
+				assertThat(exp.isList()).isTrue();
+				assertListExpression(castTextList(exp), context, StringUtil::equals);
+			}
+
+			@Test
+			void testEmptyIntegerArray() {
+				Expression<?> exp = parse("int[]{}");
+				assertThat(exp.isList()).isTrue();
+				assertListExpression(castIntegerList(exp), context);
+			}
+
+			@Test
+			void testEmptyFloatingPointArray() {
+				Expression<?> exp = parse("float[]{}");
+				assertThat(exp.isList()).isTrue();
+				assertListExpression(castFloatingPointList(exp), context);
+			}
+
+			@Test
+			void testEmptyBooleanArray() {
+				Expression<?> exp = parse("boolean[]{}");
+				assertThat(exp.isList()).isTrue();
+				assertListExpression(castBooleanList(exp), context);
+			}
+
+			@Test
+			void testUntypedEmptyArray() {
+				assertQueryException(QueryErrorCode.INCORRECT_USE,
+						() -> parse("{}"));
+			}
 		}
 
 		@Nested
 		class ForListAccess {
 
-			private void prepareContext(String name, TypeInfo elementType, Expression<?> exp) {
-				doReturn(Optional.of(exp)).when(context).resolve(isNull(), eq(name), any());
-			}
+
 
 			// SINGLE ACCESS
 
@@ -523,7 +586,7 @@ class ExpressionFactoryTest {
 				CharSequence[] array = IntStream.range(0, 10)
 						.mapToObj(i -> "item_"+i)
 						.toArray(CharSequence[]::new);
-				prepareContext("array", TypeInfo.TEXT, ArrayLiterals.ofGeneric(array));
+				prepareRef("array", ArrayLiterals.ofGeneric(array));
 
 				return IntStream.range(0, array.length).mapToObj(
 						index -> dynamicTest(String.valueOf(index), () -> {
@@ -537,7 +600,7 @@ class ExpressionFactoryTest {
 			@TestFactory
 			Stream<DynamicNode> testInteger() {
 				long[] array = LongStream.range(0, 10).toArray();
-				prepareContext("array", TypeInfo.INTEGER, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 
 				return IntStream.range(0, array.length).mapToObj(
 						index -> dynamicTest(String.valueOf(index), () -> {
@@ -551,7 +614,7 @@ class ExpressionFactoryTest {
 			@TestFactory
 			Stream<DynamicNode> testFloatingPoint() {
 				double[] array = DoubleStream.iterate(0.6, v -> v+0.7).limit(10).toArray();
-				prepareContext("array", TypeInfo.FLOATING_POINT, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 
 				return IntStream.range(0, array.length).mapToObj(
 						index -> dynamicTest(String.valueOf(index), () -> {
@@ -568,7 +631,7 @@ class ExpressionFactoryTest {
 				for (int i = 0; i < array.length; i++) {
 					array[i] = i%3==1;
 				}
-				prepareContext("array", TypeInfo.BOOLEAN, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 
 				return IntStream.range(0, array.length).mapToObj(
 						index -> dynamicTest(String.valueOf(index), () -> {
@@ -586,7 +649,7 @@ class ExpressionFactoryTest {
 				CharSequence[] array = IntStream.range(0, 10)
 						.mapToObj(i -> "item_"+i)
 						.toArray(CharSequence[]::new);
-				prepareContext("array", TypeInfo.TEXT, ArrayLiterals.ofGeneric(array));
+				prepareRef("array", ArrayLiterals.ofGeneric(array));
 
 				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
 					int[] filter = IntStream.range(0, size).toArray();
@@ -605,7 +668,7 @@ class ExpressionFactoryTest {
 			@TestFactory
 			Stream<DynamicNode> testIntegerFilter() {
 				long[] array = LongStream.range(0, 10).toArray();
-				prepareContext("array", TypeInfo.INTEGER, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 
 				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
 					int[] filter = IntStream.range(0, size).toArray();
@@ -623,7 +686,7 @@ class ExpressionFactoryTest {
 			@TestFactory
 			Stream<DynamicNode> testFloatingPointFilter() {
 				double[] array = DoubleStream.iterate(0.6, v -> v+0.7).limit(10).toArray();
-				prepareContext("array", TypeInfo.FLOATING_POINT, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 
 				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
 					int[] filter = IntStream.range(0, size).toArray();
@@ -644,7 +707,7 @@ class ExpressionFactoryTest {
 				for (int i = 0; i < array.length; i++) {
 					array[i] = i%3==1;
 				}
-				prepareContext("array", TypeInfo.BOOLEAN, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 
 				return IntStream.rangeClosed(2, array.length).mapToObj(size -> {
 					int[] filter = IntStream.range(0, size).toArray();
@@ -666,9 +729,9 @@ class ExpressionFactoryTest {
 				CharSequence[] array = IntStream.range(0, 10)
 						.mapToObj(i -> "item_"+i)
 						.toArray(CharSequence[]::new);
-				prepareContext("array", TypeInfo.TEXT, ArrayLiterals.ofGeneric(array));
+				prepareRef("array", ArrayLiterals.ofGeneric(array));
 				int[] filter = {2, 7};
-				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+				prepareRef("indices", ArrayLiterals.of(filter));
 
 				String input = "array[indices]";
 				CharSequence[] expected = new CharSequence[]{array[filter[0]], array[filter[1]]};
@@ -682,9 +745,9 @@ class ExpressionFactoryTest {
 			@Test
 			void testIntegerExpansion() {
 				long[] array = LongStream.range(0, 10).toArray();
-				prepareContext("array", TypeInfo.INTEGER, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 				int[] filter = {2, 7};
-				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+				prepareRef("indices", ArrayLiterals.of(filter));
 
 				String input = "array[indices]";
 				long[] expected = new long[]{array[filter[0]], array[filter[1]]};
@@ -698,9 +761,9 @@ class ExpressionFactoryTest {
 			@Test
 			void testFloatingPointExpansion() {
 				double[] array = DoubleStream.iterate(0.6, v -> v+0.7).limit(10).toArray();
-				prepareContext("array", TypeInfo.FLOATING_POINT, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 				int[] filter = {2, 7};
-				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+				prepareRef("indices", ArrayLiterals.of(filter));
 
 				String input = "array[indices]";
 				double[] expected = new double[]{array[filter[0]], array[filter[1]]};
@@ -717,9 +780,9 @@ class ExpressionFactoryTest {
 				for (int i = 0; i < array.length; i++) {
 					array[i] = i%3==1;
 				}
-				prepareContext("array", TypeInfo.BOOLEAN, ArrayLiterals.of(array));
+				prepareRef("array", ArrayLiterals.of(array));
 				int[] filter = {2, 7};
-				prepareContext("indices", TypeInfo.INTEGER, ArrayLiterals.of(filter));
+				prepareRef("indices", ArrayLiterals.of(filter));
 
 				String input = "array[indices]";
 				boolean[] expected = new boolean[]{array[filter[0]], array[filter[1]]};
@@ -728,6 +791,23 @@ class ExpressionFactoryTest {
 				assertThat(parsed.isList()).isTrue();
 				assertThat(parsed).isInstanceOf(BooleanListExpression.class);
 				assertListExpression(castBooleanList(parsed), context, expected);
+			}
+		}
+
+		@Nested
+		class ForReferences {
+
+			@ParameterizedTest
+			@ValueSource(strings = {
+					"x",
+					"x1234y",
+					"myAwesomeLongVariableNameNobodyNeedsButILikeItXD"
+			})
+			void testVariable(String name) {
+				Assignable<?> variable = mock(Assignable.class);
+				prepareVar(name, variable);
+				Expression<?> parsed = parse("@"+name);
+				assertThat(parsed).isSameAs(variable);
 			}
 		}
 
@@ -744,9 +824,9 @@ class ExpressionFactoryTest {
 			"2+3*4, 14",
 			"2-3*4, -10",
 			"12/3+2, 6"
-			//TODO
+			//TODO add wrapped formulas and other operators
 		})
-		void testFormulasInteger(String input, long result) {
+		void testIntegerFormulas(String input, long result) {
 			Expression<?> exp = parse(input);
 			assertThat(exp.isInteger()).isTrue();
 			assertExpression(exp, context, result);

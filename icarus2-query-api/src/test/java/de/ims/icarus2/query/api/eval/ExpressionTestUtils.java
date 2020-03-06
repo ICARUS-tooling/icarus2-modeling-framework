@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
@@ -28,6 +30,10 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.function.Executable;
+
+import de.ims.icarus2.ErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
@@ -42,6 +48,12 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  *
  */
 public class ExpressionTestUtils {
+
+	public static QueryException assertQueryException(ErrorCode errorCode, Executable executable) {
+		QueryException exception = assertThrows(QueryException.class, executable);
+		assertEquals(errorCode, exception.getErrorCode());
+		return exception;
+	}
 
 	// Simple expression assertions
 
