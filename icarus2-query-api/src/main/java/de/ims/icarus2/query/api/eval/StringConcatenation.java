@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class StringConcatenation implements Expression<CharSequence> {
 
@@ -68,9 +67,7 @@ public class StringConcatenation implements Expression<CharSequence> {
 	@Override
 	public StringConcatenation duplicate(EvaluationContext context) {
 		requireNonNull(context);
-		return new StringConcatenation(Stream.of(elements)
-				.map(ex -> ex.duplicate(context))
-				.toArray(Expression[]::new));
+		return new StringConcatenation(EvaluationUtils.duplicate(elements, context));
 	}
 
 	/**

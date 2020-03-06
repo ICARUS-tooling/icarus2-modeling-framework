@@ -19,6 +19,9 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPointList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castTextList;
 import static de.ims.icarus2.util.Conditions.checkArgument;
@@ -157,12 +160,12 @@ public class SetPredicates {
 						dynamicElements.add(element);
 					}
 				} else if(element.isList()) {
-					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
+					TypeInfo elementType = castList(element).getElementType();
 					if(!TypeInfo.isInteger(elementType))
 						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 								"Not an integer list type: "+elementType);
 
-					IntegerListExpression<?> ie = (IntegerListExpression<?>) element;
+					IntegerListExpression<?> ie = castIntegerList(element);
 					if(ie.isConstant()) {
 						ie.forEachInteger(fixedLongs::add);
 					} else {
@@ -327,14 +330,8 @@ public class SetPredicates {
 					mode,
 					target==null ? listTarget.duplicate(context) : target.duplicate(context),
 					new LongOpenHashSet(fixedLongs),
-					Stream.of(dynamicElements)
-						.map(expression -> expression.duplicate(context))
-						.map(Expression.class::cast)
-						.toArray(Expression[]::new),
-					Stream.of(dynamicLists)
-						.map(expression -> expression.duplicate(context))
-						.map(IntegerListExpression.class::cast)
-						.toArray(IntegerListExpression[]::new));
+					EvaluationUtils.duplicate(dynamicElements, context),
+					EvaluationUtils.duplicate(dynamicLists, context, IntegerListExpression.class));
 		}
 
 		@Override
@@ -429,7 +426,7 @@ public class SetPredicates {
 						dynamicElements.add(element);
 					}
 				} else if(element.isList()) {
-					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
+					TypeInfo elementType = castList(element).getElementType();
 					if(!TypeInfo.isNumerical(elementType))
 						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 								"Not an numerical list type: "+elementType);
@@ -437,7 +434,7 @@ public class SetPredicates {
 						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 								"Not a floating point type: "+elementType);
 
-					FloatingPointListExpression<?> ie = (FloatingPointListExpression<?>) element;
+					FloatingPointListExpression<?> ie = castFloatingPointList(element);
 					if(ie.isConstant()) {
 						ie.forEachFloatingPoint(fixedDoubles::add);
 					} else {
@@ -602,14 +599,8 @@ public class SetPredicates {
 					mode,
 					target==null ? listTarget.duplicate(context) : target.duplicate(context),
 					new DoubleOpenHashSet(fixedDoubles),
-					Stream.of(dynamicElements)
-						.map(expression -> expression.duplicate(context))
-						.map(Expression.class::cast)
-						.toArray(Expression[]::new),
-					Stream.of(dynamicLists)
-						.map(expression -> expression.duplicate(context))
-						.map(FloatingPointListExpression.class::cast)
-						.toArray(FloatingPointListExpression[]::new));
+					EvaluationUtils.duplicate(dynamicElements, context),
+					EvaluationUtils.duplicate(dynamicLists, context, FloatingPointListExpression.class));
 		}
 
 		@Override
@@ -704,13 +695,12 @@ public class SetPredicates {
 						dynamicElements.add(te);
 					}
 				} else if(element.isList()) {
-					TypeInfo elementType = ((ListExpression<?, ?>)element).getElementType();
+					TypeInfo elementType = castList(element).getElementType();
 					if(!TypeInfo.isText(elementType))
 						throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 								"Not an text list type: "+elementType);
 
-					@SuppressWarnings("unchecked")
-					ListExpression<?, CharSequence> ie = (ListExpression<?, CharSequence>) element;
+					ListExpression<?, CharSequence> ie = castTextList(element);
 					if(ie.isConstant()) {
 						ie.forEachItem(fixedElements::add);
 					} else {
@@ -885,13 +875,8 @@ public class SetPredicates {
 					mode,
 					target==null ? listTarget.duplicate(context) : target.duplicate(context),
 					new ObjectOpenCustomHashSet<>(fixedElements, STRATEGY),
-					Stream.of(dynamicElements)
-						.map(expression -> expression.duplicate(context))
-						.toArray(Expression[]::new),
-					Stream.of(dynamicLists)
-						.map(expression -> expression.duplicate(context))
-						.map(ListExpression.class::cast)
-						.toArray(ListExpression[]::new));
+					EvaluationUtils.duplicate(dynamicElements, context),
+					EvaluationUtils.duplicate(dynamicLists, context, ListExpression.class));
 		}
 
 		/**
