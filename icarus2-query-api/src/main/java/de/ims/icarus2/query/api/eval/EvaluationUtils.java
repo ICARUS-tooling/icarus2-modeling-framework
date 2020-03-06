@@ -27,6 +27,7 @@ import static java.util.Objects.requireNonNull;
 import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -163,6 +164,28 @@ public class EvaluationUtils {
 		return Stream.of(expressions)
 				.map(exp -> exp.duplicate(context))
 				.toArray(Expression[]::new);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public static <E extends Expression> E[] duplicate(Expression<?>[] expressions,
+			EvaluationContext context, Class<E> clazz) {
+		@SuppressWarnings("unchecked")
+		IntFunction<E[]> arrayGen = i -> (E[])Array.newInstance(clazz, i);
+		return Stream.of(expressions)
+				.map(exp -> exp.duplicate(context))
+				.map(clazz::cast)
+				.toArray(arrayGen);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public static <E extends Expression> E[] optimize(Expression<?>[] expressions,
+			EvaluationContext context, Class<E> clazz) {
+		@SuppressWarnings("unchecked")
+		IntFunction<E[]> arrayGen = i -> (E[])Array.newInstance(clazz, i);
+		return Stream.of(expressions)
+				.map(exp -> exp.optimize(context))
+				.map(clazz::cast)
+				.toArray(arrayGen);
 	}
 
 	public static <T> Expression<T>[] optimize(Expression<?>[] expressions, EvaluationContext context) {
