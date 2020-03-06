@@ -25,6 +25,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPointList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castTextList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.float2Boolean;
@@ -322,7 +323,7 @@ public class Conversions {
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new IntegerListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+			return new IntegerListCast(castList(source.duplicate(context)), cast);
 		}
 
 		@Override
@@ -425,7 +426,7 @@ public class Conversions {
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new FloatingPointListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+			return new FloatingPointListCast(castList(source.duplicate(context)), cast);
 		}
 
 		@Override
@@ -525,7 +526,7 @@ public class Conversions {
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+			return new BooleanListCast(castList(source.duplicate(context)), cast);
 		}
 
 		@Override
@@ -616,7 +617,7 @@ public class Conversions {
 		@Override
 		public Expression<CharSequence[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new TextListCast((ListExpression<?, ?>)source.duplicate(context), cast);
+			return new TextListCast(castList(source.duplicate(context)), cast);
 		}
 
 		@Override

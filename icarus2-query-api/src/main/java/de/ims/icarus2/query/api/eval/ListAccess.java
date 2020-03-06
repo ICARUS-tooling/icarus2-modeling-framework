@@ -20,8 +20,11 @@
 package de.ims.icarus2.query.api.eval;
 
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBoolean;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBooleanList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
@@ -373,17 +376,13 @@ public final class ListAccess {
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new IntegerListWrapper(Stream.of(source)
-						.map(ne -> ne.duplicate(context))
-						.toArray(Expression<?>[]::new));
+			return new IntegerListWrapper(EvaluationUtils.duplicate(source, context));
 		}
 
 		@Override
 		public Expression<long[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<?>[] newSource = Stream.of(source)
-					.map(ne -> ne.optimize(context))
-					.toArray(Expression<?>[]::new);
+			Expression<?>[] newSource = EvaluationUtils.optimize(source, context);
 
 			boolean sourceChanged = false;
 			for (int i = 0; i < newSource.length; i++) {
@@ -584,17 +583,13 @@ public final class ListAccess {
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new FloatingPointListWrapper(Stream.of(source)
-						.map(ne -> ne.duplicate(context))
-						.toArray(Expression<?>[]::new));
+			return new FloatingPointListWrapper(EvaluationUtils.duplicate(source, context));
 		}
 
 		@Override
 		public Expression<double[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<?>[] newSource = Stream.of(source)
-					.map(ne -> ne.optimize(context))
-					.toArray(Expression<?>[]::new);
+			Expression<?>[] newSource = EvaluationUtils.optimize(source, context);
 
 			boolean sourceChanged = false;
 			for (int i = 0; i < newSource.length; i++) {
@@ -643,15 +638,13 @@ public final class ListAccess {
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanAccess(
-					(BooleanListExpression<?>)source.duplicate(context),
-					(Expression<?>)index.duplicate(context));
+			return new BooleanAccess(castBooleanList(source.duplicate(context)),index.duplicate(context));
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			BooleanListExpression<?> newSource = (BooleanListExpression<?>) source.optimize(context);
+			BooleanListExpression<?> newSource = castBooleanList(source.optimize(context));
 			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -723,16 +716,15 @@ public final class ListAccess {
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanBatchAccess(
-					(BooleanListExpression<?>)source.duplicate(context),
-					(IntegerListExpression<?>)index.duplicate(context));
+			return new BooleanBatchAccess(castBooleanList(source.duplicate(context)),
+					castIntegerList(index.duplicate(context)));
 		}
 
 		@Override
 		public Expression<boolean[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			BooleanListExpression<?> newSource = (BooleanListExpression<?>) source.optimize(context);
-			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
+			BooleanListExpression<?> newSource = castBooleanList(source.optimize(context));
+			IntegerListExpression<?> newIndex = castIntegerList(index.optimize(context));
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -792,17 +784,13 @@ public final class ListAccess {
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanListWrapper(Stream.of(source)
-						.map(ne -> ne.duplicate(context))
-						.toArray(Expression[]::new));
+			return new BooleanListWrapper(EvaluationUtils.duplicate(source, context));
 		}
 
 		@Override
 		public Expression<boolean[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<Primitive<Boolean>>[] newSource = Stream.of(source)
-					.map(ne -> ne.optimize(context))
-					.toArray(Expression[]::new);
+			Expression<Primitive<Boolean>>[] newSource = EvaluationUtils.optimize(source, context);
 
 			boolean sourceChanged = false;
 			for (int i = 0; i < newSource.length; i++) {
@@ -841,20 +829,16 @@ public final class ListAccess {
 		@Override
 		public T compute() { return source.get(strictToInt(index.computeAsLong())); }
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new ObjectAccess<>(
-					(ListExpression<?, T>)source.duplicate(context),
-					(Expression<?>)index.duplicate(context));
+			return new ObjectAccess<>(castList(source.duplicate(context)), index.duplicate(context));
 		}
 
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			@SuppressWarnings("unchecked")
-			ListExpression<?, T> newSource = (ListExpression<?, T>) source.optimize(context);
+			ListExpression<?, T> newSource = castList(source.optimize(context));
 			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -920,21 +904,18 @@ public final class ListAccess {
 			return source.get(strictToInt(this.index.getAsLong(index)));
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new ObjectBatchAccess<>(
-					(ListExpression<?, E>)source.duplicate(context),
-					(IntegerListExpression<?>)index.duplicate(context));
+			return new ObjectBatchAccess<>(castList(source.duplicate(context)),
+					castIntegerList(index.duplicate(context)));
 		}
 
 		@Override
 		public ListExpression<E[], E> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			@SuppressWarnings("unchecked")
-			ListExpression<?, E> newSource = (ListExpression<?, E>) source.optimize(context);
-			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
+			ListExpression<?, E> newSource = castList(source.optimize(context));
+			IntegerListExpression<?> newIndex = castIntegerList(index.optimize(context));
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -1003,19 +984,13 @@ public final class ListAccess {
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new ObjectWrapper<>(elementType, Stream.of(source)
-						.map(ne -> ne.duplicate(context))
-						.map(Expression.class::cast)
-						.toArray(Expression[]::new));
+			return new ObjectWrapper<>(elementType, EvaluationUtils.duplicate(source, context));
 		}
 
 		@Override
 		public ListExpression<E[], E> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<E>[] newSource = Stream.of(source)
-					.map(ne -> ne.optimize(context))
-					.map(Expression.class::cast)
-					.toArray(Expression[]::new);
+			Expression<E>[] newSource = EvaluationUtils.optimize(source, context);
 
 			boolean sourceChanged = false;
 			for (int i = 0; i < newSource.length; i++) {

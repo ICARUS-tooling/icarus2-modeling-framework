@@ -159,6 +159,18 @@ public class EvaluationUtils {
 		return type;
 	}
 
+	public static <T> Expression<T>[] duplicate(Expression<?>[] expressions, EvaluationContext context) {
+		return Stream.of(expressions)
+				.map(exp -> exp.duplicate(context))
+				.toArray(Expression[]::new);
+	}
+
+	public static <T> Expression<T>[] optimize(Expression<?>[] expressions, EvaluationContext context) {
+		return Stream.of(expressions)
+				.map(exp -> exp.optimize(context))
+				.toArray(Expression[]::new);
+	}
+
 	@SuppressWarnings("unchecked")
 	static Expression<Primitive<Long>> castInteger(Expression<?> source) {
 		return (Expression<Primitive<Long>>) source;
@@ -189,8 +201,9 @@ public class EvaluationUtils {
 		return (Expression<Comparable>) source;
 	}
 
-	static ListExpression<?,?> castList(Expression<?> source) {
-		return (ListExpression<?,?>) source;
+	@SuppressWarnings("unchecked")
+	static <T> ListExpression<?,T> castList(Expression<?> source) {
+		return (ListExpression<?,T>) source;
 	}
 
 	static IntegerListExpression<?> castIntegerList(Expression<?> source) {

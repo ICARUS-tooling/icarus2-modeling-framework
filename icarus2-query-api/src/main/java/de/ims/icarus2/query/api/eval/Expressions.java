@@ -27,7 +27,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
-import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
@@ -189,9 +188,8 @@ public class Expressions {
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
 			Expression<V> newSource = source==null ? null : source.duplicate(context);
-			Expression<?>[] newArguments = arguments==null ? NO_ARGS : Stream.of(arguments)
-					.map(exp -> exp.duplicate(context))
-					.toArray(Expression[]::new);
+			Expression<?>[] newArguments = arguments==null ? NO_ARGS
+					: EvaluationUtils.duplicate(arguments, context);
 
 			return (Expression<T>) entry.instantiate(newSource, newArguments);
 		}
