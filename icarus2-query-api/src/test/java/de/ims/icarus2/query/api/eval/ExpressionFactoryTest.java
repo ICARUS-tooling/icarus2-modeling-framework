@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castBooleanList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPointList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
@@ -30,7 +31,10 @@ import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpres
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertQueryException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static de.ims.icarus2.test.util.Pair.pair;
+import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.strings.StringUtil.formatDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -39,10 +43,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -59,7 +65,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.eval.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.eval.Expression.IntegerListExpression;
@@ -97,7 +106,7 @@ class ExpressionFactoryTest {
 	}
 
 	@Nested
-	class ConstantInput {
+	class WithContext {
 
 		private EvaluationContext context;
 		private ExpressionFactory factory;
@@ -120,6 +129,18 @@ class ExpressionFactoryTest {
 
 		private void prepareVar(String name, Assignable<?> assignable) {
 			doReturn(assignable).when(context).getVariable(name);
+		}
+
+		private void prepareMember(String name, Assignable<Item> member) {
+			doReturn(Optional.of(member)).when(context).getMember(name);
+		}
+
+		private void prepareAnnotation(QualifiedIdentifier identifier, AnnotationInfo annotation) {
+			doReturn(Optional.of(annotation)).when(context).findAnnotation(identifier);
+		}
+
+		private void prepareElement(Assignable<Item> item) {
+			doReturn(Optional.of(item)).when(context).getElementStore();
 		}
 
 		private Expression<?> parse(String s) {
@@ -792,6 +813,12 @@ class ExpressionFactoryTest {
 				assertThat(parsed).isInstanceOf(BooleanListExpression.class);
 				assertListExpression(castBooleanList(parsed), context, expected);
 			}
+
+			@Test
+			void testEmptyIndices() {
+				prepareRef("array", ArrayLiterals.emptyArray(TypeInfo.GENERIC));
+				assertQueryException(QueryErrorCode.SYNTAX_ERROR, () -> parse("array[]"));
+			}
 		}
 
 		@Nested
@@ -806,178 +833,343 @@ class ExpressionFactoryTest {
 			void testVariable(String name) {
 				Assignable<?> variable = mock(Assignable.class);
 				prepareVar(name, variable);
+
 				Expression<?> parsed = parse("@"+name);
+
 				assertThat(parsed).isSameAs(variable);
 			}
-		}
 
-		@ParameterizedTest
-		@CsvSource({
-			// Simple formulas
-			"1, 1",
-			"1+2, 3",
-			"8*11, 88",
-			"123/3, 41",
-			"123%4, 3",
+			@ParameterizedTest
+			@ValueSource(strings = {
+					"x",
+					"x1234y",
+					"myAwesomeLongVariableNameNobodyNeedsButILikeItXD"
+			})
+			void testMember(String name) {
+				Assignable<Item> member = mock(Assignable.class);
+				prepareMember(name, member);
 
-			// Nested formulas
-			"2+3*4, 14",
-			"2-3*4, -10",
-			"12/3+2, 6"
-			//TODO add wrapped formulas and other operators
-		})
-		void testIntegerFormulas(String input, long result) {
-			Expression<?> exp = parse(input);
-			assertThat(exp.isInteger()).isTrue();
-			assertExpression(exp, context, result);
-		}
+				Expression<?> parsed = parse("$"+name);
 
-		private Expression<?> unwrapNegation(Expression<?> exp) {
-			if(exp instanceof BooleanNegation) {
-				exp = ((BooleanNegation)exp).getSource();
+				assertThat(parsed).isSameAs(member);
 			}
-			return exp;
+
+			@ParameterizedTest
+			@ValueSource(strings = {
+					"x",
+					"x1234y",
+					"myAwesomeLongVariableNameNobodyNeedsButILikeItXD"
+			})
+			void testRef(String name) {
+				Expression<?> ref = mock(Expression.class);
+				prepareRef(name, ref);
+
+				Expression<?> parsed = parse(name);
+
+				assertThat(parsed).isSameAs(ref);
+			}
+
+			@ParameterizedTest
+			@ValueSource(strings = {
+					"x::y",
+					"someDomain::x1234y",
+					"myAwesomeLongVariableNameNobodyNeedsButILikeIt::itGetsEvenLongerAndNobodyCanDoAnythingAboutItXD"
+			})
+			void testQualifiedRef(String name) {
+				Item item = mockItem();
+				Assignable<Item> element = mock(Assignable.class);
+				when(element.compute()).thenReturn(item);
+				prepareElement(element);
+
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
+
+				String value = "testValue";
+				AnnotationInfo annotation = new AnnotationInfo(name, identifier.getElement(),
+						ValueType.STRING, TypeInfo.TEXT);
+				Function<Item, Object> func = mock(Function.class);
+				when(func.apply(eq(item))).thenReturn(value);
+				annotation.objectSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(name);
+
+				assertThat(parsed.isText()).isTrue();
+				assertThat(parsed.compute()).isEqualTo(value);
+			}
 		}
 
-		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
-		@ParameterizedTest
-		@CsvSource(delimiter=';', value={
-			// simple containment
-			"2 in {1, 2, 3, 4,-10}; true",
-			"2 in {1, 3, 4,-10}; false",
-			// negated simple containment
-			"2 not in {1, 3, 4,-10}; true",
-			"2 not in {1, 2, 3, 4,-10}; false",
-			// with formulas
-			"2*2 in {1, 3, 4,-10}; true",
-			"2+4 not in {1, 2, 3, 4,-10}; true",
-			"2+2 not in {1, 2, 3, 4,-10}; false",
-			"2*2 in {1, 3, 5-1,-10}; true",
-			"2+4 not in {1, 2, 6/2, 4,-10}; true",
-			"2+1 not in {1, 2, 6/2, 4,-10}; false",
-			// expanded containment
-			"{0, 2} in {1, 2, 3, 4,-10}; true",
-			"{0, -1} in {1, 2, 3, 4,-10}; false",
-			// negated expanded containment
-			"{0, 2} not in {1, 2, 3, 4,-10}; false",
-			"{0, -1} not in {1, 2, 3, 4,-10}; true",
-			// 'all in'
-			"{3, 2} all in {1, 2, 3, 4,-10}; true",
-			"{0, 2} all in {1, 2, 3, 4,-10}; false",
-			// not 'all in'
-			"{3, 2} all not in {1, 2, 3, 4,-10}; false",
-			"{0, 2} all not in {1, 2, 3, 4,-10}; false",
-			"{0, -1} all not in {1, 2, 3, 4,-10}; true",
-			"{0} all not in {1, 2, 3, 4,-10}; true"
-		})
-		void testIntegerSetPredicate(String input, boolean result) {
-			Expression<?> exp = parse(input);
-			assertThat(exp.isBoolean()).isTrue();
-			assertThat(unwrapNegation(exp)).isInstanceOf(IntegerSetPredicate.class);
-			assertExpression(exp, context, result);
+		@Nested
+		class ForFormulas {
+
+			@ParameterizedTest
+			@CsvSource({
+				// Simple formulas
+				"1, 1",
+				"1+2, 3",
+				"8*11, 88",
+				"123/3, 41",
+				"123%4, 3",
+
+				// Nested formulas
+				"2+3*4, 14",
+				"2-3*4, -10",
+				"12/3+2, 6"
+				//TODO add wrapped formulas and other operators
+			})
+			void testIntegerFormulas(String input, long result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, result);
+			}
 		}
 
-		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
-		@ParameterizedTest
-		@CsvSource(delimiter=';', value={
-			// simple containment
-			"2.1 in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
-			"2.1 in {1.5, 2.2, 3.01, 4.001, -10.5}; false",
-			// negated simple containment
-			"2.1 not in {1.5, 2.2, 3.01, 4.001, -10.5}; true",
-			"2.1 not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
-			// with formulas
-			"2*2.1 in {1.0, 3.01, 4.2, -10.5}; true",
-			"2+4.3 not in {1.0, 2, 3.3, 4.001, -10.5}; true",
-			"2+2.1 not in {1.0, 2, 3.3, 4.1, -10.5}; false",
-			"2*2.1 in {1, 3, 5-0.8, -10.5}; true",
-			"2+4.1 not in {1.0, 2.2, 6/2.1, 4.001, -10.5}; true",
-			"2+1.5 not in {1.0, 2.2, 7.0/2, 4.001, -10.5}; false",
-			// expanded containment
-			"{0.0, 2.1} in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
-			"{0.0, -1.5} in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
-			// negated expanded containment
-			"{0.0, 2.1} not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
-			"{0.0, -1.0} not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
-			// 'all in'
-			"{3.01, 2.1} all in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
-			"{0.0, 2.1} all in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
-			// 'all not in'
-			"{3.3, 2.1} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
-			"{0.0, 2.1} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
-			"{0.0, -1.5} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
-			"{0.0} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true"
-		})
-		void testFloatingPointSetPredicate(String input, boolean result) {
-			Expression<?> exp = parse(input);
-			assertThat(exp.isBoolean()).isTrue();
-			assertThat(unwrapNegation(exp)).isInstanceOf(FloatingPointSetPredicate.class);
-			assertExpression(exp, context, result);
+		@Nested
+		class ForSetPredicates {
+
+			private Expression<?> unwrapNegation(Expression<?> exp) {
+				if(exp instanceof BooleanNegation) {
+					exp = ((BooleanNegation)exp).getSource();
+				}
+				return exp;
+			}
+
+			// We use the verbose syntax here for readability (so 'all not' instead of '*!')
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// simple containment
+				"2 in {1, 2, 3, 4,-10}; true",
+				"2 in {1, 3, 4,-10}; false",
+				// negated simple containment
+				"2 not in {1, 3, 4,-10}; true",
+				"2 not in {1, 2, 3, 4,-10}; false",
+				// with formulas
+				"2*2 in {1, 3, 4,-10}; true",
+				"2+4 not in {1, 2, 3, 4,-10}; true",
+				"2+2 not in {1, 2, 3, 4,-10}; false",
+				"2*2 in {1, 3, 5-1,-10}; true",
+				"2+4 not in {1, 2, 6/2, 4,-10}; true",
+				"2+1 not in {1, 2, 6/2, 4,-10}; false",
+				// expanded containment
+				"{0, 2} in {1, 2, 3, 4,-10}; true",
+				"{0, -1} in {1, 2, 3, 4,-10}; false",
+				// negated expanded containment
+				"{0, 2} not in {1, 2, 3, 4,-10}; false",
+				"{0, -1} not in {1, 2, 3, 4,-10}; true",
+				// 'all in'
+				"{3, 2} all in {1, 2, 3, 4,-10}; true",
+				"{0, 2} all in {1, 2, 3, 4,-10}; false",
+				// not 'all in'
+				"{3, 2} all not in {1, 2, 3, 4,-10}; false",
+				"{0, 2} all not in {1, 2, 3, 4,-10}; false",
+				"{0, -1} all not in {1, 2, 3, 4,-10}; true",
+				"{0} all not in {1, 2, 3, 4,-10}; true"
+			})
+			void testIntegerSetPredicate(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertThat(unwrapNegation(exp)).isInstanceOf(IntegerSetPredicate.class);
+				assertExpression(exp, context, result);
+			}
+
+			// We use the verbose syntax here for readability (so 'all not' instead of '*!')
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// simple containment
+				"2.1 in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+				"2.1 in {1.5, 2.2, 3.01, 4.001, -10.5}; false",
+				// negated simple containment
+				"2.1 not in {1.5, 2.2, 3.01, 4.001, -10.5}; true",
+				"2.1 not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+				// with formulas
+				"2*2.1 in {1.0, 3.01, 4.2, -10.5}; true",
+				"2+4.3 not in {1.0, 2, 3.3, 4.001, -10.5}; true",
+				"2+2.1 not in {1.0, 2, 3.3, 4.1, -10.5}; false",
+				"2*2.1 in {1, 3, 5-0.8, -10.5}; true",
+				"2+4.1 not in {1.0, 2.2, 6/2.1, 4.001, -10.5}; true",
+				"2+1.5 not in {1.0, 2.2, 7.0/2, 4.001, -10.5}; false",
+				// expanded containment
+				"{0.0, 2.1} in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+				"{0.0, -1.5} in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+				// negated expanded containment
+				"{0.0, 2.1} not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+				"{0.0, -1.0} not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+				// 'all in'
+				"{3.01, 2.1} all in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+				"{0.0, 2.1} all in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+				// 'all not in'
+				"{3.3, 2.1} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+				"{0.0, 2.1} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; false",
+				"{0.0, -1.5} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true",
+				"{0.0} all not in {1.5, 2.1, 3.01, 4.001, -10.5}; true"
+			})
+			void testFloatingPointSetPredicate(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertThat(unwrapNegation(exp)).isInstanceOf(FloatingPointSetPredicate.class);
+				assertExpression(exp, context, result);
+			}
+
+			// We use the verbose syntax here for readability (so 'all not' instead of '*!')
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// simple containment
+				"\"x\" in {\"x\", \"y\", \"z\"}; true",
+				"\"x\" in {\"xx\", \"y\", \"z\"}; false",
+				// negated simple containment
+				"\"x\" not in {\"xx\", \"y\", \"z\"}; true",
+				"\"x\" not in {\"x\", \"y\", \"z\"}; false",
+				// with formulas
+				"\"x\"+\"2\" in {\"x2\", \"y\", \"z\"}; true",
+				"\"x\"+\"2\" not in {\"x\", \"y\", \"z\"}; true",
+				"\"x\"+\"2\" not in {\"x2\", \"y\", \"z\"}; false",
+				"\"x\"+\"2\" in {\"x\"+\"2\", \"y\", \"z\"}; true",
+				"\"x\"+\"2\" not in {\"x\", \"y\"+\"2\", \"z\"}; true",
+				"\"x\"+\"2\" not in {\"x\"+\"2\", \"y\", \"z\"}; false",
+				// expanded containment
+				"{\"x\", \"y2\"} in {\"x\", \"y\", \"z\"}; true",
+				"{\"x2\", \"y2\"} in {\"x\", \"y\", \"z\"}; false",
+				// negated expanded containment
+				"{\"x\", \"y2\"} not in {\"x\", \"y\", \"z\"}; false",
+				"{\"x2\", \"y2\"} not in {\"x\", \"y\", \"z\"}; true",
+				// 'all in'
+				"{\"x\", \"y\"} all in {\"x\", \"y\", \"z\"}; true",
+				"{\"x\", \"y2\"} all in {\"x\", \"y\", \"z\"}; false",
+				// 'all not in'
+				"{\"x\", \"y\"} all not in {\"x\", \"y\", \"z\"}; false",
+				"{\"x\", \"y2\"} all not in {\"x\", \"y\", \"z\"}; false",
+				"{\"x2\", \"y2\"} all not in {\"x\", \"y\", \"z\"}; true",
+				"{\"x2\"} all not in {\"x\", \"y\", \"z\"}; true"
+			})
+			void testTextSetPredicate(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertThat(unwrapNegation(exp)).isInstanceOf(TextSetPredicate.class);
+				assertExpression(exp, context, result);
+			}
 		}
 
-		// We use the verbose syntax here for readability (so 'all not' instead of '*!')
-		@ParameterizedTest
-		@CsvSource(delimiter=';', value={
-			// simple containment
-			"\"x\" in {\"x\", \"y\", \"z\"}; true",
-			"\"x\" in {\"xx\", \"y\", \"z\"}; false",
-			// negated simple containment
-			"\"x\" not in {\"xx\", \"y\", \"z\"}; true",
-			"\"x\" not in {\"x\", \"y\", \"z\"}; false",
-			// with formulas
-			"\"x\"+\"2\" in {\"x2\", \"y\", \"z\"}; true",
-			"\"x\"+\"2\" not in {\"x\", \"y\", \"z\"}; true",
-			"\"x\"+\"2\" not in {\"x2\", \"y\", \"z\"}; false",
-			"\"x\"+\"2\" in {\"x\"+\"2\", \"y\", \"z\"}; true",
-			"\"x\"+\"2\" not in {\"x\", \"y\"+\"2\", \"z\"}; true",
-			"\"x\"+\"2\" not in {\"x\"+\"2\", \"y\", \"z\"}; false",
-			// expanded containment
-			"{\"x\", \"y2\"} in {\"x\", \"y\", \"z\"}; true",
-			"{\"x2\", \"y2\"} in {\"x\", \"y\", \"z\"}; false",
-			// negated expanded containment
-			"{\"x\", \"y2\"} not in {\"x\", \"y\", \"z\"}; false",
-			"{\"x2\", \"y2\"} not in {\"x\", \"y\", \"z\"}; true",
-			// 'all in'
-			"{\"x\", \"y\"} all in {\"x\", \"y\", \"z\"}; true",
-			"{\"x\", \"y2\"} all in {\"x\", \"y\", \"z\"}; false",
-			// 'all not in'
-			"{\"x\", \"y\"} all not in {\"x\", \"y\", \"z\"}; false",
-			"{\"x\", \"y2\"} all not in {\"x\", \"y\", \"z\"}; false",
-			"{\"x2\", \"y2\"} all not in {\"x\", \"y\", \"z\"}; true",
-			"{\"x2\"} all not in {\"x\", \"y\", \"z\"}; true"
-		})
-		void testTextSetPredicate(String input, boolean result) {
-			Expression<?> exp = parse(input);
-			assertThat(exp.isBoolean()).isTrue();
-			assertThat(unwrapNegation(exp)).isInstanceOf(TextSetPredicate.class);
-			assertExpression(exp, context, result);
-		}
+		@Nested
+		class ForStringConcatenation {
 
-		@TestFactory
-		Stream<DynamicNode> testStringConcatenation() {
-			return Stream.of(
-					// general
-					new String[] {"x1", "x2"},
-					// with ws
-					new String[] {"test 1 2 3", "other_test"},
-					new String[] {"test: \\n1\\t2\\t3", "other_test"},
-					// with empty elements
-					new String[] {"", ""},
-					new String[] {"x", ""},
-					new String[] {"", "x"},
-					// with ws
-					new String[] {" ", " "},
-					new String[] {"x", " "},
-					new String[] {" ", "x"}
-			).map(elements -> {
-				String expected = unescape(String.join("", elements));
-				String input = "\""+String.join("\"+\"", elements)+"\"";
-				return dynamicTest(input, () -> {
-					Expression<?> exp = parse(input);
-					assertThat(exp.isText()).isTrue();
-					assertExpression(exp, context, (CharSequence)expected, StringUtil::equals);
+			@TestFactory
+			Stream<DynamicNode> testStringConcatenation() {
+				return Stream.of(
+						// general
+						new String[] {"x1", "x2"},
+						// with ws
+						new String[] {"test 1 2 3", "other_test"},
+						new String[] {"test: \\n1\\t2\\t3", "other_test"},
+						// with empty elements
+						new String[] {"", ""},
+						new String[] {"x", ""},
+						new String[] {"", "x"},
+						// with ws
+						new String[] {" ", " "},
+						new String[] {"x", " "},
+						new String[] {" ", "x"}
+				).map(elements -> {
+					String expected = unescape(String.join("", elements));
+					String input = "\""+String.join("\"+\"", elements)+"\"";
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isText()).isTrue();
+						assertExpression(exp, context, (CharSequence)expected, StringUtil::equals);
+					});
 				});
-			});
+			}
+		}
+
+		@Nested
+		class ForCasting {
+
+			@TestFactory
+			Stream<DynamicNode> testStringCast() {
+				return Stream.of(
+					// Direct casts
+					pair("\"x\"", "x"),
+					pair("123", "123"),
+					pair("false", "false"),
+					pair("FALSE", "false"),
+					pair("true", "true"),
+					pair("TRUE", "true"),
+					pair("123.5", "123.5"),
+					// Complex casts,
+					pair("(123+5)", "128"),
+					pair("(123+5.5)", "128.5"),
+					pair("(123>456)", "false")
+				).map(p -> {
+					String input = "(string)"+p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isText()).isTrue();
+						assertExpression(exp, context, p.second, StringUtil::equals);
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testIntegerCast() {
+				return Stream.of(
+					// Direct casts
+					pair("\"123\"", _long(123)),
+					pair("123", _long(123)),
+					pair("123.5", _long(123)),
+					// Complex casts,
+					pair("(\"12\"+\"8\")", _long(128)),
+					pair("(123+5.5)", _long(128))
+				).map(p -> {
+					String input = "(int)"+p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isInteger()).isTrue();
+						assertExpression(exp, context, p.second.longValue());
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testFloatingPointCast() {
+				return Stream.of(
+					// Direct casts
+					pair("\"123.5\"", _double(123.5)),
+					pair("123", _double(123)),
+					pair("123.5", _double(123.5)),
+					// Complex casts,
+					pair("(\"12\"+\"8.5\")", _double(128.5)),
+					pair("(123+5.5)", _double(128.5))
+				).map(p -> {
+					String input = "(float)"+p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isFloatingPoint()).isTrue();
+						assertExpression(exp, context, p.second.doubleValue());
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testBooleanCast() {
+				//TODO
+				return Stream.of(
+					// Direct casts
+					pair("\"123.5\"", Boolean.TRUE),
+					pair("\"\"", Boolean.FALSE),
+					pair("123", Boolean.TRUE),
+					pair("0", Boolean.FALSE),
+					pair("123.5", Boolean.TRUE),
+					pair("0.0", Boolean.FALSE),
+					// Complex casts,
+					pair("(\"\"+\"\")", Boolean.FALSE),
+					pair("(123<456)", Boolean.TRUE)
+				).map(p -> {
+					String input = "(boolean)"+p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isBoolean()).isTrue();
+						assertExpression(exp, context, p.second.booleanValue());
+					});
+				});
+			}
 		}
  	}
 }

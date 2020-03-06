@@ -26,6 +26,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.castFloatingPoint;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castInteger;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castIntegerList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castItem;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.castList;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.castText;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.collectTypes;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.decideType;
@@ -337,10 +338,13 @@ public class ExpressionFactory {
 	}
 
 	private ListExpression<?, ?> ensureList(Expression<?> source) {
-		if(!source.isList())
+		if(!source.isList()) {
+			//TODO check if result type of source is expandable
+
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
 					"Not a list type: "+source.getResultType());
-		return (ListExpression<?, ?>)source;
+		}
+		return castList(source);
 	}
 
 	private IntegerListExpression<?> ensureIntegerList(Expression<?> source) {
@@ -510,6 +514,7 @@ public class ExpressionFactory {
 		Expression<?>[] indices = processExpressionList(ctx.indices);
 
 		if(indices.length<1)
+			// TODO actually not possible due to IQL rule
 			throw new QueryException(QueryErrorCode.INCORRECT_USE,
 					"List access needs at least 1 index argument: "+textOf(ctx), asFragment(ctx));
 

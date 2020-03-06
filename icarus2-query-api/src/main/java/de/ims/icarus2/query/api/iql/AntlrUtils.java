@@ -133,7 +133,7 @@ public final class AntlrUtils {
 		if(ctx instanceof ParserRuleContext) {
 			ParserRuleContext prc = (ParserRuleContext) ctx;
 			Interval iv = prc.getSourceInterval();
-			if(iv!=Interval.INVALID) {
+			if(iv!=Interval.INVALID && iv.a>=0 && iv.b>=0) {
 				CharStream input = prc.getStart().getInputStream();
 				String text = input.getText(Interval.of(0, iv.b));
 				return new QueryFragment(text, Math.min(iv.a, iv.b), Math.max(iv.a, iv.b));

@@ -189,6 +189,10 @@ public class EvaluationUtils {
 		return (Expression<Comparable>) source;
 	}
 
+	static ListExpression<?,?> castList(Expression<?> source) {
+		return (ListExpression<?,?>) source;
+	}
+
 	static IntegerListExpression<?> castIntegerList(Expression<?> source) {
 		return (IntegerListExpression<?>) source;
 	}
