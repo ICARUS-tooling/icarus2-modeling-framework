@@ -1182,6 +1182,48 @@ class ExpressionFactoryTest {
 		}
 
 		@Nested
+		class ForLogicalOperators {
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// Literals
+				"true && true ; true",
+				"true && false ; false",
+				"false && true ; false",
+				"false && false ; false",
+				// Literals and comparators
+				"1>5 && true ; false",
+				"5>1 && true ; true",
+				"1>5 && false ; false",
+				"5>1 && false ; false",
+			})
+			void testConjunction(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, result);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// Literals
+				"true || true ; true",
+				"true || false ; true",
+				"false || true ; true",
+				"false || false ; false",
+				// Literals and comparators
+				"1>5 || true ; true",
+				"5>1 || true ; true",
+				"1>5 || false ; false",
+				"5>1 || false ; true",
+			})
+			void testDisjunction(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, result);
+			}
+		}
+
+		@Nested
 		class ForUnaryOperations {
 
 			@ParameterizedTest
