@@ -1046,6 +1046,11 @@ class ExpressionFactoryTest {
 				assertThat(unwrapNegation(exp)).isInstanceOf(TextSetPredicate.class);
 				assertExpression(exp, context, result);
 			}
+
+			@Test
+			void testSingleElementAllIn() {
+				assertQueryException(QueryErrorCode.INCORRECT_USE, () -> parse("2 all in {1, 2, 3}"));
+			}
 		}
 
 		@Nested
@@ -1149,7 +1154,6 @@ class ExpressionFactoryTest {
 
 			@TestFactory
 			Stream<DynamicNode> testBooleanCast() {
-				//TODO
 				return Stream.of(
 					// Direct casts
 					pair("\"123.5\"", Boolean.TRUE),
@@ -1169,6 +1173,28 @@ class ExpressionFactoryTest {
 						assertExpression(exp, context, p.second.booleanValue());
 					});
 				});
+			}
+		}
+
+		@Nested
+		class ForWrapping {
+
+		}
+
+		@Nested
+		class ForUnaryOperations {
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"!false;true",
+				"not false;true",
+				"!true;false",
+				"not true;false",
+			})
+			void testBooleanNegation(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
 			}
 		}
  	}

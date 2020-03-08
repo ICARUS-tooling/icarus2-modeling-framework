@@ -143,6 +143,10 @@ public class ExpressionFactory {
 		return !context.isSwitchSet(QuerySwitch.AUTOCAST_OFF);
 	}
 
+	private boolean isAllowEarlyExit() {
+		return context.isSwitchSet(QuerySwitch.PREDICATES_OPTIMIZE_OFF);
+	}
+
 	private StringMode getStringMode() {
 		StringMode stringMode = StringMode.DEFAULT;
 		if(context.isSwitchSet(QuerySwitch.STRING_CASE_OFF)) {
@@ -865,13 +869,35 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processConjunction(ConjunctionContext ctx) {
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		List<Expression<?>> elements = new ArrayList<>();
+
+		// Try to collapse any conjunctive sequence into a single term
+		ExpressionContext tail = ctx;
+		while(tail instanceof ConjunctionContext) {
+			ConjunctionContext cctx = (ConjunctionContext) tail;
+			elements.add(processAndResolveExpression0(cctx.left));
+			tail = unwrap(cctx.right);
+		}
+		// Now add the final dangling expression
+		elements.add(processAndResolveExpression0(tail));
+
+		return LogicalOperators.conjunction(elements.toArray(NO_ARGS), isAllowEarlyExit());
 	}
 
 	Expression<?> processDisjunction(DisjunctionContext ctx) {
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		List<Expression<?>> elements = new ArrayList<>();
+
+		// Try to collapse any disjunctive sequence into a single term
+		ExpressionContext tail = ctx;
+		while(tail instanceof DisjunctionContext) {
+			DisjunctionContext cctx = (DisjunctionContext) tail;
+			elements.add(processAndResolveExpression0(cctx.left));
+			tail = unwrap(cctx.right);
+		}
+		// Now add the final dangling expression
+		elements.add(processAndResolveExpression0(tail));
+
+		return LogicalOperators.disjunction(elements.toArray(NO_ARGS), isAllowEarlyExit());
 	}
 
 	Expression<?> processTernaryOp(TernaryOpContext ctx) {

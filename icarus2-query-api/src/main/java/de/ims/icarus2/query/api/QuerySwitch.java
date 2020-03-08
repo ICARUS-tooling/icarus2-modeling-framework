@@ -33,24 +33,33 @@ import de.ims.icarus2.query.api.iql.IqlConstants;
 public enum QuerySwitch {
 
 	STRING_CASE_OFF("string.case.off", "Turns of case sensitivity when performing string operations such as equality checks."),
+
+	@Deprecated
 	STRING_DIRECTION_RLT("string.direction.right2left", "Signals the engine that all string oeprations need to be performed right-to-left."),
 	STRING_UNICODE_OFF("string.unicode.off", "Disables support for unicode code points."),
+
+	PREDICATES_OPTIMIZE_OFF("predicates.optimize.off", "Disables the engines ability to exit boolean rpedicates early"
+			+ " when the result already reached a stable state (e.g. when a single conjunction element evaluates to false)."),
 
 	AUTOCAST_OFF("autocast.off", "Disables automatic casting between compatible or convertible types."),
 
 	EXPANSION_OFF("expansion.off", "Effectively shuts down value expansion."),
 	STRING_TO_BOOLEAN_OFF("string2bool.off", "Deactivates the interpretation of strings as boolean values."),
 	INT_TO_BOOLEAN_OFF("int2bool.off", "Deactivates the interpretation of integers as boolean values."),
-	FLOAT_TO_BOOLEAN("float2bool.off", "Deactivates the interpretation of floating point numbers as boolean values."),
-	OBJECT_TO_BOOLEAN("obj2bool.off", "Deactivates the interpretation of arbitrary objects as boolean values."),
-	ANY_TO_BOOLEAN("any2bool.off", "Deactivates the interpretation of anything non-boolean as boolean value. "
+	FLOAT_TO_BOOLEAN_OFF("float2bool.off", "Deactivates the interpretation of floating point numbers as boolean values."),
+	OBJECT_TO_BOOLEAN_OFF("obj2bool.off", "Deactivates the interpretation of arbitrary objects as boolean values."),
+	ANY_TO_BOOLEAN_OFF("any2bool.off", "Deactivates the interpretation of anything non-boolean as boolean value. "
 			+ "This is a combination of 'iql.string2bool.off', 'iql.int2bool.off', 'iql.float2bool.off' and  'iql.obj2bool.off'+*."),
+
 	DIRECTION_REVERSE("direction.reverse", "Reverses the direction used to traverse corpus data for a search."),
+
+	@Deprecated
 	ARRAY_ZERO("array.zero", "Change array access to be 0-based."),
+
 	WARNINGS_OFF("warnings.off", "Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query."),
 
 	PARALLEL_OFF("parall.off", "Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher,"
-			+ " not additional modules such as monitoring or item caches."),
+			+ " not additional modules such as monitoring or item caches!"),
 	;
 	private final String key, description;
 

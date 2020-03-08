@@ -33,6 +33,8 @@ import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongBinaryOperator;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.lang.Primitives;
 
 /**
@@ -41,11 +43,30 @@ import de.ims.icarus2.util.lang.Primitives;
  */
 public class ArrayUtils {
 
-	public static <T extends Object> boolean contains(T[] array, T target) {
+	/**
+	 * Returns {@code true} iff both arrays have the same length and for every index
+	 * contain the exact same object, determined by reference equality.
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static <T> boolean containsSame(T[] a, T[] b) {
+		if(a.length!=b.length) {
+			return false;
+		}
+		for (int i = 0; i < b.length; i++) {
+			if(a[i] != b[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static <T extends Object> boolean contains(@Nullable T[] array, @Nullable T target) {
 		return indexOf(array, target)!=-1;
 	}
 
-	public static <T extends Object> int indexOf(T[] array, T target) {
+	public static <T extends Object> int indexOf(@Nullable T[] array, @Nullable T target) {
 		if(array!=null) {
 			if(target==null) {
 				for(int i=0; i<array.length; i++) {

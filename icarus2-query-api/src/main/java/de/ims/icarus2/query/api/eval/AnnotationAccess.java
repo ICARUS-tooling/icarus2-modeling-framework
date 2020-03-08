@@ -246,7 +246,8 @@ public class AnnotationAccess {
 		}
 	}
 
-	static final class SingleKeyInteger implements Expression<Primitive<Long>>, PrimitiveExpression, SharedExpression {
+	static final class SingleKeyInteger implements Expression<Primitive<Long>>,
+			PrimitiveExpression, SharedExpression {
 
 		private final Expression<? extends Item> item;
 		private final ToLongFunction<Item> lookup;
@@ -281,7 +282,8 @@ public class AnnotationAccess {
 		}
 	}
 
-	static final class SingleKeyFloatingPoint implements Expression<Primitive<Double>>, PrimitiveExpression, SharedExpression {
+	static final class SingleKeyFloatingPoint implements Expression<Primitive<Double>>,
+			PrimitiveExpression, SharedExpression {
 
 		private final Expression<? extends Item> item;
 		private final ToDoubleFunction<Item> lookup;
@@ -313,7 +315,8 @@ public class AnnotationAccess {
 		}
 	}
 
-	static final class SingleKeyBoolean implements Expression<Primitive<Boolean>>, PrimitiveExpression, SharedExpression {
+	static final class SingleKeyBoolean implements Expression<Primitive<Boolean>>,
+			PrimitiveExpression, SharedExpression {
 
 		private final Expression<? extends Item> item;
 		private final Predicate<Item> lookup;
