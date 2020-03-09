@@ -1560,6 +1560,38 @@ class ExpressionFactoryTest {
 				assertThat(exp.isBoolean()).isTrue();
 				assertExpression(exp, context, expected);
 			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"obj1 < obj1 ; false",
+				"obj1 < obj2 ; true",
+				"obj1 <= obj2 ; true",
+				"obj1 <= obj1 ; true",
+				"obj1 > obj2 ; false",
+				"obj1 >= obj2 ; false",
+				"obj1 > obj1 ; false",
+				"obj1 >= obj1 ; true",
+
+				"obj2 > obj1 ; true",
+				"obj2 > obj2 ; false",
+				"obj2 >= obj1 ; true",
+				"obj2 >= obj2 ; true",
+				"obj2 < obj1 ; false",
+				"obj2 <= obj2 ; true",
+				"obj2 < obj1 ; false",
+				"obj2 <= obj1 ; false",
+			})
+			void testObject(String input, boolean expected) {
+				Object obj1 = Integer.valueOf(100);
+				Object obj2 = Integer.valueOf(1000);
+
+				prepareRef("obj1", raw(obj1));
+				prepareRef("obj2", raw(obj2));
+
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
 		}
 
 		@Nested
