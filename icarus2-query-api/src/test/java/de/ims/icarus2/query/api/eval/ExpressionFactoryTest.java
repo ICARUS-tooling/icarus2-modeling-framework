@@ -981,6 +981,39 @@ class ExpressionFactoryTest {
 				assertThat(parsed).isSameAs(exp2);
 				assertThat(parsed.compute()).isSameAs(field);
 			}
+
+			@Test
+			void testMissingPath() {
+				Object root = new Dummy();
+
+				prepareRef("root", raw(root));
+
+				assertQueryException(QueryErrorCode.UNKNOWN_IDENTIFIER, () -> parse("root.field"));
+			}
+
+			@Test
+			void testAnnotation() {
+				Item item = mockItem();
+				Assignable<Item> element = mock(Assignable.class);
+				when(element.compute()).thenReturn(item);
+				prepareElement(element);
+
+				String name = "key";
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
+
+				String value = "testValue";
+				AnnotationInfo annotation = new AnnotationInfo(name, identifier.getElement(),
+						ValueType.STRING, TypeInfo.TEXT);
+				Function<Item, Object> func = mock(Function.class);
+				when(func.apply(eq(item))).thenReturn(value);
+				annotation.objectSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(name);
+
+				assertThat(parsed.isText()).isTrue();
+				assertThat(parsed.compute()).isEqualTo(value);
+			}
 		}
 
 		@Nested
