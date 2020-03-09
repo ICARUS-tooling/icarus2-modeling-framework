@@ -37,6 +37,7 @@ import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
 import static java.util.Objects.requireNonNull;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -95,6 +96,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
@@ -493,7 +495,7 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processMethodInvocation(MethodInvocationContext ctx) {
-		Expression<?>[] arguments = processExpressionList(ctx.arguments);
+		Expression<?>[] arguments = ctx.arguments==null ? NO_ARGS : processExpressionList(ctx.arguments);
 		Expression<?> source = processExpression0(ctx.source, false);
 
 		String name;
@@ -923,8 +925,46 @@ public class ExpressionFactory {
 	}
 
 	Expression<?> processTernaryOp(TernaryOpContext ctx) {
-		//TODO implement
-		return failForUnhandledAlternative(ctx);
+		Expression<?> condition = ensureBoolean(processAndResolveExpression0(ctx.condition));
+		Expression<?> option1 = processAndResolveExpression0(ctx.optionTrue);
+		Expression<?> option2 = processAndResolveExpression0(ctx.optionFalse);
+
+		TypeInfo type1 = option1.getResultType();
+		TypeInfo type2 = option2.getResultType();
+		TypeInfo type = null;
+
+		if(type1.equals(type2)) {
+			type = type1;
+		} else if(type1.isPrimitive() || type2.isPrimitive()) {
+			//TODO
+		} else {
+			type = findCommonType(type1, type2);
+		}
+
+		return TernaryOperation.of(type, condition, option1, option2);
+	}
+
+	//TODO helper method to derive common primitive type
+
+	private static TypeInfo findCommonType(TypeInfo type1, TypeInfo type2) {
+		Set<Class<?>> typeCandidates = ClassUtils.commonSuperclasses(
+				type1.getType(), type2.getType());
+		if(typeCandidates.isEmpty())
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH, String.format(
+					"No common super class or interface available for %s and %s", type1, type2));
+
+		// Try to find the first actual class the types have in common
+		Optional<Class<?>> properClass = typeCandidates.stream()
+				.filter(c -> !c.isInterface())
+				.findFirst();
+		if(properClass.isPresent()) {
+			return TypeInfo.of(properClass.get());
+		}
+
+		// No proper class, so we only have interfaces floating around
+		Class<?>[] interfaces = typeCandidates.toArray(new Class[typeCandidates.size()]);
+		Class<?> proxyClass = Proxy.getProxyClass(TernaryOperation.class.getClassLoader(), interfaces);
+		return TypeInfo.of(proxyClass);
 	}
 
 	Expression<?> processForEach(ForEachContext ctx) {

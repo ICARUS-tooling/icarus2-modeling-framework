@@ -29,6 +29,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertQueryException;
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.dynamic;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.raw;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
@@ -45,6 +46,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1017,6 +1019,38 @@ class ExpressionFactoryTest {
 		}
 
 		@Nested
+		class ForMethodInvocation {
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value= {
+				"func(1, 2, 3) ; func ; 6",
+				"func(1, 2, -3) ; func ; 0",
+				"func(1, 2*2, 3*3) ; func ; 14",
+				"func(-1, -2, -3) ; func ; -6",
+				"func() ; func ; 0",
+			})
+			void testLiteralArgumentSum(String input, String name, int expected) {
+				doAnswer(inv -> {
+					final Expression<?>[] args = Stream.of(inv.getArguments())
+							.skip(3)
+							.toArray(Expression[]::new);
+
+					return Optional.of(dynamic(() -> {
+						return Stream.of(args)
+						.mapToLong(Expression::computeAsLong)
+						.sum();
+					}));
+				}).when(context).resolve(isNull(), eq(name), any(), any());
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isInteger()).isTrue();
+				assertExpression(parsed, context, expected);
+			}
+
+			//TODO maybe cover other value types, but should the method resolution process itself is type-independent
+		}
+
+		@Nested
 		class ForReferences {
 
 			@ParameterizedTest
@@ -1941,6 +1975,11 @@ class ExpressionFactoryTest {
 				assertThat(exp4.isBoolean()).isTrue();
 				assertExpression(exp4, context, true);
 			}
+		}
+
+		@Nested
+		class ForTernaryOp {
+
 		}
  	}
 }

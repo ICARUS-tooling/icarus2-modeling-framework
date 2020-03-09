@@ -37,10 +37,17 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 /**
  * @author Markus Gärtner
@@ -275,5 +282,46 @@ public final class ClassUtils {
 			// Best effort, just return original object if we can't clone...
 			return source;
 		}
+	}
+
+	/*
+	 * Following implementations based on
+	 * https://stackoverflow.com/a/18606772
+	 */
+
+	private static Set<Class<?>> getSuperclasses(Class<?> clazz) {
+	    final Set<Class<?>> result = new LinkedHashSet<>();
+	    final Queue<Class<?>> queue = new ArrayDeque<>();
+	    queue.add(clazz);
+	    while (!queue.isEmpty()) {
+	        Class<?> c = queue.remove();
+	        if (result.add(c)) {
+	            Class<?> sup = c.getSuperclass();
+	            if (sup != null) queue.add(sup);
+	            queue.addAll(Arrays.asList(c.getInterfaces()));
+	        }
+	    }
+	    return result;
+	}
+
+	public static Set<Class<?>> commonSuperclasses(Class<?>...classes) {
+	    Iterator<Class<?>> it = Arrays.asList(classes).iterator();
+	    if (!it.hasNext()) {
+	        return Collections.emptySet();
+	    }
+	    // begin with set from first hierarchy
+	    Set<Class<?>> result = getSuperclasses(it.next());
+	    // remove non-superclasses of remaining
+	    while (it.hasNext()) {
+	        Class<?> c = it.next();
+	        Iterator<Class<?>> resultIt = result.iterator();
+	        while (resultIt.hasNext()) {
+	            Class<?> sup = resultIt.next();
+	            if (!sup.isAssignableFrom(c)) {
+	                resultIt.remove();
+	            }
+	        }
+	    }
+	    return result;
 	}
 }
