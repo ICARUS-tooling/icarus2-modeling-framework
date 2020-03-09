@@ -200,6 +200,7 @@ public class ExpressionFactory {
 				if(annotation.isPresent()) {
 					return AnnotationAccess.of(item.get(), annotation.get());
 				}
+				// Otherwise it _must_ be a proper path in the object graph
 			}
 
 			//TODO can we infer expected type efficiently for better filtering?

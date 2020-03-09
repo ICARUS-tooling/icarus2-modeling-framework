@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -135,8 +136,14 @@ class ExpressionFactoryTest {
 			doReturn(Boolean.TRUE).when(context).isSwitchSet(eq(sw));
 		}
 
-		private void prepareRef(String name, Expression<?> exp) {
+		private Expression<?> prepareRef(String name, Expression<?> exp) {
 			doReturn(Optional.of(exp)).when(context).resolve(isNull(), eq(name), any());
+			return exp;
+		}
+
+		private Expression<?> prepareField(Expression<?> source, String name, Expression<?> exp) {
+			doReturn(Optional.of(exp)).when(context).resolve(same(source), eq(name), any());
+			return exp;
 		}
 
 		private void prepareVar(String name, Assignable<?> assignable) {
@@ -956,6 +963,23 @@ class ExpressionFactoryTest {
 				Expression<?> parsed = parse(input);
 				assertThat(parsed.isBoolean()).isTrue();
 				assertThat(parsed.computeAsBoolean()).isEqualTo(value);
+			}
+		}
+
+		@Nested
+		class ForPathAccess {
+
+			@Test
+			void testSimplePath() {
+				Object root = new Dummy();
+				Object field = new Dummy();
+
+				Expression<?> exp1 = prepareRef("root", raw(root));
+				Expression<?> exp2 = prepareField(exp1, "field", raw(field));
+
+				Expression<?> parsed = parse("root.field");
+				assertThat(parsed).isSameAs(exp2);
+				assertThat(parsed.compute()).isSameAs(field);
 			}
 		}
 
