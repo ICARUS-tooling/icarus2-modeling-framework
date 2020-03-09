@@ -53,6 +53,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -831,6 +834,132 @@ class ExpressionFactoryTest {
 		}
 
 		@Nested
+		class ForAnnotations {
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"item1{\"key\"} ; key",
+				"item1{\"layer::key\"} ; layer::key",
+			})
+			void testObject(String input, String key) {
+				Item item = mockItem();
+				prepareRef("item1", raw(item));
+
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
+
+				Object value = new Object();
+				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
+						ValueType.UNKNOWN, TypeInfo.GENERIC);
+				Function<Item, Object> func = mock(Function.class);
+				when(func.apply(eq(item))).thenReturn(value);
+				annotation.objectSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.compute()).isSameAs(value);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"item1{\"key\"} ; key",
+				"item1{\"layer::key\"} ; layer::key",
+			})
+			void testText(String input, String key) {
+				Item item = mockItem();
+				prepareRef("item1", raw(item));
+
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
+
+				String value = "testValue";
+				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
+						ValueType.STRING, TypeInfo.TEXT);
+				Function<Item, Object> func = mock(Function.class);
+				when(func.apply(eq(item))).thenReturn(value);
+				annotation.objectSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isText()).isTrue();
+				assertThat(parsed.compute()).isEqualTo(value);
+			}
+
+			@SuppressWarnings("boxing")
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"item1{\"key\"} ; key",
+				"item1{\"layer::key\"} ; layer::key",
+			})
+			void testInteger(String input, String key) {
+				Item item = mockItem();
+				prepareRef("item1", raw(item));
+
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
+
+				long value = 123456;
+				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
+						ValueType.INTEGER, TypeInfo.INTEGER);
+				ToLongFunction<Item> func = mock(ToLongFunction.class);
+				when(func.applyAsLong(eq(item))).thenReturn(value);
+				annotation.integerSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isInteger()).isTrue();
+				assertThat(parsed.computeAsLong()).isEqualTo(value);
+			}
+
+			@SuppressWarnings("boxing")
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"item1{\"key\"} ; key",
+				"item1{\"layer::key\"} ; layer::key",
+			})
+			void testFloatingPoint(String input, String key) {
+				Item item = mockItem();
+				prepareRef("item1", raw(item));
+
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
+
+				double value = 123.456;
+				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
+						ValueType.DOUBLE, TypeInfo.FLOATING_POINT);
+				ToDoubleFunction<Item> func = mock(ToDoubleFunction.class);
+				when(func.applyAsDouble(eq(item))).thenReturn(value);
+				annotation.floatingPointSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isFloatingPoint()).isTrue();
+				assertThat(parsed.computeAsDouble()).isEqualTo(value);
+			}
+
+			@SuppressWarnings("boxing")
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"item1{\"key\"} ; key",
+				"item1{\"layer::key\"} ; layer::key",
+			})
+			void testBoolean(String input, String key) {
+				Item item = mockItem();
+				prepareRef("item1", raw(item));
+
+				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
+
+				boolean value = true;
+				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
+						ValueType.BOOLEAN, TypeInfo.BOOLEAN);
+				Predicate<Item> func = mock(Predicate.class);
+				when(func.test(eq(item))).thenReturn(value);
+				annotation.booleanSource = func;
+				prepareAnnotation(identifier, annotation);
+
+				Expression<?> parsed = parse(input);
+				assertThat(parsed.isBoolean()).isTrue();
+				assertThat(parsed.computeAsBoolean()).isEqualTo(value);
+			}
+		}
+
+		@Nested
 		class ForReferences {
 
 			@ParameterizedTest
@@ -922,7 +1051,7 @@ class ExpressionFactoryTest {
 				// Nested formulas
 				"2+3*4, 14",
 				"2-3*4, -10",
-				"12/3+2, 6"
+				"12/3+2, 6",
 				//TODO add wrapped formulas and other operators
 			})
 			void testIntegerFormulas(String input, long result) {
