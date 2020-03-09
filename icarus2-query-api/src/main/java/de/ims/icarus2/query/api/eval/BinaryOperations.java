@@ -26,6 +26,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkNumericalType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.checkTextType;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedCast;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedFloatingPoint;
+import static de.ims.icarus2.query.api.eval.EvaluationUtils.forUnsupportedTextComp;
 import static de.ims.icarus2.query.api.eval.EvaluationUtils.requiresFloatingPointOp;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.lang.Character.toLowerCase;
@@ -33,6 +34,7 @@ import static java.lang.Character.toUpperCase;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.BiPredicate;
+import java.util.function.IntPredicate;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToLongBiFunction;
 import java.util.regex.Matcher;
@@ -115,6 +117,12 @@ public class BinaryOperations {
 		case CONTAINS: return new UnicodeContainment(castText(left), castText(right), mode.getCodePointComparator());
 		case MATCHES: return new StringRegex(castText(left), castText(right), mode, true);
 
+		case LESS:
+		case LESS_OR_EQUAL:
+		case GREATER:
+		case GREATER_OR_EQUAL:
+			return new UnicodeComparison(castText(left), castText(right), mode.getCodePointComparator(), op.getComp());
+
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
 					"Unknown string operation: "+op);
@@ -130,6 +138,12 @@ public class BinaryOperations {
 		case EQUALS: return new CharsEquality(castText(left), castText(right), mode.getCharComparator());
 		case CONTAINS: return new CharsContainment(castText(left), castText(right), mode.getCharComparator());
 		case MATCHES: return new StringRegex(castText(left), castText(right), mode, false);
+
+		case LESS:
+		case LESS_OR_EQUAL:
+		case GREATER:
+		case GREATER_OR_EQUAL:
+			return new CharsComparison(castText(left), castText(right), mode.getCharComparator(), op.getComp());
 
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
@@ -387,7 +401,7 @@ public class BinaryOperations {
 		CharsEquality(Expression<CharSequence> left, Expression<CharSequence> right,
 				CharBiPredicate comparator) {
 			super(left, right);
-			this.comparator = comparator;
+			this.comparator = requireNonNull(comparator);
 		}
 
 		@Override
@@ -414,7 +428,7 @@ public class BinaryOperations {
 		UnicodeEquality(Expression<CharSequence> left, Expression<CharSequence> right,
 				IntBiPredicate comparator) {
 			super(left, right);
-			this.comparator = comparator;
+			this.comparator = requireNonNull(comparator);
 		}
 
 		@Override
@@ -441,7 +455,7 @@ public class BinaryOperations {
 		CharsContainment(Expression<CharSequence> left, Expression<CharSequence> right,
 				CharBiPredicate comparator) {
 			super(left, right);
-			this.comparator = comparator;
+			this.comparator = requireNonNull(comparator);
 		}
 
 		@Override
@@ -468,7 +482,7 @@ public class BinaryOperations {
 		UnicodeContainment(Expression<CharSequence> left, Expression<CharSequence> right,
 				IntBiPredicate comparator) {
 			super(left, right);
-			this.comparator = comparator;
+			this.comparator = requireNonNull(comparator);
 		}
 
 		@Override
@@ -485,6 +499,72 @@ public class BinaryOperations {
 		protected Expression<Primitive<Boolean>> toConstant(Expression<CharSequence> left, Expression<CharSequence> right) {
 			return Literals.of(CodePointUtils.containsCodePoints(
 					left.compute(), right.compute(), comparator));
+		}
+	}
+
+	static final class CharsComparison extends AbstractBinaryPredicate<Expression<CharSequence>> {
+
+		private final CharBiPredicate charComparator;
+		private final IntPredicate resultComparator;
+
+		CharsComparison(Expression<CharSequence> left, Expression<CharSequence> right,
+				CharBiPredicate charComparator, IntPredicate resultComparator) {
+			super(left, right);
+			this.charComparator = requireNonNull(charComparator);
+			this.resultComparator = requireNonNull(resultComparator);
+		}
+
+		private static boolean test(CharSequence left, CharSequence right,
+				CharBiPredicate charComparator, IntPredicate resultComparator) {
+			return resultComparator.test(CodePointUtils.compare(left, right, charComparator));
+		}
+
+		@Override
+		public boolean computeAsBoolean() {
+			return test(left.compute(), right.compute(), charComparator, resultComparator);
+		}
+
+		@Override
+		protected CharsComparison duplicate(Expression<CharSequence> left, Expression<CharSequence> right) {
+			return new CharsComparison(left, right, charComparator, resultComparator);
+		}
+
+		@Override
+		protected Expression<Primitive<Boolean>> toConstant(Expression<CharSequence> left, Expression<CharSequence> right) {
+			return Literals.of(test(left.compute(), right.compute(), charComparator, resultComparator));
+		}
+	}
+
+	static final class UnicodeComparison extends AbstractBinaryPredicate<Expression<CharSequence>> {
+
+		private final IntBiPredicate codePointComparator;
+		private final IntPredicate resultComparator;
+
+		UnicodeComparison(Expression<CharSequence> left, Expression<CharSequence> right,
+				IntBiPredicate codePointComparator, IntPredicate resultComparator) {
+			super(left, right);
+			this.codePointComparator = requireNonNull(codePointComparator);
+			this.resultComparator = requireNonNull(resultComparator);
+		}
+
+		private static boolean test(CharSequence left, CharSequence right,
+				IntBiPredicate codePointComparator, IntPredicate resultComparator) {
+			return resultComparator.test(CodePointUtils.compareCodePoints(left, right, codePointComparator));
+		}
+
+		@Override
+		public boolean computeAsBoolean() {
+			return test(left.compute(), right.compute(), codePointComparator, resultComparator);
+		}
+
+		@Override
+		protected UnicodeComparison duplicate(Expression<CharSequence> left, Expression<CharSequence> right) {
+			return new UnicodeComparison(left, right, codePointComparator, resultComparator);
+		}
+
+		@Override
+		protected Expression<Primitive<Boolean>> toConstant(Expression<CharSequence> left, Expression<CharSequence> right) {
+			return Literals.of(test(left.compute(), right.compute(), codePointComparator, resultComparator));
 		}
 	}
 
@@ -662,11 +742,25 @@ public class BinaryOperations {
 	}
 
 	public enum StringOp {
-		EQUALS,
-		CONTAINS,
-		MATCHES,
+		EQUALS(null),
+		CONTAINS(null),
+		MATCHES(null),
+
+		LESS(v -> v<0),
+		GREATER(v -> v>0),
+		LESS_OR_EQUAL(v -> v<=0),
+		GREATER_OR_EQUAL(v -> v>=0),
 		;
-		//TODO add the comparator ops here and make them codepoint-aware!!!
+
+		private final IntPredicate comp;
+
+		private StringOp(IntPredicate comp) { this.comp = comp; }
+
+		public IntPredicate getComp() {
+			if(comp==null)
+				throw forUnsupportedTextComp(name());
+			return comp;
+		}
 	}
 
 	public enum StringMode {

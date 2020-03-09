@@ -31,6 +31,7 @@ import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpres
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertQueryException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.lang.Primitives._double;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -68,6 +69,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.eval.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.eval.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.eval.Expression.FloatingPointListExpression;
@@ -121,6 +123,10 @@ class ExpressionFactoryTest {
 		void tearDown() {
 			context = null;
 			factory = null;
+		}
+
+		private void setSwitch(QuerySwitch sw) {
+			doReturn(Boolean.TRUE).when(context).isSwitchSet(eq(sw));
 		}
 
 		private void prepareRef(String name, Expression<?> exp) {
@@ -899,7 +905,7 @@ class ExpressionFactoryTest {
 		}
 
 		@Nested
-		class ForFormulas {
+		class ForMultAndAdd {
 
 			@ParameterizedTest
 			@CsvSource({
@@ -1079,6 +1085,130 @@ class ExpressionFactoryTest {
 						Expression<?> exp = parse(input);
 						assertThat(exp.isText()).isTrue();
 						assertExpression(exp, context, (CharSequence)expected, StringUtil::equals);
+					});
+				});
+			}
+
+			@Test
+			void testNested() {
+				String input = "\"abc\"+(\"de\"+\"fg\"))";
+				CharSequence expected = "abcdefg";
+
+				Expression<?> exp = parse(input);
+				assertThat(exp.isText()).isTrue();
+				assertExpression(exp, context, expected, StringUtil::equals);
+			}
+		}
+
+		@Nested
+		class ForStringOp {
+
+			@TestFactory
+			Stream<DynamicNode> testRegex() {
+				return Stream.of(
+					// Positive regex
+					pair("\"xxxXxxx\" =~ \"X\"", Boolean.TRUE),
+					pair("\"xxxxxxx\" =~ \"X\"", Boolean.FALSE),
+					pair("\"xxx\"+\"X\" =~ \"X\"", Boolean.TRUE),
+					pair("\"123.45\" =~ \"[1-9]+\"", Boolean.TRUE),
+					pair("\"123.45\" =~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.TRUE),
+					pair("\"123.e45\" =~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.FALSE),
+					// Negated regex
+					pair("\"xxxXxxx\" !~ \"X\"", Boolean.FALSE),
+					pair("\"xxxxxxx\" !~ \"X\"", Boolean.TRUE),
+					pair("\"xxx\"+\"X\" !~ \"X\"", Boolean.FALSE),
+					pair("\"123.45\" !~ \"[1-9]+\"", Boolean.FALSE),
+					pair("\"123.45\" !~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.FALSE),
+					pair("\"123.e45\" !~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.TRUE)
+				).map(p -> {
+					String input = p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isBoolean()).isTrue();
+						assertExpression(exp, context, p.second.booleanValue());
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testContains() {
+				return Stream.of(
+					// Positive containment check
+					pair("\"xxxXxxx\" =# \"X\"", Boolean.TRUE),
+					pair("\"xxxxxxx\" =# \"X\"", Boolean.FALSE),
+					pair("\"xxx\"+\"X\" =# \"X\"", Boolean.TRUE),
+					pair("\"123.45\" =# \"23\"", Boolean.TRUE),
+					pair("\"123.45\" =# \"3.4\"", Boolean.TRUE),
+					pair("\"123.e45\" =# \"3.4\"", Boolean.FALSE),
+					// Negated containment check
+					pair("\"xxxXxxx\" !# \"X\"", Boolean.FALSE),
+					pair("\"xxxxxxx\" !# \"X\"", Boolean.TRUE),
+					pair("\"xxx\"+\"X\" !# \"X\"", Boolean.FALSE),
+					pair("\"123.45\" !# \"23\"", Boolean.FALSE),
+					pair("\"123.45\" !# \"3.4\"", Boolean.FALSE),
+					pair("\"123.e45\" !# \"3.4\"", Boolean.TRUE)
+				).map(p -> {
+					String input = p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isBoolean()).isTrue();
+						assertExpression(exp, context, p.second.booleanValue());
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testAsciiRegex() {
+				setSwitch(QuerySwitch.STRING_UNICODE_OFF);
+				return Stream.of(
+					// Positive regex
+					pair("\"xxxXxxx\" =~ \"X\"", Boolean.TRUE),
+					pair("\"xxxxxxx\" =~ \"X\"", Boolean.FALSE),
+					pair("\"xxx\"+\"X\" =~ \"X\"", Boolean.TRUE),
+					pair("\"123.45\" =~ \"[1-9]+\"", Boolean.TRUE),
+					pair("\"123.45\" =~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.TRUE),
+					pair("\"123.e45\" =~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.FALSE),
+					// Negated regex
+					pair("\"xxxXxxx\" !~ \"X\"", Boolean.FALSE),
+					pair("\"xxxxxxx\" !~ \"X\"", Boolean.TRUE),
+					pair("\"xxx\"+\"X\" !~ \"X\"", Boolean.FALSE),
+					pair("\"123.45\" !~ \"[1-9]+\"", Boolean.FALSE),
+					pair("\"123.45\" !~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.FALSE),
+					pair("\"123.e45\" !~ \"^\\\\d+\\\\.\\\\d+$\"", Boolean.TRUE)
+				).map(p -> {
+					String input = p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isBoolean()).isTrue();
+						assertExpression(exp, context, p.second.booleanValue());
+					});
+				});
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testAsciiContains() {
+				setSwitch(QuerySwitch.STRING_UNICODE_OFF);
+				return Stream.of(
+					// Positive containment check
+					pair("\"xxxXxxx\" =# \"X\"", Boolean.TRUE),
+					pair("\"xxxxxxx\" =# \"X\"", Boolean.FALSE),
+					pair("\"xxx\"+\"X\" =# \"X\"", Boolean.TRUE),
+					pair("\"123.45\" =# \"23\"", Boolean.TRUE),
+					pair("\"123.45\" =# \"3.4\"", Boolean.TRUE),
+					pair("\"123.e45\" =# \"3.4\"", Boolean.FALSE),
+					// Negated containment check
+					pair("\"xxxXxxx\" !# \"X\"", Boolean.FALSE),
+					pair("\"xxxxxxx\" !# \"X\"", Boolean.TRUE),
+					pair("\"xxx\"+\"X\" !# \"X\"", Boolean.FALSE),
+					pair("\"123.45\" !# \"23\"", Boolean.FALSE),
+					pair("\"123.45\" !# \"3.4\"", Boolean.FALSE),
+					pair("\"123.e45\" !# \"3.4\"", Boolean.TRUE)
+				).map(p -> {
+					String input = p.first;
+					return dynamicTest(input, () -> {
+						Expression<?> exp = parse(input);
+						assertThat(exp.isBoolean()).isTrue();
+						assertExpression(exp, context, p.second.booleanValue());
 					});
 				});
 			}
@@ -1323,6 +1453,186 @@ class ExpressionFactoryTest {
 				assertThat(exp.isBoolean()).isTrue();
 				assertExpression(exp, context, expected);
 			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"-(123) ; -123",
+				"-(-123) ; 123",
+			})
+			void testNumericalNegation(String input, int expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@TestFactory
+			Stream<DynamicNode> testBitwiseNot() {
+				return IntStream.of(0, 1, Integer.MAX_VALUE, Integer.MIN_VALUE)
+						.mapToObj(val -> dynamicTest(displayString(val), () -> {
+							String input = "~"+val;
+							int expected = ~val;
+							Expression<?> exp = parse(input);
+							assertThat(exp.isInteger()).isTrue();
+							assertExpression(exp, context, expected);
+						}));
+			}
+		}
+
+		@Nested
+		class ForComparison {
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1<2;true",
+				"1<1;false",
+				"1<=2;true",
+				"1<=1;true",
+				"2<=1;false",
+				"1>2;false",
+				"2>1;true",
+				"1>=2;false",
+				"2>=1;true",
+				"1>=1;true"
+			})
+			void testInteger(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1.5<2.5;true",
+				"1.5<1.5;false",
+				"1.5<=2.5;true",
+				"1.5<=1.5;true",
+				"2.5<=1.5;false",
+				"1.5>2.5;false",
+				"2.5>1.5;true",
+				"1.5>=2.5;false",
+				"2.5>=1.5;true",
+				"1.5>=1.5;true"
+			})
+			void testFloatingPoint(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"\"1\"<\"2\";true",
+				"\"1\"<\"1\";false",
+				"\"1\"<=\"2\";true",
+				"\"1\"<=\"1\";true",
+				"\"2\"<=\"1\";false",
+				"\"1\">\"2\";false",
+				"\"2\">\"1\";true",
+				"\"1\">=\"2\";false",
+				"\"2\">=\"1\";true",
+				"\"1\">=\"1\";true"
+			})
+			void testCodePoints(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"\"1\"<\"2\";true",
+				"\"1\"<\"1\";false",
+				"\"1\"<=\"2\";true",
+				"\"1\"<=\"1\";true",
+				"\"2\"<=\"1\";false",
+				"\"1\">\"2\";false",
+				"\"2\">\"1\";true",
+				"\"1\">=\"2\";false",
+				"\"2\">=\"1\";true",
+				"\"1\">=\"1\";true"
+			})
+			void testAscii(String input, boolean expected) {
+				setSwitch(QuerySwitch.STRING_UNICODE_OFF);
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+		}
+
+		@Nested
+		class ForBitwiseOps {
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1 & 0 ; 0",
+				"111 & 0 ; 0",
+				"111 & 2 ; 2",
+				"111 & 5 ; 5",
+			})
+			void testAnd(String input, int expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1 | 0 ; 1",
+				"111 | 0 ; 111",
+				"1024 | 2 ; 1026",
+				"1024 | 512 ; 1536",
+			})
+			void testOr(String input, int expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1 ^ 0 ; 1",
+				"111 ^ 0 ; 111",
+				"1024 ^ 2 ; 1026",
+				"1024 ^ 512 ; 1536",
+				"5 ^ 4 ; 1",
+			})
+			void testXor(String input, int expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1 << 0 ; 1",
+				"1 << 1 ; 2",
+				"1 << 10 ; 1024",
+				"3 << 2 ; 12",
+			})
+			void testShiftLeft(String input, int expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1 >> 0 ; 1",
+				"1 >> 1 ; 0",
+				"1024 >> 10 ; 1",
+				"12 >> 2 ; 3",
+				"12 >> 3 ; 1",
+			})
+			void testShiftRight(String input, int expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+		}
+
+		@Nested
+		class ForEquality {
+
 		}
  	}
 }

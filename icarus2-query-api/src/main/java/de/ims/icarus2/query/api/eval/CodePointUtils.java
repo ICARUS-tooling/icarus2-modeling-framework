@@ -60,21 +60,25 @@ public final class CodePointUtils {
 		return true;
 	}
 
-//	/** Runs a basic character-wise equality check of two codepoint sequences */
-//	public static boolean equalsCodePoints(CodePointSequence cs1, CodePointSequence cs2,
-//			IntBiPredicate comparator) {
-//		int len1 = cs1.codePointCount();
-//		int len2 = cs2.codePointCount();
-//		if(len1!=len2) {
-//			return false;
-//		}
-//		for (int i = 0; i < len1; i++) {
-//			if(!comparator.test(cs1.codePointAt(i), cs2.codePointAt(i))) {
-//				return false;
-//			}
-//		}
-//		return true;
-//	}
+	/** Compares 2 {@link CharSequence} objects using the same rules as {@link String#compareTo(String)} */
+	//TODO add tests
+    public static int compare(CharSequence cs1, CharSequence cs2,
+			CharBiPredicate comparator) {
+		int len1 = cs1.length();
+		int len2 = cs2.length();
+        int lim = Math.min(len1, len2);
+
+        int k = 0;
+        while (k < lim) {
+            char c1 = cs1.charAt(k);
+            char c2 = cs2.charAt(k);
+            if (!comparator.test(c1, c2)) {
+                return c1 - c2;
+            }
+            k++;
+        }
+        return len1 - len2;
+    }
 
     public static int codePointAt(CharSequence seq, int index) {
         char c1 = seq.charAt(index);
@@ -121,6 +125,32 @@ public final class CodePointUtils {
 		}
 		return true;
 	}
+
+	/** Compares 2 {@link CharSequence} objects codepoint-wise using the same rules as {@link String#compareTo(String)} */
+	//TODO add tests
+    public static int compareCodePoints(CharSequence cs1, CharSequence cs2,
+    		IntBiPredicate comparator) {
+		int len1 = cs1.length();
+		int len2 = cs2.length();
+        int lim = Math.min(len1, len2);
+
+        int i1 = 0, i2 = 0;
+        while (i1 < lim && i2 < lim) {
+			int cp1 = codePointAt(cs1, i1++);
+			int cp2 = codePointAt(cs2, i2++);
+			if(!comparator.test(cp1, cp2)) {
+				return cp1 - cp2;
+			}
+
+			if(isSupplementaryCodePoint(cp1)) {
+				i1++;
+			}
+			if(isSupplementaryCodePoint(cp2)) {
+				i2++;
+			}
+        }
+        return len1 - len2;
+    }
 
 
 	/**

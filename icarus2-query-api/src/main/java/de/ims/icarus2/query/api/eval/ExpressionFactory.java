@@ -732,8 +732,10 @@ public class ExpressionFactory {
 
 		if(TypeInfo.isNumerical(left.getResultType()) && TypeInfo.isNumerical(right.getResultType())) {
 			return processNumericalComparison(ctx, ensureNumerical(left), ensureNumerical(right));
+		} else if(left.isText() || right.isText()) {
+			return processTextComparison(ctx, ensureText(left), ensureText(right));
 		} else if(TypeInfo.isComparable(left.getResultType()) && TypeInfo.isComparable(right.getResultType())) {
-			//TODO try to infer/ensure type compatibility between the two comparables
+			//TODO try to infer/ensure type compatibility between the two Comparable instances
 			@SuppressWarnings({ "rawtypes" })
 			Expression<Comparable> leftComp = castComparable(left);
 			@SuppressWarnings({ "rawtypes" })
@@ -762,6 +764,25 @@ public class ExpressionFactory {
 		}
 
 		return BinaryOperations.numericalPred(comp, left, right);
+	}
+
+	private Expression<Primitive<Boolean>> processTextComparison(ComparisonOpContext ctx,
+			Expression<?> left, Expression<?> right) {
+		StringOp comp = null;
+		if(ctx.LT()!=null) {
+			comp = StringOp.LESS;
+		} else if(ctx.LT_EQ()!=null) {
+			comp = StringOp.LESS_OR_EQUAL;
+		} else if(ctx.GT()!=null) {
+			comp = StringOp.GREATER;
+		} else if(ctx.GT_EQ()!=null) {
+			comp = StringOp.GREATER_OR_EQUAL;
+		} else {
+			failForUnhandledAlternative(ctx);
+		}
+
+		return isAllowUnicode() ? BinaryOperations.unicodeOp(comp, getStringMode(), left, right)
+				: BinaryOperations.asciiOp(comp, getStringMode(), left, right);
 	}
 
 	@SuppressWarnings("rawtypes")

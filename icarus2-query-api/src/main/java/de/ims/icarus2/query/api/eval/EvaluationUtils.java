@@ -323,6 +323,11 @@ public class EvaluationUtils {
 				"Operation does not support floating point types: "+op);
 	}
 
+	public static QueryException forUnsupportedTextComp(String op) {
+		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
+				"Operation does not support textual comparison: "+op);
+	}
+
 	public static QueryException forUnsupportedCast(TypeInfo source, TypeInfo target) {
 		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
 				String.format("Cannot return %s as %s", source, target));
