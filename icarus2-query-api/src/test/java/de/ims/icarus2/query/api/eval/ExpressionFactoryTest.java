@@ -2039,7 +2039,27 @@ class ExpressionFactoryTest {
 				assertExpression(exp, context, expected);
 			}
 
-			//TODO add string test
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// Literal condition
+				"true ? \"x\" : \"y\" ; x",
+				"false ? \"x\" : \"y\" ; y",
+				// Condition formula
+				"2<5 ? \"x\" : \"y\" ; x",
+				"2>5 ? \"x\" : \"y\" ; y",
+				"2<5 ? \"x\"+\"y\" : \"y\"+\"x\" ; xy",
+				"2>5 ? \"x\"+\"y\" : \"y\"+\"x\" ; yx",
+				// Auto casts
+				"2<5 ? 1 : \"x\"+\"y\" ; 1",
+				"2>5 ? \"x\"+\"y\" : 1 ; 1",
+				"2<5 ? 1.5 : \"x\"+\"y\" ; 1.5",
+				"2>5 ? \"x\"+\"y\" : 1.5 ; 1.5",
+			})
+			void testString(String input, CharSequence expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isText()).isTrue();
+				assertExpression(exp, context, expected, StringUtil::equals);
+			}
 		}
  	}
 }
