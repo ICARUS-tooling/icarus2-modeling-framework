@@ -1179,6 +1179,65 @@ class ExpressionFactoryTest {
 		@Nested
 		class ForWrapping {
 
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"(false) ; false",
+				"((false)) ; false",
+				"(((false))) ; false",
+				"((((false)))) ; false",
+				"(true) ; true",
+				"((true)) ; true",
+				"(((true))) ; true",
+				"((((true)))) ; true",
+			})
+			void testBoolean(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertThat(Literals.isLiteral(exp)).isTrue();
+				assertExpression(exp, context, result);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"(\"test\") ; test",
+				"((\"test\")) ; test",
+				"(((\"test\"))) ; test",
+				"((((\"test\")))) ; test",
+			})
+			void testString(String input, String result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isText()).isTrue();
+				assertThat(Literals.isLiteral(exp)).isTrue();
+				assertExpression(exp, context, result, StringUtil::equals);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"(123) ; 123",
+				"((123)) ; 123",
+				"(((123))) ; 123",
+				"((((123)))) ; 123",
+			})
+			void testInteger(String input, long result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertThat(Literals.isLiteral(exp)).isTrue();
+				assertExpression(exp, context, result);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"(123.5) ; 123.5",
+				"((123.5)) ; 123.5",
+				"(((123.5))) ; 123.5",
+				"((((123.5)))) ; 123.5",
+			})
+			void testFloatingPoint(String input, double result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isFloatingPoint()).isTrue();
+				assertThat(Literals.isLiteral(exp)).isTrue();
+				assertExpression(exp, context, result);
+			}
 		}
 
 		@Nested
