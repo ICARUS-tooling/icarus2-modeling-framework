@@ -1980,6 +1980,66 @@ class ExpressionFactoryTest {
 		@Nested
 		class ForTernaryOp {
 
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// Literal condition
+				"true ? 1 : 0 ; 1",
+				"false ? 1 : 0 ; 0",
+				// Condition formula
+				"2<5 ? 1 : 0 ; 1",
+				"2>5 ? 1 : 0 ; 0",
+				"2<5 ? 1+1 : 0-1 ; 2",
+				"2>5 ? 1+1 : 0-1 ; -1",
+			})
+			void testInteger(String input, long expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isInteger()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// Literal condition
+				"true ? 1.5 : 0.5 ; 1.5",
+				"false ? 1.5 : 0.5 ; 0.5",
+				// Condition formula
+				"2<5 ? 1.5 : 0.5 ; 1.5",
+				"2>5 ? 1.5 : 0.5 ; 0.5",
+				"2<5 ? 1.5+1 : 0.5-1 ; 2.5",
+				"2>5 ? 1.5+1 : 0.5-1 ; -0.5",
+				// Auto casts
+				"2<5 ? 1.5 : 0 ; 1.5",
+				"2>5 ? 1.5 : 0 ; 0.0",
+			})
+			void testFloatingPoint(String input, double expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isFloatingPoint()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// Literal condition
+				"true ? false : true ; false",
+				"false ? false : true ; true",
+				// Condition formula
+				"2<5 ? false : true ; false",
+				"2>5 ? false : true ; true",
+				"2<5 ? 1==2 : 2>1 ; false",
+				"2>5 ? 1==2 : 2>1 ; true",
+				// Auto casts
+				"2<5 ? 1==2 : 1 ; false",
+				"2>5 ? 1==2 : 1 ; true",
+				"2<5 ? 1==2 : 1.5 ; false",
+				"2>5 ? 1==2 : 1.5 ; true",
+			})
+			void testBoolean(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			//TODO add string test
 		}
  	}
 }

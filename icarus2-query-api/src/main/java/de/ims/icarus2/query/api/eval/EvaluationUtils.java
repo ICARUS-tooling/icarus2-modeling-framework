@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.regex.Pattern;
@@ -446,12 +447,12 @@ public class EvaluationUtils {
 			TypeInfo.INTEGER,
 	};
 
-	public static TypeInfo decideType(Set<TypeInfo> types) {
+	public static Optional<TypeInfo> decideType(Set<TypeInfo> types) {
 		for(TypeInfo type : typePriority) {
 			if(types.contains(type)) {
-				return type;
+				return Optional.of(type);
 			}
 		}
-		return TypeInfo.GENERIC;
+		return Optional.empty();
 	}
 }

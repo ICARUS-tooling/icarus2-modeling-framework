@@ -35,6 +35,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Proxy;
@@ -285,6 +286,20 @@ public class ExpressionFactory {
 		return castText(source);
 	}
 
+	private Expression<?> ensureType(TypeInfo type, Expression<?> source) {
+		if(TypeInfo.isInteger(type)) {
+			return ensureInteger(source);
+		} else if(TypeInfo.isFloatingPoint(type)) {
+			return ensureFloatingPoint(source);
+		} else if(TypeInfo.isBoolean(type)) {
+			return ensureBoolean(source);
+		} else if(TypeInfo.isText(type)) {
+			return ensureText(source);
+		}
+
+		return source;
+	}
+
 	private Expression<? extends Item> ensureItem(Expression<?> source) {
 		if(!source.isMember())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
@@ -469,7 +484,7 @@ public class ExpressionFactory {
 
 			if(types.size()>1) {
 				// Follow a strict type hierarchy
-				elementType = decideType(types);
+				elementType = decideType(types).orElse(TypeInfo.GENERIC);
 			} else {
 				elementType = CollectionUtils.first(types);
 			}
@@ -935,16 +950,27 @@ public class ExpressionFactory {
 
 		if(type1.equals(type2)) {
 			type = type1;
-		} else if(type1.isPrimitive() || type2.isPrimitive()) {
-			//TODO
-		} else {
+		}
+
+		/*
+		 *  If any of the expressions has an auto-castable type, try conversion.
+		 *  This will also take care of primitive types.
+		 */
+		Optional<TypeInfo> coreType = decideType(set(type1, type2));
+		if(coreType.isPresent()) {
+			type = coreType.get();
+			// Apply auto casts
+			option1 = ensureType(type, option1);
+			option2 = ensureType(type, option2);
+		}
+
+		// Easy mode failed, so we have to run a real search for types
+		if(type==null) {
 			type = findCommonType(type1, type2);
 		}
 
 		return TernaryOperation.of(type, condition, option1, option2);
 	}
-
-	//TODO helper method to derive common primitive type
 
 	private static TypeInfo findCommonType(TypeInfo type1, TypeInfo type2) {
 		Set<Class<?>> typeCandidates = ClassUtils.commonSuperclasses(

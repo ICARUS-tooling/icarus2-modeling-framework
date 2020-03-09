@@ -19,11 +19,13 @@
  */
 package de.ims.icarus2.query.api.eval;
 
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -202,4 +204,10 @@ public class TypeInfo {
 	// Frequently used helpers
 	public static final TypeInfo LIST = new TypeInfo(List.class, null, false, true);
 	public static final TypeInfo ARRAY = new TypeInfo(Object[].class, null, false, true);
+
+	private static final Set<TypeInfo> coreTypes = set(TEXT, INTEGER, FLOATING_POINT, BOOLEAN);
+
+	public static boolean isCoreType(TypeInfo type) {
+		return coreTypes.contains(requireNonNull(type));
+	}
 }
