@@ -29,6 +29,7 @@ import static de.ims.icarus2.query.api.eval.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.assertQueryException;
+import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.raw;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.displayString;
@@ -42,6 +43,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -81,6 +83,7 @@ import de.ims.icarus2.query.api.eval.SetPredicates.TextSetPredicate;
 import de.ims.icarus2.query.api.eval.UnaryOperations.BooleanNegation;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StandaloneExpressionContext;
+import de.ims.icarus2.test.Dummy;
 import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
@@ -1633,6 +1636,93 @@ class ExpressionFactoryTest {
 		@Nested
 		class ForEquality {
 
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"1!=2;true",
+				"1==1;true",
+				"1==2;false",
+				"1!=-2;true",
+				"1==-2;false",
+				"-1!=1;true",
+				"-1!=-1;false",
+				"-1==1;false",
+				"-1==-1;true",
+			})
+			void testInteger(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+					"1.5!=2.5;true",
+					"1.5==1.5;true",
+					"1.5==2.5;false",
+					"1.5!=-2.5;true",
+					"1.5==-2.5;false",
+					"-1.5!=1.5;true",
+					"-1.5!=-1.5;false",
+					"-1.5==1.5;false",
+					"-1.5==-1.5;true",
+			})
+			void testFloatingPoint(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"\"xxx\"!=\"xyz\";true",
+				"\"xxx\"==\"xyz\";false",
+				"\"xyz\"==\"xyz\";true",
+				"\"xxx\"!=\"xxx\";false",
+			})
+			void testCodePoints(String input, boolean expected) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				"\"xxx\"!=\"xyz\";true",
+				"\"xxx\"==\"xyz\";false",
+				"\"xyz\"==\"xyz\";true",
+				"\"xxx\"!=\"xxx\";false",
+			})
+			void testAscii(String input, boolean expected) {
+				setSwitch(QuerySwitch.STRING_UNICODE_OFF);
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, expected);
+			}
+
+			@Test
+			void testObject() {
+				Object obj1 = mock(Dummy.class, CALLS_REAL_METHODS);
+				Object obj2 = mock(Dummy.class, CALLS_REAL_METHODS);
+
+				prepareRef("obj1", raw(obj1));
+				prepareRef("obj2", raw(obj2));
+
+				Expression<?> exp1 = parse("obj1==obj1");
+				assertThat(exp1.isBoolean()).isTrue();
+				assertExpression(exp1, context, true);
+
+				Expression<?> exp2 = parse("obj1!=obj1");
+				assertThat(exp2.isBoolean()).isTrue();
+				assertExpression(exp2, context, false);
+
+				Expression<?> exp3 = parse("obj1==obj2");
+				assertThat(exp3.isBoolean()).isTrue();
+				assertExpression(exp3, context, false);
+
+				Expression<?> exp4 = parse("obj1!=obj2");
+				assertThat(exp4.isBoolean()).isTrue();
+				assertExpression(exp4, context, true);
+			}
 		}
  	}
 }

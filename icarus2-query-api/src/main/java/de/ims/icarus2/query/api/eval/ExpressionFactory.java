@@ -744,7 +744,7 @@ public class ExpressionFactory {
 		}
 
 		throw new QueryException(QueryErrorCode.INCORRECT_USE,
-				"Operands of a comparison must either be numerical or their result types must"
+				"Operands of a comparison must either be numerical, textual or their result types must"
 				+ " both implement java.lang.Comparable: "+textOf(ctx), asFragment(ctx));
 	}
 
