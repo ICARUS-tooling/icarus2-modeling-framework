@@ -1196,6 +1196,11 @@ class ExpressionFactoryTest {
 				"5>1 && true ; true",
 				"1>5 && false ; false",
 				"5>1 && false ; false",
+				// Wrapping
+				"true && (false && true) ; false",
+				"false && (true && false) ; false",
+				"true && (true && true) ; true",
+				"false && (false && false) ; false",
 			})
 			void testConjunction(String input, boolean result) {
 				Expression<?> exp = parse(input);
@@ -1215,8 +1220,29 @@ class ExpressionFactoryTest {
 				"5>1 || true ; true",
 				"1>5 || false ; false",
 				"5>1 || false ; true",
+				// Wrapping
+				"true || (false || true) ; true",
+				"false || (true || false) ; true",
+				"true || (true || true) ; true",
+				"false || (false || false) ; false",
 			})
 			void testDisjunction(String input, boolean result) {
+				Expression<?> exp = parse(input);
+				assertThat(exp.isBoolean()).isTrue();
+				assertExpression(exp, context, result);
+			}
+
+			@ParameterizedTest
+			@CsvSource(delimiter=';', value={
+				// No wrapping
+				"true || false && true ; true",
+				// Wrapping
+				"true && (false || true) ; true",
+				"false && (true || false) ; false",
+				"true && (true || true) ; true",
+				"false && (false || false) ; false",
+			})
+			void testMixed(String input, boolean result) {
 				Expression<?> exp = parse(input);
 				assertThat(exp.isBoolean()).isTrue();
 				assertExpression(exp, context, result);
