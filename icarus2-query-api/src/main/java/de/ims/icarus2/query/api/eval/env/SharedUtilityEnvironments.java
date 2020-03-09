@@ -77,11 +77,11 @@ public class SharedUtilityEnvironments {
 			EntryBuilder builder = entryBuilder();
 
 			builder.method("toString", TypeInfo.TEXT)
-				.instantiator((e, t, args) -> Expressions.<Object,String>wrapObj(e, Object::toString, t, args))
+				.instantiator((e, ctx, t, args) -> Expressions.<Object,String>wrapObj(e, Object::toString, t, args))
 				.commitAndReset();
 
 			builder.method("equals", TypeInfo.BOOLEAN, TypeInfo.GENERIC)
-				.instantiator((e, t, args) -> {
+				.instantiator((e, ctx, t, args) -> {
 					Expression<?> other = argAt(args, 0);
 					return wrapBool(e, obj -> obj.equals(other.compute()), t, args);
 				})
@@ -125,7 +125,7 @@ public class SharedUtilityEnvironments {
 		protected void createEntries() {
 			entryBuilder().method("compareTo", TypeInfo.INTEGER, type)
 				.aliases("compare")
-				.instantiator((e, t, args) -> {
+				.instantiator((e, ctx, t, args) -> {
 					Expression<?> other = argAt(args, 0);
 					return Expressions.<Comparable>wrapInt(e, comp -> comp.compareTo(other.compute()), t, args);
 				})
@@ -168,12 +168,12 @@ public class SharedUtilityEnvironments {
 
 			builder.method("length", TypeInfo.INTEGER)
 				.aliases("len", "symbols")
-				.instantiator((e, t, args) -> Expressions.<CharSequence>wrapInt(e, CodePointUtils::codePointCount, t, args))
+				.instantiator((e, ctx, t, args) -> Expressions.<CharSequence>wrapInt(e, CodePointUtils::codePointCount, t, args))
 				.commitAndReset();
 
 			builder.method("charAt", TypeInfo.INTEGER, TypeInfo.INTEGER)
 				.aliases("char", "symbol")
-				.instantiator((e, t, args) -> {
+				.instantiator((e, ctx, t, args) -> {
 					Expression<?> index = argAt(args, 0);
 					return Expressions.<CharSequence>wrapInt(e, seq -> CodePointUtils.codePointAt(seq, index.computeAsInt()), t, args);
 				})

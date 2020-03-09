@@ -24,6 +24,7 @@ import static de.ims.icarus2.query.api.eval.ExpressionTestUtils.raw;
 import static de.ims.icarus2.util.collections.CollectionUtils.feedItems;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -103,6 +104,7 @@ class EnvironmentCacheTest {
 
 			@Test
 			void testEquals() {
+				EvaluationContext context = mock(EvaluationContext.class);
 				Object obj = new Object();
 				Expression<?> scope = raw(obj);
 
@@ -113,7 +115,7 @@ class EnvironmentCacheTest {
 						"equals", TypeFilter.BOOLEAN, arg.getResultType());
 				assertThat(candidates).isNotNull().hasSize(1);
 
-				Expression<?> exp = candidates.get(0).instantiate(scope, arg);
+				Expression<?> exp = candidates.get(0).instantiate(context, scope, arg);
 
 				assertThat(exp.computeAsBoolean()).isFalse();
 

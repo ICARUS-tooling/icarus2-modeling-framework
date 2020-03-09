@@ -59,7 +59,7 @@ public class SharedGlobalEnvironment extends AbstractEnvironment {
 		// Math utils
 
 		builder.method("abs", TypeInfo.INTEGER, TypeInfo.INTEGER)
-			.instantiator((e, t, args) -> Expressions.<Primitive<Long>>wrapInt(e,
+			.instantiator((e, ctx, t, args) -> Expressions.<Primitive<Long>>wrapInt(e,
 					p -> Math.abs(p.longValue()), t, args))
 			.commitAndReset();
 

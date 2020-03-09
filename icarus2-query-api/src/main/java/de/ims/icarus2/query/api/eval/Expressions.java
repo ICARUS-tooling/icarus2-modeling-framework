@@ -191,7 +191,7 @@ public class Expressions {
 			Expression<?>[] newArguments = arguments==null ? NO_ARGS
 					: EvaluationUtils.duplicate(arguments, context);
 
-			return (Expression<T>) entry.instantiate(newSource, newArguments);
+			return (Expression<T>) entry.instantiate(context, newSource, newArguments);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -207,7 +207,7 @@ public class Expressions {
 			}
 
 			if(newSource!=source || argsChanged) {
-				return (Expression<T>) entry.instantiate(newSource, newArguments);
+				return (Expression<T>) entry.instantiate(context, newSource, newArguments);
 			}
 
 			return this;

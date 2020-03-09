@@ -132,7 +132,8 @@ public interface Environment {
 		 * @param arguments optional arguments to pass to the method invokation
 		 * @return
 		 */
-		Expression<?> instantiate(@Nullable Expression<?> target, Expression<?>...arguments);
+		Expression<?> instantiate(EvaluationContext context, @Nullable Expression<?> target,
+				Expression<?>...arguments);
 	}
 
 	public enum EntryType {

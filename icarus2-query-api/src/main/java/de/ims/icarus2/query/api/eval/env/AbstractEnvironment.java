@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.query.api.eval.Environment;
+import de.ims.icarus2.query.api.eval.EvaluationContext;
 import de.ims.icarus2.query.api.eval.Expression;
 import de.ims.icarus2.query.api.eval.TypeInfo;
 import de.ims.icarus2.util.AbstractBuilder;
@@ -104,7 +105,8 @@ public abstract class AbstractEnvironment implements Environment {
 	 */
 	@FunctionalInterface
 	protected interface Instantiator {
-		Expression<?> instantiate(NsEntry entry, @Nullable Expression<?> target, Expression<?>...arguments);
+		Expression<?> instantiate(NsEntry entry, EvaluationContext ctx,
+				@Nullable Expression<?> target, Expression<?>...arguments);
 	}
 
 	public static class Entry implements NsEntry {
@@ -180,8 +182,9 @@ public abstract class AbstractEnvironment implements Environment {
 		public Environment getSource() { return source; }
 
 		@Override
-		public synchronized Expression<?> instantiate(Expression<?> target, Expression<?>... arguments) {
-			return instantiator.instantiate(this, target, arguments);
+		public synchronized Expression<?> instantiate(EvaluationContext ctx,
+				Expression<?> target, Expression<?>... arguments) {
+			return instantiator.instantiate(this, ctx, target, arguments);
 		}
 
 	}

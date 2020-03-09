@@ -1028,7 +1028,7 @@ public abstract class EvaluationContext {
 					log.debug("Ambiguous method name '{}' leading to entries: {}", name,
 							CollectionUtils.toString(candidates));
 				} else if(!candidates.isEmpty()) {
-					return Optional.of(candidates.get(0).instantiate(scope, arguments));
+					return Optional.of(candidates.get(0).instantiate(this, scope, arguments));
 				}
 			}
 

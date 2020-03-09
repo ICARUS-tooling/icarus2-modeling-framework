@@ -79,7 +79,7 @@ public class SharedMemberEnvironments {
 			entryBuilder()
 				.method("getCorpus", TypeInfo.CORPUS)
 				.aliases("corpus")
-				.instantiator((e, t, args) -> wrapObj(e, CorpusMember::getCorpus, t, args))
+				.instantiator((e, ctx, t, args) -> wrapObj(e, CorpusMember::getCorpus, t, args))
 				.commitAndReset();
 		}
 
@@ -124,32 +124,32 @@ public class SharedMemberEnvironments {
 
 			builder.method("getContainer", TypeInfo.CONTAINER)
 				.aliases("container", "host")
-				.instantiator((e, t, args) -> wrapObj(e, Item::getContainer, t, args))
+				.instantiator((e, ctx, t, args) -> wrapObj(e, Item::getContainer, t, args))
 				.commitAndReset();
 
 			builder.method("getLayer", TypeInfo.LAYER)
 				.aliases("layer")
-				.instantiator((e, t, args) -> wrapObj(e, Item::getLayer, t, args))
+				.instantiator((e, ctx, t, args) -> wrapObj(e, Item::getLayer, t, args))
 				.commitAndReset();
 
 			builder.method("getBeginOffset", TypeInfo.INTEGER)
 				.aliases("offset", "begin", "beginOffset")
-				.instantiator((e, t, args) -> wrapInt(e, Item::getBeginOffset, t, args))
+				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getBeginOffset, t, args))
 				.commitAndReset();
 
 			builder.method("getEndOffset", TypeInfo.INTEGER)
 				.aliases("end", "endOffset")
-				.instantiator((e, t, args) -> wrapInt(e, Item::getEndOffset, t, args))
+				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getEndOffset, t, args))
 				.commitAndReset();
 
 			builder.method("getIndex", TypeInfo.INTEGER)
 				.aliases("index", "position")
-				.instantiator((e, t, args) -> wrapInt(e, Item::getIndex, t, args))
+				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getIndex, t, args))
 				.commitAndReset();
 
 			builder.method("getId", TypeInfo.INTEGER)
 				.aliases("id")
-				.instantiator((e, t, args) -> wrapInt(e, Item::getId, t, args))
+				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getId, t, args))
 				.commitAndReset();
 		}
 	}
