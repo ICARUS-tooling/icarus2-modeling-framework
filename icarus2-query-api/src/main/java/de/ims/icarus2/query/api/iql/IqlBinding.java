@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import de.ims.icarus2.query.api.eval.TypeInfo;
+import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
