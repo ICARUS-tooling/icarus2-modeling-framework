@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +96,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * @author Markus Gärtner
  *
  */
+@NotThreadSafe
 public abstract class EvaluationContext {
 
 	private static final Logger log = LoggerFactory.getLogger(EvaluationContext.class);
@@ -124,6 +126,7 @@ public abstract class EvaluationContext {
 		public boolean isEdges() { return edges; }
 	}
 
+	@NotThreadSafe
 	private static class RootContext extends EvaluationContext {
 
 		/** The corpus this context refers to. */
@@ -523,6 +526,7 @@ public abstract class EvaluationContext {
 		return (ItemLayer) layer;
 	}
 
+	@NotThreadSafe
 	private static class LaneContext extends EvaluationContext {
 
 		/** Uplink to the mandatory RootContext */
@@ -572,6 +576,7 @@ public abstract class EvaluationContext {
 		public Optional<Assignable<? extends Container>> getContainerStore() { return Optional.ofNullable(containerStore); }
 	}
 
+	@NotThreadSafe
 	private static class ElementContext extends EvaluationContext {
 
 		/** Uplink to an arbitrary ElementContext */

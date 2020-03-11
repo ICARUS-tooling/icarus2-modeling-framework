@@ -95,6 +95,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
+import de.ims.icarus2.util.Counter;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
@@ -108,6 +109,13 @@ public class ExpressionFactory {
 
 	/** Context and settings to be used for evaluating the query. */
 	private final EvaluationContext context;
+
+	/**
+	 * Tracks certain aspects of the expression context.
+	 * Note that tracking is only performed once the associated
+	 * element has been successfully processed.
+	 */
+	private final Stats stats = new Stats();
 
 	private static final Map<Class<? extends ParserRuleContext>, BiFunction<ExpressionFactory,ParserRuleContext, Expression<?>>>
 		handlers = new Object2ObjectOpenHashMap<>();
@@ -137,6 +145,8 @@ public class ExpressionFactory {
 	public ExpressionFactory(EvaluationContext context) { this.context = requireNonNull(context); }
 
 	public EvaluationContext getContext() { return context; }
+
+	public Stats getStats() { return stats; }
 
 	private boolean isAllowUnicode() {
 		return !context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF);
@@ -201,15 +211,24 @@ public class ExpressionFactory {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
 				Optional<AnnotationInfo> annotation = context.findAnnotation(identifier);
 				if(annotation.isPresent()) {
-					return AnnotationAccess.of(item.get(), annotation.get());
+					Expression<?> exp = AnnotationAccess.of(item.get(), annotation.get());
+					stats.annotations.increment(name);
+					return exp;
 				}
 				// Otherwise it _must_ be a proper path in the object graph
 			}
 
 			//TODO can we infer expected type efficiently for better filtering?
-			return context.resolve(source, name, TypeFilter.ALL).orElseThrow(
+			Expression<?> result = context.resolve(source, name, TypeFilter.ALL).orElseThrow(
 					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 							"Failed to resolve reference: "+name, asFragment(path.getContext())));
+
+			// Only track root references of a path
+			if(source==null) {
+				stats.references.increment(name);
+			}
+
+			return result;
 		}
 
 		throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
@@ -445,28 +464,34 @@ public class ExpressionFactory {
 	}
 
 	private Expression<?> processReference(ReferenceContext ctx) {
+		Expression<?> result = null;
 		if(ctx.variableName()!=null) {
 			// Grab identifier and let context resolve actual variable (might create one)
-			return context.getVariable(textOf(ctx.variableName().Identifier()));
+			String name = textOf(ctx.variableName().Identifier());
+			result = context.getVariable(name);
+			stats.variables.increment(name);
 		} else if(ctx.member()!=null) {
 			// Grab identifier and let context resolve it to member expression
 			String name = textOf(ctx.member().Identifier());
-			return context.getMember(name).orElseThrow(
+			result = context.getMember(name).orElseThrow(
 					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 							"No member available for name: "+name, asFragment(ctx)));
+			stats.members.increment(name);
 		} else if(ctx.Identifier()!=null) {
 			// Wrap into source-less path proxy for delayed resolution
-			return Expressions.pathProxy(textOf(ctx.Identifier()), ctx);
+			result = Expressions.pathProxy(textOf(ctx.Identifier()), ctx);
 		} else if(ctx.qualifiedIdentifier()!=null) {
 			// Fetch key and current item context and create annotation access
 			String key = textOf(ctx.qualifiedIdentifier());
 			Expression<? extends Item> item = context.getElementStore().orElseThrow(
 					() -> new QueryException(QueryErrorCode.INCORRECT_USE,
 							"No surrounding item context available", asFragment(ctx)));
-			return AnnotationAccess.of(item, context, Literals.of(key));
-		}
+			result = AnnotationAccess.of(item, context, Literals.of(key));
+			stats.annotations.increment(key);
+		} else
+			failForUnhandledAlternative(ctx);
 
-		return failForUnhandledAlternative(ctx);
+		return result;
 	}
 
 	private ListExpression<?,?> processList(ListStatementContext ctx) {
@@ -996,5 +1021,14 @@ public class ExpressionFactory {
 	Expression<?> processForEach(ForEachContext ctx) {
 		//TODO implement
 		return failForUnhandledAlternative(ctx);
+	}
+
+	public static class Stats {
+		private final Counter<String> members = new Counter<>();
+		private final Counter<String> variables = new Counter<>();
+		private final Counter<String> annotations = new Counter<>();
+		private final Counter<String> references = new Counter<>();
+
+		//TODO add public methods for reading the content in a save manner
 	}
 }

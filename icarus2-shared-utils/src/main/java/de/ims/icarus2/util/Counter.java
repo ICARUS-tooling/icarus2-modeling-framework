@@ -38,9 +38,16 @@ public class Counter<T extends Object> {
 		// no-op
 	}
 
+	public Counter<T> copy() {
+		Counter<T> c = new Counter<>();
+		c.copyFrom(this);
+		return c;
+	}
+
 	/**
 	 * Overwrites in this counter all mappings defined by the given
-	 * {@code source} counter.
+	 * {@code source} counter. Mappings not part of the {@code source}
+	 * counter are not affected.
 	 * <p>
 	 * If you want to <b>add</b> counts for objects contained in both
 	 * counters, then use the {@link #addAll(Counter)} method instead!
