@@ -39,6 +39,10 @@ public final class References {
 		throw new UnsupportedOperationException();
 	}
 
+	public static Assignable<?> payload(String name, byte[] data) {
+		return new Payload(name, data);
+	}
+
 	public static Assignable<? extends Item> member(String name, TypeInfo type) {
 		return new Member(name, type);
 	}
@@ -74,6 +78,39 @@ public final class References {
 					.orElseThrow(() -> EvaluationUtils.forInternalError(
 							"Context is missing member store for name: %s", name));
 		}
+	}
+
+	static final class Payload implements Assignable<byte[]> {
+
+		private final String name;
+		private final byte[] data;
+
+		private Payload(String name, byte[] data) {
+			this.name = checkNotEmpty(name);
+			this.data = requireNonNull(data);
+		}
+
+		@Override
+		public TypeInfo getResultType() { return TypeInfo.BINARY; }
+
+		@Override
+		public byte[] compute() { return data; }
+
+		@Override
+		public Expression<byte[]> duplicate(EvaluationContext context) {
+			requireNonNull(context);
+			return this;
+		}
+
+		private void signalUnmodifiable() {
+			throw EvaluationUtils.forIncorrectUse("Embedded data cannot be modified: %s", name);
+		}
+
+		@Override
+		public void assign(Object value) { signalUnmodifiable(); }
+
+		@Override
+		public void clear() { signalUnmodifiable(); }
 	}
 
 	//TODO

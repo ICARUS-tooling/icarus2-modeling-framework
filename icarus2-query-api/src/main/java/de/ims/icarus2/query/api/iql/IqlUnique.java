@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 )
 public abstract class IqlUnique extends AbstractIqlQueryElement {
 
-	@JsonProperty(IqlConstants.ID_PROPERTY)
+	@JsonProperty(value=IqlConstants.ID_PROPERTY, required=true)
 	private String id;
 
 	public String getId() { return id; }

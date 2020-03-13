@@ -76,6 +76,8 @@ public class IqlQuery extends IqlUnique {
 	 * Binary data required for the query. Each embedded data
 	 * chunk is assigned a variable that can be used to access
 	 * it from inside the query payload.
+	 * <p>
+	 * Note that those variables are implicitly read-only!
 	 */
 	@JsonProperty(IqlProperties.EMBEDDED_DATA)
 	@JsonInclude(Include.NON_EMPTY)

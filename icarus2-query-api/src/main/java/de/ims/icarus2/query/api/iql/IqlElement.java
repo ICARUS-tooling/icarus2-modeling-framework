@@ -161,13 +161,13 @@ public abstract class IqlElement extends IqlUnique {
 
 	public static class IqlEdge extends IqlProperElement {
 
-		@JsonProperty(IqlProperties.SOURCE)
+		@JsonProperty(value=IqlProperties.SOURCE, required=true)
 		private IqlNode source;
 
-		@JsonProperty(IqlProperties.TARGET)
+		@JsonProperty(value=IqlProperties.TARGET, required=true)
 		private IqlNode target;
 
-		@JsonProperty(IqlProperties.EDGE_TYPE)
+		@JsonProperty(value=IqlProperties.EDGE_TYPE, required=true)
 		private EdgeType edgeType;
 
 		@Override
@@ -241,7 +241,7 @@ public abstract class IqlElement extends IqlUnique {
 
 	public static class IqlElementDisjunction extends IqlElement {
 
-		@JsonProperty(IqlProperties.ALTERNATIVES)
+		@JsonProperty(value=IqlProperties.ALTERNATIVES, required=true)
 		private final List<List<IqlElement>> alternatives = new ArrayList<>();
 
 		@Override

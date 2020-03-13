@@ -34,14 +34,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlGroup extends IqlUnique {
 
-	@JsonProperty(IqlProperties.GROUP_BY)
+	@JsonProperty(value=IqlProperties.GROUP_BY, required=true)
 	private IqlExpression groupBy;
 
 	@JsonProperty(IqlProperties.FILTER_ON)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlExpression> filterOn = Optional.empty();
 
-	@JsonProperty(IqlProperties.LABEL)
+	@JsonProperty(value=IqlProperties.LABEL, required=true)
 	private String label;
 
 	@JsonProperty(IqlProperties.DEFAULT_VALUE)

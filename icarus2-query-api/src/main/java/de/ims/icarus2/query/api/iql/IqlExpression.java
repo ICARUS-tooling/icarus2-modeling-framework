@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlExpression extends AbstractIqlQueryElement {
 
-	@JsonProperty(IqlProperties.CONTENT)
+	@JsonProperty(value=IqlProperties.CONTENT, required=true)
 	private String content;
 
 	@JsonProperty(IqlProperties.RETURN_TYPE)

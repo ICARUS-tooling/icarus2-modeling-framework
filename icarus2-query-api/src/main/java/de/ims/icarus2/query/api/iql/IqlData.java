@@ -34,11 +34,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlData extends IqlNamedReference {
 
-	@JsonProperty(IqlProperties.CONTENT)
+	@JsonProperty(value=IqlProperties.CONTENT, required=true)
 	private String content;
 
 	/** Defines how to interpret the 'content' string */
-	@JsonProperty(IqlProperties.CODEC)
+	@JsonProperty(value=IqlProperties.CODEC, required=true)
 	private String codec;
 
 	@JsonProperty(IqlProperties.CHECKSUM)

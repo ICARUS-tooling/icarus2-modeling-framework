@@ -511,13 +511,11 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareReference(IqlReference reference, IncrementalBuild<?> build, Config config) {
-		prepareUnique0(reference, build, config);
+		prepareNamedReference0(reference, build, config);
 
 		// mandatory data
-		reference.setName(index("name"));
 		reference.setReferenceType(rng.random(ReferenceType.class));
 
-		build.addFieldChange(reference::setName, IqlProperties.NAME, index("name"));
 		for(ReferenceType referenceType : ReferenceType.values()) {
 			build.addEnumFieldChange(reference::setReferenceType, IqlProperties.REFERENCE_TYPE, referenceType);
 		}

@@ -38,7 +38,7 @@ import de.ims.icarus2.IcarusRuntimeException;
  */
 public class IqlQuantifier extends AbstractIqlQueryElement {
 
-	@JsonProperty(IqlProperties.QUANTIFIER_TYPE)
+	@JsonProperty(value=IqlProperties.QUANTIFIER_TYPE, required=true)
 	private QuantifierType quantifierType;
 
 	@JsonProperty(IqlProperties.VALUE)

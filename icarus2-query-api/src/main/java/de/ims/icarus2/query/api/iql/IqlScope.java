@@ -38,7 +38,7 @@ public class IqlScope extends IqlUnique {
 	/**
 	 * Defines the members of this scope.
 	 */
-	@JsonProperty(IqlProperties.LAYERS)
+	@JsonProperty(value=IqlProperties.LAYERS, required=true)
 	private List<IqlLayer> layers = new ArrayList<>();
 
 	@Override

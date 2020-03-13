@@ -39,7 +39,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class IqlPayload extends IqlUnique {
 
-	@JsonProperty(IqlProperties.QUERY_TYPE)
+	@JsonProperty(value=IqlProperties.QUERY_TYPE, required=true)
 	private QueryType queryType;
 
 	@JsonProperty(IqlProperties.NAME)

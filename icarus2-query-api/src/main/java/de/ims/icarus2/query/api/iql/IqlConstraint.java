@@ -63,7 +63,7 @@ public abstract class IqlConstraint extends IqlUnique {
 
 	public static class IqlPredicate extends IqlConstraint {
 
-		@JsonProperty(IqlProperties.EXPRESSION)
+		@JsonProperty(value=IqlProperties.EXPRESSION, required=true)
 		private IqlExpression expression;
 
 		@Override
@@ -82,10 +82,10 @@ public abstract class IqlConstraint extends IqlUnique {
 
 	public static class IqlTerm extends IqlConstraint {
 
-		@JsonProperty(IqlProperties.ITEMS)
+		@JsonProperty(value=IqlProperties.ITEMS, required=true)
 		private final List<IqlConstraint> items = new ArrayList<>();
 
-		@JsonProperty(IqlProperties.OPERATION)
+		@JsonProperty(value=IqlProperties.OPERATION, required=true)
 		private BooleanOperation operation;
 
 		@Override

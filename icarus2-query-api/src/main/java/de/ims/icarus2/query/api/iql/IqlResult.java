@@ -41,7 +41,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class IqlResult extends AbstractIqlQueryElement {
 
-	@JsonProperty(value=IqlProperties.RESULT_TYPES)
+	@JsonProperty(value=IqlProperties.RESULT_TYPES, required=true)
 	private final Set<ResultType> resultTypes = new HashSet<>();
 
 	/**

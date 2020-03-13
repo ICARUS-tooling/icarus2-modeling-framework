@@ -30,10 +30,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public class IqlSorting extends AbstractIqlQueryElement {
 
-	@JsonProperty(IqlProperties.EXPRESSION)
+	@JsonProperty(value=IqlProperties.EXPRESSION, required=true)
 	private IqlExpression expression;
 
-	@JsonProperty(IqlProperties.ORDER)
+	@JsonProperty(value=IqlProperties.ORDER, required=true)
 	private Order order;
 
 	@Override

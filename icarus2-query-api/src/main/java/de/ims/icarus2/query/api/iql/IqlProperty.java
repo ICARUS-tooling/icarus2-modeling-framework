@@ -36,7 +36,7 @@ public class IqlProperty extends AbstractIqlQueryElement {
 	/**
 	 * Mandatory key used to identify this property or switch
 	 */
-	@JsonProperty(IqlProperties.KEY)
+	@JsonProperty(value=IqlProperties.KEY, required=true)
 	private String key;
 
 	/**

@@ -45,10 +45,10 @@ public class IqlLane extends IqlNamedReference {
 	//TODO need a better mechanism for indicating proxy state
 	public static final String PROXY_NAME = "lane_proxy";
 
-	@JsonProperty(IqlProperties.LANE_TYPE)
+	@JsonProperty(value=IqlProperties.LANE_TYPE, required=true)
 	private LaneType laneType;
 
-	@JsonProperty(IqlProperties.ELEMENTS)
+	@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
 	private final List<IqlElement> elements = new ArrayList<>();
 
 	@JsonProperty(IqlProperties.NODE_ARRANGEMENT)

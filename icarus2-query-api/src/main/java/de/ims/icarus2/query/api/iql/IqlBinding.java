@@ -53,7 +53,7 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	/**
 	 * Reference to the layer the members should be bound to.
 	 */
-	@JsonProperty(IqlProperties.TARGET)
+	@JsonProperty(value=IqlProperties.TARGET, required=true)
 	private String target;
 
 	/**
@@ -70,7 +70,7 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	 * List of the actual member variables that should be bound
 	 * to the specified {@link #target target layer}.
 	 */
-	@JsonProperty(IqlProperties.MEMBERS)
+	@JsonProperty(value=IqlProperties.MEMBERS, required=true)
 	private final List<IqlReference> members = new ArrayList<>();
 
 	@Override

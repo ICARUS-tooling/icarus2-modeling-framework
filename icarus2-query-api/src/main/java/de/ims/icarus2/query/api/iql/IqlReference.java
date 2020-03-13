@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.query.api.iql;
 
-import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,30 +28,18 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @author Markus Gärtner
  *
  */
-public class IqlReference extends IqlUnique {
+public class IqlReference extends IqlNamedReference {
 
-	/**
-	 * The basic identifier to be used for the variable without the type-specific
-	 * prefix, such as '$' or '@'.
-	 */
-	@JsonProperty(IqlProperties.NAME)
-	private String name;
-
-	@JsonProperty(IqlProperties.REFERENCE_TYPE)
+	@JsonProperty(value=IqlProperties.REFERENCE_TYPE, required=true)
 	private ReferenceType referenceType;
 
 	public ReferenceType getReferenceType() { return referenceType; }
-
-	public String getName() { return name; }
-
-	public void setName(String name) { this.name = checkNotEmpty(name); }
 
 	public void setReferenceType(ReferenceType referenceType) { this.referenceType = requireNonNull(referenceType); }
 
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(name, IqlProperties.NAME);
 		checkNotNull(referenceType, "referenceType");
 	}
 

@@ -205,6 +205,9 @@ public class TypeInfo {
 	public static final TypeInfo LIST = new TypeInfo(List.class, null, false, true);
 	public static final TypeInfo ARRAY = new TypeInfo(Object[].class, null, false, true);
 
+	// Special helper type for embedded data chunks
+	public static final TypeInfo BINARY = new TypeInfo(byte[].class, null, false, false);
+
 	private static final Set<TypeInfo> coreTypes = set(TEXT, INTEGER, FLOATING_POINT, BOOLEAN);
 
 	public static boolean isCoreType(TypeInfo type) {

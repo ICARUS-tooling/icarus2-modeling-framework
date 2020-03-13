@@ -315,12 +315,12 @@ public class QueryProcessor {
 		/** Unwraps arbitrarily nested wrapping expression to the deepest nested one */
 		private ExpressionContext unwrap(ExpressionContext ctx) {
 			ExpressionContext original = ctx;
-			int depths = 0;
+			int depth = 0;
 			while(ctx instanceof WrappingExpressionContext) {
 				ctx = ((WrappingExpressionContext)ctx).expression();
-				depths++;
+				depth++;
 			}
-			if(depths>1) {
+			if(depth>1) {
 				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
 						"Superfluous wrapping of expression '{1}'", textOf(original));
 			}
@@ -330,11 +330,12 @@ public class QueryProcessor {
 		/** Unwraps arbitrarily nested wrapping of node statements */
 		private NodeStatementContext unwrap(NodeStatementContext ctx) {
 			NodeStatementContext original = ctx;
-			int depths = 0;
+			int depth = 0;
 			while(ctx instanceof NodeGroupingContext) {
 				ctx = ((NodeGroupingContext)ctx).nodeStatement();
+				depth++;
 			}
-			if(depths>1) {
+			if(depth>1) {
 				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
 						"Superfluous wrapping of node statement '{1}'", textOf(original));
 			}
