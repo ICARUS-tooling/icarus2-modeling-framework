@@ -68,7 +68,7 @@
 \section{Introduction}
 \label{sec:intro}
 
-Queries in IQL are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps. To achieve this complex task IQL embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. As a side effect queries can become quite verbose and potentially cumbersome to define manually. As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the query payload). This document lists the basic building blocks of queries and their compositions.
+Queries in IQL are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps. To achieve this complex task IQL embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. As a side effect queries can become quite verbose and potentially cumbersome to define manually. As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}). This document lists the basic building blocks of queries and their compositions.
 
 \section{Query Structure}
 \label{sec:query-structure}
@@ -80,6 +80,20 @@ Queries in IQL are designed to be self-contained with logical sections for speci
 \end{lstlisting}
 
 
+\section{JSON-LD Elements}
+\label{sec:elements}
+
+\subsection{Query}
+\label{sec:json-ld-query}
+
+\begin{itemize}
+	\item dialect version
+	\item imports
+	\item setup
+	\item streams
+	\item embedded data
+\end{itemize}
+
 \section{Query Preamble Section}
 \label{sec:query-preamble}
 
@@ -89,7 +103,7 @@ The initial part of every IQL query is meant to introduce the version of the que
 \label{sec:dialect}
 
 IQL is designed as an evolving query language that can be altered and changed in terms of syntax as the need arises. To enable evaluation engines to easily perform compatibility checks or reject a query, the exact dialect used can be declared by starting the preamble with a ``DIALECT xyz`` part, where ``xyz`` is a version definition.
-The initial version of IQL is ``1.0`` and leaving the dialect part of a query blank, this initial version will be assumed!
+The initial version of IQL is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
 
 \subsection{Imports}
 \label{sec:imports}
@@ -201,9 +215,7 @@ In addition the following strictly lowercase words are reserved as type identifi
 \parindent=0pt
 \texttt{%	
 int\\
-long\\
 float\\
-double\\
 string\\
 boolean\\
 }
@@ -308,11 +320,11 @@ Identifiers are limited in length by the engine to a total of 255 characters.
 \section{Variables and References}
 \label{sec:variables-references}
 
-In IQL all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespae is populated with all the globally available constants, methods and helper objects from the IQL core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
+In IQL all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the IQL core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
 
 \begin{tabular}{|l|c|c|c|c|c|c|}
 	\hline 
-Type	& Prefix & Example & Scope & Fixed Type & Final & Re-Assign \\ 
+Type	& Prefix & Example & Scope & Fixed* & Final & Re-Assign \\ 
 	\hline 
 Reference	& none & \texttt{max()} & global & X & X &  \\ 
 	\hline 
@@ -321,6 +333,8 @@ Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\
 Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\ 
 	\hline 
 \end{tabular} 
+
+*Fixed Type
 
 Special remarks:
 
