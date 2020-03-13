@@ -88,6 +88,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.NullLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PathAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryExpressionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.QualifiedIdentifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ReferenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetPredicateContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
@@ -467,22 +468,22 @@ public class ExpressionFactory {
 		Expression<?> result = null;
 		if(ctx.variableName()!=null) {
 			// Grab identifier and let context resolve actual variable (might create one)
-			String name = textOf(ctx.variableName().Identifier());
+			String name = processIdentifier(ctx.variableName().Identifier());
 			result = context.getVariable(name);
 			stats.variables.increment(name);
 		} else if(ctx.member()!=null) {
 			// Grab identifier and let context resolve it to member expression
-			String name = textOf(ctx.member().Identifier());
+			String name = processIdentifier(ctx.member().Identifier());
 			result = context.getMember(name).orElseThrow(
 					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 							"No member available for name: "+name, asFragment(ctx)));
 			stats.members.increment(name);
 		} else if(ctx.Identifier()!=null) {
 			// Wrap into source-less path proxy for delayed resolution
-			result = Expressions.pathProxy(textOf(ctx.Identifier()), ctx);
+			result = Expressions.pathProxy(processIdentifier(ctx.Identifier()), ctx);
 		} else if(ctx.qualifiedIdentifier()!=null) {
 			// Fetch key and current item context and create annotation access
-			String key = textOf(ctx.qualifiedIdentifier());
+			String key = processIdentifier(ctx.qualifiedIdentifier());
 			Expression<? extends Item> item = context.getElementStore().orElseThrow(
 					() -> new QueryException(QueryErrorCode.INCORRECT_USE,
 							"No surrounding item context available", asFragment(ctx)));
@@ -527,11 +528,29 @@ public class ExpressionFactory {
 		return ListAccess.wrap(elements);
 	}
 
+	private void checkIdentifier(String id) {
+		if(id.length()>255)
+			throw new QueryException(QueryErrorCode.INCORRECT_USE,
+					"Identifier exceeds limit of 255 characters: "+id);
+	}
+
+	private String processIdentifier(TerminalNode token) {
+		String id = textOf(token);
+		checkIdentifier(id);
+		return id;
+	}
+
+	private String processIdentifier(QualifiedIdentifierContext ctx) {
+		checkIdentifier(textOf(ctx.hostId));
+		checkIdentifier(textOf(ctx.elementId));
+		return textOf(ctx);
+	}
+
 	Expression<?> processPathAccess(PathAccessContext ctx) {
 		Expression<?> source = processAndResolveExpression0(ctx.source);
 
 		// We only wrap into proxy here for delayed resolution
-		return Expressions.pathProxy(source, textOf(ctx.Identifier()), ctx);
+		return Expressions.pathProxy(source, processIdentifier(ctx.Identifier()), ctx);
 	}
 
 	Expression<?> processMethodInvocation(MethodInvocationContext ctx) {
