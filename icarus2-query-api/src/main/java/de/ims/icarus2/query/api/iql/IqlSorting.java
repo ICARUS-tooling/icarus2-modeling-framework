@@ -29,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *
  */
 public class IqlSorting extends AbstractIqlQueryElement {
+	//TODO do we need to make this unique?
 
 	@JsonProperty(value=IqlProperties.EXPRESSION, required=true)
 	private IqlExpression expression;

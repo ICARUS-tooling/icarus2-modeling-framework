@@ -95,7 +95,7 @@ public class IqlStream extends IqlUnique {
 
 	/**
 	 * The processed grouping definitions if {@link #rawGrouping}
-	 * was set.
+	 * was set or if it was provided directly.
 	 */
 	@JsonProperty(IqlProperties.GROUPING)
 	@JsonInclude(Include.NON_EMPTY)
@@ -113,7 +113,13 @@ public class IqlStream extends IqlUnique {
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> rawResult = Optional.empty();
 
-	@JsonProperty(IqlProperties.RESULT)
+	/**
+	 * The processed collection of result parameters if {@link #rawResult}
+	 * was set or if provided directly.
+	 * The minimal result specification is a declaration of the desired
+	 * result type.
+	 */
+	@JsonProperty(value=IqlProperties.RESULT, required=true)
 	private IqlResult result;
 
 	/**
@@ -121,6 +127,7 @@ public class IqlStream extends IqlUnique {
 	 * query has already been processed from its raw state into fully
 	 * parsed content.
 	 */
+	//TODO expose to API?
 	@JsonIgnore
 	private boolean processed = false;
 

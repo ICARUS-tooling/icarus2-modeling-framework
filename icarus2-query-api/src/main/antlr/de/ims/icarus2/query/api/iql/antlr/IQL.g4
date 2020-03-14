@@ -278,7 +278,7 @@ groupExpression
  * 
  * BEST N (LIMIT+ORDER BY):
  * Find the N biggest or smallest results according to the specified order
- * criteria. Note that it a tie between two results cannot be resolved by
+ * criteria. Note that if a tie between two results cannot be resolved by
  * using the provided order expressions, it is undefined which the evaluation
  * engine will pick.
  */
@@ -294,8 +294,6 @@ orderExpression
 	: expression (ASC | DESC)
 	;
 	
-
-
 // RESULT END	
 
 // GENERAL HELPERS
@@ -412,9 +410,7 @@ type
 	: BOOLEAN
 	| STRING
 	| INT // all kinds of integer types (up to 64bit signed integer)
-//	| LONG
 	| FLOAT // all kinds of floating point types (up to 64bit double precision)
-//	| DOUBLE
 	;
 	
 quantifier
@@ -517,45 +513,43 @@ sign
 
 //TODO change all keywords to use character fragments to make them resistant against camel casing abuse
 
-EVEN : 'EVEN' | 'even' ;
-ODD : 'ODD' | 'odd' ;
-OMIT : 'OMIT' | 'omit' ;
-STEP : 'STEP' | 'step' ;
-DO : 'DO' | 'do' ;
-END : 'END' | 'end' ;
-COUNT : 'COUNT' | 'count' ;
-FOREACH : 'FOREACH' | 'foreach' ;
-NULL : 'NULL' | 'null' ;
-TRUE : 'TRUE' | 'true' ;
-FALSE : 'FALSE' | 'false' ;
-TREE : 'TREE' | 'tree' ;
-OR : 'OR' | 'or' ;
+ADJACENT : 'ADJACENT' | 'adjacent';
+ALL : 'ALL' | 'all' ;
 AND : 'AND' | 'and' ;
 AS : 'AS' | 'as' ;
-EDGES : 'EDGES' | 'edges' ;
-FROM : 'FROM' | 'from' ;
-ALL : 'ALL' | 'all' ;
-NOT : 'NOT' | 'not' ;
-IN : 'IN' | 'in' ;
-ADJACENT : 'ADJACENT' | 'adjacent';
-ORDERED : 'ORDERED' | 'ordered';
-GRAPH : 'GRAPH' | 'graph' ;
-HAVING : 'HAVING' | 'having' ;
-RANGE : 'RANGE' | 'range' ;
-DISTINCT : 'DISTINCT' | 'distinct' ;
-WITH : 'WITH' | 'with' ;
-FIND : 'FIND' | 'find' ;
-GROUP : 'GROUP' | 'group' ;
-BY : 'BY' | 'by' ;
-LABEL : 'LABEL' | 'label' ;
-DEFAULT : 'DEFAULT' | 'default' ;
-FILTER : 'FILTER' | 'filter' ;
-ON : 'ON' | 'on' ;
-LIMIT : 'LIMIT' | 'limit' ;
-ORDER : 'ORDER' | 'order' ;
 ASC : 'ASC' | 'asc' ;
+BY : 'BY' | 'by' ;
+COUNT : 'COUNT' | 'count' ;
+DEFAULT : 'DEFAULT' | 'default' ;
 DESC : 'DESC' | 'desc' ;
+DISTINCT : 'DISTINCT' | 'distinct' ;
+DO : 'DO' | 'do' ;
+EDGES : 'EDGES' | 'edges' ;
+END : 'END' | 'end' ;
+EVEN : 'EVEN' | 'even' ;
+FALSE : 'FALSE' | 'false' ;
+FILTER : 'FILTER' | 'filter' ;
+FIND : 'FIND' | 'find' ;
+FOREACH : 'FOREACH' | 'foreach' ;
+FROM : 'FROM' | 'from' ;
+GROUP : 'GROUP' | 'group' ;
+HAVING : 'HAVING' | 'having' ;
+IN : 'IN' | 'in' ;
+LABEL : 'LABEL' | 'label' ;
 LANE : 'LANE' | 'lane' ;
+LIMIT : 'LIMIT' | 'limit' ;
+NOT : 'NOT' | 'not' ;
+NULL : 'NULL' | 'null' ;
+ODD : 'ODD' | 'odd' ;
+OMIT : 'OMIT' | 'omit' ;
+ON : 'ON' | 'on' ;
+OR : 'OR' | 'or' ;
+ORDER : 'ORDER' | 'order' ;
+ORDERED : 'ORDERED' | 'ordered';
+RANGE : 'RANGE' | 'range' ;
+STEP : 'STEP' | 'step' ;
+TRUE : 'TRUE' | 'true' ;
+WITH : 'WITH' | 'with' ;
 
 // Keywords
 

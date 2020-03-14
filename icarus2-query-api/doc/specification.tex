@@ -10,12 +10,14 @@
 \usepackage{url}
 \usepackage{natbib}
 \usepackage{multicol}
+\usepackage{xstring}
+\usepackage{xspace}
 \usepackage{todonotes}
-\usepackage{hyperref}
-\usepackage{cleveref}
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage[capitalise]{cleveref} % must be loaded after hyperref!
 
 \newfontfamily\DejaSans{DejaVu Sans}
 
@@ -23,7 +25,26 @@
 \definecolor{eclipseKeywords}{RGB}{127,0,85}
 \colorlet{numb}{magenta!60!black}
 
-\counterwithin{paragraph}{subsubsection}
+\newcommand{\icarus}{ICARUS\xspace}
+\newcommand{\iql}{IQL\xspace}
+
+% constants
+\newcommand{\iqlns}{iql:}
+\newcommand{\repo}{https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/icarus2-model-api/src/main/java/de/ims/icarus2/model/api/}
+
+\newcommand{\repoLink}[2]{\href{\repo#1}{#2}}
+
+\newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
+
+\newcommand{\attributes}[1]{\noindent\textbf{Attributes of \iqlType{#1}:}\newline\medskip}
+
+\newcommand{\elements}[1]{\noindent\textbf{Nested Elements of \iqlType{#1}:}\newline\medskip}
+
+\newcommand{\desc}[1]{\noindent#1\newline\medskip}
+
+\newcommand{\extends}[2]{\noindent\textbf{Extends \iqlType{#1}(#2).}\newline\medskip}
+
+%\counterwithin{paragraph}{subsubsection}
 
 \lstdefinelanguage{json}{
 	basicstyle=\normalfont\ttfamily,
@@ -65,13 +86,14 @@
 
 \tableofcontents
 
-\section{Introduction}
-\label{sec:intro}
-
-Queries in IQL are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps. To achieve this complex task IQL embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. As a side effect queries can become quite verbose and potentially cumbersome to define manually. As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}). This document lists the basic building blocks of queries and their compositions.
-
 \section{Query Structure}
 \label{sec:query-structure}
+
+Queries in \iql are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
+To achieve this complex task \iql embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. 
+As a side effect queries can become quite verbose and potentially cumbersome to define manually. 
+As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}). 
+This document lists the basic building blocks of queries and their compositions.
 
 \begin{lstlisting}[language=json]
 {
@@ -83,121 +105,1090 @@ Queries in IQL are designed to be self-contained with logical sections for speci
 \section{JSON-LD Elements}
 \label{sec:elements}
 
+%TODO say something about the namespace and general iql: prefixing
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     BINDING
+\subsection{Binding}
+\label{sec:json-ld-binding}
+%\begin{itemize}
+%	\item distinct
+%	\item target
+%	\item edges
+%	\item members
+%\end{itemize}
+\desc{A binding associates a collection of member variables (\ref{sec:variables-references}) with the content of a specific \repoLink{layer/ItemLayer.java}{item layer} or derived layer type.}
+\attributes{Binding}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	distinct & boolean & - & false \\ 
+	\hline 
+	edges & boolean & - & false \\ 
+	\hline 
+	target & string & yes & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{distinct}] Enforces that the bound member references in this binding do \textbf{not} match the same target items during evaluation. Depending on the structural constraints used in the query, this setting might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
+	\item[\iqlType{edges}] Signals that the member labels are to be used for \repoLink{members/item/Edge.java}{edges} within a \repoLink{members/structure/Structure.java}{structure}.
+	\item[\iqlType{target}] The name or alias of the layer to whose content the member variables should be bound.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	members & array of \iqlType{Reference} (\ref{sec:json-ld-reference}) & yes \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{members}] Non-empty collection of member references that are bound to the target layer's content. Every such instance of \iqlType{Reference} (\ref{sec:json-ld-reference}) must be unique within the surrounding \iqlType{Payload} (\ref{sec:json-ld-payload}).
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     CONSTRAINT
+\subsection{Constraint}
+\label{sec:json-ld-constraint}
+%\begin{itemize}
+%	\item id
+%	\item solved
+%	\item solvedAs
+%\end{itemize}
+\desc{Constraints represent the actual content filtering of every query.}
+\attributes{Constraint}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	id & string & yes &  \\ 
+	\hline 
+	solved & boolean & - & false \\ 
+	\hline 
+	solvedAs & boolean & - & false \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+\item[\iqlType{id}] Identifier to uniquely identify the constraint within the entire query.
+\item[\iqlType{solved}] Hint for the evaluation engine that this constraint has already been solved, either by a back-end implementation or as a result of (partial) query evaluation by the engine itself.
+\item[\iqlType{solvedAs}] Specifies to what boolean value (\texttt{true} or \texttt{false}) the constraint has been evaluated.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PREDICATE
+\subsubsection{Predicate}
+\label{sec:json-ld-predicate}
+%\begin{itemize}
+%	\item expression
+%\end{itemize}
+\desc{Wraps a boolean \iqlType{Expression} into an atomic constraint element that represents the smallest unit of evaluation for the top-level evaluation engine.}
+\extends{Constraint}{\ref{sec:json-ld-constraint}}
+\elements{Predicate}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	expression & \iqlType{Expression} (\ref{sec:json-ld-expression}) & yes \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{expression}] The actual expression to be evaluated to a boolean result. Note that typically this expression \textbf{cannot} be composed of directly nested boolean conjunctions or disjunctions, as the engine will have parsed those into \iqlType{Term} (\ref{sec:json-ld-term}) objects already during the first processing phase.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     TERM
+\subsubsection{Term}
+\label{sec:json-ld-term}
+%\begin{itemize}
+%	\item items
+%	\item operation
+%\end{itemize}
+\desc{A collection of constraints with a logical connective.}
+\extends{Constraint}{\ref{sec:json-ld-constraint}}
+\attributes{Term}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	operation & enum & yes &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{operation}] The boolean connective to be applied to all the constraint items. Legal values are the strings ``and'' or ``or''.
+\end{description}
+\elements{Term}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	items & array of \iqlType{Constraint} (\ref{sec:json-ld-constraint}) & yes \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{items}] The constraints which are to be combined by the specified \iqlType{operation}.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Corpus}
+\label{sec:json-ld-corpus}
+\begin{itemize}
+\item id
+\item name
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     DATA
+\subsection{Data}
+\label{sec:json-ld-data}
+\begin{itemize}
+\item id
+\item name
+\item content
+\item codec
+\item checksum
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     ELEMENT
+\subsection{Element}
+\label{sec:json-ld-element}
+\begin{itemize}
+\item id
+\item consumed
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     NODE
+\subsubsection{Node}
+\label{sec:json-ld-node}
+\begin{itemize}
+\item label
+\item constraint
+\item quantifiers
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\extends{Element}{\ref{sec:json-ld-element}}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     TREE NODE
+\subsubsection{Tree Node}
+\label{sec:json-ld-tree-node}
+\begin{itemize}
+\item label
+\item constraint
+\item quantifiers
+\item children
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\extends{Node}{\ref{sec:json-ld-node}}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     EDGE
+\subsubsection{Edge}
+\label{sec:json-ld-edge}
+\begin{itemize}
+\item label
+\item constraint
+\item source
+\item target
+\item edgeType
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\extends{Element}{\ref{sec:json-ld-element}}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     EXPRESSION
+\subsection{Expression}
+\label{sec:json-ld-expression}
+\begin{itemize}
+\item content
+\item resultType
+\end{itemize}
+%TODO fill
+\desc{XXX}
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     GROUP
+\subsection{Group}
+\label{sec:json-ld-group}
+\begin{itemize}
+\item id
+\item groupBy
+\item filterOn
+\item label
+\item defaultValue
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     IMPORT
+\subsection{Import}
+\label{sec:json-ld-import}
+\begin{itemize}
+\item id
+\item name
+\item optional
+\end{itemize}
+%TODO fill
+
+To allow for flexible integration of macro definitions or bigger language extensions, \iql provides an optional section in the query that lets users specify exactly what additional modules besides the bare \iql core are required for evaluating the query. 
+Each import target is specified by providing it's unique name and telling the engine whether or not the import is to be considered optional.
+Non-optional imports that cannot be resolved to an actual extension during the query evaluation phase will cause the entire process to fail.
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     LANE
+\subsection{Lane}
+\label{sec:json-ld-lane}
+\begin{itemize}
+\item id
+\item name
+\item laneType
+\item elements
+\item nodeArrangement
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     LAYER
+\subsection{Layer}
+\label{sec:json-ld-layer}
+\begin{itemize}
+\item id
+\item name
+\item primary
+\item allMembers
+\end{itemize}
+%TODO fill
+
+%TODO rework text
+Every layer selector either references an entire subgraph of the corpus' member-graph directly or constructs a partial selection with the ``SCOPE`` keyword. When using the first approach, an [item layer](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/layer/ItemLayer.java) is referenced and all its dependencies and associated annotation layers will be made available implicitly. This is an easy way of accessing simple corpora, but can lead to costly I/O overhead when loading vast parts of a complex corpus that aren't actually needed to evaluate the query. For a more fine-grained alternative, the ``SCOPE`` keyword allows to create a scope that spans an exactly specified collection of layers. If a layer in the list of scope elements is appended the ``*`` symbol, the entire member-subgraph for this layer will be added to the scope.
+
+If multiple layer selectors are defined, up to one can be declared as ``primary'' to represent the granularity of returned items for the search.
+In case no layer is explicitly marked as ``primary'', the one specified by the corpus or context will be used for that role.
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PAYLOAD
+\subsection{Payload}
+\label{sec:json-ld-payload}
+\begin{itemize}
+\item id
+\item name
+\item queryType
+\item bindings
+\item lanes
+\item constraint
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PROPERTY
+\subsection{Property}
+\label{sec:json-ld-property}
+\begin{itemize}
+	\item key
+	\item value
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     SWITCHES
+\subsubsection{Switches}
+\label{sec:json-ld-switches}
+For increased flexibility, IQL supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native IQL switches use the prefix \texttt{iql} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}. %TODO figure out why cred messes up table and section here!
+
+\begin{table}
+\label{tab:switches}
+\noindent\begin{tabular}{|p{0.28\textwidth}|p{0.65\textwidth}|}
+\hline 
+Name	& Description \\ 
+\hline 
+\hline
+iql.string.case.off         & Turns of case sensitivity when performing string operations such as equality checks.  \\ 
+\hline
+iql.string.case.lower       & Another approach to case insensitivity, this switch turns all strings into lower case.  \\ 
+\hline
+iql.expansion.off           & Effectively shuts down value expansion \cref{sec:value-expansion}.  \\ 
+\hline
+iql.string2bool.off         & Deactivates the interpretation of strings as boolean values as described in \cref{sec:constraints}.  \\ 
+\hline
+iql.int2bool.off            & Deactivates the interpretation of integers as boolean values as described in \cref{sec:constraints}.  \\ 
+\hline
+iql.float2bool.off          & Deactivates the interpretation of floating point numbers as boolean values as described in \cref{sec:constraints}.  \\ 
+\hline
+iql.obj2bool.off            & Deactivates the interpretation of arbitrary objects as boolean values as described in \cref{sec:constraints}.  \\ 
+\hline
+iql.any2bool.off            & Deactivates the interpretation of anything non-boolean as boolean value. This is a combination of ``iql.string2bool.off'', ``iql.int2bool.off'', ``iql.float2bool.off'' and  ``iql.obj2bool.off''.  \\ 
+\hline
+iql.direction.reverse       & Reverses the direction used to traverse corpus data for a search.  \\ 
+\hline
+iql.array.zero              & Change array access \cref{sec:array-access} to be 0-based.  \\ 
+\hline
+iql.warnings.off            & Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query.  \\ 
+\hline
+iql.parall.off			  & Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches  \\ 
+\hline
+\end{tabular}
+\caption{Currently supported switches in IQL and their explanations.}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PROPERTIES
+\subsubsection{Properties}
+\label{sec:json-ld-properties}
+
+In addition to switches, that allow to turn certain IQL feature son or off, a more fine-grained configuration can be performed using named properties. These take the form of a classic assignment of ``name = value'' and support any of the basic literals (cf. \cref{sec:literals}).
+%TODO fill
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     QUANTIFIER
+\subsection{Quantifier}
+\label{sec:json-ld-quantifier}
+\begin{itemize}
+\item quantifierType
+\item value
+\item lowerBound
+\item upperBound
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     QUERY
 \subsection{Query}
 \label{sec:json-ld-query}
-
 \begin{itemize}
-	\item dialect version
-	\item imports
-	\item setup
-	\item streams
-	\item embedded data
+\item id
+\item dialect
+\item imports
+\item setup
+\item embeddeData
+\item streams
 \end{itemize}
+%TODO fill
 
-\section{Query Preamble Section}
-\label{sec:query-preamble}
-
-The initial part of every IQL query is meant to introduce the version of the query language to be used and all the desired extensions or configurations. In addition it is responsible to bind all the later used identifiers for top level corpus members to unambiguous targets (either via manifests or to actual corpus members). This part of a query can become very verbose and is intended to be automatically generated from the host application based on the search context or GUI choices made by the user.
-
-\subsection{Dialect}
-\label{sec:dialect}
-
-IQL is designed as an evolving query language that can be altered and changed in terms of syntax as the need arises. To enable evaluation engines to easily perform compatibility checks or reject a query, the exact dialect used can be declared by starting the preamble with a ``DIALECT xyz`` part, where ``xyz`` is a version definition.
 The initial version of IQL is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Imports}
-\label{sec:imports}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     REFERENCE
+\subsection{Reference}
+\label{sec:json-ld-reference}
+\begin{itemize}
+\item id
+\item name
+\item referenceType
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-To allow for flexible integration of macro definitions or bigger language extensions, IQL provides an optional ``IMPORT`` section in the preamble that lets users specify exactly what additional modules besides the bare IQL core are required for evaluating the query. each import target is specified by declaring a URI for its resolution and an optional namespace alias to be used within the query.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     RESULT
+\subsection{Result}
+\label{sec:json-ld-result}
+\begin{itemize}
+\item resultTypes
+\item resultInstructions
+\item limit
+\item percent
+\item sortings
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-```
-importStatement := 'IMPORT' importTarget (',' importTarget)*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     RESULT INSTRUCTION
+\subsection{Result Instruction}
+\label{sec:json-ld-result-instruction}
+\begin{itemize}
+\item TODO
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-importTarget := StringLiteral ('AS' Identifier)?
-``` 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     SCOPE
+\subsection{Scope}
+\label{sec:json-ld-scope}
+\begin{itemize}
+\item id
+\item layers
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Switches}
-\label{sec:switches}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     SORTING
+\subsection{Sorting}
+\label{sec:json-ld-sorting}
+\begin{itemize}
+\item expression
+\item order
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-For increased flexibility, IQL supports a collection of switches to turn certain optional features on when needed. Switches are part of a query's preamble and cannot be changed after their initial declaration. All the native IQL switches use the prefix ``iql`` for their name. Any extensions that offer additional switches should declare and use their own namespace for switches!
-
-Currently supported switches:
-
-|    Name                     |   Description                          |
-|:--------------------------- |:-------------------------------------- |
-| iql.string.case.off         | Turns of case sensitivity when performing string operations such as equality checks. |
-| iql.string.case.lower       | Another approach to case insensitivity, this switch turns all strings into lower case. |
-| iql.expansion.off           | Effectively shuts down value expansion \cref{sec:value-expansion}. |
-| iql.string2bool.off         | Deactivates the interpretation of strings as boolean values as described in \cref{sec:constraints}. |
-| iql.int2bool.off            | Deactivates the interpretation of integers as boolean values as described in \cref{sec:constraints}. |
-| iql.float2bool.off          | Deactivates the interpretation of floating point numbers as boolean values as described in \cref{sec:constraints}. |
-| iql.obj2bool.off            | Deactivates the interpretation of arbitrary objects as boolean values as described in \cref{sec:constraints}. |
-| iql.any2bool.off            | Deactivates the interpretation of anything non-boolean as boolean value. This is a combination of ``iql.string2bool.off``, ``iql.int2bool.off``, ``iql.float2bool.off`` and  ``iql.obj2bool.off``. |
-| iql.direction.reverse       | Reverses the direction used to traverse corpus data for a search. |
-| iql.array.zero              | Change array access \cref{sec:array-access} to be 0-based. |
-| iql.warnings.off            | Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query. |
-| iql.parall.off			  | Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches |
-
-\subsection{Properties}
-\label{sec:properties}
-
-In addition to switches, that allow to turn certain IQL feature son or off, a more fine-grained configuration can be performed using named properties. These take the form of a classic assignment of ``name = value`` and support any of the basic literals \cref{sec:literals}.
-
-\section{Query Statement Section}
-\label{sec:query-statement}
-
-The only truly obligatory part of an IQL query, this section defines what to actually extract from what corpus. It is divided into three subsections that define the corpus source \cref{sec:corpus-source}, a layer/scope selection \cref{sec:layer-select} for vertical filtering and the actual constraints \cref{sec:constraints} for horizontal filtering of the corpus data. 
-
-\subsection{Corpus Source}
-\label{sec:corpus-source}
-
-In the initial source statement the corpora to be used are defined and optionally re-assigned new namespaces for easier use.
-
-```
-sourceStatement := 'FROM' corpusSelector (',' corpusSelector)*
-
-corpusSelector := (qualifiedIdentifier | StringLiteral) ('AS' Identifier)?
-
-qualifiedIdentifier := Identifier ('::' Identifier)*
-```
-
-\subsection{Layer Select}
-\label{sec:layer-select}
-
-After the corpus source definition, this section is the first actual filtering step in the query, by declaring what layers, layer groups or scopes of the corpus are to be accessed and thereby vertically filtering the corpus data.
-
-```
-selectStatement := 'SELECT' layerSelector (',' layerSelector)*
-
-layerSelector := qualifiedIdentifier ('AS' 'PRIMARY'? Identifier | 'AS' 'PRIMARY'? 'SCOPE' Identifier '(' scopeElementList ')' )?
-
-scopeElementList := qualifiedIdentifier '*'? (',' qualifiedIdentifier '*'? )*
-```
-
-Every layer selector either references an entire subgraph of the corpus member-graph directly or constructs a partial selection with the ``SCOPE`` keyword. When using the first approach, an [item layer](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/layer/ItemLayer.java) is referenced and all its dependencies and associated annotation layers will be made available implicitly. This is an easy way of accessing simple corpora, but can lead to costly I/O overhead when loading vast parts of a complex corpus that aren't actually needed to evaluate the query. For a more fine-grained alternative, the ``SCOPE`` keyword allows to create a scope that spans an exactly specified collection of layers. If a layer in the list of scope elements is appended the ``*`` symbol, the entire member-subgraph for this layer will be added to the scope.
-
-If multiple layer selectors are defined, up to one can be declared as ``PRIMARY`` to represent the granularity of returned items for the search.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     STREAM
+\subsection{Stream}
+\label{sec:json-ld-stream}
+\begin{itemize}
+	\item id
+	\item primary
+	\item corpus
+	\item layers
+	\item scope
+	\item rawPayload
+	\item payload
+	\item rawGrouping
+	\item grouping
+	\item rawResult
+	\item result
+\end{itemize}
+%TODO fill
+\attributes{XXX}
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+	&  & - &  \\ 
+	\hline 
+	&  & - &  \\ 
+	\hline 
+	&  &  & \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+\elements{Binding}
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline 
+	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
+	\hline 
+\end{tabular}
+\begin{description}
+	\item[\iqlType{xxx}] XXX.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section{Result Processing Section}
-\label{sec:result-processing}
+\section{Raw Statements}
+\label{sec:raw-statements}
 
-There be dragons.
+Certain parts of an \iql query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
+During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{sec:elements}.
+This section defines the syntax and additional rules for those raw statements.
 
-(Content of the result section will be added as IQL evolves)
 
-%%END REWORK
 
-\section{Query Payload}
-\label{sec:query-payload}
 
-The innermost part of every IQL query is the collection of constraints used to actually extract and match data from the corpus.
-It is composed in a keyword-style syntax to differentiate between the different \textit{dialects} or constraint modes.
 
-\section{Reserved Words}
+%TODO from here on restructure!
+
+
+\subsection{Reserved Words}
 \label{sec:reserved-words}
 
 The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query (they are reserved in both all lowercase and all uppercase variants):
+
+\vbox{%
 \begin{multicols}{4}
 \parindent=0pt
 \texttt{%
@@ -207,29 +1198,31 @@ The following list of keywords is reserved and any of the words may not be used 
 \endgroup
 }
 \end{multicols}
-\todo{sort entries in keywords file}
+}
 
 In addition the following strictly lowercase words are reserved as type identifiers and may not be used otherwise:
 
-\begin{multicols}{3}
+\vbox{%
+\begin{multicols}{4}
 \parindent=0pt
-\texttt{%	
-int\\
-float\\
-string\\
-boolean\\
+\texttt{%
+\begingroup
+\obeylines
+\input{types.txt}
+\endgroup
 }
 \end{multicols}
+}
 
-\section{Comments}
+\subsection{Comments}
 \label{sec:comments}
 
-IQL supports single-line comments, indicated by ``//``. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query.
+IQL supports single-line comments, indicated by ``//''. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query.
 
-\section{Literals}
+\subsection{Literals}
 \label{sec:literals}
 
-\subsection{String Literals}
+\subsubsection{String Literals}
 \label{sec:string-literals}
 
 IQL uses double quotes to define string literals. String literals may not contain any of the following symbols directly:
@@ -256,15 +1249,15 @@ Examples for valid string literals:
 "a\n multiline\n string..."
 \end{verbatim}
 
-\subsection{Boolean Literals}
+\subsubsection{Boolean Literals}
 \label{sec:boolean-literals}
 
 Boolean literals are limited to either all lowercase or all uppercase versions of the literals ``true`` and ``false``.
 
-\subsection{Integer Literals}
+\subsubsection{Integer Literals}
 \label{sec:integer-literals}
 
-\subsubsection{Signed Integer Literals}
+\paragraph{Signed Integer Literals}
 Literals representing regular \texttt{int} (32bit) or \texttt{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits or underscore (\texttt{\_}) characters.
 Underscore characters may only appear inside the integer literal, never at the beginning or end (not counting the sign symbol).
 
@@ -278,10 +1271,10 @@ Examples for valid (signed) integer literals:
 -99_000000_0
 \end{verbatim}
 
-\subsubsection{Pure Integer Literals}
+\paragraph{Pure Integer Literals}
 Some parts of the IQL syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
 
-\subsection{Floating Point Literals}
+\subsubsection{Floating Point Literals}
 \label{sec:floating-point-literals}
 
 Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '\texttt{.}' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \texttt{float} (32bit) or double-precision \texttt{double} (64bit) values.
@@ -298,7 +1291,7 @@ Examples for valid (signed) floating point literals:
 
 While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of IQL.
 
-\section{Identifiers}
+\subsection{Identifiers}
 \label{sec:identifiers}
 
 Identifiers in IQL are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol.
@@ -317,12 +1310,12 @@ notTheBest______________example
 
 Identifiers are limited in length by the engine to a total of 255 characters. 
 
-\section{Variables and References}
+\subsection{Variables and References}
 \label{sec:variables-references}
 
 In IQL all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the IQL core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
 
-\begin{tabular}{|l|c|c|c|c|c|c|}
+\noindent\begin{tabular}{|l|c|c|c|c|c|c|}
 	\hline 
 Type	& Prefix & Example & Scope & Fixed* & Final & Re-Assign \\ 
 	\hline 
@@ -342,17 +1335,17 @@ Variables are more or less general-purpose storage objects for arbitrary values 
 
 Member identifiers are final in the sense that they cannot be re-assigned explicitly but will be implicitly for every iteration of the query on a new part of the corpus. For example, above \texttt{\$token} member will point to a new token object every time the inner constraint parts of the query are evaluated. Therefore member identifiers could be viewed as a sort of loop variable. 
 
-\section{Expressions}
+\subsection{Expressions}
 \label{sec:expressions}
 
 Expressions are the foundation of every query and can take any of the following forms:
 
-\subsection{Primary Expressions}
+\subsubsection{Primary Expressions}
 \label{sec:primary-expressions}
 
 Any literal (boolean, string, integer or floating point) can serve as a primary expression.
 
-\subsection{Path Expressions}
+\subsubsection{Path Expressions}
 \label{sec:path-expressions}
 
 For navigating hierarchically structured object graphs or namespaces, expressions can take the form of paths:
@@ -370,7 +1363,7 @@ some.really.long.winded.path
 
 Note that for a lot of native classes of the ICARUS2 framework, IQL provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
 
-\subsection{Method Invocation}
+\subsubsection{Method Invocation}
 \label{sec:method-invocations}
 
 Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace) and round brackets for the invocation with an optional argument list:
@@ -408,7 +1401,7 @@ complexArray[1, 2, 3]
 Note that IQL provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
 Every ItemLookup implementation, such as Container or Structure that would traditionally access its content via ``myStructure.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myStructure[someIndex]``.
 
-\subsection{Annotation Access}
+\subsubsection{Annotation Access}
 \label{sec:annotation-access}
 
 The ICARUS2 framework models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, IQL provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
@@ -429,7 +1422,7 @@ firstSetValue(myItem{"parser1.head", "parser2.head"})
 // and pick the first one present
 \end{verbatim}
 
-\subsection{Type Cast}
+\subsubsection{Type Cast}
 \label{sec:type-cast}
 
 Expressions in IQL are automatically cast to matching types according to the actual consumer's needs. Explicit casts can be performed by preceding an expression with one of the type keywords listed above in round brackets.
@@ -442,7 +1435,7 @@ Examples:
 (float) average(myVector)
 \end{verbatim}
 
-\subsection{Wrapping}
+\subsubsection{Wrapping}
 \label{sec:wrapping}
 
 Expression hierarchy and evaluation order follows the order the different types of expressions are listed here. To dictate another order, expressions can be wrapped into round brackets. This will cause the inner expression to be evaluated independent of potential hierarchical rules from outside.
@@ -454,7 +1447,7 @@ Examples:
 (6 + 4) * 2 // addition is forced to be evaluated first -> result 20
 \end{verbatim}
 
-\subsection{Set Predicate}
+\subsubsection{Set Predicate}
 \label{sec:set-predicate}
 
 Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection'). The basic form of a set predicate looks as follows:
@@ -482,7 +1475,7 @@ myValue IN {getLegalNames()}
 fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
 \end{verbatim}
 
-\subsection{Unary Operation}
+\subsubsection{Unary Operation}
 \label{sec:unary-operation}
 
 IQL only allows three unary operators to be used directly in front of an expression, the exclamation mark ``!`` and the ``NOT`` keyword for boolean negation and the minus sign ``-`` for negating numerical expressions.
@@ -496,7 +1489,7 @@ NOT someBooleanValue
 -myNumericalFunction()
 \end{verbatim}
 
-\subsection{Binary Operation}
+\subsubsection{Binary Operation}
 \label{sec:binary-operation}
 
 Binary operations between two expressions take the following simple form:
@@ -507,48 +1500,48 @@ Binary operations between two expressions take the following simple form:
 
 Binary operators follow an explicit hierarchy, listed below in the order of priority, from highest to lowest:
 
-\begin{tabular}{|p{0.3\textwidth}|p{0.68\textwidth}|}
-	\hline 
+\noindent\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
+\hline 
 Operators	& Explanation \\ 
-	\hline 
-	\hline
-\verb|*   /   %|	& multiplication, division and modulo \\ 
-	\hline 
-\verb|+   -|	& addition and subtraction \\ 
-	\hline 
-\verb#<<  >>  &  |  ^#	& shift left, shift right, bitwise and, bitwise or, bitwise xor \\ 
-	\hline 
-\verb|<   <=   >   >=|	& less, less or equal, greater, greater or equal \\ 
-	\hline 
-\verb|~   !~   #   !#|	& string operators: matches (regex), matches not (regex), contains, contains not \\ 
-	\hline 
-\verb|==  !=|	& equals, equals not \\ 
-	\hline 
-\verb|&&  AND|	& logical and \\ 
-	\hline 
-\verb#||  OR#	& logical or \\ 
-	\hline 
+\hline 
+\hline
+\verb|*  /  %|& multiplication, division and modulo \\ 
+\hline 
+\verb|+  -|& addition and subtraction \\ 
+\hline 
+\verb#<<  >>  &  |  ^#& shift left, shift right, bitwise and, bitwise or, bitwise xor \\ 
+\hline 
+\verb|<  <=  >  >=|& less, less or equal, greater, greater or equal \\ 
+\hline 
+\verb|~  !~  #  !#|& string operators: matches (regex), matches not (regex), contains, contains not \\ 
+\hline 
+\verb|==  !=|& equals, equals not \\ 
+\hline 
+\verb|&&  AND|& logical and \\ 
+\hline 
+\verb#||  OR#& logical or \\ 
+\hline 
 \end{tabular} 
 
-\subsubsection{Basic Numerical Operations}
+\paragraph{Basic Numerical Operations}
 \label{sec:basic-numerical-operations}
 
 Basic numerical operations follow the standard mathematical rules for priorities.
 While the basic numerical types (`int`, `long`, `float` and `double`) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
 
-\subsubsection{Bit Operations}
+\paragraph{Bit Operations}
 \label{sec:bit-operations}
 
 Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast \cref{sec:type-cast} to match the other. If value expansion \cref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
 The two shift operations (`<<` and `>>`) take arbitrary integer types as left operand and an \texttt{int} value as right operand.
 
-\subsubsection{Ordered Comparisons}
+\paragraph{Ordered Comparisons}
 \label{sec:ordered-comparisons}
 
 Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically.
 
-\subsubsection{String Operations}
+\paragraph{String Operations}
 \label{sec:string-operations}
 
 To account for the ubiquity of textual annotations in corpora, IQL provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \texttt{\#} or its negated form \texttt{!\#}) and regular expression matching (via \texttt{\textasciitilde} and \texttt{!\textasciitilde}). Per default IQL uses the Java regex syntax, but for the future, additional switches \cref{sec:switches} are planned to allow finer control over regex details.
@@ -560,7 +1553,7 @@ somePosAnnotation # "V"        // find verbal forms
 somePosAnnotation !~ "NN|NS"   // alternative to the set predicate with more flexibility
 \end{verbatim}
 
-\subsubsection{Equality}
+\paragraph{Equality}
 \label{sec:equality}
 
 Equality checks follow the same basic conditions as ordered comparisons \cref{sec:ordered-comparisons}, but with the following rules for comparable values ``a`` and ``b``:
@@ -573,7 +1566,7 @@ a != b iff a<b || a>b
 More generally, equality between expressions in IQL is based on content equality and therefore type specific.
 Note that trying to check two expressions of incompatible types (such as \texttt{int} and ``string``) for equality will always evaluate to ``false`` and also emit a warning. 
 
-\subsubsection{Logical Composition}
+\paragraph{Logical Composition}
 \label{sec:logical-composition}
 
 All boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \texttt{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \texttt{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of IQL expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to ``true``, the entire expression is already determined, same for a conjunction's first operand yielding ``false``.  
@@ -585,7 +1578,7 @@ a>1 && b<2
 x==1 or x==3
 \end{verbatim}
 
-\subsection{Ternary Operation}
+\subsubsection{Ternary Operation}
 \label{sec:ternary-operation}
 
 A single ternary operation is supported in IQL, the popular if-then-else replacement with the following syntax:
@@ -602,13 +1595,13 @@ Examples:
 x<2 ? "text for smaller value" : "some other text"
 \end{verbatim}
 
-\subsection{Value Expansion}
+\subsubsection{Value Expansion}
 \label{sec:value-expansion}
 
 IQL supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()`` returns an array of 3 integer values or a *array-like* data type (such as a point) and another method ``invertPoint(int, int, int)`` takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())`` is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]``.
 
-\section{Constraints}
-\label{sec:cosntraints}
+\subsection{Constraints}
+\label{sec:constraints}
 
 Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), IQL allows the following evaluations as syntactic sugar:
 
@@ -665,5 +1658,21 @@ TODO
 \label{sec:global-constraints}
 
 Global constraints con be any basic constraint \cref{sec:basic-constraints}.
+
+
+\subsection{Result Processing}
+\label{sec:result-processing}
+
+There be dragons.
+
+(Content of the result section will be added as IQL evolves)
+
+%%END REWORK
+
+\subsection{Query Payload}
+\label{sec:query-payload}
+
+The innermost part of every IQL query is the collection of constraints used to actually extract and match data from the corpus.
+It is composed in a keyword-style syntax to differentiate between the different \textit{dialects} or constraint modes.
 
 \end{document}
