@@ -39,7 +39,7 @@ public final class References {
 		throw new UnsupportedOperationException();
 	}
 
-	public static Assignable<?> payload(String name, byte[] data) {
+	public static Expression<?> payload(String name, byte[] data) {
 		return new Payload(name, data);
 	}
 
@@ -80,7 +80,7 @@ public final class References {
 		}
 	}
 
-	static final class Payload implements Assignable<byte[]> {
+	static final class Payload implements Expression<byte[]> {
 
 		private final String name;
 		private final byte[] data;
@@ -101,16 +101,6 @@ public final class References {
 			requireNonNull(context);
 			return this;
 		}
-
-		private void signalUnmodifiable() {
-			throw EvaluationUtils.forIncorrectUse("Embedded data cannot be modified: %s", name);
-		}
-
-		@Override
-		public void assign(Object value) { signalUnmodifiable(); }
-
-		@Override
-		public void clear() { signalUnmodifiable(); }
 	}
 
 	//TODO
