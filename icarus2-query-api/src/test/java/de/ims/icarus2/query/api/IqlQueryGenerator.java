@@ -47,6 +47,7 @@ import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlData;
+import de.ims.icarus2.query.api.iql.IqlData.ChecksumType;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
@@ -289,6 +290,9 @@ public class IqlQueryGenerator {
 		build.addFieldChange(data::setContent, IqlProperties.CONTENT, index("content"));
 		build.addFieldChange(data::setCodec, IqlProperties.CODEC, index("codec"));
 		build.addFieldChange(data::setChecksum, IqlProperties.CHECKSUM, index("checksum"));
+		for(ChecksumType checksumType : ChecksumType.values()) {
+			build.addEnumFieldChange(data::setChecksumType, IqlProperties.CHECKSUM_TYPE, checksumType);
+		}
 	}
 
 	private void prepareElement0(IqlElement element, IncrementalBuild<?> build, Config config) {

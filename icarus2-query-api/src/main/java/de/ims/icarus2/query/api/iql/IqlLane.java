@@ -127,13 +127,9 @@ public class IqlLane extends IqlNamedReference {
 
 		private final String label;
 
-		private NodeArrangement(String label) {
-			this.label = label;
-		}
+		private NodeArrangement(String label) { this.label = label; }
 
 		@JsonValue
-		public String getLabel() {
-			return label;
-		}
+		public String getLabel() { return label; }
 	}
 }

@@ -108,8 +108,8 @@ public abstract class IqlConstraint extends IqlUnique {
 	}
 
 	public enum BooleanOperation {
-		CONJUNCTION("and"),
-		DISJUNCTION("or"),
+		CONJUNCTION("conjunction"),
+		DISJUNCTION("disjunction"),
 		;
 
 		private final String label;

@@ -51,6 +51,8 @@ import de.ims.icarus2.test.random.RandomGenerator;
  */
 class QueryEngineTest {
 
+	private static final boolean DEBUG = false;
+
 	@Nested
 	class Internal {
 
@@ -82,6 +84,9 @@ class QueryEngineTest {
 						}
 						IqlQuery original = build.getInstance();
 						String json = mapper.writeValueAsString(original);
+
+						if(DEBUG)
+							System.out.println(json);
 
 						QueryEngine engine = QueryEngine.builder()
 								.mapper(mapper)

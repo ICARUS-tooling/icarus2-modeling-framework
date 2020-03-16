@@ -57,6 +57,8 @@ public final class IqlProperties {
 
 	public static final String CHECKSUM = IQL_NS_PREFIX+"checksum";
 
+	public static final String CHECKSUM_TYPE = IQL_NS_PREFIX+"checksumType";
+
 	public static final String CORPUS = IQL_NS_PREFIX+"corpus";
 
 	public static final String STREAMS = IQL_NS_PREFIX+"streams";

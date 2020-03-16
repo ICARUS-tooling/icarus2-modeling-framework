@@ -27,6 +27,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * @author Markus Gärtner
@@ -34,16 +35,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlData extends IqlNamedReference {
 
+	public static final String DEFAULT_CODEC = "hex";
+
 	@JsonProperty(value=IqlProperties.CONTENT, required=true)
 	private String content;
 
-	/** Defines how to interpret the 'content' string */
-	@JsonProperty(value=IqlProperties.CODEC, required=true)
-	private String codec;
+	/** Defines how to interpret the 'content' string. Defaults to {@link #DEFAULT_CODEC}. */
+	@JsonProperty(value=IqlProperties.CODEC)
+	@JsonInclude(Include.NON_DEFAULT)
+	private String codec = DEFAULT_CODEC;
 
 	@JsonProperty(IqlProperties.CHECKSUM)
 	@JsonInclude(Include.NON_EMPTY)
 	private Optional<String> checksum = Optional.empty();
+
+	@JsonProperty(IqlProperties.CHECKSUM_TYPE)
+	@JsonInclude(Include.NON_EMPTY)
+	private Optional<ChecksumType> checksumType = Optional.empty();
 
 	@Override
 	public IqlType getType() { return IqlType.DATA; }
@@ -63,9 +71,25 @@ public class IqlData extends IqlNamedReference {
 
 	public Optional<String> getChecksum() { return checksum; }
 
+	public Optional<ChecksumType> getChecksumType() { return checksumType; }
+
 	public void setContent(String content) { this.content = requireNonNull(content); }
 
-	public void setCodec(String codec) { this.codec = requireNonNull(codec); }
+	public void setCodec(String codec) { this.codec = checkNotEmpty(codec); }
 
 	public void setChecksum(String checksum) { this.checksum = Optional.of(checkNotEmpty(checksum)); }
+
+	public void setChecksumType(ChecksumType checksumType) { this.checksumType = Optional.of(checksumType); }
+
+	public enum ChecksumType {
+		MD5("MD5"),
+		;
+
+		private final String label;
+
+		private ChecksumType(String label) { this.label = label; }
+
+		@JsonValue
+		public String getLabel() { return label; }
+	}
 }

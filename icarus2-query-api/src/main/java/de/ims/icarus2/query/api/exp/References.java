@@ -24,6 +24,7 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.util.strings.NamedObject;
 
 /**
  * @author Markus Gärtner
@@ -80,7 +81,7 @@ public final class References {
 		}
 	}
 
-	static final class Payload implements Expression<byte[]> {
+	static final class Payload implements Expression<byte[]>, NamedObject {
 
 		private final String name;
 		private final byte[] data;
@@ -101,6 +102,9 @@ public final class References {
 			requireNonNull(context);
 			return this;
 		}
+
+		@Override
+		public String getName() { return name; }
 	}
 
 	//TODO

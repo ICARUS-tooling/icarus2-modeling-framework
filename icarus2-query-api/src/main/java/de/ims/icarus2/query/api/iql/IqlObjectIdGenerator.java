@@ -21,6 +21,7 @@ package de.ims.icarus2.query.api.iql;
 
 import static java.util.Objects.requireNonNull;
 
+import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,6 +40,8 @@ public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
 	private Map<String, AtomicInteger> counters;
 
 	private final Class<?> _scope;
+
+	private final DecimalFormat _format = new DecimalFormat("000000");
 
 	public IqlObjectIdGenerator() {
 		this(Object.class, null);
@@ -112,6 +115,10 @@ public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
         return new IdKey(getClass(), getScope(), key);
 	}
 
+	private String makeId(String prefix, int count) {
+		return prefix + '/' + _format.format(count);
+	}
+
 	/**
 	 * @see com.fasterxml.jackson.annotation.ObjectIdGenerator#generateId(java.lang.Object)
 	 */
@@ -126,7 +133,7 @@ public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
 			return null;
 		}
 		int count = counters().get(idPrefix).getAndIncrement();
-		return idPrefix+'_'+count;
+		return makeId(idPrefix, count);
 	}
 
 }

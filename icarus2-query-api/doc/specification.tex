@@ -15,6 +15,7 @@
 \usepackage{todonotes}
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{listings}
+\usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
@@ -25,7 +26,14 @@
 \definecolor{eclipseKeywords}{RGB}{127,0,85}
 \colorlet{numb}{magenta!60!black}
 
-\newcommand{\icarus}{ICARUS\xspace}
+\newcommand{\compresslist}{ % Define a command to reduce spacing within itemize/enumerate environments, this is used right after \begin{itemize} or \begin{enumerate}
+	\setlength{\topsep}{0pt}
+	\setlength{\itemsep}{1pt}
+	\setlength{\parskip}{0pt}
+	\setlength{\parsep}{0pt}
+}
+
+\newcommand{\icarus}{ICARUS2\xspace}
 \newcommand{\iql}{IQL\xspace}
 
 % constants
@@ -35,14 +43,42 @@
 \newcommand{\repoLink}[2]{\href{\repo#1}{#2}}
 
 \newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
-
-\newcommand{\attributes}[1]{\noindent\textbf{Attributes of \iqlType{#1}:}\newline\medskip}
-
-\newcommand{\elements}[1]{\noindent\textbf{Nested Elements of \iqlType{#1}:}\newline\medskip}
+\newcommand{\iqlBaseType}[1]{\texttt{\textless#1\textgreater}}
 
 \newcommand{\desc}[1]{\noindent#1\newline\medskip}
+\newcommand{\extends}[2]{\noindent\textbf{Extends #1(#2).}\newline\medskip}
 
-\newcommand{\extends}[2]{\noindent\textbf{Extends \iqlType{#1}(#2).}\newline\medskip}
+\newenvironment{attributes}[1]{
+\noindent\textbf{Attributes of #1:}\newline\medskip
+\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+}{
+\end{tabular}
+}
+
+\newcommand{\attribute}[4]{
+	#1 & #2 & #3 & #4 \\
+	\hline
+}
+
+\newenvironment{elements}[1]{
+\noindent\textbf{Nested Elements of #1:}\newline\medskip
+\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline
+}{
+\end{tabular}
+}
+
+\newcommand{\element}[3]{
+#1 & #2 & #3 \\
+\hline
+}
 
 %\counterwithin{paragraph}{subsubsection}
 
@@ -118,33 +154,19 @@ This document lists the basic building blocks of queries and their compositions.
 %	\item members
 %\end{itemize}
 \desc{A binding associates a collection of member variables (\ref{sec:variables-references}) with the content of a specific \repoLink{layer/ItemLayer.java}{item layer} or derived layer type.}
-\attributes{Binding}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	distinct & boolean & - & false \\ 
-	\hline 
-	edges & boolean & - & false \\ 
-	\hline 
-	target & string & yes & \\ 
-	\hline 
-\end{tabular}
+\begin{attributes}{\iqlType{Binding}}
+	\attribute{distinct}{boolean}{no}{false}
+	\attribute{edges}{boolean}{no}{false}
+	\attribute{target}{string}{yes}{}
+\end{attributes}
 \begin{description}
 	\item[\iqlType{distinct}] Enforces that the bound member references in this binding do \textbf{not} match the same target items during evaluation. Depending on the structural constraints used in the query, this setting might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
 	\item[\iqlType{edges}] Signals that the member labels are to be used for \repoLink{members/item/Edge.java}{edges} within a \repoLink{members/structure/Structure.java}{structure}.
 	\item[\iqlType{target}] The name or alias of the layer to whose content the member variables should be bound.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	members & array of \iqlType{Reference} (\ref{sec:json-ld-reference}) & yes \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{Binding}}
+	\element{members}{array of \iqlType{Reference} (\ref{sec:json-ld-reference})}{yes}
+\end{elements}
 \begin{description}
 	\item[\iqlType{members}] Non-empty collection of member references that are bound to the target layer's content. Every such instance of \iqlType{Reference} (\ref{sec:json-ld-reference}) must be unique within the surrounding \iqlType{Payload} (\ref{sec:json-ld-payload}).
 \end{description}
@@ -161,23 +183,15 @@ This document lists the basic building blocks of queries and their compositions.
 %	\item solvedAs
 %\end{itemize}
 \desc{Constraints represent the actual content filtering of every query.}
-\attributes{Constraint}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	id & string & yes &  \\ 
-	\hline 
-	solved & boolean & - & false \\ 
-	\hline 
-	solvedAs & boolean & - & false \\ 
-	\hline 
-\end{tabular}
+\begin{attributes}{\iqlBaseType{Constraint}}
+	\attribute{id}{string}{yes}{}
+	\attribute{solved}{boolean}{no}{false}
+	\attribute{solvedAs}{boolean}{no}{false}
+\end{attributes}
 \begin{description}
-\item[\iqlType{id}] Identifier to uniquely identify the constraint within the entire query.
-\item[\iqlType{solved}] Hint for the evaluation engine that this constraint has already been solved, either by a back-end implementation or as a result of (partial) query evaluation by the engine itself.
-\item[\iqlType{solvedAs}] Specifies to what boolean value (\texttt{true} or \texttt{false}) the constraint has been evaluated.
+	\item[\iqlType{id}] Identifier to uniquely identify the constraint within the entire query.
+	\item[\iqlType{solved}] Hint for the evaluation engine that this constraint has already been solved, either by a back-end implementation or as a result of (partial) query evaluation by the engine itself.
+	\item[\iqlType{solvedAs}] Specifies to what boolean value (\texttt{true} or \texttt{false}) the constraint has been evaluated.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -189,16 +203,10 @@ This document lists the basic building blocks of queries and their compositions.
 %	\item expression
 %\end{itemize}
 \desc{Wraps a boolean \iqlType{Expression} into an atomic constraint element that represents the smallest unit of evaluation for the top-level evaluation engine.}
-\extends{Constraint}{\ref{sec:json-ld-constraint}}
-\elements{Predicate}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	expression & \iqlType{Expression} (\ref{sec:json-ld-expression}) & yes \\ 
-	\hline 
-\end{tabular}
+\extends{\iqlBaseType{Constraint}}{\ref{sec:json-ld-constraint}}
+\begin{elements}{\iqlType{Predicate}}
+	\element{expression}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{yes}
+\end{elements}
 \begin{description}
 	\item[\iqlType{expression}] The actual expression to be evaluated to a boolean result. Note that typically this expression \textbf{cannot} be composed of directly nested boolean conjunctions or disjunctions, as the engine will have parsed those into \iqlType{Term} (\ref{sec:json-ld-term}) objects already during the first processing phase.
 \end{description}
@@ -213,28 +221,16 @@ This document lists the basic building blocks of queries and their compositions.
 %	\item operation
 %\end{itemize}
 \desc{A collection of constraints with a logical connective.}
-\extends{Constraint}{\ref{sec:json-ld-constraint}}
-\attributes{Term}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	operation & enum & yes &  \\ 
-	\hline 
-\end{tabular}
+\extends{\iqlBaseType{Constraint}}{\ref{sec:json-ld-constraint}}
+\begin{attributes}{\iqlType{Term}}
+	\attribute{operation}{enum}{yes}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{operation}] The boolean connective to be applied to all the constraint items. Legal values are the strings ``and'' or ``or''.
+	\item[\iqlType{operation}] The boolean connective to be applied to all the constraint items. Legal values are the strings ``conjunction'' or ``disjunction''.
 \end{description}
-\elements{Term}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	items & array of \iqlType{Constraint} (\ref{sec:json-ld-constraint}) & yes \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{Term}}
+\element{items}{array of \iqlType{Constraint} (\ref{sec:json-ld-constraint})}{yes}
+\end{elements}
 \begin{description}
 	\item[\iqlType{items}] The constraints which are to be combined by the specified \iqlType{operation}.
 \end{description}
@@ -242,39 +238,18 @@ This document lists the basic building blocks of queries and their compositions.
 
 \subsection{Corpus}
 \label{sec:json-ld-corpus}
-\begin{itemize}
-\item id
-\item name
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item id
+%\item name
+%\end{itemize}
+\desc{Top-level entry point for querying a single stream.}
+\begin{attributes}{\iqlType{Corpus}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{yes}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the corpus within the entire query.
+	\item[\iqlType{name}] The identifier used by the query engine's manifest registry for the corpus. %TODO link to rgeistry class
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -282,42 +257,30 @@ This document lists the basic building blocks of queries and their compositions.
 %     DATA
 \subsection{Data}
 \label{sec:json-ld-data}
-\begin{itemize}
-\item id
-\item name
-\item content
-\item codec
-\item checksum
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item id
+%\item name
+%\item content
+%\item codec
+%\item checksum
+%\item checksumType
+%\end{itemize}
+\desc{Allows to embed binary data in the query and make it usable from within constraint expressions via a designated reference.}
+\begin{attributes}{\iqlType{Data}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{yes}{}
+	\attribute{content}{string}{yes}{}
+	\attribute{codec}{string}{no}{hex}
+	\attribute{checksum}{string}{no}{}
+	\attribute{checksumType}{enum}{no}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the corpus within the entire query.
+	\item[\iqlType{name}] The identifier used for the expression (\ref{sec:expressions}) which can be used to reference the binary payload from within query constraints.
+	\item[\iqlType{content}] The actual content of the payload in textual form. How to properly convert the textual form to a binary stream is defined by the \iqlType{codec} attribute.
+	\item[\iqlType{codec}] Specifies the mechanism of converting the \iqlType{content} data into an actual binary stream. If left empty, defaults to \texttt{hex}.
+	\item[\iqlType{checksum}] Optional hex-string of the checksum to check the \iqlType{content} against.
+	\item[\iqlType{checksumType}] Defines the algorithm for computing the checksum. Currently only \texttt{MD5} is supported as legal value.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -325,39 +288,24 @@ This document lists the basic building blocks of queries and their compositions.
 %     ELEMENT
 \subsection{Element}
 \label{sec:json-ld-element}
-\begin{itemize}
-\item id
-\item consumed
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item id
+%\item consumed
+%\end{itemize}
+\desc{Abstract base type for all logical and/or structural units that can be matched against content of a target corpus.}
+\begin{attributes}{\iqlBaseType{Element}}
+	\attribute{id}{string}{yes}{}
+	\attribute{consumed}{boolean}{no}{false}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the element within the entire query.
+	\item[\iqlType{consumed}] Signals that the element has already been \textit{used up} in the context of a partial query evaluation. An element that has been consumed can safely be ignored in the further evaluation of the query. Note that this state can be propagated according to the following rules:
+	\begin{itemize}[leftmargin=*,topsep=0pt]\compresslist
+		\item A \iqlType{Node}(\ref{sec:json-ld-node}) can be marked as \texttt{consumed} if its \iqlType{constraint} is marked as \texttt{solved} and its match count satisfies the \iqlType{quantifiers} requirement. Note that cross-referencing constraints can only be considered solved when all other aspects of the involved elements support the \texttt{consumed} state.
+		\item A \iqlType{TreeNode}(\ref{sec:json-ld-tree-node}) can be marked as \texttt{consumed} if above conditions are met and all nested \iqlType{children} are marked \texttt{consumed}.
+		\item An \iqlType{Edge}(\ref{sec:json-ld-edge}) is considered \texttt{consumed} when both its terminals are \texttt{consumed} and the same conditions regarding its \iqlType{constraint} are fulfilled as mentioned above.
+		\item A \iqlType{ElementDisjunction}(\ref{sec:json-ld-element-disjunction}) is considered \texttt{consumed} if at least one of its \iqlType{alternatives} has been marked \texttt{consumed}.
+	\end{itemize}
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -365,41 +313,26 @@ This document lists the basic building blocks of queries and their compositions.
 %     NODE
 \subsubsection{Node}
 \label{sec:json-ld-node}
-\begin{itemize}
-\item label
-\item constraint
-\item quantifiers
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\extends{Element}{\ref{sec:json-ld-element}}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item label
+%\item constraint
+%\item quantifiers
+%\end{itemize}
+\desc{Logical unit for sequence or graph matching in a target corpus. May contain local constraints and can also be quantified.}
+\extends{\iqlBaseType{Element}}{\ref{sec:json-ld-element}}
+\begin{attributes}{\iqlType{Node}}
+	\attribute{label}{string}{no}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{label}] Identifier to bind the node through a previously defined \iqlType{Binding} (\ref{sec:json-ld-binding}) declaration.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{Node}}
+	\element{constraint}{\iqlBaseType{Constraint} (\ref{sec:json-ld-constraint})}{no}
+	\element{quantifiers}{array of \iqlType{Quantifier} (\ref{sec:json-ld-quantifier})}{no}
+\end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{constraint}] Optional local constraint to be matched against the content of potential target candidates during query evaluation.
+	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -407,42 +340,16 @@ This document lists the basic building blocks of queries and their compositions.
 %     TREE NODE
 \subsubsection{Tree Node}
 \label{sec:json-ld-tree-node}
-\begin{itemize}
-\item label
-\item constraint
-\item quantifiers
-\item children
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\extends{Node}{\ref{sec:json-ld-node}}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item children
+%\end{itemize}
+\desc{Extension of the simple \iqlType{Node} type (\ref{sec:json-ld-node}) to add implicit hierarchical constraints related to dominance within tree structures.}
+\extends{\iqlType{Node}}{\ref{sec:json-ld-node}}
+\begin{elements}{\iqlType{TreeNode}}
+	\element{children}{array of \iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
+\end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{children}] Optional list of nested nodes or node alternatives.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -450,43 +357,50 @@ This document lists the basic building blocks of queries and their compositions.
 %     EDGE
 \subsubsection{Edge}
 \label{sec:json-ld-edge}
-\begin{itemize}
-\item label
-\item constraint
-\item source
-\item target
-\item edgeType
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\extends{Element}{\ref{sec:json-ld-element}}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item label
+%\item constraint
+%\item source
+%\item target
+%\item edgeType
+%\end{itemize}
+\desc{Specialized element extension to query structural information in graphs.}
+\extends{\iqlBaseType{Element}}{\ref{sec:json-ld-element}}
+\begin{attributes}{\iqlType{Edge}}
+	\attribute{label}{string}{no}{}
+	\attribute{edgeType}{enum}{yes}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{label}] Identifier to bind the edge through a previously defined \iqlType{Binding} (\ref{sec:json-ld-binding}) declaration.
+	\item[\iqlType{edgeType}] The type specification for this edge, primarily a directionality information. Legal values are \texttt{simple}, \texttt{one-way} or \texttt{two-way}.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{Edge}}
+	\element{constraint}{\iqlBaseType{Constraint} (\ref{sec:json-ld-constraint})}{no}
+	\element{source}{\iqlType{Node} (\ref{sec:json-ld-node})}{yes}
+	\element{target}{\iqlType{Node} (\ref{sec:json-ld-node})}{yes}
+\end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{constraint}] Optional local constraint to be matched against the content of potential target candidates during query evaluation.
+	\item[\iqlType{source}] Source node declaration. 
+	\item[\iqlType{target}] target node declaration. 
+\end{description}
+For complex graph declarations multiple nodes can be defined having the same \iqlType{label}. The evaluation engine will treat them as being the same node. Note however, that at most \textbf{one} node per label is allowed to declare a local \iqlType{constraint} attribute!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     ELEMENT DISJUNCTION
+\subsubsection{Element Disjunction}
+\label{sec:json-ld-element-disjunction}
+\begin{itemize}
+	\item alternatives
+\end{itemize}
+\desc{Allows declaration of multiple alternative element definitions. When evaluating the query, each such alternative that is matched successfully, will cause this element declaration to evaluate positively.}
+\extends{\iqlBaseType{Element}}{\ref{sec:json-ld-element}}
+\begin{elements}{\iqlType{ElementDisjunction}}
+	\element{alternatives}{array of \iqlType{Element} (\ref{sec:json-ld-element})}{yes}
+\end{elements}
+\begin{description}
+	\item[\iqlType{alternatives}] The alternative element declarations, each of which constitutes a legal match for this element declaration. Must not contain less than 2 elements!
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -494,39 +408,18 @@ This document lists the basic building blocks of queries and their compositions.
 %     EXPRESSION
 \subsection{Expression}
 \label{sec:json-ld-expression}
-\begin{itemize}
-\item content
-\item resultType
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item content
+%\item resultType
+%\end{itemize}
+\desc{Wraps the textual form of an arbitrarily complex \iql expression, which can be formula, literal, method invocation, a combination of those or a great many other types of expressions. FOr more details see \cref{sec:expressions}.}
+\begin{attributes}{\iqlType{Expression}}
+	\attribute{content}{string}{yes}{}
+	\attribute{resultType}{string}{no}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{content}] The textual form of the expression. Must be valid according to the specifications in \cref{sec:expressions}.
+	\item[\iqlType{resultType}] An optional specification regarding the return type of the expression. Redundant when the expression is used as a constraint, as those are required to always evaluate to a boolean result value anyway.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -542,31 +435,16 @@ This document lists the basic building blocks of queries and their compositions.
 \item defaultValue
 \end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{XXX}}
+	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\end{elements}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
@@ -576,43 +454,21 @@ This document lists the basic building blocks of queries and their compositions.
 %     IMPORT
 \subsection{Import}
 \label{sec:json-ld-import}
-\begin{itemize}
-\item id
-\item name
-\item optional
-\end{itemize}
-%TODO fill
-
-To allow for flexible integration of macro definitions or bigger language extensions, \iql provides an optional section in the query that lets users specify exactly what additional modules besides the bare \iql core are required for evaluating the query. 
-Each import target is specified by providing it's unique name and telling the engine whether or not the import is to be considered optional.
-Non-optional imports that cannot be resolved to an actual extension during the query evaluation phase will cause the entire process to fail.
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item id
+%\item name
+%\item optional
+%\end{itemize}
+\desc{To allow for flexible integration of macro definitions or bigger language extensions, \iql provides an optional section in the query that lets users specify exactly what additional modules besides the bare \iql core are required for evaluating the query. Each import target is specified by providing it's unique name and telling the engine whether or not the import is to be considered optional.}
+\begin{attributes}{\iqlType{Import}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{yes}{}
+	\attribute{optional}{boolean}{no}{false}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the import within the entire query.
+	\item[\iqlType{name}] The original name of the extension to be added.
+	\item[\iqlType{optional}] Defines whether or not the referenced extension is optional. 	Non-optional imports that cannot be resolved to an actual extension during the query evaluation phase will cause the entire process to fail.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -628,31 +484,17 @@ Non-optional imports that cannot be resolved to an actual extension during the q
 \item nodeArrangement
 \end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
+	\item[\iqlType{id}] Identifier to uniquely identify the lane within the entire query.
 	\item[\iqlType{xxx}] XXX.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{XXX}}
+	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\end{elements}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
@@ -675,32 +517,12 @@ Every layer selector either references an entire subgraph of the corpus' member-
 
 If multiple layer selectors are defined, up to one can be declared as ``primary'' to represent the granularity of returned items for the search.
 In case no layer is explicitly marked as ``primary'', the one specified by the corpus or context will be used for that role.
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
+	\item[\iqlType{id}] Identifier to uniquely identify the layer within the entire query.
 	\item[\iqlType{xxx}] XXX.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -718,31 +540,17 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 \item constraint
 \end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
+	\item[\iqlType{id}] Identifier to uniquely identify the payload within the entire query.
 	\item[\iqlType{xxx}] XXX.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{XXX}}
+	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\end{elements}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
@@ -752,46 +560,23 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 %     PROPERTY
 \subsection{Property}
 \label{sec:json-ld-property}
-\begin{itemize}
-	\item key
-	\item value
-\end{itemize}
-%TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%	\item key
+%	\item value
+%\end{itemize}
+\desc{Allows customization of the evaluation process by changing parameters or switching certain features on/off.}
+\begin{attributes}{\iqlType{Property}}
+	\attribute{key}{string}{yes}{}
+	\attribute{value}{string}{no}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{key}] The identifier of the targeted parameter or switch. The evaluation engine might report unknown keys as errors.
+	\item[\iqlType{value}] The actual value to apply to the specified property in case it is not a switch.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     SWITCHES
 \subsubsection{Switches}
 \label{sec:json-ld-switches}
-For increased flexibility, IQL supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native IQL switches use the prefix \texttt{iql} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}. %TODO figure out why cred messes up table and section here!
+For increased flexibility, \iql supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \iql switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}. %TODO figure out why cref messes up table and section here!
 
 \begin{table}
 \label{tab:switches}
@@ -827,53 +612,30 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 \end{tabular}
 \caption{Currently supported switches in IQL and their explanations.}
 \end{table}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     PROPERTIES
-\subsubsection{Properties}
-\label{sec:json-ld-properties}
-
-In addition to switches, that allow to turn certain IQL feature son or off, a more fine-grained configuration can be performed using named properties. These take the form of a classic assignment of ``name = value'' and support any of the basic literals (cf. \cref{sec:literals}).
-%TODO fill
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     QUANTIFIER
 \subsection{Quantifier}
 \label{sec:json-ld-quantifier}
-\begin{itemize}
-\item quantifierType
-\item value
-\item lowerBound
-\item upperBound
-\end{itemize}
-%TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item quantifierType
+%\item value
+%\item lowerBound
+%\item upperBound
+%\end{itemize}
+\desc{Specifies the multiplicity of an associated \iqlBaseType{Element} (\ref{sec:json-ld-element}).}
+\begin{attributes}{\iqlType{Quantifier}}
+	\attribute{quantifierType}{enum}{yes}{}
+	\attribute{value}{integer}{no}{}
+	\attribute{lowerBound}{integer}{no}{}
+	\attribute{upperBound}{integer}{no}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{quantifierType}] Defines how to interpret the other attributes. Legal values are \texttt{all} (universal quantification), \texttt{exact}, \texttt{atMost} (0..n), \texttt{atLeast} (n+), \texttt{range} (n..m).
+	\item[\iqlType{value}] Target or limit value when \iqlType{quantifierType} is set to \texttt{exact}, \texttt{atMost} or \texttt{atLeast}.
+	\item[\iqlType{lowerBound}] Used for \texttt{range} quantification to define the minimum multiplicity.
+	\item[\iqlType{upperBound}] Used for \texttt{range} quantification to define the maximum multiplicity.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -892,31 +654,16 @@ In addition to switches, that allow to turn certain IQL feature son or off, a mo
 %TODO fill
 
 The initial version of IQL is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{XXX}}
+	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\end{elements}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
@@ -926,39 +673,22 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 %     REFERENCE
 \subsection{Reference}
 \label{sec:json-ld-reference}
-\begin{itemize}
-\item id
-\item name
-\item referenceType
-\end{itemize}
+%\begin{itemize}
+%\item id
+%\item name
+%\item referenceType
+%\end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{Reference}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{yes}{}
+	\attribute{referenceType}{enum}{yes}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the reference within the entire query.
+	\item[\iqlType{name}] The local identifier to be used for addressing this reference. Note that this is the bare name without any type-specific prefixes (such as '\textdollar' for members, cf. \cref{sec:variables-references}).
+	\item[\iqlType{referenceType}] Specifies the nature of this reference. Legal values are \texttt{reference}, \texttt{member} or \texttt{variable}.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -974,31 +704,16 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 \item sortings
 \end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{XXX}}
+	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\end{elements}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
@@ -1008,76 +723,33 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 %     RESULT INSTRUCTION
 \subsection{Result Instruction}
 \label{sec:json-ld-result-instruction}
-\begin{itemize}
-\item TODO
-\end{itemize}
+%\begin{itemize}
+%\item TODO
+%\end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
-\begin{description}
-	\item[\iqlType{xxx}] XXX.
-\end{description}
+\desc{Currently unused dummy for declaring post-processing instructions on the query result to perform conversions and/or tabular calculations.}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     SCOPE
 \subsection{Scope}
 \label{sec:json-ld-scope}
-\begin{itemize}
-\item id
-\item layers
-\end{itemize}
-%TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item id
+%\item layers
+%\end{itemize}
+\desc{Very detailed vertical filtering of the layers available in a query.}
+\begin{attributes}{\iqlType{Scope}}
+	\attribute{id}{string}{yes}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the scope within the entire query.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{Scope}}
+	\element{layers}{array of \iqlType{Layer} (\ref{sec:json-ld-layer})}{yes}
+\end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{layers}] The members of this scope.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1085,38 +757,22 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 %     SORTING
 \subsection{Sorting}
 \label{sec:json-ld-sorting}
-\begin{itemize}
-\item expression
-\item order
-\end{itemize}
-%TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+%\begin{itemize}
+%\item expression
+%\item order
+%\end{itemize}
+\desc{Defines a single rule for sorting query results based on an arbitrarily complex expression.}
+\begin{attributes}{\iqlType{Sorting}}
+	\attribute{order}{enum}{yes}{}
+\end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{order}] Hint on sorting direction, legal values are \texttt{asc} or \texttt{desc}.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{Sorting}}
+	\element{expression}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{yes}
+\end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{expression}] The actual sorting expression. It can use any (member) reference or variable available in the query to compute its result and must return a type that is comparable to allow stable sorting. Per default any of the primitive numerical types (\texttt{int} or \texttt{float}), the text type \texttt{string} and any member of the \icarus framework implementing the \texttt{java.lang.Comparable} interface can be used as return type.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1138,31 +794,17 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 	\item result
 \end{itemize}
 %TODO fill
-\attributes{XXX}
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-	&  & - &  \\ 
-	\hline 
-	&  & - &  \\ 
-	\hline 
-	&  &  & \\ 
-	\hline 
-\end{tabular}
+\desc{XXX}
+\begin{attributes}{\iqlType{XXX}}
+	\attribute{xxx}{xxx}{x}{}
+\end{attributes}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the stream within the entire query.
 \end{description}
-\elements{Binding}
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline 
-	& array of \iqlType{XXX} (\ref{sec:json-ld-reference}) &  \\ 
-	\hline 
-\end{tabular}
+\begin{elements}{\iqlType{XXX}}
+	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\end{elements}
 \begin{description}
 	\item[\iqlType{xxx}] XXX.
 \end{description}
