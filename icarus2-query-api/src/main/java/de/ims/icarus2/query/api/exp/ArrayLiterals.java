@@ -266,6 +266,9 @@ public final class ArrayLiterals {
 		public long getAsLong(int index) { return array[index]; }
 
 		@Override
+		public int getAsInt(int index) { return array[index]; }
+
+		@Override
 		public int[] compute() { return array; }
 	}
 
@@ -301,6 +304,9 @@ public final class ArrayLiterals {
 		public long getAsLong(int index) { return source.get()[index]; }
 
 		@Override
+		public int getAsInt(int index) { return source.get()[index]; }
+
+		@Override
 		public int[] compute() { return source.get(); }
 	}
 
@@ -333,6 +339,9 @@ public final class ArrayLiterals {
 		public long getAsLong(int index) { return array[index]; }
 
 		@Override
+		public int getAsInt(int index) { return array[index]; }
+
+		@Override
 		public short[] compute() { return array; }
 	}
 
@@ -363,6 +372,9 @@ public final class ArrayLiterals {
 
 		@Override
 		public long getAsLong(int index) { return array[index]; }
+
+		@Override
+		public int getAsInt(int index) { return array[index]; }
 
 		@Override
 		public byte[] compute() { return array; }

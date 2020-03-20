@@ -198,6 +198,21 @@ public final class ListAccess {
 		return new ObjectBatchAccess<>(source, index);
 	}
 
+	private static int index(ListExpression<?, ?> source, Expression<?> index) {
+		return index(source, index.computeAsInt());
+	}
+
+	private static int index(ListExpression<?, ?> source, int idx) {
+		return index(source.size(), idx);
+	}
+
+	private static int index(int size, int idx) {
+		if(idx<0) {
+			idx = size+idx;
+		}
+		return idx;
+	}
+
 	/** Provides access to a single array element */
 	static final class IntegerAccess implements Expression<Primitive<Long>> {
 		private final IntegerListExpression<?> source;
@@ -211,15 +226,11 @@ public final class ListAccess {
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.INTEGER; }
 
-		private int index() {
-			return strictToInt(index.computeAsLong());
-		}
+		@Override
+		public Primitive<Long> compute() { return source.get(index(source, index)); }
 
 		@Override
-		public Primitive<Long> compute() { return source.get(index()); }
-
-		@Override
-		public long computeAsLong() { return source.getAsLong(index()); }
+		public long computeAsLong() { return source.getAsLong(index(source, index)); }
 
 		@Override
 		public double computeAsDouble() { return computeAsLong(); }
@@ -239,7 +250,7 @@ public final class ListAccess {
 			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
-				return Literals.of(newSource.getAsLong(strictToInt(newIndex.computeAsLong())));
+				return Literals.of(newSource.getAsLong(index(newSource, newIndex)));
 			}
 
 			if(newSource!=source || newIndex!=index) {
@@ -278,7 +289,7 @@ public final class ListAccess {
 		private static void fillBuffer(long[] buffer, IntegerListExpression<?> source,
 				IntegerListExpression<?> index) {
 			for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = source.getAsLong(strictToInt(index.getAsLong(i)));
+				buffer[i] = source.getAsLong(index(source, index.getAsInt(i)));
 			}
 		}
 
@@ -368,10 +379,14 @@ public final class ListAccess {
 		}
 
 		@Override
-		public Primitive<Long> get(int index) { return castInteger(source[index]).compute(); }
+		public Primitive<Long> get(int index) {
+			return castInteger(source[index(source.length, index)]).compute();
+		}
 
 		@Override
-		public long getAsLong(int index) { return source[index].computeAsLong(); }
+		public long getAsLong(int index) {
+			return source[index(source.length, index)].computeAsLong();
+		}
 
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
@@ -418,18 +433,14 @@ public final class ListAccess {
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.FLOATING_POINT; }
 
-		private int index() {
-			return strictToInt(index.computeAsLong());
-		}
-
 		@Override
-		public Primitive<Double> compute() { return source.get(index()); }
+		public Primitive<Double> compute() { return source.get(index(source, index)); }
 
 		@Override
 		public long computeAsLong() { throw forUnsupportedCast(TypeInfo.FLOATING_POINT, TypeInfo.INTEGER); }
 
 		@Override
-		public double computeAsDouble() { return source.getAsDouble(index()); }
+		public double computeAsDouble() { return source.getAsDouble(index(source, index)); }
 
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
@@ -446,7 +457,7 @@ public final class ListAccess {
 			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
-				return Literals.of(newSource.getAsDouble(strictToInt(newIndex.computeAsLong())));
+				return Literals.of(newSource.getAsDouble(index(newSource, newIndex)));
 			}
 
 			if(newSource!=source || newIndex!=index) {
@@ -485,7 +496,7 @@ public final class ListAccess {
 		private static void fillBuffer(double[] buffer, FloatingPointListExpression<?> source,
 				IntegerListExpression<?> index) {
 			for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = source.getAsDouble(strictToInt(index.getAsLong(i)));
+				buffer[i] = source.getAsDouble(index(source, index.getAsInt(i)));
 			}
 		}
 
@@ -575,10 +586,14 @@ public final class ListAccess {
 		}
 
 		@Override
-		public Primitive<Double> get(int index) { return castFloatingPoint(source[index]).compute(); }
+		public Primitive<Double> get(int index) {
+			return castFloatingPoint(source[index(source.length, index)]).compute();
+		}
 
 		@Override
-		public double getAsDouble(int index) { return source[index].computeAsDouble(); }
+		public double getAsDouble(int index) {
+			return source[index(source.length, index)].computeAsDouble();
+		}
 
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
@@ -625,15 +640,11 @@ public final class ListAccess {
 		@Override
 		public TypeInfo getResultType() { return TypeInfo.BOOLEAN; }
 
-		private int index() {
-			return strictToInt(index.computeAsLong());
-		}
+		@Override
+		public Primitive<Boolean> compute() { return source.get(index(source, index)); }
 
 		@Override
-		public Primitive<Boolean> compute() { return source.get(index()); }
-
-		@Override
-		public boolean computeAsBoolean() { return source.getAsBoolean(index()); }
+		public boolean computeAsBoolean() { return source.getAsBoolean(index(source, index)); }
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
@@ -648,7 +659,7 @@ public final class ListAccess {
 			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
-				return Literals.of(newSource.getAsBoolean(strictToInt(newIndex.computeAsLong())));
+				return Literals.of(newSource.getAsBoolean(index(newSource, newIndex)));
 			}
 
 			if(newSource!=source || newIndex!=index) {
@@ -687,7 +698,7 @@ public final class ListAccess {
 		private static void fillBuffer(boolean[] buffer, BooleanListExpression<?> source,
 				IntegerListExpression<?> index) {
 			for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = source.getAsBoolean(strictToInt(index.getAsLong(i)));
+				buffer[i] = source.getAsBoolean(index(source, index.getAsInt(i)));
 			}
 		}
 
@@ -776,10 +787,14 @@ public final class ListAccess {
 		}
 
 		@Override
-		public Primitive<Boolean> get(int index) { return castBoolean(source[index]).compute(); }
+		public Primitive<Boolean> get(int index) {
+			return castBoolean(source[index(source.length, index)]).compute();
+		}
 
 		@Override
-		public boolean getAsBoolean(int index) { return source[index].computeAsBoolean(); }
+		public boolean getAsBoolean(int index) {
+			return source[index(source.length, index)].computeAsBoolean();
+		}
 
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
@@ -827,7 +842,7 @@ public final class ListAccess {
 		public TypeInfo getResultType() { return source.getElementType(); }
 
 		@Override
-		public T compute() { return source.get(strictToInt(index.computeAsLong())); }
+		public T compute() { return source.get(index(source, index)); }
 
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
@@ -842,7 +857,7 @@ public final class ListAccess {
 			Expression<?> newIndex = index.optimize(context);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
-				return Expressions.constant(newSource.get(strictToInt(newIndex.computeAsLong())));
+				return Expressions.constant(newSource.get(index(newSource, newIndex)));
 			}
 
 			if(newSource!=source || newIndex!=index) {
@@ -884,7 +899,7 @@ public final class ListAccess {
 		private static <E> void fillBuffer(E[] buffer, ListExpression<?, E> source,
 				IntegerListExpression<?> index) {
 			for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = source.get(strictToInt(index.getAsLong(i)));
+				buffer[i] = source.get(index(source, index.getAsInt(i)));
 			}
 		}
 
@@ -979,7 +994,7 @@ public final class ListAccess {
 		}
 
 		@Override
-		public E get(int index) { return source[index].compute(); }
+		public E get(int index) { return source[index(source.length, index)].compute(); }
 
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {

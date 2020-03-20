@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.exp;
 
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.Consumer;
@@ -52,6 +53,10 @@ public interface ListProxy<T> {
 
 	public interface OfInteger extends ListProxy<Primitive<Long>> {
 		long getAsLong(int index);
+
+		default int getAsInt(int index) {
+			return strictToInt(getAsLong(index));
+		}
 
 		default void forEachInteger(LongConsumer action) {
 			requireNonNull(action);
