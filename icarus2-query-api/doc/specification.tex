@@ -17,6 +17,7 @@
 \usepackage{listings}
 \usepackage{enumitem}
 \usepackage{xcolor}
+\usepackage{syntax}
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
 
@@ -35,6 +36,8 @@
 
 \newcommand{\icarus}{ICARUS2\xspace}
 \newcommand{\iql}{IQL\xspace}
+
+\newcommand{\keyword}[1]{\textcolor{purple}{\texttt{#1}}}
 
 % constants
 \newcommand{\iqlns}{iql:}
@@ -546,6 +549,7 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the payload within the entire query.
+	\item[\iqlType{name}] Identifier to uniquely identify the payload within the entire query.
 	\item[\iqlType{xxx}] XXX.
 \end{description}
 \begin{elements}{\iqlType{XXX}}
@@ -603,14 +607,14 @@ iql.any2bool.off            & Deactivates the interpretation of anything non-boo
 \hline
 iql.direction.reverse       & Reverses the direction used to traverse corpus data for a search.  \\ 
 \hline
-iql.array.zero              & Change array access \cref{sec:array-access} to be 0-based.  \\ 
+iql.array.zero              & Change array access \cref{sec:list-access} to be 0-based.  \\ 
 \hline
 iql.warnings.off            & Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query.  \\ 
 \hline
 iql.parall.off			  & Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches  \\ 
 \hline
 \end{tabular}
-\caption{Currently supported switches in IQL and their explanations.}
+\caption{Currently supported switches in \iql and their explanations.}
 \end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -653,7 +657,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 \end{itemize}
 %TODO fill
 
-The initial version of IQL is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
+The initial version of \iql is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
 \desc{XXX}
 \begin{attributes}{\iqlType{XXX}}
 	\attribute{xxx}{xxx}{x}{}
@@ -726,7 +730,7 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 %\begin{itemize}
 %\item TODO
 %\end{itemize}
-%TODO fill
+%TODO fill once the specification is fleshed out
 \desc{Currently unused dummy for declaring post-processing instructions on the query result to perform conversions and/or tabular calculations.}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -811,11 +815,11 @@ The initial version of IQL is ``1.0`` and by leaving the dialect part of a query
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section{Raw Statements}
-\label{sec:raw-statements}
+\section{Inner \iql ELements}
+\label{sec:inner-iql-elements}
 
 Certain parts of an \iql query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
-During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{sec:elements}.
+During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{sec:elements} (unless of course the query or query fragments are provided fully processed).
 This section defines the syntax and additional rules for those raw statements.
 
 
@@ -828,7 +832,7 @@ This section defines the syntax and additional rules for those raw statements.
 \subsection{Reserved Words}
 \label{sec:reserved-words}
 
-The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query (they are reserved in both all lowercase and all uppercase variants):
+The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query. They are reserved in both all lowercase and all uppercase variants, any while camel-cased versions are technically permitted, it is highly discouraged to use them:
 
 \vbox{%
 \begin{multicols}{4}
@@ -859,7 +863,7 @@ In addition the following strictly lowercase words are reserved as type identifi
 \subsection{Comments}
 \label{sec:comments}
 
-IQL supports single-line comments, indicated by ``//''. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query.
+\iql supports single-line comments, indicated by ``//''. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query. 
 
 \subsection{Literals}
 \label{sec:literals}
@@ -867,21 +871,21 @@ IQL supports single-line comments, indicated by ``//''. All remaining content in
 \subsubsection{String Literals}
 \label{sec:string-literals}
 
-IQL uses double quotes to define string literals. String literals may not contain any of the following symbols directly:
+\iql uses double quotes to define string literals. String literals may not contain any of the following symbols directly:
 
 \begin{verbatim}
 \n line break
 \r carriage return
-\f form feed
-\b backspace
 \t tab
 \ backslash
 " nested quotation mark
 \end{verbatim}
 
-Any of those symbols listed above can be embedded into a string literal as part of an escape sequence with a preceding backslash.
+\noindent Any of those symbols listed above can be embedded into a string literal as part of an escape sequence with a preceding backslash.
 
-Examples for valid string literals:
+%TODO add unicode escape mechanism
+
+\paragraph{Examples for valid string literals:}
 
 \begin{verbatim}
 "string"
@@ -890,11 +894,12 @@ Examples for valid string literals:
 "a more complex string!"
 "a\n multiline\n string..."
 \end{verbatim}
+%TODO emoji not showing!!
 
 \subsubsection{Boolean Literals}
 \label{sec:boolean-literals}
 
-Boolean literals are limited to either all lowercase or all uppercase versions of the literals ``true`` and ``false``.
+Boolean literals are limited to either all lowercase or all uppercase versions of the literals \keyword{true} and \keyword{false}.
 
 \subsubsection{Integer Literals}
 \label{sec:integer-literals}
@@ -903,7 +908,7 @@ Boolean literals are limited to either all lowercase or all uppercase versions o
 Literals representing regular \texttt{int} (32bit) or \texttt{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits or underscore (\texttt{\_}) characters.
 Underscore characters may only appear inside the integer literal, never at the beginning or end (not counting the sign symbol).
 
-Examples for valid (signed) integer literals:
+\paragraph{Examples for valid (signed) integer literals:}
 
 \begin{verbatim}
 1
@@ -914,14 +919,14 @@ Examples for valid (signed) integer literals:
 \end{verbatim}
 
 \paragraph{Pure Integer Literals}
-Some parts of the IQL syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
+Some parts of the \iql syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
 
 \subsubsection{Floating Point Literals}
 \label{sec:floating-point-literals}
 
 Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '\texttt{.}' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \texttt{float} (32bit) or double-precision \texttt{double} (64bit) values.
 
-Examples for valid (signed) floating point literals:
+\paragraph{Examples for valid (signed) floating point literals:}
 
 \begin{verbatim}
 1.0
@@ -931,35 +936,40 @@ Examples for valid (signed) floating point literals:
 -99_000000_0.000_000_001
 \end{verbatim}
 
-While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of IQL.
+\noindent While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of \iql.
 
 \subsection{Identifiers}
 \label{sec:identifiers}
 
-Identifiers in IQL are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol.
+\noindent Identifiers in \iql are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol.
 
-Examples for valid identifiers:
+\paragraph{Examples for valid identifiers:}
 
 \begin{verbatim}
 x
 myIdentifier
 x1
+x_1
+x__1
 x321
 some_random_id
+someRandomId002
 random_2_4
 notTheBest______________example
 \end{verbatim}
 
-Identifiers are limited in length by the engine to a total of 255 characters. 
+\noindent Identifiers are limited in length by the engine to a total of 255 characters. 
 
 \subsection{Variables and References}
 \label{sec:variables-references}
 
-In IQL all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the IQL core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
+In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
+
+\noindent The following table provides a compact overview of the available identifiers and their capabilities/features:
 
 \noindent\begin{tabular}{|l|c|c|c|c|c|c|}
 	\hline 
-Type	& Prefix & Example & Scope & Fixed* & Final & Re-Assign \\ 
+Type	& Prefix & Example & Scope & Fixed\footnote{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.} & Final & Re-Assign \\ 
 	\hline 
 Reference	& none & \texttt{max()} & global & X & X &  \\ 
 	\hline 
@@ -967,11 +977,9 @@ Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\
 	\hline 
 Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\ 
 	\hline 
-\end{tabular} 
+\end{tabular}
 
-*Fixed Type
-
-Special remarks:
+\noindent\textbf{Special remarks:}
 
 Variables are more or less general-purpose storage objects for arbitrary values and without a fixed type. Their first assignment however hints at the implied type to be used and as such they can cause cast errors when used for situations where an incompatible type would be needed.
 
@@ -991,70 +999,77 @@ Any literal (boolean, string, integer or floating point) can serve as a primary 
 \label{sec:path-expressions}
 
 For navigating hierarchically structured object graphs or namespaces, expressions can take the form of paths:
+\begin{grammar}	
+<path> ::= <expression> `.' <identifier> 	
+\end{grammar}
 
-```
-<expression> '.' <identifier>
-```
-
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 someObejct.someProperty
 some.really.long.winded.path
 \end{verbatim}
 
-Note that for a lot of native classes of the ICARUS2 framework, IQL provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
+\noindent Note that for a lot of native classes of the ICARUS2 framework, \iql provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
 
 \subsubsection{Method Invocation}
 \label{sec:method-invocations}
 
 Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace) and round brackets for the invocation with an optional argument list:
+\begin{grammar}	
+	<method> ::= <expression> `(' <arguments>? `)'
+	
+	<arguments> ::= <expression> (`,' <expression>)*
+\end{grammar}
 
-```
-<expression> '(' <expression>? (',' <expression>)* ')'
-```
-
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 myFunction()
 myNamespace.someFunction(someArgument, anotherArgument)
 min(123, 456, dynamicContent())
+some().chained().methods()
 \end{verbatim}
 
-\subsection{Array Access}
-\label{sec:array-access}
+\subsection{List Access}
+\label{sec:list-access}
 
-Arrays are accessed by an expression pointing to the array itself and an index expression in square brackets indicating the position of the desired element within the array. Note that the index expression must evaluate to an integer value within \texttt{int} space. Positive values indicate the position beginning from the start of the array (with \texttt{1} being the first position for better human readability per default, see \cref{sec:switches} for an option to switch to 0-based indices), whereas negative values allow backwards referencing of elements with \texttt{-1} pointing to the last array element and \texttt{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
+Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to integer values within \texttt{int} space. Positive values indicate the position beginning from the start of the array (with \texttt{1} being the first position for better human readability per default, see \cref{sec:json-ld-switches} for an option to switch to 0-based indices), whereas negative values allow backwards referencing of elements with \texttt{-1} pointing to the last array element and \texttt{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
 
-```
-<expression> '[' <expression> (',' <expression>)* ']'
-```
+\begin{grammar}	
+	<array> ::= <expression> `[' <indices> `]'
+	
+	<indices> ::= <expression> (`,' <expression>)*
+\end{grammar}
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 myArray[1]
+myArray[-1]
 complexArray[1][2][3]
+complexArray[-1][2][-3]
 complexArray[1, 2][3]
 complexArray[1, 2, 3]
 \end{verbatim}
 
-Note that IQL provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
-Every ItemLookup implementation, such as Container or Structure that would traditionally access its content via ``myStructure.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myStructure[someIndex]``.
+\noindent Note that \iql provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
+Every \repoLink{/members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{/members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
 
 \subsubsection{Annotation Access}
 \label{sec:annotation-access}
 
-The ICARUS2 framework models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, IQL provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
+The ICARUS2 framework models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \iql provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
 
-```
-<expression> '{' <expression> (',' <expression>)* '}'
-```
+\begin{grammar}	
+	<annotation> ::= <expression> `{' <keys> `}'
+	
+	<keys> ::= <expression> (`,' <expression>)*
+\end{grammar}
 
-The first expression must evaluate to an item reference and the annotation pointers inside curly brackets must evaluate to strings (if only a single expression is given, it can evaluate to a list or array and be expanded, cf. \cref{sec:value-expansion}) that uniquely denote annotation layers in the current context of the query. Typically users will use string literals in double quotes to explicitly state the annotations to be accessed, but the IQL syntax allows for very flexible extraction statement. If the evaluation of those annotation pointers yields more than one string, the result will be an array-like object containing the resolved values for each of the annotation keys in the same order as those were specified.
+\noindent The first expression must evaluate to an item reference and the annotation pointers inside curly brackets must evaluate to strings (if only a single expression is given, it can evaluate to a list or array and be expanded, cf. \cref{sec:value-expansion}) that uniquely denote annotation layers in the current context of the query. Typically users will use string literals in double quotes to explicitly state the annotations to be accessed, but the \iql syntax allows for very flexible extraction statement. If the evaluation of those annotation pointers yields more than one string, the result will be an array-like object containing the resolved values for each of the annotation keys in the same order as those were specified.
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 myItem{"pos"}
@@ -1067,9 +1082,9 @@ firstSetValue(myItem{"parser1.head", "parser2.head"})
 \subsubsection{Type Cast}
 \label{sec:type-cast}
 
-Expressions in IQL are automatically cast to matching types according to the actual consumer's needs. Explicit casts can be performed by preceding an expression with one of the type keywords listed above in round brackets.
+Expressions in \iql are automatically cast to matching types according to the actual consumer's needs (unless this feature gets deactivated via the corresponding switch, cf. \cref{sec:json-ld-switches}). Explicit casts can be performed by preceding an expression with one of the type keywords listed above in round brackets.
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 (int) myValue
@@ -1080,9 +1095,9 @@ Examples:
 \subsubsection{Wrapping}
 \label{sec:wrapping}
 
-Expression hierarchy and evaluation order follows the order the different types of expressions are listed here. To dictate another order, expressions can be wrapped into round brackets. This will cause the inner expression to be evaluated independent of potential hierarchical rules from outside.
+Expression hierarchy and evaluation order follows the order the different types of expressions are listed here. To dictate another order, expressions can be wrapped into round brackets. This will cause the inner expression to be evaluated independent of potential hierarchical rules from the outside context.
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 6 + 4 * 2   // multiplication is evaluated first -> result 14
@@ -1093,22 +1108,28 @@ Examples:
 \label{sec:set-predicate}
 
 Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection'). The basic form of a set predicate looks as follows:
+\begin{grammar}	
+	<set_predicate> ::= <expression> `IN' `{' <items> `}'
+	
+	<items> ::= <expression> (`,' <expression>)*
+\end{grammar}
 
-```
-<expression> 'IN' '{' <expression> (',' <expression>)* '}' 
-```
+\noindent The entire expression evaluates to a boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See the section about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
 
-The entire expression evaluates to a boolean value and will be ``true`` iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See the section about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+Set predicates can be directly negated (apart from wrpping \cref{sec:wrapping} them and negating \cref{sec:unary-operation} the entire expression) with with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
 
-Set predicates can be directly negated (apart from wrpping \cref{sec:wrapping} them and negating \cref{sec:unary-operation} the entire expression) with with an exclamation mark ``!`` or the keyword ``NOT`` in front of the ``IN`` keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to ``true`` if at least *one* of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*`` or the ``ALL`` keyword in front of the opening curly bracket to change the overall behavior such that the result will be ``true`` iff *all* of the elements are contained in the set.
+\paragraph{The complete syntax with all options looks as follows:}
+\begin{grammar}	
+	<set_predicate> ::= <expression> <all>? <not>? `IN' `{' <items> `}'
+	
+	<all> ::=  `ALL' | `*'
+	
+	<not> ::=  `NOT' | `!'
+	
+	<items> ::= <expression> (`,' <expression>)*
+\end{grammar}
 
-The complete syntax with all options looks as follows: 
-
-```
-<expression> ('NOT' | '!')? 'IN' ('ALL' | '*')? '{' <expression> (',' <expression>)* '}' 
-```
-
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 someAnnotationValue IN {"NP","VP","-"}
@@ -1120,15 +1141,17 @@ fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
 \subsubsection{Unary Operation}
 \label{sec:unary-operation}
 
-IQL only allows three unary operators to be used directly in front of an expression, the exclamation mark ``!`` and the ``NOT`` keyword for boolean negation and the minus sign ``-`` for negating numerical expressions.
+\iql only allows four unary operators to be used directly in front of an expression, the exclamation mark ``!'' and the \keyword{NOT} keyword for boolean negation, the minus sign ``-'' for negating numerical expressions and the ``\~'' symbol of bitwise negation of integer numbers.
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 !someBooleanFunction()
 NOT someBooleanValue
 -123
 -myNumericalFunction()
+~123
+~myIntegerFunction()
 \end{verbatim}
 
 \subsubsection{Binary Operation}
@@ -1136,11 +1159,11 @@ NOT someBooleanValue
 
 Binary operations between two expressions take the following simple form:
 
-```
-<expression> <operator> <expression>
-```
+\begin{grammar}	
+	<binary_op> ::= <expression> <operator> <expression>
+\end{grammar}
 
-Binary operators follow an explicit hierarchy, listed below in the order of priority, from highest to lowest:
+\noindent Binary operators follow an explicit hierarchy, listed below in the order of priority, from highest to lowest:
 
 \noindent\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
 \hline 
@@ -1169,14 +1192,14 @@ Operators	& Explanation \\
 \label{sec:basic-numerical-operations}
 
 Basic numerical operations follow the standard mathematical rules for priorities.
-While the basic numerical types (`int`, `long`, `float` and `double`) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
+While the basic numerical types (\keyword{int}, \keyword{long}, \keyword{float} and \keyword{double}) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
 
 \paragraph{Bit Operations}
 \label{sec:bit-operations}
 
 Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast \cref{sec:type-cast} to match the other. If value expansion \cref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
-The two shift operations (`<<` and `>>`) take arbitrary integer types as left operand and an \texttt{int} value as right operand.
+The two shift operations (\texttt{\textless{}\textless} and \texttt{\textgreater{}\textgreater}) take arbitrary integer types as left operand and an \keyword{int} value as right operand.
 
 \paragraph{Ordered Comparisons}
 \label{sec:ordered-comparisons}
@@ -1186,9 +1209,9 @@ Comparisons are special binary operators that take two expressions of equal or c
 \paragraph{String Operations}
 \label{sec:string-operations}
 
-To account for the ubiquity of textual annotations in corpora, IQL provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \texttt{\#} or its negated form \texttt{!\#}) and regular expression matching (via \texttt{\textasciitilde} and \texttt{!\textasciitilde}). Per default IQL uses the Java regex syntax, but for the future, additional switches \cref{sec:switches} are planned to allow finer control over regex details.
+To account for the ubiquity of textual annotations in corpora, \iql provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \texttt{\#} or its negated form \texttt{!\#}) and regular expression matching (via \texttt{\textasciitilde} and \texttt{!\textasciitilde}). Per default \iql uses the Java regex syntax, but for the future, additional switches \cref{sec:json-ld-switches} are planned to allow finer control over regex details.
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 somePosAnnotation # "V"        // find verbal forms
@@ -1205,15 +1228,16 @@ a == b iff !(a<b) && !(a>b)
 a != b iff a<b || a>b
 \end{verbatim}
 
-More generally, equality between expressions in IQL is based on content equality and therefore type specific.
-Note that trying to check two expressions of incompatible types (such as \texttt{int} and ``string``) for equality will always evaluate to ``false`` and also emit a warning. 
+\noindent More generally, equality between expressions in \iql is based on content equality and therefore type specific.
+Note that trying to check two expressions of incompatible types (such as \keyword{int} and \keyword{string}) for equality will always evaluate to \keyword{false} and also emit a warning. 
+%TODO is this part actually implemented?
 
 \paragraph{Logical Composition}
 \label{sec:logical-composition}
 
-All boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \texttt{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \texttt{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of IQL expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to ``true``, the entire expression is already determined, same for a conjunction's first operand yielding ``false``.  
+All boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \keyword{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}.  
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 a>1 && b<2
@@ -1223,15 +1247,15 @@ x==1 or x==3
 \subsubsection{Ternary Operation}
 \label{sec:ternary-operation}
 
-A single ternary operation is supported in IQL, the popular if-then-else replacement with the following syntax:
+A single ternary operation is supported in \iql, the popular if-then-else replacement with the following syntax:
 
-```
-<expression> ? <expression> : <expression>
-```
+\begin{grammar}	
+	<ternary> ::= <expression> `?' <expression> `:' <expression>
+\end{grammar}
 
-The first expression must evaluate to a boolean value and determines which of the following two alternatives will be evaluated for the total value of the expression. Note that the second and third expressions must have compatible result types.
+\noindent The first expression must evaluate to a \keyword{boolean} value and determines which of the following two alternatives will be evaluated for the total value of the expression. Note that the second and third expressions must have compatible result types.
 
-Examples:
+\paragraph{Examples:}
 
 \begin{verbatim}
 x<2 ? "text for smaller value" : "some other text"
@@ -1240,25 +1264,31 @@ x<2 ? "text for smaller value" : "some other text"
 \subsubsection{Value Expansion}
 \label{sec:value-expansion}
 
-IQL supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()`` returns an array of 3 integer values or a *array-like* data type (such as a point) and another method ``invertPoint(int, int, int)`` takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())`` is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]``.
+\iql supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()'' returns an array of 3 integer values or a \textit{array-like} data type (such as a 3D point) and another method ``invertPoint(int, int, int)'' takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())'' is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]''.
 
 \subsection{Constraints}
 \label{sec:constraints}
 
-Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), IQL allows the following evaluations as syntactic sugar:
+Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), \iql allows the following evaluations as syntactic sugar:
 
-|      Type               |       Condition         |    Value     |
-|:----------------------- |:----------------------- |:------------ |
-| ``string``              | empty or null           | ``false``    | 
-| \texttt{int} or \texttt{long}     | ``0``                   | ``false``    |
-| \texttt{float} or \texttt{double} | ``0.0``                 | ``false``    |
-| any object              | null                    | ``false``    |
+\noindent\begin{tabular}{|l|c|c|}
+	\hline 
+	Type & Condition & Value \\ 
+	\hline 
+	\keyword{string} & empty or null & \keyword{false}  \\ 
+	\hline 
+	\keyword{int} or \keyword{long} & \texttt{0} & \keyword{false} \\ 
+	\hline 
+	\keyword{float} or \keyword{double} & \texttt{0.0} & \keyword{false} \\ 
+	\hline
+	any object & \keyword{null} & \keyword{false} \\ 
+	\hline 
+\end{tabular}
 
+\subsection{Structural Constraints}
+\label{sec:structural-constraints}
 
-\subsection{Constraints}
-\label{sec:constraints}
-
-The constraints section in IQL consists either of the sole ``ALL`` keyword or of an optional bindings definition and the actual constraints themselves. A binding is a collection of member references \cref{sec:variables-references} that get declared to belong to a certain type and/or part of the corpus. The 'DISTINCT' keyword enforces that the bound member references in this binding do **not** match the same target. Depending on the localConstraint used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
+The constraints section in \iql consists either of the sole ``ALL`` keyword or of an optional bindings definition and the actual constraints themselves. A binding is a collection of member references \cref{sec:variables-references} that get declared to belong to a certain type and/or part of the corpus. The 'DISTINCT' keyword enforces that the bound member references in this binding do **not** match the same target. Depending on the localConstraint used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
 
 ```
 bindingsList := 'WITH' binding ('AND' binding)* 
@@ -1307,14 +1337,14 @@ Global constraints con be any basic constraint \cref{sec:basic-constraints}.
 
 There be dragons.
 
-(Content of the result section will be added as IQL evolves)
+(Content of the result section will be added as \iql evolves)
 
 %%END REWORK
 
 \subsection{Query Payload}
 \label{sec:query-payload}
 
-The innermost part of every IQL query is the collection of constraints used to actually extract and match data from the corpus.
+The innermost part of every \iql query is the collection of constraints used to actually extract and match data from the corpus.
 It is composed in a keyword-style syntax to differentiate between the different \textit{dialects} or constraint modes.
 
 \end{document}
