@@ -109,13 +109,14 @@ public class IqlPayload extends IqlUnique {
 		/**
 		 * Return all elements of the corpus for specified primary layer.
 		 * Cannot have any constraints defined at all!
+		 * (Only filtering will be donw in the result section)
 		 */
 		ALL("all", false, false),
-		/** Define basic constraints for bound members */
+		/** Define basic (global) constraints for bound members */
 		PLAIN("plain", true, false),
 		/** Contains a single lane to match */
 		SINGLE_LANE("singleLane", true, true),
-		/** Define structural constraints via nested tree nodes */
+		/** Multiple lanes (e.g. concurrent parses), optionally linked via global constraints. */
 		MULTI_LANE("multiLane", true, true),
 		;
 

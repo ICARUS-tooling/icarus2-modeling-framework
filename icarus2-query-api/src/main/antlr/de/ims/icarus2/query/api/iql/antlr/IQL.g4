@@ -134,7 +134,7 @@ binding
 
 selectiveStatement
 	: constraint // plain
-	| ((nodeArrangement? nodeStatement) | laneStatementsList) (HAVING constraint)?
+	| (nodeStatement | laneStatementsList) (HAVING constraint)? //structural constraints
 	;	
 
 laneStatementsList
@@ -142,8 +142,7 @@ laneStatementsList
 	;
 	
 laneStatement
-	//TODO exchange ALIGNED with a set of modes, such as (ORDERED, ADJACENT,...)
-	: LANE member nodeArrangement? nodeStatement
+	: LANE name=Identifier (AS member)? nodeStatement
 	;
 	
 nodeArrangement
@@ -166,7 +165,7 @@ nodeArrangement
  */
 nodeStatement
 	: LBRACE nodeStatement RBRACE				#nodeGrouping
-	| node+										#nodeSequence
+	| nodeArrangement? node+										#nodeSequence
 	| element (COMMA element)*					#elementSequence	
 	| <assoc=right> left=nodeStatement or right=nodeStatement			#nodeAlternatives
 	;
@@ -184,6 +183,7 @@ nodeStatement
  * [...[...][[...]]]		existentially quantified tree with (multiple) inner constraints
  * <x>[[]<y>[<z>[]]]		tree with explicit and implicit quantification
  */
+ // The grammar overgenerates here due to 'nodeStatement' allowing graph structures, but we handle that later 
 node
 	: quantifier? LBRACK memberLabel? constraint? nodeStatement? RBRACK
 	;
@@ -343,7 +343,6 @@ expression
 	| source=expression {isAny(-1,Identifier,RPAREN,RBRACK)}? LBRACE keys=expressionList RBRACE	# annotationAccess
 	| LPAREN type RPAREN expression													# castExpression
 	| LPAREN expression RPAREN 														# wrappingExpression
-	//TODO maybe replace 'NOT | EXMARK' by 'not' rule, but might interfere with priorities?
 	| (NOT | EXMARK | MINUS | TILDE) expression 									# unaryOp
 	| left=expression (STAR | SLASH | PERCENT) right=expression 					# multiplicativeOp
 	| left=expression (PLUS | MINUS) right=expression 								# additiveOp
@@ -354,6 +353,7 @@ expression
 	| <assoc=right> left=expression and right=expression 											# conjunction
 	| <assoc=right> left=expression or right=expression 											# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
+	| source=expression AS (member | variableName)											# assignmentOp
 	| source=expression all? not? IN listStatement 	# setPredicate
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
@@ -511,7 +511,7 @@ sign
  * Lexer Rules
  */
 
-//TODO change all keywords to use character fragments to make them resistant against camel casing abuse
+//TODO change all keywords to use character fragments to make them resistant against camel casing abuse <- actually intended?
 
 ADJACENT : 'ADJACENT' | 'adjacent';
 ALL : 'ALL' | 'all' ;

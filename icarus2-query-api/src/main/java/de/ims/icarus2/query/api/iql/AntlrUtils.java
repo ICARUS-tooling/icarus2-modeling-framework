@@ -167,7 +167,7 @@ public final class AntlrUtils {
 
 	private static boolean isContinuous(Token t1, Token t2) {
 		int t1Stop = t1.getStopIndex();
-		int t2Start = t2.getStopIndex();
+		int t2Start = t2.getStartIndex();
 
 		if(t1Stop==-1 || t2Start==-1)
 			throw new QueryException(QueryErrorCode.AST_ERROR, String.format(

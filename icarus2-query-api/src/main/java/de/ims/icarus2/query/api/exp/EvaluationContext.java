@@ -866,6 +866,8 @@ public abstract class EvaluationContext {
 
 	private final EnvironmentCache environmentCache;
 
+	//TODO add storage for flags set by special marker fields or methods inside expressions
+
 	//TODO add mechanism to register callbacks for stages of matching process?
 
 	private EvaluationContext(BuilderBase<?,?> builder) {

@@ -142,6 +142,10 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonInclude(Include.NON_EMPTY)
 		private List<IqlElement> children = new ArrayList<>();
 
+		@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
+		@JsonInclude(Include.NON_ABSENT)
+		private Optional<NodeArrangement> nodeArrangement = Optional.empty();
+
 		@Override
 		public IqlType getType() { return IqlType.TREE_NODE; }
 
@@ -154,7 +158,12 @@ public abstract class IqlElement extends IqlUnique {
 
 		public List<IqlElement> getChildren() { return CollectionUtils.unmodifiableListProxy(children); }
 
+		public Optional<NodeArrangement> getNodeArrangement() { return nodeArrangement; }
+
+
 		public void addChild(IqlElement child) { children.add(requireNonNull(child)); }
+
+		public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = Optional.of(nodeArrangement); }
 
 		public void forEachChild(Consumer<? super IqlElement> action) { children.forEach(requireNonNull(action)); }
 	}

@@ -59,7 +59,6 @@ import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
-import de.ims.icarus2.query.api.iql.IqlLane.NodeArrangement;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
@@ -68,6 +67,7 @@ import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
+import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.test.util.Pair;
 
 /**
@@ -186,7 +186,6 @@ class QueryProcessorTest {
 		@ParameterizedTest
 		@ValueSource(strings = {
 				"FIND ORDERED [![]]",
-				"FIND ORDERED [],![]---[]",
 		})
 		void testInsufficientNodesForAlignment(String rawPayload) {
 			assertReportHasWarnings(expectReport(rawPayload),
@@ -979,7 +978,12 @@ class QueryProcessorTest {
 				IqlLane lane = lanes.get(0);
 				assertThat(lane.getLaneType()).isSameAs(LaneType.TREE);
 				assertThat(lane.getElements()).isNotEmpty();
-				assertThat(lane.getNodeArrangement()).isEqualTo(nodeArrangement);
+				if(nodeArrangement==null) {
+					assertThat(lane.getNodeArrangement().isPresent()).isFalse();
+				} else {
+					assertThat(lane.getNodeArrangement().isPresent()).isTrue();
+					assertThat(lane.getNodeArrangement().get()).isEqualTo(nodeArrangement);
+				}
 			}
 
 			@Nested
@@ -989,7 +993,7 @@ class QueryProcessorTest {
 				void testEmptyNestedNode() {
 					String rawPayload = "FIND [[]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, NodeArrangement.UNSPECIFIED);
+					assertTree(payload, null);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node())));
 				}
@@ -998,7 +1002,7 @@ class QueryProcessorTest {
 				void testEmptyNestedSiblings() {
 					String rawPayload = "FIND [[][]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, NodeArrangement.UNSPECIFIED);
+					assertTree(payload, null);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node(), node())));
 				}
@@ -1007,7 +1011,7 @@ class QueryProcessorTest {
 				void testEmptyNestedChain() {
 					String rawPayload = "FIND [[[]]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, NodeArrangement.UNSPECIFIED);
+					assertTree(payload, null);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
 							tree(null, null, tree(null, null, node()))));
@@ -1022,7 +1026,7 @@ class QueryProcessorTest {
 				void testEmptyAllQuantifiedNode(String quantifier) {
 					String rawPayload = "FIND ["+quantifier+"[]]";
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
-					assertTree(payload, NodeArrangement.UNSPECIFIED);
+					assertTree(payload, null);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
 							tree(null, null, node(null, null, quantAll()))));

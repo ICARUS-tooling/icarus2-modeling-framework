@@ -64,7 +64,6 @@ import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
-import de.ims.icarus2.query.api.iql.IqlLane.NodeArrangement;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
@@ -78,6 +77,7 @@ import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlUnique;
+import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingsListContext;
@@ -381,7 +381,7 @@ public class QueryProcessor {
 				genId(lane);
 				lane.setName(IqlLane.PROXY_NAME);
 
-				processLaneContent(lane, sctx.nodeArrangement(), sctx.nodeStatement());
+				processLaneContent(lane, sctx.nodeStatement());
 
 				payload.addLane(lane);
 				payload.setQueryType(QueryType.SINGLE_LANE);
@@ -404,18 +404,18 @@ public class QueryProcessor {
 			IqlLane lane = new IqlLane();
 			genId(lane);
 
-			lane.setName(extractMemberName(ctx.member()));
+			lane.setName(textOf(ctx.name));
 
-			processLaneContent(lane, ctx.nodeArrangement(), ctx.nodeStatement());
+			Optional.ofNullable(ctx.member())
+				.map(this::extractMemberName)
+				.ifPresent(lane::setAlias);
+
+			processLaneContent(lane, ctx.nodeStatement());
 
 			return lane;
 		}
 
 		private NodeArrangement processNodeArrangement(NodeArrangementContext ctx) {
-			if(ctx==null) {
-				return NodeArrangement.UNSPECIFIED;
-			}
-
 			if(ctx.ORDERED()!=null) {
 				return NodeArrangement.ORDERED;
 			} else if(ctx.ADJACENT()!=null) {
@@ -425,10 +425,15 @@ public class QueryProcessor {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private void processLaneContent(IqlLane lane, NodeArrangementContext nctx,
-				NodeStatementContext ctx) {
+		private void processLaneContent(IqlLane lane, NodeStatementContext ctx) {
 
-			lane.setNodeArrangement(processNodeArrangement(nctx));
+			if(ctx instanceof NodeSequenceContext) {
+				NodeSequenceContext nsctx = (NodeSequenceContext)ctx;
+				NodeArrangementContext nctx = nsctx.nodeArrangement();
+				if(nctx!=null) {
+					lane.setNodeArrangement(processNodeArrangement(nctx));
+				}
+			}
 
 			try {
 				// Start the (recursive) node parsing with a 'null' parent
@@ -448,7 +453,7 @@ public class QueryProcessor {
 			}
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(lane.getNodeArrangement()!=NodeArrangement.UNSPECIFIED
+			if(lane.getNodeArrangement().isPresent()
 					&& countExistentialElements(lane.getElements())<2) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 						"For node arrangement feature to be effective the query needs at least"
@@ -635,7 +640,7 @@ public class QueryProcessor {
 							"Double negation of nested nodes '{1}' - try to express query positively instead", textOf(ctx));
 				} else if(parent==null && node.isUniversallyQuantified()) {
 					//TODO need to revisit this limitation in the IQL specification!! (we might allow universal quantification here)
-					/* Info for todo: nodes are typically bound to items that are embedded into a
+					/* Info for TODO: nodes are typically bound to items that are embedded into a
 					 * surrounding grouping (e.g. sentences) that provides a natural limitation for
 					 * the scope of universal quantification. So a universally quantified node would read
 					 * 'find container (sentence) where _ALL_ items match this one'. As a result we
@@ -651,7 +656,15 @@ public class QueryProcessor {
 			// Finally process actual children
 			if(ctx.nodeStatement()!=null) {
 				IqlTreeNode tNode = (IqlTreeNode) node;
-				processNodeStatement(ctx.nodeStatement(), tNode).forEach(tNode::addChild);
+				NodeStatementContext nctx = ctx.nodeStatement();
+				if(nctx instanceof NodeSequenceContext) {
+					NodeSequenceContext nsctx = (NodeSequenceContext)nctx;
+					NodeArrangementContext nactx = nsctx.nodeArrangement();
+					if(nactx!=null) {
+						tNode.setNodeArrangement(processNodeArrangement(nactx));
+					}
+				}
+				processNodeStatement(nctx, tNode).forEach(tNode::addChild);
 			}
 
 			return node;

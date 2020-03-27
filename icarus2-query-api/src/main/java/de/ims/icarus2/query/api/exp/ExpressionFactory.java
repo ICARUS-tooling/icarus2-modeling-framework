@@ -34,6 +34,7 @@ import static de.ims.icarus2.query.api.exp.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.exp.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
+import static de.ims.icarus2.query.api.iql.AntlrUtils.isContinuous;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static java.util.Objects.requireNonNull;
@@ -142,6 +143,7 @@ public class ExpressionFactory {
 		handlers.put(TernaryOpContext.class, (f,ctx) -> f.processTernaryOp((TernaryOpContext) ctx));
 		handlers.put(ForEachContext.class, (f,ctx) -> f.processForEach((ForEachContext) ctx));
 	}
+	//TODO handle assignmentOp "exp AS (member | var)", a special expression that returns true if the assignment produces a value other than 0 or null
 
 	public ExpressionFactory(EvaluationContext context) { this.context = requireNonNull(context); }
 
@@ -479,6 +481,7 @@ public class ExpressionFactory {
 							"No member available for name: "+name, asFragment(ctx)));
 			stats.members.increment(name);
 		} else if(ctx.Identifier()!=null) {
+			//TODO check first if it is a special marker (e.g. 'rightmost') and then send to EvaluationContext (after checking for negated context)
 			// Wrap into source-less path proxy for delayed resolution
 			result = Expressions.pathProxy(processIdentifier(ctx.Identifier()), ctx);
 		} else if(ctx.qualifiedIdentifier()!=null) {
@@ -541,6 +544,10 @@ public class ExpressionFactory {
 	}
 
 	private String processIdentifier(QualifiedIdentifierContext ctx) {
+		if(!isContinuous(ctx))
+			throw new QueryException(QueryErrorCode.NON_CONTINUOUS_TOKEN,
+					"Qualified identifier parts are not continuous (must not contain whitespaces): "+textOf(ctx),
+					asFragment(ctx));
 		checkIdentifier(textOf(ctx.hostId));
 		checkIdentifier(textOf(ctx.elementId));
 		return textOf(ctx);

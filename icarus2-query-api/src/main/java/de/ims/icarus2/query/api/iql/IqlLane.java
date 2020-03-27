@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -35,7 +36,9 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class IqlLane extends IqlNamedReference {
+public class IqlLane extends IqlAliasedReference {
+
+	//TODO document that getName() will return the name of the layer (alias) to which this lane is bound
 
 	/**
 	 * Special name reserved for signaling that a lane is introduced as a proxy,
@@ -52,8 +55,8 @@ public class IqlLane extends IqlNamedReference {
 	private final List<IqlElement> elements = new ArrayList<>();
 
 	@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
-	@JsonInclude(Include.NON_DEFAULT)
-	private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<NodeArrangement> nodeArrangement = Optional.empty();
 
 	@Override
 	public void checkIntegrity() {
@@ -71,14 +74,14 @@ public class IqlLane extends IqlNamedReference {
 
 	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
-	public NodeArrangement getNodeArrangement() { return nodeArrangement; }
+	public Optional<NodeArrangement> getNodeArrangement() { return nodeArrangement; }
 
 
 	public void setLaneType(LaneType laneType) { this.laneType = requireNonNull(laneType); }
 
 	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
 
-	public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = requireNonNull(nodeArrangement); }
+	public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = Optional.of(nodeArrangement); }
 
 	/** Returns {@code true} iff this lane has been assigned the {@link #PROXY_NAME proxy name} */
 	public boolean isProxy() {
@@ -117,19 +120,5 @@ public class IqlLane extends IqlNamedReference {
 		public boolean isAllowChildren() { return allowChildren; }
 
 		public boolean isAllowEdges() { return allowEdges; }
-	}
-
-	public enum NodeArrangement {
-		UNSPECIFIED("unspecified"),
-		ORDERED("ordered"),
-		ADJACENT("adjacent")
-		;
-
-		private final String label;
-
-		private NodeArrangement(String label) { this.label = label; }
-
-		@JsonValue
-		public String getLabel() { return label; }
 	}
 }

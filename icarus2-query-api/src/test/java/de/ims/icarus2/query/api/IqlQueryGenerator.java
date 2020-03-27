@@ -60,7 +60,6 @@ import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
-import de.ims.icarus2.query.api.iql.IqlLane.NodeArrangement;
 import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
@@ -83,6 +82,7 @@ import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUnique;
+import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.test.Dummy;
 import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -319,6 +319,10 @@ public class IqlQueryGenerator {
 	private void prepareTreeNode(IqlTreeNode treeNode, IncrementalBuild<?> build, Config config) {
 		prepareNode(treeNode, build, config);
 
+		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
+			build.addEnumFieldChange(treeNode::setNodeArrangement, IqlProperties.NODE_ARRANGEMENT, nodeArrangement);
+		}
+
 		if(config.tryNested(IqlType.TREE_NODE)) {
 			for (int i = 0; i < config.getCount(IqlType.TREE_NODE, DEFAULT_COUNT); i++) {
 				build.addNestedChange(IqlProperties.CHILDREN, IqlType.TREE_NODE, config, treeNode, treeNode::addChild);
@@ -398,7 +402,7 @@ public class IqlQueryGenerator {
 	}
 
 	private void prepareLane(IqlLane lane, IncrementalBuild<?> build, Config config) {
-		prepareNamedReference0(lane, build, config);
+		prepareAliasedReference0(lane, build, config);
 
 		// mandatory data
 		lane.setLaneType(LaneType.SEQUENCE);
