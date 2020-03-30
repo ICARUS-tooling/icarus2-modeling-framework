@@ -35,8 +35,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import de.ims.icarus2.model.manifest.ManifestGenerator;
 import de.ims.icarus2.query.api.iql.IqlAliasedReference;
@@ -53,6 +51,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
@@ -178,6 +177,7 @@ public class IqlQueryGenerator {
 		case LANE: prepareLane((IqlLane) element, build, config); break;
 		case LAYER: prepareLayer((IqlLayer) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
+		case NODE_SET: prepareNodeSet((IqlNodeSet) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
 		case PREDICATE: preparePredicate((IqlPredicate) element, build, config); break;
 		case PROPERTY: prepareProperty((IqlProperty) element, build, config); break;
@@ -316,18 +316,37 @@ public class IqlQueryGenerator {
 		}
 	}
 
-	private void prepareTreeNode(IqlTreeNode treeNode, IncrementalBuild<?> build, Config config) {
-		prepareNode(treeNode, build, config);
+	private void prepareNodeSet(IqlNodeSet nodeSet, IncrementalBuild<?> build, Config config) {
+		prepareElement0(nodeSet, build, config);
 
 		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
-			build.addEnumFieldChange(treeNode::setNodeArrangement, IqlProperties.NODE_ARRANGEMENT, nodeArrangement);
+			build.addEnumFieldChange(nodeSet::setNodeArrangement, IqlProperties.NODE_ARRANGEMENT, nodeArrangement);
 		}
 
 		if(config.tryNested(IqlType.TREE_NODE)) {
 			for (int i = 0; i < config.getCount(IqlType.TREE_NODE, DEFAULT_COUNT); i++) {
-				build.addNestedChange(IqlProperties.CHILDREN, IqlType.TREE_NODE, config, treeNode, treeNode::addChild);
+				build.addNestedChange(IqlProperties.NODES, IqlType.TREE_NODE, config, nodeSet, nodeSet::addNode);
 			}
 			config.endNested(IqlType.TREE_NODE);
+		}
+	}
+
+	private void prepareTreeNode(IqlTreeNode treeNode, IncrementalBuild<?> build, Config config) {
+		prepareNode(treeNode, build, config);
+
+		if(config.tryNested(IqlType.TREE_NODE)) {
+			build.addNestedChange(IqlProperties.CHILDREN, IqlType.TREE_NODE, config, treeNode, treeNode::setChildren);
+			config.endNested(IqlType.TREE_NODE);
+		}
+
+		if(config.tryNested(IqlType.ELEMENT_DISJUNCTION)) {
+			build.addNestedChange(IqlProperties.CHILDREN, IqlType.ELEMENT_DISJUNCTION, config, treeNode, treeNode::setChildren);
+			config.endNested(IqlType.ELEMENT_DISJUNCTION);
+		}
+
+		if(config.tryNested(IqlType.NODE_SET)) {
+			build.addNestedChange(IqlProperties.CHILDREN, IqlType.NODE_SET, config, treeNode, treeNode::setChildren);
+			config.endNested(IqlType.NODE_SET);
 		}
 	}
 
@@ -350,9 +369,7 @@ public class IqlQueryGenerator {
 		prepareElement0(dis, build, config);
 
 		for (int i = 0; i < 3; i++) {
-			dis.addAlternative(IntStream.range(0, i+1)
-					.mapToObj(j -> (IqlElement)generateFull(IqlType.NODE, config))
-					.collect(Collectors.toList()));
+			dis.addAlternative((IqlNodeSet)generateFull(IqlType.NODE_SET, config));
 		}
 	}
 
@@ -406,16 +423,10 @@ public class IqlQueryGenerator {
 
 		// mandatory data
 		lane.setLaneType(LaneType.SEQUENCE);
-		lane.addElement(generateFull(IqlType.NODE, config));
+		lane.setElements(generateFull(IqlType.NODE_SET, config));
 
-		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
-			build.addEnumFieldChange(lane::setNodeArrangement, IqlProperties.NODE_ARRANGEMENT, nodeArrangement);
-		}
 		for(LaneType laneType : LaneType.values()) {
 			build.addEnumFieldChange(lane::setLaneType, IqlProperties.LANE_TYPE, laneType);
-		}
-		for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT); i++) {
-			build.addNestedChange(IqlProperties.ELEMENTS, IqlType.NODE, config, lane, lane::addElement);
 		}
 	}
 
@@ -430,7 +441,12 @@ public class IqlQueryGenerator {
 		prepareUnique0(payload, build, config);
 
 		// mandatory data
-		payload.setQueryType(rng.random(QueryType.class));
+		payload.setQueryType(QueryType.ALL);
+
+		build.addChange(IqlProperties.QUERY_TYPE+"/"+IqlProperties.CONSTRAINT, () -> {
+			payload.setQueryType(QueryType.PLAIN);
+			payload.setConstraint(generateFull(IqlType.PREDICATE, config));
+		});
 
 		build.addFieldChange(payload::setName, IqlProperties.NAME, index("name"));
 		for(QueryType queryType : QueryType.values()) {

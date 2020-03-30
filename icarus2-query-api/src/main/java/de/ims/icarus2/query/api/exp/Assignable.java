@@ -31,5 +31,28 @@ public interface Assignable<T> extends Expression<T> {
 
 	//TODO primitive specializations for 'assign()' ?
 
+	default void assignInt(int value) {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.INTEGER);
+	}
+
+	default void assignFloat(float value) {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.FLOATING_POINT);
+	}
+
+	default void assignLong(long value) {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.INTEGER);
+	}
+
+	default void assignDouble(double value) {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.FLOATING_POINT);
+	}
+
+	default void assignBoolean(boolean value) {
+		throw EvaluationUtils.forUnsupportedCast(getResultType(), TypeInfo.BOOLEAN);
+	}
+
 	void clear();
+
+	@Override
+	Assignable<T> duplicate(EvaluationContext context);
 }

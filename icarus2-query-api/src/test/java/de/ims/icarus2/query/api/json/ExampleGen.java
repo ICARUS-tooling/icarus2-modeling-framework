@@ -26,6 +26,7 @@ import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
@@ -85,13 +86,15 @@ public class ExampleGen {
 		payload.setQueryType(QueryType.SINGLE_LANE);
 		IqlLane lane = new IqlLane();
 		lane.setLaneType(LaneType.SEQUENCE);
-		lane.setNodeArrangement(NodeArrangement.ADJACENT);
+		IqlNodeSet nodeSet = new IqlNodeSet();
+		nodeSet.setNodeArrangement(NodeArrangement.ADJACENT);
 		IqlNode node1 = new IqlNode();
 		node1.setConstraint(pred("pos==stts.ADJ"));
-		lane.addElement(node1);
+		nodeSet.addNode(node1);
 		IqlNode node2 = new IqlNode();
 		node2.setConstraint(pred("[form==\"test\"]"));
-		lane.addElement(node2);
+		nodeSet.addNode(node2);
+		lane.setElements(nodeSet);
 		payload.addLane(lane);
 
 		stream.setPayload(payload);

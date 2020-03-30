@@ -69,6 +69,7 @@ import de.ims.icarus2.query.api.exp.Expression.ListExpression;
 import de.ims.icarus2.query.api.exp.Expressions.PathProxy;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.AssignmentOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BitwiseOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.BooleanLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.CastExpressionContext;
@@ -83,6 +84,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ForEachContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.IntegerLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MethodInvocationContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MultiplicativeOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NullLiteralContext;
@@ -96,6 +98,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.Counter;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
@@ -142,6 +145,7 @@ public class ExpressionFactory {
 		handlers.put(DisjunctionContext.class, (f,ctx) -> f.processDisjunction((DisjunctionContext) ctx));
 		handlers.put(TernaryOpContext.class, (f,ctx) -> f.processTernaryOp((TernaryOpContext) ctx));
 		handlers.put(ForEachContext.class, (f,ctx) -> f.processForEach((ForEachContext) ctx));
+		handlers.put(AssignmentOpContext.class, (f,ctx) -> f.processAssignmentOp((AssignmentOpContext) ctx));
 	}
 	//TODO handle assignmentOp "exp AS (member | var)", a special expression that returns true if the assignment produces a value other than 0 or null
 
@@ -466,32 +470,48 @@ public class ExpressionFactory {
 		}
 	}
 
+	private Assignable<?> processVariable(VariableNameContext ctx) {
+		String name = processIdentifier(ctx.Identifier());
+		Assignable<?> result = context.getVariable(name);
+		stats.variables.increment(name);
+		return result;
+	}
+
+	private Assignable<? extends Item> processMember(MemberContext ctx) {
+		// Grab identifier and let context resolve it to member expression
+		String name = processIdentifier(ctx.Identifier());
+		Assignable<? extends Item> result = context.getMember(name).orElseThrow(
+				() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+						"No member available for name: "+name, asFragment(ctx)));
+		stats.members.increment(name);
+		return result;
+	}
+
+	private Expression<?> processAnnotation(QualifiedIdentifierContext ctx) {
+		String key = processIdentifier(ctx);
+		Expression<? extends Item> item = context.getElementStore().orElseThrow(
+				() -> new QueryException(QueryErrorCode.INCORRECT_USE,
+						"No surrounding item context available", asFragment(ctx)));
+		Expression<?> result = AnnotationAccess.of(item, context, Literals.of(key));
+		stats.annotations.increment(key);
+		return result;
+	}
+
 	private Expression<?> processReference(ReferenceContext ctx) {
 		Expression<?> result = null;
 		if(ctx.variableName()!=null) {
 			// Grab identifier and let context resolve actual variable (might create one)
-			String name = processIdentifier(ctx.variableName().Identifier());
-			result = context.getVariable(name);
-			stats.variables.increment(name);
+			result = processVariable(ctx.variableName());
 		} else if(ctx.member()!=null) {
 			// Grab identifier and let context resolve it to member expression
-			String name = processIdentifier(ctx.member().Identifier());
-			result = context.getMember(name).orElseThrow(
-					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
-							"No member available for name: "+name, asFragment(ctx)));
-			stats.members.increment(name);
+			result = processMember(ctx.member());
 		} else if(ctx.Identifier()!=null) {
-			//TODO check first if it is a special marker (e.g. 'rightmost') and then send to EvaluationContext (after checking for negated context)
+			//TODO check first if it is a special marker (e.g. 'last', 'first') and then send to EvaluationContext (after checking for negated context)
 			// Wrap into source-less path proxy for delayed resolution
 			result = Expressions.pathProxy(processIdentifier(ctx.Identifier()), ctx);
 		} else if(ctx.qualifiedIdentifier()!=null) {
 			// Fetch key and current item context and create annotation access
-			String key = processIdentifier(ctx.qualifiedIdentifier());
-			Expression<? extends Item> item = context.getElementStore().orElseThrow(
-					() -> new QueryException(QueryErrorCode.INCORRECT_USE,
-							"No surrounding item context available", asFragment(ctx)));
-			result = AnnotationAccess.of(item, context, Literals.of(key));
-			stats.annotations.increment(key);
+			result = processAnnotation(ctx.qualifiedIdentifier());
 		} else
 			failForUnhandledAlternative(ctx);
 
@@ -794,7 +814,7 @@ public class ExpressionFactory {
 		return BinaryOperations.numericalOp(op, left, right);
 	}
 
-	Expression<?> processComparisonOp(ComparisonOpContext ctx) {
+	Expression<Primitive<Boolean>> processComparisonOp(ComparisonOpContext ctx) {
 
 		Expression<?> left = processAndResolveExpression0(ctx.left);
 		Expression<?> right = processAndResolveExpression0(ctx.right);
@@ -873,7 +893,7 @@ public class ExpressionFactory {
 		return BinaryOperations.comparablePred(comp, left, right);
 	}
 
-	Expression<?> processStringOp(StringOpContext ctx) {
+	Expression<Primitive<Boolean>> processStringOp(StringOpContext ctx) {
 		Expression<CharSequence> target = ensureText(processAndResolveExpression0(ctx.left));
 		Expression<CharSequence> query = ensureText(processAndResolveExpression0(ctx.right));
 
@@ -901,7 +921,7 @@ public class ExpressionFactory {
 		return maybeNegate(expression, negate);
 	}
 
-	Expression<?> processEqualityCheck(EqualityCheckContext ctx) {
+	Expression<Primitive<Boolean>> processEqualityCheck(EqualityCheckContext ctx) {
 		Expression<?> left = processAndResolveExpression0(ctx.left);
 		Expression<?> right = processAndResolveExpression0(ctx.right);
 
@@ -958,7 +978,7 @@ public class ExpressionFactory {
 		return expression;
 	}
 
-	Expression<?> processConjunction(ConjunctionContext ctx) {
+	Expression<Primitive<Boolean>> processConjunction(ConjunctionContext ctx) {
 		List<Expression<?>> elements = new ArrayList<>();
 
 		// Try to collapse any conjunctive sequence into a single term
@@ -974,7 +994,7 @@ public class ExpressionFactory {
 		return LogicalOperators.conjunction(elements.toArray(NO_ARGS), isAllowEarlyExit());
 	}
 
-	Expression<?> processDisjunction(DisjunctionContext ctx) {
+	Expression<Primitive<Boolean>> processDisjunction(DisjunctionContext ctx) {
 		List<Expression<?>> elements = new ArrayList<>();
 
 		// Try to collapse any disjunctive sequence into a single term
@@ -988,6 +1008,20 @@ public class ExpressionFactory {
 		elements.add(processAndResolveExpression0(tail));
 
 		return LogicalOperators.disjunction(elements.toArray(NO_ARGS), isAllowEarlyExit());
+	}
+
+	Expression<Primitive<Boolean>> processAssignmentOp(AssignmentOpContext ctx) {
+		Expression<?> source = processAndResolveExpression0(ctx.source);
+		Assignable<?> target;
+		if(ctx.member()!=null) {
+			target = processMember(ctx.member());
+		} else if(ctx.variableName()!=null) {
+			target = processVariable(ctx.variableName());
+		} else {
+			return failForUnhandledAlternative(ctx);
+		}
+
+		return AssignmentOperation.assignment(source, target);
 	}
 
 	Expression<?> processTernaryOp(TernaryOpContext ctx) {

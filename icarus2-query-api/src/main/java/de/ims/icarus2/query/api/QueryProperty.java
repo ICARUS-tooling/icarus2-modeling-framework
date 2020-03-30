@@ -17,20 +17,13 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.iql;
+package de.ims.icarus2.query.api;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+/**
+ * @author Markus Gärtner
+ *
+ */
+public enum QueryProperty {
 
-public enum NodeArrangement {
-	UNSPECIFIED("unspecified"),
-	ORDERED("ordered"),
-	ADJACENT("adjacent")
-	;
-
-	private final String label;
-
-	private NodeArrangement(String label) { this.label = label; }
-
-	@JsonValue
-	public String getLabel() { return label; }
+	//TODO property for defining default node arrangement for a query
 }

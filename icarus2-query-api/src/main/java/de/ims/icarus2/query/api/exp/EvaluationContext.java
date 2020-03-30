@@ -441,8 +441,8 @@ public abstract class EvaluationContext {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public Expression<Container> duplicate(EvaluationContext context) {
-			return (Expression<Container>) context.getContainerStore().orElseThrow(
+		public Assignable<Container> duplicate(EvaluationContext context) {
+			return (Assignable<Container>) context.getContainerStore().orElseThrow(
 					() -> EvaluationUtils.forInternalError(
 					"Target context does not provide container store"));
 		}
@@ -512,10 +512,11 @@ public abstract class EvaluationContext {
 		public Item compute() { return item; }
 
 		@Override
-		public Expression<Item> duplicate(EvaluationContext context) {
-			return context.getElementStore().map(EvaluationUtils::castItem).orElseThrow(
-					() -> EvaluationUtils.forInternalError(
-					"Target context does not provide element store"));
+		public Assignable<Item> duplicate(EvaluationContext context) {
+			return context.getElementStore()
+					.map(EvaluationUtils::castMember)
+					.orElseThrow(() -> EvaluationUtils.forInternalError(
+							"Target context does not provide element store"));
 		}
 	}
 

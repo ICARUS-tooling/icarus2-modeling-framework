@@ -220,6 +220,11 @@ public class EvaluationUtils {
 		return (Expression<Item>) source;
 	}
 
+	@SuppressWarnings("unchecked")
+	static Assignable<Item> castMember(Expression<?> source) {
+		return (Assignable<Item>) source;
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	static Expression<Comparable> castComparable(Expression<?> source) {
 		return (Expression<Comparable>) source;

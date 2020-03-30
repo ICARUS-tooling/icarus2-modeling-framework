@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.query.api.iql;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -129,43 +128,62 @@ public abstract class IqlElement extends IqlUnique {
 		}
 	}
 
+	public static class IqlNodeSet extends IqlElement {
+
+		@JsonProperty(IqlProperties.CHILDREN)
+		@JsonInclude(Include.NON_EMPTY)
+		private final List<IqlElement> nodes = new ArrayList<>();
+
+		@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
+		@JsonInclude(Include.NON_DEFAULT)
+		private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
+
+		@Override
+		public IqlType getType() { return IqlType.NODE_SET; }
+
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+
+			checkCollection(nodes);
+		}
+
+		public List<IqlElement> getNodes() { return CollectionUtils.unmodifiableListProxy(nodes); }
+
+		public NodeArrangement getNodeArrangement() { return nodeArrangement; }
+
+
+		public void addNode(IqlElement child) { nodes.add(requireNonNull(child)); }
+
+		public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = requireNonNull(nodeArrangement); }
+
+		public void forEachNode(Consumer<? super IqlElement> action) { nodes.forEach(requireNonNull(action)); }
+
+	}
+
 	/**
 	 * Implementation note: we use {@link IqlElement} as child type so that
-	 * {@link IqlElementDisjunction} is also allowed.
+	 * {@link IqlElementDisjunction} and {@link IqlNodeSet} are also allowed.
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
 	public static class IqlTreeNode extends IqlNode {
 
+		/**
+		 * Children of this tree node, can either be a single (tree)node,
+		 * an IqlNodeSet or an IqlElementDisjunction.
+		 */
 		@JsonProperty(IqlProperties.CHILDREN)
-		@JsonInclude(Include.NON_EMPTY)
-		private List<IqlElement> children = new ArrayList<>();
-
-		@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
 		@JsonInclude(Include.NON_ABSENT)
-		private Optional<NodeArrangement> nodeArrangement = Optional.empty();
+		private Optional<IqlElement> children = Optional.empty();
 
 		@Override
 		public IqlType getType() { return IqlType.TREE_NODE; }
 
-		@Override
-		public void checkIntegrity() {
-			super.checkIntegrity();
+		public Optional<IqlElement> getChildren() { return children; }
 
-			checkCollection(children);
-		}
-
-		public List<IqlElement> getChildren() { return CollectionUtils.unmodifiableListProxy(children); }
-
-		public Optional<NodeArrangement> getNodeArrangement() { return nodeArrangement; }
-
-
-		public void addChild(IqlElement child) { children.add(requireNonNull(child)); }
-
-		public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = Optional.of(nodeArrangement); }
-
-		public void forEachChild(Consumer<? super IqlElement> action) { children.forEach(requireNonNull(action)); }
+		public void setChildren(IqlElement children) { this.children = Optional.of(children); }
 	}
 
 	public static class IqlEdge extends IqlProperElement {
@@ -251,7 +269,7 @@ public abstract class IqlElement extends IqlUnique {
 	public static class IqlElementDisjunction extends IqlElement {
 
 		@JsonProperty(value=IqlProperties.ALTERNATIVES, required=true)
-		private final List<List<IqlElement>> alternatives = new ArrayList<>();
+		private final List<IqlElement> alternatives = new ArrayList<>();
 
 		@Override
 		public IqlType getType() { return IqlType.ELEMENT_DISJUNCTION; }
@@ -262,19 +280,16 @@ public abstract class IqlElement extends IqlUnique {
 			checkCondition(alternatives.size()>1, "alternatives", "Must have at least 2 alternatives");
 
 			for(int i=0; i<alternatives.size(); i++) {
-				checkCollectionNotEmpty(alternatives.get(i), "alternatives["+i+"]");
+				checkNestedNotNull(alternatives.get(i), "alternatives["+i+"]");
 			}
 		}
 
 		public int getAlternativesCount() { return alternatives.size(); }
 
-		public List<IqlElement> getAlternative(int index) { return CollectionUtils.unmodifiableListProxy(alternatives.get(index)); }
+		public IqlElement getAlternative(int index) { return alternatives.get(index); }
 
-		public void addAlternative(List<? extends IqlElement> items) {
-			requireNonNull(items);
-			checkArgument("Alternative must not be empty", !items.isEmpty());
-
-			alternatives.add(new ArrayList<>(items));
+		public void addAlternative(IqlElement alternative) {
+			alternatives.add(requireNonNull(alternative));
 		}
 	}
 

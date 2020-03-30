@@ -121,6 +121,8 @@ public final class IqlProperties {
 
 	public static final String CHILDREN = IQL_NS_PREFIX+"children";
 
+	public static final String NODES = IQL_NS_PREFIX+"nodes";
+
 	public static final String ALTERNATIVES = IQL_NS_PREFIX+"alternatives";
 
 	public static final String EDGE_TYPE = IQL_NS_PREFIX+"edgeType";

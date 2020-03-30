@@ -21,16 +21,8 @@ package de.ims.icarus2.query.api.iql;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-
-import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
  * @author Markus Gärtner
@@ -52,19 +44,13 @@ public class IqlLane extends IqlAliasedReference {
 	private LaneType laneType;
 
 	@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
-	private final List<IqlElement> elements = new ArrayList<>();
-
-	@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<NodeArrangement> nodeArrangement = Optional.empty();
+	private IqlElement elements;
 
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(laneType, IqlProperties.LANE_TYPE);
-		//TODO 'nodeArrangement' flag only supported for tree or graph statement
-
-		checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
+		checkNestedNotNull(elements, IqlProperties.ELEMENTS);
 	}
 
 	@Override
@@ -72,16 +58,12 @@ public class IqlLane extends IqlAliasedReference {
 
 	public LaneType getLaneType() { return laneType; }
 
-	public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
-
-	public Optional<NodeArrangement> getNodeArrangement() { return nodeArrangement; }
+	public IqlElement getElements() { return elements; }
 
 
 	public void setLaneType(LaneType laneType) { this.laneType = requireNonNull(laneType); }
 
-	public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
-
-	public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = Optional.of(nodeArrangement); }
+	public void setElements(IqlElement elements) { this.elements = requireNonNull(elements); }
 
 	/** Returns {@code true} iff this lane has been assigned the {@link #PROXY_NAME proxy name} */
 	public boolean isProxy() {

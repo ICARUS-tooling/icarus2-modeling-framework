@@ -72,12 +72,14 @@ public class IqlPayload extends IqlUnique {
 		checkOptionalStringNotEmpty(name, IqlProperties.NAME);
 
 		if(queryType==QueryType.ALL) {
-			checkCondition(constraint==null && lanes.isEmpty(), "constraint/lanes",
-					"must not define a global 'constraint' or 'lanes' entry if query type is 'all'");
+			checkCondition(!constraint.isPresent(), IqlProperties.CONSTRAINT,
+					"must not define a global 'constraint' entry if query type is 'all'");
+			checkCondition(lanes.isEmpty(), IqlProperties.LANES,
+					"must not define a global 'lanes' entry if query type is 'all'");
+		} else {
+			checkCondition(constraint.isPresent() || !lanes.isEmpty(), "constraint/lanes",
+					"must either define a global 'constraint' or at least one 'lanes' entry");
 		}
-
-		checkCondition(constraint!=null || !lanes.isEmpty(), "constraint/lanes",
-				"must either define a global 'constraint' or at least one 'lanes' entry");
 
 		checkCollection(bindings);
 		checkOptionalNested(constraint);

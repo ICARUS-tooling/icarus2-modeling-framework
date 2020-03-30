@@ -73,9 +73,9 @@ public final class References {
 		public void clear() { item = null; }
 
 		@Override
-		public Expression<Item> duplicate(EvaluationContext context) {
+		public Assignable<Item> duplicate(EvaluationContext context) {
 			return context.getMember(name)
-					.map(EvaluationUtils::castItem)
+					.map(EvaluationUtils::castMember)
 					.orElseThrow(() -> EvaluationUtils.forInternalError(
 							"Context is missing member store for name: %s", name));
 		}

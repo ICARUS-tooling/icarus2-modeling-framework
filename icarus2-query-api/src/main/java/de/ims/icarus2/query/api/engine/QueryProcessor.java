@@ -26,7 +26,6 @@ import static de.ims.icarus2.query.api.iql.AntlrUtils.isContinuous;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.strings.StringUtil.isNullOrEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -43,8 +42,10 @@ import org.antlr.v4.runtime.Token;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.iql.AntlrUtils;
@@ -58,6 +59,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
@@ -427,17 +429,9 @@ public class QueryProcessor {
 
 		private void processLaneContent(IqlLane lane, NodeStatementContext ctx) {
 
-			if(ctx instanceof NodeSequenceContext) {
-				NodeSequenceContext nsctx = (NodeSequenceContext)ctx;
-				NodeArrangementContext nctx = nsctx.nodeArrangement();
-				if(nctx!=null) {
-					lane.setNodeArrangement(processNodeArrangement(nctx));
-				}
-			}
-
 			try {
 				// Start the (recursive) node parsing with a 'null' parent
-				processNodeStatement(ctx, null).forEach(lane::addElement);
+				lane.setElements(processNodeStatement(ctx, null));
 
 				LaneType laneType = LaneType.SEQUENCE;
 				if(treeFeaturesUsed) {
@@ -450,14 +444,6 @@ public class QueryProcessor {
 			} finally {
 				treeFeaturesUsed = false;
 				graphFeaturesUsed = false;
-			}
-
-			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(lane.getNodeArrangement().isPresent()
-					&& countExistentialElements(lane.getElements())<2) {
-				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
-						"For node arrangement feature to be effective the query needs at least"
-						+ " two distinct nodes that are existentially quantified.");
 			}
 		}
 
@@ -571,7 +557,8 @@ public class QueryProcessor {
 		}
 
 		/** Process given node statement and honor limitations of specified query type */
-		private List<? extends IqlElement> processNodeStatement(NodeStatementContext ctx, IqlTreeNode parent) {
+		private IqlElement processNodeStatement(NodeStatementContext ctx,
+				IqlTreeNode parent) {
 			ctx = unwrap(ctx);
 
 			if(ctx instanceof NodeSequenceContext) {
@@ -579,26 +566,42 @@ public class QueryProcessor {
 			} else if (ctx instanceof ElementSequenceContext) {
 				return processElementSequence((ElementSequenceContext) ctx, parent);
 			} else if (ctx instanceof NodeAlternativesContext) {
-				return list(processNodeAlternatives((NodeAlternativesContext) ctx, parent));
+				return processNodeAlternatives((NodeAlternativesContext) ctx, parent);
 			}
 
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private List<IqlNode> processNodeSequence(NodeSequenceContext ctx,
+		private IqlNodeSet processNodeSequence(NodeSequenceContext ctx,
 				@Nullable IqlTreeNode parent) {
-			List<IqlNode> elements = new ArrayList<>();
+			IqlNodeSet nodeSet = new IqlNodeSet();
+			genId(nodeSet);
+
 			for(NodeContext nctx : ctx.node()) {
-				elements.add(processNode(nctx, parent));
+				nodeSet.addNode(processNode(nctx, parent));
 			}
-			return elements;
+			if(ctx.nodeArrangement()!=null) {
+				nodeSet.setNodeArrangement(processNodeArrangement(ctx.nodeArrangement()));
+			}
+
+			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
+			if(nodeSet.getNodeArrangement()!=NodeArrangement.UNSPECIFIED
+					&& countExistentialElements(nodeSet.getNodes())<2) {
+				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
+						"For node arrangement feature to be effective the query needs at least"
+						+ " two distinct nodes that are existentially quantified.");
+			}
+
+			return nodeSet;
 		}
 
-		private List<IqlElement> processElementSequence(ElementSequenceContext ctx,
+		private IqlNodeSet processElementSequence(ElementSequenceContext ctx,
 				@Nullable IqlTreeNode parent) {
-			List<IqlElement> elements = new ArrayList<>();
+			IqlNodeSet elements = new IqlNodeSet();
+			genId(elements);
+
 			for(ElementContext ectx : ctx.element()) {
-				elements.add(processElement(ectx, parent));
+				elements.addNode(processElement(ectx, parent));
 			}
 			return elements;
 		}
@@ -612,6 +615,23 @@ public class QueryProcessor {
 			if(cctx!=null) {
 				element.setConstraint(processConstraint(cctx));
 			}
+		}
+
+		private IqlNodeSet ensureChildren(IqlTreeNode node) {
+			Optional<IqlElement> children = node.getChildren();
+			if(!children.isPresent()) {
+				node.setChildren(new IqlNodeSet());
+				children = node.getChildren();
+			}
+
+			assert children.isPresent();
+			IqlElement element = children.get();
+			if(!(element instanceof IqlNodeSet))
+				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+						Messages.mismatch("Type of parent's children object mismatch",
+								IqlNodeSet.class, element.getClass()));
+
+			return (IqlNodeSet)element;
 		}
 
 		private IqlNode processNode(NodeContext ctx, @Nullable IqlTreeNode parent) {
@@ -653,18 +673,13 @@ public class QueryProcessor {
 				}
 			}
 
+			if(parent!=null) {
+				ensureChildren(parent).addNode(node);
+			}
+
 			// Finally process actual children
 			if(ctx.nodeStatement()!=null) {
-				IqlTreeNode tNode = (IqlTreeNode) node;
-				NodeStatementContext nctx = ctx.nodeStatement();
-				if(nctx instanceof NodeSequenceContext) {
-					NodeSequenceContext nsctx = (NodeSequenceContext)nctx;
-					NodeArrangementContext nactx = nsctx.nodeArrangement();
-					if(nactx!=null) {
-						tNode.setNodeArrangement(processNodeArrangement(nactx));
-					}
-				}
-				processNodeStatement(nctx, tNode).forEach(tNode::addChild);
+				processNodeStatement(ctx.nodeStatement(), (IqlTreeNode) node);
 			}
 
 			return node;
@@ -788,7 +803,6 @@ public class QueryProcessor {
 		private IqlEdge processFilledEdge(FilledEdgeContext ctx, IqlNode source, IqlNode target) {
 			IqlEdge edge = new IqlEdge();
 
-			genId(edge);
 			processProperElement0(edge, ctx.memberLabel(), ctx.constraint());
 
 			LeftEdgePartContext left = ctx.leftEdgePart();
