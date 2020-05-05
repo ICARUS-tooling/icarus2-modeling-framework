@@ -206,9 +206,8 @@ public class BinaryOperations {
 		/**
 		 * Asks the left and right operands to optimize themselves and
 		 * {@link #toConstant(Expression, Expression) simplifies} this expression into a constant
-		 * if both the optimized operands report being constant. Otherwise TODO
-		 *
-		 * If none of these conditions are met, this expression is returned as-is.
+		 * if both the optimized operands report being constant. Otherwise this
+		 * expression is returned as-is.
 		 *
 		 * @see de.ims.icarus2.query.api.exp.Expression#duplicate(de.ims.icarus2.query.api.exp.EvaluationContext)
 		 */

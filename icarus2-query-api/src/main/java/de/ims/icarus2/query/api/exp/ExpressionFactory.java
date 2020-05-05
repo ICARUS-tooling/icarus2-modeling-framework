@@ -100,7 +100,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
-import de.ims.icarus2.util.Counter;
+import de.ims.icarus2.util.CountingStats;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
@@ -120,7 +120,7 @@ public class ExpressionFactory {
 	 * Note that tracking is only performed once the associated
 	 * element has been successfully processed.
 	 */
-	private final Stats stats = new Stats();
+	private final CountingStats<StatsField, String> stats = new CountingStats<>(StatsField.class);
 
 	private static final Map<Class<? extends ParserRuleContext>, BiFunction<ExpressionFactory,ParserRuleContext, Expression<?>>>
 		handlers = new Object2ObjectOpenHashMap<>();
@@ -153,7 +153,7 @@ public class ExpressionFactory {
 
 	public EvaluationContext getContext() { return context; }
 
-	public Stats getStats() { return stats; }
+	public CountingStats<StatsField,String> getStats() { return stats; }
 
 	private boolean isAllowUnicode() {
 		return !context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF);
@@ -219,7 +219,7 @@ public class ExpressionFactory {
 				Optional<AnnotationInfo> annotation = context.findAnnotation(identifier);
 				if(annotation.isPresent()) {
 					Expression<?> exp = AnnotationAccess.of(item.get(), annotation.get());
-					stats.annotations.increment(name);
+					stats.count(StatsField.ANNOTATION, name);
 					return exp;
 				}
 				// Otherwise it _must_ be a proper path in the object graph
@@ -232,7 +232,7 @@ public class ExpressionFactory {
 
 			// Only track root references of a path
 			if(source==null) {
-				stats.references.increment(name);
+				stats.count(StatsField.REFERENCE, name);
 			}
 
 			return result;
@@ -473,7 +473,7 @@ public class ExpressionFactory {
 	private Assignable<?> processVariable(VariableNameContext ctx) {
 		String name = processIdentifier(ctx.Identifier());
 		Assignable<?> result = context.getVariable(name);
-		stats.variables.increment(name);
+		stats.count(StatsField.VARIABLE, name);
 		return result;
 	}
 
@@ -483,7 +483,7 @@ public class ExpressionFactory {
 		Assignable<? extends Item> result = context.getMember(name).orElseThrow(
 				() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 						"No member available for name: "+name, asFragment(ctx)));
-		stats.members.increment(name);
+		stats.count(StatsField.MEMBER, name);
 		return result;
 	}
 
@@ -493,7 +493,7 @@ public class ExpressionFactory {
 				() -> new QueryException(QueryErrorCode.INCORRECT_USE,
 						"No surrounding item context available", asFragment(ctx)));
 		Expression<?> result = AnnotationAccess.of(item, context, Literals.of(key));
-		stats.annotations.increment(key);
+		stats.count(StatsField.ANNOTATION, key);
 		return result;
 	}
 
@@ -607,7 +607,7 @@ public class ExpressionFactory {
 		Expression<?>[] indices = processExpressionList(ctx.indices);
 
 		if(indices.length<1)
-			// TODO actually not possible due to IQL rule
+			// FIXME actually not possible due to IQL rule
 			throw new QueryException(QueryErrorCode.INCORRECT_USE,
 					"List access needs at least 1 index argument: "+textOf(ctx), asFragment(ctx));
 
@@ -633,6 +633,7 @@ public class ExpressionFactory {
 		Expression<?>[] arguments = processExpressionList(ctx.keys);
 
 		if(arguments.length<1)
+			// FIXME actually not possible due to IQL rule
 			throw new QueryException(QueryErrorCode.INCORRECT_USE,
 					"Annotation access needs at least 1 key argument: "+textOf(ctx), asFragment(ctx));
 
@@ -1083,12 +1084,36 @@ public class ExpressionFactory {
 		return failForUnhandledAlternative(ctx);
 	}
 
-	public static class Stats {
-		private final Counter<String> members = new Counter<>();
-		private final Counter<String> variables = new Counter<>();
-		private final Counter<String> annotations = new Counter<>();
-		private final Counter<String> references = new Counter<>();
-
-		//TODO add public methods for reading the content in a save manner
+	public enum StatsField {
+		MEMBER,
+		VARIABLE,
+		ANNOTATION,
+		REFERENCE,
+		;
 	}
+
+//	public static class Stats {
+//		private final Counter<String> members = new Counter<>();
+//		private final Counter<String> variables = new Counter<>();
+//		private final Counter<String> annotations = new Counter<>();
+//		private final Counter<String> references = new Counter<>();
+//
+//
+//		private Counter<String> forField(StatsField field) {
+//			switch (field) {
+//			case MEMBER: return members;
+//			case VARIABLE: return variables;
+//			case ANNOTATION: return annotations;
+//			case REFERENCE: return references;
+//
+//			default:
+//				throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
+//						"Unknown field: "+field);
+//			}
+//		}
+//
+//		public Set<String> getValues(StatsField field) {
+//
+//		}
+//	}
 }

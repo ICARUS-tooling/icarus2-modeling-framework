@@ -47,9 +47,10 @@ import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.engine.ext.EngineExtension;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.RootContextBuilder;
 import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.ExpressionFactory;
-import de.ims.icarus2.query.api.exp.EvaluationContext.RootContextBuilder;
+import de.ims.icarus2.query.api.exp.env.ConstantsEnvironment;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlData;
 import de.ims.icarus2.query.api.iql.IqlImport;
@@ -136,7 +137,7 @@ public class QueryEngine {
 		QueryContext(IqlQuery query) {
 			this.query = requireNonNull(query);
 
-			// Resolve exensions
+			// Resolve extensions
 			List<IqlImport> imports = query.getImports();
 			if(imports.isEmpty()) {
 				extensions = Collections.emptyList();
@@ -210,8 +211,8 @@ public class QueryEngine {
 			applyEmbeddedData(contextBuilder, queryContext.getEmbeddedData());
 			applyExtensions(contextBuilder, queryContext.getExtensions()); // partly outside our control
 
-			EvaluationContext context = contextBuilder.build();
-			ExpressionFactory expressionFactory = new ExpressionFactory(context);
+			EvaluationContext rootContext = contextBuilder.build();
+			ExpressionFactory expressionFactory = new ExpressionFactory(rootContext);
 			//TODO build the structural matchers and parse all the expressions
 
 			throw new UnsupportedOperationException();
@@ -238,7 +239,7 @@ public class QueryEngine {
 				return;
 			}
 
-			//TODO wrap embedded data into a new environment and add to builder
+			builder.registerEnvironment(ConstantsEnvironment.forMapping(data));
 		}
 
 		private void applyExtensions(RootContextBuilder builder, List<EngineExtension> extensions) {
@@ -292,7 +293,7 @@ public class QueryEngine {
 				if(rawLayer.isPrimary()) {
 					if(!ModelUtils.isItemLayer(layer))
 						throw new QueryException(QueryErrorCode.INCORRECT_USE,
-								"Designated primary layer is not a vlaid item layer: "+getName(layer));
+								"Designated primary layer is not a valid item layer: "+getName(layer));
 					if(primaryLayer!=null)
 						throw new QueryException(QueryErrorCode.INCORRECT_USE,
 								"Primary layer already designated: "+getName(layer));

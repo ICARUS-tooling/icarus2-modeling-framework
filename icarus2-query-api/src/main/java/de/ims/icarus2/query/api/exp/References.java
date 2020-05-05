@@ -81,6 +81,12 @@ public final class References {
 		}
 	}
 
+	/**
+	 * Models embedded data packets in a query.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	static final class Payload implements Expression<byte[]>, NamedObject {
 
 		private final String name;

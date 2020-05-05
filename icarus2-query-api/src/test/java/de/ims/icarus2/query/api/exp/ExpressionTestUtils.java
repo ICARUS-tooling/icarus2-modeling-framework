@@ -34,13 +34,6 @@ import org.junit.jupiter.api.function.Executable;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.exp.ArrayLiterals;
-import de.ims.icarus2.query.api.exp.Conversions;
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.EvaluationUtils;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.Literals;
-import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
@@ -614,6 +607,4 @@ public class ExpressionTestUtils {
 			public double getAsDouble(int index) { return source.get()[index]; }
 		};
 	}
-
-	//TODO other simple dynamic implementations!
 }

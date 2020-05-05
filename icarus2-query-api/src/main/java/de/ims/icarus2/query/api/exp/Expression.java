@@ -226,6 +226,4 @@ public interface Expression<T> {
 		@Override
 		default TypeInfo getElementType() { return TypeInfo.BOOLEAN; }
 	}
-
-	//TODO
 }
