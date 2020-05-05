@@ -158,8 +158,8 @@ This document lists the basic building blocks of queries and their compositions.
 %\end{itemize}
 \desc{A binding associates a collection of member variables (\ref{sec:variables-references}) with the content of a specific \repoLink{layer/ItemLayer.java}{item layer} or derived layer type.}
 \begin{attributes}{\iqlType{Binding}}
-	\attribute{distinct}{boolean}{no}{false}
-	\attribute{edges}{boolean}{no}{false}
+	\attribute{distinct}{Boolean}{no}{false}
+	\attribute{edges}{Boolean}{no}{false}
 	\attribute{target}{string}{yes}{}
 \end{attributes}
 \begin{description}
@@ -188,13 +188,13 @@ This document lists the basic building blocks of queries and their compositions.
 \desc{Constraints represent the actual content filtering of every query.}
 \begin{attributes}{\iqlBaseType{Constraint}}
 	\attribute{id}{string}{yes}{}
-	\attribute{solved}{boolean}{no}{false}
-	\attribute{solvedAs}{boolean}{no}{false}
+	\attribute{solved}{Boolean}{no}{false}
+	\attribute{solvedAs}{Boolean}{no}{false}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the constraint within the entire query.
 	\item[\iqlType{solved}] Hint for the evaluation engine that this constraint has already been solved, either by a back-end implementation or as a result of (partial) query evaluation by the engine itself.
-	\item[\iqlType{solvedAs}] Specifies to what boolean value (\texttt{true} or \texttt{false}) the constraint has been evaluated.
+	\item[\iqlType{solvedAs}] Specifies to what Boolean value (\texttt{true} or \texttt{false}) the constraint has been evaluated.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -205,13 +205,13 @@ This document lists the basic building blocks of queries and their compositions.
 %\begin{itemize}
 %	\item expression
 %\end{itemize}
-\desc{Wraps a boolean \iqlType{Expression} into an atomic constraint element that represents the smallest unit of evaluation for the top-level evaluation engine.}
+\desc{Wraps a Boolean \iqlType{Expression} into an atomic constraint element that represents the smallest unit of evaluation for the top-level evaluation engine.}
 \extends{\iqlBaseType{Constraint}}{\ref{sec:json-ld-constraint}}
 \begin{elements}{\iqlType{Predicate}}
 	\element{expression}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{yes}
 \end{elements}
 \begin{description}
-	\item[\iqlType{expression}] The actual expression to be evaluated to a boolean result. Note that typically this expression \textbf{cannot} be composed of directly nested boolean conjunctions or disjunctions, as the engine will have parsed those into \iqlType{Term} (\ref{sec:json-ld-term}) objects already during the first processing phase.
+	\item[\iqlType{expression}] The actual expression to be evaluated to a Boolean result. Note that typically this expression \textbf{cannot} be composed of directly nested Boolean conjunctions or disjunctions, as the engine will have parsed those into \iqlType{Term} (\ref{sec:json-ld-term}) objects already during the first processing phase.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -229,7 +229,7 @@ This document lists the basic building blocks of queries and their compositions.
 	\attribute{operation}{enum}{yes}{}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{operation}] The boolean connective to be applied to all the constraint items. Legal values are the strings ``conjunction'' or ``disjunction''.
+	\item[\iqlType{operation}] The Boolean connective to be applied to all the constraint items. Legal values are the strings ``conjunction'' or ``disjunction''.
 \end{description}
 \begin{elements}{\iqlType{Term}}
 \element{items}{array of \iqlType{Constraint} (\ref{sec:json-ld-constraint})}{yes}
@@ -298,7 +298,7 @@ This document lists the basic building blocks of queries and their compositions.
 \desc{Abstract base type for all logical and/or structural units that can be matched against content of a target corpus.}
 \begin{attributes}{\iqlBaseType{Element}}
 	\attribute{id}{string}{yes}{}
-	\attribute{consumed}{boolean}{no}{false}
+	\attribute{consumed}{Boolean}{no}{false}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the element within the entire query.
@@ -309,6 +309,30 @@ This document lists the basic building blocks of queries and their compositions.
 		\item An \iqlType{Edge}(\ref{sec:json-ld-edge}) is considered \texttt{consumed} when both its terminals are \texttt{consumed} and the same conditions regarding its \iqlType{constraint} are fulfilled as mentioned above.
 		\item A \iqlType{ElementDisjunction}(\ref{sec:json-ld-element-disjunction}) is considered \texttt{consumed} if at least one of its \iqlType{alternatives} has been marked \texttt{consumed}.
 	\end{itemize}
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     NODE SET
+\subsubsection{Node Set}
+\label{sec:json-ld-node-set}
+%\begin{itemize}
+%\item nodes
+%\item nodeArrangement
+%\end{itemize}
+\desc{Wrapper around a list of \iqlType{Element} (\ref{sec:json-ld-element}) instances to group them for either nesting or disjunction.}
+\extends{\iqlType{Node}}{\ref{sec:json-ld-node}}
+\begin{attributes}{\iqlType{NodeSet}}
+	\attribute{nodeArrangement}{enum}{no}{unspecified}
+\end{attributes}
+\begin{description}
+	\item[\iqlType{nodeArrangement}] Defines what kind of order or arrangement should be assumed between the elements in this set. Legal values are \texttt{unspecified}, \texttt{ordered} (matched elements must occur in exactly the order specified in this set but need not form a continuous span) or \texttt{adjacent} (matched elements must form a continuous span).
+\end{description}
+\begin{elements}{\iqlType{NodeSet}}
+	\element{nodes}{array of \iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
+\end{elements}
+\begin{description}
+	\item[\iqlType{nodes}] List of nested \iqlBaseType{Element} instances. Legal types depend on the context in which this set is being used.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -335,7 +359,7 @@ This document lists the basic building blocks of queries and their compositions.
 \end{elements}
 \begin{description}
 	\item[\iqlType{constraint}] Optional local constraint to be matched against the content of potential target candidates during query evaluation.
-	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation.
+	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation. Multiple quantifiers behave disjunctively. Note that \iql defines some restrictions on the legal combinations of quantifiers: The all-quantifier (\texttt{*} or \texttt{all}) and not-quantifier (\texttt{!} or \texttt{not}) can only be used in isolation, all other quantifiers can be combined in disjunctive fashion.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -349,10 +373,10 @@ This document lists the basic building blocks of queries and their compositions.
 \desc{Extension of the simple \iqlType{Node} type (\ref{sec:json-ld-node}) to add implicit hierarchical constraints related to dominance within tree structures.}
 \extends{\iqlType{Node}}{\ref{sec:json-ld-node}}
 \begin{elements}{\iqlType{TreeNode}}
-	\element{children}{array of \iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
+	\element{children}{instance of \iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
 \end{elements}
 \begin{description}
-	\item[\iqlType{children}] Optional list of nested nodes or node alternatives.
+	\item[\iqlType{children}] Optional nested nodes or node alternatives.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -385,7 +409,7 @@ This document lists the basic building blocks of queries and their compositions.
 \begin{description}
 	\item[\iqlType{constraint}] Optional local constraint to be matched against the content of potential target candidates during query evaluation.
 	\item[\iqlType{source}] Source node declaration. 
-	\item[\iqlType{target}] target node declaration. 
+	\item[\iqlType{target}] Target node declaration. 
 \end{description}
 For complex graph declarations multiple nodes can be defined having the same \iqlType{label}. The evaluation engine will treat them as being the same node. Note however, that at most \textbf{one} node per label is allowed to declare a local \iqlType{constraint} attribute!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -394,10 +418,10 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %     ELEMENT DISJUNCTION
 \subsubsection{Element Disjunction}
 \label{sec:json-ld-element-disjunction}
-\begin{itemize}
-	\item alternatives
-\end{itemize}
-\desc{Allows declaration of multiple alternative element definitions. When evaluating the query, each such alternative that is matched successfully, will cause this element declaration to evaluate positively.}
+%\begin{itemize}
+%	\item alternatives
+%\end{itemize}
+\desc{Allows declaration of multiple alternative element definitions. When evaluating the query, each such alternative that is matched successfully will cause this element declaration to evaluate positively.}
 \extends{\iqlBaseType{Element}}{\ref{sec:json-ld-element}}
 \begin{elements}{\iqlType{ElementDisjunction}}
 	\element{alternatives}{array of \iqlType{Element} (\ref{sec:json-ld-element})}{yes}
@@ -415,14 +439,14 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %\item content
 %\item resultType
 %\end{itemize}
-\desc{Wraps the textual form of an arbitrarily complex \iql expression, which can be formula, literal, method invocation, a combination of those or a great many other types of expressions. FOr more details see \cref{sec:expressions}.}
+\desc{Wraps the textual form of an arbitrarily complex \iql expression, which can be a formula, literal, method invocation, a combination of those or a great many other types of expressions. For more details see \cref{sec:expressions}.}
 \begin{attributes}{\iqlType{Expression}}
 	\attribute{content}{string}{yes}{}
 	\attribute{resultType}{string}{no}{}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{content}] The textual form of the expression. Must be valid according to the specifications in \cref{sec:expressions}.
-	\item[\iqlType{resultType}] An optional specification regarding the return type of the expression. Redundant when the expression is used as a constraint, as those are required to always evaluate to a boolean result value anyway.
+	\item[\iqlType{resultType}] An optional specification regarding the return type of the expression. Redundant when the expression is used as a constraint, as those are required to always evaluate to a Boolean result value anyway.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -466,7 +490,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 \begin{attributes}{\iqlType{Import}}
 	\attribute{id}{string}{yes}{}
 	\attribute{name}{string}{yes}{}
-	\attribute{optional}{boolean}{no}{false}
+	\attribute{optional}{Boolean}{no}{false}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the import within the entire query.
@@ -479,27 +503,32 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %     LANE
 \subsection{Lane}
 \label{sec:json-ld-lane}
-\begin{itemize}
-\item id
-\item name
-\item laneType
-\item elements
-\item nodeArrangement
-\end{itemize}
+%\begin{itemize}
+%\item id
+%\item name
+%\item alias %stores the member name used to reference the entire structure/sentence
+%\item laneType
+%\item elements
+%\end{itemize}
 %TODO fill
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+\desc{Lanes serve as a means of splitting queries for a single corpus stream into multiple logical subqueries that target different structural and/or logical layers, e.g. multiple syntactic analyses for the same source text.}
+\begin{attributes}{\iqlType{Lane}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{yes}{}
+	\attribute{alias}{string}{no}{}
+	\attribute{laneType}{enum}{yes}{}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the lane within the entire query.
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{name}] The unique identifier of the \repoLink{layer/ItemLayer.java}{item layer} or \repoLink{layer/StructureLayer.java}{structure layer} that serves as target for this lane.
+	\item[\iqlType{alias}] If items of this lane in their entirety are meant to be used as part of query expressions inside this field holds the label used for the respective member variable. It is recommended to keep the chosen \texttt{alias} close to the original \texttt{name} to avoid confusion.
+	\item[\iqlType{laneType}] The type of structure this lane is meant to match, effectively defining the basic complexity class for evaluation. legal values are \texttt{sequence}, \texttt{tree} and \texttt{graph}. Note that the initial evaluation engine for \iql does not support the \texttt{graph} type! %TODO adjust once we extend the engine
 \end{description}
-\begin{elements}{\iqlType{XXX}}
-	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\begin{elements}{\iqlType{Lane}}
+	\element{elements}{\iqlBaseType{Element} (\ref{sec:json-ld-element})}{yes}
 \end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{elements}] The structural constraints to be used for evaluation of this lane.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -534,29 +563,34 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 %     PAYLOAD
 \subsection{Payload}
 \label{sec:json-ld-payload}
-\begin{itemize}
-\item id
-\item name
-\item queryType
-\item bindings
-\item lanes
-\item constraint
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+%\begin{itemize}
+%\item id
+%\item name
+%\item queryType
+%\item bindings
+%\item lanes
+%\item constraint
+%\end{itemize}
+\desc{Every payload encapsulates all the (processed) query constraints to be evaluated against a single stream of corpus data.}
+\begin{attributes}{\iqlType{Payload}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{no}{}
+	\attribute{queryType}{enum}{yes}{}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{id}] Identifier to uniquely identify the payload within the entire query.
-	\item[\iqlType{name}] Identifier to uniquely identify the payload within the entire query.
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Automatically generated identifier to uniquely identify the payload within the entire query.
+	\item[\iqlType{name}] Custom identifier to uniquely identify the payload within the entire query. This attribute is deprecated but currently being kept to shift its use case.
+	\item[\iqlType{queryType}] The overall type of query strategy to be applied for this query payload. Legal values are \texttt{all} (returns the entire corpus and disallows any kind of constraint, leaving only the \iqlType{Result} (\ref{sec:json-ld-result}) declaration as option to modify the result volume), \texttt{plain} (disabling any kind of structural constraints/lanes), \texttt{singleLane} and \texttt{multiLane}. The last two values dictate the minimal/maximal number of \iqlType{Lane} definitions in this payload.
 \end{description}
 \begin{elements}{\iqlType{XXX}}
-	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+	\element{bindings}{array of \iqlType{Binding} (\ref{sec:json-ld-binding})}{no}
+	\element{lanes}{array of \iqlType{Lane} (\ref{sec:json-ld-lane})}{no}
+	\element{constraint}{\iqlType{Constraint} (\ref{sec:json-ld-constraint})}{no}
 \end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{bindings}] Optional collection of bindings used within this payload. Note that member variables inside constraints or structural query elements will not resolve unless previously bound to corpus members.
+	\item[\iqlType{lanes}] If \iqlType{queryType} is set to \texttt{singleLane} or \texttt{multiLane}, this array is expected to hold either exactly 1 or at least 2 \iqlType{Lane} declarations that define structural constraint for the evaluation.
+	\item[\iqlType{constraint}] If \iqlType{queryType} is set to \texttt{plain}, this is expected to contain the basic constraints for matching candidates. In any version involving \iqlType{Lane} declarations, global constraints can be defined here as a means of implementing complex query features that are tested once the lanes have produced preliminary result candidates.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -595,15 +629,15 @@ iql.string.case.lower       & Another approach to case insensitivity, this switc
 \hline
 iql.expansion.off           & Effectively shuts down value expansion \cref{sec:value-expansion}.  \\ 
 \hline
-iql.string2bool.off         & Deactivates the interpretation of strings as boolean values as described in \cref{sec:constraints}.  \\ 
+iql.string2bool.off         & Deactivates the interpretation of strings as Boolean values as described in \cref{sec:constraints}.  \\ 
 \hline
-iql.int2bool.off            & Deactivates the interpretation of integers as boolean values as described in \cref{sec:constraints}.  \\ 
+iql.int2bool.off            & Deactivates the interpretation of integers as Boolean values as described in \cref{sec:constraints}.  \\ 
 \hline
-iql.float2bool.off          & Deactivates the interpretation of floating point numbers as boolean values as described in \cref{sec:constraints}.  \\ 
+iql.float2bool.off          & Deactivates the interpretation of floating point numbers as Boolean values as described in \cref{sec:constraints}.  \\ 
 \hline
-iql.obj2bool.off            & Deactivates the interpretation of arbitrary objects as boolean values as described in \cref{sec:constraints}.  \\ 
+iql.obj2bool.off            & Deactivates the interpretation of arbitrary objects as Boolean values as described in \cref{sec:constraints}.  \\ 
 \hline
-iql.any2bool.off            & Deactivates the interpretation of anything non-boolean as boolean value. This is a combination of ``iql.string2bool.off'', ``iql.int2bool.off'', ``iql.float2bool.off'' and  ``iql.obj2bool.off''.  \\ 
+iql.any2bool.off            & Deactivates the interpretation of anything non-Boolean as Boolean value. This is a combination of ``iql.string2bool.off'', ``iql.int2bool.off'', ``iql.float2bool.off'' and  ``iql.obj2bool.off''.  \\ 
 \hline
 iql.direction.reverse       & Reverses the direction used to traverse corpus data for a search.  \\ 
 \hline
@@ -753,7 +787,7 @@ The initial version of \iql is ``1.0`` and by leaving the dialect part of a quer
 	\element{layers}{array of \iqlType{Layer} (\ref{sec:json-ld-layer})}{yes}
 \end{elements}
 \begin{description}
-	\item[\iqlType{layers}] The members of this scope.
+	\item[\iqlType{layers}] The layer members of this scope.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1114,7 +1148,7 @@ Also called 'containment predicate', this expression allows to check if a given 
 	<items> ::= <expression> (`,' <expression>)*
 \end{grammar}
 
-\noindent The entire expression evaluates to a boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See the section about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+\noindent The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See the section about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
 
 Set predicates can be directly negated (apart from wrpping \cref{sec:wrapping} them and negating \cref{sec:unary-operation} the entire expression) with with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
 
@@ -1141,7 +1175,7 @@ fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
 \subsubsection{Unary Operation}
 \label{sec:unary-operation}
 
-\iql only allows four unary operators to be used directly in front of an expression, the exclamation mark ``!'' and the \keyword{NOT} keyword for boolean negation, the minus sign ``-'' for negating numerical expressions and the ``\~'' symbol of bitwise negation of integer numbers.
+\iql only allows four unary operators to be used directly in front of an expression, the exclamation mark ``!'' and the \keyword{NOT} keyword for Boolean negation, the minus sign ``-'' for negating numerical expressions and the ``\~'' symbol of bitwise negation of integer numbers.
 
 \paragraph{Examples:}
 
@@ -1204,7 +1238,7 @@ The two shift operations (\texttt{\textless{}\textless} and \texttt{\textgreater
 \paragraph{Ordered Comparisons}
 \label{sec:ordered-comparisons}
 
-Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically.
+Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a Boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically.
 
 \paragraph{String Operations}
 \label{sec:string-operations}
@@ -1235,7 +1269,7 @@ Note that trying to check two expressions of incompatible types (such as \keywor
 \paragraph{Logical Composition}
 \label{sec:logical-composition}
 
-All boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \keyword{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}.  
+All Boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \keyword{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}.  
 
 \paragraph{Examples:}
 
@@ -1269,7 +1303,7 @@ x<2 ? "text for smaller value" : "some other text"
 \subsection{Constraints}
 \label{sec:constraints}
 
-Simply put, constraints are expressions that evaluate to a boolean result. Apart from native boolean expressions (such as comparisons, boolean literals or boolean functions), \iql allows the following evaluations as syntactic sugar:
+Simply put, constraints are expressions that evaluate to a Boolean result. Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \iql allows the following evaluations as syntactic sugar:
 
 \noindent\begin{tabular}{|l|c|c|}
 	\hline 
@@ -1300,12 +1334,12 @@ Constraints are further divided into local constraints (signaled by the ``WHERE`
 \subsubsection{Basic Constraints}
 \label{sec:basic-constraints}
 
-Constraints can either be predicates, loop predicates, bracketed (with ``(`` or ``)``) constraints or boolean disjunctions (via ``OR``) or conjunctions (with ``AND``) of constraints.
+Constraints can either be predicates, loop predicates, bracketed (with ``(`` or ``)``) constraints or Boolean disjunctions (via ``OR``) or conjunctions (with ``AND``) of constraints.
 
 \paragraph{Predicate}
 \label{sec:predicate}
 
-Predicates are essentially expressions \cref{sec:expressions} that evaluate to boolean value. See the previous sections on constraints \cref{sec:constraints} for information on how non-boolean types are interpreted as boolean values and the switches \cref{sec:switches} section for ways to influence this behavior.
+Predicates are essentially expressions \cref{sec:expressions} that evaluate to Boolean value. See the previous sections on constraints \cref{sec:constraints} for information on how non-Boolean types are interpreted as Boolean values and the switches \cref{sec:switches} section for ways to influence this behavior.
 
 \paragraph{Loop Predicate}
 

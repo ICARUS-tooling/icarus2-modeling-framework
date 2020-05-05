@@ -56,6 +56,7 @@ import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.DependencyType;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -121,8 +122,10 @@ public abstract class EvaluationContext {
 			this.edges = edges;
 		}
 
+		/** The layer this binding referrs to */
 		public ItemLayer getLayer() { return layer; }
 
+		/** In case of {@link StructureLayer}s, bindings can target edges */
 		public boolean isEdges() { return edges; }
 	}
 
@@ -961,6 +964,13 @@ public abstract class EvaluationContext {
 	}
 
 	//TODO rethink the entire variable scoping concept
+	/*
+	 * With embedded expression scopes such as loop constraints, we need a way to
+	 * restrict the variables to that scope, but also make them properly adhere to
+	 * the expression mechanics of duplication etc...
+	 * One option could be to use a UUID-style suffix in the identifier for a variable
+	 * when embedded.
+	 */
 	public Assignable<?> getVariable(String name) { return getRootContext().getVariable(name); }
 
 	public Optional<ItemLayer> resolveMember(String name) { return getRootContext().resolveMember(name); }
@@ -969,23 +979,6 @@ public abstract class EvaluationContext {
 
 	public boolean isSwitchSet(QuerySwitch qs) {
 		return isSwitchSet(qs.getKey());
-	}
-
-	/**
-	 * Return all the currently active and available environments that can be
-	 * used to resolve identifiers to fields or methods. The environments are
-	 * ordered based on their priority: the environment on position {@code 0}
-	 * is considered the most important one for any resolution process, with
-	 * the importance of subsequent entries decreasing.
-	 * @return
-	 *
-	 * @deprecated we discarded the idea of a changing set of active environments
-	 * in favor of a cache implementation that searches for applicable environments.
-	 */
-	@Deprecated
-	public List<Environment> getActiveEnvironments() {
-		//TODO implement
-		throw new UnsupportedOperationException();
 	}
 
 	private static final TypeInfo[] NO_ARGS = {};
