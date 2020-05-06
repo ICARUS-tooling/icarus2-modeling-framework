@@ -76,9 +76,8 @@ public class IqlStream extends IqlUnique {
 	/**
 	 * The raw unprocessed query payload as provided by the user.
 	 */
-	@JsonProperty(value=IqlProperties.RAW_PAYLOAD, required=true)
-	//TODO make the rawXXX fields optional
-	private String rawPayload;
+	@JsonProperty(value=IqlProperties.RAW_PAYLOAD)
+	private Optional<String> rawPayload;
 
 	/**
 	 * The processed query payload after being parsed by the query engine.
@@ -141,14 +140,17 @@ public class IqlStream extends IqlUnique {
 		super.checkIntegrity();
 		checkNestedNotNull(corpus, IqlProperties.CORPUS);
 		checkNestedNotNull(result, "result");
-		checkStringNotEmpty(rawPayload, IqlProperties.RAW_PAYLOAD);
 
 		checkCollection(layers);
 		checkCollection(grouping);
 		checkOptionalNested(scope);
 		checkOptionalNested(payload);
-		checkOptionalStringNotEmpty(rawGrouping, "rawGrouping");
-		checkOptionalStringNotEmpty(rawResult, "rawResult");
+		checkOptionalStringNotEmpty(rawPayload, IqlProperties.RAW_PAYLOAD);
+		checkOptionalStringNotEmpty(rawGrouping, IqlProperties.RAW_GROUPING);
+		checkOptionalStringNotEmpty(rawResult, IqlProperties.RAW_RESULT);
+
+		checkCondition(rawPayload.isPresent() || payload.isPresent(),
+				IqlProperties.PAYLOAD, "Must either define a raw payload or provide fully processed payload element");
 	}
 
 	public boolean isProcessed() { return processed; }
@@ -167,7 +169,7 @@ public class IqlStream extends IqlUnique {
 
 	public Optional<IqlScope> getScope() { return scope; }
 
-	public String getRawPayload() { return rawPayload; }
+	public Optional<String> getRawPayload() { return rawPayload; }
 
 	public Optional<IqlPayload> getPayload() { return payload; }
 
@@ -182,7 +184,7 @@ public class IqlStream extends IqlUnique {
 
 	public void setPrimary(boolean primary) { this.primary = primary; }
 
-	public void setRawPayload(String rawPayload) { this.rawPayload = checkNotEmpty(rawPayload); }
+	public void setRawPayload(String rawPayload) { this.rawPayload = Optional.of(rawPayload); }
 
 	public void setPayload(IqlPayload payload) { this.payload = Optional.of(payload); }
 
