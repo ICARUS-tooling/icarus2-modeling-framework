@@ -41,9 +41,11 @@
 
 % constants
 \newcommand{\iqlns}{iql:}
-\newcommand{\repo}{https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/icarus2-model-api/src/main/java/de/ims/icarus2/model/api/}
+\newcommand{\repoUrl}{https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/}
+\newcommand{\manifestsUrl}{\repoUrl icarus2-manifest-api/src/main/java/de/ims/icarus2/model/manifest/api/}
+\newcommand{\modelsUrl}{\repoUrl icarus2-model-api/src/main/java/de/ims/icarus2/model/api/}
 
-\newcommand{\repoLink}[2]{\href{\repo#1}{#2}}
+\newcommand{\repoLink}[2]{\href{#1}{#2}}
 
 \newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
 \newcommand{\iqlBaseType}[1]{\texttt{\textless#1\textgreater}}
@@ -53,7 +55,7 @@
 
 \newenvironment{attributes}[1]{
 \noindent\textbf{Attributes of #1:}\newline\medskip
-\begin{tabular}{|p{0.28\textwidth}|p{0.16\textwidth}|p{0.17\textwidth}|p{0.15\textwidth}|}
+\begin{tabular}{|p{0.3\textwidth}|p{0.20\textwidth}|p{0.20\textwidth}|p{0.17\textwidth}|}
 	\hline
 	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
 	\hline
@@ -69,7 +71,7 @@
 
 \newenvironment{elements}[1]{
 \noindent\textbf{Nested Elements of #1:}\newline\medskip
-\begin{tabular}{|p{0.2\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+\begin{tabular}{|p{0.3\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
 	\hline
 	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
 	\hline
@@ -156,7 +158,7 @@ This document lists the basic building blocks of queries and their compositions.
 %	\item edges
 %	\item members
 %\end{itemize}
-\desc{A binding associates a collection of member variables (\ref{sec:variables-references}) with the content of a specific \repoLink{layer/ItemLayer.java}{item layer} or derived layer type.}
+\desc{A binding associates a collection of member variables (\ref{sec:variables-references}) with the content of a specific \repoLink{\modelsUrl layer/ItemLayer.java}{item layer} or derived layer type.}
 \begin{attributes}{\iqlType{Binding}}
 	\attribute{distinct}{Boolean}{no}{false}
 	\attribute{edges}{Boolean}{no}{false}
@@ -164,7 +166,7 @@ This document lists the basic building blocks of queries and their compositions.
 \end{attributes}
 \begin{description}
 	\item[\iqlType{distinct}] Enforces that the bound member references in this binding do \textbf{not} match the same target items during evaluation. Depending on the structural constraints used in the query, this setting might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
-	\item[\iqlType{edges}] Signals that the member labels are to be used for \repoLink{members/item/Edge.java}{edges} within a \repoLink{members/structure/Structure.java}{structure}.
+	\item[\iqlType{edges}] Signals that the member labels are to be used for \repoLink{\modelsUrl members/item/Edge.java}{edges} within a \repoLink{\modelsUrl members/structure/Structure.java}{structure}.
 	\item[\iqlType{target}] The name or alias of the layer to whose content the member variables should be bound.
 \end{description}
 \begin{elements}{\iqlType{Binding}}
@@ -252,7 +254,7 @@ This document lists the basic building blocks of queries and their compositions.
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the corpus within the entire query.
-	\item[\iqlType{name}] The identifier used by the query engine's manifest registry for the corpus. %TODO link to rgeistry class
+	\item[\iqlType{name}] The identifier used by the query engine's \repoLink{\manifestsUrl ManifestRegistry.java}{manifest registry} for the corpus.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -454,26 +456,31 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %     GROUP
 \subsection{Group}
 \label{sec:json-ld-group}
-\begin{itemize}
-\item id
-\item groupBy
-\item filterOn
-\item label
-\item defaultValue
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+%\begin{itemize}
+%\item id
+%\item groupBy
+%\item filterOn
+%\item label
+%\item defaultValue
+%\end{itemize}
+\desc{Provides a mechanism to collect successful matches into dedicated groups, either for result visualization or use in further result processing.}
+\begin{attributes}{\iqlType{Group}}
+	\attribute{id}{string}{yes}{}
+	\attribute{label}{string}{yes}{}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier to uniquely identify the group declaration within the entire query.
+	\item[\iqlType{label}] Label (ideally human readable) to be used for referencing this group in subsequent result processing or for generating textual result reports.
 \end{description}
-\begin{elements}{\iqlType{XXX}}
-	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\begin{elements}{\iqlType{Group}}
+	\element{groupBy}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{yes}
+	\element{filterOn}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{no}
+	\element{defaultValue}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{no}
 \end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{groupBy}] The mandatory expression used to extract the value from matches based on which the actual grouping occurs.
+	\item[\iqlType{filterOn}] Optional mechanism to exclude certain matches from being used for grouping.
+	\item[\iqlType{defaultValue}] If matches cannot produce a valid value for grouping but should still be included in the process, this optional field provides the means of declaring a kind of ``fall back'' group. Be aware of potential overlap in groups when using default values that are not distinct from the regular grouping results.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -510,7 +517,6 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %\item laneType
 %\item elements
 %\end{itemize}
-%TODO fill
 \desc{Lanes serve as a means of splitting queries for a single corpus stream into multiple logical subqueries that target different structural and/or logical layers, e.g. multiple syntactic analyses for the same source text.}
 \begin{attributes}{\iqlType{Lane}}
 	\attribute{id}{string}{yes}{}
@@ -520,7 +526,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the lane within the entire query.
-	\item[\iqlType{name}] The unique identifier of the \repoLink{layer/ItemLayer.java}{item layer} or \repoLink{layer/StructureLayer.java}{structure layer} that serves as target for this lane.
+	\item[\iqlType{name}] The unique identifier of the \repoLink{\modelsUrl layer/ItemLayer.java}{item layer} or \repoLink{\modelsUrl layer/StructureLayer.java}{structure layer} that serves as target for this lane.
 	\item[\iqlType{alias}] If items of this lane in their entirety are meant to be used as part of query expressions inside this field holds the label used for the respective member variable. It is recommended to keep the chosen \texttt{alias} close to the original \texttt{name} to avoid confusion.
 	\item[\iqlType{laneType}] The type of structure this lane is meant to match, effectively defining the basic complexity class for evaluation. legal values are \texttt{sequence}, \texttt{tree} and \texttt{graph}. Note that the initial evaluation engine for \iql does not support the \texttt{graph} type! %TODO adjust once we extend the engine
 \end{description}
@@ -536,26 +542,32 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %     LAYER
 \subsection{Layer}
 \label{sec:json-ld-layer}
-\begin{itemize}
-\item id
-\item name
-\item primary
-\item allMembers
-\end{itemize}
-%TODO fill
-
-%TODO rework text
-Every layer selector either references an entire subgraph of the corpus' member-graph directly or constructs a partial selection with the ``SCOPE`` keyword. When using the first approach, an [item layer](../../icarus2-model-api/src/main/java/de/ims/icarus2/model/api/layer/ItemLayer.java) is referenced and all its dependencies and associated annotation layers will be made available implicitly. This is an easy way of accessing simple corpora, but can lead to costly I/O overhead when loading vast parts of a complex corpus that aren't actually needed to evaluate the query. For a more fine-grained alternative, the ``SCOPE`` keyword allows to create a scope that spans an exactly specified collection of layers. If a layer in the list of scope elements is appended the ``*`` symbol, the entire member-subgraph for this layer will be added to the scope.
-
-If multiple layer selectors are defined, up to one can be declared as ``primary'' to represent the granularity of returned items for the search.
-In case no layer is explicitly marked as ``primary'', the one specified by the corpus or context will be used for that role.
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+%\begin{itemize}
+%\item id
+%\item name
+%\item alias
+%\item primary
+%\item allMembers
+%\end{itemize}
+\desc{Every layer selector either references an entire subgraph of the corpus' member-graph directly or constructs a partial selection as part of a \iqlType{Scope} (\ref{sec:json-ld-scope}). 
+When using the first approach, an \repoLink{\modelsUrl layer/ItemLayer.java}{item layer} is referenced and all its dependencies and associated annotation layers will be made available implicitly. 
+This is an easy way of accessing simple corpora, but can lead to costly I/O overhead when loading vast parts of a complex corpus that aren't actually needed to evaluate the query. 
+For a more fine-grained alternative, scopes allow to create a scope that spans an exactly specified collection of layers. 
+If multiple layer selectors are defined, up to one can be declared as ``primary'' to represent the granularity of returned items for the search or scope.
+In case no layer is explicitly marked as ``primary'', the one specified by the corpus or context will be used for that role by default.}
+\begin{attributes}{\iqlType{Layer}}
+	\attribute{id}{string}{yes}{}
+	\attribute{name}{string}{yes}{}
+	\attribute{alias}{string}{no}{}
+	\attribute{primary}{Boolean}{no}{false}
+	\attribute{allMembers}{Boolean}{no}{false}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the layer within the entire query.
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{name}] Identifier used to reference the layer within its host corpus.
+	\item[\iqlType{alias}] Optional identifier to rename the layer for referencing within the query.
+	\item[\iqlType{primary}] Signals that the layer is intended to act as the primary layer in the query or scope and as such defines the level of granularity for obtaining chunks in the corpus.
+	\item[\iqlType{allMembers}] When this layer definition is used inside a \iqlType{Scope} (\ref{sec:json-ld-scope}), effectively adds the entire member-subgraph of this layer to the scope. This property is redundant when the layer is part of the regular \iqlType{layers} declaration in a \iqlType{Stream} (\ref{sec:json-ld-stream}), as in that case all member subgraphs for each layer are already being added to the global scope!.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -616,8 +628,7 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 \label{sec:json-ld-switches}
 For increased flexibility, \iql supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \iql switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}. %TODO figure out why cref messes up table and section here!
 
-\begin{table}
-\label{tab:switches}
+\begin{table}[h]
 \noindent\begin{tabular}{|p{0.28\textwidth}|p{0.65\textwidth}|}
 \hline 
 Name	& Description \\ 
@@ -648,6 +659,7 @@ iql.warnings.off            & Deactivates all warnings, potentially resulting in
 iql.parall.off			  & Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches  \\ 
 \hline
 \end{tabular}
+\label{tab:switches}
 \caption{Currently supported switches in \iql and their explanations.}
 \end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -681,29 +693,34 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 %     QUERY
 \subsection{Query}
 \label{sec:json-ld-query}
-\begin{itemize}
-\item id
-\item dialect
-\item imports
-\item setup
-\item embeddeData
-\item streams
-\end{itemize}
-%TODO fill
-
-The initial version of \iql is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+%\begin{itemize}
+%\item id
+%\item dialect
+%\item imports
+%\item setup
+%\item embeddeData
+%\item streams
+%\end{itemize}
+\desc{Encapsulates all the global configuration and extension of the query engine, as well as shared embedded data. Each query contains at least one \iqlType{Stream} declaration that in turn holds the actual query payload with constraints for the matching process.}
+\begin{attributes}{\iqlType{Query}}
+	\attribute{id}{string}{yes}{}
+	\attribute{dialect}{string}{no}{1.0}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{id}] Identifier for the query, chosen by the client. In more complex (asynchronous) query workflows this id is used to map answers and results to the correct query.
+	\item[\iqlType{dialect}] Specifies which basic version of \iql to use. The initial version of \iql is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
 \end{description}
-\begin{elements}{\iqlType{XXX}}
-	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\begin{elements}{\iqlType{Query}}
+	\element{imports}{array of \iqlType{Import} (\ref{sec:json-ld-import})}{no}
+	\element{setup}{array of \iqlType{Property} (\ref{sec:json-ld-property})}{no}
+	\element{embeddeData}{array of \iqlType{Data} (\ref{sec:json-ld-data})}{no}
+	\element{streams}{array of \iqlType{Stream} (\ref{sec:json-ld-stream})}{yes}
 \end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{imports}] Defines extensions to be applied to the evaluation engine prior to actual query evaluation.
+	\item[\iqlType{setup}] Allows to configure the core evaluation engine or already defined extensions in a simple manner.
+	\item[\iqlType{embeddeData}] Binary data to be used in the evaluation process, such as audio or video fragments.
+	\item[\iqlType{streams}] Corpus data streams to be queried. In the initial version, the engine only supports single-stream querying!
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -716,8 +733,7 @@ The initial version of \iql is ``1.0`` and by leaving the dialect part of a quer
 %\item name
 %\item referenceType
 %\end{itemize}
-%TODO fill
-\desc{XXX}
+\desc{Models references usable from within query expressions for accessing corpus members or variables.}
 \begin{attributes}{\iqlType{Reference}}
 	\attribute{id}{string}{yes}{}
 	\attribute{name}{string}{yes}{}
@@ -734,26 +750,31 @@ The initial version of \iql is ``1.0`` and by leaving the dialect part of a quer
 %     RESULT
 \subsection{Result}
 \label{sec:json-ld-result}
-\begin{itemize}
-\item resultTypes
-\item resultInstructions
-\item limit
-\item percent
-\item sortings
-\end{itemize}
-%TODO fill
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+%\begin{itemize}
+%\item resultTypes
+%\item resultInstructions
+%\item limit
+%\item percent
+%\item sortings
+%\end{itemize}
+\desc{Encapsulates all the information on result processing and preparation.}
+\begin{attributes}{\iqlType{Result}}
+	\attribute{limit}{integer}{no}{}
+	\attribute{percent}{Boolean}{no}{false}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{limit}] Optional limitation on the total size of the result to be returned. If the \iqlType{percent} flag is not set to \texttt{true}, this number is in reference to the units provided by the query's primary \repoLink{\modelsUrl layer/ItemLayer.java}{item layer}.
+	\item[\iqlType{percent}] If set to \texttt{true} the value defined in \iqlType{limit} is treated as a integer percentage value in the interval 1 to 99, with boundaries included.
 \end{description}
-\begin{elements}{\iqlType{XXX}}
-	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\begin{elements}{\iqlType{Result}}
+	\element{resultTypes}{array of enum}{yes}
+	\element{resultInstructions}{array of \iqlType{ResultInstruction} (\ref{sec:json-ld-result-instruction})}{no}
+	\element{sortings}{array of \iqlType{Sorting} (\ref{sec:json-ld-sorting})}{no}
 \end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{resultTypes}] Defines the result format or type the engine should return data in. At least one result type must be declared and the engine can also be instructed to return the results in multiple formats simultaneously. In the first iteration only \texttt{kwic} (keyword-in-context) and \texttt{custom} (as a placeholder for the raw corpus members) are supported.
+	\item[\iqlType{resultInstructions}] Optional collection of additional processing instructions to generate (textual) result reports.
+	\item[\iqlType{sortings}] Allows to sort matches before generating result reports.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -804,7 +825,7 @@ The initial version of \iql is ``1.0`` and by leaving the dialect part of a quer
 	\attribute{order}{enum}{yes}{}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{order}] Hint on sorting direction, legal values are \texttt{asc} or \texttt{desc}.
+	\item[\iqlType{order}] Hint on sorting direction, legal values are \texttt{asc} or \texttt{desc} for ascending or descending order, respectively.
 \end{description}
 \begin{elements}{\iqlType{Sorting}}
 	\element{expression}{\iqlType{Expression} (\ref{sec:json-ld-expression})}{yes}
@@ -818,33 +839,54 @@ The initial version of \iql is ``1.0`` and by leaving the dialect part of a quer
 %     STREAM
 \subsection{Stream}
 \label{sec:json-ld-stream}
-\begin{itemize}
-	\item id
-	\item primary
-	\item corpus
-	\item layers
-	\item scope
-	\item rawPayload
-	\item payload
-	\item rawGrouping
-	\item grouping
-	\item rawResult
-	\item result
+%\begin{itemize}
+%	\item id
+%	\item primary
+%	\item corpus
+%	\item layers
+%	\item scope
+%	\item rawPayload
+%	\item payload
+%	\item rawGrouping
+%	\item grouping
+%	\item rawResult
+%	\item result
+%\end{itemize}
+\desc{A stream encapsulates all the information and query constraints to extract, evaluate and prepare data from a single corpus. Note that many of the attributes and/or elements below are marked as optional, but the following restrictions are in effect:}
+\vspace{-\medskipamount}
+\begin{itemize}[leftmargin=*,topsep=0pt]\compresslist
+	\item Either \iqlType{rawPayload} or \iqlType{payload} must be provided by the client.
+	\item Either \iqlType{layers} or \iqlType{scope} must be provided to define the granularity of data being loaded for evaluation.
 \end{itemize}
-%TODO fill
-\desc{XXX}
-\begin{attributes}{\iqlType{XXX}}
-	\attribute{xxx}{xxx}{x}{}
+\begin{attributes}{\iqlType{Stream}}
+	\attribute{id}{string}{yes}{}
+	\attribute{primary}{Boolean}{no}{false}
+	\attribute{rawPayload}{string}{no}{}
+	\attribute{rawGrouping}{string}{no}{}
+	\attribute{rawResult}{string}{no}{}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
 	\item[\iqlType{id}] Identifier to uniquely identify the stream within the entire query.
+	\item[\iqlType{primary}] Flag to indicate that the primary layer of this stream is meant to be used as primary layer of the entire search result. Only one stream can declare this property and it primarily dictates the order of result elements in a multi-stream query or which stream is allowed to dictate sorting.
+	\item[\iqlType{rawPayload}] The textual (raw) form of the payload for this stream, i.e. all the constraints and structural query content.
+	\item[\iqlType{rawGrouping}] The textual (raw) grouping definitions to be applied for results of this stream.
+	\item[\iqlType{rawResult}] The textual (raw) result configuration and post-processing instructions for this stream.
 \end{description}
-\begin{elements}{\iqlType{XXX}}
-	\element{xxx}{array of \iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+\begin{elements}{\iqlType{Stream}}
+	\element{corpus}{\iqlType{Corpus} (\ref{sec:json-ld-corpus})}{yes}
+	\element{layers}{array of \iqlType{Layer} (\ref{sec:json-ld-layer})}{no}
+	\element{scope}{\iqlType{Scope} (\ref{sec:json-ld-scope})}{no}
+	\element{payload}{\iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+	\element{grouping}{array of \iqlType{Grouping} (\ref{sec:json-ld-group})}{no}
+	\element{result}{\iqlType{Result} (\ref{sec:json-ld-result})}{yes}
 \end{elements}
 \begin{description}
-	\item[\iqlType{xxx}] XXX.
+	\item[\iqlType{corpus}] The corpus to extract data from.
+	\item[\iqlType{layers}] Vertical filtering to be applied to the corpus prior to actual query evaluation.
+	\item[\iqlType{scope}] Another and more fine-grained form of vertical filtering that allows for more precise selection of layers to be part of this stream's data.
+	\item[\iqlType{payload}] The processed form of \iqlType{rawPayload}.
+	\item[\iqlType{grouping}] The processed form of \iqlType{rawGrouping}.
+	\item[\iqlType{result}] The processed form of \iqlType{rawResult}.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -855,9 +897,7 @@ The initial version of \iql is ``1.0`` and by leaving the dialect part of a quer
 Certain parts of an \iql query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
 During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{sec:elements} (unless of course the query or query fragments are provided fully processed).
 This section defines the syntax and additional rules for those raw statements.
-
-
-
+Note that the textual form of all following \iql elements is expected to be encoded in UTF-8, so no special escape mechanisms are needed for unicode content.
 
 
 %TODO from here on restructure!
@@ -866,7 +906,7 @@ This section defines the syntax and additional rules for those raw statements.
 \subsection{Reserved Words}
 \label{sec:reserved-words}
 
-The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query. They are reserved in both all lowercase and all uppercase variants, any while camel-cased versions are technically permitted, it is highly discouraged to use them:
+The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query. They are reserved in both all lowercase and all uppercase variants, and while camel-cased versions are technically permitted, it is highly discouraged to use them:
 
 \vbox{%
 \begin{multicols}{4}
@@ -916,15 +956,14 @@ In addition the following strictly lowercase words are reserved as type identifi
 \end{verbatim}
 
 \noindent Any of those symbols listed above can be embedded into a string literal as part of an escape sequence with a preceding backslash.
-
-%TODO add unicode escape mechanism
+At the current time there is no planned mechanism to provide additional escape support for unicode symbols, since the default encoding scheme for \iql is UTF-8.
 
 \paragraph{Examples for valid string literals:}
 
 \begin{verbatim}
 "string"
 "123"
-"some fancy number (123.456e-789) and emoji 👍"
+"some fancy number (123.456e-789) and emoji ☹ <emoji not showing>"
 "a more complex string!"
 "a\n multiline\n string..."
 \end{verbatim}
@@ -939,7 +978,7 @@ Boolean literals are limited to either all lowercase or all uppercase versions o
 \label{sec:integer-literals}
 
 \paragraph{Signed Integer Literals}
-Literals representing regular \texttt{int} (32bit) or \texttt{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits or underscore (\texttt{\_}) characters.
+Literals representing regular \keyword{int} (32bit) or \keyword{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits or underscore (\texttt{\_}) characters.
 Underscore characters may only appear inside the integer literal, never at the beginning or end (not counting the sign symbol).
 
 \paragraph{Examples for valid (signed) integer literals:}
@@ -958,7 +997,7 @@ Some parts of the \iql syntax only allow unsigned "pure" integers and will expli
 \subsubsection{Floating Point Literals}
 \label{sec:floating-point-literals}
 
-Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '\texttt{.}' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \texttt{float} (32bit) or double-precision \texttt{double} (64bit) values.
+Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '\texttt{.}' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \keyword{float} (32bit) or double-precision \keyword{double} (64bit) values.
 
 \paragraph{Examples for valid (signed) floating point literals:}
 
@@ -992,7 +1031,7 @@ random_2_4
 notTheBest______________example
 \end{verbatim}
 
-\noindent Identifiers are limited in length by the engine to a total of 255 characters. 
+\noindent Identifiers are limited in length by the engine to a total of 255 characters. This is a purely arbitrary choice to keep queries readable and not subject to any technical limitations.
 
 \subsection{Variables and References}
 \label{sec:variables-references}
@@ -1000,10 +1039,11 @@ notTheBest______________example
 In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
 
 \noindent The following table provides a compact overview of the available identifiers and their capabilities/features:
+\medskip
 
 \noindent\begin{tabular}{|l|c|c|c|c|c|c|}
 	\hline 
-Type	& Prefix & Example & Scope & Fixed\footnote{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.} & Final & Re-Assign \\ 
+Type	& Prefix & Example & Scope & Fixed\footnotemark & Final & Re-Assign \\ 
 	\hline 
 Reference	& none & \texttt{max()} & global & X & X &  \\ 
 	\hline 
@@ -1012,7 +1052,8 @@ Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\
 Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\ 
 	\hline 
 \end{tabular}
-
+\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.}
+\medskip
 \noindent\textbf{Special remarks:}
 
 Variables are more or less general-purpose storage objects for arbitrary values and without a fixed type. Their first assignment however hints at the implied type to be used and as such they can cause cast errors when used for situations where an incompatible type would be needed.
@@ -1088,7 +1129,7 @@ complexArray[1, 2, 3]
 \end{verbatim}
 
 \noindent Note that \iql provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
-Every \repoLink{/members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{/members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
+Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
 
 \subsubsection{Annotation Access}
 \label{sec:annotation-access}
@@ -1134,8 +1175,8 @@ Expression hierarchy and evaluation order follows the order the different types 
 \paragraph{Examples:}
 
 \begin{verbatim}
-6 + 4 * 2   // multiplication is evaluated first -> result 14
-(6 + 4) * 2 // addition is forced to be evaluated first -> result 20
+6 + 4 * 2   // multiplication evaluated first -> result 14
+(6 + 4) * 2 // addition is evaluated first -> result 20
 \end{verbatim}
 
 \subsubsection{Set Predicate}
