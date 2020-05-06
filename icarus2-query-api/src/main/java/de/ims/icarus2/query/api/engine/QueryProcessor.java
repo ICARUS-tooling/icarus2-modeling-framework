@@ -139,9 +139,8 @@ public class QueryProcessor {
 	}
 
 	/**
-	 * Parses the the embedded textual representations
-	 * for query payload, grouping and query instructions,
-	 * the latter two if defined.
+	 * Parses the embedded textual representations for query payload,
+	 * grouping and query instructions, if available.
 	 *
 	 * @param stream the raw query
 	 * @throws QueryException if any of the sections to be processed
@@ -152,7 +151,10 @@ public class QueryProcessor {
 		requireNonNull(stream);
 		checkState("Query processed", !stream.isProcessed());
 
-		stream.setPayload(processPayload(stream.getRawPayload()));
+		String rawPayload = stream.getRawPayload().orElse(null);
+		if(!isNullOrEmpty(rawPayload)) {
+			stream.setPayload(processPayload(rawPayload));
+		}
 
 		String rawGrouping = stream.getRawGrouping().orElse(null);
 		if(!isNullOrEmpty(rawGrouping)) {

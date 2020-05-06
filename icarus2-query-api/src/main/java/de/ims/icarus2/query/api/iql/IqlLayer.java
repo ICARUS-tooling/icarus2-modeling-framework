@@ -42,7 +42,7 @@ public class IqlLayer extends IqlAliasedReference {
 	 * adds the entire member-subgraph of this layer to the scope.
 	 *
 	 * Note: This property is redundant when the layer is part of the regular
-	 * {@link IqlQuery#layers} declaration, as in that case all member subgraphs
+	 * {@link IqlStream#getLayers() layers} declaration, as in that case all member subgraphs
 	 * for each layer are already being added to the global scope!
 	 */
 	@JsonProperty(IqlProperties.ALL_MEMBERS)

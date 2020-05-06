@@ -48,6 +48,7 @@ public class IqlReference extends IqlNamedReference {
 
 	public enum ReferenceType {
 
+		//TODO REFERENCE is not used?
 		REFERENCE("reference", '\0', false, true, true),
 		MEMBER("member", '$', false, false, true),
 		VARIABLE("variable", '@', true, false, false),

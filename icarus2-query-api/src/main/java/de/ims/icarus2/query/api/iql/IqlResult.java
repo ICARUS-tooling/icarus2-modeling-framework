@@ -44,10 +44,6 @@ public class IqlResult extends AbstractIqlQueryElement {
 	@JsonProperty(value=IqlProperties.RESULT_TYPES, required=true)
 	private final Set<ResultType> resultTypes = new HashSet<>();
 
-	/**
-	 * The processed result instructions if
-	 * {@link #rawResultInstructions} was set.
-	 */
 	@JsonProperty(IqlProperties.RESULT_INSTRUCTIONS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlResultInstruction> resultInstructions = new ArrayList<>();

@@ -51,7 +51,7 @@ public class IqlStream extends IqlUnique {
 	private boolean primary = false;
 
 	/**
-	 * Basic definition of the corpora to be used for this query
+	 * The source of data for this stream.
 	 */
 	@JsonProperty(value=IqlProperties.CORPUS, required=true)
 	private IqlCorpus corpus;
