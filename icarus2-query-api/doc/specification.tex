@@ -1052,7 +1052,7 @@ Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\
 Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\ 
 	\hline 
 \end{tabular}
-\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.}
+\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.}\\
 \medskip
 \noindent\textbf{Special remarks:}
 
@@ -1068,7 +1068,7 @@ Expressions are the foundation of every query and can take any of the following 
 \subsubsection{Primary Expressions}
 \label{sec:primary-expressions}
 
-Any literal (boolean, string, integer or floating point) can serve as a primary expression.
+Any literal (\keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float}) can serve as a primary expression.
 
 \subsubsection{Path Expressions}
 \label{sec:path-expressions}
@@ -1090,7 +1090,7 @@ some.really.long.winded.path
 \subsubsection{Method Invocation}
 \label{sec:method-invocations}
 
-Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace) and round brackets for the invocation with an optional argument list:
+Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace or a path expression) and round brackets for the invocation with an optional argument list:
 \begin{grammar}	
 	<method> ::= <expression> `(' <arguments>? `)'
 	
@@ -1106,10 +1106,10 @@ min(123, 456, dynamicContent())
 some().chained().methods()
 \end{verbatim}
 
-\subsection{List Access}
+\subsubsection{List Access}
 \label{sec:list-access}
 
-Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to integer values within \texttt{int} space. Positive values indicate the position beginning from the start of the array (with \texttt{1} being the first position for better human readability per default, see \cref{sec:json-ld-switches} for an option to switch to 0-based indices), whereas negative values allow backwards referencing of elements with \texttt{-1} pointing to the last array element and \texttt{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
+Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to integer values within \texttt{int} space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \texttt{-1} pointing to the last array element and \texttt{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
 
 \begin{grammar}	
 	<array> ::= <expression> `[' <indices> `]'
@@ -1122,6 +1122,7 @@ Lists or arrays are accessed by an expression pointing to the list or array obje
 \begin{verbatim}
 myArray[1]
 myArray[-1]
+myArray[-myArray.length] // same as myArray[0]
 complexArray[1][2][3]
 complexArray[-1][2][-3]
 complexArray[1, 2][3]
@@ -1157,14 +1158,15 @@ firstSetValue(myItem{"parser1.head", "parser2.head"})
 \subsubsection{Type Cast}
 \label{sec:type-cast}
 
-Expressions in \iql are automatically cast to matching types according to the actual consumer's needs (unless this feature gets deactivated via the corresponding switch, cf. \cref{sec:json-ld-switches}). Explicit casts can be performed by preceding an expression with one of the type keywords listed above in round brackets.
+Expressions in \iql are automatically cast to matching types according to the actual consumer's needs (unless this feature gets deactivated via the corresponding switch, cf. \cref{sec:json-ld-switches}). Explicit casts can be performed by preceding an expression with one of the type keywords listed above (\ref{sec:reserved-words}) in round brackets.
 
 \paragraph{Examples:}
 
 \begin{verbatim}
 (int) myValue
-(long) 12345.678
+(int) 12345.678
 (float) average(myVector)
+(string) 123.456
 \end{verbatim}
 
 \subsubsection{Wrapping}
@@ -1189,9 +1191,9 @@ Also called 'containment predicate', this expression allows to check if a given 
 	<items> ::= <expression> (`,' <expression>)*
 \end{grammar}
 
-\noindent The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See the section about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+\noindent The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
 
-Set predicates can be directly negated (apart from wrpping \cref{sec:wrapping} them and negating \cref{sec:unary-operation} the entire expression) with with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
+Set predicates can be directly negated (apart from wrapping \ref{sec:wrapping} them and negating \ref{sec:unary-operation} the entire expression) with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
 
 \paragraph{The complete syntax with all options looks as follows:}
 \begin{grammar}	
@@ -1209,7 +1211,7 @@ Set predicates can be directly negated (apart from wrpping \cref{sec:wrapping} t
 \begin{verbatim}
 someAnnotationValue IN {"NP","VP","-"}
 someAnnotationValue NOT IN {"NN","DET"}
-myValue IN {getLegalNames()}
+"John" IN {getLegalNames()}
 fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
 \end{verbatim}
 
@@ -1267,30 +1269,32 @@ Operators	& Explanation \\
 \label{sec:basic-numerical-operations}
 
 Basic numerical operations follow the standard mathematical rules for priorities.
-While the basic numerical types (\keyword{int}, \keyword{long}, \keyword{float} and \keyword{double}) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
+While the basic numerical types (\keyword{int}, \keyword{float}) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
 
 \paragraph{Bit Operations}
 \label{sec:bit-operations}
 
-Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast \cref{sec:type-cast} to match the other. If value expansion \cref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
+Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast \ref{sec:type-cast} to match the other. If value expansion \ref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
 The two shift operations (\texttt{\textless{}\textless} and \texttt{\textgreater{}\textgreater}) take arbitrary integer types as left operand and an \keyword{int} value as right operand.
 
 \paragraph{Ordered Comparisons}
 \label{sec:ordered-comparisons}
 
-Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a Boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically.
+Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a Boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically and may be subject to case conversions (\ref{sec:json-ld-switches}).
 
 \paragraph{String Operations}
 \label{sec:string-operations}
 
-To account for the ubiquity of textual annotations in corpora, \iql provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \texttt{\#} or its negated form \texttt{!\#}) and regular expression matching (via \texttt{\textasciitilde} and \texttt{!\textasciitilde}). Per default \iql uses the Java regex syntax, but for the future, additional switches \cref{sec:json-ld-switches} are planned to allow finer control over regex details.
+To account for the ubiquity of textual annotations in corpora, \iql provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \texttt{\#} or its negated form \texttt{!\#}) and regular expression matching (via \texttt{\textasciitilde} and \texttt{!\textasciitilde}). Per default \iql uses the Java regex syntax, but for the future, additional switches (\ref{sec:json-ld-switches}) are planned to allow finer control over regex details.
 
 \paragraph{Examples:}
 
 \begin{verbatim}
-somePosAnnotation # "V"        // find verbal forms
-somePosAnnotation !~ "NN|NS"   // alternative to the set predicate with more flexibility
+// find verbal forms
+somePosAnnotation # "V"       
+// alternative to the set predicate with more flexibility
+somePosAnnotation !~ "NN|NS"   
 \end{verbatim}
 
 \paragraph{Equality}
@@ -1310,7 +1314,7 @@ Note that trying to check two expressions of incompatible types (such as \keywor
 \paragraph{Logical Composition}
 \label{sec:logical-composition}
 
-All Boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \keyword{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}.  
+All Boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \keyword{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}. 
 
 \paragraph{Examples:}
 
@@ -1352,9 +1356,9 @@ Simply put, constraints are expressions that evaluate to a Boolean result. Apart
 	\hline 
 	\keyword{string} & empty or null & \keyword{false}  \\ 
 	\hline 
-	\keyword{int} or \keyword{long} & \texttt{0} & \keyword{false} \\ 
+	\keyword{int} & \texttt{0} & \keyword{false} \\ 
 	\hline 
-	\keyword{float} or \keyword{double} & \texttt{0.0} & \keyword{false} \\ 
+	\keyword{float} & \texttt{0.0} & \keyword{false} \\ 
 	\hline
 	any object & \keyword{null} & \keyword{false} \\ 
 	\hline 
@@ -1363,14 +1367,22 @@ Simply put, constraints are expressions that evaluate to a Boolean result. Apart
 \subsection{Structural Constraints}
 \label{sec:structural-constraints}
 
-The constraints section in \iql consists either of the sole ``ALL`` keyword or of an optional bindings definition and the actual constraints themselves. A binding is a collection of member references \cref{sec:variables-references} that get declared to belong to a certain type and/or part of the corpus. The 'DISTINCT' keyword enforces that the bound member references in this binding do **not** match the same target. Depending on the localConstraint used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
+The constraints section in \iql consists either of the sole ``ALL`` keyword or of an optional bindings definition and the actual constraints themselves. 
+A binding is a collection of member references \cref{sec:variables-references} that get declared to belong to a certain type and/or part of the corpus. 
+The \keyword{DISTINCT} keyword enforces that multiple bound member references in this binding do \textbf{not} match the same target. 
+Depending on the local constraints used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
+Additionally the \keyword{EDGES} keyword signals that the bound members of a structure are actually edges.
+In this case using \keyword{DISTINCT} is redundant, as bound edges are implicitly assumed to be distinct when matching.
 
-```
-bindingsList := 'WITH' binding ('AND' binding)* 
-binding := member (',' member)* 'AS' 'DISTINCT'? qualifiedIdentifier
-```
+\begin{grammar}	
+	<bindingsList> ::= `WITH' <binding> (`AND' <binding>)* 
+	
+	<binding> := <option>? <member> (`,' <member>)* `FROM' <layer>
+	
+	<option> := `DISTINCT' | `EDGES'
+\end{grammar}
 
-Constraints are further divided into local constraints (signaled by the ``WHERE`` keyword) and global ones (with the ``HAVING`` keyword). Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). They also introduce certain limitations on what can be expressed or searched (e.g. a ``flat`` local constraints declaration will not provide implicit access to tree information). However, global constraints can introduce arbitrary constraints and thereby increase the evaluation complexity, potentially without limits. Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
+Constraints are further divided into local constraints as part of XXX \todo{text} and global ones (with the \keyword{HAVING} keyword). Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). They also introduce certain limitations on what can be expressed or searched (e.g. a ``flat'' local constraints declaration will not provide implicit access to tree information). However, global constraints can introduce arbitrary constraints and thereby increase the evaluation complexity, potentially without limits. Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
 
 \subsubsection{Basic Constraints}
 \label{sec:basic-constraints}
