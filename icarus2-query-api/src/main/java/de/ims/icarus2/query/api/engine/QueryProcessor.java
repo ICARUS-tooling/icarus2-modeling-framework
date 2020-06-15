@@ -68,6 +68,7 @@ import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
+import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
@@ -356,6 +357,15 @@ public class QueryProcessor {
 				for(BindingContext bctx : blctx.binding()) {
 					payload.addBinding(processBinding(bctx));
 				}
+			}
+
+			// Handle modifiers
+			if(ctx.FIRST()!=null) {
+				payload.setQueryModifier(QueryModifier.FIRST);
+			} else if(ctx.LAST()!=null) {
+				payload.setQueryModifier(QueryModifier.LAST);
+			} else if(ctx.ANY()!=null) {
+				payload.setQueryModifier(QueryModifier.ANY);
 			}
 
 			// Handle actual selection statement variants

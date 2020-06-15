@@ -63,6 +63,7 @@ import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
+import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlProperties;
 import de.ims.icarus2.query.api.iql.IqlProperty;
@@ -455,6 +456,9 @@ public class IqlQueryGenerator {
 		build.addNestedChange(IqlProperties.CONSTRAINT, IqlType.PREDICATE, config, payload, payload::setConstraint);
 		for (int i = 0; i < config.getCount(IqlType.LANE, DEFAULT_COUNT); i++) {
 			build.addNestedChange(IqlProperties.LANES, IqlType.LANE, config, payload, payload::addLane);
+		}
+		for(QueryModifier queryModifier : QueryModifier.values()) {
+			build.addEnumFieldChange(payload::setQueryModifier, IqlProperties.QUERY_MODIFIER, queryModifier);
 		}
 	}
 

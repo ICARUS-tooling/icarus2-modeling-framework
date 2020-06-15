@@ -42,6 +42,10 @@ public class IqlPayload extends IqlUnique {
 	@JsonProperty(value=IqlProperties.QUERY_TYPE, required=true)
 	private QueryType queryType;
 
+	@JsonProperty(value=IqlProperties.QUERY_MODIFIER)
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<QueryModifier> queryModifier = Optional.empty();
+
 	@JsonProperty(IqlProperties.NAME)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> name = Optional.empty();
@@ -88,6 +92,8 @@ public class IqlPayload extends IqlUnique {
 
 	public QueryType getQueryType() { return queryType; }
 
+	public Optional<QueryModifier> getQueryModifier() { return queryModifier; }
+
 	public Optional<String> getName() { return name; }
 
 	public List<IqlBinding> getBindings() { return CollectionUtils.unmodifiableListProxy(bindings); }
@@ -98,6 +104,8 @@ public class IqlPayload extends IqlUnique {
 
 
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
+
+	public void setQueryModifier(QueryModifier queryModifier) { this.queryModifier = Optional.of(queryModifier); }
 
 	public void setName(String name) { this.name = Optional.of(checkNotEmpty(name)); }
 
@@ -140,4 +148,27 @@ public class IqlPayload extends IqlUnique {
 
 		public boolean isAllowElements() { return allowElements; }
 	}
+
+	public enum QueryModifier {
+		/** Only the first match is to be reported for every unit-of-interest */
+		FIRST("first"),
+		/** Only the last match is to be reported for every unit-of-interest */
+		LAST("last"),
+		/** Up to one random match is to be reported for every unit-of-interest */
+		ANY("any"),
+		;
+
+		private final String label;
+
+		private QueryModifier(String label) {
+			this.label = label;
+		}
+
+		@JsonValue
+		public String getLabel() {
+			return label;
+		}
+	}
+
+
 }

@@ -108,7 +108,7 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (WITH bindingsList)? FIND selectiveStatement EOF
+	| (WITH bindingsList)? FIND (FIRST | LAST | ANY)? selectiveStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -516,6 +516,7 @@ sign
 ADJACENT : 'ADJACENT' | 'adjacent';
 ALL : 'ALL' | 'all' ;
 AND : 'AND' | 'and' ;
+ANY : 'ANY' | 'any' ;
 AS : 'AS' | 'as' ;
 ASC : 'ASC' | 'asc' ;
 BY : 'BY' | 'by' ;
@@ -530,6 +531,7 @@ EVEN : 'EVEN' | 'even' ;
 FALSE : 'FALSE' | 'false' ;
 FILTER : 'FILTER' | 'filter' ;
 FIND : 'FIND' | 'find' ;
+FIRST : 'FIRST' | 'first' ;
 FOREACH : 'FOREACH' | 'foreach' ;
 FROM : 'FROM' | 'from' ;
 GROUP : 'GROUP' | 'group' ;
@@ -537,6 +539,7 @@ HAVING : 'HAVING' | 'having' ;
 IN : 'IN' | 'in' ;
 LABEL : 'LABEL' | 'label' ;
 LANE : 'LANE' | 'lane' ;
+LAST : 'LAST' | 'last' ;
 LIMIT : 'LIMIT' | 'limit' ;
 NOT : 'NOT' | 'not' ;
 NULL : 'NULL' | 'null' ;
