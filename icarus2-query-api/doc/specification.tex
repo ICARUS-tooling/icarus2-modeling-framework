@@ -20,12 +20,28 @@
 \usepackage{syntax}
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
+\usepackage{forest}
+
+\usepackage{acro}
+
+\DeclareAcronym{cql}{short = CQL, long = corpus query language}
+\DeclareAcronym{cqs}{short = CQS, long = corpus query system}
+\DeclareAcronym{rdbms}{short = RDBMS, long = relational database management system}
+\DeclareAcronym{rdb}{short = RDB, long = relational database}
+\DeclareAcronym{iql}{short = IQL, long = ICARUS2 Query Language}
+\DeclareAcronym{icmf}{short = ICMF, long = ICARUS2 Corpus Modeling Framework}
+\DeclareAcronym{iqp}{short = IQP, long = ICARUS2 Query Processor}
+\DeclareAcronym{kwic}{short = KWIC, long = keyword-in-context}
+\DeclareAcronym{uoi}{short = UoI, long = unit-of-interest, long-plural-form = units-of-interest}
 
 \newfontfamily\DejaSans{DejaVu Sans}
 
 \definecolor{eclipseStrings}{RGB}{42,0.0,255}
 \definecolor{eclipseKeywords}{RGB}{127,0,85}
 \colorlet{numb}{magenta!60!black}
+
+\definecolor{darkgreen}{rgb}{0.0, 0.5, 0.0}
+\definecolor{darkred}{rgb}{0.8, 0.0, 0.0}
 
 \newcommand{\compresslist}{ % Define a command to reduce spacing within itemize/enumerate environments, this is used right after \begin{itemize} or \begin{enumerate}
 	\setlength{\topsep}{0pt}
@@ -920,7 +936,7 @@ The following list of keywords is reserved and any of the words may not be used 
 \end{multicols}
 }
 
-In addition the following strictly lowercase words are reserved as type identifiers and may not be used otherwise:
+\noindent In addition the following strictly lowercase words are reserved as type identifiers and may not be used otherwise:
 
 \vbox{%
 \begin{multicols}{4}
@@ -1056,7 +1072,7 @@ Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\
 \medskip
 \noindent\textbf{Special remarks:}
 
-Variables are more or less general-purpose storage objects for arbitrary values and without a fixed type. Their first assignment however hints at the implied type to be used and as such they can cause cast errors when used for situations where an incompatible type would be needed.
+\noindent Variables are more or less general-purpose storage objects for arbitrary values and without a fixed type. Their first assignment however hints at the implied type to be used and as such they can cause cast errors when used for situations where an incompatible type would be needed.
 
 Member identifiers are final in the sense that they cannot be re-assigned explicitly but will be implicitly for every iteration of the query on a new part of the corpus. For example, above \texttt{\$token} member will point to a new token object every time the inner constraint parts of the query are evaluated. Therefore member identifiers could be viewed as a sort of loop variable. 
 
@@ -1364,35 +1380,65 @@ Simply put, constraints are expressions that evaluate to a Boolean result. Apart
 	\hline 
 \end{tabular}
 
+\noindent Note that those evaluations are only active if the respective switches (\ref{sec:json-ld-switches}) have not been set.
+
 \subsection{Structural Constraints}
 \label{sec:structural-constraints}
 
-The constraints section in \iql consists either of the sole ``ALL`` keyword or of an optional bindings definition and the actual constraints themselves. 
-A binding is a collection of member references \cref{sec:variables-references} that get declared to belong to a certain type and/or part of the corpus. 
+The constraints section in \iql (referred to as the payload) consists either of the sole \keyword{ALL} keyword or of an optional bindings definition and the actual constraints themselves. 
+A binding is a collection of member references (\ref{sec:variables-references}) that get declared to belong to a certain type and/or part of the corpus. 
 The \keyword{DISTINCT} keyword enforces that multiple bound member references in this binding do \textbf{not} match the same target. 
 Depending on the local constraints used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
 Additionally the \keyword{EDGES} keyword signals that the bound members of a structure are actually edges.
 In this case using \keyword{DISTINCT} is redundant, as bound edges are implicitly assumed to be distinct when matching.
 
 \begin{grammar}	
-	<bindingsList> ::= `WITH' <binding> (`AND' <binding>)* 
+	<payload> ::= `ALL' | <selection>
+	
+	<selection> ::= (`WITH' <bindingsList>)? `FIND' <modifier>? <constraints>
+	
+	<modifier> ::= `FIRST' | `LAST' | `ANY'
+	
+	<bindingsList> ::= <binding> (`AND' <binding>)* 
 	
 	<binding> := <option>? <member> (`,' <member>)* `FROM' <layer>
 	
 	<option> := `DISTINCT' | `EDGES'
+	
 \end{grammar}
+\todo{expand the constraints rule to include lanes and subsequently sequence/tree/graph definitions}
 
-Constraints are further divided into local constraints as part of XXX \todo{text} and global ones (with the \keyword{HAVING} keyword). Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). They also introduce certain limitations on what can be expressed or searched (e.g. a ``flat'' local constraints declaration will not provide implicit access to tree information). However, global constraints can introduce arbitrary constraints and thereby increase the evaluation complexity, potentially without limits. Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
+Constraints are further divided into local constraints as part of node or edge definitions and global ones (with the \keyword{HAVING} keyword). 
+Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). 
+They also introduce certain limitations on what can be expressed or searched (e.g. a ``flat'' local constraints declaration will not provide implicit access to tree information). 
+However, global constraints can introduce arbitrary constraints or relations and thereby increase the evaluation complexity, potentially without limits. 
+Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
+
+\paragraph{Match Modifiers}
+\label{sec:mathc-modifiers}
+Per default, the search in \iql is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
+For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as tree entries in the result if the query was only meant to find instances of the lemma ``the''.
+This default behavior can be adjusted to only return each \ac{uoi} no more than once by using one of the modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) listed in the grammar fragment in \cref{sec:constraints}.
+The semantics of the \keyword{ANY} modifier are such that the engine may freely pick any one match within a \ac{uoi}.
+Note however, that to support reproducible search results, repeated evaluations of the same query on a corpus are still required to yield the same instances here.
+The exact semantics of \keyword{FIRST} and \keyword{LAST} are depending on the type of structural constraints used in the payload, but generally are based on the natural order of items within the corpus (typically this is the flow of words in a text).
+The evaluation behavior for them is subsequently covered in the \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}.
+
+\paragraph{Lanes}
+\label{sec:lanes}
+\todo{link to the JSON part and give a brief explanation}
+
 
 \subsubsection{Basic Constraints}
 \label{sec:basic-constraints}
 
-Constraints can either be predicates, loop predicates, bracketed (with ``(`` or ``)``) constraints or Boolean disjunctions (via ``OR``) or conjunctions (with ``AND``) of constraints.
+Constraints can either be predicates, loop predicates, bracketed (with \keyword{(} or \keyword{)}) constraints or Boolean disjunctions (via \keyword{OR}) or conjunctions (with \keyword{AND}) of constraints.
 
 \paragraph{Predicate}
 \label{sec:predicate}
 
-Predicates are essentially expressions \cref{sec:expressions} that evaluate to Boolean value. See the previous sections on constraints \cref{sec:constraints} for information on how non-Boolean types are interpreted as Boolean values and the switches \cref{sec:switches} section for ways to influence this behavior.
+Predicates are essentially expressions (\ref{sec:expressions}) that evaluate to a Boolean value. 
+See the previous sections on constraints (\ref{sec:constraints}) for information on how non-Boolean types are interpreted as Boolean values and the switches (\ref{sec:json-ld-switches}) section for ways to influence this behavior.
 
 \paragraph{Loop Predicate}
 
@@ -1401,12 +1447,137 @@ TODO
 \subsubsection{Flat Constraints}
 \label{sec:flat-constraints}
 
-Flat constraints provide no extra helpers to declare structural properties of the query. They consist of arbitrary basic constraints \cref{sec:basic-constraints} and typically make global constraints redundant.
+Flat constraints provide no extra helpers to declare structural properties of the query. 
+They consist of arbitrary basic constraints \cref{sec:basic-constraints} and typically make global constraints redundant.
+
+\subsubsection{Sequence Constraints}
+\label{sec:sequence-constraints}
+
+As the most basic form of structural constraints this type is used to match sequences of \repoLink{\modelsUrl members/item/Item.java}{items} or nodes in the target corpus.
+\iql uses square brackets (\keyword{[} and \keyword{]}) to mark individual nodes.
+Each node can have arbitrarily complex internal constraints (composed of basic constraints, cf. \ref{sec:basic-constraints}) that have implicit access to annotations and structural information (e.g. host container) of the item the node is matched against.
+Multiple nodes in a sequence declaration are required to match to items in exactly the order they are defined in (but not necessarily adjacent to each other, use the \keyword{ADJACENT} directive in front of a node sequence for that).
+
+\paragraph{Examples:}
+
+\begin{verbatim}
+[]                  // empty node
+[pos=="NN"]         // node with local constraint
+<2>[$x:]            // node x exactly 2 times       
+[$x:]<2-5>[][$y:]   // nodes x & y with 2-5 nodes in between
+[$x:] ![$y:]        // node x without any node y following
+ADJACENT [$x:][$y:] // node y directly following node x
+[$x:] or [$y:]      // disjunction: either x OR y
+{[$x:][$y:]} or [$z:] // disjunction: either group x+y OR z
+\end{verbatim}
+
+\paragraph{Sequence Matching}
+\noindent Sequence constraints only provide a single dimension for \textit{moving} the query sequence through the search space of the target corpus.
+Matching is performed greedily in order of node appearance in the query, following the direction specified by the corpus itself.
+If the switch to reverse direction (cf. \ref{sec:json-ld-switches}) is set, then matching attempts will start from the very end of each matching context (such as a container or structure), but the order of nodes to match will remain the same.
+That is, in a node sequence \verb|[$x:][$y:]| the node matched by \texttt{x} will \textbf{always} be before the node matched by \texttt{y} according to the original direction of items in the corpus.
+Only the direction from which the overall matching attempt will start changes with the respective switch.
+This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned match to either the first or last, with respect to the current direction.
+
+\paragraph{Node Grouping}
+\noindent Nodes can be grouped together within curly brackets (\keyword{\{} and \keyword{\}}).
+This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
+Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
+However, those directives are \textbf{not} automatically inherited to the inner collection of nodes in the group, allowing for expressions such as the following:
+\begin{verbatim}
+ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
+\end{verbatim}
+This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
+Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
+The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
+
+\noindent Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
+Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
+A possible (and simple) solution for this query would be the following:
+\begin{verbatim}
+ADJACENT [$a:][$b:] <0+>[] [$c:][$d:]
+\end{verbatim}
+
+\paragraph{Special Note:}
+\noindent Evaluation of quantified nodes in \iql is done greedily, i.e. the engine will try to match as many instances as possible.
+However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
+An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \texttt{<inf->}).
 
 \subsubsection{Tree Constraints}
 \label{sec:tree-constraints}
 
-TODO
+Located between mere sequences (\ref{sec:sequence-constraints}) and graphs (\ref{sec:graph-constraints}) this type of structural constraints is meant to target tree structures, such as (but not limited to) syntax trees, coreference structures, discourse, etc.
+To simplify query syntax, \iql uses a similar approach as the original ICARUS project, which in turn took inspiration from PML-TQ:
+To signal parent-child relations, child nodes are nested within their respective parent, effectively making each node yet another scope for a sequence of child nodes.
+Contrary to bare sequence constraints (\ref{sec:sequence-constraints}) the order of (child) nodes to be matched in the corpus is \textbf{not} implicitly defined by the order of constraint nodes!
+Instead, the \keyword{ORDERED} or \keyword{ADJACENT} keywords need to be used explicitly to signal that a specific kind of order should be honored.
+Apart from this little addendum tree constraints behave basically the same as nested sequence constraints:
+They can be individually quantified or existentially negated, as well as grouped and linked via the \keyword{OR} keyword to expression disjunctions.
+
+\paragraph{Examples:}
+
+\begin{verbatim}
+[[]]              // anonymous nesting of nodes
+[$x: [$y:]]       // nesting of node y inside x
+[[$x:] [$y:]]     // nesting of siblings x and y
+[$x: [$y: [$z:]]] // deep nesting chain 
+[$x: <2->[$y:]]   // at most 2 y nested inside x
+[$x: ![$y:]]      // node x without any child matching y
+
+// internal disjunction
+[[$x:] or [$y:] or {[$z: <4+>[]]}]
+\end{verbatim}
+
+\paragraph{Tree Matching}
+
+\noindent As opposed to sequences (\ref{sec:sequence-constraints}), trees (and subsequently also graphs, cf. \ref{sec:graph-constraints}) offer an additional dimension of matching freedom over the bare iteration of items in a container or structure to be matched.
+This requires further specification of the matching process to guarantee consistent results and define basic expectations.
+Below explanations are primarily intended to specify the behavior in the presence of limiting modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) in the payload, but are also of interest for the expected order of returned matches if no limiting modifiers are defined.
+
+\noindent Consider a simple tree query \verb|[$x: [$y:]]| where x and y are bound nodes with individual constraints.
+The nodes X\textsubscript{n} or Y\textsubscript{n} in the following example tree then denote the n-th node that match the constraints of query nodes x and y, respectively:
+
+\begin{forest}
+	for tree={
+		if n children=0{
+			tier=terminal
+		}{},
+	}
+	[Root 
+		[A\textsubscript{1} [1]] 
+		[A\textsubscript{2} 
+			[\textcolor{darkgreen}{X\textsubscript{1}} 
+				[A\textsubscript{3} [2]]  
+				[\textcolor{darkgreen}{Y\textsubscript{1}}
+					[A\textsubscript{4} [3]]
+					[A\textsubscript{5} [4]] 
+				] 
+				[\textcolor{darkred}{Y\textsubscript{2}} [5]] 
+			]
+		]		
+		[\textcolor{darkred}{X\textsubscript{2}} 
+			[A\textsubscript{6} [6]]  
+			[\textcolor{darkred}{Y\textsubscript{3}} [7]] 
+		] 
+	]
+\end{forest}
+
+\noindent The tree contains 3 possible matches for \verb|[$x: [$y:]]|, specifically the pairs \texttt{\{X\textsubscript{1},Y\textsubscript{1}\}}, \texttt{\{X\textsubscript{1},Y\textsubscript{2}\}} and \texttt{\{X\textsubscript{2},Y\textsubscript{2}\}}.
+
+
+\noindent\texttt{[Root 
+	[A\textsubscript{1}] 
+	[A\textsubscript{2} 
+	[\textcolor{darkgreen}{X\textsubscript{1}} 
+	[A\textsubscript{3}]  
+	[\textcolor{darkgreen}{Y\textsubscript{1}}
+	[A\textsubscript{4}]
+	[A\textsubscript{5}]] 
+	[\textcolor{darkred}{Y\textsubscript{2}}]]]		
+	[\textcolor{darkred}{X\textsubscript{2}} 
+	[A\textsubscript{6}]  
+	[\textcolor{darkred}{Y\textsubscript{3}}]]]
+}
 
 \subsubsection{Graph Constraints}
 \label{sec:graph-constraints}
@@ -1416,7 +1587,8 @@ TODO
 \subsubsection{Global Constraints}
 \label{sec:global-constraints}
 
-Global constraints con be any basic constraint \cref{sec:basic-constraints}.
+Global constraints con be any basic constraint \cref{sec:basic-constraints} and follow after the main section of structural constraint, indicated yb the \keyword{HAVING} keyword.
+\todo{examples and more explanation of what is available (members, etc) + complexity!!!}
 
 
 \subsection{Result Processing}
@@ -1425,13 +1597,5 @@ Global constraints con be any basic constraint \cref{sec:basic-constraints}.
 There be dragons.
 
 (Content of the result section will be added as \iql evolves)
-
-%%END REWORK
-
-\subsection{Query Payload}
-\label{sec:query-payload}
-
-The innermost part of every \iql query is the collection of constraints used to actually extract and match data from the corpus.
-It is composed in a keyword-style syntax to differentiate between the different \textit{dialects} or constraint modes.
 
 \end{document}
