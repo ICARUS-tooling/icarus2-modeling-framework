@@ -2,7 +2,10 @@
 % File specification.tex
 %
 
-\documentclass[11pt]{article}
+\documentclass[11pt,a4paper,portrait]{article}
+
+\usepackage[hscale=0.75,vscale=0.8]{geometry}
+
 \usepackage[utf8]{inputenc}
 \usepackage{times}
 \usepackage{fontspec}
@@ -16,8 +19,10 @@
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{listings}
 \usepackage{enumitem}
+\usepackage{cprotect}
 \usepackage{xcolor}
 \usepackage{syntax}
+\usepackage{wrapfig}
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
 \usepackage{forest}
@@ -54,6 +59,8 @@
 \newcommand{\iql}{IQL\xspace}
 
 \newcommand{\keyword}[1]{\textcolor{purple}{\texttt{#1}}}
+
+\newcommand{\member}[1]{\texttt{#1}}
 
 % constants
 \newcommand{\iqlns}{iql:}
@@ -162,7 +169,7 @@ This document lists the basic building blocks of queries and their compositions.
 \section{JSON-LD Elements}
 \label{sec:elements}
 
-%TODO say something about the namespace and general iql: prefixing
+\todo{say something about the namespace and general iql: prefixing}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     BINDING
@@ -604,20 +611,24 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 	\attribute{id}{string}{yes}{}
 	\attribute{name}{string}{no}{}
 	\attribute{queryType}{enum}{yes}{}
+	\attribute{queryModifier}{enum}{no}{}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Automatically generated identifier to uniquely identify the payload within the entire query.
 	\item[\iqlType{name}] Custom identifier to uniquely identify the payload within the entire query. This attribute is deprecated but currently being kept to shift its use case.
 	\item[\iqlType{queryType}] The overall type of query strategy to be applied for this query payload. Legal values are \texttt{all} (returns the entire corpus and disallows any kind of constraint, leaving only the \iqlType{Result} (\ref{sec:json-ld-result}) declaration as option to modify the result volume), \texttt{plain} (disabling any kind of structural constraints/lanes), \texttt{singleLane} and \texttt{multiLane}. The last two values dictate the minimal/maximal number of \iqlType{Lane} definitions in this payload.
+	\item[\iqlType{queryModifier}] Allows to limit the number of times an individual \acp{uoi} will be returned in the result. Supported values are \texttt{first}, \texttt{last} and \texttt{any}. The specific semantics of this modifier are described in more details in \cref{sec:constraints}.
 \end{description}
-\begin{elements}{\iqlType{XXX}}
+\begin{elements}{\iqlType{Payload}}
 	\element{bindings}{array of \iqlType{Binding} (\ref{sec:json-ld-binding})}{no}
 	\element{lanes}{array of \iqlType{Lane} (\ref{sec:json-ld-lane})}{no}
+	\element{filter}{\iqlType{Constraint} (\ref{sec:json-ld-constraint})}{no}
 	\element{constraint}{\iqlType{Constraint} (\ref{sec:json-ld-constraint})}{no}
 \end{elements}
 \begin{description}
 	\item[\iqlType{bindings}] Optional collection of bindings used within this payload. Note that member variables inside constraints or structural query elements will not resolve unless previously bound to corpus members.
 	\item[\iqlType{lanes}] If \iqlType{queryType} is set to \texttt{singleLane} or \texttt{multiLane}, this array is expected to hold either exactly 1 or at least 2 \iqlType{Lane} declarations that define structural constraint for the evaluation.
+	\item[\iqlType{filter}] If \iqlType{queryType} is set to anything other than \texttt{plain}, this constraint expression allows to filter contextual \acp{uoi} prior to the actual structural matching.
 	\item[\iqlType{constraint}] If \iqlType{queryType} is set to \texttt{plain}, this is expected to contain the basic constraints for matching candidates. In any version involving \iqlType{Lane} declarations, global constraints can be defined here as a means of implementing complex query features that are tested once the lanes have produced preliminary result candidates.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -642,7 +653,7 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 
 \subsubsection{Switches}
 \label{sec:json-ld-switches}
-For increased flexibility, \iql supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \iql switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}. %TODO figure out why cref messes up table and section here!
+For increased flexibility, \iql supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \iql switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}.
 
 \begin{table}[h]
 \noindent\begin{tabular}{|p{0.28\textwidth}|p{0.65\textwidth}|}
@@ -675,8 +686,8 @@ iql.warnings.off            & Deactivates all warnings, potentially resulting in
 iql.parall.off			  & Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches  \\ 
 \hline
 \end{tabular}
-\label{tab:switches}
 \caption{Currently supported switches in \iql and their explanations.}
+\label{tab:switches}
 \end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -892,7 +903,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 	\element{corpus}{\iqlType{Corpus} (\ref{sec:json-ld-corpus})}{yes}
 	\element{layers}{array of \iqlType{Layer} (\ref{sec:json-ld-layer})}{no}
 	\element{scope}{\iqlType{Scope} (\ref{sec:json-ld-scope})}{no}
-	\element{payload}{\iqlType{XXX} (\ref{sec:json-ld-xxx})}{no}
+	\element{payload}{\iqlType{Payload} (\ref{sec:json-ld-payload})}{no}
 	\element{grouping}{array of \iqlType{Grouping} (\ref{sec:json-ld-group})}{no}
 	\element{result}{\iqlType{Result} (\ref{sec:json-ld-result})}{yes}
 \end{elements}
@@ -958,10 +969,14 @@ The following list of keywords is reserved and any of the words may not be used 
 \subsection{Literals}
 \label{sec:literals}
 
+Literals are statically-typed fixed-value expressions in \iql.
+They are parsed only once during the initial processing part of a query.
+
 \subsubsection{String Literals}
 \label{sec:string-literals}
 
-\iql uses double quotes to define string literals. String literals may not contain any of the following symbols directly:
+\iql uses simple double quotes (" or U+0022) to define string literals. 
+String literals may not contain any of the following symbols directly:
 
 \begin{verbatim}
 \n line break
@@ -1052,26 +1067,26 @@ notTheBest______________example
 \subsection{Variables and References}
 \label{sec:variables-references}
 
-In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}.
+In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}. \cref{tab:identifiers} provides a compact overview of the available identifiers and their capabilities/features.
 
-\noindent The following table provides a compact overview of the available identifiers and their capabilities/features:
-\medskip
+\begin{table}[ht]
+	\centering\begin{tabular}{|l|c|c|c|c|c|c|}
+		\hline 
+		Type	& Prefix & Example & Scope & Fixed\footnotemark & Final & Re-Assign \\ 
+		\hline 
+		Reference	& none & \texttt{max()} & global & X & X &  \\ 
+		\hline 
+		Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\ 
+		\hline 
+		Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\ 
+		\hline 
+	\end{tabular}
+	\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.} %TODO doesn't work properly
+	\caption{Identifier types available in \iql and their properties.}
+	\label{tab:identifiers}
+\end{table}
 
-\noindent\begin{tabular}{|l|c|c|c|c|c|c|}
-	\hline 
-Type	& Prefix & Example & Scope & Fixed\footnotemark & Final & Re-Assign \\ 
-	\hline 
-Reference	& none & \texttt{max()} & global & X & X &  \\ 
-	\hline 
-Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\ 
-	\hline 
-Member	& \texttt{\$} & \texttt{\$token} & limited & X & (X) &  \\ 
-	\hline 
-\end{tabular}
-\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.}\\
-\medskip
-\noindent\textbf{Special remarks:}
-
+\paragraph{Special remarks:}
 \noindent Variables are more or less general-purpose storage objects for arbitrary values and without a fixed type. Their first assignment however hints at the implied type to be used and as such they can cause cast errors when used for situations where an incompatible type would be needed.
 
 Member identifiers are final in the sense that they cannot be re-assigned explicitly but will be implicitly for every iteration of the query on a new part of the corpus. For example, above \texttt{\$token} member will point to a new token object every time the inner constraint parts of the query are evaluated. Therefore member identifiers could be viewed as a sort of loop variable. 
@@ -1079,12 +1094,15 @@ Member identifiers are final in the sense that they cannot be re-assigned explic
 \subsection{Expressions}
 \label{sec:expressions}
 
-Expressions are the foundation of every query and can take any of the following forms:
+Expressions are the foundation of every query.
+Each expression has a (usually fixed) result type and evaluates to a value of that type.
+They can take any of the following forms:
 
 \subsubsection{Primary Expressions}
 \label{sec:primary-expressions}
 
-Any literal (\keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float}) can serve as a primary expression.
+Any literal (\keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float}) can serve as a primary expression of that type.
+See \cref{sec:literals} for examples and a more detailed specification of the various types of literals in \iql.
 
 \subsubsection{Path Expressions}
 \label{sec:path-expressions}
@@ -1165,10 +1183,11 @@ The ICARUS2 framework models segmentation, structure and content of a corpus res
 
 \begin{verbatim}
 myItem{"pos"}
-myItem{"form", "pos", "lemma"}
-firstSetValue(myItem{"parser1.head", "parser2.head"})   
+myItem{"form", "pos", "lemma"} 
+
 // extract values from multiple concurrent annotation layers
 // and pick the first one present
+firstSetValue(myItem{"parser1.head", "parser2.head"})  
 \end{verbatim}
 
 \subsubsection{Type Cast}
@@ -1256,9 +1275,10 @@ Binary operations between two expressions take the following simple form:
 	<binary_op> ::= <expression> <operator> <expression>
 \end{grammar}
 
-\noindent Binary operators follow an explicit hierarchy, listed below in the order of priority, from highest to lowest:
+\noindent Binary operators follow an explicit hierarchy, listed in \cref{tab:binary-operators} in the order of priority, from highest to lowest.
 
-\noindent\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
+\begin{table}[ht]
+\centering\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
 \hline 
 Operators	& Explanation \\ 
 \hline 
@@ -1280,6 +1300,9 @@ Operators	& Explanation \\
 \verb#||  OR#& logical or \\ 
 \hline 
 \end{tabular} 
+\caption{Binary operators available in \iql and their hierarchical order.}
+\label{tab:binary-operators}
+\end{table}
 
 \paragraph{Basic Numerical Operations}
 \label{sec:basic-numerical-operations}
@@ -1364,9 +1387,13 @@ x<2 ? "text for smaller value" : "some other text"
 \subsection{Constraints}
 \label{sec:constraints}
 
-Simply put, constraints are expressions that evaluate to a Boolean result. Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \iql allows the following evaluations as syntactic sugar:
+Simply put, constraints are expressions that evaluate to a Boolean result. 
+Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \iql allows certain evaluations as syntactic sugar, listed in \cref{tab:constraints-translation}.
+Note that those evaluations are only active if the respective switches to disable them (\ref{sec:json-ld-switches}) have not been set.
 
-\noindent\begin{tabular}{|l|c|c|}
+
+\begin{table}
+\centering\begin{tabular}{|l|c|c|}
 	\hline 
 	Type & Condition & Value \\ 
 	\hline 
@@ -1379,8 +1406,33 @@ Simply put, constraints are expressions that evaluate to a Boolean result. Apart
 	any object & \keyword{null} & \keyword{false} \\ 
 	\hline 
 \end{tabular}
+\caption{Rules for evaluating arbitrary values or objects in a query to Boolean values.}
+\label{tab:constraints-translation}
+\end{table}
 
-\noindent Note that those evaluations are only active if the respective switches (\ref{sec:json-ld-switches}) have not been set.
+\subsection{Basic Constraints}
+\label{sec:basic-constraints}
+
+Basic constraints can either be predicates, loop predicates, bracketed (with \keyword{(} or \keyword{)}) constraints or disjunctions (via \keyword{OR}) or conjunctions (with \keyword{AND}) of constraints.
+
+\paragraph{Predicate}
+\label{sec:predicate}
+
+Predicates are essentially expressions (\ref{sec:expressions}) that evaluate to a Boolean value. 
+See the previous sections on constraints (\ref{sec:constraints}) for information on how non-Boolean types are interpreted as Boolean values and the switches (\ref{sec:json-ld-switches}) section for ways to influence this behavior.
+
+\paragraph{Loop Predicate}
+
+TODO
+
+\subsection{Filter Constraints}
+\label{sec:filter-constraints}
+
+For complex (i.e. structural) queries, \iql offers a way of filtering the \acp{uoi} before they are processed by the matchers for sequence, tree or graph structures (cf. \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}).
+A dedicated \keyword{FILTER BY} section in the query payload preceding the actual structural constraints is available to define filtering rules that have to evaluate to \keyword{true} for a \ac{uoi} to be considered for actual matching.
+Constraints within a filtering rules have only access to general properties of the \acp{uoi}, such as sentence length, tree height or similar information.
+The do \textbf{not} have access to bound member variables, apart from those defined for the top-level members of lanes (\ref{sec:lanes})!
+Note that filter constraints are \textbf{not} compatible with flat constraints (\ref{sec:flat-constraints}) as they both essentially fill the same function and flat constraints take precedence.
 
 \subsection{Structural Constraints}
 \label{sec:structural-constraints}
@@ -1395,7 +1447,7 @@ In this case using \keyword{DISTINCT} is redundant, as bound edges are implicitl
 \begin{grammar}	
 	<payload> ::= `ALL' | <selection>
 	
-	<selection> ::= (`WITH' <bindingsList>)? `FIND' <modifier>? <constraints>
+	<selection> ::= (`WITH' <bindingsList>)? (`FILTER' `BY' <constraints>)? `FIND' <modifier>? <constraints>
 	
 	<modifier> ::= `FIRST' | `LAST' | `ANY'
 	
@@ -1428,27 +1480,11 @@ The evaluation behavior for them is subsequently covered in the \cref{sec:sequen
 \label{sec:lanes}
 \todo{link to the JSON part and give a brief explanation}
 
-
-\subsubsection{Basic Constraints}
-\label{sec:basic-constraints}
-
-Constraints can either be predicates, loop predicates, bracketed (with \keyword{(} or \keyword{)}) constraints or Boolean disjunctions (via \keyword{OR}) or conjunctions (with \keyword{AND}) of constraints.
-
-\paragraph{Predicate}
-\label{sec:predicate}
-
-Predicates are essentially expressions (\ref{sec:expressions}) that evaluate to a Boolean value. 
-See the previous sections on constraints (\ref{sec:constraints}) for information on how non-Boolean types are interpreted as Boolean values and the switches (\ref{sec:json-ld-switches}) section for ways to influence this behavior.
-
-\paragraph{Loop Predicate}
-
-TODO
-
 \subsubsection{Flat Constraints}
 \label{sec:flat-constraints}
 
 Flat constraints provide no extra helpers to declare structural properties of the query. 
-They consist of arbitrary basic constraints \cref{sec:basic-constraints} and typically make global constraints redundant.
+They consist of arbitrary basic constraints \cref{sec:basic-constraints} and disallow global constraints (\ref{sec:global-constraints}). \todo{a word on the differences between flat and global constraints}
 
 \subsubsection{Sequence Constraints}
 \label{sec:sequence-constraints}
@@ -1475,9 +1511,14 @@ ADJACENT [$x:][$y:] // node y directly following node x
 \noindent Sequence constraints only provide a single dimension for \textit{moving} the query sequence through the search space of the target corpus.
 Matching is performed greedily in order of node appearance in the query, following the direction specified by the corpus itself.
 If the switch to reverse direction (cf. \ref{sec:json-ld-switches}) is set, then matching attempts will start from the very end of each matching context (such as a container or structure), but the order of nodes to match will remain the same.
-That is, in a node sequence \verb|[$x:][$y:]| the node matched by \texttt{x} will \textbf{always} be before the node matched by \texttt{y} according to the original direction of items in the corpus.
+That is, in a node sequence \verb|[$x:][$y:]| the node matched by \member{x} will \textbf{always} be before the node matched by \member{y} according to the original direction of items in the corpus.
 Only the direction from which the overall matching attempt will start changes with the respective switch.
 This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned match to either the first or last, with respect to the current direction.
+
+\paragraph{Special Note:}
+\noindent Evaluation of quantified nodes in \iql is done greedily, i.e. the engine will try to match as many instances as possible.
+However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
+An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \texttt{<inf->}).
 
 \paragraph{Node Grouping}
 \noindent Nodes can be grouped together within curly brackets (\keyword{\{} and \keyword{\}}).
@@ -1491,17 +1532,12 @@ This would read as ``Find x immediately followed by a, later followed by b+c, la
 Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
 The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
 
-\noindent Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
+Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
 A possible (and simple) solution for this query would be the following:
 \begin{verbatim}
 ADJACENT [$a:][$b:] <0+>[] [$c:][$d:]
 \end{verbatim}
-
-\paragraph{Special Note:}
-\noindent Evaluation of quantified nodes in \iql is done greedily, i.e. the engine will try to match as many instances as possible.
-However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
-An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \texttt{<inf->}).
 
 \subsubsection{Tree Constraints}
 \label{sec:tree-constraints}
@@ -1534,9 +1570,8 @@ They can be individually quantified or existentially negated, as well as grouped
 This requires further specification of the matching process to guarantee consistent results and define basic expectations.
 Below explanations are primarily intended to specify the behavior in the presence of limiting modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) in the payload, but are also of interest for the expected order of returned matches if no limiting modifiers are defined.
 
-\noindent Consider a simple tree query \verb|[$x: [$y:]]| where x and y are bound nodes with individual constraints.
-The nodes X\textsubscript{n} or Y\textsubscript{n} in the following example tree then denote the n-th node that match the constraints of query nodes x and y, respectively:
-
+\begin{wrapfigure}{R}{0.5\textwidth}
+	\centering
 \begin{forest}
 	for tree={
 		if n children=0{
@@ -1561,9 +1596,14 @@ The nodes X\textsubscript{n} or Y\textsubscript{n} in the following example tree
 		] 
 	]
 \end{forest}
+\caption{\label{fig:tree-matching} Example tree with highlighted hits for the query \texttt{[\$x: [\$y:]]}.}
+\end{wrapfigure}
 
-\noindent The tree contains 3 possible matches for \verb|[$x: [$y:]]|, specifically the pairs \texttt{\{X\textsubscript{1},Y\textsubscript{1}\}}, \texttt{\{X\textsubscript{1},Y\textsubscript{2}\}} and \texttt{\{X\textsubscript{2},Y\textsubscript{2}\}}.
+Consider a simple tree query \verb|[$x: [$y:]]| where x and y are bound nodes with individual constraints.
+The nodes X\textsubscript{n} or Y\textsubscript{n} in the example tree (\cref{fig:tree-matching}) then denote the n-th node that match the constraints of query nodes x and y, respectively.
 
+The tree contains 3 possible matches for the query, specifically the pairs \texttt{\{X\textsubscript{1},Y\textsubscript{1}\}}, \texttt{\{X\textsubscript{1},Y\textsubscript{2}\}} and \texttt{\{X\textsubscript{2},Y\textsubscript{2}\}}.
+\todo{expand on the order of matches}
 
 \noindent\texttt{[Root 
 	[A\textsubscript{1}] 
@@ -1587,15 +1627,50 @@ The nodes X\textsubscript{n} or Y\textsubscript{n} in the following example tree
 \subsubsection{Global Constraints}
 \label{sec:global-constraints}
 
-Global constraints con be any basic constraint \cref{sec:basic-constraints} and follow after the main section of structural constraint, indicated yb the \keyword{HAVING} keyword.
+Global constraints con be any basic constraint \cref{sec:basic-constraints} and follow after the main section of structural constraints, indicated by the \keyword{HAVING} keyword.
 \todo{examples and more explanation of what is available (members, etc) + complexity!!!}
 
+\paragraph{Evaluation Priorities}
+\noindent If global constraints are present, the evaluation process changes to a two-stage strategy:
+Matchers for the associated structural constraints produce preliminary result candidates and the global constraints are then evaluated for each such candidate.
+This makes global constraints both very powerful as they have access to more information compared to regular (internal or local) constraints (e.g. they already \textit{know} that all local constraints evaluated to \keyword{true} and the exact candidates produced for structural constraints) and also very critical when it comes to performance.
+It can be very tempting to construct queries such as the following one (bindings section omitted) that only matches when \member{y} is the last child of \member{x}:
+\begin{verbatim}
+FIND [$x: [$y:]] HAVING $x.indexOf($y) == $x.size-1
+\end{verbatim}
+This will cause the structural matcher to potentially propose \textbf{all} children of \member{x} as candidates to be processed by the global constraints section.
+Subsequently, for a node of size $N$ this will produce $N-1$ candidates that are bound to fail the global constraint check.
+\cref{sec:utility} lists several families of utility markers and functions that can be used to signal the evaluation engine that certain local constraints are to be treated as special filters.
+With the use of those utility markers, above query looks like the following and will be vastly more efficient to evaluate:
+\begin{verbatim}
+FIND [$x: [$y: isLast]]
+\end{verbatim}
+Similarly global constraints are not the place to perform filtering on general properties of the current \ac{uoi}, such as sentence length (use the \keyword{FILTER BY} expression for that, cf. \cref{sec:filter-constraints}).
 
 \subsection{Result Processing}
 \label{sec:result-processing}
 
-There be dragons.
+There be dragons\dots
 
 (Content of the result section will be added as \iql evolves)
+
+\section{Utility Markers \& Functions}
+\label{sec:utility}
+
+The following utility features are provided by the \ac{iqp} but are \textbf{not} part of the core specification. 
+As such it is possible for engine extensions to override them, change their behavior or completely remove them if desired.
+They are listed here as per default they all are available and provide valuable improvements for performance and usability.
+
+\subsection{Position Markers}
+\label{sec:position-markers}
+
+Every node (\ref{sec:sequence-constraints}) in a query has an implicit \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} context that it is hosted  or contained in.\footnote{The \ac{icmf} specifies that each item can only be hosted (or \textit{owned}) by a single container or derived object, but be contained within an arbitrary number of additional containers or structures.}
+\todo{describe the situations possible for nodes (root, top-level, nested) with implicit/explicit parent, and then list the isFirst, isLast, etc markers}
+
+\subsection{Tree Functions}
+\label{sec:tree-functions}
+
+\subsection{Graph Functions}
+\label{sec:graph-functions}
 
 \end{document}
