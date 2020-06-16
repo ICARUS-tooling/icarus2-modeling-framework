@@ -448,7 +448,7 @@ public class IqlQueryGenerator {
 			payload.setQueryType(QueryType.PLAIN);
 			payload.setConstraint(generateFull(IqlType.PREDICATE, config));
 		});
-
+		payload.setFilter(generateFull(IqlType.PREDICATE, config));
 		build.addFieldChange(payload::setName, IqlProperties.NAME, index("name"));
 		for(QueryType queryType : QueryType.values()) {
 			build.addEnumFieldChange(payload::setQueryType, IqlProperties.QUERY_TYPE, queryType);

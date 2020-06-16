@@ -359,6 +359,11 @@ public class QueryProcessor {
 				}
 			}
 
+			// Handle filter
+			if(ctx.constraint()!=null) {
+				payload.setConstraint(processConstraint(ctx.constraint()));
+			}
+
 			// Handle modifiers
 			if(ctx.FIRST()!=null) {
 				payload.setQueryModifier(QueryModifier.FIRST);
@@ -402,6 +407,11 @@ public class QueryProcessor {
 			} else {
 				// Simple plain statement
 				payload.setQueryType(QueryType.PLAIN);
+
+				if(ctx.constraint()!=null) {
+					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+							"Do not mix FILTER BY expression with plain query");
+				}
 			}
 
 			payload.checkIntegrity();

@@ -41,6 +41,8 @@ public final class IqlProperties {
 
 	public static final String BINDINGS = IQL_NS_PREFIX+"bindings";
 
+	public static final String FILTER = IQL_NS_PREFIX+"filter";
+
 	public static final String LANES = IQL_NS_PREFIX+"lanes";
 
 	public static final String KEY = IQL_NS_PREFIX+"key";

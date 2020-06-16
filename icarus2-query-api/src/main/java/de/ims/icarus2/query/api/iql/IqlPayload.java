@@ -61,6 +61,11 @@ public class IqlPayload extends IqlUnique {
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlLane> lanes = new ArrayList<>();
 
+	// Pre-search filter (not compatible with plain constraints!!)
+	@JsonProperty(IqlProperties.FILTER)
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<IqlConstraint> filter = Optional.empty();
+
 	// Either plain or global constraints
 	@JsonProperty(IqlProperties.CONSTRAINT)
 	@JsonInclude(Include.NON_ABSENT)
@@ -100,6 +105,8 @@ public class IqlPayload extends IqlUnique {
 
 	public List<IqlLane> getLanes() { return CollectionUtils.unmodifiableListProxy(lanes); }
 
+	public Optional<IqlConstraint> getFilter() { return filter; }
+
 	public Optional<IqlConstraint> getConstraint() { return constraint; }
 
 
@@ -112,6 +119,8 @@ public class IqlPayload extends IqlUnique {
 	public void addBinding(IqlBinding binding) { bindings.add(requireNonNull(binding)); }
 
 	public void addLane(IqlLane lane) { lanes.add(requireNonNull(lane)); }
+
+	public void setFilter(IqlConstraint filter) { this.filter = Optional.of(filter); }
 
 	public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
 

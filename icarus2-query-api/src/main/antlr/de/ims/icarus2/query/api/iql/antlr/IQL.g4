@@ -108,7 +108,7 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (WITH bindingsList)? FIND (FIRST | LAST | ANY)? selectiveStatement EOF
+	| (WITH bindingsList)? (FILTER BY constraint)? FIND (FIRST | LAST | ANY)? selectiveStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -132,6 +132,7 @@ binding
 	: (DISTINCT | EDGES)? member (COMMA member)* FROM Identifier
 	;
 
+//TODO we need an efficient mechanism for pre-filtering prior to structural constraints (maybe add ONLY <constraint> after HAVING)?
 selectiveStatement
 	: constraint // plain
 	| (nodeStatement | laneStatementsList) (HAVING constraint)? //structural constraints

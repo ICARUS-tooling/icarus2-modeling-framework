@@ -77,6 +77,7 @@ public class SharedMemberEnvironments {
 		@Override
 		protected void createEntries() {
 			entryBuilder()
+				/** {@link CorpusMember#getCorpus} */
 				.method("getCorpus", TypeInfo.CORPUS)
 				.aliases("corpus")
 				.instantiator((e, ctx, t, args) -> wrapObj(e, CorpusMember::getCorpus, t, args))
@@ -122,31 +123,37 @@ public class SharedMemberEnvironments {
 		protected void createEntries() {
 			EntryBuilder builder = entryBuilder();
 
+			/** {@link Item#getContainer} */
 			builder.method("getContainer", TypeInfo.CONTAINER)
 				.aliases("container", "host")
 				.instantiator((e, ctx, t, args) -> wrapObj(e, Item::getContainer, t, args))
 				.commitAndReset();
 
+			/** {@link Item#getLayer} */
 			builder.method("getLayer", TypeInfo.LAYER)
 				.aliases("layer")
 				.instantiator((e, ctx, t, args) -> wrapObj(e, Item::getLayer, t, args))
 				.commitAndReset();
 
+			/** {@link Item#getBeginOffset} */
 			builder.method("getBeginOffset", TypeInfo.INTEGER)
 				.aliases("offset", "begin", "beginOffset")
 				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getBeginOffset, t, args))
 				.commitAndReset();
 
+			/** {@link Item#getEndOffset} */
 			builder.method("getEndOffset", TypeInfo.INTEGER)
 				.aliases("end", "endOffset")
 				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getEndOffset, t, args))
 				.commitAndReset();
 
+			/** {@link Item#getIndex} */
 			builder.method("getIndex", TypeInfo.INTEGER)
 				.aliases("index", "position")
 				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getIndex, t, args))
 				.commitAndReset();
 
+			/** {@link Item#getId} */
 			builder.method("getId", TypeInfo.INTEGER)
 				.aliases("id")
 				.instantiator((e, ctx, t, args) -> wrapInt(e, Item::getId, t, args))
