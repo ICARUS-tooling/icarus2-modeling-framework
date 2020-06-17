@@ -110,7 +110,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.PayloadStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectiveStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectionStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnsignedSimpleQuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
@@ -374,7 +374,7 @@ public class QueryProcessor {
 			}
 
 			// Handle actual selection statement variants
-			SelectiveStatementContext sctx = ctx.selectiveStatement();
+			SelectionStatementContext sctx = ctx.selectionStatement();
 			// Plain constraints or global constraints section of structure statement
 			if(sctx.constraint()!=null) {
 				payload.setConstraint(processConstraint(sctx.constraint()));

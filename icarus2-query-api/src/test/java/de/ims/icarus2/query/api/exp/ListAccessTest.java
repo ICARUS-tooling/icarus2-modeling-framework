@@ -21,9 +21,9 @@ package de.ims.icarus2.query.api.exp;
 
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.dynamicLongs;
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.mockContext;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -33,12 +33,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import de.ims.icarus2.query.api.exp.ArrayLiterals;
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.ListAccess;
-import de.ims.icarus2.query.api.exp.Literals;
-import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
@@ -315,7 +309,7 @@ class ListAccessTest {
 				assertThat(exp.isList()).isTrue();
 				assertThat(TypeInfo.isInteger(exp.getElementType())).isTrue();
 
-				assertListExpression((IntegerListExpression<?>)exp, mock(EvaluationContext.class), expected);
+				assertListExpression((IntegerListExpression<?>)exp, mockContext(), expected);
 			}
 
 			@Test
@@ -330,7 +324,7 @@ class ListAccessTest {
 				assertThat(exp.isList()).isTrue();
 				assertThat(TypeInfo.isFloatingPoint(exp.getElementType())).isTrue();
 
-				assertListExpression((FloatingPointListExpression<?>)exp, mock(EvaluationContext.class), expected);
+				assertListExpression((FloatingPointListExpression<?>)exp, mockContext(), expected);
 			}
 
 			@Test
@@ -351,7 +345,7 @@ class ListAccessTest {
 				assertThat(exp.isList()).isTrue();
 				assertThat(TypeInfo.isBoolean(exp.getElementType())).isTrue();
 
-				assertListExpression((BooleanListExpression<?>)exp, mock(EvaluationContext.class), expected);
+				assertListExpression((BooleanListExpression<?>)exp, mockContext(), expected);
 			}
 		}
 	}

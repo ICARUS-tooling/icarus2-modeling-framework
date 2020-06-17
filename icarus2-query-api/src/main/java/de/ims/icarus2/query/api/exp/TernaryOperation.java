@@ -82,18 +82,18 @@ public class TernaryOperation {
 		@Override
 		public Expression<Object> duplicate(EvaluationContext context) {
 			return new TernaryOp(type,
-					condition.duplicate(context),
-					option1.duplicate(context),
-					option2.duplicate(context));
+					context.duplicate(condition),
+					context.duplicate(option1),
+					context.duplicate(option2));
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<Object> optimize(EvaluationContext context) {
 
-			Expression<?> newCondition = condition.optimize(context);
-			Expression<?> newOption1 = option1.optimize(context);
-			Expression<?> newOption2 = option2.optimize(context);
+			Expression<?> newCondition = context.optimize(condition);
+			Expression<?> newOption1 = context.optimize(option1);
+			Expression<?> newOption2 = context.optimize(option2);
 
 			// Jackpot : fixed choice
 			if(newCondition.isConstant()) {

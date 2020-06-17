@@ -239,15 +239,15 @@ public final class ListAccess {
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
 			return new IntegerAccess(
-					(IntegerListExpression<?>)source.duplicate(context),
-					index.duplicate(context));
+					(IntegerListExpression<?>)context.duplicate(source),
+					context.duplicate(index));
 		}
 
 		@Override
 		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			IntegerListExpression<?> newSource = (IntegerListExpression<?>) source.optimize(context);
-			Expression<?> newIndex = index.optimize(context);
+			IntegerListExpression<?> newSource = (IntegerListExpression<?>) context.optimize(source);
+			Expression<?> newIndex = context.optimize(index);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Literals.of(newSource.getAsLong(index(newSource, newIndex)));
@@ -319,15 +319,15 @@ public final class ListAccess {
 		public Expression<long[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
 			return new IntegerBatchAccess(
-					(IntegerListExpression<?>)source.duplicate(context),
-					(IntegerListExpression<?>)index.duplicate(context));
+					(IntegerListExpression<?>)context.duplicate(source),
+					(IntegerListExpression<?>)context.duplicate(index));
 		}
 
 		@Override
 		public Expression<long[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			IntegerListExpression<?> newSource = (IntegerListExpression<?>) source.optimize(context);
-			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
+			IntegerListExpression<?> newSource = (IntegerListExpression<?>) context.optimize(source);
+			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) context.optimize(index);
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -446,15 +446,15 @@ public final class ListAccess {
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
 			return new FloatingPointAccess(
-					(FloatingPointListExpression<?>)source.duplicate(context),
-					index.duplicate(context));
+					(FloatingPointListExpression<?>)context.duplicate(source),
+					context.duplicate(index));
 		}
 
 		@Override
 		public Expression<Primitive<Double>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) source.optimize(context);
-			Expression<?> newIndex = index.optimize(context);
+			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) context.optimize(source);
+			Expression<?> newIndex = context.optimize(index);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Literals.of(newSource.getAsDouble(index(newSource, newIndex)));
@@ -526,15 +526,15 @@ public final class ListAccess {
 		public Expression<double[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
 			return new FloatingPointBatchAccess(
-					(FloatingPointListExpression<?>)source.duplicate(context),
-					(IntegerListExpression<?>)index.duplicate(context));
+					(FloatingPointListExpression<?>)context.duplicate(source),
+					(IntegerListExpression<?>)context.duplicate(index));
 		}
 
 		@Override
 		public Expression<double[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) source.optimize(context);
-			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) index.optimize(context);
+			FloatingPointListExpression<?> newSource = (FloatingPointListExpression<?>) context.optimize(source);
+			IntegerListExpression<?> newIndex = (IntegerListExpression<?>) context.optimize(index);
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -649,14 +649,14 @@ public final class ListAccess {
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanAccess(castBooleanList(source.duplicate(context)),index.duplicate(context));
+			return new BooleanAccess(castBooleanList(context.duplicate(source)),context.duplicate(index));
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			BooleanListExpression<?> newSource = castBooleanList(source.optimize(context));
-			Expression<?> newIndex = index.optimize(context);
+			BooleanListExpression<?> newSource = castBooleanList(context.optimize(source));
+			Expression<?> newIndex = context.optimize(index);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Literals.of(newSource.getAsBoolean(index(newSource, newIndex)));
@@ -727,15 +727,15 @@ public final class ListAccess {
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanBatchAccess(castBooleanList(source.duplicate(context)),
-					castIntegerList(index.duplicate(context)));
+			return new BooleanBatchAccess(castBooleanList(context.duplicate(source)),
+					castIntegerList(context.duplicate(index)));
 		}
 
 		@Override
 		public Expression<boolean[]> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			BooleanListExpression<?> newSource = castBooleanList(source.optimize(context));
-			IntegerListExpression<?> newIndex = castIntegerList(index.optimize(context));
+			BooleanListExpression<?> newSource = castBooleanList(context.optimize(source));
+			IntegerListExpression<?> newIndex = castIntegerList(context.optimize(index));
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {
@@ -847,14 +847,14 @@ public final class ListAccess {
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new ObjectAccess<>(castList(source.duplicate(context)), index.duplicate(context));
+			return new ObjectAccess<>(castList(context.duplicate(source)), context.duplicate(index));
 		}
 
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			ListExpression<?, T> newSource = castList(source.optimize(context));
-			Expression<?> newIndex = index.optimize(context);
+			ListExpression<?, T> newSource = castList(context.optimize(source));
+			Expression<?> newIndex = context.optimize(index);
 
 			if(newSource.isConstant() && newIndex.isConstant()) {
 				return Expressions.constant(newSource.get(index(newSource, newIndex)));
@@ -922,15 +922,15 @@ public final class ListAccess {
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new ObjectBatchAccess<>(castList(source.duplicate(context)),
-					castIntegerList(index.duplicate(context)));
+			return new ObjectBatchAccess<>(castList(context.duplicate(source)),
+					castIntegerList(context.duplicate(index)));
 		}
 
 		@Override
 		public ListExpression<E[], E> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			ListExpression<?, E> newSource = castList(source.optimize(context));
-			IntegerListExpression<?> newIndex = castIntegerList(index.optimize(context));
+			ListExpression<?, E> newSource = castList(context.optimize(source));
+			IntegerListExpression<?> newIndex = castIntegerList(context.optimize(index));
 
 			// Optimize to constant
 			if(newSource.isConstant() && newIndex.isConstant()) {

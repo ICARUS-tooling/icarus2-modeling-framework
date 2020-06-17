@@ -187,7 +187,7 @@ public class Expressions {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
-			Expression<V> newSource = source==null ? null : source.duplicate(context);
+			Expression<V> newSource = source==null ? null : context.duplicate(source);
 			Expression<?>[] newArguments = arguments==null ? NO_ARGS
 					: EvaluationUtils.duplicate(arguments, context);
 

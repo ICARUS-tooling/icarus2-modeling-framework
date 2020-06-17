@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.exp;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.mockContext;
 import static de.ims.icarus2.test.TestUtils.displayString;
 import static de.ims.icarus2.test.TestUtils.npeAsserter;
 import static de.ims.icarus2.test.util.Triple.triple;
@@ -31,7 +32,6 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
-import static org.mockito.Mockito.mock;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -209,12 +209,12 @@ class BinaryOperationsTest {
 					assertThat(expression.computeAsDouble()).isEqualTo(data.result);
 					assertThat(((Primitive<? extends Number>)expression.compute()).longValue()).isEqualTo(data.result);
 
-					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = mockContext().duplicate(expression);
 					assertThat(duplicate.computeAsLong()).isEqualTo(data.result);
 					assertThat(duplicate.computeAsDouble()).isEqualTo(data.result);
 					assertThat(((Primitive<? extends Number>)duplicate.compute()).longValue()).isEqualTo(data.result);
 
-					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = mockContext().optimize(expression);
 					assertThat(optimized.computeAsLong()).isEqualTo(data.result);
 					assertThat(optimized.computeAsDouble()).isEqualTo(data.result);
 					assertThat(((Primitive<? extends Number>)optimized.compute()).longValue()).isEqualTo(data.result);
@@ -482,11 +482,11 @@ class BinaryOperationsTest {
 					assertThat(expression.computeAsDouble()).isEqualTo(data.result);
 					assertThat(((Primitive<? extends Number>)expression.compute()).doubleValue()).isEqualTo(data.result);
 
-					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = mockContext().duplicate(expression);
 					assertThat(duplicate.computeAsDouble()).isEqualTo(data.result);
 					assertThat(((Primitive<? extends Number>)duplicate.compute()).doubleValue()).isEqualTo(data.result);
 
-					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = mockContext().optimize(expression);
 					assertThat(optimized.computeAsDouble()).isEqualTo(data.result);
 					assertThat(((Primitive<? extends Number>)optimized.compute()).doubleValue()).isEqualTo(data.result);
 				});
@@ -684,11 +684,11 @@ class BinaryOperationsTest {
 					assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
 					assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = mockContext().duplicate(expression);
 					assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
 					assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = mockContext().optimize(expression);
 					assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
 					assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 				});
@@ -872,11 +872,11 @@ class BinaryOperationsTest {
 					assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
 					assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-					Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+					Expression<?> duplicate = mockContext().duplicate(expression);
 					assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
 					assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-					Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+					Expression<?> optimized = mockContext().optimize(expression);
 					assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
 					assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 				});
@@ -1099,11 +1099,11 @@ class BinaryOperationsTest {
 				assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
 				assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-				Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+				Expression<?> duplicate = mockContext().duplicate(expression);
 				assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
 				assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-				Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+				Expression<?> optimized = mockContext().optimize(expression);
 				assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
 				assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 			});
@@ -1305,11 +1305,11 @@ class BinaryOperationsTest {
 				assertThat(expression.computeAsBoolean()).isEqualTo(data.result);
 				assertThat(((Primitive<?>)expression.compute()).booleanValue()).isEqualTo(data.result);
 
-				Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+				Expression<?> duplicate = mockContext().duplicate(expression);
 				assertThat(duplicate.computeAsBoolean()).isEqualTo(data.result);
 				assertThat(((Primitive<?>)duplicate.compute()).booleanValue()).isEqualTo(data.result);
 
-				Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+				Expression<?> optimized = mockContext().optimize(expression);
 				assertThat(optimized.computeAsBoolean()).isEqualTo(data.result);
 				assertThat(((Primitive<?>)optimized.compute()).booleanValue()).isEqualTo(data.result);
 			});
@@ -1416,10 +1416,10 @@ class BinaryOperationsTest {
 			Expression<?> expression = create(op, mode, left, right);
 			assertThat(expression.computeAsBoolean()).isEqualTo(equals);
 
-			Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+			Expression<?> duplicate = mockContext().duplicate(expression);
 			assertThat(duplicate.computeAsBoolean()).isEqualTo(equals);
 
-			Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+			Expression<?> optimized = mockContext().optimize(expression);
 			assertThat(optimized.computeAsBoolean()).isEqualTo(equals);
 		}
 
@@ -1583,10 +1583,10 @@ class BinaryOperationsTest {
 			Expression<?> expression = create(op, mode, left, right);
 			assertThat(expression.computeAsBoolean()).isEqualTo(equals);
 
-			Expression<?> duplicate = expression.duplicate(mock(EvaluationContext.class));
+			Expression<?> duplicate = mockContext().duplicate(expression);
 			assertThat(duplicate.computeAsBoolean()).isEqualTo(equals);
 
-			Expression<?> optimized = expression.optimize(mock(EvaluationContext.class));
+			Expression<?> optimized = mockContext().optimize(expression);
 			assertThat(optimized.computeAsBoolean()).isEqualTo(equals);
 		}
 

@@ -981,6 +981,20 @@ public abstract class EvaluationContext {
 		return isSwitchSet(qs.getKey());
 	}
 
+	// BEGIN
+
+	public <T> Expression<T> duplicate(Expression<T> source) {
+		return source.duplicate(this);
+	}
+
+	public <T> Assignable<T> duplicate(Assignable<T> source) {
+		return source.duplicate(this);
+	}
+
+	public <T> Expression<T> optimize(Expression<T> source) {
+		return source.optimize(this);
+	}
+
 	private static final TypeInfo[] NO_ARGS = {};
 
 	private TypeInfo[] argTypes(@Nullable Expression<?>[] arguments) {

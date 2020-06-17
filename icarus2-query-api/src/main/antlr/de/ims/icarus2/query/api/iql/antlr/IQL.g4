@@ -93,7 +93,7 @@ public static final int COMMENTS = 2;
 
 // Standalone statement parts
 standaloneNodeStatement : nodeStatement EOF ;
-standaloneSelectiveStatement : selectiveStatement EOF ;
+standaloneSelectiveStatement : selectionStatement EOF ;
 
 // Standalone helpers
 standaloneExpression : expression EOF ;
@@ -108,7 +108,7 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (WITH bindingsList)? (FILTER BY constraint)? FIND (FIRST | LAST | ANY)? selectiveStatement EOF
+	| (WITH bindingsList)? (FILTER BY constraint)? FIND (FIRST | LAST | ANY)? selectionStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -132,8 +132,7 @@ binding
 	: (DISTINCT | EDGES)? member (COMMA member)* FROM Identifier
 	;
 
-//TODO we need an efficient mechanism for pre-filtering prior to structural constraints (maybe add ONLY <constraint> after HAVING)?
-selectiveStatement
+selectionStatement
 	: constraint // plain
 	| (nodeStatement | laneStatementsList) (HAVING constraint)? //structural constraints
 	;	
@@ -144,11 +143,6 @@ laneStatementsList
 	
 laneStatement
 	: LANE name=Identifier (AS member)? nodeStatement
-	;
-	
-nodeArrangement
-	: ORDERED
-	| ADJACENT
 	;
 	
 /**
@@ -169,6 +163,11 @@ nodeStatement
 	| nodeArrangement? node+										#nodeSequence
 	| element (COMMA element)*					#elementSequence	
 	| <assoc=right> left=nodeStatement or right=nodeStatement			#nodeAlternatives
+	;
+	
+nodeArrangement
+	: ORDERED
+	| ADJACENT
 	;
 	
 /**

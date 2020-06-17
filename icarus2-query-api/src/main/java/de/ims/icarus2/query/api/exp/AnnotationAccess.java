@@ -242,7 +242,7 @@ public class AnnotationAccess {
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new SingleKeyObject<>(type, item.duplicate(context), lookup);
+			return new SingleKeyObject<>(type, context.duplicate(item), lookup);
 		}
 	}
 
@@ -278,7 +278,7 @@ public class AnnotationAccess {
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new SingleKeyInteger(item.duplicate(context), lookup);
+			return new SingleKeyInteger(context.duplicate(item), lookup);
 		}
 	}
 
@@ -311,7 +311,7 @@ public class AnnotationAccess {
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new SingleKeyFloatingPoint(item.duplicate(context), lookup);
+			return new SingleKeyFloatingPoint(context.duplicate(item), lookup);
 		}
 	}
 
@@ -344,7 +344,7 @@ public class AnnotationAccess {
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new SingleKeyBoolean(item.duplicate(context), lookup);
+			return new SingleKeyBoolean(context.duplicate(item), lookup);
 		}
 	}
 
@@ -395,7 +395,7 @@ public class AnnotationAccess {
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new MultiKeyObject<>(elementType, item.duplicate(context), lookups);
+			return new MultiKeyObject<>(elementType, context.duplicate(item), lookups);
 		}
 	}
 
@@ -446,7 +446,7 @@ public class AnnotationAccess {
 		@Override
 		public IntegerListExpression<long[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new MultiKeyInteger(item.duplicate(context), lookups);
+			return new MultiKeyInteger(context.duplicate(item), lookups);
 		}
 	}
 
@@ -497,7 +497,7 @@ public class AnnotationAccess {
 		@Override
 		public FloatingPointListExpression<double[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new MultiKeyFloatingPoint(item.duplicate(context), lookups);
+			return new MultiKeyFloatingPoint(context.duplicate(item), lookups);
 		}
 	}
 
@@ -548,7 +548,7 @@ public class AnnotationAccess {
 		@Override
 		public BooleanListExpression<boolean[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new MultiKeyBoolean(item.duplicate(context), lookups);
+			return new MultiKeyBoolean(context.duplicate(item), lookups);
 		}
 	}
 }

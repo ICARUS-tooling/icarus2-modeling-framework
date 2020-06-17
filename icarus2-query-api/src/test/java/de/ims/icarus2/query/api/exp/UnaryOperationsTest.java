@@ -19,18 +19,14 @@
  */
 package de.ims.icarus2.query.api.exp;
 
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.mockContext;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.Literals;
-import de.ims.icarus2.query.api.exp.UnaryOperations;
 import de.ims.icarus2.query.api.exp.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.exp.ExpressionTest.FloatingPointExpressionTest;
 import de.ims.icarus2.query.api.exp.ExpressionTest.IntegerExpressionTest;
@@ -79,7 +75,7 @@ class UnaryOperationsTest {
 			MutableLong value = new MutableLong(999);
 			Expression<?> expression = ExpressionTestUtils.dynamic(value::longValue);
 			expression = UnaryOperations.minus(expression);
-			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
+			assertThat(mockContext().optimize(expression)).isSameAs(expression);
 		}
 	}
 
@@ -117,7 +113,7 @@ class UnaryOperationsTest {
 			MutableDouble value = new MutableDouble(999.888);
 			Expression<?> expression = ExpressionTestUtils.dynamic(value::doubleValue);
 			expression = UnaryOperations.minus(expression);
-			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
+			assertThat(mockContext().optimize(expression)).isSameAs(expression);
 		}
 	}
 
@@ -155,7 +151,7 @@ class UnaryOperationsTest {
 			MutableBoolean value = new MutableBoolean(true);
 			Expression<Primitive<Boolean>> expression = ExpressionTestUtils.dynamic(value::booleanValue);
 			expression = UnaryOperations.not(expression);
-			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
+			assertThat(mockContext().optimize(expression)).isSameAs(expression);
 		}
 	}
 
@@ -189,7 +185,7 @@ class UnaryOperationsTest {
 			MutableLong value = new MutableLong(999);
 			Expression<?> expression = ExpressionTestUtils.dynamic(value::longValue);
 			expression = UnaryOperations.bitwiseNot(expression);
-			assertThat(expression.optimize(mock(EvaluationContext.class))).isSameAs(expression);
+			assertThat(mockContext().optimize(expression)).isSameAs(expression);
 		}
 	}
 }

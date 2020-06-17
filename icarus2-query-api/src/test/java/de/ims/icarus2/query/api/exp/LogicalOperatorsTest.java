@@ -20,10 +20,10 @@
 package de.ims.icarus2.query.api.exp;
 
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.assertExpression;
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.mockContext;
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.optimizable;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.function.BooleanSupplier;
@@ -35,10 +35,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.Literals;
-import de.ims.icarus2.query.api.exp.LogicalOperators;
 import de.ims.icarus2.query.api.exp.ExpressionTest.BooleanExpressionTest;
 import de.ims.icarus2.query.api.exp.LogicalOperators.Conjunction;
 import de.ims.icarus2.query.api.exp.LogicalOperators.Disjunction;
@@ -49,8 +45,6 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
  *
  */
 class LogicalOperatorsTest {
-
-	private static final EvaluationContext mockContext = mock(EvaluationContext.class);
 
 	@Nested
 	class ForConjunction {
@@ -100,17 +94,17 @@ class LogicalOperatorsTest {
 			@Test
 			void testFullCollapseToTrue() {
 				Expression<?> exp = createFor(true, true, true);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, true);
+				assertExpression(exp, mockContext(), true);
 			}
 
 			@Test
 			void testFullCollapseToFalse() {
 				Expression<?> exp = createFor(false, false, false);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, false);
+				assertExpression(exp, mockContext(), false);
 			}
 
 			@Test
@@ -126,7 +120,7 @@ class LogicalOperatorsTest {
 						.toArray(Expression[]::new);
 
 				Expression<?> exp = createFor(elements);
-				assertThat(exp.optimize(mockContext)).isSameAs(exp);
+				assertThat(mockContext().optimize(exp)).isSameAs(exp);
 			}
 
 			@Test
@@ -143,7 +137,7 @@ class LogicalOperatorsTest {
 				elements[3] = Literals.of(values[3]);
 
 				Expression<?> exp = createFor(elements);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(optimized).isInstanceOf(getTestTargetClass());
 				assertThat(optimized).isNotSameAs(exp);
 			}
@@ -165,17 +159,17 @@ class LogicalOperatorsTest {
 			@Test
 			void testFullCollapseToTrue() {
 				Expression<?> exp = createFor(true, true, true);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, true);
+				assertExpression(exp, mockContext(), true);
 			}
 
 			@Test
 			void testFullCollapseToFalse() {
 				Expression<?> exp = createFor(false, false, false);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, false);
+				assertExpression(exp, mockContext(), false);
 			}
 
 			@Test
@@ -191,7 +185,7 @@ class LogicalOperatorsTest {
 						.toArray(Expression[]::new);
 
 				Expression<?> exp = createFor(elements);
-				assertThat(exp.optimize(mockContext)).isSameAs(exp);
+				assertThat(mockContext().optimize(exp)).isSameAs(exp);
 			}
 
 			@Test
@@ -208,7 +202,7 @@ class LogicalOperatorsTest {
 				elements[3] = Literals.of(values[3]);
 
 				Expression<?> exp = createFor(elements);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(optimized).isInstanceOf(getTestTargetClass());
 				assertThat(optimized).isNotSameAs(exp);
 			}
@@ -270,17 +264,17 @@ class LogicalOperatorsTest {
 			@Test
 			void testFullCollapseToTrue() {
 				Expression<?> exp = createFor(true, true, true);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, true);
+				assertExpression(exp, mockContext(), true);
 			}
 
 			@Test
 			void testFullCollapseToFalse() {
 				Expression<?> exp = createFor(false, false, false);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, false);
+				assertExpression(exp, mockContext(), false);
 			}
 
 			@Test
@@ -296,7 +290,7 @@ class LogicalOperatorsTest {
 						.toArray(Expression[]::new);
 
 				Expression<?> exp = createFor(elements);
-				assertThat(exp.optimize(mockContext)).isSameAs(exp);
+				assertThat(mockContext().optimize(exp)).isSameAs(exp);
 			}
 
 			@Test
@@ -313,7 +307,7 @@ class LogicalOperatorsTest {
 				elements[2] = Literals.of(values[2]);
 
 				Expression<?> exp = createFor(elements);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(optimized).isInstanceOf(getTestTargetClass());
 				assertThat(optimized).isNotSameAs(exp);
 			}
@@ -335,17 +329,17 @@ class LogicalOperatorsTest {
 			@Test
 			void testFullCollapseToTrue() {
 				Expression<?> exp = createFor(true, true, true);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, true);
+				assertExpression(exp, mockContext(), true);
 			}
 
 			@Test
 			void testFullCollapseToFalse() {
 				Expression<?> exp = createFor(false, false, false);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(Literals.isLiteral(optimized)).isTrue();
-				assertExpression(exp, mockContext, false);
+				assertExpression(exp, mockContext(), false);
 			}
 
 			@Test
@@ -361,7 +355,7 @@ class LogicalOperatorsTest {
 						.toArray(Expression[]::new);
 
 				Expression<?> exp = createFor(elements);
-				assertThat(exp.optimize(mockContext)).isSameAs(exp);
+				assertThat(mockContext().optimize(exp)).isSameAs(exp);
 			}
 
 			@Test
@@ -378,7 +372,7 @@ class LogicalOperatorsTest {
 				elements[2] = Literals.of(values[2]);
 
 				Expression<?> exp = createFor(elements);
-				Expression<?> optimized = exp.optimize(mockContext);
+				Expression<?> optimized = mockContext().optimize(exp);
 				assertThat(optimized).isInstanceOf(getTestTargetClass());
 				assertThat(optimized).isNotSameAs(exp);
 			}

@@ -23,6 +23,9 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
@@ -55,6 +58,18 @@ public class ExpressionTestUtils {
 		return exception;
 	}
 
+	public static EvaluationContext mockContext() {
+		EvaluationContext ctx = mock(EvaluationContext.class);
+		when(ctx.duplicate((Expression<?>)any(Expression.class)))
+			.thenAnswer(invoc -> ((Expression<?>)invoc.getArgument(0)).duplicate(ctx));
+		when(ctx.duplicate((Assignable<?>)any(Assignable.class)))
+			.thenAnswer(invoc -> ((Assignable<?>)invoc.getArgument(0)).duplicate(ctx));
+		when(ctx.optimize((Expression<?>)any(Expression.class)))
+			.thenAnswer(invoc -> ((Expression<?>)invoc.getArgument(0)).optimize(ctx));
+
+		return ctx;
+	}
+
 	// Simple expression assertions
 
 	@SuppressWarnings("unchecked")
@@ -62,33 +77,33 @@ public class ExpressionTestUtils {
 			BiPredicate<T, T> equality) {
 		assertThat(exp.compute()).satisfies(result -> equality.test((T) result, expected));
 
-		assertThat(exp.duplicate(ctx).compute()).satisfies(result -> equality.test((T) result, expected));
+		assertThat(ctx.duplicate(exp).compute()).satisfies(result -> equality.test((T) result, expected));
 
-		assertThat(exp.optimize(ctx).compute()).satisfies(result -> equality.test((T) result, expected));
+		assertThat(ctx.optimize(exp).compute()).satisfies(result -> equality.test((T) result, expected));
 	}
 
 	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, long expected) {
 		assertThat(exp.computeAsLong()).isEqualTo(expected);
 
-		assertThat(exp.duplicate(ctx).computeAsLong()).isEqualTo(expected);
+		assertThat(ctx.duplicate(exp).computeAsLong()).isEqualTo(expected);
 
-		assertThat(exp.optimize(ctx).computeAsLong()).isEqualTo(expected);
+		assertThat(ctx.optimize(exp).computeAsLong()).isEqualTo(expected);
 	}
 
 	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, double expected) {
 		assertThat(exp.computeAsDouble()).isEqualTo(expected);
 
-		assertThat(exp.duplicate(ctx).computeAsDouble()).isEqualTo(expected);
+		assertThat(ctx.duplicate(exp).computeAsDouble()).isEqualTo(expected);
 
-		assertThat(exp.optimize(ctx).computeAsDouble()).isEqualTo(expected);
+		assertThat(ctx.optimize(exp).computeAsDouble()).isEqualTo(expected);
 	}
 
 	public static void assertExpression(Expression<?> exp, EvaluationContext ctx, boolean expected) {
 		assertThat(exp.computeAsBoolean()).isEqualTo(expected);
 
-		assertThat(exp.duplicate(ctx).computeAsBoolean()).isEqualTo(expected);
+		assertThat(ctx.duplicate(exp).computeAsBoolean()).isEqualTo(expected);
 
-		assertThat(exp.optimize(ctx).computeAsBoolean()).isEqualTo(expected);
+		assertThat(ctx.optimize(exp).computeAsBoolean()).isEqualTo(expected);
 	}
 
 	// Liste expression assertions
@@ -96,8 +111,8 @@ public class ExpressionTestUtils {
 	@SuppressWarnings("unchecked")
 	public static <T> void assertListExpression(ListExpression<?,T> exp, EvaluationContext ctx,
 			BiPredicate<T, T> equality, T...expected) {
-		ListExpression<?,?> optimized = (ListExpression<?, ?>) exp.optimize(ctx);
-		ListExpression<?,?> duplicated = (ListExpression<?, ?>) exp.duplicate(ctx);
+		ListExpression<?,?> optimized = (ListExpression<?, ?>) ctx.optimize(exp);
+		ListExpression<?,?> duplicated = (ListExpression<?, ?>) ctx.duplicate(exp);
 
 		assertThat(exp.size()).isEqualTo(expected.length);
 		assertThat(optimized.size()).isEqualTo(exp.size());
@@ -118,8 +133,8 @@ public class ExpressionTestUtils {
 	}
 
 	public static void assertListExpression(IntegerListExpression<?> exp, EvaluationContext ctx, long...expected) {
-		IntegerListExpression<?> optimized = (IntegerListExpression<?>) exp.optimize(ctx);
-		IntegerListExpression<?> duplicated = (IntegerListExpression<?>) exp.duplicate(ctx);
+		IntegerListExpression<?> optimized = (IntegerListExpression<?>) ctx.optimize(exp);
+		IntegerListExpression<?> duplicated = (IntegerListExpression<?>) ctx.duplicate(exp);
 
 		assertThat(exp.size()).isEqualTo(expected.length);
 		assertThat(optimized.size()).isEqualTo(exp.size());
@@ -139,8 +154,8 @@ public class ExpressionTestUtils {
 	}
 
 	public static void assertListExpression(FloatingPointListExpression<?> exp, EvaluationContext ctx, double...expected) {
-		FloatingPointListExpression<?> optimized = (FloatingPointListExpression<?>) exp.optimize(ctx);
-		FloatingPointListExpression<?> duplicated = (FloatingPointListExpression<?>) exp.duplicate(ctx);
+		FloatingPointListExpression<?> optimized = (FloatingPointListExpression<?>) ctx.optimize(exp);
+		FloatingPointListExpression<?> duplicated = (FloatingPointListExpression<?>) ctx.duplicate(exp);
 
 		assertThat(exp.size()).isEqualTo(expected.length);
 		assertThat(optimized.size()).isEqualTo(exp.size());
@@ -160,8 +175,8 @@ public class ExpressionTestUtils {
 	}
 
 	public static void assertListExpression(BooleanListExpression<?> exp, EvaluationContext ctx, boolean...expected) {
-		BooleanListExpression<?> optimized = (BooleanListExpression<?>) exp.optimize(ctx);
-		BooleanListExpression<?> duplicated = (BooleanListExpression<?>) exp.duplicate(ctx);
+		BooleanListExpression<?> optimized = (BooleanListExpression<?>) ctx.optimize(exp);
+		BooleanListExpression<?> duplicated = (BooleanListExpression<?>) ctx.duplicate(exp);
 
 		assertThat(exp.size()).isEqualTo(expected.length);
 		assertThat(optimized.size()).isEqualTo(exp.size());

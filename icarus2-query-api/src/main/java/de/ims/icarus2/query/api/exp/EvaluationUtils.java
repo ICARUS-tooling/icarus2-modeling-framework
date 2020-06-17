@@ -163,7 +163,7 @@ public class EvaluationUtils {
 
 	public static <T> Expression<T>[] duplicate(Expression<?>[] expressions, EvaluationContext context) {
 		return Stream.of(expressions)
-				.map(exp -> exp.duplicate(context))
+				.map(exp -> context.duplicate(exp))
 				.toArray(Expression[]::new);
 	}
 
@@ -173,7 +173,7 @@ public class EvaluationUtils {
 		@SuppressWarnings("unchecked")
 		IntFunction<E[]> arrayGen = i -> (E[])Array.newInstance(clazz, i);
 		return Stream.of(expressions)
-				.map(exp -> exp.duplicate(context))
+				.map(exp -> context.duplicate(exp))
 				.map(clazz::cast)
 				.toArray(arrayGen);
 	}
@@ -184,14 +184,14 @@ public class EvaluationUtils {
 		@SuppressWarnings("unchecked")
 		IntFunction<E[]> arrayGen = i -> (E[])Array.newInstance(clazz, i);
 		return Stream.of(expressions)
-				.map(exp -> exp.optimize(context))
+				.map(exp -> context.optimize(exp))
 				.map(clazz::cast)
 				.toArray(arrayGen);
 	}
 
 	public static <T> Expression<T>[] optimize(Expression<?>[] expressions, EvaluationContext context) {
 		return Stream.of(expressions)
-				.map(exp -> exp.optimize(context))
+				.map(exp -> context.optimize(exp))
 				.toArray(Expression[]::new);
 	}
 

@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.exp;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.mockContext;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -29,9 +30,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
@@ -127,7 +125,7 @@ public interface ExpressionTest<T>
 	default void testOptimize() {
 		T value = constant();
 		Expression<?> instance = createWithValue(value);
-		Expression<?> optimized = instance.optimize(context());
+		Expression<?> optimized = mockContext().optimize(instance);
 		if(optimizeToConstant()) {
 			assertThat(optimized.isConstant()).isTrue();
 		}
@@ -142,7 +140,7 @@ public interface ExpressionTest<T>
 	default void testDuplicate() {
 		T value = constant();
 		Expression<?> instance = createWithValue(value);
-		Expression<?> clone = instance.duplicate(context());
+		Expression<?> clone = mockContext().duplicate(instance);
 		if(nativeConstant()) {
 			assertThat(clone).isSameAs(instance);
 		} else {

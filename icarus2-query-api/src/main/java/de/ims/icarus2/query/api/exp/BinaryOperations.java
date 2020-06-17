@@ -162,7 +162,8 @@ public class BinaryOperations {
 	 * @param <T> the result type for {@link #compute()} and similar value retrieving method
 	 * @param <E> the expression types expected as input for the left and right operands
 	 */
-	private static abstract class AbstractBinaryOperation<T, E extends Expression<?>> implements Expression<T> {
+	@SuppressWarnings("rawtypes")
+	private static abstract class AbstractBinaryOperation<T, E extends Expression> implements Expression<T> {
 		protected final E left;
 		protected final E right;
 		private boolean usesSideEffects;
@@ -184,17 +185,15 @@ public class BinaryOperations {
 		 * </ul>
 		 *
 		 * If none of these conditions are met, this expression is returned as-is.
-		 *
-		 * @see de.ims.icarus2.query.api.exp.Expression#duplicate(de.ims.icarus2.query.api.exp.EvaluationContext)
 		 */
 		@Override
 		public Expression<T> duplicate(EvaluationContext context) {
 			requireNonNull(context);
 
 			@SuppressWarnings("unchecked")
-			E newLeft = (E) left.duplicate(context);
+			E newLeft = (E) context.duplicate(left);
 			@SuppressWarnings("unchecked")
-			E newRight = (E) right.duplicate(context);
+			E newRight = (E) context.duplicate(right);
 
 			if(usesSideEffects || newLeft!=left || newRight!=right) {
 				return duplicate(newLeft, newRight);
@@ -209,16 +208,16 @@ public class BinaryOperations {
 		 * if both the optimized operands report being constant. Otherwise this
 		 * expression is returned as-is.
 		 *
-		 * @see de.ims.icarus2.query.api.exp.Expression#duplicate(de.ims.icarus2.query.api.exp.EvaluationContext)
+		 * @see de.ims.icarus2.query.api.exp.Expression#optimize(EvaluationContext)
 		 */
 		@Override
 		public Expression<T> optimize(EvaluationContext context) {
 			requireNonNull(context);
 
 			@SuppressWarnings("unchecked")
-			E newLeft = (E) left.optimize(context);
+			E newLeft = (E) context.optimize(left);
 			@SuppressWarnings("unchecked")
-			E newRight = (E) right.optimize(context);
+			E newRight = (E) context.optimize(right);
 
 			if(newLeft.isConstant() && newRight.isConstant()) {
 				return toConstant(newLeft, newRight);

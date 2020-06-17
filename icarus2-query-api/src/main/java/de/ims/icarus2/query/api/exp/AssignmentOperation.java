@@ -65,7 +65,7 @@ public class AssignmentOperation {
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
-			return new ObjectAssignment(source.duplicate(context), target.duplicate(context));
+			return new ObjectAssignment(context.duplicate(source), context.duplicate(target));
 		}
 
 	}

@@ -328,7 +328,7 @@ public class SetPredicates {
 			requireNonNull(context);
 			return new IntegerSetPredicate(
 					mode,
-					target==null ? listTarget.duplicate(context) : target.duplicate(context),
+					target==null ? context.duplicate(listTarget) : context.duplicate(target),
 					new LongOpenHashSet(fixedLongs),
 					EvaluationUtils.duplicate(dynamicElements, context),
 					EvaluationUtils.duplicate(dynamicLists, context, IntegerListExpression.class));
@@ -597,7 +597,7 @@ public class SetPredicates {
 			requireNonNull(context);
 			return new FloatingPointSetPredicate(
 					mode,
-					target==null ? listTarget.duplicate(context) : target.duplicate(context),
+					target==null ? context.duplicate(listTarget) : context.duplicate(target),
 					new DoubleOpenHashSet(fixedDoubles),
 					EvaluationUtils.duplicate(dynamicElements, context),
 					EvaluationUtils.duplicate(dynamicLists, context, FloatingPointListExpression.class));
@@ -873,7 +873,7 @@ public class SetPredicates {
 			requireNonNull(context);
 			return new TextSetPredicate(
 					mode,
-					target==null ? listTarget.duplicate(context) : target.duplicate(context),
+					target==null ? context.duplicate(listTarget) : context.duplicate(target),
 					new ObjectOpenCustomHashSet<>(fixedElements, STRATEGY),
 					EvaluationUtils.duplicate(dynamicElements, context),
 					EvaluationUtils.duplicate(dynamicLists, context, ListExpression.class));

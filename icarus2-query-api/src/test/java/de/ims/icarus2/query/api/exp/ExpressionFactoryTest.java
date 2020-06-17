@@ -30,6 +30,7 @@ import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.assertExpression;
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.assertListExpression;
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.assertQueryException;
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.dynamic;
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.mockContext;
 import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.raw;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
@@ -78,15 +79,6 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QuerySwitch;
-import de.ims.icarus2.query.api.exp.ArrayLiterals;
-import de.ims.icarus2.query.api.exp.Assignable;
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.EvaluationUtils;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.ExpressionFactory;
-import de.ims.icarus2.query.api.exp.Literals;
-import de.ims.icarus2.query.api.exp.QualifiedIdentifier;
-import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
@@ -133,7 +125,7 @@ class ExpressionFactoryTest {
 
 		@BeforeEach
 		void setUp() {
-			context = mock(EvaluationContext.class);
+			context = mockContext();
 			factory = new ExpressionFactory(context);
 		}
 

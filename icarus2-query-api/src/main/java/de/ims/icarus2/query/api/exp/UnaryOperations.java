@@ -86,7 +86,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new IntegerBitwiseNegation(source.duplicate(context));
+			return new IntegerBitwiseNegation(context.duplicate(source));
 		}
 
 		@Override
@@ -98,7 +98,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<?> newSource = source.optimize(context);
+			Expression<?> newSource = context.optimize(source);
 			if(newSource.isConstant()) {
 				return Literals.of(~newSource.computeAsLong());
 			}
@@ -130,7 +130,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new IntegerNegation(source.duplicate(context));
+			return new IntegerNegation(context.duplicate(source));
 		}
 
 		@Override
@@ -142,7 +142,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Long>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<?> newSource = source.optimize(context);
+			Expression<?> newSource = context.optimize(source);
 			if(newSource.isConstant()) {
 				return Literals.of(-newSource.computeAsLong());
 			}
@@ -174,7 +174,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new FloatingPointNegation(source.duplicate(context));
+			return new FloatingPointNegation(context.duplicate(source));
 		}
 
 		@Override
@@ -187,7 +187,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Double>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<?> newSource =source.optimize(context);
+			Expression<?> newSource = context.optimize(source);
 			if(newSource.isConstant()) {
 				return Literals.of(-newSource.computeAsDouble());
 			}
@@ -224,7 +224,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanNegation(source.duplicate(context));
+			return new BooleanNegation(context.duplicate(source));
 		}
 
 		@Override
@@ -233,7 +233,7 @@ public class UnaryOperations {
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
 			requireNonNull(context);
-			Expression<Primitive<Boolean>> newSource = source.optimize(context);
+			Expression<Primitive<Boolean>> newSource = context.optimize(source);
 			if(newSource.isConstant()) {
 				return Literals.of(!newSource.computeAsBoolean());
 			}

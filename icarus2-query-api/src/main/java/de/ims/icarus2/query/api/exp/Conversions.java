@@ -275,7 +275,7 @@ public class Conversions {
 		@Override
 		public Expression<Primitive<Long>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new IntegerCast(source.duplicate(context), cast);
+			return new IntegerCast(context.duplicate(source), cast);
 		}
 
 		@Override
@@ -323,7 +323,7 @@ public class Conversions {
 		@Override
 		public Expression<long[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new IntegerListCast(castList(source.duplicate(context)), cast);
+			return new IntegerListCast(castList(context.duplicate(source)), cast);
 		}
 
 		@Override
@@ -378,7 +378,7 @@ public class Conversions {
 		@Override
 		public Expression<Primitive<Double>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new FloatingPointCast(source.duplicate(context), cast);
+			return new FloatingPointCast(context.duplicate(source), cast);
 		}
 
 		@Override
@@ -426,7 +426,7 @@ public class Conversions {
 		@Override
 		public Expression<double[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new FloatingPointListCast(castList(source.duplicate(context)), cast);
+			return new FloatingPointListCast(castList(context.duplicate(source)), cast);
 		}
 
 		@Override
@@ -478,7 +478,7 @@ public class Conversions {
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanCast(source.duplicate(context), cast);
+			return new BooleanCast(context.duplicate(source), cast);
 		}
 
 		@Override
@@ -526,7 +526,7 @@ public class Conversions {
 		@Override
 		public Expression<boolean[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new BooleanListCast(castList(source.duplicate(context)), cast);
+			return new BooleanListCast(castList(context.duplicate(source)), cast);
 		}
 
 		@Override
@@ -570,7 +570,7 @@ public class Conversions {
 		@Override
 		public Expression<CharSequence> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new TextCast(source.duplicate(context), cast);
+			return new TextCast(context.duplicate(source), cast);
 		}
 
 		@Override
@@ -617,7 +617,7 @@ public class Conversions {
 		@Override
 		public Expression<CharSequence[]> duplicate(EvaluationContext context) {
 			requireNonNull(context);
-			return new TextListCast(castList(source.duplicate(context)), cast);
+			return new TextListCast(castList(context.duplicate(source)), cast);
 		}
 
 		@Override

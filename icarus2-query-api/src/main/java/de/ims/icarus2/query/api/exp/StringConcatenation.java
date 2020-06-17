@@ -62,7 +62,7 @@ public class StringConcatenation implements Expression<CharSequence> {
 	}
 
 	/**
-	 * @see de.ims.icarus2.query.api.exp.Expression#duplicate(de.ims.icarus2.query.api.exp.EvaluationContext)
+	 * @see de.ims.icarus2.query.api.exp.EvaluationUtils#duplicate(Expression[], EvaluationContext)
 	 */
 	@Override
 	public StringConcatenation duplicate(EvaluationContext context) {
