@@ -7,6 +7,7 @@
 \usepackage[hscale=0.75,vscale=0.8]{geometry}
 
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage{times}
 \usepackage{fontspec}
 \usepackage{latexsym}
@@ -21,11 +22,12 @@
 \usepackage{enumitem}
 \usepackage{cprotect}
 \usepackage{xcolor}
-\usepackage{syntax}
+\usepackage[rounded]{syntax}
 \usepackage{wrapfig}
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
 \usepackage{forest}
+\usepackage{ntheorem}
 
 \usepackage{acro}
 
@@ -45,8 +47,14 @@
 \definecolor{eclipseKeywords}{RGB}{127,0,85}
 \colorlet{numb}{magenta!60!black}
 
+\definecolor{gray}{rgb}{220, 220, 220}
 \definecolor{darkgreen}{rgb}{0.0, 0.5, 0.0}
 \definecolor{darkred}{rgb}{0.8, 0.0, 0.0}
+
+\theoremstyle{break}
+\newtheorem{gram}{Grammar Snippet}
+
+\crefname{gram}{snippet}{snippets}
 
 \newcommand{\compresslist}{ % Define a command to reduce spacing within itemize/enumerate environments, this is used right after \begin{itemize} or \begin{enumerate}
 	\setlength{\topsep}{0pt}
@@ -62,6 +70,7 @@
 
 \newcommand{\member}[1]{\texttt{#1}}
 
+
 % constants
 \newcommand{\iqlns}{iql:}
 \newcommand{\repoUrl}{https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/}
@@ -76,6 +85,7 @@
 \newcommand{\desc}[1]{\noindent#1\newline\medskip}
 \newcommand{\extends}[2]{\noindent\textbf{Extends #1(#2).}\newline\medskip}
 
+% Environment to wrap JSON attributes of IQL elements into tables
 \newenvironment{attributes}[1]{
 \noindent\textbf{Attributes of #1:}\newline\medskip
 \begin{tabular}{|p{0.3\textwidth}|p{0.20\textwidth}|p{0.20\textwidth}|p{0.17\textwidth}|}
@@ -86,12 +96,13 @@
 }{
 \end{tabular}
 }
-
+% shorthand methods for filling attributes table: name, type, required, default
 \newcommand{\attribute}[4]{
 	#1 & #2 & #3 & #4 \\
 	\hline
 }
 
+% Environment to wrap nested JSON elements of IQL elements into tables
 \newenvironment{elements}[1]{
 \noindent\textbf{Nested Elements of #1:}\newline\medskip
 \begin{tabular}{|p{0.3\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
@@ -102,11 +113,45 @@
 }{
 \end{tabular}
 }
-
+% shorthand methods for filling elements table: name, type, required
 \newcommand{\element}[3]{
 #1 & #2 & #3 \\
 \hline
 }
+
+% make a noticable skip and set a horizontal separator
+\newcommand{\diagsep}{\bigskip\hrule}
+
+\newcommand{\rrhead}[1]{\medskip\noindent\synt{#1}:\newline\medskip}
+
+% wrap syntax diagram with a title label (uses syntdiag)
+\newenvironment{rrdiag}[1]{
+	\rrhead{#1}
+	\hspace{-\medskipamount}
+	\begin{syntdiag}
+	}{
+	\end{syntdiag}
+}
+
+% wrap syntax diagram with a title label (uses syntdiag*)
+\newenvironment{rrdiag*}[1]{
+	\rrhead{#1}
+	\begin{syntdiag*}
+	}{
+	\end{syntdiag*}
+}
+
+% allows to split a railroad diagram manually
+\newenvironment{rrfrag}[2]{
+	\begin{syntdiag*}[\left{#1}\right{#2}]
+	}{
+	\end{syntdiag*}
+}
+
+\newcommand{\sst}{\begin{stack}}
+\newcommand{\est}{\end{stack}}
+\newcommand{\srp}{\begin{rep}}
+\newcommand{\erp}{\end{rep}}
 
 %\counterwithin{paragraph}{subsubsection}
 
@@ -1107,10 +1152,14 @@ See \cref{sec:literals} for examples and a more detailed specification of the va
 \subsubsection{Path Expressions}
 \label{sec:path-expressions}
 
-For navigating hierarchically structured object graphs or namespaces, expressions can take the form of paths:
-\begin{grammar}	
-<path> ::= <expression> `.' <identifier> 	
-\end{grammar}
+For navigating hierarchically structured object graphs or namespaces, expressions can take the form of paths, consisting of a original expression, a dot as separator and finally an identifier that denotes the path element or ``field'' within the context of whatever the original expression returned.
+
+\begin{gram}[\synt{path}]
+	\label{gram:path-expression}
+	\begin{grammar}	
+		<path> ::= <expression> `.' <identifier> 	
+	\end{grammar}
+\end{gram}
 
 \paragraph{Examples:}
 
@@ -1125,11 +1174,20 @@ some.really.long.winded.path
 \label{sec:method-invocations}
 
 Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace or a path expression) and round brackets for the invocation with an optional argument list:
-\begin{grammar}	
-	<method> ::= <expression> `(' <arguments>? `)'
+
+\begin{gram}[\synt{method}]
+	\label{gram:method-invocation}
+	\begin{grammar}	
+		<method> ::= <expression> `(' <arguments>? `)'
+		
+		<arguments> ::= <expression> (`,' <expression>)*	
+	\end{grammar}
+	\diagsep
 	
-	<arguments> ::= <expression> (`,' <expression>)*
-\end{grammar}
+	\begin{rrdiag*}{method}
+		<expression> `(' \sst \\ \srp <expression> \\ `,' \erp \est `)'
+	\end{rrdiag*}
+\end{gram}
 
 \paragraph{Examples:}
 
@@ -1145,11 +1203,19 @@ some().chained().methods()
 
 Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to integer values within \texttt{int} space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \texttt{-1} pointing to the last array element and \texttt{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
 
-\begin{grammar}	
-	<array> ::= <expression> `[' <indices> `]'
+\begin{gram}[\synt{array}]
+	\label{gram:list-access}
+	\begin{grammar}	
+		<array> ::= <expression> `[' <indices> `]'
+		
+		<indices> ::= <expression> (`,' <expression>)*	
+	\end{grammar}
+	\diagsep
 	
-	<indices> ::= <expression> (`,' <expression>)*
-\end{grammar}
+	\begin{rrdiag*}{method}
+		<expression> `[' \srp <expression> \\ `,' \erp `]'
+	\end{rrdiag*}
+\end{gram}
 
 \paragraph{Examples:}
 
@@ -1171,11 +1237,19 @@ Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} im
 
 The ICARUS2 framework models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \iql provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
 
-\begin{grammar}	
-	<annotation> ::= <expression> `{' <keys> `}'
+\begin{gram}[\synt{annotation}]
+	\label{gram:annotation-access}
+	\begin{grammar}	
+		<annotation> ::= <expression> `{' <keys> `}'
+		
+		<keys> ::= <expression> (`,' <expression>)*
+	\end{grammar}
+	\diagsep
 	
-	<keys> ::= <expression> (`,' <expression>)*
-\end{grammar}
+	\begin{rrdiag*}{method}
+		<expression> `{' \srp <expression> \\ `,' \erp `}'
+	\end{rrdiag*}
+\end{gram}
 
 \noindent The first expression must evaluate to an item reference and the annotation pointers inside curly brackets must evaluate to strings (if only a single expression is given, it can evaluate to a list or array and be expanded, cf. \cref{sec:value-expansion}) that uniquely denote annotation layers in the current context of the query. Typically users will use string literals in double quotes to explicitly state the annotations to be accessed, but the \iql syntax allows for very flexible extraction statement. If the evaluation of those annotation pointers yields more than one string, the result will be an array-like object containing the resolved values for each of the annotation keys in the same order as those were specified.
 
@@ -1219,27 +1293,27 @@ Expression hierarchy and evaluation order follows the order the different types 
 \subsubsection{Set Predicate}
 \label{sec:set-predicate}
 
-Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection'). The basic form of a set predicate looks as follows:
-\begin{grammar}	
-	<set_predicate> ::= <expression> `IN' `{' <items> `}'
-	
-	<items> ::= <expression> (`,' <expression>)*
-\end{grammar}
+Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
 
-\noindent The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
 
-Set predicates can be directly negated (apart from wrapping \ref{sec:wrapping} them and negating \ref{sec:unary-operation} the entire expression) with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
-
-\paragraph{The complete syntax with all options looks as follows:}
-\begin{grammar}	
-	<set_predicate> ::= <expression> <all>? <not>? `IN' `{' <items> `}'
+\begin{gram}[\synt{set_predicate}]
+	\label{gram:set-predicate}
+	\begin{grammar}	
+		<set_predicate> ::= <expression> <all>? <not>? `IN' `{' <items> `}'
+		
+		<all> ::=  `ALL' | `*'
+		
+		<not> ::=  `NOT' | `!'
+		
+		<items> ::= <expression> (`,' <expression>)*
+	\end{grammar}
+	\diagsep
 	
-	<all> ::=  `ALL' | `*'
-	
-	<not> ::=  `NOT' | `!'
-	
-	<items> ::= <expression> (`,' <expression>)*
-\end{grammar}
+	\begin{rrdiag*}{set_predicate}
+		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' `{' \srp <expression> \\ `,' \erp `}'
+	\end{rrdiag*}
+\end{gram}
 
 \paragraph{Examples:}
 
@@ -1271,9 +1345,12 @@ NOT someBooleanValue
 
 Binary operations between two expressions take the following simple form:
 
-\begin{grammar}	
-	<binary_op> ::= <expression> <operator> <expression>
-\end{grammar}
+\begin{gram}[\synt{binary_op}]
+	\label{gram:binary-operations}
+	\begin{grammar}	
+		<binary_op> ::= <expression> <operator> <expression>
+	\end{grammar}
+\end{gram}
 
 \noindent Binary operators follow an explicit hierarchy, listed in \cref{tab:binary-operators} in the order of priority, from highest to lowest.
 
@@ -1313,7 +1390,7 @@ While the basic numerical types (\keyword{int}, \keyword{float}) can be arbitrar
 \paragraph{Bit Operations}
 \label{sec:bit-operations}
 
-Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast \ref{sec:type-cast} to match the other. If value expansion \ref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
+Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast~\ref{sec:type-cast} to match the other. If value expansion~\ref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
 The two shift operations (\texttt{\textless{}\textless} and \texttt{\textgreater{}\textgreater}) take arbitrary integer types as left operand and an \keyword{int} value as right operand.
 
@@ -1367,9 +1444,12 @@ x==1 or x==3
 
 A single ternary operation is supported in \iql, the popular if-then-else replacement with the following syntax:
 
-\begin{grammar}	
-	<ternary> ::= <expression> `?' <expression> `:' <expression>
-\end{grammar}
+\begin{gram}[\synt{ternary}]
+	\label{gram:ternary-operations}
+	\begin{grammar}	
+		<ternary> ::= <expression> `?' <expression> `:' <expression>
+	\end{grammar}
+\end{gram}
 
 \noindent The first expression must evaluate to a \keyword{boolean} value and determines which of the following two alternatives will be evaluated for the final value of the expression. Note that the second and third expressions must have compatible result types.
 
@@ -1389,76 +1469,118 @@ x<2 ? "text for smaller value" : "some other text"
 
 Simply put, constraints are expressions that evaluate to a Boolean result. 
 Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \iql allows certain evaluations as syntactic sugar, listed in \cref{tab:constraints-translation}.
-Note that those evaluations are only active if the respective switches to disable them (\ref{sec:json-ld-switches}) have not been set.
-
+Note that those conversions are only active if the respective switches to disable them (\ref{sec:json-ld-switches}) have not been set.
 
 \begin{table}
-\centering\begin{tabular}{|l|c|c|}
-	\hline 
-	Type & Condition & Value \\ 
-	\hline 
-	\keyword{string} & empty or null & \keyword{false}  \\ 
-	\hline 
-	\keyword{int} & \texttt{0} & \keyword{false} \\ 
-	\hline 
-	\keyword{float} & \texttt{0.0} & \keyword{false} \\ 
-	\hline
-	any object & \keyword{null} & \keyword{false} \\ 
-	\hline 
-\end{tabular}
-\caption{Rules for evaluating arbitrary values or objects in a query to Boolean values.}
-\label{tab:constraints-translation}
+	\centering\begin{tabular}{|l|c|c|}
+		\hline 
+		Type & Condition & Value \\ 
+		\hline 
+		\keyword{string} & empty or null & \keyword{false}  \\ 
+		\hline 
+		\keyword{int} & \texttt{0} & \keyword{false} \\ 
+		\hline 
+		\keyword{float} & \texttt{0.0} & \keyword{false} \\ 
+		\hline
+		any object & \keyword{null} & \keyword{false} \\ 
+		\hline 
+	\end{tabular}
+	\caption{Rules for converting arbitrary values or objects in a query to Boolean values.}
+	\label{tab:constraints-translation}
 \end{table}
 
-\subsection{Basic Constraints}
+\subsubsection{Basic Constraints}
 \label{sec:basic-constraints}
 
 Basic constraints can either be predicates, loop predicates, bracketed (with \keyword{(} or \keyword{)}) constraints or disjunctions (via \keyword{OR}) or conjunctions (with \keyword{AND}) of constraints.
+\todo{add syntax diagram}
 
-\paragraph{Predicate}
+\subsubsection{Predicate}
 \label{sec:predicate}
 
 Predicates are essentially expressions (\ref{sec:expressions}) that evaluate to a Boolean value. 
-See the previous sections on constraints (\ref{sec:constraints}) for information on how non-Boolean types are interpreted as Boolean values and the switches (\ref{sec:json-ld-switches}) section for ways to influence this behavior.
+See \cref{tab:constraints-translation} for information on how non-Boolean types are interpreted as Boolean values and the switches (\ref{sec:json-ld-switches}) section for ways to influence this behavior.
 
-\paragraph{Loop Predicate}
+\subsubsection{Loop Predicate}
 
 TODO
 
-\subsection{Filter Constraints}
-\label{sec:filter-constraints}
+\subsection{Payload Structure}
+\label{sec:payload-structure}
 
-For complex (i.e. structural) queries, \iql offers a way of filtering the \acp{uoi} before they are processed by the matchers for sequence, tree or graph structures (cf. \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}).
+The Payload section in \iql consists of either the sole \keyword{ALL} keyword or a selection statement (\ref{sec:selection}) with optional binding (\ref{sec:bindings}) definition and filter constraints (\ref{sec:filter-constraints}) preceding it.
+If the \keyword{ALL} keyword is used, no constraints whatsoever can be defined and the engine is instructed to return the entire target corpus.
+In this case the only way of restricting results is by using the \iqlType{Result} section (\ref{sec:json-ld-result}) of a query.
+
+\begin{gram}[\synt{payload}]
+	\label{gram:payload}
+	\begin{grammar}	
+		<payload> ::= `ALL' 
+		\alt <bindingsList>? (`FILTER' `BY' <constraint>)? `FIND' <modifier>? <selection>
+		
+		<modifier> ::= `FIRST' | `LAST' | `ANY'	
+	\end{grammar}
+	\diagsep
+	\begin{samepage} %TODO need alternative to prevent pagebreak between multiple rrfrag instances
+	\rrhead{payload with content}
+	\begin{rrfrag}{>-}{...}
+		\sst \\ <bindingsList> \est \sst \\ `FILTER' `BY' <constraint> \est 
+	\end{rrfrag}
+	\newline
+	\begin{rrfrag}{...}{->}
+		`FIND' \sst \\ `FIRST' \\ `LAST' \\ `ANY' \est <selection>
+	\end{rrfrag}
+	\end{samepage}
+\end{gram}
+
+\subsubsection{Filter Constraints}
+\label{sec:filter-constraints}
+\noindent For complex (i.e. structural) queries, \iql offers a way of filtering the \acp{uoi} before they are processed by the matchers for sequence, tree or graph structures (cf. \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}).
 A dedicated \keyword{FILTER BY} section in the query payload preceding the actual structural constraints is available to define filtering rules that have to evaluate to \keyword{true} for a \ac{uoi} to be considered for actual matching.
 Constraints within a filtering rules have only access to general properties of the \acp{uoi}, such as sentence length, tree height or similar information.
 The do \textbf{not} have access to bound member variables, apart from those defined for the top-level members of lanes (\ref{sec:lanes})!
 Note that filter constraints are \textbf{not} compatible with flat constraints (\ref{sec:flat-constraints}) as they both essentially fill the same function and flat constraints take precedence.
 
-\subsection{Structural Constraints}
-\label{sec:structural-constraints}
+\subsubsection{Match Modifiers}
+\label{sec:match-modifiers}
+Per default, the search in \iql is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
+For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as tree entries in the result if the query was only meant to find instances of the lemma ``the''.
+This default behavior can be adjusted to only return each \ac{uoi} no more than once by using one of the modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) listed in \cref{gram:payload}.
+The semantics of the \keyword{ANY} modifier are such that the engine may freely pick any one match within a \ac{uoi}.
+Note however, that to support reproducible search results, repeated evaluations of the same query on a corpus are still required to yield the same instances here.
+The exact semantics of \keyword{FIRST} and \keyword{LAST} are depending on the type of structural constraints used in the payload, but generally are based on the natural order of items within the corpus (typically this is the flow of words in a text).
+The evaluation behavior for them is subsequently covered in \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}.
 
-The constraints section in \iql (referred to as the payload) consists either of the sole \keyword{ALL} keyword or of an optional bindings definition and the actual constraints themselves. 
-A binding is a collection of member references (\ref{sec:variables-references}) that get declared to belong to a certain type and/or part of the corpus. 
+\subsubsection{Bindings}
+\label{sec:bindings}
+A binding is a collection of member references (\ref{sec:variables-references}) that get declared to belong to a certain member type or part of the corpus. 
 The \keyword{DISTINCT} keyword enforces that multiple bound member references in this binding do \textbf{not} match the same target. 
 Depending on the local constraints used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
 Additionally the \keyword{EDGES} keyword signals that the bound members of a structure are actually edges.
 In this case using \keyword{DISTINCT} is redundant, as bound edges are implicitly assumed to be distinct when matching.
 
-\begin{grammar}	
-	<payload> ::= `ALL' | <selection>
-	
-	<selection> ::= (`WITH' <bindingsList>)? (`FILTER' `BY' <constraints>)? `FIND' <modifier>? <constraints>
-	
-	<modifier> ::= `FIRST' | `LAST' | `ANY'
-	
-	<bindingsList> ::= <binding> (`AND' <binding>)* 
-	
-	<binding> := <option>? <member> (`,' <member>)* `FROM' <layer>
-	
-	<option> := `DISTINCT' | `EDGES'
-	
-\end{grammar}
-\todo{expand the constraints rule to include lanes and subsequently sequence/tree/graph definitions}
+\begin{gram}[Bindings]
+	\label{gram:bindings}
+	\begin{grammar}	
+		<bindingsList> ::= `WITH' <binding> (`AND' <binding>)* 
+		
+		<binding> := <option>? <member> (`,' <member>)* `FROM' <layer>
+		
+		<option> := `DISTINCT' | `EDGES'	
+	\end{grammar}
+	\diagsep
+	\begin{rrdiag*}{bindingsList}
+		`WITH' \srp
+			\sst \\ `DISTINCT' \\ `EDGES' \est \srp <member> \\ `,' \erp `FROM' <layer>
+			\\ `AND'
+		\erp 
+	\end{rrdiag*}
+\end{gram}
+
+\noindent Raw binding definitions in the payload are parsed and stored in their JSON counterpart (\iqlType{Binding},~\ref{sec:json-ld-binding}) during query processing.
+
+\subsubsection{Selection Statement}
+\label{sec:selection}
 
 Constraints are further divided into local constraints as part of node or edge definitions and global ones (with the \keyword{HAVING} keyword). 
 Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). 
@@ -1466,32 +1588,188 @@ They also introduce certain limitations on what can be expressed or searched (e.
 However, global constraints can introduce arbitrary constraints or relations and thereby increase the evaluation complexity, potentially without limits. 
 Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
 
-\paragraph{Match Modifiers}
-\label{sec:mathc-modifiers}
-Per default, the search in \iql is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
-For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as tree entries in the result if the query was only meant to find instances of the lemma ``the''.
-This default behavior can be adjusted to only return each \ac{uoi} no more than once by using one of the modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) listed in the grammar fragment in \cref{sec:constraints}.
-The semantics of the \keyword{ANY} modifier are such that the engine may freely pick any one match within a \ac{uoi}.
-Note however, that to support reproducible search results, repeated evaluations of the same query on a corpus are still required to yield the same instances here.
-The exact semantics of \keyword{FIRST} and \keyword{LAST} are depending on the type of structural constraints used in the payload, but generally are based on the natural order of items within the corpus (typically this is the flow of words in a text).
-The evaluation behavior for them is subsequently covered in the \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}.
+\begin{gram}[\synt{selectionStatement}]
+	\label{gram:selection}
+	\begin{grammar}	
+		<selectionStatement> ::= <constraint>
+		\alt (<nodeStatement> | <laneStatementsList>) (`HAVING' <constraint>)?	
+		
+		<laneStatementsList> ::= <laneStatement> (`AND' <laneStatement>)*
+		
+		<laneStatement> ::= `LANE' <identifier> (`AS' <member>)? <nodeStatement>
+	\end{grammar}
+	\diagsep
+	
+	\begin{rrdiag*}{selectionStatement}
+		\sst
+			\sst <nodeStatement> \\ \srp <laneStatement> \\ `AND' \erp \est
+				\sst \\ `HAVING' <constraint> \est \\ 
+			<constraint> 
+		\est
+	\end{rrdiag*}
 
-\paragraph{Lanes}
+	\begin{rrdiag*}{laneStatement}
+		`LANE' <identifier> \sst \\ `AS' <member> \est <nodeStatement>
+	\end{rrdiag*}
+\end{gram}
+
+%TODO a few words about nodeStatement and link to section about structural constraints?
+
+\subsubsection{Lanes}
 \label{sec:lanes}
-\todo{link to the JSON part and give a brief explanation}
+\noindent Lane statements can be used to extract information from concurrent structures that exist for the \ac{uoi} of the payload.
+Each lane statement is introduced by the \keyword{LANE} keyword and an identifier that matches the name or alias of a layer in the outer query definition (cf. \cref{gram:selection}).
+Optionally the source layer of a lane can also be assigned a member variable (\ref{sec:variables-references}) so that it can be explicitly referenced in the payload.\footnote{This is particularly useful when using the global constraints to compare content of different lanes. Imagine for instance a query that searches for a certain syntactic construct \texttt{C} to be present in two concurrent parse trees \texttt{A} and \texttt{B}, but will only consider sentences where \texttt{C} is embedded deeper inside \texttt{A} compared to its embedding depth in \texttt{B}.}
+During query processing raw lane statements will be parsed into \iqlType{Lane} objects (\ref{sec:json-ld-lane}).
+
+%TODO from here rework
+
+Constraints are further divided into local constraints as part of node or edge definitions and global ones (with the \keyword{HAVING} keyword). 
+Local constraints are obligatory and define the basic complexity of the query (flat, tree or graph). 
+They also introduce certain limitations on what can be expressed or searched (e.g. a ``flat'' local constraints declaration will not provide implicit access to tree information). 
+However, global constraints can introduce arbitrary constraints or relations and thereby increase the evaluation complexity, potentially without limits. 
+Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
 
 \subsubsection{Flat Constraints}
 \label{sec:flat-constraints}
 
 Flat constraints provide no extra helpers to declare structural properties of the query. 
-They consist of arbitrary basic constraints \cref{sec:basic-constraints} and disallow global constraints (\ref{sec:global-constraints}). \todo{a word on the differences between flat and global constraints}
+They consist of arbitrary basic constraints \cref{sec:basic-constraints} and disallow both global constraints (\ref{sec:global-constraints}) and filter constraints (\ref{sec:filter-constraints}). \todo{a word on the differences between flat and global constraints}
+
+\subsubsection{Structural Constraints}
+\label{sec:structural-constraints}
+
+\iql provides several classes of structural constraints that each feature distinctive syntax features to express structures of increasing complexity.
+Those structures are sequences (\ref{sec:sequence-constraints}), trees (\ref{sec:tree-constraints}) and graphs (\ref{sec:graph-constraints}).
+They all get explained in more detail in their respective sections, but the syntactic basics for all of them will be defined here.
+To simplify the overall \iql grammar, a general syntax exists for the declaration of nodes (and edges).
+This general form honors the aspects specific to each of those structure types, but generally over-generates and only some of its features are actually applicable in concrete use cases.
+\Cref{gram:node-statement} shows the full syntax for defining structural constraints in \iql.
+
+\begin{gram}[\synt{nodeStatement}]
+	\label{gram:node-statement}
+	\begin{grammar}			
+		<nodeStatement> ::= `\{' <nodeStatement> `\}'
+		\alt <nodeArrangement>? <node>+
+		\alt <element> (`,' <element>)*
+		\alt <nodeStatement> `or' <nodeStatement>
+		
+		<nodeArrangement> ::= `ORDERED' | `ADJACENT'
+		
+		<node> ::= <quantifier>? `[' <memberLabel>? <constraint>? <nodeStatement>? `]'
+		
+		<quantifier> ::= <simpleQuantifier> (`|' <simpleQuantifier>)*
+		\alt `\textless' <simpleQuantifier> (`|' <simpleQuantifier>)* `\textgreater'
+		
+		<simpleQuantifier> ::=  (`ALL' | `*')
+		\alt (`NOT' | `!')
+		\alt <digits> (`+' | `-')?
+		\alt <digits> `..' <digits>
+		
+		<memberLabel> ::= <member> `:'
+		
+		<element> ::= <node> | <node> <edge> <node>
+		
+		<edge> ::= `\textless\textminus\textminus' | `\textminus\textminus\textgreater' | `\textless\textminus\textgreater' | `\textminus\textminus\textminus'
+		\alt (`\textless\textminus' | `\textminus\textminus') `[' <memberLabel>? <constraint>? `]' (`\textminus\textminus' | `\textminus\textgreater')
+	\end{grammar}
+	\diagsep
+	\begin{rrdiag*}{nodeStatement}
+		\sst
+			`\{' <nodeStatement> `\}' \\
+			<nodeStatement> `or' <nodeStatement> \\
+			\sst \\ `ORDERED' \\ `ADJACENT' \est \srp <node> \\ \erp \\
+			<element> \srp \\ `,' <element> \erp
+		\est
+	\end{rrdiag*}
+
+	\begin{rrdiag*}{node}
+		\sst \\ <quantifier> \est `[' 
+		\sst \\ <memberLabel> \est
+		\sst \\ <constraint> \est
+		\sst \\ <nodeStatement> \est `]'
+	\end{rrdiag*}
+
+	\begin{rrdiag*}{quantifier}
+		`\textless' \srp
+			\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ <digits> `..' <digits> \\ 
+				<digits> \sst \\ `+' \\ `-' \est 
+			\est
+		 \\ `|' \erp `\textgreater'
+	\end{rrdiag*}
+
+	\begin{rrdiag*}{element}
+		\sst <node> \\ <node> <edge> <node> \est
+	\end{rrdiag*}
+
+	\begin{rrdiag*}{edge}
+		\sst 
+			\sst \lit{\textless\textminus} \\ \lit{\textminus\textminus} \est `[' 
+				\sst \\ <memberLabel> \est
+				\sst \\ <constraint> \est `]' 
+				\sst \lit{\textminus\textminus} \\ \lit{\textminus\textgreater} \est \\
+			\lit{\textless\textminus\textminus} \\
+			\lit{\textminus\textminus\textgreater} \\ 
+			\lit{\textless\textminus\textgreater} \\
+			\lit{\textminus\textminus\textminus}
+		\est
+	\end{rrdiag*}
+\end{gram}
+
+\noindent There are four (partly recursive) approaches to express node statements, i.e. grouping, node sequence, element sequence and disjunction. 
+The distinction between node and element sequences exists to easily distinguish sequence or tree queries from graph definitions.
+Sequence queries do not include hierarchical structural information and as such have no use for edges.
+In the syntax used for tree nodes in \iql information about the incoming edge is implicitly available from every nested node and constraints related to outgoing edges are to be attached to the respective child terminals of those edges.
+For graphs where no simple association between nodes and edges exists, there is a necessity to have explicit edge declarations available for querying.
+As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder that can be filled with either node or edge declarations.
+
+\paragraph{Nodes}
+\noindent \iql uses square brackets (\keyword{[} and \keyword{]}) to mark individual nodes.
+Declaring a node in a structural constraint implicitly marks it as existentially quantified.
+Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most}, \textit{at-least} or bounded range quantification.
+\iql allows multiple quantifiers to be separated by the pipe symbol \lit{|} to express disjunction between quantifiers.
+This way complex constraints can be defined very neatly, such as the ``all or nothing'' quantification \texttt{\keyword{all}|\keyword{not}}.
+This quantifier combination ensures that either all targets in a certain context match the node in question, or none does.\footnote{Example: find all sentences that either have no word with more than five characters or all of their words have five or more characters.}
+
+A node's inner content can optionally have an initial \textbf{member label} (identifier with a colon \lit{:} afterwards) to link this node to a previously defined member binding (\ref{sec:bindings}).
+Such as binding restricts the type of corpus member that the node can be matched against.
+It also provides a point of reference that subsequent constraints (e.g. in the global constraints section, cf. \cref{sec:global-constraints}) can use to access information of the target the node has been matched against.
+Note that cross-referencing between nodes from within local constraints (such as in \verb|[$x:][$y: pos!=$x.pos]|) is discouraged\footnote{The reason behind this is that the \ac{iqp} per default is not required to honor the order of nodes defined in a query or the linking relations between them when planning the automaton for evaluation. As such there is no guarantee that node \member{x} will have already been matched against a valid target when the cross-reference constraint inside \member{y} is evaluated. This would cause an error during evaluation time to occur, which in turn will abort the entire search.} and global constraints should be used for this.
+This approach guarantees that by the time such cross-reference constraints (or ``joins'', to use database terminology) are evaluated all involved member variables will be assigned preliminary candidates.
+
+%Each node can have arbitrarily complex \textbf{local constraints} (composed of basic constraints, cf.~\ref{sec:basic-constraints}) that have implicit access to annotations and structural information (e.g. host container) of the item the node is matched against.
+Nodes can also optionally define \textbf{local constraints} that must evaluate to \keyword{true} for target item to be considered as result candidate.
+Local constraints have full access to properties and annotations of the target item currently being inspected and can take any form described in \cref{sec:basic-constraints}.
+Note that it is up to the evaluation engine how to optimize and potentially prune the evaluation process of constraint expressions.
+Correct evaluation of a conjunctive local constraints with external function calls \verb|[$x: func1($x) && func2($x) && func3($x)]| must not rely on the premise of any particular function (\texttt{func1}, \texttt{func2} or \texttt{func3}) actually being called at all.
+The evaluation semantics of conjunctive Boolean concatenation allow an early determination of the final result as soon as the stable predicate of one of the inner terms evaluating to \keyword{false} is met.
+Therefore it is perfectly legal (and in parts expected from an efficient evaluation engine) to not evaluate the calls to \texttt{func2} and \texttt{func3} after \texttt{func1} has already caused the result to remain \keyword{false}.
+
+
+\paragraph{Edges}
+\noindent
+
+\paragraph{Node Grouping}
+\noindent Nodes (or elements) can be grouped together within curly brackets (\keyword{\{}~and~\keyword{\}}).
+This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
+Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
+However, those directives are \textbf{not} automatically inherited to the inner collection of nodes in the group, allowing for expressions such as the following node sequence:
+\begin{verbatim}
+ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
+\end{verbatim}
+This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
+Note that the adjacency modifier does not apply to the inner sequences a+b and c+d, which are only subject to the implicit order of the sequence declaration.\footnote{An additional \keyword{ORDERED} in each of the groups would make that explicit, but is redundant.}
+
+\paragraph{Node Sequence}
+\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style.
+
+Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
+The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
 
 \subsubsection{Sequence Constraints}
 \label{sec:sequence-constraints}
 
 As the most basic form of structural constraints this type is used to match sequences of \repoLink{\modelsUrl members/item/Item.java}{items} or nodes in the target corpus.
-\iql uses square brackets (\keyword{[} and \keyword{]}) to mark individual nodes.
-Each node can have arbitrarily complex internal constraints (composed of basic constraints, cf. \ref{sec:basic-constraints}) that have implicit access to annotations and structural information (e.g. host container) of the item the node is matched against.
 Multiple nodes in a sequence declaration are required to match to items in exactly the order they are defined in (but not necessarily adjacent to each other, use the \keyword{ADJACENT} directive in front of a node sequence for that).
 
 \paragraph{Examples:}
@@ -1510,7 +1788,7 @@ ADJACENT [$x:][$y:] // node y directly following node x
 \paragraph{Sequence Matching}
 \noindent Sequence constraints only provide a single dimension for \textit{moving} the query sequence through the search space of the target corpus.
 Matching is performed greedily in order of node appearance in the query, following the direction specified by the corpus itself.
-If the switch to reverse direction (cf. \ref{sec:json-ld-switches}) is set, then matching attempts will start from the very end of each matching context (such as a container or structure), but the order of nodes to match will remain the same.
+If the switch to reverse direction (cf.~\ref{sec:json-ld-switches}) is set, then matching attempts will start from the very end of each matching context (such as a container or structure), but the order of nodes to match will remain the same.
 That is, in a node sequence \verb|[$x:][$y:]| the node matched by \member{x} will \textbf{always} be before the node matched by \member{y} according to the original direction of items in the corpus.
 Only the direction from which the overall matching attempt will start changes with the respective switch.
 This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned match to either the first or last, with respect to the current direction.
@@ -1519,18 +1797,6 @@ This also leads to a very simple and intuitive semantic for the \keyword{FIRST} 
 \noindent Evaluation of quantified nodes in \iql is done greedily, i.e. the engine will try to match as many instances as possible.
 However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
 An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \texttt{<inf->}).
-
-\paragraph{Node Grouping}
-\noindent Nodes can be grouped together within curly brackets (\keyword{\{} and \keyword{\}}).
-This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
-Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
-However, those directives are \textbf{not} automatically inherited to the inner collection of nodes in the group, allowing for expressions such as the following:
-\begin{verbatim}
-ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
-\end{verbatim}
-This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
-Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
-The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
 
 Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
@@ -1566,7 +1832,7 @@ They can be individually quantified or existentially negated, as well as grouped
 
 \paragraph{Tree Matching}
 
-\noindent As opposed to sequences (\ref{sec:sequence-constraints}), trees (and subsequently also graphs, cf. \ref{sec:graph-constraints}) offer an additional dimension of matching freedom over the bare iteration of items in a container or structure to be matched.
+\noindent As opposed to sequences (\ref{sec:sequence-constraints}), trees (and subsequently also graphs, cf.~\ref{sec:graph-constraints}) offer an additional dimension of matching freedom over the bare iteration of items in a container or structure to be matched.
 This requires further specification of the matching process to guarantee consistent results and define basic expectations.
 Below explanations are primarily intended to specify the behavior in the presence of limiting modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) in the payload, but are also of interest for the expected order of returned matches if no limiting modifiers are defined.
 
