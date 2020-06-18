@@ -117,6 +117,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
+import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 
 /**
  * Helper for processing the actual content of a query.
@@ -713,6 +714,9 @@ public class QueryProcessor {
 			return ctx.simpleQuantifier()
 					.stream()
 					.map(this::processSimpleQuantifier)
+					// Ignore redundant quantifiers directly
+					//TODO should we collect all of them first and then emit warnings for redundant ones?
+					.filter(new ObjectOpenCustomHashSet<>(IqlQuantifier.EQUALITY)::add)
 					.collect(Collectors.toList());
 		}
 

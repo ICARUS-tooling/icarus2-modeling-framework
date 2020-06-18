@@ -22,6 +22,7 @@ package de.ims.icarus2.query.api.iql;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
 import java.util.OptionalInt;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -31,12 +32,41 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
  * @author Markus Gärtner
  *
  */
 public class IqlQuantifier extends AbstractIqlQueryElement {
+
+	private static final IqlQuantifier ALL, NONE;
+	static {
+		ALL = new IqlQuantifier();
+		ALL.setQuantifierType(QuantifierType.ALL);
+		NONE = new IqlQuantifier();
+		NONE.setQuantifierType(QuantifierType.EXACT);
+		NONE.setValue(0);
+	}
+
+	public static IqlQuantifier all() { return ALL; }
+	public static IqlQuantifier none() { return NONE; }
+
+	public static final Strategy<IqlQuantifier> EQUALITY = new Strategy<IqlQuantifier>() {
+
+		@Override
+		public int hashCode(IqlQuantifier q) {
+			return Objects.hash(q.quantifierType, q.value, q.lowerBound, q.upperBound);
+		}
+
+		@Override
+		public boolean equals(IqlQuantifier q1, IqlQuantifier q2) {
+			return Objects.equals(q1.quantifierType, q2.quantifierType)
+					&& q1.value.equals(q2.value)
+					&& q1.lowerBound.equals(q2.lowerBound)
+					&& q1.upperBound.equals(q2.upperBound);
+		}
+	};
 
 	@JsonProperty(value=IqlProperties.QUANTIFIER_TYPE, required=true)
 	private QuantifierType quantifierType;
