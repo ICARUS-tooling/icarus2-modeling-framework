@@ -108,12 +108,12 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| (WITH bindingsList)? (FILTER BY constraint)? FIND (FIRST | LAST | ANY)? selectionStatement EOF
+	| bindingsList? (FILTER BY constraint)? FIND (FIRST | LAST | ANY)? selectionStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
 bindingsList
-	: binding (AND binding)* 
+	: WITH binding (AND binding)* 
 	;
 	
 /** 
@@ -283,11 +283,11 @@ groupExpression
  * engine will pick.
  */
 resultStatement
-	: (LIMIT limit=unsignedIntegerLiteral PERCENT?)? (ORDER BY orderExpressionList)? EOF
+	: (LIMIT limit=unsignedIntegerLiteral PERCENT?)? orderExpressionList? EOF
 	;
 	
 orderExpressionList
-	: orderExpression (COMMA orderExpression)*
+	: ORDER BY orderExpression (COMMA orderExpression)*
 	;
 	
 orderExpression
@@ -387,7 +387,7 @@ qualifiedIdentifier
 	
 loopExpresseion
 	// expression source must be a reference to an iterable object or collection
-	: FOREACH expression AS variableName loopControl (COUNT counterList)?
+	: FOREACH expression AS variableName loopControl counterList?
 	;
 	
 loopControl
@@ -399,7 +399,7 @@ boundedRange
 	;
 	
 counterList
-	: counter (COMMA counter)*
+	: COUNT counter (COMMA counter)*
 	;
 	
 counter
@@ -414,14 +414,14 @@ type
 	;
 	
 quantifier
-	: all
-	| not
-	| unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )*  
-	| LT unsignedSimpleQuantifier ( PIPE unsignedSimpleQuantifier )* GT
+	: simpleQuantifier ( PIPE simpleQuantifier )*  
+	| LT simpleQuantifier ( PIPE simpleQuantifier )* GT
 	;
 	
-unsignedSimpleQuantifier
-	: value=PureDigits 						
+simpleQuantifier
+	: all
+	| not
+	| value=PureDigits 						
 	| value=PureDigits PLUS					
 	| value=PureDigits MINUS					
 	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits

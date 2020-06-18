@@ -32,6 +32,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -111,7 +112,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.QuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectionStatementContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnsignedSimpleQuantifierContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.SimpleQuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
@@ -708,37 +709,28 @@ public class QueryProcessor {
 		}
 
 		private List<IqlQuantifier> processQuantifier(QuantifierContext ctx) {
-			List<IqlQuantifier> quantifiers = new ArrayList<>();
-
-			if(ctx.all()!=null) {
-				// Universally quantified
-				IqlQuantifier quantifier = new IqlQuantifier();
-				quantifier.setQuantifierType(QuantifierType.ALL);
-				quantifiers.add(quantifier);
-			} else if(ctx.not()!=null) {
-				// Negated
-				IqlQuantifier quantifier = new IqlQuantifier();
-				quantifier.setQuantifierType(QuantifierType.EXACT);
-				quantifier.setValue(0);
-				quantifiers.add(quantifier);
-			} else {
-				// List of disjunctive quantifier statements
-				for(UnsignedSimpleQuantifierContext uctx : ctx.unsignedSimpleQuantifier()) {
-					quantifiers.add(processUnsignedSimpleQuantifier(uctx));
-				}
-			}
-
-			return quantifiers;
+			// List of disjunctive quantifier statements
+			return ctx.simpleQuantifier()
+					.stream()
+					.map(this::processSimpleQuantifier)
+					.collect(Collectors.toList());
 		}
 
 		private int pureDigits(Token token) {
 			return Integer.parseInt(textOf(token));
 		}
 
-		private IqlQuantifier processUnsignedSimpleQuantifier(UnsignedSimpleQuantifierContext ctx) {
+		private IqlQuantifier processSimpleQuantifier(SimpleQuantifierContext ctx) {
 			IqlQuantifier quantifier = new IqlQuantifier();
 
-			if(ctx.PLUS()!=null) {
+			if(ctx.all()!=null) {
+				// Universally quantified
+				quantifier.setQuantifierType(QuantifierType.ALL);
+			} else if(ctx.not()!=null) {
+				// Negated
+				quantifier.setQuantifierType(QuantifierType.EXACT);
+				quantifier.setValue(0);
+			} else if(ctx.PLUS()!=null) {
 				quantifier.setQuantifierType(QuantifierType.AT_LEAST);
 				quantifier.setValue(pureDigits(ctx.value));
 			} else if(ctx.MINUS()!=null) {

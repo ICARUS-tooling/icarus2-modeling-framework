@@ -29,7 +29,7 @@ versionDeclarationTest : versionDeclaration EOF ;
 
 quantifierTest : quantifier EOF ;
 
-unsignedSimpleQuantifierTest : unsignedSimpleQuantifier EOF ;
+unsignedSimpleQuantifierTest : simpleQuantifier EOF ;
 
 integerLiteralTest : integerLiteral EOF ;
 unsignedIntegerLiteralTest : unsignedIntegerLiteral EOF ;
