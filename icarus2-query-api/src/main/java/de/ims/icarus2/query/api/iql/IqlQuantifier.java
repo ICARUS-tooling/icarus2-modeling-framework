@@ -61,6 +61,9 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 		@Override
 		public boolean equals(IqlQuantifier q1, IqlQuantifier q2) {
+			if(q1==null || q2==null) {
+				return q1==q2;
+			}
 			return Objects.equals(q1.quantifierType, q2.quantifierType)
 					&& q1.value.equals(q2.value)
 					&& q1.lowerBound.equals(q2.lowerBound)
