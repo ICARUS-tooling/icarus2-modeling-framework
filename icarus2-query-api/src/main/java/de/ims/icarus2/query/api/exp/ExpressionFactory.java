@@ -517,26 +517,9 @@ public class ExpressionFactory {
 		return result;
 	}
 
-	private Expression<?>[] processSetRaw(SetStatementContext ctx) {
-		return ctx.expressionList()!=null ?
-				processExpressionList(ctx.expressionList()) : NO_ARGS;
-	}
-
-	/** Process elements in expression set and convert if explicit type is defined */
-	private Expression<?>[] processSet(SetStatementContext ctx) {
-		Expression<?>[] elements = processSetRaw(ctx);
-
-		// Force type conversion if needed
-		if(ctx.type()!=null) {
-			TypeInfo elementType = processType(ctx.type());
-			elements = ensureType(elementType, elements);
-		}
-
-		return elements;
-	}
-
 	private ListExpression<?, ?> processList(SetStatementContext ctx) {
-		Expression<?>[] elements = processSetRaw(ctx);
+		Expression<?>[] elements = ctx.expressionList()!=null ?
+				processExpressionList(ctx.expressionList()) : NO_ARGS;
 
 		TypeInfo elementType = extractElementType(ctx, elements);
 
@@ -700,27 +683,28 @@ public class ExpressionFactory {
 
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {
 
-		Expression<?> target = processAndResolveExpression0(ctx.source);
-		SetStatementContext sctx = ctx.setStatement();
-		Expression<?>[] elements = processSet(sctx);
+		Expression<?> source = processAndResolveExpression0(ctx.source);
+		Expression<?> target = processAndResolveExpression0(ctx.target);
+		//TODO not sure if we are ignoring value expansion here
+		Expression<?>[] elements = ListAccess.unwrap(ensureList(target));
 
 		Expression<Primitive<Boolean>> setPred;
 		boolean negated = ctx.not()!=null;
 		boolean all = ctx.all()!=null;
 
 		if(all) {
-			if(!target.isList())
+			if(!source.isList())
 				throw new QueryException(QueryErrorCode.INCORRECT_USE,
 						"Cannot use the 'ALL IN' set predicate with a non-list "
 						+ "target expression: "+textOf(ctx), asFragment(ctx));
 
 			if(negated) {
-				setPred = SetPredicates.allNotIn((ListExpression<?, ?>) target, elements);
+				setPred = SetPredicates.allNotIn((ListExpression<?, ?>) source, elements);
 			} else {
-				setPred = SetPredicates.allIn((ListExpression<?, ?>) target, elements);
+				setPred = SetPredicates.allIn((ListExpression<?, ?>) source, elements);
 			}
 		} else {
-			setPred = SetPredicates.in(target, elements);
+			setPred = SetPredicates.in(source, elements);
 		}
 
 		// Outer negation only needed when we're not in the 'all not in' mode

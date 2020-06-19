@@ -354,7 +354,7 @@ expression
 	| <assoc=right> left=expression or right=expression 											# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
 	| source=expression AS (member | variableName)											# assignmentOp
-	| source=expression all? not? IN setStatement 	# setPredicate
+	| source=expression all? not? IN target=expression 	# setPredicate
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
 	;
