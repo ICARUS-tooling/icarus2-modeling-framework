@@ -17,10 +17,13 @@
 \usepackage{xstring}
 \usepackage{xspace}
 \usepackage{todonotes}
+\usepackage{comment} % for commenting out the huge draft lists
+%\usepackage{inconsolata} % to have Consolas as font for verbatim and tt
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{listings}
 \usepackage{enumitem}
 \usepackage{cprotect}
+\usepackage{fancyvrb}
 \usepackage{xcolor}
 \usepackage[rounded]{syntax}
 \usepackage{wrapfig}
@@ -42,6 +45,12 @@
 \DeclareAcronym{uoi}{short = UoI, long = unit-of-interest, long-plural-form = units-of-interest}
 
 \newfontfamily\DejaSans{DejaVu Sans}
+
+\setmonofont{Consolas}
+
+\lstset{
+	basicstyle=\ttfamily,
+}
 
 \definecolor{eclipseStrings}{RGB}{42,0.0,255}
 \definecolor{eclipseKeywords}{RGB}{127,0,85}
@@ -152,6 +161,12 @@
 \newcommand{\est}{\end{stack}}
 \newcommand{\srp}{\begin{rep}}
 \newcommand{\erp}{\end{rep}}
+
+\newcommand*\BitAnd{\mathbin{\&}}
+\newcommand*\BitOr{\mathbin{|}}
+\newcommand*\ShiftLeft{\ll}
+\newcommand*\ShiftRight{\gg}
+\newcommand*\BitNeg{\ensuremath{\mathord{\sim}}}
 
 %\counterwithin{paragraph}{subsubsection}
 
@@ -1020,30 +1035,29 @@ They are parsed only once during the initial processing part of a query.
 \subsubsection{String Literals}
 \label{sec:string-literals}
 
-\iql uses simple double quotes (" or U+0022) to define string literals. 
+\iql uses simple double quotes (\lit{"} or U+0022) to define string literals. 
 String literals may not contain any of the following symbols directly:
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 \n line break
 \r carriage return
 \t tab
 \ backslash
 " nested quotation mark
-\end{verbatim}
+\end{Verbatim}
 
 \noindent Any of those symbols listed above can be embedded into a string literal as part of an escape sequence with a preceding backslash.
 At the current time there is no planned mechanism to provide additional escape support for unicode symbols, since the default encoding scheme for \iql is UTF-8.
 
 \paragraph{Examples for valid string literals:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 "string"
 "123"
-"some fancy number (123.456e-789) and emoji ☹ <emoji not showing>"
+"some fancy number (123.456e-789) and special symbol ♣"
 "a more complex string!"
 "a\n multiline\n string..."
-\end{verbatim}
-%TODO emoji not showing!!
+\end{Verbatim}
 
 \subsubsection{Boolean Literals}
 \label{sec:boolean-literals}
@@ -1054,18 +1068,26 @@ Boolean literals are limited to either all lowercase or all uppercase versions o
 \label{sec:integer-literals}
 
 \paragraph{Signed Integer Literals}
-Literals representing regular \keyword{int} (32bit) or \keyword{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits or underscore (\texttt{\_}) characters.
+Literals representing regular \keyword{int} (32bit) or \keyword{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits (\lit{0} to \lit{9}) or underscore (\texttt{\_}) characters.
 Underscore characters may only appear inside the integer literal, never at the beginning or end (not counting the sign symbol).
+
+\begin{gram}
+	\label{gram:integer}
+	\begin{rrdiag*}{integerLiteral}
+		\sst \\ `+' \\ `\textminus' \est
+			<digit> \sst \\ \sst \\ \srp \sst <digit> \\ `\_' \est \\ \erp \est <digit> \est
+	\end{rrdiag*}
+\end{gram}
 
 \paragraph{Examples for valid (signed) integer literals:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 1
 +123
 -123
 1_000_000
 -99_000000_0
-\end{verbatim}
+\end{Verbatim}
 
 \paragraph{Pure Integer Literals}
 Some parts of the \iql syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
@@ -1075,15 +1097,22 @@ Some parts of the \iql syntax only allow unsigned "pure" integers and will expli
 
 Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '\texttt{.}' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \keyword{float} (32bit) or double-precision \keyword{double} (64bit) values.
 
+\begin{gram}
+	\label{gram:floating-point}
+	\begin{rrdiag*}{floatingPointLiteral}
+		<signedInteger> `.' <unsignedInteger>
+	\end{rrdiag*}
+\end{gram}
+
 \paragraph{Examples for valid (signed) floating point literals:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 1.0
 +123.456
 -123.456
 1_000_000.999
 -99_000000_0.000_000_001
-\end{verbatim}
+\end{Verbatim}
 
 \noindent While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of \iql.
 
@@ -1092,9 +1121,19 @@ Floating point literals are constructed by using a (signed) integer literal for 
 
 \noindent Identifiers in \iql are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol.
 
+\begin{gram}
+	\label{gram:identifier}
+	\begin{rrdiag*}{identifier}
+		<character> \sst \\ 
+			\sst \\ \srp \sst <character> \\ <digit> \\ `\_' \est \\ \erp \est
+				\sst <character> \\ <digit> \est
+		\est
+	\end{rrdiag*}
+\end{gram}
+
 \paragraph{Examples for valid identifiers:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 x
 myIdentifier
 x1
@@ -1105,7 +1144,7 @@ some_random_id
 someRandomId002
 random_2_4
 notTheBest______________example
-\end{verbatim}
+\end{Verbatim}
 
 \noindent Identifiers are limited in length by the engine to a total of 255 characters. This is a purely arbitrary choice to keep queries readable and not subject to any technical limitations.
 
@@ -1143,10 +1182,46 @@ Expressions are the foundation of every query.
 Each expression has a (usually fixed) result type and evaluates to a value of that type.
 They can take any of the following forms:
 
+\begin{gram*}
+	\label{gram:expression}
+	\begin{rrdiag*}{expression}
+		\sst
+		`NULL' \\
+		`TRUE' \\
+		`FALSE' \\
+		<floatingPointLiteral> \\
+		<integerLiteral> \\
+		<stringLiteral> \\
+		\sst \\ <type> `[]' \est `{' \srp <expression> \\ `,'\erp  `}' \\
+		\sst \\ <identifier> `::' \\ `@' \\ `\$' \est <identifier> \\
+		<expression> `.' <identifier> \\ %path
+		<expression> `(' \srp <expression> \\ `,' \erp `)' \\ %method invocation
+		<expression> `[' \srp <index> \\ `,' \erp `]' \\ %list access
+		<expression> `{' \srp <expression> \\  `,' \erp `}' \\ %annotation access
+		`(' <type> `)' <expression> \\ %cast
+		`(' <expression> `)' \\ %wrapping
+		\sst `NOT' \\ `!' \\ `\textminus' \\ `\texttildelow' \est <expression> \\ %unary op
+		<expression> \sst 
+		\tok{`*' | `/' | `\%' } \\ 
+		\tok{`+' | `\textminus'} \\ 
+		\tok{`\verb|<<|' | `\verb|>>|' | `|' | `\&' | `\textasciicircum'} \\ 
+		\tok{`\textless' | `\textless=' | `\textgreater' | `\textgreater='} \\ 
+		\tok{`=\texttildelow' | `!\texttildelow' | `=\#' | `!\#'} \\ 
+		\tok{`==' | `!='} \\ 
+		\tok{`AND' | `\&\&' | `OR' | `||'} 
+		\est <expression> \\ %binary op
+		<assignment> \\ %assignment op for later
+		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression> \\ %set predicate
+		<expression> `?' <expression> `:' <expression> \\ %ternary op
+		<loopExpression> % loop
+		\est
+	\end{rrdiag*}
+\end{gram*}
+
 \subsubsection{Primary Expressions}
 \label{sec:primary-expressions}
 
-Any literal (\keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float}) can serve as a primary expression of that type.
+Any literal of types \keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float} can serve as a primary expression of that type.
 See \cref{sec:literals} for examples and a more detailed specification of the various types of literals in \iql.
 
 \subsubsection{Path Expressions}
@@ -1163,10 +1238,10 @@ For navigating hierarchically structured object graphs or namespaces, expression
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 someObejct.someProperty
 some.really.long.winded.path
-\end{verbatim}
+\end{Verbatim}
 
 \noindent Note that for a lot of native classes of the ICARUS2 framework, \iql provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
 
@@ -1191,12 +1266,12 @@ Method invocations consist of an expression that points to the actual method (su
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 myFunction()
 myNamespace.someFunction(someArgument, anotherArgument)
 min(123, 456, dynamicContent())
 some().chained().methods()
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{List Access}
 \label{sec:list-access}
@@ -1219,7 +1294,7 @@ Lists or arrays are accessed by an expression pointing to the list or array obje
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 myArray[1]
 myArray[-1]
 myArray[-myArray.length] // same as myArray[0]
@@ -1227,7 +1302,7 @@ complexArray[1][2][3]
 complexArray[-1][2][-3]
 complexArray[1, 2][3]
 complexArray[1, 2, 3]
-\end{verbatim}
+\end{Verbatim}
 
 \noindent Note that \iql provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
 Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
@@ -1255,14 +1330,14 @@ The ICARUS2 framework models segmentation, structure and content of a corpus res
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 myItem{"pos"}
 myItem{"form", "pos", "lemma"} 
 
 // extract values from multiple concurrent annotation layers
 // and pick the first one present
 firstSetValue(myItem{"parser1.head", "parser2.head"})  
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Type Cast}
 \label{sec:type-cast}
@@ -1271,12 +1346,12 @@ Expressions in \iql are automatically cast to matching types according to the ac
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 (int) myValue
 (int) 12345.678
 (float) average(myVector)
 (string) 123.456
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Wrapping}
 \label{sec:wrapping}
@@ -1285,60 +1360,58 @@ Expression hierarchy and evaluation order follows the order the different types 
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 6 + 4 * 2   // multiplication evaluated first -> result 14
 (6 + 4) * 2 // addition is evaluated first -> result 20
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Set Predicate}
 \label{sec:set-predicate}
 
 Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
 
-Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark ``!'' or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star ``*'' or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
+Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark \lit{!} or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star \lit{*} or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
 
 \begin{gram}[\synt{set_predicate}]
 	\label{gram:set-predicate}
 	\begin{grammar}	
-		<set_predicate> ::= <expression> <all>? <not>? `IN' `{' <items> `}'
+		<set_predicate> ::= <expression> <all>? <not>? `IN' <expression>
 		
 		<all> ::=  `ALL' | `*'
 		
 		<not> ::=  `NOT' | `!'
-		
-		<items> ::= <expression> (`,' <expression>)*
 	\end{grammar}
 	\diagsep
 	
 	\begin{rrdiag*}{set_predicate}
-		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' `{' \srp <expression> \\ `,' \erp `}'
+		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression>
 	\end{rrdiag*}
 \end{gram}
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 someAnnotationValue IN {"NP","VP","-"}
 someAnnotationValue NOT IN {"NN","DET"}
 "John" IN {getLegalNames()}
 fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Unary Operation}
 \label{sec:unary-operation}
 
-\iql only allows four unary operators to be used directly in front of an expression, the exclamation mark ``!'' and the \keyword{NOT} keyword for Boolean negation, the minus sign ``-'' for negating numerical expressions and the ``\~'' symbol of bitwise negation of integer numbers.
+\iql only allows four unary operators to be used directly in front of an expression, the exclamation mark \lit{!} and the \keyword{NOT} keyword for Boolean negation, the minus sign \lit{\textminus} for negating numerical expressions and the \lit{\texttildelow} symbol of bitwise negation of integer numbers.
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 !someBooleanFunction()
 NOT someBooleanValue
 -123
 -myNumericalFunction()
 ~123
 ~myIntegerFunction()
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Binary Operation}
 \label{sec:binary-operation}
@@ -1368,7 +1441,7 @@ Operators	& Explanation \\
 \hline 
 \verb|<  <=  >  >=|& less, less or equal, greater, greater or equal \\ 
 \hline 
-\verb|~  !~  #  !#|& string operators: matches (regex), matches not (regex), contains, contains not \\ 
+\verb|=~  !~  =#  !#|& string operators: matches (regex), matches not (regex), contains, contains not \\ 
 \hline 
 \verb|==  !=|& equals, equals not \\ 
 \hline 
@@ -1390,9 +1463,9 @@ While the basic numerical types (\keyword{int}, \keyword{float}) can be arbitrar
 \paragraph{Bit Operations}
 \label{sec:bit-operations}
 
-Bitwise operations (\texttt{\&}, \texttt{$|$} and \texttt{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast~\ref{sec:type-cast} to match the other. If value expansion~\ref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
+Bitwise operations (\lit{\&}, \lit{|} and \lit{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast~\ref{sec:type-cast} to match the other. If value expansion~\ref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
-The two shift operations (\texttt{\textless{}\textless} and \texttt{\textgreater{}\textgreater}) take arbitrary integer types as left operand and an \keyword{int} value as right operand.
+The two shift operations (\lit{\textless{}\textless} and \lit{\textgreater{}\textgreater}) take arbitrary integer types as left operand and an \keyword{int} value as right operand.
 
 \paragraph{Ordered Comparisons}
 \label{sec:ordered-comparisons}
@@ -1402,26 +1475,26 @@ Comparisons are special binary operators that take two expressions of equal or c
 \paragraph{String Operations}
 \label{sec:string-operations}
 
-To account for the ubiquity of textual annotations in corpora, \iql provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \texttt{\#} or its negated form \texttt{!\#}) and regular expression matching (via \texttt{\textasciitilde} and \texttt{!\textasciitilde}). Per default \iql uses the Java regex syntax, but for the future, additional switches (\ref{sec:json-ld-switches}) are planned to allow finer control over regex details.
+To account for the ubiquity of textual annotations in corpora, \iql provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \lit{=\#} or its negated form \lit{!\#}) and regular expression matching (via \lit{=\textasciitilde} and \lit{!\textasciitilde}). Per default \iql uses the Java regex syntax, but for the future, additional switches (\ref{sec:json-ld-switches}) are planned to allow finer control over regex details.
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 // find verbal forms
 somePosAnnotation # "V"       
 // alternative to the set predicate with more flexibility
 somePosAnnotation !~ "NN|NS"   
-\end{verbatim}
+\end{Verbatim}
 
 \paragraph{Equality}
 \label{sec:equality}
 
-Equality checks follow the same basic conditions as ordered comparisons \cref{sec:ordered-comparisons}, but with the following rules for comparable values ``a`` and ``b``:
+Equality checks follow the same basic conditions as ordered comparisons (\ref{sec:ordered-comparisons}), but with the following rules for comparable values ``a`` and ``b``:
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 a == b iff !(a<b) && !(a>b)
 a != b iff a<b || a>b
-\end{verbatim}
+\end{Verbatim}
 
 \noindent More generally, equality between expressions in \iql is based on content equality and therefore type specific.
 Note that trying to check two expressions of incompatible types (such as \keyword{int} and \keyword{string}) for equality will always evaluate to \keyword{false} and also emit a warning. 
@@ -1430,19 +1503,19 @@ Note that trying to check two expressions of incompatible types (such as \keywor
 \paragraph{Logical Composition}
 \label{sec:logical-composition}
 
-All Boolean expressions can be combined via disjunction (either double pipes \texttt{$||$} or the \keyword{OR} keyword) or conjunction (double ampersand \texttt{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}. 
+All Boolean expressions can be combined via disjunction (either double pipes \lit{||} or the \keyword{OR} keyword) or conjunction (double ampersand \lit{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}. 
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 a>1 && b<2
 x==1 or x==3
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Ternary Operation}
 \label{sec:ternary-operation}
 
-A single ternary operation is supported in \iql, the popular if-then-else replacement with the following syntax:
+A single ternary operation is supported in \iql, which is the popular if-then-else replacement with the following syntax:
 
 \begin{gram}[\synt{ternary}]
 	\label{gram:ternary-operations}
@@ -1455,9 +1528,9 @@ A single ternary operation is supported in \iql, the popular if-then-else replac
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 x<2 ? "text for smaller value" : "some other text"
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Value Expansion}
 \label{sec:value-expansion}
@@ -1488,22 +1561,6 @@ Note that those conversions are only active if the respective switches to disabl
 	\caption{Rules for converting arbitrary values or objects in a query to Boolean values.}
 	\label{tab:constraints-translation}
 \end{table}
-
-\subsubsection{Basic Constraints}
-\label{sec:basic-constraints}
-
-Basic constraints can either be predicates, loop predicates, bracketed (with \keyword{(} or \keyword{)}) constraints or disjunctions (via \keyword{OR}) or conjunctions (with \keyword{AND}) of constraints.
-\todo{add syntax diagram}
-
-\subsubsection{Predicate}
-\label{sec:predicate}
-
-Predicates are essentially expressions (\ref{sec:expressions}) that evaluate to a Boolean value. 
-See \cref{tab:constraints-translation} for information on how non-Boolean types are interpreted as Boolean values and the switches (\ref{sec:json-ld-switches}) section for ways to influence this behavior.
-
-\subsubsection{Loop Predicate}
-
-TODO
 
 \subsection{Payload Structure}
 \label{sec:payload-structure}
@@ -1634,7 +1691,7 @@ Since there is no way for an evaluation engine to assess the complexity of user 
 \label{sec:flat-constraints}
 
 Flat constraints provide no extra helpers to declare structural properties of the query. 
-They consist of arbitrary basic constraints \cref{sec:basic-constraints} and disallow both global constraints (\ref{sec:global-constraints}) and filter constraints (\ref{sec:filter-constraints}). \todo{a word on the differences between flat and global constraints}
+They consist of arbitrary basic constraints \cref{sec:constraints} and disallow both global constraints (\ref{sec:global-constraints}) and filter constraints (\ref{sec:filter-constraints}). \todo{a word on the differences between flat and global constraints}
 
 \subsubsection{Structural Constraints}
 \label{sec:structural-constraints}
@@ -1683,21 +1740,6 @@ This general form honors the aspects specific to each of those structure types, 
 		\est
 	\end{rrdiag*}
 
-	\begin{rrdiag*}{node}
-		\sst \\ <quantifier> \est `[' 
-		\sst \\ <memberLabel> \est
-		\sst \\ <constraint> \est
-		\sst \\ <nodeStatement> \est `]'
-	\end{rrdiag*}
-
-	\begin{rrdiag*}{quantifier}
-		`\textless' \srp
-			\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ <digits> `..' <digits> \\ 
-				<digits> \sst \\ `+' \\ `-' \est 
-			\est
-		 \\ `|' \erp `\textgreater'
-	\end{rrdiag*}
-
 	\begin{rrdiag*}{element}
 		\sst <node> \\ <node> <edge> <node> \est
 	\end{rrdiag*}
@@ -1724,9 +1766,29 @@ For graphs where no simple association between nodes and edges exists, there is 
 As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder that can be filled with either node or edge declarations.
 
 \paragraph{Nodes}
-\noindent \iql uses square brackets (\keyword{[} and \keyword{]}) to mark individual nodes.
+\noindent \iql uses square brackets (\keyword{[} and \keyword{]}) to mark individual nodes.\\
+\rrhead{node}
+\noindent\begin{rrfrag}{>-}{...}
+	\sst \\ <quantifier> \est `[' 
+	\sst \\ <memberLabel> \est
+	\sst \\ <constraint> \est
+\end{rrfrag}\\
+\begin{rrfrag}{...}{->}
+	\sst \\ <nodeStatement> \est `]'
+\end{rrfrag}\\
+\medskip
 Declaring a node in a structural constraint implicitly marks it as existentially quantified.
-Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most}, \textit{at-least} or bounded range quantification.
+Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most}, \textit{at-least} or bounded range quantification. 
+The following diagram simplifies the overall rules for \synt{quantifier} to keep it compact.
+Albeit being shown here as unrelated to each other, the appearance of the angle brackets (\keyword{\textless} and \keyword{\textgreater}) before or after the actual quantifier content is restricted to either \textit{both} of them being used (for a proper wrapping, such \texttt{\textless 3..10 \textgreater}) or \textit{none} of them (for plain quantifiers, such as \texttt{1|4|ALL}).\\
+\begin{rrdiag*}{quantifier}
+	\sst \\ `\textless' \est \srp
+	\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ <digits> `..' <digits> \\ 
+	<digits> \sst \\ `+' \\ `-' \est 
+	\est
+	\\ `|' \erp \sst \\ `\textgreater' \est
+\end{rrdiag*}\\
+\medskip
 \iql allows multiple quantifiers to be separated by the pipe symbol \lit{|} to express disjunction between quantifiers.
 This way complex constraints can be defined very neatly, such as the ``all or nothing'' quantification \texttt{\keyword{all}|\keyword{not}}.
 This quantifier combination ensures that either all targets in a certain context match the node in question, or none does.\footnote{Example: find all sentences that either have no word with more than five characters or all of their words have five or more characters.}
@@ -1739,32 +1801,45 @@ This approach guarantees that by the time such cross-reference constraints (or `
 
 %Each node can have arbitrarily complex \textbf{local constraints} (composed of basic constraints, cf.~\ref{sec:basic-constraints}) that have implicit access to annotations and structural information (e.g. host container) of the item the node is matched against.
 Nodes can also optionally define \textbf{local constraints} that must evaluate to \keyword{true} for target item to be considered as result candidate.
-Local constraints have full access to properties and annotations of the target item currently being inspected and can take any form described in \cref{sec:basic-constraints}.
+Local constraints have full access to properties and annotations of the target item currently being inspected and can take any form described in \cref{sec:constraints}.
 Note that it is up to the evaluation engine how to optimize and potentially prune the evaluation process of constraint expressions.
-Correct evaluation of a conjunctive local constraints with external function calls \verb|[$x: func1($x) && func2($x) && func3($x)]| must not rely on the premise of any particular function (\texttt{func1}, \texttt{func2} or \texttt{func3}) actually being called at all.
+Correct evaluation of a conjunctive local constraints with external function calls \texttt{[\$x:~func1(\$x) \&\&~func2(\$x) \&\&~func3(\$x)]} must not rely on the premise of any particular function (\texttt{func1}, \texttt{func2} or \texttt{func3}) actually being called at all.
 The evaluation semantics of conjunctive Boolean concatenation allow an early determination of the final result as soon as the stable predicate of one of the inner terms evaluating to \keyword{false} is met.
 Therefore it is perfectly legal (and in parts expected from an efficient evaluation engine) to not evaluate the calls to \texttt{func2} and \texttt{func3} after \texttt{func1} has already caused the result to remain \keyword{false}.
 
+If a \synt{node} is used within a tree environment, it can also contain a \textbf{nested} \synt{nodeStatement} declaration to define structural constraints on child nodes.
+The target item a node is matched against during query evaluation defines the structural context that is then in turn being used for matching the nested \synt{node} instances.
 
 \paragraph{Edges}
 \noindent
 
 \paragraph{Node Grouping}
-\noindent Nodes (or elements) can be grouped together within curly brackets (\keyword{\{}~and~\keyword{\}}).
+\noindent Nodes (or elements) can be grouped together within curly brackets (\keyword{\{}~and~\keyword{\}}) as defined by the first \synt{nodeStatement} rule.
 This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
 Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
 However, those directives are \textbf{not} automatically inherited to the inner collection of nodes in the group, allowing for expressions such as the following node sequence:
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
-\end{verbatim}
+\end{Verbatim}
 This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
 Note that the adjacency modifier does not apply to the inner sequences a+b and c+d, which are only subject to the implicit order of the sequence declaration.\footnote{An additional \keyword{ORDERED} in each of the groups would make that explicit, but is redundant.}
+The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
 
 \paragraph{Node Sequence}
-\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style.
-
+\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule).
+Instances of \synt{node} in a sequence are defined one after another without special separator symbols.
+They may optionally be preceded by a \synt{nodeArrangement} directive to guide the matching progress.
 Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
-The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
+
+\paragraph{Element Sequence}
+\noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement}), but with noticeable differences: 
+Element sequences do use a separator symbol (a simple comma \lit{,}) between \synt{element} definitions.
+Since \iql does not use keywords to signal the structural type to be expected in a query payload\footnote{An earlier draft made use of \keyword{TREE} and \keyword{GRAPH} keywords to distinguish those types from the basic node sequence, but in an effort to reduce the overall number of keywords (that users had to learn) this approach was dropped.} this approach was necessary to easily detect the type of structure.
+It also hints at the second difference, that is, element sequences do not support arrangement modifiers (as \synt{element} instances can be either nodes or edges, with the latter not being suitable for this kind of ordering) and as such can be more intuitively be understood as sets of \synt{element} instances.
+
+\paragraph{Structural Disjunction}
+\noindent As the forth option of \synt{nodeStatement}, the disjunction of entire node statements provides a very powerful tool to express complex queries.
+\todo{syntax and examples?}
 
 \subsubsection{Sequence Constraints}
 \label{sec:sequence-constraints}
@@ -1774,7 +1849,7 @@ Multiple nodes in a sequence declaration are required to match to items in exact
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 []                  // empty node
 [pos=="NN"]         // node with local constraint
 <2>[$x:]            // node x exactly 2 times       
@@ -1783,7 +1858,7 @@ Multiple nodes in a sequence declaration are required to match to items in exact
 ADJACENT [$x:][$y:] // node y directly following node x
 [$x:] or [$y:]      // disjunction: either x OR y
 {[$x:][$y:]} or [$z:] // disjunction: either group x+y OR z
-\end{verbatim}
+\end{Verbatim}
 
 \paragraph{Sequence Matching}
 \noindent Sequence constraints only provide a single dimension for \textit{moving} the query sequence through the search space of the target corpus.
@@ -1801,9 +1876,9 @@ An extension of the quantifier syntax or a change in the ``at most'' semantics i
 Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
 A possible (and simple) solution for this query would be the following:
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 ADJACENT [$a:][$b:] <0+>[] [$c:][$d:]
-\end{verbatim}
+\end{Verbatim}
 
 \subsubsection{Tree Constraints}
 \label{sec:tree-constraints}
@@ -1818,7 +1893,7 @@ They can be individually quantified or existentially negated, as well as grouped
 
 \paragraph{Examples:}
 
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 [[]]              // anonymous nesting of nodes
 [$x: [$y:]]       // nesting of node y inside x
 [[$x:] [$y:]]     // nesting of siblings x and y
@@ -1828,7 +1903,7 @@ They can be individually quantified or existentially negated, as well as grouped
 
 // internal disjunction
 [[$x:] or [$y:] or {[$z: <4+>[]]}]
-\end{verbatim}
+\end{Verbatim}
 
 \paragraph{Tree Matching}
 
@@ -1862,7 +1937,7 @@ Below explanations are primarily intended to specify the behavior in the presenc
 		] 
 	]
 \end{forest}
-\caption{\label{fig:tree-matching} Example tree with highlighted hits for the query \texttt{[\$x: [\$y:]]}.}
+\caption{\label{fig:tree-matching} Example tree with highlighted hits for the query \texttt{[\$x:~[\$y:]]}.}
 \end{wrapfigure}
 
 Consider a simple tree query \verb|[$x: [$y:]]| where x and y are bound nodes with individual constraints.
@@ -1893,7 +1968,7 @@ The tree contains 3 possible matches for the query, specifically the pairs \text
 \subsubsection{Global Constraints}
 \label{sec:global-constraints}
 
-Global constraints con be any basic constraint \cref{sec:basic-constraints} and follow after the main section of structural constraints, indicated by the \keyword{HAVING} keyword.
+Global constraints con be any basic constraint \cref{sec:constraints} and follow after the main section of structural constraints, indicated by the \keyword{HAVING} keyword.
 \todo{examples and more explanation of what is available (members, etc) + complexity!!!}
 
 \paragraph{Evaluation Priorities}
@@ -1901,16 +1976,16 @@ Global constraints con be any basic constraint \cref{sec:basic-constraints} and 
 Matchers for the associated structural constraints produce preliminary result candidates and the global constraints are then evaluated for each such candidate.
 This makes global constraints both very powerful as they have access to more information compared to regular (internal or local) constraints (e.g. they already \textit{know} that all local constraints evaluated to \keyword{true} and the exact candidates produced for structural constraints) and also very critical when it comes to performance.
 It can be very tempting to construct queries such as the following one (bindings section omitted) that only matches when \member{y} is the last child of \member{x}:
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 FIND [$x: [$y:]] HAVING $x.indexOf($y) == $x.size-1
-\end{verbatim}
+\end{Verbatim}
 This will cause the structural matcher to potentially propose \textbf{all} children of \member{x} as candidates to be processed by the global constraints section.
 Subsequently, for a node of size $N$ this will produce $N-1$ candidates that are bound to fail the global constraint check.
 \cref{sec:utility} lists several families of utility markers and functions that can be used to signal the evaluation engine that certain local constraints are to be treated as special filters.
 With the use of those utility markers, above query looks like the following and will be vastly more efficient to evaluate:
-\begin{verbatim}
+\begin{Verbatim}[samepage=true]
 FIND [$x: [$y: isLast]]
-\end{verbatim}
+\end{Verbatim}
 Similarly global constraints are not the place to perform filtering on general properties of the current \ac{uoi}, such as sentence length (use the \keyword{FILTER BY} expression for that, cf. \cref{sec:filter-constraints}).
 
 \subsection{Result Processing}
