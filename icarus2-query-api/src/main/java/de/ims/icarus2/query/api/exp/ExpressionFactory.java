@@ -83,7 +83,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.FloatingPointLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ForEachContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.IntegerLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListAccessContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MethodInvocationContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MultiplicativeOpContext;
@@ -94,6 +93,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QualifiedIdentifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ReferenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetPredicateContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
@@ -102,7 +102,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.CountingStats;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -420,8 +419,8 @@ public class ExpressionFactory {
 			return processIntegerLiteral(pctx.integerLiteral());
 		} else if(pctx.StringLiteral()!=null) {
 			return processStringLiteral(pctx.StringLiteral());
-		} else if(pctx.listStatement()!=null) {
-			return processList(pctx.listStatement());
+		} else if(pctx.setStatement()!=null) {
+			return processList(pctx.setStatement());
 		} else if(pctx.reference()!=null) {
 			return processReference(pctx.reference());
 		}
@@ -518,28 +517,28 @@ public class ExpressionFactory {
 		return result;
 	}
 
-	private ListExpression<?,?> processList(ListStatementContext ctx) {
-		Expression<?>[] elements = ctx.expressionList()!=null ?
+	private Expression<?>[] processSetRaw(SetStatementContext ctx) {
+		return ctx.expressionList()!=null ?
 				processExpressionList(ctx.expressionList()) : NO_ARGS;
+	}
 
-		TypeInfo elementType = null;
+	/** Process elements in expression set and convert if explicit type is defined */
+	private Expression<?>[] processSet(SetStatementContext ctx) {
+		Expression<?>[] elements = processSetRaw(ctx);
 
+		// Force type conversion if needed
 		if(ctx.type()!=null) {
-			// Honor explicit type definition
-			elementType = processType(ctx.type());
-		} else if(elements.length>0) {
-			// Otherwise try best-effort option to derive type info
-			Set<TypeInfo> types = collectTypes(elements);
+			TypeInfo elementType = processType(ctx.type());
+			elements = ensureType(elementType, elements);
+		}
 
-			if(types.size()>1) {
-				// Follow a strict type hierarchy
-				elementType = decideType(types).orElse(TypeInfo.GENERIC);
-			} else {
-				elementType = CollectionUtils.first(types);
-			}
-		} else
-			throw new QueryException(QueryErrorCode.INCORRECT_USE,
-					"Empty array is missing explicit type declaration", asFragment(ctx));
+		return elements;
+	}
+
+	private ListExpression<?, ?> processList(SetStatementContext ctx) {
+		Expression<?>[] elements = processSetRaw(ctx);
+
+		TypeInfo elementType = extractElementType(ctx, elements);
 
 		if(elements.length==0) {
 			return ArrayLiterals.emptyArray(elementType);
@@ -549,6 +548,29 @@ public class ExpressionFactory {
 		elements = ensureType(elementType, elements);
 
 		return ListAccess.wrap(elements);
+	}
+
+	private TypeInfo extractElementType(SetStatementContext ctx, Expression<?>[] elements) {
+		TypeInfo elementType = null;
+
+		if(ctx.type()!=null) {
+			// Honor explicit type definition
+			elementType = processType(ctx.type());
+		} else if(elements.length>0) {
+			// Otherwise try best-effort option to derive type info
+			List<TypeInfo> types = collectTypes(elements);
+
+			if(types.size()>1) {
+				// Follow a strict type hierarchy
+				elementType = decideType(types).orElse(TypeInfo.GENERIC);
+			} else {
+				elementType = types.get(0);
+			}
+		} else
+			throw new QueryException(QueryErrorCode.INCORRECT_USE,
+					"Empty array is missing explicit type declaration", asFragment(ctx));
+
+		return elementType;
 	}
 
 	private void checkIdentifier(String id) {
@@ -679,7 +701,8 @@ public class ExpressionFactory {
 	Expression<?> processSetPredicate(SetPredicateContext ctx) {
 
 		Expression<?> target = processAndResolveExpression0(ctx.source);
-		Expression<?>[] elements = processExpressionList(ctx.listStatement().expressionList());
+		SetStatementContext sctx = ctx.setStatement();
+		Expression<?>[] elements = processSet(sctx);
 
 		Expression<Primitive<Boolean>> setPred;
 		boolean negated = ctx.not()!=null;

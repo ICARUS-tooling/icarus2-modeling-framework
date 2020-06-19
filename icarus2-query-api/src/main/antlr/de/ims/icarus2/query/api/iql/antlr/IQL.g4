@@ -354,7 +354,7 @@ expression
 	| <assoc=right> left=expression or right=expression 											# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
 	| source=expression AS (member | variableName)											# assignmentOp
-	| source=expression all? not? IN listStatement 	# setPredicate
+	| source=expression all? not? IN setStatement 	# setPredicate
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
 	;
@@ -365,11 +365,11 @@ primary
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
-	| listStatement
+	| setStatement
 	| reference	
 	;
 	
-listStatement
+setStatement
 	: (type LBRACK RBRACK)? LBRACE expressionList? RBRACE
 	;
 	
@@ -512,6 +512,8 @@ sign
  */
 
 //TODO change all keywords to use character fragments to make them resistant against camel casing abuse <- actually intended?
+
+//TODO add specification about unicode codepoints for all special characters we use here
 
 ADJACENT : 'ADJACENT' | 'adjacent';
 ALL : 'ALL' | 'all' ;

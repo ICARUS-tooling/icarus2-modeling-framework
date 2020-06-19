@@ -25,11 +25,13 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -47,7 +49,6 @@ import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.exp.Expression.ListExpression;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
 /**
@@ -437,12 +438,11 @@ public class EvaluationUtils {
 		return args[index];
 	}
 
-	public static Set<TypeInfo> collectTypes(Expression<?>...expressions) {
-		Set<TypeInfo> types = new ObjectOpenHashSet<>();
-		for (Expression<?> expression : expressions) {
-			types.add(expression.getResultType());
-		}
-		return types;
+	public static List<TypeInfo> collectTypes(Expression<?>...expressions) {
+		return Stream.of(expressions)
+				.map(Expression::getResultType)
+				.distinct()
+				.collect(Collectors.toList());
 	}
 
 	private static final TypeInfo[] typePriority = {
@@ -452,7 +452,7 @@ public class EvaluationUtils {
 			TypeInfo.INTEGER,
 	};
 
-	public static Optional<TypeInfo> decideType(Set<TypeInfo> types) {
+	public static Optional<TypeInfo> decideType(Collection<TypeInfo> types) {
 		for(TypeInfo type : typePriority) {
 			if(types.contains(type)) {
 				return Optional.of(type);

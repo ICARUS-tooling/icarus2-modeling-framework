@@ -101,10 +101,16 @@ public final class ListAccess {
 	}
 
 	/** Unwraps a list expression into an array of individual expressions */
+	@SuppressWarnings("unchecked")
 	public static <E> Expression<E>[] unwrap(ListExpression<?, E> source) {
 		requireNonNull(source);
 		if(source.size()==0) {
 			return EvaluationUtils.noArgs();
+		}
+
+		// Unwrap our own internal wrapper if applicable
+		if(source instanceof ListWrapper) {
+			return (Expression<E>[]) ((ListWrapper)source).source;
 		}
 
 		IntFunction<Expression<?>> mapper;
@@ -211,6 +217,13 @@ public final class ListAccess {
 			idx = size+idx;
 		}
 		return idx;
+	}
+
+	static class ListWrapper {
+		protected final Expression<?>[] source;
+		ListWrapper(Expression<?>[] source) {
+			this.source = requireNonNull(source);
+		}
 	}
 
 	/** Provides access to a single array element */
@@ -346,14 +359,13 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class IntegerListWrapper implements IntegerListExpression<long[]> {
-		private final Expression<?>[] source;
+	static final class IntegerListWrapper extends ListWrapper implements IntegerListExpression<long[]> {
 		private final long[] buffer;
 
 		private static final TypeInfo type = TypeInfo.of(long[].class, true);
 
 		public IntegerListWrapper(Expression<?>[] source) {
-			this.source = requireNonNull(source);
+			super(source);
 			buffer = new long[source.length];
 		}
 
@@ -553,14 +565,13 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class FloatingPointListWrapper implements FloatingPointListExpression<double[]> {
-		private final Expression<?>[] source;
+	static final class FloatingPointListWrapper extends ListWrapper implements FloatingPointListExpression<double[]> {
 		private final double[] buffer;
 
 		private static final TypeInfo type = TypeInfo.of(double[].class, true);
 
 		public FloatingPointListWrapper(Expression<?>[] source) {
-			this.source = requireNonNull(source);
+			super(source);
 			buffer = new double[source.length];
 		}
 
@@ -754,14 +765,13 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class BooleanListWrapper implements BooleanListExpression<boolean[]> {
-		private final Expression<?>[] source;
+	static final class BooleanListWrapper extends ListWrapper implements BooleanListExpression<boolean[]> {
 		private final boolean[] buffer;
 
 		private static final TypeInfo type = TypeInfo.of(boolean[].class, true);
 
 		public BooleanListWrapper(Expression<?>[] source) {
-			this.source = requireNonNull(source);
+			super(source);
 			buffer = new boolean[source.length];
 		}
 
@@ -949,8 +959,7 @@ public final class ListAccess {
 	}
 
 	/** Wraps multiple singular expressions into an array */
-	static final class ObjectWrapper<E> implements ListExpression<E[], E> {
-		private final Expression<E>[] source;
+	static final class ObjectWrapper<E> extends ListWrapper implements ListExpression<E[], E> {
 		private final E[] buffer;
 
 		private final TypeInfo type, elementType;
@@ -963,7 +972,7 @@ public final class ListAccess {
 //		}
 
 		public ObjectWrapper(TypeInfo elementType, Expression<E>[] source) {
-			this.source = requireNonNull(source);
+			super(source);
 			this.elementType = requireNonNull(elementType);
 			type = EvaluationUtils.arrayType(elementType);
 			buffer = EvaluationUtils.arrayOf(elementType, source.length);
@@ -981,9 +990,10 @@ public final class ListAccess {
 		@Override
 		public boolean isFixedSize() { return true; }
 
-		private static <E> void fillBuffer(E[] buffer, Expression<E>[] source) {
+		@SuppressWarnings("unchecked")
+		private static <E> void fillBuffer(E[] buffer, Expression<?>[] source) {
 			for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = source[i].compute();
+				buffer[i] = (E) source[i].compute(); //TODO do we want cast here or switch to Object[] buffer?
 			}
 		}
 
@@ -993,8 +1003,9 @@ public final class ListAccess {
 			return buffer;
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public E get(int index) { return source[index(source.length, index)].compute(); }
+		public E get(int index) { return (E) source[index(source.length, index)].compute(); }
 
 		@Override
 		public ListExpression<E[], E> duplicate(EvaluationContext context) {
