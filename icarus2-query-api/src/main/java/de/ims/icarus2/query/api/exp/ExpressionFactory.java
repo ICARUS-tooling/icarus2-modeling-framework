@@ -83,6 +83,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.FloatingPointLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ForEachContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.IntegerLiteralContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListAccessContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ListStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MethodInvocationContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MultiplicativeOpContext;
@@ -93,7 +94,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QualifiedIdentifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ReferenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetPredicateContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
@@ -419,8 +419,8 @@ public class ExpressionFactory {
 			return processIntegerLiteral(pctx.integerLiteral());
 		} else if(pctx.StringLiteral()!=null) {
 			return processStringLiteral(pctx.StringLiteral());
-		} else if(pctx.setStatement()!=null) {
-			return processList(pctx.setStatement());
+		} else if(pctx.listStatement()!=null) {
+			return processList(pctx.listStatement());
 		} else if(pctx.reference()!=null) {
 			return processReference(pctx.reference());
 		}
@@ -517,7 +517,7 @@ public class ExpressionFactory {
 		return result;
 	}
 
-	private ListExpression<?, ?> processList(SetStatementContext ctx) {
+	private ListExpression<?, ?> processList(ListStatementContext ctx) {
 		Expression<?>[] elements = ctx.expressionList()!=null ?
 				processExpressionList(ctx.expressionList()) : NO_ARGS;
 
@@ -533,7 +533,7 @@ public class ExpressionFactory {
 		return ListAccess.wrap(elements);
 	}
 
-	private TypeInfo extractElementType(SetStatementContext ctx, Expression<?>[] elements) {
+	private TypeInfo extractElementType(ListStatementContext ctx, Expression<?>[] elements) {
 		TypeInfo elementType = null;
 
 		if(ctx.type()!=null) {

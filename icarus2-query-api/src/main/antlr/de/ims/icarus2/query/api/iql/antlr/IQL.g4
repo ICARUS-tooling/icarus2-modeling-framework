@@ -365,11 +365,11 @@ primary
 	| floatingPointLiteral
 	| integerLiteral
 	| StringLiteral
-	| setStatement
+	| listStatement
 	| reference	
 	;
 	
-setStatement
+listStatement
 	: (type LBRACK RBRACK)? LBRACE expressionList? RBRACE
 	;
 	
