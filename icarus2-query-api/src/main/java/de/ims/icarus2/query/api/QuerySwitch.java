@@ -56,6 +56,8 @@ public enum QuerySwitch {
 	@Deprecated
 	ARRAY_ZERO("array.zero", "Change array access to be 0-based."),
 
+	RELATIVE_POSITION_MARKERS("markers.position.relative", "Allow position markers to use relative (percentage) arguments."),
+
 	WARNINGS_OFF("warnings.off", "Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query."),
 
 	PARALLEL_OFF("parall.off", "Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher,"
