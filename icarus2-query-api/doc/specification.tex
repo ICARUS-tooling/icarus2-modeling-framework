@@ -2,7 +2,7 @@
 % File specification.tex
 %
 
-\documentclass[11pt,a4paper,portrait]{article}
+\documentclass[11pt,a4paper]{article}
 
 \usepackage[hscale=0.75,vscale=0.8]{geometry}
 
@@ -17,6 +17,7 @@
 \usepackage{xstring}
 \usepackage{xspace}
 \usepackage{todonotes}
+\usepackage[toc,page]{appendix}
 \usepackage{comment} % for commenting out the huge draft lists
 %\usepackage{inconsolata} % to have Consolas as font for verbatim and tt
 \usepackage{bera}% optional: just to have a nice mono-spaced font
@@ -25,12 +26,12 @@
 \usepackage{cprotect}
 \usepackage{fancyvrb}
 \usepackage{xcolor}
+\usepackage{forest}
 \usepackage[rounded]{syntax}
 \usepackage{wrapfig}
 \usepackage{hyperref}
-\usepackage[capitalise]{cleveref} % must be loaded after hyperref!
-\usepackage{forest}
 \usepackage{ntheorem}
+\usepackage[capitalise]{cleveref} % must be loaded after hyperref!
 
 \usepackage{acro}
 
@@ -78,6 +79,9 @@
 \newcommand{\keyword}[1]{\textcolor{purple}{\texttt{#1}}}
 
 \newcommand{\member}[1]{\texttt{#1}}
+
+\newcommand{\query}[1]{\texttt{#1}}
+\newcommand{\switch}[1]{``\texttt{#1}''}
 
 
 % constants
@@ -162,11 +166,11 @@
 \newcommand{\srp}{\begin{rep}}
 \newcommand{\erp}{\end{rep}}
 
-\newcommand*\BitAnd{\mathbin{\&}}
-\newcommand*\BitOr{\mathbin{|}}
-\newcommand*\ShiftLeft{\ll}
-\newcommand*\ShiftRight{\gg}
-\newcommand*\BitNeg{\ensuremath{\mathord{\sim}}}
+%\newcommand*\BitAnd{\mathbin{\&}}
+%\newcommand*\BitOr{\mathbin{|}}
+%\newcommand*\ShiftLeft{\ll}
+%\newcommand*\ShiftRight{\gg}
+%\newcommand*\BitNeg{\ensuremath{\mathord{\sim}}}
 
 %\counterwithin{paragraph}{subsubsection}
 
@@ -279,7 +283,7 @@ This document lists the basic building blocks of queries and their compositions.
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the constraint within the entire query.
 	\item[\iqlType{solved}] Hint for the evaluation engine that this constraint has already been solved, either by a back-end implementation or as a result of (partial) query evaluation by the engine itself.
-	\item[\iqlType{solvedAs}] Specifies to what Boolean value (\texttt{true} or \texttt{false}) the constraint has been evaluated.
+	\item[\iqlType{solvedAs}] Specifies to what Boolean value (\keyword{true} or \keyword{false}) the constraint has been evaluated.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -716,9 +720,9 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 For increased flexibility, \iql supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \iql switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}.
 
 \begin{table}[h]
-\noindent\begin{tabular}{|p{0.28\textwidth}|p{0.65\textwidth}|}
+\noindent\begin{tabular}{|p{0.35\textwidth}|p{0.58\textwidth}|}
 \hline 
-Name	& Description \\ 
+\textbf{Name}	& \textbf{Description} \\ 
 \hline 
 \hline
 iql.string.case.off         & Turns of case sensitivity when performing string operations such as equality checks.  \\ 
@@ -739,7 +743,9 @@ iql.any2bool.off            & Deactivates the interpretation of anything non-Boo
 \hline
 iql.direction.reverse       & Reverses the direction used to traverse corpus data for a search.  \\ 
 \hline
-iql.array.zero              & Change array access \cref{sec:list-access} to be 0-based.  \\ 
+iql.array.zero              & Change array access (\ref{sec:list-access}) to be 0-based.  \\ 
+\hline
+iql.markers.position.relative & Allow position markers (\ref{sec:position-markers}) to use relative (percentage) arguments.  \\ 
 \hline
 iql.warnings.off            & Deactivates all warnings, potentially resulting in confusing results if there are mistakes in the query.  \\ 
 \hline
@@ -1068,7 +1074,7 @@ Boolean literals are limited to either all lowercase or all uppercase versions o
 \label{sec:integer-literals}
 
 \paragraph{Signed Integer Literals}
-Literals representing regular \keyword{int} (32bit) or \keyword{long} (64bit) integers consist of an optional initial sign (\texttt{+} or \texttt{-}) and the body consisting of digits (\lit{0} to \lit{9}) or underscore (\texttt{\_}) characters.
+Literals representing regular \keyword{int} (32bit) or \keyword{long} (64bit) integers consist of an optional initial sign (\lit{+} or \lit{-}) and the body consisting of digits (\lit{0} to \lit{9}) or underscore (\lit{\_}) characters.
 Underscore characters may only appear inside the integer literal, never at the beginning or end (not counting the sign symbol).
 
 \begin{gram}
@@ -1095,7 +1101,7 @@ Some parts of the \iql syntax only allow unsigned "pure" integers and will expli
 \subsubsection{Floating Point Literals}
 \label{sec:floating-point-literals}
 
-Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot '\texttt{.}' as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \keyword{float} (32bit) or double-precision \keyword{double} (64bit) values.
+Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot \lit{.} as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \keyword{float} (32bit) or double-precision \keyword{double} (64bit) values.
 
 \begin{gram}
 	\label{gram:floating-point}
@@ -1119,7 +1125,7 @@ Floating point literals are constructed by using a (signed) integer literal for 
 \subsection{Identifiers}
 \label{sec:identifiers}
 
-\noindent Identifiers in \iql are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol.
+\noindent Identifiers in \iql are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol (cf. \cref{gram:identifier}).
 
 \begin{gram}
 	\label{gram:identifier}
@@ -1151,14 +1157,14 @@ notTheBest______________example
 \subsection{Variables and References}
 \label{sec:variables-references}
 
-In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \texttt{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \texttt{\$} sign, such as \texttt{\$token1}. \cref{tab:identifiers} provides a compact overview of the available identifiers and their capabilities/features.
+In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \lit{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \lit{\$} sign, such as \texttt{\$token1}. \cref{tab:identifiers} provides a compact overview of the available identifiers and their capabilities/features.
 
 \begin{table}[ht]
 	\centering\begin{tabular}{|l|c|c|c|c|c|c|}
 		\hline 
 		Type	& Prefix & Example & Scope & Fixed\footnotemark & Final & Re-Assign \\ 
 		\hline 
-		Reference	& none & \texttt{max()} & global & X & X &  \\ 
+		Reference	&  & \texttt{max()} & global & X & X &  \\ 
 		\hline 
 		Variable	& \texttt{@} & \texttt{@myVar} & limited & (X) &  & X \\ 
 		\hline 
@@ -1180,49 +1186,49 @@ Member identifiers are final in the sense that they cannot be re-assigned explic
 
 Expressions are the foundation of every query.
 Each expression has a (usually fixed) result type and evaluates to a value of that type.
-They can take any of the following forms:
-
-\begin{gram*}
-	\label{gram:expression}
-	\begin{rrdiag*}{expression}
-		\sst
-		`NULL' \\
-		`TRUE' \\
-		`FALSE' \\
-		<floatingPointLiteral> \\
-		<integerLiteral> \\
-		<stringLiteral> \\
-		\sst \\ <type> `[]' \est `{' \srp <expression> \\ `,'\erp  `}' \\
-		\sst \\ <identifier> `::' \\ `@' \\ `\$' \est <identifier> \\
-		<expression> `.' <identifier> \\ %path
-		<expression> `(' \srp <expression> \\ `,' \erp `)' \\ %method invocation
-		<expression> `[' \srp <index> \\ `,' \erp `]' \\ %list access
-		<expression> `{' \srp <expression> \\  `,' \erp `}' \\ %annotation access
-		`(' <type> `)' <expression> \\ %cast
-		`(' <expression> `)' \\ %wrapping
-		\sst `NOT' \\ `!' \\ `\textminus' \\ `\texttildelow' \est <expression> \\ %unary op
-		<expression> \sst 
-		\tok{`*' | `/' | `\%' } \\ 
-		\tok{`+' | `\textminus'} \\ 
-		\tok{`\verb|<<|' | `\verb|>>|' | `|' | `\&' | `\textasciicircum'} \\ 
-		\tok{`\textless' | `\textless=' | `\textgreater' | `\textgreater='} \\ 
-		\tok{`=\texttildelow' | `!\texttildelow' | `=\#' | `!\#'} \\ 
-		\tok{`==' | `!='} \\ 
-		\tok{`AND' | `\&\&' | `OR' | `||'} 
-		\est <expression> \\ %binary op
-		<assignment> \\ %assignment op for later
-		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression> \\ %set predicate
-		<expression> `?' <expression> `:' <expression> \\ %ternary op
-		<loopExpression> % loop
-		\est
-	\end{rrdiag*}
-\end{gram*}
+They can take any of the following forms and a overview diagram is available in the appendix as \cref{gram:expression}.
 
 \subsubsection{Primary Expressions}
 \label{sec:primary-expressions}
 
 Any literal of types \keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float} can serve as a primary expression of that type.
 See \cref{sec:literals} for examples and a more detailed specification of the various types of literals in \iql.
+
+\paragraph{References}
+\noindent Any reference or variable as described in \cref{sec:variables-references} is also a valid primary expression.
+Note that the process for resolving references strongly relies on the context the reference is being used in, for instance to allow simple references to be used as aliases for method calls.
+
+Additionally a special construct is available as primary expression to more easily access annotation values from within a node definitions (\ref{sec:structural-constraints}).
+Normally the evaluation engine tries to resolve any otherwise unknown identifier inside a node as the key (aliased or original) of an annotation that should be fetched for the item matched to this node.
+But since this is not always possible in an unambiguous way or there exists a name clash between an annotation key and another identifier available in the current environment, a \synt{qualifiedIdentifier} (\cref{gram:qualified-identifier}) can be used instead.
+
+\begin{gram}[\synt{qualifiedIdentifier}]
+	\label{gram:qualified-identifier}
+	\begin{grammar}	
+		<qualifiedIdentifier> ::= <identifier> `::' <identifier> 	
+	\end{grammar}
+\end{gram}
+
+A qualified identifier consists of two identifiers that are joined by a double colon \lit{::}.
+The first (or left) identifier is expected to unambiguously resolve to a annotation layer available for the current context.
+The second (or right) identifier in turn acts as specification of an annotation key (or its alias) available from the previously defined annotation layer.
+
+\paragraph{List Expression}
+Arrays (or more generally ``lists'') in \iql can be defined by enclosing a sequence of expressions within curly brackets (\lit{\{} and \lit{\}}), using the comma symbol (\lit{,}) as separator.
+Optionally the desired type for elements in the list can be made explicit with a special type marker in front of the opening bracket as illustrated by \cref{gram:list-expression}.
+If no type is provided, the overall element type will be determined by checking the types of all elements and choosing the least restrictive one.
+Note that for empty lists (no elements are given inside the curly brackets) it is mandatory to specify the element type!
+
+\begin{gram}[\synt{listExpression}]
+	\label{gram:list-expression}
+	\begin{grammar}	
+		<listExpression> ::= (<type> `[]')? `{' (<expression> (`,' <expression>)* )? `}'	
+	\end{grammar}
+	\diagsep
+	\begin{rrdiag*}{listExpression}
+		\sst \\ <type> `[]' \est `{' \sst \\ \srp <expression> \\ `,'\erp  \est `}' \\	
+	\end{rrdiag*}
+\end{gram}
 
 \subsubsection{Path Expressions}
 \label{sec:path-expressions}
@@ -1276,7 +1282,7 @@ some().chained().methods()
 \subsubsection{List Access}
 \label{sec:list-access}
 
-Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to integer values within \texttt{int} space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \texttt{-1} pointing to the last array element and \texttt{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
+Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to values within 32bit signed integer space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \lit{-1} pointing to the last array element and \lit{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
 
 \begin{gram}[\synt{array}]
 	\label{gram:list-access}
@@ -1310,7 +1316,7 @@ Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} im
 \subsubsection{Annotation Access}
 \label{sec:annotation-access}
 
-The ICARUS2 framework models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \iql provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
+The \ac{icmf} models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \iql provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
 
 \begin{gram}[\synt{annotation}]
 	\label{gram:annotation-access}
@@ -1368,14 +1374,20 @@ Expression hierarchy and evaluation order follows the order the different types 
 \subsubsection{Set Predicate}
 \label{sec:set-predicate}
 
-Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the expressions inside the curly brackets (the set definition). See about equality operators in \cref{sec:binary-operation}. Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}. The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. 
+The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the elements inside the set definition to the right (typically a list expression, cf. \cref{sec:primary-expressions} or \cref{gram:list-expression}). 
+See about equality operators in \cref{sec:binary-operation} on how elements are compared. 
+Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}.
+The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
 
-Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark \lit{!} or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. The set predicate can be universally quantified with a star \lit{*} or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
+Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark \lit{!} or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. 
+If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. 
+The set predicate can be universally quantified with a star \lit{*} or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
 
-\begin{gram}[\synt{set_predicate}]
+\begin{gram}[\synt{setPredicate}]
 	\label{gram:set-predicate}
 	\begin{grammar}	
-		<set_predicate> ::= <expression> <all>? <not>? `IN' <expression>
+		<setPredicate> ::= <expression> <all>? <not>? `IN' <expression>
 		
 		<all> ::=  `ALL' | `*'
 		
@@ -1383,7 +1395,7 @@ Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} t
 	\end{grammar}
 	\diagsep
 	
-	\begin{rrdiag*}{set_predicate}
+	\begin{rrdiag*}{setPredicate}
 		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression>
 	\end{rrdiag*}
 \end{gram}
@@ -1393,8 +1405,9 @@ Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} t
 \begin{Verbatim}[samepage=true]
 someAnnotationValue IN {"NP","VP","-"}
 someAnnotationValue NOT IN {"NN","DET"}
-"John" IN {getLegalNames()}
-fetchCharacterNamesInChapterOne() IN {getOrcishNames()}
+someAnnotationValue NOT IN {"NN","DET", STTS.getVerbTags()}
+"John" IN getLegalNames()
+fetchCharacterNamesInChapterOne() IN getOrcishNames()
 \end{Verbatim}
 
 \subsubsection{Unary Operation}
@@ -1428,9 +1441,10 @@ Binary operations between two expressions take the following simple form:
 \noindent Binary operators follow an explicit hierarchy, listed in \cref{tab:binary-operators} in the order of priority, from highest to lowest.
 
 \begin{table}[ht]
-\centering\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
+\centering
+\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
 \hline 
-Operators	& Explanation \\ 
+\textbf{Operators}	& \textbf{Explanation} \\ 
 \hline 
 \hline
 \verb|*  /  %|& multiplication, division and modulo \\ 
@@ -1545,9 +1559,10 @@ Apart from native Boolean expressions (such as comparisons, Boolean literals or 
 Note that those conversions are only active if the respective switches to disable them (\ref{sec:json-ld-switches}) have not been set.
 
 \begin{table}
-	\centering\begin{tabular}{|l|c|c|}
+	\centering
+	\begin{tabular}{|l|c|c|}
 		\hline 
-		Type & Condition & Value \\ 
+		\textbf{Type} & \textbf{Condition} & \textbf{Value} \\ 
 		\hline 
 		\keyword{string} & empty or null & \keyword{false}  \\ 
 		\hline 
@@ -1691,7 +1706,9 @@ Since there is no way for an evaluation engine to assess the complexity of user 
 \label{sec:flat-constraints}
 
 Flat constraints provide no extra helpers to declare structural properties of the query. 
-They consist of arbitrary basic constraints \cref{sec:constraints} and disallow both global constraints (\ref{sec:global-constraints}) and filter constraints (\ref{sec:filter-constraints}). \todo{a word on the differences between flat and global constraints}
+They consist of arbitrary basic constraints \cref{sec:constraints} and disallow both global constraints (\ref{sec:global-constraints}) and filter constraints (\ref{sec:filter-constraints}). 
+Note that flat constraints rely on the availability of member references from the binding or lane sections in the query payload to have access to any content at all.
+In this regard they behave very similar to global constraints.
 
 \subsubsection{Structural Constraints}
 \label{sec:structural-constraints}
@@ -1701,7 +1718,8 @@ Those structures are sequences (\ref{sec:sequence-constraints}), trees (\ref{sec
 They all get explained in more detail in their respective sections, but the syntactic basics for all of them will be defined here.
 To simplify the overall \iql grammar, a general syntax exists for the declaration of nodes (and edges).
 This general form honors the aspects specific to each of those structure types, but generally over-generates and only some of its features are actually applicable in concrete use cases.
-\Cref{gram:node-statement} shows the full syntax for defining structural constraints in \iql.
+\Cref{gram:node-statement} shows the basic for defining structural constraints in \iql.
+More detailed illustrations of the various components (\synt{node}, \synt{quantifier} and \synt{edge}) follow below.
 
 \begin{gram}[\synt{nodeStatement}]
 	\label{gram:node-statement}
@@ -1713,22 +1731,9 @@ This general form honors the aspects specific to each of those structure types, 
 		
 		<nodeArrangement> ::= `ORDERED' | `ADJACENT'
 		
-		<node> ::= <quantifier>? `[' <memberLabel>? <constraint>? <nodeStatement>? `]'
-		
-		<quantifier> ::= <simpleQuantifier> (`|' <simpleQuantifier>)*
-		\alt `\textless' <simpleQuantifier> (`|' <simpleQuantifier>)* `\textgreater'
-		
-		<simpleQuantifier> ::=  (`ALL' | `*')
-		\alt (`NOT' | `!')
-		\alt <digits> (`+' | `-')?
-		\alt <digits> `..' <digits>
-		
 		<memberLabel> ::= <member> `:'
 		
 		<element> ::= <node> | <node> <edge> <node>
-		
-		<edge> ::= `\textless\textminus\textminus' | `\textminus\textminus\textgreater' | `\textless\textminus\textgreater' | `\textminus\textminus\textminus'
-		\alt (`\textless\textminus' | `\textminus\textminus') `[' <memberLabel>? <constraint>? `]' (`\textminus\textminus' | `\textminus\textgreater')
 	\end{grammar}
 	\diagsep
 	\begin{rrdiag*}{nodeStatement}
@@ -1743,19 +1748,6 @@ This general form honors the aspects specific to each of those structure types, 
 	\begin{rrdiag*}{element}
 		\sst <node> \\ <node> <edge> <node> \est
 	\end{rrdiag*}
-
-	\begin{rrdiag*}{edge}
-		\sst 
-			\sst \lit{\textless\textminus} \\ \lit{\textminus\textminus} \est `[' 
-				\sst \\ <memberLabel> \est
-				\sst \\ <constraint> \est `]' 
-				\sst \lit{\textminus\textminus} \\ \lit{\textminus\textgreater} \est \\
-			\lit{\textless\textminus\textminus} \\
-			\lit{\textminus\textminus\textgreater} \\ 
-			\lit{\textless\textminus\textgreater} \\
-			\lit{\textminus\textminus\textminus}
-		\est
-	\end{rrdiag*}
 \end{gram}
 
 \noindent There are four (partly recursive) approaches to express node statements, i.e. grouping, node sequence, element sequence and disjunction. 
@@ -1766,32 +1758,54 @@ For graphs where no simple association between nodes and edges exists, there is 
 As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder that can be filled with either node or edge declarations.
 
 \paragraph{Nodes}
-\noindent \iql uses square brackets (\keyword{[} and \keyword{]}) to mark individual nodes.\\
-\rrhead{node}
-\noindent\begin{rrfrag}{>-}{...}
-	\sst \\ <quantifier> \est `[' 
-	\sst \\ <memberLabel> \est
-	\sst \\ <constraint> \est
-\end{rrfrag}\\
-\begin{rrfrag}{...}{->}
-	\sst \\ <nodeStatement> \est `]'
-\end{rrfrag}\\
-\medskip
+\noindent \iql uses square brackets (\lit{[} and \lit{]}) to mark individual nodes.
+\cref{gram:node} gives an overview of the syntax used for defining nodes with all the optional content elements.
+\begin{gram}[\synt{node}]
+	\label{gram:node}
+	\begin{grammar}			
+		<node> ::= <quantifier>? `[' <memberLabel>? <constraint>? <nodeStatement>? `]'
+		
+		<memberLabel> ::= <member> `:'
+	\end{grammar}
+	\diagsep
+	\rrhead{node}
+	\noindent\begin{rrfrag}{>-}{...}
+		\sst \\ <quantifier> \est `[' 
+		\sst \\ <memberLabel> \est
+		\sst \\ <constraint> \est
+	\end{rrfrag}\\
+	\begin{rrfrag}{...}{->}
+		\sst \\ <nodeStatement> \est `]'
+	\end{rrfrag}\\
+\end{gram}
 Declaring a node in a structural constraint implicitly marks it as existentially quantified.
-Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most}, \textit{at-least} or bounded range quantification. 
-The following diagram simplifies the overall rules for \synt{quantifier} to keep it compact.
-Albeit being shown here as unrelated to each other, the appearance of the angle brackets (\keyword{\textless} and \keyword{\textgreater}) before or after the actual quantifier content is restricted to either \textit{both} of them being used (for a proper wrapping, such \texttt{\textless 3..10 \textgreater}) or \textit{none} of them (for plain quantifiers, such as \texttt{1|4|ALL}).\\
-\begin{rrdiag*}{quantifier}
-	\sst \\ `\textless' \est \srp
-	\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ <digits> `..' <digits> \\ 
-	<digits> \sst \\ `+' \\ `-' \est 
-	\est
-	\\ `|' \erp \sst \\ `\textgreater' \est
-\end{rrdiag*}\\
-\medskip
+Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most} (0 to n), \textit{at-least} (n to inf) or bounded range quantification. 
+The \cref{gram:quantifier} simplifies the overall rules for \synt{quantifier} to keep it compact.
+Albeit being shown here as unrelated to each other, the appearance of the angle brackets (\lit{\textless} and \lit{\textgreater}) before or after the actual quantifier content is restricted to either \textit{both} of them being used (for a proper wrapping, such as \lit{\textless 3..10 \textgreater}) or \textit{none} of them (for plain quantifiers, such as \lit{1|4|ALL}).
 \iql allows multiple quantifiers to be separated by the pipe symbol \lit{|} to express disjunction between quantifiers.
-This way complex constraints can be defined very neatly, such as the ``all or nothing'' quantification \texttt{\keyword{all}|\keyword{not}}.
+This way complex constraints can be defined very neatly, such as the ``all or nothing'' quantification \lit{\keyword{all}|\keyword{not}}.
 This quantifier combination ensures that either all targets in a certain context match the node in question, or none does.\footnote{Example: find all sentences that either have no word with more than five characters or all of their words have five or more characters.}
+
+\begin{gram}[\synt{quantifier}]
+	\label{gram:quantifier}
+	\begin{grammar}			
+		<quantifier> ::= <simpleQuantifier> (`|' <simpleQuantifier>)*
+		\alt `\textless' <simpleQuantifier> (`|' <simpleQuantifier>)* `\textgreater'
+		
+		<simpleQuantifier> ::=  (`ALL' | `*')
+		\alt (`NOT' | `!')
+		\alt <digits> (`+' | `-')?
+		\alt <digits> `..' <digits>
+	\end{grammar}
+	\diagsep	
+	\begin{rrdiag*}{quantifier}
+		\sst \\ `\textless' \est \srp
+		\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ <digits> `..' <digits> \\ 
+		<digits> \sst \\ `+' \\ `-' \est 
+		\est
+		\\ `|' \erp \sst \\ `\textgreater' \est
+	\end{rrdiag*}
+\end{gram}
 
 A node's inner content can optionally have an initial \textbf{member label} (identifier with a colon \lit{:} afterwards) to link this node to a previously defined member binding (\ref{sec:bindings}).
 Such as binding restricts the type of corpus member that the node can be matched against.
@@ -1799,52 +1813,110 @@ It also provides a point of reference that subsequent constraints (e.g. in the g
 Note that cross-referencing between nodes from within local constraints (such as in \verb|[$x:][$y: pos!=$x.pos]|) is discouraged\footnote{The reason behind this is that the \ac{iqp} per default is not required to honor the order of nodes defined in a query or the linking relations between them when planning the automaton for evaluation. As such there is no guarantee that node \member{x} will have already been matched against a valid target when the cross-reference constraint inside \member{y} is evaluated. This would cause an error during evaluation time to occur, which in turn will abort the entire search.} and global constraints should be used for this.
 This approach guarantees that by the time such cross-reference constraints (or ``joins'', to use database terminology) are evaluated all involved member variables will be assigned preliminary candidates.
 
-%Each node can have arbitrarily complex \textbf{local constraints} (composed of basic constraints, cf.~\ref{sec:basic-constraints}) that have implicit access to annotations and structural information (e.g. host container) of the item the node is matched against.
 Nodes can also optionally define \textbf{local constraints} that must evaluate to \keyword{true} for target item to be considered as result candidate.
 Local constraints have full access to properties and annotations of the target item currently being inspected and can take any form described in \cref{sec:constraints}.
 Note that it is up to the evaluation engine how to optimize and potentially prune the evaluation process of constraint expressions.
-Correct evaluation of a conjunctive local constraints with external function calls \texttt{[\$x:~func1(\$x) \&\&~func2(\$x) \&\&~func3(\$x)]} must not rely on the premise of any particular function (\texttt{func1}, \texttt{func2} or \texttt{func3}) actually being called at all.
+Correct evaluation of a conjunctive local constraints with external function calls \query{[\$x:~func1(\$x) \&\&~func2(\$x) \&\&~func3(\$x)]} must not rely on the premise of any particular function (\texttt{func1}, \texttt{func2} or \texttt{func3}) actually being called at all.
 The evaluation semantics of conjunctive Boolean concatenation allow an early determination of the final result as soon as the stable predicate of one of the inner terms evaluating to \keyword{false} is met.
 Therefore it is perfectly legal (and in parts expected from an efficient evaluation engine) to not evaluate the calls to \texttt{func2} and \texttt{func3} after \texttt{func1} has already caused the result to remain \keyword{false}.
 
 If a \synt{node} is used within a tree environment, it can also contain a \textbf{nested} \synt{nodeStatement} declaration to define structural constraints on child nodes.
 The target item a node is matched against during query evaluation defines the structural context that is then in turn being used for matching the nested \synt{node} instances.
+Note that this opens up the entire spectrum of node grouping, disjunctions and arrangement modifiers to define constraints on (sub-)trees.
 
 \paragraph{Edges}
-\noindent
+\noindent Edges are a structural element that is available exclusively to \textbf{graph} constraints (\ref{sec:graph-constraints}).
+Each edge minimally consists of a source and target node and a type indicator\footnote{Type indicators for empty edges (i.e. edges without an inner constraint or label definition) always consist of three symbols, cf. \cref{gram:edge}} to signal whether the edge is meant to be undirected, uni- or bidirectional and in the case of unidirectional edges which direction between source and target node it takes.
+
+\begin{gram}[\synt{edge}]
+	\label{gram:edge}
+	\begin{grammar}	
+		<edge> ::= `\textless\textminus\textminus' | `\textminus\textminus\textgreater' | `\textless\textminus\textgreater' | `\textminus\textminus\textminus'
+		\alt (`\textless\textminus' | `\textminus\textminus') `[' <memberLabel>? <constraint>? `]' (`\textminus\textminus' | `\textminus\textgreater')
+	\end{grammar}
+	\diagsep
+	\begin{rrdiag*}{edge}
+		\sst 
+		\sst \lit{\textless\textminus} \\ \lit{\textminus\textminus} \est `[' 
+		\sst \\ <memberLabel> \est
+		\sst \\ <constraint> \est `]' 
+		\sst \lit{\textminus\textminus} \\ \lit{\textminus\textgreater} \est \\
+		\lit{\textless\textminus\textminus} \\
+		\lit{\textminus\textminus\textgreater} \\ 
+		\lit{\textless\textminus\textgreater} \\
+		\lit{\textminus\textminus\textminus}
+		\est
+	\end{rrdiag*}
+\end{gram}
+
+Optionally, an edge can also be assigned its own member label and/or local constraints.
+In that case the type indicator gets split into two separate parts\footnote{When split, each part of a type indicator uses two symbols, which are the respective 2/3 of the original three-symbol indicator.} with a node-like part in the middle to host the edge's label and/or constraints.
+Note that the same guidelines for cross-referencing from within local constraints that were mentioned above in the section about nodes, also apply to local edge constraints: 
+Correct evaluation of an edge's local constraints must not rely on the availability of cross-referenced external nodes (including the edge's own source and target nodes) or edges.
+As usual global constraints should be used to define constraints that link individual elements such as edges to other (external) parts of the payload.
+The section about global constraints (\ref{sec:global-constraints}) contains further hints on the optimization the \ac{iqp} implements in order to prevent unnecessary exploration of the search space.
+
+The \textbf{quantification} of edges follows slightly different rules as compared to regular nodes.
+Every edge can have \textbf{up to one} explicit quantifier declaration attached to it, either on the source or target node.
+If no quantifier is present, the entire edge is by default existentially quantified, otherwise the following rules apply:
+The node not bearing any quantifier is existentially quantified (or ``fixed'') and the quantifier on the other node acts as an indicator for the multiplicity of the edge itself.
+The following examples illustrate some use cases for quantification on edges:
+
+\begin{Verbatim}
+// a node x linked to 3 nodes that match y
+[$x:]--> <3>[$y:]
+// 3 nodes matching x that are linked to the same node y   
+<3>[$x:]-->[$y:]
+// node x with no direct link to a node that would match y
+[$x:]-->![$y:]
+\end{Verbatim}
+
+\noindent Note that edge definitions cannot be chained, so the query ``find x linked to y, linked to z'' must be expressed in two separate edge definitions, one linking \member{x} to \member{y} and one linking \member{y} to \member{z}.
+This means that graph constraints (\ref{sec:graph-constraints}) require some redundancy, but the linked section also explains some easy strategies to minimize overhead.
 
 \paragraph{Node Grouping}
-\noindent Nodes (or elements) can be grouped together within curly brackets (\keyword{\{}~and~\keyword{\}}) as defined by the first \synt{nodeStatement} rule.
+\noindent Nodes (or elements) can be grouped together within curly brackets (\lit{\{}~and~\lit{\}}) as defined by the first \synt{nodeStatement} rule in \cref{gram:node-statement}.
 This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
 Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
-However, those directives are \textbf{not} automatically inherited to the inner collection of nodes in the group, allowing for expressions such as the following node sequence:
+However, those directives are \textbf{not} automatically \textbf{inherited} to the inner collection of nodes in the group, allowing for expressions such as the following node sequence:
 \begin{Verbatim}[samepage=true]
 ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
 \end{Verbatim}
-This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
+\noindent This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
 Note that the adjacency modifier does not apply to the inner sequences a+b and c+d, which are only subject to the implicit order of the sequence declaration.\footnote{An additional \keyword{ORDERED} in each of the groups would make that explicit, but is redundant.}
 The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
 
 \paragraph{Node Sequence}
-\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule).
+\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule in \cref{gram:node-statement}).
 Instances of \synt{node} in a sequence are defined one after another without special separator symbols.
 They may optionally be preceded by a \synt{nodeArrangement} directive to guide the matching progress.
 Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
 
 \paragraph{Element Sequence}
-\noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement}), but with noticeable differences: 
+\noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement} in \cref{gram:node-statement}), but with noticeable differences: 
 Element sequences do use a separator symbol (a simple comma \lit{,}) between \synt{element} definitions.
 Since \iql does not use keywords to signal the structural type to be expected in a query payload\footnote{An earlier draft made use of \keyword{TREE} and \keyword{GRAPH} keywords to distinguish those types from the basic node sequence, but in an effort to reduce the overall number of keywords (that users had to learn) this approach was dropped.} this approach was necessary to easily detect the type of structure.
 It also hints at the second difference, that is, element sequences do not support arrangement modifiers (as \synt{element} instances can be either nodes or edges, with the latter not being suitable for this kind of ordering) and as such can be more intuitively be understood as sets of \synt{element} instances.
 
 \paragraph{Structural Disjunction}
-\noindent As the forth option of \synt{nodeStatement}, the disjunction of entire node statements provides a very powerful tool to express complex queries.
-\todo{syntax and examples?}
+\noindent As the forth option of \synt{nodeStatement} in \cref{gram:node-statement}, the disjunction of entire node statements provides a very powerful tool to express complex queries.
+Two node statements are linked with the \keyword{OR} keyword to mark them as ``either or'' cases.
+Since this opens up recursion, a complex disjunction may contain more than two node statements in total.
+Note that the order of node statements in a disjunction does not imply a specific priority the evaluation engine has to follow.
+For illustration, the second example below might match an instance of \verb|[$y:]| first:
+\begin{Verbatim}
+[$x:] or [$y:]          // x or y
+[$x:] or [$y:] or [$z]  // x or y or z
+[$x:] or {[$y:][$z]}    // either x alone or a sequence y+z
+[$x: {[$y:] or [$z]}]   // tree node x with either y or z as child
+// complex nested disjunctions
+[$x: [$y: [$z: [$a:] or [$b:]]] or [$z]]
+\end{Verbatim}
 
 \subsubsection{Sequence Constraints}
 \label{sec:sequence-constraints}
 
-As the most basic form of structural constraints this type is used to match sequences of \repoLink{\modelsUrl members/item/Item.java}{items} or nodes in the target corpus.
+As the most basic form of structural constraints this type is used to match sequences of nodes to \repoLink{\modelsUrl members/item/Item.java}{items} in the target corpus.
 Multiple nodes in a sequence declaration are required to match to items in exactly the order they are defined in (but not necessarily adjacent to each other, use the \keyword{ADJACENT} directive in front of a node sequence for that).
 
 \paragraph{Examples:}
@@ -1871,13 +1943,14 @@ This also leads to a very simple and intuitive semantic for the \keyword{FIRST} 
 \paragraph{Special Note:}
 \noindent Evaluation of quantified nodes in \iql is done greedily, i.e. the engine will try to match as many instances as possible.
 However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
-An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \texttt{<inf->}).
+An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \lit{<inf->}).
 
 Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
-A possible (and simple) solution for this query would be the following:
+Possible (and simple) solutions for this query could be the following:
 \begin{Verbatim}[samepage=true]
 ADJACENT [$a:][$b:] <0+>[] [$c:][$d:]
+{ADJACENT [$a:][$b:]} {ADJACENT [$c:][$d:]}
 \end{Verbatim}
 
 \subsubsection{Tree Constraints}
@@ -1911,7 +1984,7 @@ They can be individually quantified or existentially negated, as well as grouped
 This requires further specification of the matching process to guarantee consistent results and define basic expectations.
 Below explanations are primarily intended to specify the behavior in the presence of limiting modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) in the payload, but are also of interest for the expected order of returned matches if no limiting modifiers are defined.
 
-\begin{wrapfigure}{R}{0.5\textwidth}
+\begin{wrapfigure}[12]{L}{0pt} %not sure what produced the 
 	\centering
 \begin{forest}
 	for tree={
@@ -1937,16 +2010,17 @@ Below explanations are primarily intended to specify the behavior in the presenc
 		] 
 	]
 \end{forest}
-\caption{\label{fig:tree-matching} Example tree with highlighted hits for the query \texttt{[\$x:~[\$y:]]}.}
+\caption{\label{fig:tree-matching} Example tree with highlighted hits for the simple tree query \query{[\$x:~[\$y:]]}.}
 \end{wrapfigure}
 
-Consider a simple tree query \verb|[$x: [$y:]]| where x and y are bound nodes with individual constraints.
+Consider a simple tree query \query{[\$x:~[\$y:]]} where x and y are bound nodes with individual constraints.
 The nodes X\textsubscript{n} or Y\textsubscript{n} in the example tree (\cref{fig:tree-matching}) then denote the n-th node that match the constraints of query nodes x and y, respectively.
+The nodes A\textsubscript{1} to A\textsubscript{6} are placeholders for nodes that match neither \texttt{x} nor \texttt{y}.
 
 The tree contains 3 possible matches for the query, specifically the pairs \texttt{\{X\textsubscript{1},Y\textsubscript{1}\}}, \texttt{\{X\textsubscript{1},Y\textsubscript{2}\}} and \texttt{\{X\textsubscript{2},Y\textsubscript{2}\}}.
 \todo{expand on the order of matches}
 
-\noindent\texttt{[Root 
+\noindent\query{[Root 
 	[A\textsubscript{1}] 
 	[A\textsubscript{2} 
 	[\textcolor{darkgreen}{X\textsubscript{1}} 
@@ -1963,13 +2037,12 @@ The tree contains 3 possible matches for the query, specifically the pairs \text
 \subsubsection{Graph Constraints}
 \label{sec:graph-constraints}
 
-\todo[inline]{content}
+\todo[inline]{content, explain node and edge composition, mention referencing as a strategy to minimize edge declaration overhead, etc...}
 
 \subsubsection{Global Constraints}
 \label{sec:global-constraints}
 
-Global constraints con be any basic constraint \cref{sec:constraints} and follow after the main section of structural constraints, indicated by the \keyword{HAVING} keyword.
-\todo{examples and more explanation of what is available (members, etc) + complexity!!!}
+Global constraints can be any basic constraint \cref{sec:constraints} and follow after the main section of structural constraints, indicated by the \keyword{HAVING} keyword (cf. \cref{gram:selection}).
 
 \paragraph{Evaluation Priorities}
 \noindent If global constraints are present, the evaluation process changes to a two-stage strategy:
@@ -1988,6 +2061,19 @@ FIND [$x: [$y: isLast]]
 \end{Verbatim}
 Similarly global constraints are not the place to perform filtering on general properties of the current \ac{uoi}, such as sentence length (use the \keyword{FILTER BY} expression for that, cf. \cref{sec:filter-constraints}).
 
+\paragraph{Constraint Hoisting}
+Per default, global constraints are second-class constraints, that are only consulted, once the structural and local constraints in the other sections of a query payload have been evaluated.
+This provides them with a lot more decision power and available information, but also can lead to rather inefficient evaluation scenarios.
+Consider a query \query{FIND~[\$x:~[\$y:~[\$z]]] HAVING \$x.pos!=\$y.pos} that looks for nested nodes \member{x}, \member{y} and \member{z} where in addition to local constraints the nodes \member{x} and \member{y} are required to have different part-pf-speech tags.
+With the default two-stage evaluation process described above this would result in a serious overhead when evaluating a target tree: 
+For every successful match of \query{[\$x:~[\$y:]]} the engine would continue to look for children of \member{y} matching \member{z}, regardless of \member{x} and \member{y} satisfying the global constraint.
+
+Through a optimization technique dubbed \textit{constraint hoisting} the \ac{iqp} will try to work around this performance issue and attach global constraints to the nodes in the (tree) automaton that matches a certain part of the query.
+In the example above the matcher would evaluate the global constraint \query{\$x.pos!=\$y.pos} as soon as it successfully identified candidates for \member{x} and \member{y}, thereby reducing the overhead of searching for potential candidates for \member{z} that would ultimately fail due to \member{x} and \member{y} not satisfying the global constraint.
+
+Note that only very specific global constraints can successfully be hoisted! 
+\todo{list properties required for hoisting and mention hoisting of constraint fragments, since IQL splits boolean expressions into fragments}
+
 \subsection{Result Processing}
 \label{sec:result-processing}
 
@@ -2005,13 +2091,128 @@ They are listed here as per default they all are available and provide valuable 
 \subsection{Position Markers}
 \label{sec:position-markers}
 
-Every node (\ref{sec:sequence-constraints}) in a query has an implicit \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} context that it is hosted  or contained in.\footnote{The \ac{icmf} specifies that each item can only be hosted (or \textit{owned}) by a single container or derived object, but be contained within an arbitrary number of additional containers or structures.}
-\todo{describe the situations possible for nodes (root, top-level, nested) with implicit/explicit parent, and then list the isFirst, isLast, etc markers}
+Every node (\ref{sec:structural-constraints}) in a query has an implicit \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} context that it is hosted  or contained in.\footnote{The \ac{icmf} specifies that each item can only be hosted (or more accurately \textit{owned}) by a single container or derived object, but be contained within an arbitrary number of additional containers or structures.}
+\iql offers a variety of predefined helper functions  to exploit this fact and to optimize queries.
+\cref{tab:position-markers} lists the functions currently available, their arguments and matching conditions.
+Note that legal arguments for a node that occurs in a container of size $N$ reside in the closed interval $[1..N]$ for regular index values and $[-N..-1]$ for reverse indices (see below).
+
+\begin{table}[ht]\centering
+\begin{tabular}{|p{0.17\textwidth}|p{0.14\textwidth}|p{0.60\textwidth}|}
+	\hline 
+	\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
+	\hline 
+	\hline  
+	isFirst & - & Node is the first in its context ($index = 1$). \\ 
+	\hline 
+	isLast & - & Node is the last in its context ($index = N-1$). \\  
+	\hline 
+	isAfter & int & Node occurs after designated position ($index > arg$). \\  
+	\hline 
+	isBefore & int & Node occurs before designated position ($index < arg$). \\  
+	\hline 
+	isBetween & int, int & Node occurs inside designated interval ($arg_1 < index < arg_2$). Difference between $arg_1$ and $arg_2$ must be at least 2 for the function to evaluate. \\  
+	\hline 
+	isOutside & int, int & Node occurs outside designated interval ($index < arg_1$ and $index>arg_2$). $arg_1$ must be less than or equal to $arg_2$.\\  
+	\hline 
+	isAt & int & Node occurs at specific position ($index = arg$). \\  
+	\hline 
+	isNotAt & int & Node occurs at any position except the designated one ($index \neq arg$). \\  
+	\hline 
+\end{tabular}
+\caption{Position markers provided by the default evaluation engine for \iql. The conditions in the last column assume a container of size \textit{N} as context. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
+\label{tab:position-markers}
+\end{table} 
+
+\paragraph{Negation}
+\noindent Note that position markers cannot be negated when used in a constraint expression.\footnote{Depending on the query configuration doing so would either fail the evaluation process with an error or silently ignore the issue, potentially producing invalid results.}
+For every function/marker in \cref{tab:position-markers} there exists a complement that can be used to easily express the negated condition.
+For instance \query{isBefore(n)} can be negated into \query{isAfter(n-1)}, but the engine will not perform this conversion and it up to the user to properly provide the intended negated form.
+
+\paragraph{Reverse Indices}
+\noindent Any position marker that takes at least one argument also supports negative values that are treated as reverse indices, starting from the end of the surrounding container's size.
+This follows the same semantics as the index scheme for arrays or lists (\ref{sec:list-access}).
+Note that certain position markers with interval arguments (such as \query{inBetween($arg_1$,~$arg_2$)}) still require actual interval boundaries to be in the proper order (generally $arg_1 \leq arg_2$).
+
+\paragraph{Relative Indices}
+\noindent Per default all the position markers that take argument expect them to be integer values for explicit designation of the desired index or index range.
+This means that any other type of argument will be automatically converted to an integer value if the query configuration permits it.
+However, if the associated switch (\ref{sec:json-ld-switches}) is active\footnote{This switch is off by default as it interferes with the automatic type conversion of arguments. If it is active, arguments must explicitly be cast if not already an integer or floating-point number. If the switch is not active, any floating-point argument will be cast to an integer (typically 0 if any of the arguments are intended to be reverse indices).}, position markers can use relative arguments in the form of floating-point numbers.
+Relative indices are expected to be in the open interval $(0..1)$ (or $(-1..0)$ for negative reverse indices) and are treated as percentages of the total size of the surrounding container.
+The following examples illustrate this approach (assume the markers are used inside a token node that is directly hosted within a sentence):
+\begin{Verbatim}
+// the token can only occur in the first half of the sentence
+isBefore(0.5)
+
+// the token must occur after the first 20% and before the last 80%
+isBetween(0.2, 0.8)
+\end{Verbatim}
+It is easily possible to define the same position marker with relative indices in both normal and reverse form.
+For instance, \query{isBefore(0.8)} and \query{isBefore(-0.2)} both describe the same 80\% interval.
+As a general rule, relative indices should only be used with regular (positive) arguments.
+
+\paragraph{Marker Stacking}
+\noindent Position markers may \textbf{only} be used as top-level terms in a constraint expression.
+\iql allows multiple position markers to occur in the same constraint expression, but only if they are all joined by a conjunctive Boolean connective!
+\begin{Verbatim}
+// legal use cases
+[isLast]
+[pos!="NN" && isBefore(10)]
+
+// illegal use of position markers
+[pos!="NN" || isLast]
+\end{Verbatim}
+
+\paragraph{Markers in Global Constraints}
+\noindent Global constraints (\ref{sec:global-constraints}) have access to an extended version of the ``local'' position markers.
+\todo{explain extra first argument (the desired item to be checked), apart from that they behave the same}
 
 \subsection{Tree Functions}
 \label{sec:tree-functions}
 
+\todo{describe the situations possible for nodes (root, top-level, nested) with implicit/explicit parent, and then list the isFirstChild, isLastChild, etc markers}
+
 \subsection{Graph Functions}
 \label{sec:graph-functions}
 
+\begin{appendices}
+\section{Extended Grammar Diagrams}
+
+
+\begin{gram*}
+	\label{gram:expression}
+	\begin{rrdiag*}{expression}
+		\sst
+		`NULL' \\
+		`TRUE' \\
+		`FALSE' \\
+		<floatingPointLiteral> \\
+		<integerLiteral> \\
+		<stringLiteral> \\
+		\sst \\ <type> `[]' \est `{' \sst \\ \srp <expression> \\ `,'\erp \est `}' \\
+		\sst \\ <identifier> `::' \\ `@' \\ `\$' \est <identifier> \\
+		<expression> `.' <identifier> \\ %path
+		<expression> `(' \srp <expression> \\ `,' \erp `)' \\ %method invocation
+		<expression> `[' \srp <index> \\ `,' \erp `]' \\ %list access
+		<expression> `{' \srp <expression> \\  `,' \erp `}' \\ %annotation access
+		`(' <type> `)' <expression> \\ %cast
+		`(' <expression> `)' \\ %wrapping
+		\sst `NOT' \\ `!' \\ `\textminus' \\ `\texttildelow' \est <expression> \\ %unary op
+		<expression> \sst 
+		\tok{`*' | `/' | `\%' } \\ 
+		\tok{`+' | `\textminus'} \\ 
+		\tok{`\verb|<<|' | `\verb|>>|' | `|' | `\&' | `\textasciicircum'} \\ 
+		\tok{`\textless' | `\textless=' | `\textgreater' | `\textgreater='} \\ 
+		\tok{`=\texttildelow' | `!\texttildelow' | `=\#' | `!\#'} \\ 
+		\tok{`==' | `!='} \\ 
+		\tok{`AND' | `\&\&' | `OR' | `||'} 
+		\est <expression> \\ %binary op
+		<assignment> \\ %assignment op for later
+		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression> \\ %set predicate
+		<expression> `?' <expression> `:' <expression> \\ %ternary op
+		<loopExpression> % loop
+		\est
+	\end{rrdiag*}
+\end{gram*}
+
+\end{appendices}
 \end{document}
