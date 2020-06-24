@@ -2094,7 +2094,11 @@ They are listed here as per default they all are available and provide valuable 
 Every node (\ref{sec:structural-constraints}) in a query has an implicit \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} context that it is hosted  or contained in.\footnote{The \ac{icmf} specifies that each item can only be hosted (or more accurately \textit{owned}) by a single container or derived object, but be contained within an arbitrary number of additional containers or structures.}
 \iql offers a variety of predefined helper functions  to exploit this fact and to optimize queries.
 \cref{tab:position-markers} lists the functions currently available, their arguments and matching conditions.
-Note that legal arguments for a node that occurs in a container of size $N$ reside in the closed interval $[1..N]$ for regular index values and $[-N..-1]$ for reverse indices (see below).
+Note that legal arguments for a node that occurs in a container of size $N$ reside in the closed integer interval $[1..N]$ for regular index values and $[-N..-1]$ for reverse indices (see below).\footnote{This is in contrast to the 0-based access of array or list elements in \iql.}
+The syntax for providing arguments follows the normal rules for method invocations in \iql \ref{sec:method-invocations}, e.g. \query{isOutside(4, 12)}.
+Arguments can be provided as literals, which is is the preferred way, or as any other kind of expression that evaluates to the necessary type (or can be converted, depending on the query configuration).
+It is not possible to access properties from the node itself for which the marker is defined, as position markers are evaluated \textbf{before} the corresponding nodes are matched and subsequently any such attempts will result in an error during query evaluation.
+However, globally accessible information or any data provided by surrounding containers or structures can be used to specify marker arguments.\footnote{For example, a node could be defined to be in first position for short sentences and in last position for long ones.}
 
 \begin{table}[ht]\centering
 \begin{tabular}{|p{0.17\textwidth}|p{0.14\textwidth}|p{0.60\textwidth}|}
@@ -2104,11 +2108,11 @@ Note that legal arguments for a node that occurs in a container of size $N$ resi
 	\hline  
 	isFirst & - & Node is the first in its context ($index = 1$). \\ 
 	\hline 
-	isLast & - & Node is the last in its context ($index = N-1$). \\  
+	isLast & - & Node is the last in its context ($index = N$). \\  
 	\hline 
-	isAfter & int & Node occurs after designated position ($index > arg$). \\  
+	isAfter & int & Node occurs after designated position ($index > arg$). Legal values are: $1 < arg < N-1$ \\  
 	\hline 
-	isBefore & int & Node occurs before designated position ($index < arg$). \\  
+	isBefore & int & Node occurs before designated position ($index < arg$). Legal values are: $1 < arg < N$\\  
 	\hline 
 	isBetween & int, int & Node occurs inside designated interval ($arg_1 < index < arg_2$). Difference between $arg_1$ and $arg_2$ must be at least 2 for the function to evaluate. \\  
 	\hline 
@@ -2123,10 +2127,18 @@ Note that legal arguments for a node that occurs in a container of size $N$ resi
 \label{tab:position-markers}
 \end{table} 
 
+\paragraph{Direction}
+\noindent Position markers follow the direction specified for the whole query, same as all structural constraints (\ref{sec:structural-constraints}).
+This means they are also subject to reversing via switch (\ref{sec:json-ld-switches}) the order in which \acp{uoi} are traversed.
+Note that this effectively reverses the semantics of all the markers listed in \cref{tab:position-markers} (see below section about negation for examples on how construct markers that cover the inverse index interval).
+For instance \query{isFirst} will target the last item when traversing a container in the original direction.
+Users need to keep this in mind when mixing position markers with switches that influence the order of traversal during node matching.
+
 \paragraph{Negation}
-\noindent Note that position markers cannot be negated when used in a constraint expression.\footnote{Depending on the query configuration doing so would either fail the evaluation process with an error or silently ignore the issue, potentially producing invalid results.}
+\noindent Position markers cannot be negated when used in a constraint expression.\footnote{Depending on the query configuration doing so would either fail the evaluation process with an error or silently ignore the issue, potentially producing invalid results.}
 For every function/marker in \cref{tab:position-markers} there exists a complement that can be used to easily express the negated condition.
 For instance \query{isBefore(n)} can be negated into \query{isAfter(n-1)}, but the engine will not perform this conversion and it up to the user to properly provide the intended negated form.
+Trying to negate a position marker inside structural constraints will result in an error during the preprocessing of the query payload.
 
 \paragraph{Reverse Indices}
 \noindent Any position marker that takes at least one argument also supports negative values that are treated as reverse indices, starting from the end of the surrounding container's size.
@@ -2146,30 +2158,128 @@ isBefore(0.5)
 // the token must occur after the first 20% and before the last 80%
 isBetween(0.2, 0.8)
 \end{Verbatim}
+The actual index values to be used for determining the legal position of the node are calculated by multiplying the context's size attribute (e.g. the length of the surrounding sentence) with the marker's relative argument and then rounding down the result to the nearest integer.
 It is easily possible to define the same position marker with relative indices in both normal and reverse form.
 For instance, \query{isBefore(0.8)} and \query{isBefore(-0.2)} both describe the same 80\% interval.
 As a general rule, relative indices should only be used with regular (positive) arguments.
 
 \paragraph{Marker Stacking}
-\noindent Position markers may \textbf{only} be used as top-level terms in a constraint expression.
-\iql allows multiple position markers to occur in the same constraint expression, but only if they are all joined by a conjunctive Boolean connective!
+\noindent Position markers generally may \textbf{only} be used as top-level terms in a constraint expression.
+\iql allows multiple position markers to occur in the same constraint expression, with the following condition:
+When the expression is viewed in conjunctive normal form, positional markers may not be mixed with non-marker terms inside a single clause.
+Multiple marker-only clauses are allowed however.
 \begin{Verbatim}
 // legal use cases
 [isLast]
 [pos!="NN" && isBefore(10)]
+[pos!="NN" && (isBefore(10) || isAfter(24))]
+[pos!="NN" && isNotAt(5) && (isBefore(10) || isAfter(24))]
 
-// illegal use of position markers
+// illegal use of position markers (see rules above)
 [pos!="NN" || isLast]
+// above constraint must be expressed via node disjunction
+{[pos!="NN"] or [isLast]}
 \end{Verbatim}
+The reasons for this limitation in stacking position markers stems from the underlying interval arithmetic.
+Each positional marker effectively describes a non-empty interval of possible index values for the node.
+Conjunction of markers results in the intersection of their intervals, possibly creating an empty set, which will render the node constraint impossible to satisfy.
+Disjunction of markers on the other hand creates a union of their intervals, either joining them if they overlap or creating a set of disjoint intervals that denotes a discontinuous collection of legal values.
+The final result is a fixed\footnote{Fixed in the sense that it only depends on the overall size of the surrounding container.} collection of index values that can be iterated to check for potential result candidates.
+In the absence of any kind of positional marker this default index set to be traversed is the complete interval $[1..N]$ for a host container of size $N$.
+In case of disjunction between a positional marker and a non-marker term, this would render the marker's filter function useless.\footnote{Joining the complete interval $[1..N]$ with any sub-interval does not reduce the number of indices to be traversed}
 
 \paragraph{Markers in Global Constraints}
-\noindent Global constraints (\ref{sec:global-constraints}) have access to an extended version of the ``local'' position markers.
-\todo{explain extra first argument (the desired item to be checked), apart from that they behave the same}
+\noindent Global constraints (\ref{sec:global-constraints}) have access to an extended version of the ``local'' position markers that acts as a general predicate for items (and additional index arguments, depending on the marker).
+So for example \query{isLast(\$x)} is the method-equivalent to the local marker \query{[\$x: isLast]}.
+Note that there is no performance benefit by using those methods in global constraints, as actual position markers are only recognized within structural constraints.
+The version for global constraints merely serves as syntactic sugar.
+However, since those methods are not subject to the same limitations as mentioned int the section about stacking above, they can be used freely inside local constraints (both in nested and disjunctive expressions).
+
+\subsection{Tree Markers}
+\label{sec:tree-markers}
+
+While the basic positional markers described in \cref{sec:position-markers} limit a node's overall position in the surrounding container, tree markers work on the hierarchical properties of tree structures.
+As such they define legal positions of a node within its parent's list of children.
+All tree markers are subject to the same rules as position markers regarding negation, direction, relative and reverse indices, as well as stacking.
+Note however, that the default order for traversing child nodes in a tree does not necessarily\footnote{The \ac{icmf} does however strongly encourage tree structures to order children according to their begin-offsets if it does not interfere with their intended semantics.} reflect the actual order of the child nodes position when projected onto the underlying foundation layer.
+It can therefore make sense to define additional precedence constraints via global constraints if needed.
+
+\begin{table}[ht]\centering
+	\begin{tabular}{|p{0.17\textwidth}|p{0.14\textwidth}|p{0.60\textwidth}|}
+		\hline 
+		\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
+		\hline 
+		\hline  
+		isFirstChild & - & Node is the first child of its parent ($childIndex = 1$). \\ 
+		\hline 
+		isLastChild & - & Node is the last child of its parent ($childIndex = N-1$). \\  
+		\hline 
+		isChildAfter & int & Node occurs as child after designated position ($childIndex > arg$). \\  
+		\hline 
+		isChildBefore & int & Node occurs as child before designated position ($childIndex < arg$). \\  
+		\hline 
+		isChildBetween & int, int & Node occurs as child inside designated interval ($arg_1 < childIndex < arg_2$). Difference between $arg_1$ and $arg_2$ must be at least 2 for the function to evaluate. \\  
+		\hline 
+		isChildOutside & int, int & Node occurs as child outside designated interval ($childIndex < arg_1$ and $childIndex>arg_2$). $arg_1$ must be less than or equal to $arg_2$.\\  
+		\hline 
+		isChildAt & int & Node occurs as child at specific position ($childIndex = arg$). \\  
+		\hline 
+		isChildNotAt & int & Node occurs as child at any position except the designated one ($childIndex \neq arg$). \\  
+		\hline 
+	\end{tabular}
+	\caption{Positional markers for trees provided by the default evaluation engine for \iql. The conditions in the last column assume a parent node with \textit{N} children as context and $childIndex$ being the desired position of the node within its parent's list of children. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
+	\label{tab:tree-position-markers}
+\end{table}
+
+\paragraph{Hierarchy Markers}
+Apart from the horizontal domain described above, tree markers also cover the hierarchical aspect of tree structures.
+A series of additional markers is available to specify a node's vertical location in the tree, as shown in \cref{tab:tree-hierarchy-markers}.
+These markers inherit all the rules of general tree markers, except that they cannot be used with relative indices.%\footnote{The reason is that all the hierarchy-related methods in \ac{icmf} are optional and as such a tree object cannot be expected to provide ready-to-use information about its depths or the heights of individual subtrees. Subsequently the \ac{iqp} would have to analyze a tree first before being able to construct an efficient matcher for it, which defeats the purpose of}
+
+\begin{table}[ht]\centering
+\begin{tabular}{|p{0.21\textwidth}|p{0.14\textwidth}|p{0.56\textwidth}|}
+	\hline 
+	\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
+	\hline 
+	\hline  
+	isRoot & - & Node is a designated root in the structure. \\ 
+	\hline 
+	isLeaf & - & Node is a leaf, i.e. it has no children. \\  
+	\hline 
+	isIntermediate & - & Node is neither a designated root nor a leaf. \\  
+	\hline 
+	isGeneration & int & Node is a member of the $arg$-th generation of the parent node. Note that only values of $arg \geq 2$ make any sense, as per default parent-child nesting in tree constraints implies membership in the 1\textsuperscript{st} generation. \\  
+	\hline
+	isNotGeneration & int & Node is nested arbitrarily deep in its parent, but not in the designated generation. \\  
+	\hline  
+	isGenerationAfter & int & Node is nested at least $arg+1$ generations deep in its parent. \\  
+	\hline 
+	isGenerationBefore & int & Node is nested no more than $arg-1$ generations deep in its parent. \\  
+	\hline 
+	isAnyGeneration & - & Node is nested arbitrarily deep in its parent. This is the equivalent of a full transitive closure over the tree dominance relation between parent and child nodes. \\  
+	\hline 
+\end{tabular}
+\caption{Additional markers for hierarchical properties in tree structures. Note that ``parent'' in the matching conditions refers to the node in a target tree that has been matched by the original node's parent.}
+\label{tab:tree-hierarchy-markers}
+\end{table}
+
+All the \todo{generation concept, explain that some tree methods in ICMF are optional, as such reverse indices can be inefficient}
 
 \subsection{Tree Functions}
 \label{sec:tree-functions}
 
-\todo{describe the situations possible for nodes (root, top-level, nested) with implicit/explicit parent, and then list the isFirstChild, isLastChild, etc markers}
+\begin{table}[ht]\centering
+	\begin{tabular}{|p{0.20\textwidth}|p{0.25\textwidth}|p{0.52\textwidth}|}
+		\hline 
+		\textbf{Label} & \textbf{Argument Types} & \textbf{Result Type} \\ 
+		\hline 
+		\hline  
+		ancestor & array of nodes & node \\ 
+		\hline 
+	\end{tabular}
+	\caption{Utility functions for advanced tree matching. Primarily these functions are intended to complement the top-down tree matching strategy employed by the \ac{iqp} with bottom-up evaluation.}
+	\label{tab:tree-functions}
+\end{table}
 
 \subsection{Graph Functions}
 \label{sec:graph-functions}
