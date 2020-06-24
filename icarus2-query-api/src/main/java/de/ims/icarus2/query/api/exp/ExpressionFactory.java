@@ -163,7 +163,7 @@ public class ExpressionFactory {
 	}
 
 	private boolean isAllowEarlyExit() {
-		return context.isSwitchSet(QuerySwitch.PREDICATES_OPTIMIZE_OFF);
+		return !context.isSwitchSet(QuerySwitch.PREDICATES_OPTIMIZE_OFF);
 	}
 
 	private StringMode getStringMode() {
