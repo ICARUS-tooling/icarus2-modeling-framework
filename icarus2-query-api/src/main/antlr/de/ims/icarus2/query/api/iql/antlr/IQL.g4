@@ -353,7 +353,7 @@ expression
 	| <assoc=right> left=expression and right=expression 											# conjunction
 	| <assoc=right> left=expression or right=expression 											# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
-	| source=expression AS (member | variableName)											# assignmentOp
+	| source=expression AS (member | variable)											# assignmentOp
 	| source=expression all? not? IN target=expression 	# setPredicate
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
@@ -374,7 +374,7 @@ listStatement
 	;
 	
 reference
-	: variableName
+	: variable
 	| member
 	| Identifier
 	| qualifiedIdentifier // always points to annotations
@@ -387,7 +387,7 @@ qualifiedIdentifier
 	
 loopExpresseion
 	// expression source must be a reference to an iterable object or collection
-	: FOREACH expression AS variableName loopControl counterList?
+	: FOREACH expression AS variable loopControl counterList?
 	;
 	
 loopControl
@@ -403,7 +403,7 @@ counterList
 	;
 	
 counter
-	: constraint AS variableName
+	: constraint AS variable
 	;
 	
 type
@@ -447,7 +447,7 @@ or
 	| DOUBLE_PIPE
 	;
 	
-variableName
+variable
 	: AT Identifier
 	;
 

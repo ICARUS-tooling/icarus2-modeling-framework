@@ -113,7 +113,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectionStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SimpleQuantifierContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
@@ -232,7 +232,7 @@ public class QueryProcessor {
 		return expression;
 	}
 
-	private IqlReference processVariableName(VariableNameContext ctx) {
+	private IqlReference processVariableName(VariableContext ctx) {
 		IqlReference variable = new IqlReference();
 
 		genId(variable);

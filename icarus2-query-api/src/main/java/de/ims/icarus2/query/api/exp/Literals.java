@@ -106,8 +106,8 @@ public final class Literals {
 		return value ? TRUE : FALSE;
 	}
 
-	private static final BooleanLiteral TRUE = new BooleanLiteral(true);
-	private static final BooleanLiteral FALSE = new BooleanLiteral(false);
+	public static final Expression<Primitive<Boolean>> TRUE = new BooleanLiteral(true);
+	public static final Expression<Primitive<Boolean>> FALSE = new BooleanLiteral(false);
 
 	static final class BooleanLiteral extends Literal<Primitive<Boolean>>
 			implements PrimitiveExpression  {

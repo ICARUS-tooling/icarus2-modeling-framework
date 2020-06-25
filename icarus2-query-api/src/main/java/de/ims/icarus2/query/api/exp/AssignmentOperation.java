@@ -68,5 +68,16 @@ public class AssignmentOperation {
 			return new ObjectAssignment(context.duplicate(source), context.duplicate(target));
 		}
 
+		@Override
+		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
+			Expression<?> newSource = context.optimize(source);
+
+			// If we produce a permanent null assignment, bail and default to false literal
+			if(newSource.isConstant() && newSource.compute()==null) {
+				return Literals.FALSE;
+			}
+
+			return new ObjectAssignment(newSource, target);
+		}
 	}
 }

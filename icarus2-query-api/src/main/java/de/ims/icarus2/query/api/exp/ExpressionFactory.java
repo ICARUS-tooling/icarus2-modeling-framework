@@ -98,7 +98,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.UnaryOpContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableNameContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.CountingStats;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
@@ -469,7 +469,7 @@ public class ExpressionFactory {
 		}
 	}
 
-	private Assignable<?> processVariable(VariableNameContext ctx) {
+	private Assignable<?> processVariable(VariableContext ctx) {
 		String name = processIdentifier(ctx.Identifier());
 		Assignable<?> result = context.getVariable(name);
 		stats.count(StatsField.VARIABLE, name);
@@ -498,9 +498,9 @@ public class ExpressionFactory {
 
 	private Expression<?> processReference(ReferenceContext ctx) {
 		Expression<?> result = null;
-		if(ctx.variableName()!=null) {
+		if(ctx.variable()!=null) {
 			// Grab identifier and let context resolve actual variable (might create one)
-			result = processVariable(ctx.variableName());
+			result = processVariable(ctx.variable());
 		} else if(ctx.member()!=null) {
 			// Grab identifier and let context resolve it to member expression
 			result = processMember(ctx.member());
@@ -1023,8 +1023,8 @@ public class ExpressionFactory {
 		Assignable<?> target;
 		if(ctx.member()!=null) {
 			target = processMember(ctx.member());
-		} else if(ctx.variableName()!=null) {
-			target = processVariable(ctx.variableName());
+		} else if(ctx.variable()!=null) {
+			target = processVariable(ctx.variable());
 		} else {
 			return failForUnhandledAlternative(ctx);
 		}
