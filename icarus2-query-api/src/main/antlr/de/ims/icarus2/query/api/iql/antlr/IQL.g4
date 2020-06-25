@@ -451,10 +451,7 @@ variable
 	: AT Identifier
 	;
 
-/** 
- * Models the actual member variables for a matching.
- * The optional index suffix
- */
+/** Models the actual member variables for a matching. */
 member
 	: DOLLAR Identifier
 	;

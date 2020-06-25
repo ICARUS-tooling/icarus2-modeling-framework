@@ -1371,45 +1371,6 @@ Expression hierarchy and evaluation order follows the order the different types 
 (6 + 4) * 2 // addition is evaluated first -> result 20
 \end{Verbatim}
 
-\subsubsection{Set Predicate}
-\label{sec:set-predicate}
-
-Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. 
-The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the elements inside the set definition to the right (typically a list expression, cf. \cref{sec:primary-expressions} or \cref{gram:list-expression}). 
-See about equality operators in \cref{sec:binary-operation} on how elements are compared. 
-Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}.
-The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
-
-Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark \lit{!} or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. 
-If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. 
-The set predicate can be universally quantified with a star \lit{*} or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
-
-\begin{gram}[\synt{setPredicate}]
-	\label{gram:set-predicate}
-	\begin{grammar}	
-		<setPredicate> ::= <expression> <all>? <not>? `IN' <expression>
-		
-		<all> ::=  `ALL' | `*'
-		
-		<not> ::=  `NOT' | `!'
-	\end{grammar}
-	\diagsep
-	
-	\begin{rrdiag*}{setPredicate}
-		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression>
-	\end{rrdiag*}
-\end{gram}
-
-\paragraph{Examples:}
-
-\begin{Verbatim}[samepage=true]
-someAnnotationValue IN {"NP","VP","-"}
-someAnnotationValue NOT IN {"NN","DET"}
-someAnnotationValue NOT IN {"NN","DET", STTS.getVerbTags()}
-"John" IN getLegalNames()
-fetchCharacterNamesInChapterOne() IN getOrcishNames()
-\end{Verbatim}
-
 \subsubsection{Unary Operation}
 \label{sec:unary-operation}
 
@@ -1441,31 +1402,31 @@ Binary operations between two expressions take the following simple form:
 \noindent Binary operators follow an explicit hierarchy, listed in \cref{tab:binary-operators} in the order of priority, from highest to lowest.
 
 \begin{table}[ht]
-\centering
-\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
-\hline 
-\textbf{Operators}	& \textbf{Explanation} \\ 
-\hline 
-\hline
-\verb|*  /  %|& multiplication, division and modulo \\ 
-\hline 
-\verb|+  -|& addition and subtraction \\ 
-\hline 
-\verb#<<  >>  &  |  ^#& shift left, shift right, bitwise and, bitwise or, bitwise xor \\ 
-\hline 
-\verb|<  <=  >  >=|& less, less or equal, greater, greater or equal \\ 
-\hline 
-\verb|=~  !~  =#  !#|& string operators: matches (regex), matches not (regex), contains, contains not \\ 
-\hline 
-\verb|==  !=|& equals, equals not \\ 
-\hline 
-\verb|&&  AND|& logical and \\ 
-\hline 
-\verb#||  OR#& logical or \\ 
-\hline 
-\end{tabular} 
-\caption{Binary operators available in \iql and their hierarchical order.}
-\label{tab:binary-operators}
+	\centering
+	\begin{tabular}{|p{0.25\textwidth}|p{0.6\textwidth}|}
+		\hline 
+		\textbf{Operators}	& \textbf{Explanation} \\ 
+		\hline 
+		\hline
+		\verb|*  /  %|& multiplication, division and modulo \\ 
+		\hline 
+		\verb|+  -|& addition and subtraction \\ 
+		\hline 
+		\verb#<<  >>  &  |  ^#& shift left, shift right, bitwise and, bitwise or, bitwise xor \\ 
+		\hline 
+		\verb|<  <=  >  >=|& less, less or equal, greater, greater or equal \\ 
+		\hline 
+		\verb|=~  !~  =#  !#|& string operators: matches (regex), matches not (regex), contains, contains not \\ 
+		\hline 
+		\verb|==  !=|& equals, equals not \\ 
+		\hline 
+		\verb|&&  AND|& logical and \\ 
+		\hline 
+		\verb#||  OR#& logical or \\ 
+		\hline 
+	\end{tabular} 
+	\caption{Binary operators available in \iql and their hierarchical order.}
+	\label{tab:binary-operators}
 \end{table}
 
 \paragraph{Basic Numerical Operations}
@@ -1524,6 +1485,74 @@ All Boolean expressions can be combined via disjunction (either double pipes \li
 \begin{Verbatim}[samepage=true]
 a>1 && b<2
 x==1 or x==3
+\end{Verbatim}
+
+\subsubsection{Assignment}
+\label{sec:assignment}
+
+\iql offers a special construct to assign (member) variables and at the same time verify the successful assignment with a Boolean result value. 
+\Cref{gram:assignment} illustrates the basic syntax for assignment operations inside a constraint, allowing the result of an arbitrary expression to be assigned to any previously defined member variable (or dynamically allocated variable).
+
+\begin{gram}[\synt{assignment}]
+	\label{gram:assignment}
+	\begin{grammar}	
+		<assignment> ::= <expression> `AS' (<member> | <variable>)
+	\end{grammar}
+	\diagsep
+	
+	\begin{rrdiag*}{setPredicate}
+		<expression> `AS' \sst <member> \\ <variable> \est
+	\end{rrdiag*}
+\end{gram}
+
+If a member variable is used for the assignment or the variable has already been used previously and thereby has been type-bound, the result type of the \synt{expression} has to be compatible!
+Assignment operations provide a Boolean return value that is \keyword{true} iff the assignment was successful and the (member) variable holds a non-null value.
+\paragraph{Examples:}
+
+\begin{Verbatim}[samepage=true]
+// global constraint over two tree nodes to fetch their first 
+// ancestor, failing if $x and $y do not have a common ancestor
+... HAVING ancestor($x, $y) AS $a
+\end{Verbatim}
+
+
+\subsubsection{Set Predicate}
+\label{sec:set-predicate}
+
+Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. 
+The entire expression evaluates to a Boolean value and will be \keyword{true} iff the input expression (left-most one) evaluates to the same value as any of the elements inside the set definition to the right (typically a list expression, cf. \cref{sec:primary-expressions} or \cref{gram:list-expression}). 
+See about equality operators in \cref{sec:binary-operation} on how elements are compared. 
+Note that methods or collections used inside the set definition are subject to the expansion rules described in \cref{sec:value-expansion}.
+The primary use case for set expressions is to greatly simplify the declaration of constraints for multiple alternative target values. 
+
+Set predicates can be directly negated (apart from wrapping~\ref{sec:wrapping} them and negating~\ref{sec:unary-operation} the entire expression) with an exclamation mark \lit{!} or the keyword \keyword{NOT} in front of the \keyword{IN} keyword. 
+If the input expression evaluates to an array-like object, the set predicate will expand its content and evaluate to \keyword{true} if at least \textit{one} of its elements is found to be contained in the set. 
+The set predicate can be universally quantified with a star \lit{*} or the \keyword{ALL} keyword in front to change the overall behavior such that the result will be \keyword{true} iff \textit{all} of the elements are contained in the set (or none of them are, if the set predicate is directly negated).
+
+\begin{gram}[\synt{setPredicate}]
+	\label{gram:set-predicate}
+	\begin{grammar}	
+		<setPredicate> ::= <expression> <all>? <not>? `IN' <expression>
+		
+		<all> ::=  `ALL' | `*'
+		
+		<not> ::=  `NOT' | `!'
+	\end{grammar}
+	\diagsep
+	
+	\begin{rrdiag*}{setPredicate}
+		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression>
+	\end{rrdiag*}
+\end{gram}
+
+\paragraph{Examples:}
+
+\begin{Verbatim}[samepage=true]
+someAnnotationValue IN {"NP","VP","-"}
+someAnnotationValue NOT IN {"NN","DET"}
+someAnnotationValue NOT IN {"NN","DET", STTS.getVerbTags()}
+"John" IN getLegalNames()
+fetchCharacterNamesInChapterOne() IN getOrcishNames()
 \end{Verbatim}
 
 \subsubsection{Ternary Operation}
@@ -2263,13 +2292,16 @@ These markers inherit all the rules of general tree markers, except that they ca
 \label{tab:tree-hierarchy-markers}
 \end{table}
 
-All the \todo{generation concept, explain that some tree methods in ICMF are optional, as such reverse indices can be inefficient}
+All the additional hierarchical markers in \cref{tab:tree-hierarchy-markers} operate purely on the vertical axis within a tree structure.
+
+
+\todo{generation concept, explain that some tree methods in ICMF are optional, as such reverse indices can be inefficient}
 
 \subsection{Tree Functions}
 \label{sec:tree-functions}
 
 \begin{table}[ht]\centering
-	\begin{tabular}{|p{0.20\textwidth}|p{0.25\textwidth}|p{0.52\textwidth}|}
+	\begin{tabular}{|p{0.20\textwidth}|p{0.25\textwidth}|p{0.46\textwidth}|}
 		\hline 
 		\textbf{Label} & \textbf{Argument Types} & \textbf{Result Type} \\ 
 		\hline 
@@ -2316,7 +2348,7 @@ All the \todo{generation concept, explain that some tree methods in ICMF are opt
 		\tok{`==' | `!='} \\ 
 		\tok{`AND' | `\&\&' | `OR' | `||'} 
 		\est <expression> \\ %binary op
-		<assignment> \\ %assignment op for later
+		<expression> `AS' (<member> | <variable>) \\ %assignment op for later
 		<expression> \sst \\ `ALL' \\ `*' \est \sst \\ `NOT' \\ `!' \est `IN' <expression> \\ %set predicate
 		<expression> `?' <expression> `:' <expression> \\ %ternary op
 		<loopExpression> % loop
