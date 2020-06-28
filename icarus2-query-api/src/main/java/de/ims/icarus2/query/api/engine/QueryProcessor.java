@@ -731,7 +731,7 @@ public class QueryProcessor {
 				// Universally quantified
 				quantifier.setQuantifierType(QuantifierType.ALL);
 			} else if(ctx.not()!=null) {
-				// Negated
+				// Existentially negated
 				quantifier.setQuantifierType(QuantifierType.EXACT);
 				quantifier.setValue(0);
 			} else if(ctx.PLUS()!=null) {

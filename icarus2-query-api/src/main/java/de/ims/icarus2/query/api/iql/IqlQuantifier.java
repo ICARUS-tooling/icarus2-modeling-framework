@@ -40,17 +40,18 @@ import it.unimi.dsi.fastutil.Hash.Strategy;
  */
 public class IqlQuantifier extends AbstractIqlQueryElement {
 
-	private static final IqlQuantifier ALL, NONE;
-	static {
-		ALL = new IqlQuantifier();
-		ALL.setQuantifierType(QuantifierType.ALL);
-		NONE = new IqlQuantifier();
-		NONE.setQuantifierType(QuantifierType.EXACT);
-		NONE.setValue(0);
+	public static IqlQuantifier all() {
+		IqlQuantifier q = new IqlQuantifier();
+		q.setQuantifierType(QuantifierType.ALL);
+		return q;
 	}
 
-	public static IqlQuantifier all() { return ALL; }
-	public static IqlQuantifier none() { return NONE; }
+	public static IqlQuantifier none() {
+		IqlQuantifier q = new IqlQuantifier();
+		q.setQuantifierType(QuantifierType.EXACT);
+		q.setValue(0);
+		return q;
+	}
 
 	public static final Strategy<IqlQuantifier> EQUALITY = new Strategy<IqlQuantifier>() {
 
