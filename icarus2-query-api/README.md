@@ -5,7 +5,7 @@
 
 ## Developer Notes
 
-Due to some obvious flaws in the ANTLR components for gradle and IDEs such as Eclipse, additional steps can be necessary in order to get the automatic processing of grammar files working. For Eclipse (using the ANTLR 4 IDE plugin), the following needed to be done manually:
+Due to some obvious flaws in the ANTLR components for gradle and IDEs such as Eclipse, additional steps can be necessary in order to get the automatic processing of grammar files working. For Eclipse (using the ANTLR 4 IDE plugin), the following needs to be done manually:
 
  - Run As "Generate ANTLR Recognizer" for every grammar file in the ``serc/main/antlr`` and ``src/test/antlr`` folders to have Eclipse create the launch configurations.
  - Modify the "External Tool Configuration" entries related to test grammars to also include ``-o build\generated-src\antlr\test\de\ims\icarus2\query\api\iql\antlr`` as argument.

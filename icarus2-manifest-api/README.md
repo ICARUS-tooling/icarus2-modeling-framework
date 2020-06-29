@@ -1,4 +1,4 @@
-# ICARUS2 Manifest Framework
+# ICARUS2 Manifest API
 
 ## Overview
 
