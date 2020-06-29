@@ -18,6 +18,7 @@ package de.ims.icarus2.model.standard.registry;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -563,7 +564,8 @@ public class DefaultCorpusManager implements CorpusManager {
 
 			// Throw all exceptions combined
 			if(!exceptionBuffer.isEmpty()) {
-				exceptionBuffer.setMessage("Failed to shutdown corpora");
+				exceptionBuffer.setFormattedMessage("Failed to shutdown %d of %d corpora",
+						_int(exceptionBuffer.getExceptionCount()), _int(pendingCorpora.size()));
 				throw exceptionBuffer.toException();
 			}
 		} finally {
