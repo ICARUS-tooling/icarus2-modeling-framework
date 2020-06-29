@@ -53,13 +53,13 @@ On top of the manifest API the modeling framework project defines the basic mode
 
 **Utility Projects**
 
-ICARUS2 completely abstracts away from any physical aspects for the consuming party related to corpus storage, format or other technical properties. This way it is completely irrelevant if the corpus data is being read from a file, some distributed web-locations, a database or created in real-time by some integrated text generation pipeline. Several utility projects exist within the ICARUS2 ecosystem to make pluggin-in certain corpus resources easier. Currently the `icarus2-file-driver-utils` project is the most mature one of those and it is (currently only) dedicated to reading arbitrarily complex tabular corpus data and transform it into ready to use in-memory representations.  
+ICARUS2 completely abstracts away from any physical aspects for the consuming party related to corpus storage, format or other technical properties. This way it is completely irrelevant if the corpus data is being read from a file, some distributed web-locations, a database or created in real-time by some integrated text generation pipeline. Several utility projects exist within the ICARUS2 ecosystem to make plugging-in certain corpus resources easier. Currently the `icarus2-file-driver-utils` project is the most mature one of those and it is (currently only) dedicated to reading arbitrarily complex tabular corpus data and transform it into ready to use in-memory representations.  
 
 ## Query API
 
 ## Examples
 
-Various parts of the ICARUS2 documentation use or reference ready to use examples. All of those examples are collected in the `icarus2-examples` project. The associated [README](icarus2-examples/README.md) lists the available code examples and serves as a good entry point when exploring the code base.
+Various parts of the ICARUS2 documentation use or reference ready to use code examples. All of those examples are collected in the `icarus2-examples` project. The associated [README](icarus2-examples/README.md) lists the available code examples and serves as a good entry point when exploring the code base.
 
 ## License
 
