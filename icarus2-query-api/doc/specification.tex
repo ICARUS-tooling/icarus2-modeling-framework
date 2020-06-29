@@ -2139,17 +2139,17 @@ However, globally accessible information or any data provided by surrounding con
 	\hline 
 	isLast & - & Node is the last in its context ($index = N$). \\  
 	\hline 
-	isAfter & int & Node occurs after designated position ($index > arg$). Legal values are: $1 < arg < N-1$ \\  
+	isAfter & int & Node occurs after designated position ($index > arg$). Legal values are: $1 \leq arg < N$. \\  
 	\hline 
-	isBefore & int & Node occurs before designated position ($index < arg$). Legal values are: $1 < arg < N$\\  
+	isBefore & int & Node occurs before designated position ($index < arg$). Legal values are: $1 < arg \leq N$. \\  
 	\hline 
-	isBetween & int, int & Node occurs inside designated interval ($arg_1 < index < arg_2$). Difference between $arg_1$ and $arg_2$ must be at least 2 for the function to evaluate. \\  
+	isInside & int, int & Node occurs inside designated interval ($arg_1 \leq index \leq arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$. \\  
 	\hline 
-	isOutside & int, int & Node occurs outside designated interval ($index < arg_1$ and $index>arg_2$). $arg_1$ must be less than or equal to $arg_2$.\\  
+	isOutside & int, int & Node occurs outside designated interval ($index < arg_1$ and $index>arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$. \\  
 	\hline 
-	isAt & int & Node occurs at specific position ($index = arg$). \\  
+	isAt & int & Node occurs at specific position ($index = arg$). Legal values are: $1 \leq arg \leq N$. \\  
 	\hline 
-	isNotAt & int & Node occurs at any position except the designated one ($index \neq arg$). \\  
+	isNotAt & int & Node occurs at any position except the designated one ($index \neq arg$). Legal values are: $1 \leq arg \leq N$. \\  
 	\hline 
 \end{tabular}
 \caption{Position markers provided by the default evaluation engine for \iql. The conditions in the last column assume a container of size \textit{N} as context. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
@@ -2243,17 +2243,17 @@ It can therefore make sense to define additional precedence constraints via glob
 		\hline 
 		isLastChild & - & Node is the last child of its parent ($childIndex = N-1$). \\  
 		\hline 
-		isChildAfter & int & Node occurs as child after designated position ($childIndex > arg$). \\  
+		isChildAfter & int & Node occurs as child after designated position ($childIndex > arg$). Legal values are: $1 \leq arg < N$. \\  
 		\hline 
-		isChildBefore & int & Node occurs as child before designated position ($childIndex < arg$). \\  
+		isChildBefore & int & Node occurs as child before designated position ($childIndex < arg$). Legal values are: $1 < arg \leq N$. \\  
 		\hline 
-		isChildBetween & int, int & Node occurs as child inside designated interval ($arg_1 < childIndex < arg_2$). Difference between $arg_1$ and $arg_2$ must be at least 2 for the function to evaluate. \\  
+		isChildInside & int, int & Node occurs as child inside designated interval ($arg_1 \leq childIndex \leq arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$. \\  
 		\hline 
-		isChildOutside & int, int & Node occurs as child outside designated interval ($childIndex < arg_1$ and $childIndex>arg_2$). $arg_1$ must be less than or equal to $arg_2$.\\  
+		isChildOutside & int, int & Node occurs as child outside designated interval ($childIndex < arg_1$ and $childIndex>arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$. \\  
 		\hline 
-		isChildAt & int & Node occurs as child at specific position ($childIndex = arg$). \\  
+		isChildAt & int & Node occurs as child at specific position ($childIndex = arg$). Legal values are: $1 \leq arg \leq N$. \\  
 		\hline 
-		isChildNotAt & int & Node occurs as child at any position except the designated one ($childIndex \neq arg$). \\  
+		isChildNotAt & int & Node occurs as child at any position except the designated one ($childIndex \neq arg$). Legal values are: $1 \leq arg \leq N$. \\  
 		\hline 
 	\end{tabular}
 	\caption{Positional markers for trees provided by the default evaluation engine for \iql. The conditions in the last column assume a parent node with \textit{N} children as context and $childIndex$ being the desired position of the node within its parent's list of children. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
@@ -2275,6 +2275,8 @@ These markers inherit all the rules of general tree markers, except that they ca
 	\hline 
 	isLeaf & - & Node is a leaf, i.e. it has no children. \\  
 	\hline 
+	isNoLeaf & - & Node is not a leaf, i.e. it has at least one child. \\  
+	\hline 
 	isIntermediate & - & Node is neither a designated root nor a leaf. \\  
 	\hline 
 	isGeneration & int & Node is a member of the $arg$-th generation of the parent node. Note that only values of $arg \geq 2$ make any sense, as per default parent-child nesting in tree constraints implies membership in the 1\textsuperscript{st} generation. \\  
@@ -2293,7 +2295,20 @@ These markers inherit all the rules of general tree markers, except that they ca
 \end{table}
 
 All the additional hierarchical markers in \cref{tab:tree-hierarchy-markers} operate purely on the vertical axis within a tree structure.
+Four of them (\query{isRoot}, \query{isLeaf}, \query{isNoLeaf} and \query{isIntermediate}) are based on the presence or absence of child nodes and/or a parent.
+The remaining markers use the concept of \textit{generations}\footnote{Also often called ``levels'' in tree structures.} in the tree.
+Given a tree structure $T$ and the root node $R$, the set of nodes in $T$ are partitioned into disjoint sets of generations $G_0$ to $G_n$ where $n$ is the height of $T$ and $G_i$ is the set of nodes belonging to the $i$-th generation, that is all the nodes with a depth of $i$ (i.e. path distance $i$ to $R$). 
+Note that $R$ is the only member in $G_0$ and $G_n$ can only contain leaf nodes.
 
+If no generation markers are used within a node constraint and the node is nested, a direct parent-child relation is assumed, which is equivalent ti \query{isGeneration(1)}.
+Nodes that represent the root of a tree query can also use generation-based markers to indicate where in a prospective target tree the associated item should be located.
+Regular tree hierarchy markers can also be combined with generation-based markers to  further specify the location within a tree.
+For instance, \query{[\$x: [isGenerationAfter(2) \&\& isNoLeaf]]} will match any node that is nested at least 3 steps deep within \member{x} but ignores leaves.
+The \query{isRoot} marker however cannot be combined with any other hierarchy-related markers, as only designated roots in the target structure can match it and the only sensible combinations would be with normal (horizontal) position markers (\ref{sec:position-markers}).
+
+\paragraph{Evaluation Performance}
+\noindent Tree-related methods for fetching hierarchical information (such as height and depth of a node) are optional in \ac{icmf}.
+As a result the \ac{iqp} 
 
 \todo{generation concept, explain that some tree methods in ICMF are optional, as such reverse indices can be inefficient}
 
