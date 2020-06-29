@@ -22,7 +22,7 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -31,9 +31,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -55,6 +57,9 @@ import de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorageTest;
 import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
+import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.GrowingAnnotationBundle;
+import de.ims.icarus2.test.TargetedTest;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.random.Randomized;
 import de.ims.icarus2.test.util.Pair;
@@ -214,7 +219,9 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 		Stream<DynamicTest> testComplexAnnotationStorageSupplierOfAnnotationBundle() {
 			return bundleFactories().map(info -> dynamicTest(
 					info.first,
-					() -> assertNotNull(new ComplexAnnotationStorage(info.second))));
+					() -> assertThat(new ComplexAnnotationStorage(info.second))
+						.extracting(ComplexAnnotationStorage::getBundleFactory)
+						.isSameAs(info.second)));
 		}
 
 		/**
@@ -225,7 +232,9 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 			return bundleFactories().map(info  -> dynamicContainer(info.first,
 					IntStream.of(UNSET_INT, 1, 10, 100, 10_000).mapToObj(capacity ->
 							dynamicTest(String.valueOf(capacity),
-									() -> assertNotNull(new ComplexAnnotationStorage(capacity, info.second))))));
+									() -> assertThat(new ComplexAnnotationStorage(capacity, info.second))
+										.extracting(ComplexAnnotationStorage::getBundleFactory)
+										.isSameAs(info.second)))));
 		}
 
 		/**
@@ -289,5 +298,128 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 
 			return singleton(valueType);
 		}
+	}
+
+	@Nested
+	class Bundles {
+
+		abstract class TestBase<B extends AnnotationBundle> implements TargetedTest<B> {
+
+			protected List<String> collectKeys(B bundle) {
+				List<String> keys = new ArrayList<>();
+				assertThat(bundle.collectKeys(keys::add));
+				return keys;
+			}
+
+			protected Map<String, Object> mapping(int size) {
+				return keys().stream()
+						.limit(size)
+						.collect(Collectors.toMap(k -> k, k -> new Object()));
+			}
+
+			@Test
+			void testFill() {
+				Map<String, Object> mapping = mapping(5);
+				B bundle = create();
+
+				for(Entry<String, Object> e : mapping.entrySet()) {
+					assertThat(bundle.setValue(e.getKey(), e.getValue()))
+						.isEqualTo(true);
+				}
+			}
+
+			@Test
+			void testAddRedundant() {
+				Map<String, Object> mapping = mapping(5);
+				B bundle = create();
+				mapping.forEach(bundle::setValue);
+
+				for(Entry<String, Object> e : mapping.entrySet()) {
+					assertThat(bundle.setValue(e.getKey(), e.getValue()))
+						.isEqualTo(false);
+				}
+			}
+
+			@Test
+			void testKeys() {
+				Map<String, Object> mapping = mapping(5);
+				B bundle = create();
+				mapping.forEach(bundle::setValue);
+
+				assertThat(collectKeys(bundle))
+					.containsExactlyInAnyOrderElementsOf(mapping.keySet());
+			}
+
+			@Test
+			void testLookup() {
+				Map<String, Object> mapping = mapping(5);
+				B bundle = create();
+				mapping.forEach(bundle::setValue);
+
+				for(Entry<String, Object> e : mapping.entrySet()) {
+					assertThat(bundle.getValue(e.getKey()))
+						.describedAs("Mapping for key %s", e.getKey())
+						.isSameAs(e.getValue());
+				}
+
+				assertThat(bundle.getValue("myFantasyKeyXXX")).isNull();
+			}
+
+			@Test
+			void testDelete() {
+				Map<String, Object> mapping = mapping(5);
+				B bundle = create();
+				mapping.forEach(bundle::setValue);
+
+				for(String key : mapping.keySet()) {
+					assertThat(bundle.setValue(key, null)).isTrue();
+					assertThat(bundle.getValue(key)).isNull();
+				}
+			}
+		}
+
+		@Nested
+		class GrowingBundle extends TestBase<GrowingAnnotationBundle> {
+
+			@Override
+			public Class<?> getTestTargetClass() { return GrowingAnnotationBundle.class; }
+
+			@Override
+			public GrowingAnnotationBundle createTestInstance(TestSettings settings) {
+				return settings.process(new GrowingAnnotationBundle());
+			}
+
+			@Test
+			void testGrow() {
+				final int limit = GrowingAnnotationBundle.ARRAY_THRESHOLD;
+				GrowingAnnotationBundle bundle = new GrowingAnnotationBundle(limit);
+
+				for (int i = 0; i < limit; i++) {
+					bundle.setValue("key_"+i, new Object());
+					assertThat(bundle.isMap()).isFalse();
+				}
+
+				bundle.setValue("threshold_key", new Object());
+				assertThat(bundle.isMap()).isTrue();
+			}
+
+			@Test
+			void testShrink() {
+				final int limit = GrowingAnnotationBundle.ARRAY_THRESHOLD;
+				GrowingAnnotationBundle bundle = new GrowingAnnotationBundle(limit);
+
+				for (int i = 0; i < limit+1; i++) {
+					bundle.setValue("key_"+i, new Object());
+				}
+				assertThat(bundle.isMap()).isTrue();
+
+				assertThat(bundle.setValue("key_0", null)).isTrue();
+				assertThat(bundle.isMap()).isFalse();
+				assertThat(bundle.setValue("key_1", null)).isTrue();
+				assertThat(bundle.isMap()).isFalse();
+			}
+		}
+
+		//TODO test classes for the other 2 (simple) bundle types
 	}
 }

@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.unbound;
 
-import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
@@ -24,6 +23,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -135,6 +136,18 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 		this.bundleFactory = bundleFactory;
 	}
+
+	@VisibleForTesting
+	Supplier<AnnotationBundle> getBundleFactory() { return bundleFactory; }
+
+	@VisibleForTesting
+	AnnotationBundle getNoEntryValues() { return noEntryValues; }
+
+	@VisibleForTesting
+	Map<String, ValueType> getValueTypes() { return valueTypes; }
+
+	@VisibleForTesting
+	boolean isAllowUnknownKeys() { return allowUnknownKeys; }
 
 	/**
 	 * @see de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage#addNotify(de.ims.icarus2.model.api.layer.AnnotationLayer)
@@ -437,7 +450,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		boolean collectKeys(Consumer<String> buffer);
 	}
 
-	public static class LargeAnnotationBundle extends Object2ObjectOpenHashMap<String, Object> implements AnnotationBundle {
+	public static final class LargeAnnotationBundle extends Object2ObjectOpenHashMap<String, Object> implements AnnotationBundle {
 
 		private static final long serialVersionUID = -3058615796981616593L;
 
@@ -468,7 +481,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 	}
 
-	public static class CompactAnnotationBundle implements AnnotationBundle {
+	public static final class CompactAnnotationBundle implements AnnotationBundle {
 
 		public static final int DEFAULT_CAPACITY = 6;
 
@@ -532,7 +545,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		}
 	}
 
-	public static class GrowingAnnotationBundle implements AnnotationBundle {
+	public static final class GrowingAnnotationBundle implements AnnotationBundle {
 
 		public static final int DEFAULT_CAPACITY = 8;
 		public static final int ARRAY_THRESHOLD = 16;
@@ -545,10 +558,19 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 
 		/**
 		 * Creates a new compact bundle with initial storage for a number
-		 * of entries equal to the {@code capacity} parameter.
+		 * of entries equal to the {@code capacity} parameter or {@link #DEFAULT_CAPACITY}
+		 * if the supplied {@code capacity} is too small.
 		 */
 		public GrowingAnnotationBundle(int capacity) {
+			if(capacity<DEFAULT_CAPACITY) {
+				capacity = DEFAULT_CAPACITY;
+			}
 			data = new Object[capacity*2];
+		}
+
+		@VisibleForTesting
+		boolean isMap() {
+			return data instanceof Map;
 		}
 
 		/**
@@ -582,6 +604,9 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 					// Seek and remove entry
 					for(int i=0; i<array.length-1; i+=2) {
 						if(array[i]!=null && array[i].equals(key)) {
+							if(array[i+1] == null) {
+								return false;
+							}
 							array[i] = null;
 							array[i+1] = null;
 							return true;
@@ -591,6 +616,9 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 					// Seek and insert or update entry
 					for(int i=0; i<array.length-1; i+=2) {
 						if(array[i]==null || array[i].equals(key)) {
+							if(value.equals(array[i+1])) {
+								return false;
+							}
 							array[i] = key;
 							array[i+1] = value;
 							return true;
@@ -612,7 +640,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 					}
 				}
 			} else {
-				doMapOp(key, value);
+				return doMapOp(key, value);
 			}
 
 			return false;
@@ -638,20 +666,33 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 			@SuppressWarnings("unchecked")
 			Map<String, Object> map = (Map<String, Object>)data;
 
-			checkState(map.size()>ARRAY_THRESHOLD);
-			//TODO
+			if(map.size()>ARRAY_THRESHOLD) {
+				return;
+			}
+
+			int size = Math.max(DEFAULT_CAPACITY, map.size());
+			Object[] array = new Object[size*2];
+			int pos = 0;
+			for(Map.Entry<String, Object> e : map.entrySet()) {
+				array[pos++] = e.getKey();
+				array[pos++] = e.getValue();
+			}
+
+			data = array;
 		}
 
-		private void doMapOp(String key, Object value) {
+		private boolean doMapOp(String key, Object value) {
+			boolean result;
 			@SuppressWarnings("unchecked")
 			Map<String, Object> map = (Map<String, Object>)data;
 			if(value==null) {
-				map.remove(key);
+				result = map.remove(key) != null;
 				maybeShrink();
 			} else {
-				//TODO this assignment was missing. need to check if simply throwing the mapping into the map is ok
-				map.put(key, value);
+				//TODO we test for object identity here, not content, maybe change to "!value.equals(map.put(key, value))" ?
+				result = map.put(key, value) != value;
 			}
+			return result;
 		}
 
 		/**
