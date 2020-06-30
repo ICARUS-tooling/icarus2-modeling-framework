@@ -53,9 +53,11 @@ On top of the manifest API the modeling framework project defines the basic mode
 
 **Utility Projects**
 
-ICARUS2 completely abstracts away from any physical aspects for the consuming party related to corpus storage, format or other technical properties. This way it is completely irrelevant if the corpus data is being read from a file, some distributed web-locations, a database or created in real-time by some integrated text generation pipeline. Several utility projects exist within the ICARUS2 ecosystem to make plugging-in certain corpus resources easier. Currently the `icarus2-file-driver-utils` project is the most mature one of those and it is (currently only) dedicated to reading arbitrarily complex tabular corpus data and transform it into ready to use in-memory representations.  
+ICARUS2 completely abstracts away from any physical aspects for the consuming party related to corpus storage, format or other technical properties. This way it is completely irrelevant if the corpus data is being read from a file, some distributed web-locations, a database or created in real-time by some integrated text generation pipeline. Several utility projects exist within the ICARUS2 ecosystem to make plugging-in certain corpus resources easier. Currently the `icarus2-file-driver-utils` project is the most mature one of those (README found [here](icarus2-file-driver-utils/README.md)) and it is (currently only) dedicated to reading arbitrarily complex tabular corpus data and transform it into ready to use in-memory representations.  
 
 ## Query API
+
+ICARUS2 applies a novel approach to corpus querying that combines the performance benefits from dedicated (database) storage and retrieval solutions with a maximum of query expressiveness in a hybrid architecture. All components related to the query workflow are bundled in the `icarus2-query-api` project, including the default implementation of the query processor. The README is located [here](icarus2-query-api/README.md) and a very detailed specification and introduction for the ICARUS2 query language used by this framework is available [here](icarus2-query-api/doc/specification.pdf) as PDF. Note that the query API and associated components are all work in progress and as such still subject to frequent changes in design. 
 
 ## Examples
 
@@ -63,6 +65,8 @@ Various parts of the ICARUS2 documentation use or reference ready to use code ex
 
 ## License
 
-ICARUS2 is licensed under an [Apache License 2.0](LICENSE) open-source license.
+ICARUS2 is licensed under an [Apache 2.0](LICENSE) open-source license.
 
 ## References
+
+TODO
