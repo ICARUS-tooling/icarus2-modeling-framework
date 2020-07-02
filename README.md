@@ -57,7 +57,7 @@ ICARUS2 completely abstracts away from any physical aspects for the consuming pa
 
 ## Query API
 
-ICARUS2 applies a novel approach to corpus querying that combines the performance benefits from dedicated (database) storage and retrieval solutions with a maximum of query expressiveness in a hybrid architecture. All components related to the query workflow are bundled in the `icarus2-query-api` project, including the default implementation of the query processor. The README is located [here](icarus2-query-api/README.md) and a very detailed specification and introduction for the ICARUS2 query language used by this framework is available [here](icarus2-query-api/doc/specification.pdf) as PDF. Note that the query API and associated components are all work in progress and as such still subject to frequent changes in design. 
+ICARUS2 applies a novel approach to corpus querying that combines the performance benefits from dedicated (database) storage and retrieval solutions with a maximum of query expressiveness in a hybrid architecture. All components related to the query workflow are bundled in the `icarus2-query-api` project, including the default implementation of the query processor. The README is located [here](icarus2-query-api/README.md) and a very detailed specification and introduction for the ICARUS2 query language used by this framework is available [here](icarus2-query-api/doc/iql_specification.pdf) as PDF. Note that the query API and associated components are all work in progress and as such still subject to frequent changes in design. 
 
 ## Examples
 

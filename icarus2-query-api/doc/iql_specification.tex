@@ -41,7 +41,7 @@
 \DeclareAcronym{rdb}{short = RDB, long = relational database}
 \DeclareAcronym{iql}{short = IQL, long = ICARUS2 Query Language}
 \DeclareAcronym{icmf}{short = ICMF, long = ICARUS2 Corpus Modeling Framework}
-\DeclareAcronym{iqp}{short = IQP, long = ICARUS2 Query Processor}
+\DeclareAcronym{icqp}{short = ICQP, long = ICARUS2 Corpus Query Processor}
 \DeclareAcronym{kwic}{short = KWIC, long = keyword-in-context}
 \DeclareAcronym{uoi}{short = UoI, long = unit-of-interest, long-plural-form = units-of-interest}
 
@@ -1839,7 +1839,7 @@ This quantifier combination ensures that either all targets in a certain context
 A node's inner content can optionally have an initial \textbf{member label} (identifier with a colon \lit{:} afterwards) to link this node to a previously defined member binding (\ref{sec:bindings}).
 Such as binding restricts the type of corpus member that the node can be matched against.
 It also provides a point of reference that subsequent constraints (e.g. in the global constraints section, cf. \cref{sec:global-constraints}) can use to access information of the target the node has been matched against.
-Note that cross-referencing between nodes from within local constraints (such as in \verb|[$x:][$y: pos!=$x.pos]|) is discouraged\footnote{The reason behind this is that the \ac{iqp} per default is not required to honor the order of nodes defined in a query or the linking relations between them when planning the automaton for evaluation. As such there is no guarantee that node \member{x} will have already been matched against a valid target when the cross-reference constraint inside \member{y} is evaluated. This would cause an error during evaluation time to occur, which in turn will abort the entire search.} and global constraints should be used for this.
+Note that cross-referencing between nodes from within local constraints (such as in \verb|[$x:][$y: pos!=$x.pos]|) is discouraged\footnote{The reason behind this is that the \ac{icqp} per default is not required to honor the order of nodes defined in a query or the linking relations between them when planning the automaton for evaluation. As such there is no guarantee that node \member{x} will have already been matched against a valid target when the cross-reference constraint inside \member{y} is evaluated. This would cause an error during evaluation time to occur, which in turn will abort the entire search.} and global constraints should be used for this.
 This approach guarantees that by the time such cross-reference constraints (or ``joins'', to use database terminology) are evaluated all involved member variables will be assigned preliminary candidates.
 
 Nodes can also optionally define \textbf{local constraints} that must evaluate to \keyword{true} for target item to be considered as result candidate.
@@ -1883,7 +1883,7 @@ In that case the type indicator gets split into two separate parts\footnote{When
 Note that the same guidelines for cross-referencing from within local constraints that were mentioned above in the section about nodes, also apply to local edge constraints: 
 Correct evaluation of an edge's local constraints must not rely on the availability of cross-referenced external nodes (including the edge's own source and target nodes) or edges.
 As usual global constraints should be used to define constraints that link individual elements such as edges to other (external) parts of the payload.
-The section about global constraints (\ref{sec:global-constraints}) contains further hints on the optimization the \ac{iqp} implements in order to prevent unnecessary exploration of the search space.
+The section about global constraints (\ref{sec:global-constraints}) contains further hints on the optimization the \ac{icqp} implements in order to prevent unnecessary exploration of the search space.
 
 The \textbf{quantification} of edges follows slightly different rules as compared to regular nodes.
 Every edge can have \textbf{up to one} explicit quantifier declaration attached to it, either on the source or target node.
@@ -1891,7 +1891,7 @@ If no quantifier is present, the entire edge is by default existentially quantif
 The node not bearing any quantifier is existentially quantified (or ``fixed'') and the quantifier on the other node acts as an indicator for the multiplicity of the edge itself.
 The following examples illustrate some use cases for quantification on edges:
 
-\begin{Verbatim}
+\begin{Verbatim}[samepage=true]
 // a node x linked to 3 nodes that match y
 [$x:]--> <3>[$y:]
 // 3 nodes matching x that are linked to the same node y   
@@ -1933,7 +1933,7 @@ Two node statements are linked with the \keyword{OR} keyword to mark them as ``e
 Since this opens up recursion, a complex disjunction may contain more than two node statements in total.
 Note that the order of node statements in a disjunction does not imply a specific priority the evaluation engine has to follow.
 For illustration, the second example below might match an instance of \verb|[$y:]| first:
-\begin{Verbatim}
+\begin{Verbatim}[samepage=true]
 [$x:] or [$y:]          // x or y
 [$x:] or [$y:] or [$z]  // x or y or z
 [$x:] or {[$y:][$z]}    // either x alone or a sequence y+z
@@ -1989,7 +1989,7 @@ Located between mere sequences (\ref{sec:sequence-constraints}) and graphs (\ref
 To simplify query syntax, \iql uses a similar approach as the original ICARUS project, which in turn took inspiration from PML-TQ:
 To signal parent-child relations, child nodes are nested within their respective parent, effectively making each node yet another scope for a sequence of child nodes.
 Contrary to bare sequence constraints (\ref{sec:sequence-constraints}) the order of (child) nodes to be matched in the corpus is \textbf{not} implicitly defined by the order of constraint nodes!
-Instead, the \keyword{ORDERED} or \keyword{ADJACENT} keywords need to be used explicitly to signal that a specific kind of order should be honored.
+Instead, the \keyword{ORDERED} or \keyword{ADJACENT} keywords need to be used explicitly to signal that a specific kind of order should be honored.\footnote{Also note that \keyword{ORDERED} and \keyword{ADJACENT} when used inside tree nodes are referring to the order of nodes as defined by the parent, \textbf{not} their overall position when projected onto the underlying foundation layer!}
 Apart from this little addendum tree constraints behave basically the same as nested sequence constraints:
 They can be individually quantified or existentially negated, as well as grouped and linked via the \keyword{OR} keyword to expression disjunctions.
 
@@ -2042,9 +2042,9 @@ Below explanations are primarily intended to specify the behavior in the presenc
 \caption{\label{fig:tree-matching} Example tree with highlighted hits for the simple tree query \query{[\$x:~[\$y:]]}.}
 \end{wrapfigure}
 
-Consider a simple tree query \query{[\$x:~[\$y:]]} where x and y are bound nodes with individual constraints.
-The nodes X\textsubscript{n} or Y\textsubscript{n} in the example tree (\cref{fig:tree-matching}) then denote the n-th node that match the constraints of query nodes x and y, respectively.
-The nodes A\textsubscript{1} to A\textsubscript{6} are placeholders for nodes that match neither \texttt{x} nor \texttt{y}.
+Consider a simple tree query \query{[\$x:~[\$y:]]} where \member{x} and \member{y} are bound nodes with individual constraints.
+The nodes X\textsubscript{n} or Y\textsubscript{n} in the example tree (\cref{fig:tree-matching}) then denote the $n$-th node that match the constraints of query nodes \member{x} and \member{y}, respectively.
+The nodes A\textsubscript{1} to A\textsubscript{6} are placeholders for nodes that match neither \member{x} nor \member{y}.
 
 The tree contains 3 possible matches for the query, specifically the pairs \texttt{\{X\textsubscript{1},Y\textsubscript{1}\}}, \texttt{\{X\textsubscript{1},Y\textsubscript{2}\}} and \texttt{\{X\textsubscript{2},Y\textsubscript{2}\}}.
 \todo{expand on the order of matches}
@@ -2086,7 +2086,7 @@ Subsequently, for a node of size $N$ this will produce $N-1$ candidates that are
 \cref{sec:utility} lists several families of utility markers and functions that can be used to signal the evaluation engine that certain local constraints are to be treated as special filters.
 With the use of those utility markers, above query looks like the following and will be vastly more efficient to evaluate:
 \begin{Verbatim}[samepage=true]
-FIND [$x: [$y: isLast]]
+FIND [$x: [$y: isLastChild]]
 \end{Verbatim}
 Similarly global constraints are not the place to perform filtering on general properties of the current \ac{uoi}, such as sentence length (use the \keyword{FILTER BY} expression for that, cf. \cref{sec:filter-constraints}).
 
@@ -2097,7 +2097,7 @@ Consider a query \query{FIND~[\$x:~[\$y:~[\$z]]] HAVING \$x.pos!=\$y.pos} that l
 With the default two-stage evaluation process described above this would result in a serious overhead when evaluating a target tree: 
 For every successful match of \query{[\$x:~[\$y:]]} the engine would continue to look for children of \member{y} matching \member{z}, regardless of \member{x} and \member{y} satisfying the global constraint.
 
-Through a optimization technique dubbed \textit{constraint hoisting} the \ac{iqp} will try to work around this performance issue and attach global constraints to the nodes in the (tree) automaton that matches a certain part of the query.
+Through a optimization technique dubbed \textit{constraint hoisting} the \ac{icqp} will try to work around this performance issue and attach global constraints to the nodes in the (tree) automaton that matches a certain part of the query.
 In the example above the matcher would evaluate the global constraint \query{\$x.pos!=\$y.pos} as soon as it successfully identified candidates for \member{x} and \member{y}, thereby reducing the overhead of searching for potential candidates for \member{z} that would ultimately fail due to \member{x} and \member{y} not satisfying the global constraint.
 
 Note that only very specific global constraints can successfully be hoisted! 
@@ -2113,7 +2113,7 @@ There be dragons\dots
 \section{Utility Markers \& Functions}
 \label{sec:utility}
 
-The following utility features are provided by the \ac{iqp} but are \textbf{not} part of the core specification. 
+The following utility features are provided by the \ac{icqp} but are \textbf{not} part of the core specification. 
 As such it is possible for engine extensions to override them, change their behavior or completely remove them if desired.
 They are listed here as per default they all are available and provide valuable improvements for performance and usability.
 
@@ -2180,7 +2180,7 @@ This means that any other type of argument will be automatically converted to an
 However, if the associated switch (\ref{sec:json-ld-switches}) is active\footnote{This switch is off by default as it interferes with the automatic type conversion of arguments. If it is active, arguments must explicitly be cast if not already an integer or floating-point number. If the switch is not active, any floating-point argument will be cast to an integer (typically 0 if any of the arguments are intended to be reverse indices).}, position markers can use relative arguments in the form of floating-point numbers.
 Relative indices are expected to be in the open interval $(0..1)$ (or $(-1..0)$ for negative reverse indices) and are treated as percentages of the total size of the surrounding container.
 The following examples illustrate this approach (assume the markers are used inside a token node that is directly hosted within a sentence):
-\begin{Verbatim}
+\begin{Verbatim}[samepage=true]
 // the token can only occur in the first half of the sentence
 isBefore(0.5)
 
@@ -2197,7 +2197,7 @@ As a general rule, relative indices should only be used with regular (positive) 
 \iql allows multiple position markers to occur in the same constraint expression, with the following condition:
 When the expression is viewed in conjunctive normal form, positional markers may not be mixed with non-marker terms inside a single clause.
 Multiple marker-only clauses are allowed however.
-\begin{Verbatim}
+\begin{Verbatim}[samepage=true]
 // legal use cases
 [isLast]
 [pos!="NN" && isBefore(10)]
@@ -2263,15 +2263,17 @@ It can therefore make sense to define additional precedence constraints via glob
 \paragraph{Hierarchy Markers}
 Apart from the horizontal domain described above, tree markers also cover the hierarchical aspect of tree structures.
 A series of additional markers is available to specify a node's vertical location in the tree, as shown in \cref{tab:tree-hierarchy-markers}.
-These markers inherit all the rules of general tree markers, except that they cannot be used with relative indices.%\footnote{The reason is that all the hierarchy-related methods in \ac{icmf} are optional and as such a tree object cannot be expected to provide ready-to-use information about its depths or the heights of individual subtrees. Subsequently the \ac{iqp} would have to analyze a tree first before being able to construct an efficient matcher for it, which defeats the purpose of}
+These markers inherit all the rules of general tree markers, except that they cannot be used with relative indices.%\footnote{The reason is that all the hierarchy-related methods in \ac{icmf} are optional and as such a tree object cannot be expected to provide ready-to-use information about its depths or the heights of individual subtrees. Subsequently the \ac{icqp} would have to analyze a tree first before being able to construct an efficient matcher for it, which defeats the purpose of}
 
 \begin{table}[ht]\centering
-\begin{tabular}{|p{0.21\textwidth}|p{0.14\textwidth}|p{0.56\textwidth}|}
+\begin{tabular}{|p{0.22\textwidth}|p{0.14\textwidth}|p{0.55\textwidth}|}
 	\hline 
 	\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
 	\hline 
 	\hline  
 	isRoot & - & Node is a designated root in the structure. \\ 
+	\hline 
+	isNoRoot & - & Node has a parent. \\ 
 	\hline 
 	isLeaf & - & Node is a leaf, i.e. it has no children. \\  
 	\hline 
@@ -2295,22 +2297,45 @@ These markers inherit all the rules of general tree markers, except that they ca
 \end{table}
 
 All the additional hierarchical markers in \cref{tab:tree-hierarchy-markers} operate purely on the vertical axis within a tree structure.
-Four of them (\query{isRoot}, \query{isLeaf}, \query{isNoLeaf} and \query{isIntermediate}) are based on the presence or absence of child nodes and/or a parent.
+The initial lot of them (\query{isRoot}, \query{isNoRoot}, \query{isLeaf}, \query{isNoLeaf} and \query{isIntermediate}) are based on the presence or absence of child nodes and/or a parent.
 The remaining markers use the concept of \textit{generations}\footnote{Also often called ``levels'' in tree structures.} in the tree.
 Given a tree structure $T$ and the root node $R$, the set of nodes in $T$ are partitioned into disjoint sets of generations $G_0$ to $G_n$ where $n$ is the height of $T$ and $G_i$ is the set of nodes belonging to the $i$-th generation, that is all the nodes with a depth of $i$ (i.e. path distance $i$ to $R$). 
 Note that $R$ is the only member in $G_0$ and $G_n$ can only contain leaf nodes.
+Generations in structural \iql queries are always calculated based on the immediate parent of the node declaration that contains the marker(s).
+If a constraint related to the nesting distance between transitively nested nodes or other non-immediate relations is desired, global constraints (\ref{sec:global-constraints}) should be used, possibly employing dedicated tree functions (\ref{sec:tree-functions}).
+
 
 If no generation markers are used within a node constraint and the node is nested, a direct parent-child relation is assumed, which is equivalent ti \query{isGeneration(1)}.
 Nodes that represent the root of a tree query can also use generation-based markers to indicate where in a prospective target tree the associated item should be located.
 Regular tree hierarchy markers can also be combined with generation-based markers to  further specify the location within a tree.
 For instance, \query{[\$x: [isGenerationAfter(2) \&\& isNoLeaf]]} will match any node that is nested at least 3 steps deep within \member{x} but ignores leaves.
 The \query{isRoot} marker however cannot be combined with any other hierarchy-related markers, as only designated roots in the target structure can match it and the only sensible combinations would be with normal (horizontal) position markers (\ref{sec:position-markers}).
+If the \query{isRoot} marker is being used within a nested node, an error will be issued as the query will be impossible to satisfy.%TODO mention that engine does this in general for obviously erroneous queries?
 
 \paragraph{Evaluation Performance}
 \noindent Tree-related methods for fetching hierarchical information (such as height and depth of a node) are optional in \ac{icmf}.
-As a result the \ac{iqp} 
+As a result the \ac{icqp} might have to compute the data required for evaluating a query at runtime, generating some additional overhead from tree traversals. 
+This is especially critical for hierarchical markers that use reverse indices, as knowledge about the overall tree height is required to effectively translate relative indices into absolute intervals of legal (generation) values.
 
-\todo{generation concept, explain that some tree methods in ICMF are optional, as such reverse indices can be inefficient}
+\subsection{Sequence Functions}
+\label{sec:sequence-functions}
+
+\begin{table}[ht]\centering
+	\begin{tabular}{|p{0.18\textwidth}|p{0.14\textwidth}|p{0.12\textwidth}|p{0.45\textwidth}|}
+		\hline 
+		\textbf{Label} & \textbf{Arguments} & \textbf{Result} & Description \\ 
+		\hline 
+		\hline  
+		isAdjacent & node[] & Boolean & Check whether the given nodes form a continuous interval on the utnerlying foundation layer. \\ 
+		\hline  
+		isOrdered & node[] & Boolean & Check whether the given nodes form an ordered sequence, as indicated by their begin indices, allowing for nodes to overlap. \\ 
+		\hline  
+		isOrderedDisjoint & node[] & Boolean & Check whether the given nodes form a disjoint ordered sequence, as indicated by their begin indices. \\ 
+		\hline 
+	\end{tabular}
+	\caption{Utility functions for advanced sequence matching. Primarily these functions are intended to provide equivalents for the position markers in \cref{sec:position-markers} usable in global constraints and batch methods for checking the horizontal arrangement of nodes.}
+	\label{tab:sequence-functions}
+\end{table}
 
 \subsection{Tree Functions}
 \label{sec:tree-functions}
@@ -2318,18 +2343,43 @@ As a result the \ac{iqp}
 \begin{table}[ht]\centering
 	\begin{tabular}{|p{0.20\textwidth}|p{0.25\textwidth}|p{0.46\textwidth}|}
 		\hline 
-		\textbf{Label} & \textbf{Argument Types} & \textbf{Result Type} \\ 
+		\textbf{Label} & \textbf{Arguments} & \textbf{Result} \\ 
 		\hline 
 		\hline  
 		ancestor & array of nodes & node \\ 
 		\hline 
 	\end{tabular}
-	\caption{Utility functions for advanced tree matching. Primarily these functions are intended to complement the top-down tree matching strategy employed by the \ac{iqp} with bottom-up evaluation.}
+	\caption{Utility functions for advanced tree matching. Primarily these functions are intended to complement the top-down tree matching strategy employed by the \ac{icqp} with bottom-up evaluation.}
 	\label{tab:tree-functions}
 \end{table}
 
+The nested style of defining tree queries in \iql in top-down manner and the associated matcher in the \ac{icqp} also producing top-down automata for evaluation cause some obvious shortcomings:
+For problems in bottom-up style, for instance ``Find the first common ancestor of adjacent phrases x and y'' it can be more intuitive (and usually more efficient wrt evaluation) to define the query bottom-up.
+Using the tree functions listed in \cref{tab:tree-functions} a simple query for this question could look like the following: 
+\begin{Verbatim}[samepage=true]
+FIND ADJACENT [$x:][$y:] HAVING ancestor($x,$y) AS $a}
+\end{Verbatim}
+This will first try to find two adjacent instances for \member{x} and \member{y} from the set of nodes in the target tree and then use the \query{ancestor(\$x,\$y)} method to fetch their first common ancestor node and assign it to \member{a} for further use.
+The same can be achieved in a top-down fashion with a slightly more verbose query:
+\begin{Verbatim}[samepage=true]
+FIND [$a: childCount>=2
+    [$x: isAnyGeneration] 
+    [$y: isAnyGeneration]]
+HAVING isAdjacent($x, $y)
+\end{Verbatim}
+Besides the differences in appearance those two approaches also differ greatly in their respective evaluation complexity.
+While the bottom-up query can be efficiently solved in $\mathcal{O}(nh)$ time for trees with $n$ nodes and height $h$ \footnote{Construction of a reverse lookup between indices and the nodes beginning/ending there and subsequent production of adjacent pairs for \member{x} and \member{y} requires $\mathcal{O}(n)$ time. Without a dedicated utility data structure, determining the first common ancestor of \member{x} and \member{y} is linear in the maximum depth of the two nodes.}, the top-down query results in a vastly more expensive search.
+Since node \member{a} does not provide any strong filter mechanism besides needing at least 2 child nodes, the matcher will have to move the search tree through the target tree and repeatedly check any possible combination of descendant nodes matching \member{x} and \member{y} to be adjacent.
+
 \subsection{Graph Functions}
 \label{sec:graph-functions}
+
+There be dragons\dots
+
+(Content of the this section will be added as \iql evolves)
+%TODO once tree evaluation is fully implemented, start the graph part
+
+
 
 \begin{appendices}
 \section{Extended Grammar Diagrams}
