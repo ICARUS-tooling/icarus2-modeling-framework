@@ -1,0 +1,200 @@
+
+\usepackage{standalone}
+\usepackage[hscale=0.75,vscale=0.8]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{fontspec}
+\usepackage{latexsym}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{multicol}
+\usepackage{xstring}
+\usepackage{xspace}
+\usepackage{todonotes}
+\usepackage[toc,page]{appendix}
+\usepackage{comment} % for commenting out the huge draft lists
+%\usepackage{inconsolata} % to have Consolas as font for verbatim and tt
+\usepackage{bera}% optional: just to have a nice mono-spaced font
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{cprotect}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usepackage{forest}
+\usepackage[rounded]{syntax}
+\usepackage{wrapfig}
+\usepackage{hyperref}
+\usepackage{ntheorem}
+\usepackage[capitalise]{cleveref} % must be loaded after hyperref!
+
+\usepackage{acro}
+
+\DeclareAcronym{cql}{short = CQL, long = corpus query language}
+\DeclareAcronym{cqs}{short = CQS, long = corpus query system}
+\DeclareAcronym{rdbms}{short = RDBMS, long = relational database management system}
+\DeclareAcronym{rdb}{short = RDB, long = relational database}
+\DeclareAcronym{iql}{short = IQL, long = ICARUS2 Query Language}
+\DeclareAcronym{icmf}{short = ICMF, long = ICARUS2 Corpus Modeling Framework}
+\DeclareAcronym{icqp}{short = ICQP, long = ICARUS2 Corpus Query Processor}
+\DeclareAcronym{kwic}{short = KWIC, long = keyword-in-context}
+\DeclareAcronym{uoi}{short = UoI, long = unit-of-interest, long-plural-form = units-of-interest}
+
+\newfontfamily\DejaSans{DejaVu Sans}
+
+\setmonofont{Consolas}
+
+\lstset{
+	basicstyle=\ttfamily,
+}
+
+\definecolor{eclipseStrings}{RGB}{42,0.0,255}
+\definecolor{eclipseKeywords}{RGB}{127,0,85}
+\colorlet{numb}{magenta!60!black}
+
+\definecolor{gray}{rgb}{220, 220, 220}
+\definecolor{darkgreen}{rgb}{0.0, 0.5, 0.0}
+\definecolor{darkred}{rgb}{0.8, 0.0, 0.0}
+
+\theoremstyle{break}
+\newtheorem{gram}{Grammar Snippet}
+
+\crefname{gram}{snippet}{snippets}
+
+\newcommand{\compresslist}{ % Define a command to reduce spacing within itemize/enumerate environments, this is used right after \begin{itemize} or \begin{enumerate}
+	\setlength{\topsep}{0pt}
+	\setlength{\itemsep}{1pt}
+	\setlength{\parskip}{0pt}
+	\setlength{\parsep}{0pt}
+}
+
+\newcommand{\icarus}{ICARUS2\xspace}
+\newcommand{\iql}{IQL\xspace}
+
+\newcommand{\keyword}[1]{\textcolor{purple}{\texttt{#1}}}
+
+\newcommand{\member}[1]{\texttt{#1}}
+
+\newcommand{\query}[1]{\texttt{#1}}
+\newcommand{\switch}[1]{``\texttt{#1}''}
+
+
+% constants
+\newcommand{\iqlns}{iql:}
+\newcommand{\repoUrl}{https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/}
+\newcommand{\manifestsUrl}{\repoUrl icarus2-manifest-api/src/main/java/de/ims/icarus2/model/manifest/api/}
+\newcommand{\modelsUrl}{\repoUrl icarus2-model-api/src/main/java/de/ims/icarus2/model/api/}
+
+\newcommand{\repoLink}[2]{\href{#1}{#2}}
+
+\newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
+\newcommand{\iqlBaseType}[1]{\texttt{\textless#1\textgreater}}
+
+\newcommand{\desc}[1]{\noindent#1\newline\medskip}
+\newcommand{\extends}[2]{\noindent\textbf{Extends #1(#2).}\newline\medskip}
+
+% Environment to wrap JSON attributes of IQL elements into tables
+\newenvironment{attributes}[1]{
+\noindent\textbf{Attributes of #1:}\newline\medskip
+\begin{tabular}{|p{0.3\textwidth}|p{0.20\textwidth}|p{0.20\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+	\hline
+	\hline
+}{
+\end{tabular}
+}
+% shorthand methods for filling attributes table: name, type, required, default
+\newcommand{\attribute}[4]{
+	#1 & #2 & #3 & #4 \\
+	\hline
+}
+
+% Environment to wrap nested JSON elements of IQL elements into tables
+\newenvironment{elements}[1]{
+\noindent\textbf{Nested Elements of #1:}\newline\medskip
+\begin{tabular}{|p{0.3\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+	\hline
+	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+	\hline
+	\hline
+}{
+\end{tabular}
+}
+% shorthand methods for filling elements table: name, type, required
+\newcommand{\element}[3]{
+#1 & #2 & #3 \\
+\hline
+}
+
+% make a noticable skip and set a horizontal separator
+\newcommand{\diagsep}{\bigskip\hrule}
+
+\newcommand{\rrhead}[1]{\medskip\noindent\synt{#1}:\newline\medskip}
+
+% wrap syntax diagram with a title label (uses syntdiag)
+\newenvironment{rrdiag}[1]{
+	\rrhead{#1}
+	\hspace{-\medskipamount}
+	\begin{syntdiag}
+	}{
+	\end{syntdiag}
+}
+
+% wrap syntax diagram with a title label (uses syntdiag*)
+\newenvironment{rrdiag*}[1]{
+	\rrhead{#1}
+	\begin{syntdiag*}
+	}{
+	\end{syntdiag*}
+}
+
+% allows to split a railroad diagram manually
+\newenvironment{rrfrag}[2]{
+	\begin{syntdiag*}[\left{#1}\right{#2}]
+	}{
+	\end{syntdiag*}
+}
+
+\newcommand{\sst}{\begin{stack}}
+\newcommand{\est}{\end{stack}}
+\newcommand{\srp}{\begin{rep}}
+\newcommand{\erp}{\end{rep}}
+
+%\newcommand*\BitAnd{\mathbin{\&}}
+%\newcommand*\BitOr{\mathbin{|}}
+%\newcommand*\ShiftLeft{\ll}
+%\newcommand*\ShiftRight{\gg}
+%\newcommand*\BitNeg{\ensuremath{\mathord{\sim}}}
+
+%\counterwithin{paragraph}{subsubsection}
+
+\lstdefinelanguage{json}{
+	basicstyle=\normalfont\ttfamily,
+	commentstyle=\color{eclipseStrings}, % style of comment
+	stringstyle=\color{eclipseKeywords}, % style of strings
+	numbers=left,
+	numberstyle=\scriptsize,
+	stepnumber=1,
+	numbersep=8pt,
+	showstringspaces=false,
+	breaklines=true,
+	frame=lines,
+%	backgroundcolor=\color{gray}, %only if you like
+	string=[s]{"}{"},
+	comment=[l]{:\ "},
+	morecomment=[l]{:"},
+	literate=
+	*{0}{{{\color{numb}0}}}{1}
+	{1}{{{\color{numb}1}}}{1}
+	{2}{{{\color{numb}2}}}{1}
+	{3}{{{\color{numb}3}}}{1}
+	{4}{{{\color{numb}4}}}{1}
+	{5}{{{\color{numb}5}}}{1}
+	{6}{{{\color{numb}6}}}{1}
+	{7}{{{\color{numb}7}}}{1}
+	{8}{{{\color{numb}8}}}{1}
+	{9}{{{\color{numb}9}}}{1}
+}
+
+\endinput
