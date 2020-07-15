@@ -1029,7 +1029,7 @@ public class ExpressionFactory {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		return AssignmentOperation.assignment(source, target);
+		return AssignmentOperation.assignment(source, target, ctx.OPTIONAL()!=null);
 	}
 
 	Expression<?> processTernaryOp(TernaryOpContext ctx) {

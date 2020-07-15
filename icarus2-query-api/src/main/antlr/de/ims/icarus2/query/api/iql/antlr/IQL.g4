@@ -350,11 +350,11 @@ expression
 	| left=expression (LT | LT_EQ | GT | GT_EQ) right=expression 					# comparisonOp
 	| left=expression (MATCHES | NOT_MATCHES | CONTAINS | NOT_CONTAINS) right=expression 	# stringOp
 	| left=expression (EQ | NOT_EQ) right=expression 								# equalityCheck
-	| <assoc=right> left=expression and right=expression 											# conjunction
-	| <assoc=right> left=expression or right=expression 											# disjunction
+	| <assoc=right> left=expression and right=expression 							# conjunction
+	| <assoc=right> left=expression or right=expression 							# disjunction
 	// Optional extra expressions that will be supported fully in a later IQL iteration
-	| source=expression AS (member | variable)											# assignmentOp
-	| source=expression all? not? IN target=expression 	# setPredicate
+	| source=expression AS OPTIONAL? (member | variable)							# assignmentOp
+	| source=expression all? not? IN target=expression 								# setPredicate
 	| condition=expression QMARK optionTrue=expression COLON optionFalse=expression # ternaryOp
 	| loopExpresseion																# forEach
 	;
@@ -545,6 +545,7 @@ NULL : 'NULL' | 'null' ;
 ODD : 'ODD' | 'odd' ;
 OMIT : 'OMIT' | 'omit' ;
 ON : 'ON' | 'on' ;
+OPTIONAL : 'OPTIONAL' | 'optional' ;
 OR : 'OR' | 'or' ;
 ORDER : 'ORDER' | 'order' ;
 ORDERED : 'ORDERED' | 'ordered';

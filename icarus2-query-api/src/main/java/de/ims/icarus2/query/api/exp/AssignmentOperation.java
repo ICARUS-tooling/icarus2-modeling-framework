@@ -31,9 +31,9 @@ import de.ims.icarus2.util.MutablePrimitives.Primitive;
 public class AssignmentOperation {
 
 	public static Expression<Primitive<Boolean>> assignment(
-			Expression<?> source, Assignable<?> target) {
+			Expression<?> source, Assignable<?> target, boolean optional) {
 		//TODO make switch on result type later to forward to primitive specializations
-		return new ObjectAssignment(source, target);
+		return new ObjectAssignment(source, target, optional);
 	}
 
 	static final class ObjectAssignment implements Expression<Primitive<Boolean>> {
@@ -41,10 +41,12 @@ public class AssignmentOperation {
 		private final MutableBoolean value = new MutableBoolean();
 		private final Expression<?> source;
 		private final Assignable<?> target;
+		private final boolean optional;
 
-		ObjectAssignment(Expression<?> source, Assignable<?> target) {
+		ObjectAssignment(Expression<?> source, Assignable<?> target, boolean optional) {
 			this.source = requireNonNull(source);
 			this.target = requireNonNull(target);
+			this.optional = optional;
 		}
 
 		@Override
@@ -60,24 +62,27 @@ public class AssignmentOperation {
 		public boolean computeAsBoolean() {
 			Object value = source.compute();
 			target.assign(value);
-			return value!=null;
+			return optional || value!=null;
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> duplicate(EvaluationContext context) {
-			return new ObjectAssignment(context.duplicate(source), context.duplicate(target));
+			return new ObjectAssignment(context.duplicate(source), context.duplicate(target), optional);
 		}
 
 		@Override
 		public Expression<Primitive<Boolean>> optimize(EvaluationContext context) {
 			Expression<?> newSource = context.optimize(source);
 
-			// If we produce a permanent null assignment, bail and default to false literal
+			/*
+			 *  If we produce a permanent null assignment, bail and wrap
+			 *  the 'optional' flag as result literal.
+			 */
 			if(newSource.isConstant() && newSource.compute()==null) {
-				return Literals.FALSE;
+				return Literals.of(optional);
 			}
 
-			return new ObjectAssignment(newSource, target);
+			return new ObjectAssignment(newSource, target, optional);
 		}
 	}
 }
