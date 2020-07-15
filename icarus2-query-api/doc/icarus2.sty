@@ -17,6 +17,7 @@
 %\usepackage{inconsolata} % to have Consolas as font for verbatim and tt
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{listings}
+\usepackage[section]{placeins} % to keep floats within the section they have been defined in
 \usepackage{enumitem}
 \usepackage{cprotect}
 \usepackage{fancyvrb}
@@ -69,7 +70,6 @@
 }
 
 \newcommand{\icarus}{ICARUS2\xspace}
-\newcommand{\iql}{IQL\xspace}
 
 \newcommand{\keyword}[1]{\textcolor{purple}{\texttt{#1}}}
 
@@ -196,5 +196,3 @@
 	{8}{{{\color{numb}8}}}{1}
 	{9}{{{\color{numb}9}}}{1}
 }
-
-\endinput

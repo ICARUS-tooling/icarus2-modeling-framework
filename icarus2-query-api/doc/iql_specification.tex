@@ -4,7 +4,6 @@
 
 \documentclass[11pt,a4paper]{article}
 
-\usepackage[utf-8]{inputenc}
 \usepackage{icarus2}
 
 \title{ICARUS2 Query Language Specification}
@@ -19,11 +18,17 @@
 
 \tableofcontents
 
+\listoffigures
+
+\listoftables
+
+\newpage
+
 \section{Query Structure}
 \label{sec:query-structure}
 
-Queries in \iql are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
-To achieve this complex task \iql embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. 
+Queries in \ac{iql} are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
+To achieve this complex task \ac{iql} embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. 
 As a side effect queries can become quite verbose and potentially cumbersome to define manually. 
 As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}). 
 This document lists the basic building blocks of queries and their compositions.
@@ -253,7 +258,7 @@ This document lists the basic building blocks of queries and their compositions.
 \end{elements}
 \begin{description}
 	\item[\iqlType{constraint}] Optional local constraint to be matched against the content of potential target candidates during query evaluation.
-	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation. Multiple quantifiers behave disjunctively. Note that \iql defines some restrictions on the legal combinations of quantifiers: The all-quantifier (\texttt{*} or \texttt{all}) and not-quantifier (\texttt{!} or \texttt{not}) can only be used in isolation, all other quantifiers can be combined in disjunctive fashion.
+	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation. Multiple quantifiers behave disjunctively. Note that \ac{iql} defines some restrictions on the legal combinations of quantifiers: The all-quantifier (\texttt{*} or \texttt{all}) and not-quantifier (\texttt{!} or \texttt{not}) can only be used in isolation, all other quantifiers can be combined in disjunctive fashion.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -333,7 +338,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %\item content
 %\item resultType
 %\end{itemize}
-\desc{Wraps the textual form of an arbitrarily complex \iql expression, which can be a formula, literal, method invocation, a combination of those or a great many other types of expressions. For more details see \cref{sec:expressions}.}
+\desc{Wraps the textual form of an arbitrarily complex \ac{iql} expression, which can be a formula, literal, method invocation, a combination of those or a great many other types of expressions. For more details see \cref{sec:expressions}.}
 \begin{attributes}{\iqlType{Expression}}
 	\attribute{content}{string}{yes}{}
 	\attribute{resultType}{string}{no}{}
@@ -385,7 +390,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %\item name
 %\item optional
 %\end{itemize}
-\desc{To allow for flexible integration of macro definitions or bigger language extensions, \iql provides an optional section in the query that lets users specify exactly what additional modules besides the bare \iql core are required for evaluating the query. Each import target is specified by providing it's unique name and telling the engine whether or not the import is to be considered optional.}
+\desc{To allow for flexible integration of macro definitions or bigger language extensions, \ac{iql} provides an optional section in the query that lets users specify exactly what additional modules besides the bare \ac{iql} core are required for evaluating the query. Each import target is specified by providing it's unique name and telling the engine whether or not the import is to be considered optional.}
 \begin{attributes}{\iqlType{Import}}
 	\attribute{id}{string}{yes}{}
 	\attribute{name}{string}{yes}{}
@@ -420,7 +425,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 	\item[\iqlType{id}] Identifier to uniquely identify the lane within the entire query.
 	\item[\iqlType{name}] The unique identifier of the \repoLink{\modelsUrl layer/ItemLayer.java}{item layer} or \repoLink{\modelsUrl layer/StructureLayer.java}{structure layer} that serves as target for this lane.
 	\item[\iqlType{alias}] If items of this lane in their entirety are meant to be used as part of query expressions inside this field holds the label used for the respective member variable. It is recommended to keep the chosen \texttt{alias} close to the original \texttt{name} to avoid confusion.
-	\item[\iqlType{laneType}] The type of structure this lane is meant to match, effectively defining the basic complexity class for evaluation. legal values are \texttt{sequence}, \texttt{tree} and \texttt{graph}. Note that the initial evaluation engine for \iql does not support the \texttt{graph} type! %TODO adjust once we extend the engine
+	\item[\iqlType{laneType}] The type of structure this lane is meant to match, effectively defining the basic complexity class for evaluation. legal values are \texttt{sequence}, \texttt{tree} and \texttt{graph}. Note that the initial evaluation engine for \ac{iql} does not support the \texttt{graph} type! %TODO adjust once we extend the engine
 \end{description}
 \begin{elements}{\iqlType{Lane}}
 	\element{elements}{\iqlBaseType{Element} (\ref{sec:json-ld-element})}{yes}
@@ -522,9 +527,9 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 
 \subsubsection{Switches}
 \label{sec:json-ld-switches}
-For increased flexibility, \iql supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \iql switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}.
+For increased flexibility, \ac{iql} supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \ac{iql} switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}.
 
-\begin{table}[h]
+\begin{table}[!htb]
 \noindent\begin{tabular}{|p{0.35\textwidth}|p{0.58\textwidth}|}
 \hline 
 \textbf{Name}	& \textbf{Description} \\ 
@@ -557,7 +562,7 @@ iql.warnings.off            & Deactivates all warnings, potentially resulting in
 iql.parall.off			  & Forces the query evaluation engine to run single-threaded. This does however only affect the actual matcher, not additional. modules such as monitoring or item caches  \\ 
 \hline
 \end{tabular}
-\caption{Currently supported switches in \iql and their explanations.}
+\caption[Supported query switches]{Currently supported switches in \ac{iql} and their explanations.}
 \label{tab:switches}
 \end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -606,7 +611,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier for the query, chosen by the client. In more complex (asynchronous) query workflows this id is used to map answers and results to the correct query.
-	\item[\iqlType{dialect}] Specifies which basic version of \iql to use. The initial version of \iql is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
+	\item[\iqlType{dialect}] Specifies which basic version of \ac{iql} to use. The initial version of \ac{iql} is ``1.0`` and by leaving the dialect part of a query blank the engine will default to this initial version.
 \end{description}
 \begin{elements}{\iqlType{Query}}
 	\element{imports}{array of \iqlType{Import} (\ref{sec:json-ld-import})}{no}
@@ -789,13 +794,13 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section{Inner \iql ELements}
+\section{Inner \ac{iql} ELements}
 \label{sec:inner-iql-elements}
 
-Certain parts of an \iql query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
+Certain parts of an \ac{iql} query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
 During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{sec:elements} (unless of course the query or query fragments are provided fully processed).
 This section defines the syntax and additional rules for those raw statements.
-Note that the textual form of all following \iql elements is expected to be encoded in UTF-8, so no special escape mechanisms are needed for unicode content.
+Note that the textual form of all following \ac{iql} elements is expected to be encoded in UTF-8, so no special escape mechanisms are needed for unicode content.
 
 
 %TODO from here on restructure!
@@ -835,18 +840,18 @@ The following list of keywords is reserved and any of the words may not be used 
 \subsection{Comments}
 \label{sec:comments}
 
-\iql supports single-line comments, indicated by ``//''. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query. 
+\ac{iql} supports single-line comments, indicated by ``//''. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query. 
 
 \subsection{Literals}
 \label{sec:literals}
 
-Literals are statically-typed fixed-value expressions in \iql.
+Literals are statically-typed fixed-value expressions in \ac{iql}.
 They are parsed only once during the initial processing part of a query.
 
 \subsubsection{String Literals}
 \label{sec:string-literals}
 
-\iql uses simple double quotes (\lit{"} or U+0022) to define string literals. 
+\ac{iql} uses simple double quotes (\lit{"} or U+0022) to define string literals. 
 String literals may not contain any of the following symbols directly:
 
 \begin{Verbatim}[samepage=true]
@@ -858,7 +863,7 @@ String literals may not contain any of the following symbols directly:
 \end{Verbatim}
 
 \noindent Any of those symbols listed above can be embedded into a string literal as part of an escape sequence with a preceding backslash.
-At the current time there is no planned mechanism to provide additional escape support for unicode symbols, since the default encoding scheme for \iql is UTF-8.
+At the current time there is no planned mechanism to provide additional escape support for unicode symbols, since the default encoding scheme for \ac{iql} is UTF-8.
 
 \paragraph{Examples for valid string literals:}
 
@@ -901,7 +906,7 @@ Underscore characters may only appear inside the integer literal, never at the b
 \end{Verbatim}
 
 \paragraph{Pure Integer Literals}
-Some parts of the \iql syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
+Some parts of the \ac{iql} syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
 
 \subsubsection{Floating Point Literals}
 \label{sec:floating-point-literals}
@@ -925,12 +930,12 @@ Floating point literals are constructed by using a (signed) integer literal for 
 -99_000000_0.000_000_001
 \end{Verbatim}
 
-\noindent While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of \iql.
+\noindent While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of \ac{iql}.
 
 \subsection{Identifiers}
 \label{sec:identifiers}
 
-\noindent Identifiers in \iql are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol (cf. \cref{gram:identifier}).
+\noindent Identifiers in \ac{iql} are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol (cf. \cref{gram:identifier}).
 
 \begin{gram}
 	\label{gram:identifier}
@@ -962,7 +967,7 @@ notTheBest______________example
 \subsection{Variables and References}
 \label{sec:variables-references}
 
-In \iql all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \iql core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \lit{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \lit{\$} sign, such as \texttt{\$token1}. \cref{tab:identifiers} provides a compact overview of the available identifiers and their capabilities/features.
+In \ac{iql} all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \ac{iql} core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \lit{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \lit{\$} sign, such as \texttt{\$token1}. \cref{tab:identifiers} provides a compact overview of the available identifiers and their capabilities/features.
 
 \begin{table}[ht]
 	\centering\begin{tabular}{|l|c|c|c|c|c|c|}
@@ -977,7 +982,7 @@ In \iql all top-level (i.e. not part of the tail expression in a hierarchical pa
 		\hline 
 	\end{tabular}
 	\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.} %TODO doesn't work properly
-	\caption{Identifier types available in \iql and their properties.}
+	\caption[Available identifier types]{Identifier types available in \ac{iql} and their properties.}
 	\label{tab:identifiers}
 \end{table}
 
@@ -997,7 +1002,7 @@ They can take any of the following forms and a overview diagram is available in 
 \label{sec:primary-expressions}
 
 Any literal of types \keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float} can serve as a primary expression of that type.
-See \cref{sec:literals} for examples and a more detailed specification of the various types of literals in \iql.
+See \cref{sec:literals} for examples and a more detailed specification of the various types of literals in \ac{iql}.
 
 \paragraph{References}
 \noindent Any reference or variable as described in \cref{sec:variables-references} is also a valid primary expression.
@@ -1019,7 +1024,7 @@ The first (or left) identifier is expected to unambiguously resolve to a annotat
 The second (or right) identifier in turn acts as specification of an annotation key (or its alias) available from the previously defined annotation layer.
 
 \paragraph{List Expression}
-Arrays (or more generally ``lists'') in \iql can be defined by enclosing a sequence of expressions within curly brackets (\lit{\{} and \lit{\}}), using the comma symbol (\lit{,}) as separator.
+Arrays (or more generally ``lists'') in \ac{iql} can be defined by enclosing a sequence of expressions within curly brackets (\lit{\{} and \lit{\}}), using the comma symbol (\lit{,}) as separator.
 Optionally the desired type for elements in the list can be made explicit with a special type marker in front of the opening bracket as illustrated by \cref{gram:list-expression}.
 If no type is provided, the overall element type will be determined by checking the types of all elements and choosing the least restrictive one.
 Note that for empty lists (no elements are given inside the curly brackets) it is mandatory to specify the element type!
@@ -1054,7 +1059,7 @@ someObejct.someProperty
 some.really.long.winded.path
 \end{Verbatim}
 
-\noindent Note that for a lot of native classes of the ICARUS2 framework, \iql provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
+\noindent Note that for a lot of native classes of the ICARUS2 framework, \ac{iql} provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
 
 \subsubsection{Method Invocation}
 \label{sec:method-invocations}
@@ -1115,13 +1120,13 @@ complexArray[1, 2][3]
 complexArray[1, 2, 3]
 \end{Verbatim}
 
-\noindent Note that \iql provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
+\noindent Note that \ac{iql} provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
 Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
 
 \subsubsection{Annotation Access}
 \label{sec:annotation-access}
 
-The \ac{icmf} models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \iql provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
+The \ac{icmf} models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \ac{iql} provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
 
 \begin{gram}[\synt{annotation}]
 	\label{gram:annotation-access}
@@ -1137,7 +1142,7 @@ The \ac{icmf} models segmentation, structure and content of a corpus resource as
 	\end{rrdiag*}
 \end{gram}
 
-\noindent The first expression must evaluate to an item reference and the annotation pointers inside curly brackets must evaluate to strings (if only a single expression is given, it can evaluate to a list or array and be expanded, cf. \cref{sec:value-expansion}) that uniquely denote annotation layers in the current context of the query. Typically users will use string literals in double quotes to explicitly state the annotations to be accessed, but the \iql syntax allows for very flexible extraction statement. If the evaluation of those annotation pointers yields more than one string, the result will be an array-like object containing the resolved values for each of the annotation keys in the same order as those were specified.
+\noindent The first expression must evaluate to an item reference and the annotation pointers inside curly brackets must evaluate to strings (if only a single expression is given, it can evaluate to a list or array and be expanded, cf. \cref{sec:value-expansion}) that uniquely denote annotation layers in the current context of the query. Typically users will use string literals in double quotes to explicitly state the annotations to be accessed, but the \ac{iql} syntax allows for very flexible extraction statement. If the evaluation of those annotation pointers yields more than one string, the result will be an array-like object containing the resolved values for each of the annotation keys in the same order as those were specified.
 
 \paragraph{Examples:}
 
@@ -1153,7 +1158,7 @@ firstSetValue(myItem{"parser1.head", "parser2.head"})
 \subsubsection{Type Cast}
 \label{sec:type-cast}
 
-Expressions in \iql are automatically cast to matching types according to the actual consumer's needs (unless this feature gets deactivated via the corresponding switch, cf. \cref{sec:json-ld-switches}). Explicit casts can be performed by preceding an expression with one of the type keywords listed above (\ref{sec:reserved-words}) in round brackets.
+Expressions in \ac{iql} are automatically cast to matching types according to the actual consumer's needs (unless this feature gets deactivated via the corresponding switch, cf. \cref{sec:json-ld-switches}). Explicit casts can be performed by preceding an expression with one of the type keywords listed above (\ref{sec:reserved-words}) in round brackets.
 
 \paragraph{Examples:}
 
@@ -1179,7 +1184,7 @@ Expression hierarchy and evaluation order follows the order the different types 
 \subsubsection{Unary Operation}
 \label{sec:unary-operation}
 
-\iql only allows four unary operators to be used directly in front of an expression, the exclamation mark \lit{!} and the \keyword{NOT} keyword for Boolean negation, the minus sign \lit{\textminus} for negating numerical expressions and the \lit{\texttildelow} symbol of bitwise negation of integer numbers.
+\ac{iql} only allows four unary operators to be used directly in front of an expression, the exclamation mark \lit{!} and the \keyword{NOT} keyword for Boolean negation, the minus sign \lit{\textminus} for negating numerical expressions and the \lit{\texttildelow} symbol of bitwise negation of integer numbers.
 
 \paragraph{Examples:}
 
@@ -1230,7 +1235,7 @@ Binary operations between two expressions take the following simple form:
 		\verb#||  OR#& logical or \\ 
 		\hline 
 	\end{tabular} 
-	\caption{Binary operators available in \iql and their hierarchical order.}
+	\caption[Available binary operators]{Binary operators available in \ac{iql} and their hierarchical order.}
 	\label{tab:binary-operators}
 \end{table}
 
@@ -1255,7 +1260,7 @@ Comparisons are special binary operators that take two expressions of equal or c
 \paragraph{String Operations}
 \label{sec:string-operations}
 
-To account for the ubiquity of textual annotations in corpora, \iql provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \lit{=\#} or its negated form \lit{!\#}) and regular expression matching (via \lit{=\textasciitilde} and \lit{!\textasciitilde}). Per default \iql uses the Java regex syntax, but for the future, additional switches (\ref{sec:json-ld-switches}) are planned to allow finer control over regex details.
+To account for the ubiquity of textual annotations in corpora, \ac{iql} provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \lit{=\#} or its negated form \lit{!\#}) and regular expression matching (via \lit{=\textasciitilde} and \lit{!\textasciitilde}). Per default \ac{iql} uses the Java regex syntax, but for the future, additional switches (\ref{sec:json-ld-switches}) are planned to allow finer control over regex details.
 
 \paragraph{Examples:}
 
@@ -1276,48 +1281,60 @@ a == b iff !(a<b) && !(a>b)
 a != b iff a<b || a>b
 \end{Verbatim}
 
-\noindent More generally, equality between expressions in \iql is based on content equality and therefore type specific.
+\noindent More generally, equality between expressions in \ac{iql} is based on content equality and therefore type specific.
 Note that trying to check two expressions of incompatible types (such as \keyword{int} and \keyword{string}) for equality will always evaluate to \keyword{false} and also emit a warning. 
 %TODO is this part actually implemented?
 
 \paragraph{Logical Composition}
 \label{sec:logical-composition}
 
-All Boolean expressions can be combined via disjunction (either double pipes \lit{||} or the \keyword{OR} keyword) or conjunction (double ampersand \lit{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. While not strictly mandatory, evaluation of \iql expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}. 
+All Boolean expressions can be combined via disjunction (either double pipes \lit{||} or the \keyword{OR} keyword) or conjunction (double ampersand \lit{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. 
+While not strictly mandatory, evaluation of \ac{iql} expressions is recommended to employ optimized interpretation such that only the first operand is evaluated if possible. 
+When the first operand of a disjunction evaluates to \keyword{true}, the entire expression is already determined, same for a conjunction's first operand yielding \keyword{false}.
 
 \paragraph{Examples:}
-
 \begin{Verbatim}[samepage=true]
 a>1 && b<2
 x==1 or x==3
 \end{Verbatim}
 
+Note that aforementioned optimization strategy also applies to chained boolean expressions, such as \query{a \&\& b \&\& c} and that the evaluation engine is free to reorder operands here as it sees fit.
+As such individual operands may never be evaluated at all and the overall correctness of a query expression must not rely on side-effects stemming from specific expressions being evaluated or not.
+
 \subsubsection{Assignment}
 \label{sec:assignment}
 
-\iql offers a special construct to assign (member) variables and at the same time verify the successful assignment with a Boolean result value. 
+\ac{iql} offers a special construct to assign (member) variables and at the same time verify the successful assignment with a Boolean result value. 
 \Cref{gram:assignment} illustrates the basic syntax for assignment operations inside a constraint, allowing the result of an arbitrary expression to be assigned to any previously defined member variable (or dynamically allocated variable).
 
 \begin{gram}[\synt{assignment}]
 	\label{gram:assignment}
 	\begin{grammar}	
-		<assignment> ::= <expression> `AS' (<member> | <variable>)
+		<assignment> ::= <expression> `AS' `OPTIONAL'? (<member> | <variable>)
 	\end{grammar}
 	\diagsep
 	
-	\begin{rrdiag*}{setPredicate}
-		<expression> `AS' \sst <member> \\ <variable> \est
+	\begin{rrdiag*}{assignment}
+		<expression> `AS' \sst \\ `OPTIONAL' \est \sst <member> \\ <variable> \est
 	\end{rrdiag*}
 \end{gram}
 
 If a member variable is used for the assignment or the variable has already been used previously and thereby has been type-bound, the result type of the \synt{expression} has to be compatible!
 Assignment operations provide a Boolean return value that is \keyword{true} iff the assignment was successful and the (member) variable holds a non-null value.
-\paragraph{Examples:}
+If the assignment is declared to be \keyword{OPTIONAL}, it will always evaluate to \keyword{true} regardless of the final value the (member) variable is holding.
+As the name of that keyword implies, this allows to have parts of the query effectively becoming optional when it comes to capturing information.
+Keep in mind that optional (member) variables might not be assigned a valid non-null value when trying to read them in subsequent constraints or final result processing.
+As such care must be taken not to create errors when trying to access their content.
 
+\paragraph{Examples:}
 \begin{Verbatim}[samepage=true]
 // global constraint over two tree nodes to fetch their first 
 // ancestor, failing if $x and $y do not have a common ancestor
 ... HAVING ancestor($x, $y) AS $a
+
+// optionally assign the last child of $x as a member variable,
+// not failing if $x has no children
+... HAVING lastChild($x) AS OPTIONAL $c
 \end{Verbatim}
 
 
@@ -1363,7 +1380,7 @@ fetchCharacterNamesInChapterOne() IN getOrcishNames()
 \subsubsection{Ternary Operation}
 \label{sec:ternary-operation}
 
-A single ternary operation is supported in \iql, which is the popular if-then-else replacement with the following syntax:
+A single ternary operation is supported in \ac{iql}, which is the popular if-then-else replacement with the following syntax:
 
 \begin{gram}[\synt{ternary}]
 	\label{gram:ternary-operations}
@@ -1383,13 +1400,13 @@ x<2 ? "text for smaller value" : "some other text"
 \subsubsection{Value Expansion}
 \label{sec:value-expansion}
 
-\iql supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()'' returns an array of 3 integer values or a \textit{array-like} data type (such as a 3D point) and another method ``invertPoint(int, int, int)'' takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())'' is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]''.
+\ac{iql} supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()'' returns an array of 3 integer values or a \textit{array-like} data type (such as a 3D point) and another method ``invertPoint(int, int, int)'' takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())'' is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]''.
 
 \subsection{Constraints}
 \label{sec:constraints}
 
 Simply put, constraints are expressions that evaluate to a Boolean result. 
-Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \iql allows certain evaluations as syntactic sugar, listed in \cref{tab:constraints-translation}.
+Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \ac{iql} allows certain evaluations as syntactic sugar, listed in \cref{tab:constraints-translation}.
 Note that those conversions are only active if the respective switches to disable them (\ref{sec:json-ld-switches}) have not been set.
 
 \begin{table}
@@ -1407,14 +1424,19 @@ Note that those conversions are only active if the respective switches to disabl
 		any object & \keyword{null} & \keyword{false} \\ 
 		\hline 
 	\end{tabular}
-	\caption{Rules for converting arbitrary values or objects in a query to Boolean values.}
+	\caption[Boolean conversion rules]{Rules for converting arbitrary values or objects in a query to Boolean values.}
 	\label{tab:constraints-translation}
 \end{table}
+
+\paragraph{Result Expansion} %TODO assigment part, explain how results can be expanded after absic candidates have been matched
+Besides their obvious role as filters, constraints can also be used to expand the set of captured members in a match, subsequently usable for instance in advanced result processing.\footnote{Per default members defined as bindings (\ref{sec:bindings}) are captured when used as labels for nodes (\ref{sec:structural-constraints}) in the query.}
+The assignment operation (\ref{sec:assignment}) allows arbitrary expressions to be evaluated and having their results stored in either a general variable or, in case of a result type compatible to \repoLink{\modelsUrl members/item/Item.java}{items}, actual member variable (\ref{sec:variables-references}).
+
 
 \subsection{Payload Structure}
 \label{sec:payload-structure}
 
-The Payload section in \iql consists of either the sole \keyword{ALL} keyword or a selection statement (\ref{sec:selection}) with optional binding (\ref{sec:bindings}) definition and filter constraints (\ref{sec:filter-constraints}) preceding it.
+The Payload section in \ac{iql} consists of either the sole \keyword{ALL} keyword or a selection statement (\ref{sec:selection}) with optional binding (\ref{sec:bindings}) definition and filter constraints (\ref{sec:filter-constraints}) preceding it.
 If the \keyword{ALL} keyword is used, no constraints whatsoever can be defined and the engine is instructed to return the entire target corpus.
 In this case the only way of restricting results is by using the \iqlType{Result} section (\ref{sec:json-ld-result}) of a query.
 
@@ -1441,7 +1463,7 @@ In this case the only way of restricting results is by using the \iqlType{Result
 
 \subsubsection{Filter Constraints}
 \label{sec:filter-constraints}
-\noindent For complex (i.e. structural) queries, \iql offers a way of filtering the \acp{uoi} before they are processed by the matchers for sequence, tree or graph structures (cf. \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}).
+\noindent For complex (i.e. structural) queries, \ac{iql} offers a way of filtering the \acp{uoi} before they are processed by the matchers for sequence, tree or graph structures (cf. \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}).
 A dedicated \keyword{FILTER BY} section in the query payload preceding the actual structural constraints is available to define filtering rules that have to evaluate to \keyword{true} for a \ac{uoi} to be considered for actual matching.
 Constraints within a filtering rules have only access to general properties of the \acp{uoi}, such as sentence length, tree height or similar information.
 The do \textbf{not} have access to bound member variables, apart from those defined for the top-level members of lanes (\ref{sec:lanes})!
@@ -1449,7 +1471,7 @@ Note that filter constraints are \textbf{not} compatible with flat constraints (
 
 \subsubsection{Match Modifiers}
 \label{sec:match-modifiers}
-Per default, the search in \iql is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
+Per default, the search in \ac{iql} is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
 For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as tree entries in the result if the query was only meant to find instances of the lemma ``the''.
 This default behavior can be adjusted to only return each \ac{uoi} no more than once by using one of the modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) listed in \cref{gram:payload}.
 The semantics of the \keyword{ANY} modifier are such that the engine may freely pick any one match within a \ac{uoi}.
@@ -1547,12 +1569,12 @@ In this regard they behave very similar to global constraints.
 \subsubsection{Structural Constraints}
 \label{sec:structural-constraints}
 
-\iql provides several classes of structural constraints that each feature distinctive syntax features to express structures of increasing complexity.
+\ac{iql} provides several classes of structural constraints that each feature distinctive syntax features to express structures of increasing complexity.
 Those structures are sequences (\ref{sec:sequence-constraints}), trees (\ref{sec:tree-constraints}) and graphs (\ref{sec:graph-constraints}).
 They all get explained in more detail in their respective sections, but the syntactic basics for all of them will be defined here.
-To simplify the overall \iql grammar, a general syntax exists for the declaration of nodes (and edges).
+To simplify the overall \ac{iql} grammar, a general syntax exists for the declaration of nodes (and edges).
 This general form honors the aspects specific to each of those structure types, but generally over-generates and only some of its features are actually applicable in concrete use cases.
-\Cref{gram:node-statement} shows the basic for defining structural constraints in \iql.
+\Cref{gram:node-statement} shows the basic for defining structural constraints in \ac{iql}.
 More detailed illustrations of the various components (\synt{node}, \synt{quantifier} and \synt{edge}) follow below.
 
 \begin{gram}[\synt{nodeStatement}]
@@ -1587,12 +1609,12 @@ More detailed illustrations of the various components (\synt{node}, \synt{quanti
 \noindent There are four (partly recursive) approaches to express node statements, i.e. grouping, node sequence, element sequence and disjunction. 
 The distinction between node and element sequences exists to easily distinguish sequence or tree queries from graph definitions.
 Sequence queries do not include hierarchical structural information and as such have no use for edges.
-In the syntax used for tree nodes in \iql information about the incoming edge is implicitly available from every nested node and constraints related to outgoing edges are to be attached to the respective child terminals of those edges.
+In the syntax used for tree nodes in \ac{iql} information about the incoming edge is implicitly available from every nested node and constraints related to outgoing edges are to be attached to the respective child terminals of those edges.
 For graphs where no simple association between nodes and edges exists, there is a necessity to have explicit edge declarations available for querying.
 As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder that can be filled with either node or edge declarations.
 
 \paragraph{Nodes}
-\noindent \iql uses square brackets (\lit{[} and \lit{]}) to mark individual nodes.
+\noindent \ac{iql} uses square brackets (\lit{[} and \lit{]}) to mark individual nodes.
 \cref{gram:node} gives an overview of the syntax used for defining nodes with all the optional content elements.
 \begin{gram}[\synt{node}]
 	\label{gram:node}
@@ -1616,7 +1638,7 @@ Declaring a node in a structural constraint implicitly marks it as existentially
 Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most} (0 to n), \textit{at-least} (n to inf) or bounded range quantification. 
 The \cref{gram:quantifier} simplifies the overall rules for \synt{quantifier} to keep it compact.
 Albeit being shown here as unrelated to each other, the appearance of the angle brackets (\lit{\textless} and \lit{\textgreater}) before or after the actual quantifier content is restricted to either \textit{both} of them being used (for a proper wrapping, such as \lit{\textless 3..10 \textgreater}) or \textit{none} of them (for plain quantifiers, such as \lit{1|4|ALL}).
-\iql allows multiple quantifiers to be separated by the pipe symbol \lit{|} to express disjunction between quantifiers.
+\ac{iql} allows multiple quantifiers to be separated by the pipe symbol \lit{|} to express disjunction between quantifiers.
 This way complex constraints can be defined very neatly, such as the ``all or nothing'' quantification \lit{\keyword{all}|\keyword{not}}.
 This quantifier combination ensures that either all targets in a certain context match the node in question, or none does.\footnote{Example: find all sentences that either have no word with more than five characters or all of their words have five or more characters.}
 
@@ -1729,7 +1751,7 @@ Currently there are only two directives available to specify the node arrangemen
 \paragraph{Element Sequence}
 \noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement} in \cref{gram:node-statement}), but with noticeable differences: 
 Element sequences do use a separator symbol (a simple comma \lit{,}) between \synt{element} definitions.
-Since \iql does not use keywords to signal the structural type to be expected in a query payload\footnote{An earlier draft made use of \keyword{TREE} and \keyword{GRAPH} keywords to distinguish those types from the basic node sequence, but in an effort to reduce the overall number of keywords (that users had to learn) this approach was dropped.} this approach was necessary to easily detect the type of structure.
+Since \ac{iql} does not use keywords to signal the structural type to be expected in a query payload\footnote{An earlier draft made use of \keyword{TREE} and \keyword{GRAPH} keywords to distinguish those types from the basic node sequence, but in an effort to reduce the overall number of keywords (that users had to learn) this approach was dropped.} this approach was necessary to easily detect the type of structure.
 It also hints at the second difference, that is, element sequences do not support arrangement modifiers (as \synt{element} instances can be either nodes or edges, with the latter not being suitable for this kind of ordering) and as such can be more intuitively be understood as sets of \synt{element} instances.
 
 \paragraph{Structural Disjunction}
@@ -1775,7 +1797,7 @@ Only the direction from which the overall matching attempt will start changes wi
 This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned match to either the first or last, with respect to the current direction.
 
 \paragraph{Special Note:}
-\noindent Evaluation of quantified nodes in \iql is done greedily, i.e. the engine will try to match as many instances as possible.
+\noindent Evaluation of quantified nodes in \ac{iql} is done greedily, i.e. the engine will try to match as many instances as possible.
 However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
 An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \lit{<inf->}).
 
@@ -1791,7 +1813,7 @@ ADJACENT [$a:][$b:] <0+>[] [$c:][$d:]
 \label{sec:tree-constraints}
 
 Located between mere sequences (\ref{sec:sequence-constraints}) and graphs (\ref{sec:graph-constraints}) this type of structural constraints is meant to target tree structures, such as (but not limited to) syntax trees, coreference structures, discourse, etc.
-To simplify query syntax, \iql uses a similar approach as the original ICARUS project, which in turn took inspiration from PML-TQ:
+To simplify query syntax, \ac{iql} uses a similar approach as the original ICARUS project, which in turn took inspiration from PML-TQ:
 To signal parent-child relations, child nodes are nested within their respective parent, effectively making each node yet another scope for a sequence of child nodes.
 Contrary to bare sequence constraints (\ref{sec:sequence-constraints}) the order of (child) nodes to be matched in the corpus is \textbf{not} implicitly defined by the order of constraint nodes!
 Instead, the \keyword{ORDERED} or \keyword{ADJACENT} keywords need to be used explicitly to signal that a specific kind of order should be honored.\footnote{Also note that \keyword{ORDERED} and \keyword{ADJACENT} when used inside tree nodes are referring to the order of nodes as defined by the parent, \textbf{not} their overall position when projected onto the underlying foundation layer!}
@@ -1844,7 +1866,7 @@ Below explanations are primarily intended to specify the behavior in the presenc
 		] 
 	]
 \end{forest}
-\caption{\label{fig:tree-matching} Example tree with highlighted hits for the simple tree query \query{[\$x:~[\$y:]]}.}
+\caption[Example target tree for simple query]{\label{fig:tree-matching} Example tree with highlighted hits for the simple tree query \query{[\$x:~[\$y:]]}.}
 \end{wrapfigure}
 
 Consider a simple tree query \query{[\$x:~[\$y:]]} where \member{x} and \member{y} are bound nodes with individual constraints.
@@ -1896,7 +1918,7 @@ FIND [$x: [$y: isLastChild]]
 Similarly global constraints are not the place to perform filtering on general properties of the current \ac{uoi}, such as sentence length (use the \keyword{FILTER BY} expression for that, cf. \cref{sec:filter-constraints}).
 
 \paragraph{Constraint Hoisting}
-Per default, global constraints are second-class constraints, that are only consulted, once the structural and local constraints in the other sections of a query payload have been evaluated.
+Per default, global constraints are second-class constraints, that are only consulted once the structural and local constraints in the other sections of a query payload have been evaluated.
 This provides them with a lot more decision power and available information, but also can lead to rather inefficient evaluation scenarios.
 Consider a query \query{FIND~[\$x:~[\$y:~[\$z]]] HAVING \$x.pos!=\$y.pos} that looks for nested nodes \member{x}, \member{y} and \member{z} where in addition to local constraints the nodes \member{x} and \member{y} are required to have different part-pf-speech tags.
 With the default two-stage evaluation process described above this would result in a serious overhead when evaluating a target tree: 
@@ -1913,7 +1935,7 @@ Note that only very specific global constraints can successfully be hoisted!
 
 There be dragons\dots
 
-(Content of the result section will be added as \iql evolves)
+(Content of the result section will be added as \ac{iql} evolves)
 
 \section{Utility Markers \& Functions}
 \label{sec:utility}
@@ -1926,10 +1948,10 @@ They are listed here as per default they all are available and provide valuable 
 \label{sec:position-markers}
 
 Every node (\ref{sec:structural-constraints}) in a query has an implicit \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} context that it is hosted  or contained in.\footnote{The \ac{icmf} specifies that each item can only be hosted (or more accurately \textit{owned}) by a single container or derived object, but be contained within an arbitrary number of additional containers or structures.}
-\iql offers a variety of predefined helper functions  to exploit this fact and to optimize queries.
+\ac{iql} offers a variety of predefined helper functions  to exploit this fact and to optimize queries.
 \cref{tab:position-markers} lists the functions currently available, their arguments and matching conditions.
-Note that legal arguments for a node that occurs in a container of size $N$ reside in the closed integer interval $[1..N]$ for regular index values and $[-N..-1]$ for reverse indices (see below).\footnote{This is in contrast to the 0-based access of array or list elements in \iql.}
-The syntax for providing arguments follows the normal rules for method invocations in \iql \ref{sec:method-invocations}, e.g. \query{isOutside(4, 12)}.
+Note that legal arguments for a node that occurs in a container of size $N$ reside in the closed integer interval $[1..N]$ for regular index values and $[-N..-1]$ for reverse indices (see below).\footnote{This is in contrast to the 0-based access of array or list elements in \ac{iql}.}
+The syntax for providing arguments follows the normal rules for method invocations in \ac{iql} \ref{sec:method-invocations}, e.g. \query{isOutside(4, 12)}.
 Arguments can be provided as literals, which is is the preferred way, or as any other kind of expression that evaluates to the necessary type (or can be converted, depending on the query configuration).
 It is not possible to access properties from the node itself for which the marker is defined, as position markers are evaluated \textbf{before} the corresponding nodes are matched and subsequently any such attempts will result in an error during query evaluation.
 However, globally accessible information or any data provided by surrounding containers or structures can be used to specify marker arguments.\footnote{For example, a node could be defined to be in first position for short sentences and in last position for long ones.}
@@ -1957,7 +1979,7 @@ However, globally accessible information or any data provided by surrounding con
 	isNotAt & int & Node occurs at any position except the designated one ($index \neq arg$). Legal values are: $1 \leq arg \leq N$. \\  
 	\hline 
 \end{tabular}
-\caption{Position markers provided by the default evaluation engine for \iql. The conditions in the last column assume a container of size \textit{N} as context. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
+\caption[Global position markers]{Position markers provided by the default evaluation engine for \ac{iql}. The conditions in the last column assume a container of size \textit{N} as context. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
 \label{tab:position-markers}
 \end{table} 
 
@@ -1999,7 +2021,7 @@ As a general rule, relative indices should only be used with regular (positive) 
 
 \paragraph{Marker Stacking}
 \noindent Position markers generally may \textbf{only} be used as top-level terms in a constraint expression.
-\iql allows multiple position markers to occur in the same constraint expression, with the following condition:
+\ac{iql} allows multiple position markers to occur in the same constraint expression, with the following condition:
 When the expression is viewed in conjunctive normal form, positional markers may not be mixed with non-marker terms inside a single clause.
 Multiple marker-only clauses are allowed however.
 \begin{Verbatim}[samepage=true]
@@ -2038,7 +2060,7 @@ All tree markers are subject to the same rules as position markers regarding neg
 Note however, that the default order for traversing child nodes in a tree does not necessarily\footnote{The \ac{icmf} does however strongly encourage tree structures to order children according to their begin-offsets if it does not interfere with their intended semantics.} reflect the actual order of the child nodes position when projected onto the underlying foundation layer.
 It can therefore make sense to define additional precedence constraints via global constraints if needed.
 
-\begin{table}[ht]\centering
+\begin{table}[!htb]\centering
 	\begin{tabular}{|p{0.17\textwidth}|p{0.14\textwidth}|p{0.60\textwidth}|}
 		\hline 
 		\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
@@ -2061,17 +2083,18 @@ It can therefore make sense to define additional precedence constraints via glob
 		isChildNotAt & int & Node occurs as child at any position except the designated one ($childIndex \neq arg$). Legal values are: $1 \leq arg \leq N$. \\  
 		\hline 
 	\end{tabular}
-	\caption{Positional markers for trees provided by the default evaluation engine for \iql. The conditions in the last column assume a parent node with \textit{N} children as context and $childIndex$ being the desired position of the node within its parent's list of children. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
+	\caption[Tree positional markers]{Positional markers for trees provided by the default evaluation engine for \ac{iql}. The conditions in the last column assume a parent node with \textit{N} children as context and $childIndex$ being the desired position of the node within its parent's list of children. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
 	\label{tab:tree-position-markers}
 \end{table}
 
-\paragraph{Hierarchy Markers}
+\subsubsection{Hierarchy Markers}
+\label{sec:hierarchy-markers}
 Apart from the horizontal domain described above, tree markers also cover the hierarchical aspect of tree structures.
 A series of additional markers is available to specify a node's vertical location in the tree, as shown in \cref{tab:tree-hierarchy-markers}.
 These markers inherit all the rules of general tree markers, except that they cannot be used with relative indices.%\footnote{The reason is that all the hierarchy-related methods in \ac{icmf} are optional and as such a tree object cannot be expected to provide ready-to-use information about its depths or the heights of individual subtrees. Subsequently the \ac{icqp} would have to analyze a tree first before being able to construct an efficient matcher for it, which defeats the purpose of}
 
-\begin{table}[ht]\centering
-\begin{tabular}{|p{0.22\textwidth}|p{0.14\textwidth}|p{0.55\textwidth}|}
+\begin{table}[!htb]\centering
+\begin{tabular}{|p{0.23\textwidth}|p{0.14\textwidth}|p{0.54\textwidth}|}
 	\hline 
 	\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
 	\hline 
@@ -2096,69 +2119,147 @@ These markers inherit all the rules of general tree markers, except that they ca
 	\hline 
 	isAnyGeneration & - & Node is nested arbitrarily deep in its parent. This is the equivalent of a full transitive closure over the tree dominance relation between parent and child nodes. \\  
 	\hline 
+	isLeftmostt & - & Node is located along the path of leftmost descendants (according to the actual position on the underlying foundation layer, \textbf{not} necessarily the order of child nodes along each step). This marker is generally combined with one of the generation-based markers to provide an indicator on the vertical location of the desired descendant. \\  
+	\hline 
+	isRightmost & - & Represents the symmetric opposite of above \query{isLeftmost}, marker, following the path of rightmost descendants. \\  
+	\hline 
 \end{tabular}
-\caption{Additional markers for hierarchical properties in tree structures. Note that ``parent'' in the matching conditions refers to the node in a target tree that has been matched by the original node's parent.}
+\caption[Hierarchical markers]{Additional markers for hierarchical properties in tree structures. Note that ``parent'' in the matching conditions refers to the node in a target tree that has been matched by the original node's parent.}
 \label{tab:tree-hierarchy-markers}
 \end{table}
 
-All the additional hierarchical markers in \cref{tab:tree-hierarchy-markers} operate purely on the vertical axis within a tree structure.
+All the additional hierarchical markers in \cref{tab:tree-hierarchy-markers} operate purely on the vertical axis within a tree structure (with the exception of the two ``descendants'' markers that use the fringes of the subtree spanned by a node's parent to place candidate nodes in the target tree).
 The initial lot of them (\query{isRoot}, \query{isNoRoot}, \query{isLeaf}, \query{isNoLeaf} and \query{isIntermediate}) are based on the presence or absence of child nodes and/or a parent.
 The remaining markers use the concept of \textit{generations}\footnote{Also often called ``levels'' in tree structures.} in the tree.
 Given a tree structure $T$ and the root node $R$, the set of nodes in $T$ are partitioned into disjoint sets of generations $G_0$ to $G_n$ where $n$ is the height of $T$ and $G_i$ is the set of nodes belonging to the $i$-th generation, that is all the nodes with a depth of $i$ (i.e. path distance $i$ to $R$). 
 Note that $R$ is the only member in $G_0$ and $G_n$ can only contain leaf nodes.
-Generations in structural \iql queries are always calculated based on the immediate parent of the node declaration that contains the marker(s).
+Generations in structural \ac{iql} queries are always calculated based on the immediate parent of the node declaration that contains the marker(s).
 If a constraint related to the nesting distance between transitively nested nodes or other non-immediate relations is desired, global constraints (\ref{sec:global-constraints}) should be used, possibly employing dedicated tree functions (\ref{sec:tree-functions}).
 
-
-If no generation markers are used within a node constraint and the node is nested, a direct parent-child relation is assumed, which is equivalent ti \query{isGeneration(1)}.
+If no generation markers are used within a node constraint and the node is nested, a direct parent-child relation is assumed, which is equivalent to \query{isGeneration(1)}.
 Nodes that represent the root of a tree query can also use generation-based markers to indicate where in a prospective target tree the associated item should be located.
 Regular tree hierarchy markers can also be combined with generation-based markers to  further specify the location within a tree.
 For instance, \query{[\$x: [isGenerationAfter(2) \&\& isNoLeaf]]} will match any node that is nested at least 3 steps deep within \member{x} but ignores leaves.
 The \query{isRoot} marker however cannot be combined with any other hierarchy-related markers, as only designated roots in the target structure can match it and the only sensible combinations would be with normal (horizontal) position markers (\ref{sec:position-markers}).
-If the \query{isRoot} marker is being used within a nested node, an error will be issued as the query will be impossible to satisfy.%TODO mention that engine does this in general for obviously erroneous queries?
+If the \query{isRoot} marker is being used within a nested node, an error will be issued as the query will be impossible to satisfy.\footnote{The \ac{icqp} does this for any kinds of obviously erroneous queries when the planning phase results in unsolvable issues.}
 
-\paragraph{Evaluation Performance}
-\noindent Tree-related methods for fetching hierarchical information (such as height and depth of a node) are optional in \ac{icmf}.
+\begin{wrapfigure}[18]{L}{0pt}
+	\centering
+	\begin{forest}
+		for tree={ circle, draw	}
+	[Root 
+		[\textcolor{darkgreen}{1}
+			[\textcolor{darkgreen}{4} [\textcolor{darkgreen}{11}]] [5] [6 [12] [13]]
+		] 
+		[2
+			[7] [8 [14]]
+		]
+		[\textcolor{darkred}{3}
+			[9 [15] [16]] [\textcolor{darkred}{10}]
+		]
+	]
+	\end{forest}
+	\caption[Fringe illustration]{\label{fig:tree-fringe} Example tree with highlighted nodes on the fringes for the \query{isLeftmost} (\textcolor{darkgreen}{green}, nodes 1, 4 and 11) and \query{isRightmost} (\textcolor{darkred}{red}, nodes 3 and 10) markers.}
+\end{wrapfigure}
+
+The two \textbf{fringe} markers \query{isLeftmost} and \query{isRightmost} play a special role as they effectively combine horizontal and vertical navigation into a single marker.
+They signal that node candidates must be located at the left (or right) fringe of a target tree as illustrated by \cref{fig:tree-fringe}.
+As such they describe a path starting from a particular node downwards rather than a specific position within that node's list of immediate children.
+Note that the \textit{leftmost} and \textit{rightmost} properties do \textbf{not} refer to the position of children within their parent's list of child nodes.
+Instead the actual position on the underlying foundation layer is taken as basis for determining which nodes belong to the respective fringes.
+More specifically, an item's begin index is responsible for its position in the lift of \textit{leftmost} candidates, and the end index is taken as the decisive property when it comes to the \textit{rightmost} fringe.
+Since the \ac{icmf} does not require structures to order outgoing edges for a parent node according to the positional indices of its children, using those fringe markers can incur a certain computational overhead.
+
+Fringe markers are typically combined with one or more generation-based markers to further specify a node's position in the tree.
+If no additional hierarchical marker is provided only the immediate children of a node are taken into account.
+Otherwise the fringe marker will guide the selection of child nodes along the path to the desired vertical position.
+
+\paragraph{Examples:}
+\begin{Verbatim}[samepage=true]
+[isLeftmost && isLeaf]            // node 11
+[isRightmost && isGeneration(-2)] // node 3
+\end{Verbatim}
+
+
+\subsubsection{Evaluation Performance}
+\label{sec:hierarchy-markers-performance}
+Tree-related methods for fetching hierarchical information (such as height and depth of a node) are optional in \ac{icmf}.
 As a result the \ac{icqp} might have to compute the data required for evaluating a query at runtime, generating some additional overhead from tree traversals. 
 This is especially critical for hierarchical markers that use reverse indices, as knowledge about the overall tree height is required to effectively translate relative indices into absolute intervals of legal (generation) values.
 
 \subsection{Sequence Functions}
 \label{sec:sequence-functions}
+\todo[inline]{finish}
 
-\begin{table}[ht]\centering
-	\begin{tabular}{|p{0.18\textwidth}|p{0.14\textwidth}|p{0.12\textwidth}|p{0.45\textwidth}|}
+\begin{table}[!htb]\centering
+	\begin{tabular}{|p{0.20\textwidth}|p{0.14\textwidth}|p{0.10\textwidth}|p{0.45\textwidth}|}
 		\hline 
 		\textbf{Label} & \textbf{Arguments} & \textbf{Result} & Description \\ 
 		\hline 
 		\hline  
-		isAdjacent & node[] & Boolean & Check whether the given nodes form a continuous interval on the utnerlying foundation layer. \\ 
+		isAdjacent & node[] & Boolean & Check whether the given nodes form a continuous interval on the underlying foundation layer. \\ 
 		\hline  
 		isOrdered & node[] & Boolean & Check whether the given nodes form an ordered sequence, as indicated by their begin indices, allowing for nodes to overlap. \\ 
 		\hline  
 		isOrderedDisjoint & node[] & Boolean & Check whether the given nodes form a disjoint ordered sequence, as indicated by their begin indices. \\ 
 		\hline 
 	\end{tabular}
-	\caption{Utility functions for advanced sequence matching. Primarily these functions are intended to provide equivalents for the position markers in \cref{sec:position-markers} usable in global constraints and batch methods for checking the horizontal arrangement of nodes.}
+	\caption[Sequence functions]{Utility functions for advanced sequence matching. Primarily these functions are intended to provide equivalents for the position markers in \cref{sec:position-markers} usable in global constraints and batch methods for checking the horizontal arrangement of nodes.}
 	\label{tab:sequence-functions}
+	\todo{correct description/caption}
+\end{table}
+
+\subsection{Spatial Functions}
+\label{sec:relative-markers}
+
+To provide fine control over horizontal positioning of nodes, as set of utility functions is provided that models specific spatial relations regarding (relative) positioning, overlap or inclusion of a pair of nodes.
+
+\begin{table}[!htb]\centering
+\begin{tabular}{|p{0.20\textwidth}|p{0.74\textwidth}|}
+	\hline 
+	\textbf{Label} &  \textbf{Matching Condition} \\ 
+	\hline 
+	\hline  
+	isLeftOf  & Node $n_1$ located completely outside and to the left of $n_2$ ($n_{1}.right < n_{2}.left$). \\  
+	\hline  
+	isRightOf  & Node $n_1$ located completely outside and to the right of $n_2$ ($n_{1}.left > n_{2}.right$). \\ 
+	\hline  
+	overlaps  & Nodes $n_1$ and $n_2$ overlap in some way ($n_{1}.left \le n_{2}.right \land n_{2}.left \le n_{1}.right$). \\ 
+	\hline  
+	overlapsNot  & Nodes $n_1$ and $n_2$ do not overlap ($n_{1}.left > n_{2}.right \lor n_{2}.left > n_{1}.right$). This function is a negation of \query{overlaps} that mainly exists as as syntactic sugar. \\  
+	\hline 
+	overlapsLeft  & Node $n_1$ overlaps $n_2$ on the left side ($n_{1}.left \le n_{2}.left \land n_{1}.right \ge n_{2}.left$). \\ 
+	\hline 
+	overlapsRight  & Node $n_1$ overlaps $n_2$ on the right side ($n_{1}.right \ge n_{2}.right \land n_{1}.left \le n_{2}.right$). \\ 
+	\hline 
+	surrounds  & Node $n_1$ fully surrounds $n_2$, i.e. it overlaps $n_2$ on both sides ($n_{1}.left \le n_{2}.left \land n_{1}.right \ge n_{2}.right$). \\ 
+	\hline 
+	fits  & Node $n_1$ exactly fits $n_2$, i.e. its boundaries match on both sides ($n_{1}.left = n_{2}.left \land n_{1}.right = n_{2}.right$). \\ 
+	\hline 
+\end{tabular}
+\caption[Spatial functions]{Spatial functions to model relative positioning between two nodes. All functions listed take exactly two node arguments, $n_1$ and $n_2$. For the matching condition column, $n.left$ stands for the begin index (the left boundary of the span covered by $n$ when projected onto the common foundation layer) and $n.right$ for the end index with $n.left \leq n.right$.}
+\label{tab:spatial-functions}
 \end{table}
 
 \subsection{Tree Functions}
 \label{sec:tree-functions}
 
-\begin{table}[ht]\centering
-	\begin{tabular}{|p{0.20\textwidth}|p{0.25\textwidth}|p{0.46\textwidth}|}
+\begin{table}[!htb]\centering
+	\begin{tabular}{|p{0.17\textwidth}|p{0.14\textwidth}|p{0.60\textwidth}|}
 		\hline 
 		\textbf{Label} & \textbf{Arguments} & \textbf{Result} \\ 
 		\hline 
 		\hline  
-		ancestor & array of nodes & node \\ 
+		ancestor & node[] & Returns the first common ancestor of the given nodes. \\ 
+		\hline  
+		parentAt & node, int & Returns the $arg_2$-th parent of $arg_1$. The immediate parent of $arg_1$ is reached with $arg_2 = 1$, its grandparent with $arg_2 = 2$ and so on \dots Note that a node's immediate parent can (in the presence of a single unambiguous structure) be reached with the \query{parent} shortcut field. \\ 
 		\hline 
 	\end{tabular}
-	\caption{Utility functions for advanced tree matching. Primarily these functions are intended to complement the top-down tree matching strategy employed by the \ac{icqp} with bottom-up evaluation.}
+	\caption[Tree functions]{Utility functions for advanced tree matching. Primarily these functions are intended to complement the top-down tree matching strategy employed by the \ac{icqp} with bottom-up evaluation and navigation options.}
 	\label{tab:tree-functions}
 \end{table}
 
-The nested style of defining tree queries in \iql in top-down manner and the associated matcher in the \ac{icqp} also producing top-down automata for evaluation cause some obvious shortcomings:
+The nested style of defining tree queries in \ac{iql} in top-down manner and the associated matcher in the \ac{icqp} also producing top-down automata for evaluation cause some obvious shortcomings:
 For problems in bottom-up style, for instance ``Find the first common ancestor of adjacent phrases x and y'' it can be more intuitive (and usually more efficient wrt evaluation) to define the query bottom-up.
 Using the tree functions listed in \cref{tab:tree-functions} a simple query for this question could look like the following: 
 \begin{Verbatim}[samepage=true]
@@ -2181,7 +2282,7 @@ Since node \member{a} does not provide any strong filter mechanism besides needi
 
 There be dragons\dots
 
-(Content of the this section will be added as \iql evolves)
+(Content of the this section will be added as \ac{iql} evolves)
 %TODO once tree evaluation is fully implemented, start the graph part
 
 
