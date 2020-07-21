@@ -26,6 +26,7 @@ package de.ims.icarus2.query.api.iql;
 public class IqlCorpus extends IqlNamedReference {
 
 	//TODO extra fields?
+	//TODO add PID-style field for unambiguous identification based on external databases
 
 	@Override
 	public IqlType getType() { return IqlType.CORPUS; }

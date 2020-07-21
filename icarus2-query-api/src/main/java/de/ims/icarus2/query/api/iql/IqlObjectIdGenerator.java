@@ -119,15 +119,8 @@ public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
 		return prefix + '/' + _format.format(count);
 	}
 
-	/**
-	 * @see com.fasterxml.jackson.annotation.ObjectIdGenerator#generateId(java.lang.Object)
-	 */
-	@Override
-	public String generateId(Object forPojo) {
-		if(forPojo==null) {
-			return null;
-		}
-		IqlType type = ((IqlQueryElement)forPojo).getType();
+	private String makeId(IqlQueryElement iql) {
+		IqlType type = iql.getType();
 		String idPrefix = type.getUidPrefix();
 		if(idPrefix==null) {
 			return null;
@@ -136,4 +129,18 @@ public class IqlObjectIdGenerator extends ObjectIdGenerator<String> {
 		return makeId(idPrefix, count);
 	}
 
+	/**
+	 * @see com.fasterxml.jackson.annotation.ObjectIdGenerator#generateId(java.lang.Object)
+	 */
+	@Override
+	public String generateId(Object forPojo) {
+		if(forPojo==null) {
+			return null;
+		}
+		return makeId((IqlQueryElement) forPojo);
+	}
+
+	public void assignId(IqlUnique iql) {
+		iql.setId(makeId(iql));
+	}
 }

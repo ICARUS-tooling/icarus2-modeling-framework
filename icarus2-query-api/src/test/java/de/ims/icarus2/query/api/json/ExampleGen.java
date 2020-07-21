@@ -52,22 +52,22 @@ public class ExampleGen {
 		IqlObjectIdGenerator gen = new IqlObjectIdGenerator();
 
 		IqlQuery query = new IqlQuery();
-		query.setId(gen.generateId(query));
+		gen.assignId(query);
 
 		IqlProperty property = new IqlProperty();
 		property.setKey(QuerySwitch.STRING_CASE_OFF.getKey());
 		query.addSetup(property);
 
 		IqlImport imp = new IqlImport();
-		imp.setId(gen.generateId(imp));
+		gen.assignId(imp);
 		imp.setName("common.tagsets.stts");
 		query.addImport(imp);
 
 		IqlStream stream = new IqlStream();
-		stream.setId(gen.generateId(stream));
+		gen.assignId(stream);
 
 		IqlCorpus corpus = new IqlCorpus();
-		corpus.setId(gen.generateId(corpus));
+		gen.assignId(corpus);
 		corpus.setName("TIGER v2");
 		stream.setCorpus(corpus);
 
@@ -83,16 +83,22 @@ public class ExampleGen {
 		stream.setRawPayload("FIND ADJACENT [pos==stts.ADJ][form==\"test\"]");
 
 		IqlPayload payload = new IqlPayload();
+		gen.assignId(payload);
 		payload.setQueryType(QueryType.SINGLE_LANE);
 		IqlLane lane = new IqlLane();
+		gen.assignId(lane);
+		lane.setName("syntax");
 		lane.setLaneType(LaneType.SEQUENCE);
 		IqlNodeSet nodeSet = new IqlNodeSet();
+		gen.assignId(nodeSet);
 		nodeSet.setNodeArrangement(NodeArrangement.ADJACENT);
 		IqlNode node1 = new IqlNode();
-		node1.setConstraint(pred("pos==stts.ADJ"));
+		gen.assignId(node1);
+		node1.setConstraint(pred("pos==stts.ADJ", gen));
 		nodeSet.addNode(node1);
 		IqlNode node2 = new IqlNode();
-		node2.setConstraint(pred("[form==\"test\"]"));
+		gen.assignId(node2);
+		node2.setConstraint(pred("[form==\"test\"]", gen));
 		nodeSet.addNode(node2);
 		lane.setElements(nodeSet);
 		payload.addLane(lane);
@@ -103,7 +109,7 @@ public class ExampleGen {
 
 		ObjectMapper mapper = IqlUtils.createMapper();
 
-		mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, payload);
+		mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, query);
 	}
 
 	private static IqlExpression exp(String s) {
@@ -112,8 +118,9 @@ public class ExampleGen {
 		return expression;
 	}
 
-	private static IqlConstraint pred(String s) {
+	private static IqlConstraint pred(String s, IqlObjectIdGenerator gen) {
 		IqlPredicate pred = new IqlPredicate();
+		gen.assignId(pred);
 		pred.setExpression(exp(s));
 		return pred;
 	}
