@@ -1,0 +1,67 @@
+{ "@context" : "http://www.ims.uni-stuttgart.de/icarus/v2/jsonld/iql/query" 
+  "@type" : "iql:Query",
+  "@id" : "query/000001",
+  "iql:imports" : [ {
+    "@type" : "iql:Import",
+    "@id" : "import/000001",
+    "iql:name" : "common.tagsets.stts"
+  } ],
+  "iql:setup" : [ {
+    "@type" : "iql:Property",
+    "iql:key" : "iql.string.case.off"
+  } ],
+  "iql:streams" : [ {
+    "@type" : "iql:Stream",
+    "@id" : "stream/000001",
+    "iql:corpus" : {
+      "@type" : "iql:Corpus",
+      "@id" : "corpus/000001",
+      "iql:name" : "TIGER v2"
+    },
+    "iql:rawPayload" : "FIND ADJACENT [pos==stts.ADJ][form==\"test\"]",
+    "iql:payload" : {
+      "@type" : "iql:Payload",
+      "@id" : "stream/000002",
+      "iql:queryType" : "singleLane",
+      "iql:lanes" : [ {
+        "@type" : "iql:Lane",
+        "@id" : "lane/000001",
+        "iql:name" : "syntax",
+        "iql:laneType" : "sequence",
+        "iql:elements" : {
+          "@type" : "iql:NodeSet",
+          "@id" : "nodes/000001",
+          "iql:children" : [ {
+            "@type" : "iql:Node",
+            "@id" : "node/000001",
+            "iql:constraint" : {
+              "@type" : "iql:Predicate",
+              "@id" : "pred/000001",
+              "iql:expression" : {
+                "@type" : "iql:Expression",
+                "iql:content" : "pos==stts.ADJ"
+              }
+            }
+          }, {
+            "@type" : "iql:Node",
+            "@id" : "node/000002",
+            "iql:constraint" : {
+              "@type" : "iql:Predicate",
+              "@id" : "pred/000002",
+              "iql:expression" : {
+                "@type" : "iql:Expression",
+                "iql:content" : "[form==\"test\"]"
+              }
+            }
+          } ],
+          "iql:nodeArrangement" : "adjacent"
+        }
+      } ]
+    },
+    "iql:result" : {
+      "@type" : "iql:Result",
+      "iql:resultTypes" : [ "kwic" ],
+      "iql:limit" : 100
+    }
+  } ]
+}

@@ -1,0 +1,28 @@
+{ "@context" : "http://www.ims.uni-stuttgart.de/icarus/v2/jsonld/iql/query" 
+  "@type" : "iql:Query",
+  "@id" : "query/000001",
+  "iql:imports" : [ {
+    "@type" : "iql:Import",
+    "@id" : "import/000001",
+    "iql:name" : "common.tagsets.stts"
+  } ],
+  "iql:setup" : [ {
+    "@type" : "iql:Property",
+    "iql:key" : "iql.string.case.off"
+  } ],
+  "iql:streams" : [ {
+    "@type" : "iql:Stream",
+    "@id" : "stream/000001",
+    "iql:corpus" : {
+      "@type" : "iql:Corpus",
+      "@id" : "corpus/000001",
+      "iql:name" : "TIGER v2"
+    },
+    "iql:rawPayload" : "FIND ADJACENT [pos==stts.ADJ][form==\"test\"]",
+    "iql:result" : {
+      "@type" : "iql:Result",
+      "iql:resultTypes" : [ "kwic" ],
+      "iql:limit" : 100
+    }
+  } ]
+}

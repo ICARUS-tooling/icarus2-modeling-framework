@@ -22,26 +22,32 @@
 
 \listoftables
 
+\listoftodos
+
 \newpage
 
-\section{Query Structure}
-\label{sec:query-structure}
+\section{Introduction}
+\label{sec:intro}
 
-Queries in \ac{iql} are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
+Queries in the \ac{iql} are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
 To achieve this complex task \ac{iql} embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. 
 As a side effect queries can become quite verbose and potentially cumbersome to define manually. 
-As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}). 
+As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}, cf. \cref{sec:inner-iql-elements}). 
 This document lists the basic building blocks of queries and their compositions.
 
-\begin{lstlisting}[language=json]
-{
-  "@context" : "http://www.ims.uni-stuttgart.de/icarus/jsonld/iql/query" 
-}
-\end{lstlisting}
-
+\Cref{sec:elements} gives an overview on the JSON-LD elements available in the ``outer'' section of the \ac{iql} protocol.
+\Cref{sec:inner-iql-elements} provides the specification for the actual query language used in a query's ``inner'' payload and \cref{sec:utility} finally contains various collections of utility functions available to make queries both simpler to declare and more efficient to evaluate.
 
 \section{JSON-LD Elements}
 \label{sec:elements}
+
+The ``outer layer'' of every serialized \ac{iql} query is a JSON-LD object with various (optional) properties to hold all the required information for proper query evaluation.
+
+The following snippet shows the mockup of a simple query that searches the TIGER corpus for word pairs starting with an adjective and ending in a word with the surface form ``test'', ignoring case and only returning up to 100 hits in a \ac{kwic} style. 
+The query also features an import statement for the STTS part-of-speech tagset, allowing more controlled expressions inside query constraints.
+\medskip
+
+\lstinputlisting[language=json,basicstyle=\small\ttfamily]{res/iql-mockup-query-no-payload.json}
 
 \todo{say something about the namespace and general iql: prefixing}
 
@@ -803,9 +809,6 @@ This section defines the syntax and additional rules for those raw statements.
 Note that the textual form of all following \ac{iql} elements is expected to be encoded in UTF-8, so no special escape mechanisms are needed for unicode content.
 
 
-%TODO from here on restructure!
-
-
 \subsection{Reserved Words}
 \label{sec:reserved-words}
 
@@ -1428,10 +1431,10 @@ Note that those conversions are only active if the respective switches to disabl
 	\label{tab:constraints-translation}
 \end{table}
 
-\paragraph{Result Expansion} %TODO assigment part, explain how results can be expanded after absic candidates have been matched
+\paragraph{Result Expansion}
 Besides their obvious role as filters, constraints can also be used to expand the set of captured members in a match, subsequently usable for instance in advanced result processing.\footnote{Per default members defined as bindings (\ref{sec:bindings}) are captured when used as labels for nodes (\ref{sec:structural-constraints}) in the query.}
 The assignment operation (\ref{sec:assignment}) allows arbitrary expressions to be evaluated and having their results stored in either a general variable or, in case of a result type compatible to \repoLink{\modelsUrl members/item/Item.java}{items}, actual member variable (\ref{sec:variables-references}).
-
+%TODO assigment part, explain how results can be expanded after absic candidates have been matched
 
 \subsection{Payload Structure}
 \label{sec:payload-structure}
@@ -2191,6 +2194,7 @@ This is especially critical for hierarchical markers that use reverse indices, a
 \label{sec:sequence-functions}
 \todo[inline]{finish}
 
+\todo{correct description/caption in table}
 \begin{table}[!htb]\centering
 	\begin{tabular}{|p{0.20\textwidth}|p{0.14\textwidth}|p{0.10\textwidth}|p{0.45\textwidth}|}
 		\hline 
@@ -2206,7 +2210,6 @@ This is especially critical for hierarchical markers that use reverse indices, a
 	\end{tabular}
 	\caption[Sequence functions]{Utility functions for advanced sequence matching. Primarily these functions are intended to provide equivalents for the position markers in \cref{sec:position-markers} usable in global constraints and batch methods for checking the horizontal arrangement of nodes.}
 	\label{tab:sequence-functions}
-	\todo{correct description/caption}
 \end{table}
 
 \subsection{Spatial Functions}
@@ -2230,11 +2233,15 @@ To provide fine control over horizontal positioning of nodes, as set of utility 
 	\hline 
 	overlapsLeft  & Node $n_1$ overlaps $n_2$ on the left side ($n_{1}.left \le n_{2}.left \land n_{1}.right \ge n_{2}.left$). \\ 
 	\hline 
-	overlapsRight  & Node $n_1$ overlaps $n_2$ on the right side ($n_{1}.right \ge n_{2}.right \land n_{1}.left \le n_{2}.right$). \\ 
+	overlapsRight  & Node $n_1$ overlaps $n_2$ on the right side ($n_{1}.right \ge n_{2}.right \land n_{1}.left \le n_{2}.right$). \\ %TODO a word about surrounding with full overlap?
 	\hline 
 	surrounds  & Node $n_1$ fully surrounds $n_2$, i.e. it overlaps $n_2$ on both sides ($n_{1}.left \le n_{2}.left \land n_{1}.right \ge n_{2}.right$). \\ 
 	\hline 
 	fits  & Node $n_1$ exactly fits $n_2$, i.e. its boundaries match on both sides ($n_{1}.left = n_{2}.left \land n_{1}.right = n_{2}.right$). \\ 
+	\hline 
+	alignsLeft  & Node $n_1$ and $n_2$ share the same left boundary ($n_{1}.left = n_{2}.left$). \\ 
+	\hline 
+	alignsRight  & Node $n_1$ and $n_2$ share the same right boundary ($n_{1}.right = n_{2}.right$). \\ 
 	\hline 
 \end{tabular}
 \caption[Spatial functions]{Spatial functions to model relative positioning between two nodes. All functions listed take exactly two node arguments, $n_1$ and $n_2$. For the matching condition column, $n.left$ stands for the begin index (the left boundary of the span covered by $n$ when projected onto the common foundation layer) and $n.right$ for the end index with $n.left \leq n.right$.}

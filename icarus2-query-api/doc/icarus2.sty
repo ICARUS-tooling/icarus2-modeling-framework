@@ -181,6 +181,7 @@
 	breaklines=true,
 	frame=lines,
 %	backgroundcolor=\color{gray}, %only if you like
+	xleftmargin=2em,
 	string=[s]{"}{"},
 	comment=[l]{:\ "},
 	morecomment=[l]{:"},
@@ -195,4 +196,27 @@
 	{7}{{{\color{numb}7}}}{1}
 	{8}{{{\color{numb}8}}}{1}
 	{9}{{{\color{numb}9}}}{1}
+}
+
+\lstdefinelanguage{java}{
+	basicstyle=\scriptsize\ttfamily,
+	keywordstyle=\color{javapurple}\bfseries,
+	stringstyle=\color{javared},
+	commentstyle=\color{javagreen},
+	morecomment=[s][\color{javadocblue}]{/**}{*/},
+	numberstyle=\tiny\color{black},
+	numbers=left,
+	numbersep=3pt,
+	stepnumber=1,
+	breakautoindent=false,
+	framerule=0pt,
+	xleftmargin=1em,
+	xrightmargin=0pt,
+	breakindent=0pt,
+	showspaces=false,
+	showtabs=false,
+	breaklines=true,
+	showstringspaces=false,
+	breakatwhitespace=true,
+	tabsize=4,
 }
