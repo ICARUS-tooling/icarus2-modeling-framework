@@ -219,6 +219,7 @@ public class QueryEngine {
 		}
 
 		private CorpusManifest resolveCorpus(IqlCorpus source) {
+			//TODO provide a mechanism to resolve PID values in IqlCorpus instances
 			return corpusManager.getManifestRegistry().getCorpusManifest(source.getName())
 					.orElseThrow(() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
 							"Unable to resolve corpus name: "+source.getName()));

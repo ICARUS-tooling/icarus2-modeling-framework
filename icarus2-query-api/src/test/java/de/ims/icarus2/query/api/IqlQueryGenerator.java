@@ -279,6 +279,8 @@ public class IqlQueryGenerator {
 
 	private void prepareCorpus(IqlCorpus corpus, IncrementalBuild<?> build, Config config) {
 		prepareNamedReference0(corpus, build, config);
+
+		build.addFieldChange(corpus::setPid, IqlProperties.PID, index("pid"));
 	}
 
 	private void prepareData(IqlData data, IncrementalBuild<?> build, Config config) {

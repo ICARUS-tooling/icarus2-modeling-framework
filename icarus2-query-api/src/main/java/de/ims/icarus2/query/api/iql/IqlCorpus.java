@@ -19,6 +19,14 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkNullOrNotEmpty;
+
+import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author Markus Gärtner
  *
@@ -26,8 +34,29 @@ package de.ims.icarus2.query.api.iql;
 public class IqlCorpus extends IqlNamedReference {
 
 	//TODO extra fields?
-	//TODO add PID-style field for unambiguous identification based on external databases
+
+	/**
+	 * Describes a persistent identifier stemming from a third-party
+	 * storage system or referencing service.
+	 */
+	@JsonProperty(value=IqlProperties.PID)
+	@JsonInclude(Include.NON_ABSENT)
+	private Optional<String> pid = Optional.empty();
 
 	@Override
 	public IqlType getType() { return IqlType.CORPUS; }
+
+	/**
+	 * @see de.ims.icarus2.query.api.iql.IqlNamedReference#checkIntegrity()
+	 */
+	@Override
+	public void checkIntegrity() {
+		super.checkIntegrity();
+
+		checkOptionalStringNotEmpty(pid, IqlProperties.PID);
+	}
+
+	public Optional<String> getPid() { return pid; }
+
+	public void setPid(String pid) { this.pid = Optional.ofNullable(checkNullOrNotEmpty(pid)); }
 }

@@ -85,4 +85,10 @@ public class Conditions {
 			throw new IllegalArgumentException("String must not be empty");
 		return s;
 	}
+
+	public static String checkNullOrNotEmpty(String s) {
+		if(s!=null && s.isEmpty())
+			throw new IllegalArgumentException("String must be null or not be empty");
+		return s;
+	}
 }

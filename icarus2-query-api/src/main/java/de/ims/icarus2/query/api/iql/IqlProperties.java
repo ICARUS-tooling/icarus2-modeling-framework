@@ -35,6 +35,8 @@ public final class IqlProperties {
 
 	public static final String NAME = IQL_NS_PREFIX+"name";
 
+	public static final String PID = IQL_NS_PREFIX+"pid";
+
 	public static final String ALIAS = IQL_NS_PREFIX+"alias";
 
 	public static final String OPTIONAL = IQL_NS_PREFIX+"optional";
