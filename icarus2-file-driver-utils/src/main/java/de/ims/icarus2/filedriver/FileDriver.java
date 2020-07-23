@@ -1829,8 +1829,9 @@ public class FileDriver extends AbstractDriver {
 		 * Perform whatever kind of operation the step models.
 		 *
 		 * @param driver
+		 * @param reportBuilder
 		 * @param env
-		 * @return
+		 * @return {@code true} iff this step executed successfully
 		 * @throws Exception
 		 */
 		boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception;

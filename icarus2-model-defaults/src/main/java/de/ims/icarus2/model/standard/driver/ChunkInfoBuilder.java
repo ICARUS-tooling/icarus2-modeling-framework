@@ -96,8 +96,13 @@ public class ChunkInfoBuilder {
 
 	/**
 	 * Returns the current state of the internal {@link ChunkInfo}.
-	 * Note that this method does <b>not</b> reset this builder and
-	 * therefore can be used multiple times with the same result.
+	 * Note that this method does <b>not</b> {@link #reset() reset}
+	 * this builder and therefore can be used multiple times with
+	 * the same result.
+	 * <p>
+	 * The result returned is <i>owned</i> by this builder and should
+	 * <b>not</b> be stored, cached or otherwise used outside of
+	 * scanning its content.
 	 *
 	 * @return
 	 */
