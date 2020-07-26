@@ -16,7 +16,7 @@
     "iql:corpus" : {
       "@type" : "iql:Corpus",
       "@id" : "corpus/000001",
-      "iql:name" : "TIGER v2"
+      "iql:name" : "TIGER-v2"
     },
     "iql:rawPayload" : "FIND ADJACENT [pos==stts.ADJ][form==\"test\"]",
     "iql:result" : {

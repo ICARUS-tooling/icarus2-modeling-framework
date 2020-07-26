@@ -36,7 +36,7 @@ As a countermeasure the overall structure of a query is composed of blocks that 
 This document lists the basic building blocks of queries and their compositions.
 
 \Cref{sec:elements} gives an overview on the JSON-LD elements available in the ``outer'' section of the \ac{iql} protocol.
-\Cref{sec:inner-iql-elements} provides the specification for the actual query language used in a query's ``inner'' payload and \cref{sec:utility} finally contains various collections of utility functions available to make queries both simpler to declare and more efficient to evaluate.
+\Cref{sec:inner-iql-elements} provides the specification for the actual query language used in a query's ``inner'' payload and \cref{sec:utility} finally contains various collections of utility functions available to make queries both simpler to declare and more efficient to evaluate by the \ac{icqp}.
 
 \section{JSON-LD Elements}
 \label{sec:elements}
@@ -149,15 +149,18 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 %\begin{itemize}
 %\item id
 %\item name
+%\item pid
 %\end{itemize}
 \desc{Top-level entry point for querying a single stream.}
 \begin{attributes}{\iqlType{Corpus}}
 	\attribute{id}{string}{yes}{}
 	\attribute{name}{string}{yes}{}
+	\attribute{pid}{string}{no}{}
 \end{attributes}
 \begin{description}
 	\item[\iqlType{id}] Identifier to uniquely identify the corpus within the entire query.
 	\item[\iqlType{name}] The identifier used by the query engine's \repoLink{\manifestsUrl ManifestRegistry.java}{manifest registry} for the corpus.
+	\item[\iqlType{pid}] Optional external identifier used for the corpus. This can be any persistent identifier such as a DOI, VLO-Handle or similar means of referencing a resource.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -985,7 +988,7 @@ In \ac{iql} all top-level (i.e. not part of the tail expression in a hierarchica
 		\hline 
 	\end{tabular}
 	\footnotetext{Fixed as in ``fixed type'', i.e. the type of value stored is pre-determined and cannot be changed during query evaluation.} %TODO doesn't work properly
-	\caption[Available identifier types]{Identifier types available in \ac{iql} and their properties.}
+	\caption[Identifier types]{Identifier types available in \ac{iql} and their properties.}
 	\label{tab:identifiers}
 \end{table}
 
@@ -1231,14 +1234,14 @@ Binary operations between two expressions take the following simple form:
 		\hline 
 		\verb|=~  !~  =#  !#|& string operators: matches (regex), matches not (regex), contains, contains not \\ 
 		\hline 
-		\verb|==  !=|& equals, equals not \\ 
+		\verb|==  !=|& equality, inequality \\ 
 		\hline 
-		\verb|&&  AND|& logical and \\ 
+		\verb|&&  AND|& logical conjunction \\ 
 		\hline 
-		\verb#||  OR#& logical or \\ 
+		\verb#||  OR#& logical disjunction \\ 
 		\hline 
 	\end{tabular} 
-	\caption[Available binary operators]{Binary operators available in \ac{iql} and their hierarchical order.}
+	\caption[Binary operators]{Binary operators available in \ac{iql} and their hierarchical order.}
 	\label{tab:binary-operators}
 \end{table}
 
@@ -1449,7 +1452,7 @@ In this case the only way of restricting results is by using the \iqlType{Result
 		<payload> ::= `ALL' 
 		\alt <bindingsList>? (`FILTER' `BY' <constraint>)? `FIND' <modifier>? <selection>
 		
-		<modifier> ::= `FIRST' | `LAST' | `ANY'	
+		<modifier> ::= (`FIRST' | `LAST' | `ANY') (<digits> `HITS')?	
 	\end{grammar}
 	\diagsep
 	\begin{samepage} %TODO need alternative to prevent pagebreak between multiple rrfrag instances
@@ -1459,7 +1462,10 @@ In this case the only way of restricting results is by using the \iqlType{Result
 	\end{rrfrag}
 	\newline
 	\begin{rrfrag}{...}{->}
-		`FIND' \sst \\ `FIRST' \\ `LAST' \\ `ANY' \est <selection>
+		`FIND' \sst \\
+			\sst `FIRST' \\ `LAST' \\ `ANY' \est
+			\sst \\ <digits> `HITS' \est
+		\est <selection>
 	\end{rrfrag}
 	\end{samepage}
 \end{gram}
@@ -1481,6 +1487,10 @@ The semantics of the \keyword{ANY} modifier are such that the engine may freely 
 Note however, that to support reproducible search results, repeated evaluations of the same query on a corpus are still required to yield the same instances here.
 The exact semantics of \keyword{FIRST} and \keyword{LAST} are depending on the type of structural constraints used in the payload, but generally are based on the natural order of items within the corpus (typically this is the flow of words in a text).
 The evaluation behavior for them is subsequently covered in \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}.
+
+All three available modifiers can also take an optional numerical argument that defines the upper bound for the number of hits to be reported, followed by the \keyword{HITS} keyword.
+This \textit{limit} must be a positive non-zero integer that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
+If a modifier is accompanied by a limit value, the \ac{icqp} will report a number of hits per \ac{uoi} no greater than this limit.
 
 \subsubsection{Bindings}
 \label{sec:bindings}
@@ -1638,12 +1648,13 @@ As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder t
 	\end{rrfrag}\\
 \end{gram}
 Declaring a node in a structural constraint implicitly marks it as existentially quantified.
-Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of universal quantification, negation, explicit quantification, \textit{at-most} (0 to n), \textit{at-least} (n to inf) or bounded range quantification. 
+Additionally, nodes can be \textbf{explicitly quantified} with an arbitrary combination of \textit{universal} quantification, \textit{negation}, \textit{explicit} quantification, \textit{at-most} (0 to n), \textit{at-least} (n to inf) or \textit{bounded range} quantification. 
 The \cref{gram:quantifier} simplifies the overall rules for \synt{quantifier} to keep it compact.
 Albeit being shown here as unrelated to each other, the appearance of the angle brackets (\lit{\textless} and \lit{\textgreater}) before or after the actual quantifier content is restricted to either \textit{both} of them being used (for a proper wrapping, such as \lit{\textless 3..10 \textgreater}) or \textit{none} of them (for plain quantifiers, such as \lit{1|4|ALL}).
 \ac{iql} allows multiple quantifiers to be separated by the pipe symbol \lit{|} to express disjunction between quantifiers.
 This way complex constraints can be defined very neatly, such as the ``all or nothing'' quantification \lit{\keyword{all}|\keyword{not}}.
 This quantifier combination ensures that either all targets in a certain context match the node in question, or none does.\footnote{Example: find all sentences that either have no word with more than five characters or all of their words have five or more characters.}
+Note that this \textit{context} of a quantifier plays a fundamental role, as for instance the usage of path markers (\ref{sec:path-markers}) changes along what dimension or path the quantification is to be applied.
 
 \begin{gram}[\synt{quantifier}]
 	\label{gram:quantifier}
@@ -1682,6 +1693,72 @@ Therefore it is perfectly legal (and in parts expected from an efficient evaluat
 If a \synt{node} is used within a tree environment, it can also contain a \textbf{nested} \synt{nodeStatement} declaration to define structural constraints on child nodes.
 The target item a node is matched against during query evaluation defines the structural context that is then in turn being used for matching the nested \synt{node} instances.
 Note that this opens up the entire spectrum of node grouping, disjunctions and arrangement modifiers to define constraints on (sub-)trees.
+
+\paragraph{Quantification}
+\noindent \ac{iql} knows a staggering total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
+Those basic sets are \textit{existential negation}, \textit{universal quantification}, \textit{exact}, \textit{at-least}, \textit{at-most} and \textit{range}.
+Some quantifiers differentiate between \textit{greedy} (the default), \textit{reluctant} and \textit{possessive} mode.
+The differences of those three modes are explained below, assuming that the quantifier in question occurred on a node constraint $n_i$ that is followed by an optional sequence of additional node constraints $n_{i+1}..n_N$.
+Note that the complete query will only succeed if $n_i$ \textbf{and} all its successors successfully match!
+The primary effect caused by different modes is the size and number of matches reported by the evaluation engine.
+\begin{description}
+	\item[greedy] Match as many instances for $n$ as possible, while still allowing $n_{i+1}..n_N$ to find appropriate candidates. This will find at least as many instances of $n$ as the \textit{reluctant} mode and at most as many as the \textit{possessive} mode, but is guaranteed to leave room for $n_{i+1}..n_N$ when collecting hits.
+	\item[reluctant] Match as few instances for $n$ as possible, considering the need of $n_{i+1}..n_N$ to also produce candidates. This will produce the shortest possible sequence of hits for $n$ and is guaranteed to leave room for $n_{i+1}..n_N$ when collecting hits.
+	\item[possessive] Match as many instances for $n$ as possible, completely ignoring $n_{i+1}..n_N$. This is guaranteed to find the longest sequence of hits for $n$ but might cause the query to fail when subsequently there is no more room to match $n_{i+1}..n_N$.
+\end{description}
+
+\begin{table}[!htb]\centering
+	\begin{tabular}{|p{0.10\textwidth}|p{0.12\textwidth}|p{0.13\textwidth}|p{0.54\textwidth}|}
+		\hline 
+		\textbf{Greedy} & \textbf{Reluctant} & \textbf{Possessive} & \textbf{Description} \\ 
+		\hline 
+		\hline  
+		not &  &  & Existential negation. Alternatively the exclamation mark \lit{!} can be used instead of the \keyword{not} keyword. \\ 
+		\hline  
+		all &  &  & Universal quantification. Alternatively the asterisk \lit{*} can be used instead of the \keyword{all} keyword. Note that using this quantifier on a node that is not the only one within its context will cause an error. \\ 
+		\hline 
+		X &  &  & Exact quantification of $X$ instances. \\ 
+		\hline 
+		X+ & X+? & X+! & Open quantification of \textit{at least} $X$ instances. \\ 
+		\hline 
+		X- & X-? & X-! & Bounded quantification of \textit{at most} $X$ instances. \\ 
+		\hline 
+		X-Y & X-Y? & X-Y! & Bounded quantification of \textit{at least} $X$, but \textit{at most} $Y$ instances. \\ 
+		\hline 
+	\end{tabular}
+	\caption[Node quantifiers]{Complete list of node quantifiers supported by \ac{iql}, separated into the six fundamental groups. For quantifier types that do not distinguish between modes the \textit{greedy} column shows the only way of formulating those.}
+	\label{tab:quantifiers}
+\end{table}
+
+
+
+\begin{comment}
+/*
+* Quantification rules (N is assumed to be the collection of subsequent nodes):
+*
+* not  - existential negation
+* 
+* all  - greedy universal quantification -> match as many as possible, considering N
+* all? - reluctant universal quantification -> match as few as possible, considering N
+* all! - possessive universal quantification -> match ALL available with no regard for N
+* 
+* X    - greedily match exactly X instances
+* X?   - reluctantly match X instances if subsequent nodes can still be matched by N
+* X!   - possessively match X instances, extending without consideration for N
+* 
+* X+   - greedily match X or more instances, considering N
+* X+?  - reluctantly match X or more instances, considering N
+* X+!  - possessively match at least X instances, extending without consideration for N
+* 
+* X-   - greedily match up to X instances, considering N
+* X-?  - reluctantly match up to X instances, considering N
+* X-!  - possessively match up to X instances, extending without consideration for N
+* 
+* X-Y  - greedily match X to Y instances, leaving room for N
+* X-Y? - reluctantly match X to Y instances, leaving room for N
+* X-Y! - possessively match X to Y instances, extending without consideration for N
+*/
+\end{comment}
 
 \paragraph{Edges}
 \noindent Edges are a structural element that is available exclusively to \textbf{graph} constraints (\ref{sec:graph-constraints}).
@@ -1799,10 +1876,11 @@ That is, in a node sequence \verb|[$x:][$y:]| the node matched by \member{x} wil
 Only the direction from which the overall matching attempt will start changes with the respective switch.
 This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned match to either the first or last, with respect to the current direction.
 
-\paragraph{Special Note:}
-\noindent Evaluation of quantified nodes in \ac{iql} is done greedily, i.e. the engine will try to match as many instances as possible.
-However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
-An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \lit{<inf->}).
+%\paragraph{Special Note:}
+%\noindent Evaluation of quantified nodes in \ac{iql} is done greedily per default, i.e. the engine will try to match as many instances as possible.
+%However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
+%An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \lit{<inf->}).
+%TODO this is obsolete with the quantifier rework?
 
 Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
@@ -2085,6 +2163,10 @@ It can therefore make sense to define additional precedence constraints via glob
 		\hline 
 		isChildNotAt & int & Node occurs as child at any position except the designated one ($childIndex \neq arg$). Legal values are: $1 \leq arg \leq N$. \\  
 		\hline 
+		isLeftChild & - & Node's covered region on the foundation layer is outside and to the left of that covered by its parent ($child.right < parent.left$). Legal values are: $1 \leq arg \leq N$. \\  
+		\hline 
+		isRightChild & - & Node's covered region on the foundation layer is outside and to the right of that covered by its parent ($child.left > parent.right$). Legal values are: $1 \leq arg \leq N$. \\  
+		\hline 
 	\end{tabular}
 	\caption[Tree positional markers]{Positional markers for trees provided by the default evaluation engine for \ac{iql}. The conditions in the last column assume a parent node with \textit{N} children as context and $childIndex$ being the desired position of the node within its parent's list of children. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
 	\label{tab:tree-position-markers}
@@ -2146,43 +2228,75 @@ For instance, \query{[\$x: [isGenerationAfter(2) \&\& isNoLeaf]]} will match any
 The \query{isRoot} marker however cannot be combined with any other hierarchy-related markers, as only designated roots in the target structure can match it and the only sensible combinations would be with normal (horizontal) position markers (\ref{sec:position-markers}).
 If the \query{isRoot} marker is being used within a nested node, an error will be issued as the query will be impossible to satisfy.\footnote{The \ac{icqp} does this for any kinds of obviously erroneous queries when the planning phase results in unsolvable issues.}
 
-\begin{wrapfigure}[18]{L}{0pt}
-	\centering
-	\begin{forest}
-		for tree={ circle, draw	}
-	[Root 
-		[\textcolor{darkgreen}{1}
-			[\textcolor{darkgreen}{4} [\textcolor{darkgreen}{11}]] [5] [6 [12] [13]]
-		] 
-		[2
-			[7] [8 [14]]
-		]
-		[\textcolor{darkred}{3}
-			[9 [15] [16]] [\textcolor{darkred}{10}]
-		]
-	]
-	\end{forest}
-	\caption[Fringe illustration]{\label{fig:tree-fringe} Example tree with highlighted nodes on the fringes for the \query{isLeftmost} (\textcolor{darkgreen}{green}, nodes 1, 4 and 11) and \query{isRightmost} (\textcolor{darkred}{red}, nodes 3 and 10) markers.}
-\end{wrapfigure}
 
-The two \textbf{fringe} markers \query{isLeftmost} and \query{isRightmost} play a special role as they effectively combine horizontal and vertical navigation into a single marker.
-They signal that node candidates must be located at the left (or right) fringe of a target tree as illustrated by \cref{fig:tree-fringe}.
-As such they describe a path starting from a particular node downwards rather than a specific position within that node's list of immediate children.
+\subsubsection{Path Markers}
+\label{sec:path-markers}
+
+While hierarchical and regular tree markers (\ref{sec:tree-markers}, \ref{sec:hierarchy-markers}) operate on strictly one of either the horizontal or vertical dimension within a tree, path markers effectively combine horizontal and vertical navigation into a single marker.
+As such they describe a path starting from a particular node downwards rather than a specific position within that node's list of immediate children or a vertical range within the tree.
+
+\begin{table}[!htb]\centering
+	\begin{tabular}{|p{0.23\textwidth}|p{0.14\textwidth}|p{0.54\textwidth}|}
+		\hline 
+		\textbf{Label} & \textbf{Arguments} & \textbf{Matching Condition} \\ 
+		\hline 
+		\hline 
+		isLeftmost & - & Node is located along the path of leftmost descendants (according to the actual position on the underlying foundation layer, \textbf{not} necessarily the order of child nodes along each step). \\  
+		\hline 
+		isRightmost & - & Represents the symmetric opposite of above \query{isLeftmost}, marker, following the path of rightmost descendants. \\  
+		\hline 
+	\end{tabular}
+	\caption[Path markers]{Additional markers for path properties in tree structures.}
+	\label{tab:tree-path-markers}
+\end{table}
+
+\paragraph{Fringe Markers}
+\noindent The two \textbf{fringe} markers \query{isLeftmost} and \query{isRightmost} signal that node candidates must be located at the left (or right) fringe of a target tree as illustrated by \cref{fig:tree-fringe}.
 Note that the \textit{leftmost} and \textit{rightmost} properties do \textbf{not} refer to the position of children within their parent's list of child nodes.
 Instead the actual position on the underlying foundation layer is taken as basis for determining which nodes belong to the respective fringes.
 More specifically, an item's begin index is responsible for its position in the lift of \textit{leftmost} candidates, and the end index is taken as the decisive property when it comes to the \textit{rightmost} fringe.
 Since the \ac{icmf} does not require structures to order outgoing edges for a parent node according to the positional indices of its children, using those fringe markers can incur a certain computational overhead.
 
-Fringe markers are typically combined with one or more generation-based markers to further specify a node's position in the tree.
-If no additional hierarchical marker is provided only the immediate children of a node are taken into account.
-Otherwise the fringe marker will guide the selection of child nodes along the path to the desired vertical position.
+\begin{figure}
+	\centering
+	\begin{forest}
+		for tree={ circle, draw	}
+		[Root 
+			[\textcolor{darkgreen}{1}
+				[\textcolor{darkgreen}{4} [\textcolor{darkgreen}{11}]] [5] [6 [12] [13]]
+			] 
+			[2
+				[7] [8 [14]]
+			]
+			[\textcolor{darkred}{3}
+				[9 [15] [16]] [\textcolor{darkred}{10}]
+			]
+		]
+	\end{forest}
+	\caption[Fringe illustration]{\label{fig:tree-fringe} Example tree with highlighted nodes on the fringes for the \query{isLeftmost} (\textcolor{darkgreen}{green}, nodes 1, 4 and 11) and \query{isRightmost} (\textcolor{darkred}{red}, nodes 3 and 10) markers.}
+\end{figure}
 
-\paragraph{Examples:}
+\paragraph{Quantification}
+\noindent With regular tree markers (\ref{sec:tree-markers}) quantifiers operate along the horizontal axis (either globally or within the context of a node's list of children).
+Path markers however completely change this behavior in a way that quantification happens along the path defined by the marker.
+This means that quantification effectively changes to be vertical with the path marker acting as guide for picking the next path element from a horizontal pool of candidates.
+
+\paragraph{Marker Stacking}
+\noindent Path markers are typically combined with one or more generation-based markers to further specify a node's position in the tree.
+If no additional hierarchical marker is provided only the immediate children of a node are taken into account.
+Otherwise the path marker will guide the selection of child nodes along the path to the desired vertical position.
+Note however, that the presence of quantifiers greatly restricts what kind of marker stacking is actually legal in a particular case.
+If for instance a quantifier requires more than one instance of the node to be matched along the path, but a generation-based marker limits the occurrence to be on only a single level, the query becomes unsolvable and the \ac{icqp} will issue an error.
+
+\paragraph{Examples:}\footnote{Node references based on the example tree in \cref{fig:tree-fringe}.}
 \begin{Verbatim}[samepage=true]
 [isLeftmost && isLeaf]            // node 11
 [isRightmost && isGeneration(-2)] // node 3
+// go down 2 to 4 nodes alongside the left fringe
+<2-4>[isLeftmost]
+// impossible query
+<2>[isLeftmost && isGeneration(3)]
 \end{Verbatim}
-
 
 \subsubsection{Evaluation Performance}
 \label{sec:hierarchy-markers-performance}
