@@ -28,6 +28,7 @@
 \usepackage{hyperref}
 \usepackage{ntheorem}
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
+\usepackage[chapter]{algorithm}
 
 \usepackage{acro}
 
@@ -40,6 +41,8 @@
 \DeclareAcronym{icqp}{short = ICQP, long = ICARUS2 Corpus Query Processor}
 \DeclareAcronym{kwic}{short = KWIC, long = keyword-in-context}
 \DeclareAcronym{uoi}{short = UoI, long = unit-of-interest, long-plural-form = units-of-interest}
+
+\setcounter{secnumdepth}{3}
 
 \newfontfamily\DejaSans{DejaVu Sans}
 
@@ -58,7 +61,7 @@
 \definecolor{darkred}{rgb}{0.8, 0.0, 0.0}
 
 \theoremstyle{break}
-\newtheorem{gram}{Grammar Snippet}
+\newtheorem{gram}{Grammar Snippet}[chapter]
 
 \crefname{gram}{snippet}{snippets}
 
