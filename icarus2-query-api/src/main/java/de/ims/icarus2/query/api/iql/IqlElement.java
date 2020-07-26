@@ -77,7 +77,7 @@ public abstract class IqlElement extends IqlUnique {
 
 	}
 
-	private static boolean isExistentiallyQuantified(List<IqlQuantifier> quantifiers) {
+	private static boolean isExistentiallyQuantified0(List<IqlQuantifier> quantifiers) {
 		if(quantifiers.isEmpty()) {
 			return true;
 		}
@@ -89,12 +89,12 @@ public abstract class IqlElement extends IqlUnique {
 		return false;
 	}
 
-	private static boolean isUniversallyQuantified(List<IqlQuantifier> quantifiers) {
+	private static boolean isUniversallyQuantified0(List<IqlQuantifier> quantifiers) {
 		return quantifiers.size()==1
 				&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
 	}
 
-	private static boolean isExistentiallyNegated(List<IqlQuantifier> quantifiers) {
+	private static boolean isExistentiallyNegated0(List<IqlQuantifier> quantifiers) {
 		return quantifiers.size()==1
 				&& quantifiers.get(0).isExistentiallyNegated();
 	}
@@ -134,11 +134,11 @@ public abstract class IqlElement extends IqlUnique {
 
 		public boolean hasQuantifiers() { return !quantifiers.isEmpty(); }
 
-		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified(quantifiers); }
+		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified0(quantifiers); }
 
-		public boolean isUniversallyQuantified() { return isUniversallyQuantified(quantifiers); }
+		public boolean isUniversallyQuantified() { return isUniversallyQuantified0(quantifiers); }
 
-		public boolean isExistentiallyNegated() { return isExistentiallyNegated(quantifiers); }
+		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
 	public static class IqlNode extends IqlProperElement {
@@ -167,11 +167,11 @@ public abstract class IqlElement extends IqlUnique {
 
 		public boolean hasQuantifiers() { return !quantifiers.isEmpty(); }
 
-		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified(quantifiers); }
+		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified0(quantifiers); }
 
-		public boolean isUniversallyQuantified() { return isUniversallyQuantified(quantifiers); }
+		public boolean isUniversallyQuantified() { return isUniversallyQuantified0(quantifiers); }
 
-		public boolean isExistentiallyNegated() { return isExistentiallyNegated(quantifiers); }
+		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
 	public static class IqlNodeSet extends IqlElement {

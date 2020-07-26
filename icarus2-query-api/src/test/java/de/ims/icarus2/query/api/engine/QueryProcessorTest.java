@@ -177,14 +177,6 @@ class QueryProcessorTest {
 		}
 
 		@ParameterizedTest
-		@ValueSource(strings = {"all", "ALL", "*"})
-		void testUniversallyQuantifiedRoot(String quantifier) {
-			String rawPayload = "FIND "+quantifier+"[]";
-			assertReportHasErrors(expectReport(rawPayload),
-					pair(QueryErrorCode.INCORRECT_USE, list(msgContains("universally"))));
-		}
-
-		@ParameterizedTest
 		@ValueSource(strings = {
 				"FIND ORDERED [![]]",
 		})
@@ -797,6 +789,17 @@ class QueryProcessorTest {
 
 			@Nested
 			class Quantified {
+
+				@ParameterizedTest
+				@ValueSource(strings = {"all", "ALL", "*"})
+				void testUniversallyQuantifiedRoot(String quantifier) {
+					String rawPayload = "FIND "+quantifier+"[]";
+					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
+					assertSequence(payload);
+					assertBindings(payload);
+					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+							node(null, null, quantAll()))));
+				}
 
 				@ParameterizedTest
 				@ValueSource(ints = {0, 1, 1000, Integer.MAX_VALUE})

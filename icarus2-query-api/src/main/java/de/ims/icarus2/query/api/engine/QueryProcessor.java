@@ -478,8 +478,7 @@ public class QueryProcessor {
 		private void processLaneContent(IqlLane lane, NodeStatementContext ctx) {
 
 			try {
-				// Start the (recursive) node parsing with a 'null' parent
-				lane.setElements(processNodeStatement(ctx, null));
+				lane.setElements(processNodeStatement(ctx, new TreeInfo()));
 
 				LaneType laneType = LaneType.SEQUENCE;
 				if(treeFeaturesUsed) {
@@ -625,11 +624,13 @@ public class QueryProcessor {
 			IqlElementGrouping grouping = new IqlElementGrouping();
 			genId(grouping);
 
-			boolean negated = grouping.isExistentiallyNegated();
+			boolean negated = false;
 
 			if(ctx.quantifier()!=null) {
 				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
 				quantifiers.forEach(grouping::addQuantifier);
+
+				negated = grouping.isExistentiallyNegated();
 
 				if(tree.isNegated() && negated) {
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
@@ -735,11 +736,13 @@ public class QueryProcessor {
 
 			processProperElement0(node, ctx.memberLabel(), ctx.constraint());
 
-			final boolean negated = node.isExistentiallyNegated();
+			boolean negated = false;
 
 			if(ctx.quantifier()!=null) {
 				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
 				quantifiers.forEach(node::addQuantifier);
+
+				negated = node.isExistentiallyNegated();
 
 				if(tree.isNegated() && node.isExistentiallyNegated()) {
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
