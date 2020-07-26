@@ -2,9 +2,10 @@
 % File iql_specification.tex
 %
 
-\documentclass[11pt,a4paper]{article}
+\documentclass[11pt,a4paper]{report}
 
 \usepackage{icarus2}
+
 
 \title{ICARUS2 Query Language Specification}
 
@@ -26,7 +27,7 @@
 
 \newpage
 
-\section{Introduction}
+\chapter*{Introduction}
 \label{sec:intro}
 
 Queries in the \ac{iql} are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
@@ -38,7 +39,7 @@ This document lists the basic building blocks of queries and their compositions.
 \Cref{sec:elements} gives an overview on the JSON-LD elements available in the ``outer'' section of the \ac{iql} protocol.
 \Cref{sec:inner-iql-elements} provides the specification for the actual query language used in a query's ``inner'' payload and \cref{sec:utility} finally contains various collections of utility functions available to make queries both simpler to declare and more efficient to evaluate by the \ac{icqp}.
 
-\section{JSON-LD Elements}
+\chapter{JSON-LD Elements}
 \label{sec:elements}
 
 The ``outer layer'' of every serialized \ac{iql} query is a JSON-LD object with various (optional) properties to hold all the required information for proper query evaluation.
@@ -53,7 +54,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     BINDING
-\subsection{Binding}
+\section{Binding}
 \label{sec:json-ld-binding}
 %\begin{itemize}
 %	\item distinct
@@ -83,7 +84,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     CONSTRAINT
-\subsection{Constraint}
+\section{Constraint}
 \label{sec:json-ld-constraint}
 %\begin{itemize}
 %	\item id
@@ -105,7 +106,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     PREDICATE
-\subsubsection{Predicate}
+\subsection{Predicate}
 \label{sec:json-ld-predicate}
 %\begin{itemize}
 %	\item expression
@@ -122,7 +123,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     TERM
-\subsubsection{Term}
+\subsection{Term}
 \label{sec:json-ld-term}
 %\begin{itemize}
 %	\item items
@@ -144,7 +145,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Corpus}
+\section{Corpus}
 \label{sec:json-ld-corpus}
 %\begin{itemize}
 %\item id
@@ -166,7 +167,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     DATA
-\subsection{Data}
+\section{Data}
 \label{sec:json-ld-data}
 %\begin{itemize}
 %\item id
@@ -197,7 +198,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     ELEMENT
-\subsection{Element}
+\section{Element}
 \label{sec:json-ld-element}
 %\begin{itemize}
 %\item id
@@ -222,7 +223,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     NODE SET
-\subsubsection{Node Set}
+\subsection{Node Set}
 \label{sec:json-ld-node-set}
 %\begin{itemize}
 %\item nodes
@@ -246,7 +247,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     NODE
-\subsubsection{Node}
+\subsection{Node}
 \label{sec:json-ld-node}
 %\begin{itemize}
 %\item label
@@ -273,7 +274,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     TREE NODE
-\subsubsection{Tree Node}
+\subsection{Tree Node}
 \label{sec:json-ld-tree-node}
 %\begin{itemize}
 %\item children
@@ -290,7 +291,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     EDGE
-\subsubsection{Edge}
+\subsection{Edge}
 \label{sec:json-ld-edge}
 %\begin{itemize}
 %\item label
@@ -324,7 +325,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     ELEMENT DISJUNCTION
-\subsubsection{Element Disjunction}
+\subsection{Element Disjunction}
 \label{sec:json-ld-element-disjunction}
 %\begin{itemize}
 %	\item alternatives
@@ -341,7 +342,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     EXPRESSION
-\subsection{Expression}
+\section{Expression}
 \label{sec:json-ld-expression}
 %\begin{itemize}
 %\item content
@@ -360,7 +361,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     GROUP
-\subsection{Group}
+\section{Group}
 \label{sec:json-ld-group}
 %\begin{itemize}
 %\item id
@@ -392,7 +393,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     IMPORT
-\subsection{Import}
+\section{Import}
 \label{sec:json-ld-import}
 %\begin{itemize}
 %\item id
@@ -414,7 +415,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     LANE
-\subsection{Lane}
+\section{Lane}
 \label{sec:json-ld-lane}
 %\begin{itemize}
 %\item id
@@ -446,7 +447,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     LAYER
-\subsection{Layer}
+\section{Layer}
 \label{sec:json-ld-layer}
 %\begin{itemize}
 %\item id
@@ -479,7 +480,7 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     PAYLOAD
-\subsection{Payload}
+\section{Payload}
 \label{sec:json-ld-payload}
 %\begin{itemize}
 %\item id
@@ -518,7 +519,7 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     PROPERTY
-\subsection{Property}
+\section{Property}
 \label{sec:json-ld-property}
 %\begin{itemize}
 %	\item key
@@ -534,7 +535,7 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 	\item[\iqlType{value}] The actual value to apply to the specified property in case it is not a switch.
 \end{description}
 
-\subsubsection{Switches}
+\subsection{Switches}
 \label{sec:json-ld-switches}
 For increased flexibility, \ac{iql} supports a collection of switches to turn certain optional features on or off when needed. Switches are static and cannot be changed for the active query evaluation once set. All the native \ac{iql} switches use the prefix \texttt{iql:} for their name. Any extensions that offer additional switches should declare and use their own namespace for those switches! Currently supported switches are shown in \cref{tab:switches}.
 
@@ -578,7 +579,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     QUANTIFIER
-\subsection{Quantifier}
+\section{Quantifier}
 \label{sec:json-ld-quantifier}
 %\begin{itemize}
 %\item quantifierType
@@ -603,7 +604,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     QUERY
-\subsection{Query}
+\section{Query}
 \label{sec:json-ld-query}
 %\begin{itemize}
 %\item id
@@ -638,7 +639,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     REFERENCE
-\subsection{Reference}
+\section{Reference}
 \label{sec:json-ld-reference}
 %\begin{itemize}
 %\item id
@@ -660,7 +661,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     RESULT
-\subsection{Result}
+\section{Result}
 \label{sec:json-ld-result}
 %\begin{itemize}
 %\item resultTypes
@@ -692,7 +693,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     RESULT INSTRUCTION
-\subsection{Result Instruction}
+\section{Result Instruction}
 \label{sec:json-ld-result-instruction}
 %\begin{itemize}
 %\item TODO
@@ -703,7 +704,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     SCOPE
-\subsection{Scope}
+\section{Scope}
 \label{sec:json-ld-scope}
 %\begin{itemize}
 %\item id
@@ -726,7 +727,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     SORTING
-\subsection{Sorting}
+\section{Sorting}
 \label{sec:json-ld-sorting}
 %\begin{itemize}
 %\item expression
@@ -749,7 +750,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     STREAM
-\subsection{Stream}
+\section{Stream}
 \label{sec:json-ld-stream}
 %\begin{itemize}
 %	\item id
@@ -803,7 +804,7 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section{Inner \ac{iql} ELements}
+\chapter{Inner \ac{iql} ELements}
 \label{sec:inner-iql-elements}
 
 Certain parts of an \ac{iql} query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
@@ -812,7 +813,7 @@ This section defines the syntax and additional rules for those raw statements.
 Note that the textual form of all following \ac{iql} elements is expected to be encoded in UTF-8, so no special escape mechanisms are needed for unicode content.
 
 
-\subsection{Reserved Words}
+\section{Reserved Words}
 \label{sec:reserved-words}
 
 The following list of keywords is reserved and any of the words may not be used as direct identifier strings in a query. They are reserved in both all lowercase and all uppercase variants, and while camel-cased versions are technically permitted, it is highly discouraged to use them:
@@ -843,18 +844,18 @@ The following list of keywords is reserved and any of the words may not be used 
 \end{multicols}
 }
 
-\subsection{Comments}
+\section{Comments}
 \label{sec:comments}
 
 \ac{iql} supports single-line comments, indicated by ``//''. All remaining content in a line after the comment indicator will be ignored when parsing and evaluating a query. 
 
-\subsection{Literals}
+\section{Literals}
 \label{sec:literals}
 
 Literals are statically-typed fixed-value expressions in \ac{iql}.
 They are parsed only once during the initial processing part of a query.
 
-\subsubsection{String Literals}
+\subsection{String Literals}
 \label{sec:string-literals}
 
 \ac{iql} uses simple double quotes (\lit{"} or U+0022) to define string literals. 
@@ -881,12 +882,12 @@ At the current time there is no planned mechanism to provide additional escape s
 "a\n multiline\n string..."
 \end{Verbatim}
 
-\subsubsection{Boolean Literals}
+\subsection{Boolean Literals}
 \label{sec:boolean-literals}
 
 Boolean literals are limited to either all lowercase or all uppercase versions of the literals \keyword{true} and \keyword{false}.
 
-\subsubsection{Integer Literals}
+\subsection{Integer Literals}
 \label{sec:integer-literals}
 
 \paragraph{Signed Integer Literals}
@@ -914,7 +915,7 @@ Underscore characters may only appear inside the integer literal, never at the b
 \paragraph{Pure Integer Literals}
 Some parts of the \ac{iql} syntax only allow unsigned "pure" integers and will explicitly state this fact. In those special cases integer literals may neither contain the initial sign symbol nor intermediate underscores.
 
-\subsubsection{Floating Point Literals}
+\subsection{Floating Point Literals}
 \label{sec:floating-point-literals}
 
 Floating point literals are constructed by using a (signed) integer literal for the pre-decimal part, a dot \lit{.} as delimiter and a decimal part made up by a unsigned integer literal. They represent either single-precision \keyword{float} (32bit) or double-precision \keyword{double} (64bit) values.
@@ -938,7 +939,7 @@ Floating point literals are constructed by using a (signed) integer literal for 
 
 \noindent While many languages offer to express floating point literals in the scientific notation with explicit exponent declaration, we do not include this in the initial draft of \ac{iql}.
 
-\subsection{Identifiers}
+\section{Identifiers}
 \label{sec:identifiers}
 
 \noindent Identifiers in \ac{iql} are combinations of lowercase or uppercase alphabetic \texttt{[a-zA-Z]} characters that may contain underscore symbols \texttt{\_} between the first and last position and may also contain digits \texttt{[0-9]} on any position except as initial symbol (cf. \cref{gram:identifier}).
@@ -970,7 +971,7 @@ notTheBest______________example
 
 \noindent Identifiers are limited in length by the engine to a total of 255 characters. This is a purely arbitrary choice to keep queries readable and not subject to any technical limitations.
 
-\subsection{Variables and References}
+\section{Variables and References}
 \label{sec:variables-references}
 
 In \ac{iql} all top-level (i.e. not part of the tail expression in a hierarchical path) identifiers are expected to reference 'something' from the global namespace available to the query. This namespace is populated with all the globally available constants, methods and helper objects from the \ac{iql} core and any imported extensions, as well as all the corpus members defined in the scoping part of the query. Outside this global namespace any dynamically created identifiers from within a query reside in the variable namespace and are marked with a preceding \lit{@} (e.g. \texttt{@myVariable}). They can be used the same way as any regular identifier, with the exception of additionally allowing assignment expressions when inside script blocks. In addition any corpus members bound within a constraint section are prefixed with a \lit{\$} sign, such as \texttt{\$token1}. \cref{tab:identifiers} provides a compact overview of the available identifiers and their capabilities/features.
@@ -997,21 +998,22 @@ In \ac{iql} all top-level (i.e. not part of the tail expression in a hierarchica
 
 Member identifiers are final in the sense that they cannot be re-assigned explicitly but will be implicitly for every iteration of the query on a new part of the corpus. For example, above \texttt{\$token} member will point to a new token object every time the inner constraint parts of the query are evaluated. Therefore member identifiers could be viewed as a sort of loop variable. 
 
-\subsection{Expressions}
+\section{Expressions}
 \label{sec:expressions}
 
 Expressions are the foundation of every query.
 Each expression has a (usually fixed) result type and evaluates to a value of that type.
 They can take any of the following forms and a overview diagram is available in the appendix as \cref{gram:expression}.
 
-\subsubsection{Primary Expressions}
+\subsection{Primary Expressions}
 \label{sec:primary-expressions}
 
 Any literal of types \keyword{boolean}, \keyword{string}, \keyword{int} or \keyword{float} can serve as a primary expression of that type.
 See \cref{sec:literals} for examples and a more detailed specification of the various types of literals in \ac{iql}.
 
-\paragraph{References}
-\noindent Any reference or variable as described in \cref{sec:variables-references} is also a valid primary expression.
+\subsubsection{References}
+\label{sec:references}
+Any reference or variable as described in \cref{sec:variables-references} is also a valid primary expression.
 Note that the process for resolving references strongly relies on the context the reference is being used in, for instance to allow simple references to be used as aliases for method calls.
 
 Additionally a special construct is available as primary expression to more easily access annotation values from within a node definitions (\ref{sec:structural-constraints}).
@@ -1029,7 +1031,8 @@ A qualified identifier consists of two identifiers that are joined by a double c
 The first (or left) identifier is expected to unambiguously resolve to a annotation layer available for the current context.
 The second (or right) identifier in turn acts as specification of an annotation key (or its alias) available from the previously defined annotation layer.
 
-\paragraph{List Expression}
+\subsubsection{List Expression}
+\label{sec:list-expression}
 Arrays (or more generally ``lists'') in \ac{iql} can be defined by enclosing a sequence of expressions within curly brackets (\lit{\{} and \lit{\}}), using the comma symbol (\lit{,}) as separator.
 Optionally the desired type for elements in the list can be made explicit with a special type marker in front of the opening bracket as illustrated by \cref{gram:list-expression}.
 If no type is provided, the overall element type will be determined by checking the types of all elements and choosing the least restrictive one.
@@ -1046,7 +1049,7 @@ Note that for empty lists (no elements are given inside the curly brackets) it i
 	\end{rrdiag*}
 \end{gram}
 
-\subsubsection{Path Expressions}
+\subsection{Path Expressions}
 \label{sec:path-expressions}
 
 For navigating hierarchically structured object graphs or namespaces, expressions can take the form of paths, consisting of a original expression, a dot as separator and finally an identifier that denotes the path element or ``field'' within the context of whatever the original expression returned.
@@ -1067,7 +1070,7 @@ some.really.long.winded.path
 
 \noindent Note that for a lot of native classes of the ICARUS2 framework, \ac{iql} provides convenient path-based alternatives to method invocations. For example in  the context of navigating a structure, ``someStructure.getParent(someItem)`` can be replaced by ``someItem.parent`` as long as ``someStructure`` is unambiguous in the current context and already bound.
 
-\subsubsection{Method Invocation}
+\subsection{Method Invocation}
 \label{sec:method-invocations}
 
 Method invocations consist of an expression that points to the actual method (such as an identifier in the global namespace or a path expression) and round brackets for the invocation with an optional argument list:
@@ -1095,7 +1098,7 @@ min(123, 456, dynamicContent())
 some().chained().methods()
 \end{Verbatim}
 
-\subsubsection{List Access}
+\subsection{List Access}
 \label{sec:list-access}
 
 Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to values within 32bit signed integer space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \lit{-1} pointing to the last array element and \lit{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
@@ -1129,7 +1132,7 @@ complexArray[1, 2, 3]
 \noindent Note that \ac{iql} provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
 Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
 
-\subsubsection{Annotation Access}
+\subsection{Annotation Access}
 \label{sec:annotation-access}
 
 The \ac{icmf} models segmentation, structure and content of a corpus resource as different aspects. As such the information about any annotation attached to a given Item is stored apart from it and therefore is not easily accessible from the item alone. To simplify the usage of annotations within a query, \ac{iql} provides the following expression as syntactic sugar for accessing (multiple) annotations directly from an item:
@@ -1161,7 +1164,7 @@ myItem{"form", "pos", "lemma"}
 firstSetValue(myItem{"parser1.head", "parser2.head"})  
 \end{Verbatim}
 
-\subsubsection{Type Cast}
+\subsection{Type Cast}
 \label{sec:type-cast}
 
 Expressions in \ac{iql} are automatically cast to matching types according to the actual consumer's needs (unless this feature gets deactivated via the corresponding switch, cf. \cref{sec:json-ld-switches}). Explicit casts can be performed by preceding an expression with one of the type keywords listed above (\ref{sec:reserved-words}) in round brackets.
@@ -1175,7 +1178,7 @@ Expressions in \ac{iql} are automatically cast to matching types according to th
 (string) 123.456
 \end{Verbatim}
 
-\subsubsection{Wrapping}
+\subsection{Wrapping}
 \label{sec:wrapping}
 
 Expression hierarchy and evaluation order follows the order the different types of expressions are listed here. To dictate another order, expressions can be wrapped into round brackets. This will cause the inner expression to be evaluated independent of potential hierarchical rules from the outside context.
@@ -1187,7 +1190,7 @@ Expression hierarchy and evaluation order follows the order the different types 
 (6 + 4) * 2 // addition is evaluated first -> result 20
 \end{Verbatim}
 
-\subsubsection{Unary Operation}
+\subsection{Unary Operation}
 \label{sec:unary-operation}
 
 \ac{iql} only allows four unary operators to be used directly in front of an expression, the exclamation mark \lit{!} and the \keyword{NOT} keyword for Boolean negation, the minus sign \lit{\textminus} for negating numerical expressions and the \lit{\texttildelow} symbol of bitwise negation of integer numbers.
@@ -1203,7 +1206,7 @@ NOT someBooleanValue
 ~myIntegerFunction()
 \end{Verbatim}
 
-\subsubsection{Binary Operation}
+\subsection{Binary Operation}
 \label{sec:binary-operation}
 
 Binary operations between two expressions take the following simple form:
@@ -1245,25 +1248,25 @@ Binary operations between two expressions take the following simple form:
 	\label{tab:binary-operators}
 \end{table}
 
-\paragraph{Basic Numerical Operations}
+\subsubsection{Basic Numerical Operations}
 \label{sec:basic-numerical-operations}
 
 Basic numerical operations follow the standard mathematical rules for priorities.
 While the basic numerical types (\keyword{int}, \keyword{float}) can be arbitrarily mixed inside those expressions, the type used during the expression and as result will be determined by the least restrictive type of any operand involved.
 
-\paragraph{Bit Operations}
+\subsubsection{Bit Operations}
 \label{sec:bit-operations}
 
 Bitwise operations (\lit{\&}, \lit{|} and \lit{\textasciicircum}) take integer expressions (or any other form of \textit{bitset}) as inputs and generate a result of the corresponding type. If different types are used (e.g. \texttt{int} and \texttt{long}), one must be cast~\ref{sec:type-cast} to match the other. If value expansion~\ref{sec:value-expansion} is active, any array-like data can also be used and will be subject to element-wise bit operations.
 
 The two shift operations (\lit{\textless{}\textless} and \lit{\textgreater{}\textgreater}) take arbitrary integer types as left operand and an \keyword{int} value as right operand.
 
-\paragraph{Ordered Comparisons}
+\subsubsection{Ordered Comparisons}
 \label{sec:ordered-comparisons}
 
 Comparisons are special binary operators that take two expressions of equal or compatible result type and produce a Boolean value. Note that their exact semantics are type specific, e.g. when comparing strings, the operation is performed lexicographically and may be subject to case conversions (\ref{sec:json-ld-switches}).
 
-\paragraph{String Operations}
+\subsubsection{String Operations}
 \label{sec:string-operations}
 
 To account for the ubiquity of textual annotations in corpora, \ac{iql} provides a set of dedicated string operators to perform substring matching (with the \textit{contains} operator \lit{=\#} or its negated form \lit{!\#}) and regular expression matching (via \lit{=\textasciitilde} and \lit{!\textasciitilde}). Per default \ac{iql} uses the Java regex syntax, but for the future, additional switches (\ref{sec:json-ld-switches}) are planned to allow finer control over regex details.
@@ -1277,7 +1280,7 @@ somePosAnnotation # "V"
 somePosAnnotation !~ "NN|NS"   
 \end{Verbatim}
 
-\paragraph{Equality}
+\subsubsection{Equality}
 \label{sec:equality}
 
 Equality checks follow the same basic conditions as ordered comparisons (\ref{sec:ordered-comparisons}), but with the following rules for comparable values ``a`` and ``b``:
@@ -1291,7 +1294,7 @@ a != b iff a<b || a>b
 Note that trying to check two expressions of incompatible types (such as \keyword{int} and \keyword{string}) for equality will always evaluate to \keyword{false} and also emit a warning. 
 %TODO is this part actually implemented?
 
-\paragraph{Logical Composition}
+\subsubsection{Logical Composition}
 \label{sec:logical-composition}
 
 All Boolean expressions can be combined via disjunction (either double pipes \lit{||} or the \keyword{OR} keyword) or conjunction (double ampersand \lit{\&\&} or the \keyword{AND} keyword), with conjunction having higher priority. 
@@ -1307,7 +1310,7 @@ x==1 or x==3
 Note that aforementioned optimization strategy also applies to chained boolean expressions, such as \query{a \&\& b \&\& c} and that the evaluation engine is free to reorder operands here as it sees fit.
 As such individual operands may never be evaluated at all and the overall correctness of a query expression must not rely on side-effects stemming from specific expressions being evaluated or not.
 
-\subsubsection{Assignment}
+\subsection{Assignment}
 \label{sec:assignment}
 
 \ac{iql} offers a special construct to assign (member) variables and at the same time verify the successful assignment with a Boolean result value. 
@@ -1344,7 +1347,7 @@ As such care must be taken not to create errors when trying to access their cont
 \end{Verbatim}
 
 
-\subsubsection{Set Predicate}
+\subsection{Set Predicate}
 \label{sec:set-predicate}
 
 Also called 'containment predicate', this expression allows to check if a given value is a member of a specified set (or generally speaking 'collection') as shown in \cref{gram:set-predicate}. 
@@ -1383,7 +1386,7 @@ someAnnotationValue NOT IN {"NN","DET", STTS.getVerbTags()}
 fetchCharacterNamesInChapterOne() IN getOrcishNames()
 \end{Verbatim}
 
-\subsubsection{Ternary Operation}
+\subsection{Ternary Operation}
 \label{sec:ternary-operation}
 
 A single ternary operation is supported in \ac{iql}, which is the popular if-then-else replacement with the following syntax:
@@ -1403,20 +1406,19 @@ A single ternary operation is supported in \ac{iql}, which is the popular if-the
 x<2 ? "text for smaller value" : "some other text"
 \end{Verbatim}
 
-\subsubsection{Value Expansion}
+\subsection{Value Expansion}
 \label{sec:value-expansion}
 
 \ac{iql} supports expansion of arrays, lists and array-like method return values for situations where an immediate consumer supports lists of values as input. Assuming the method ``randomPoint()'' returns an array of 3 integer values or a \textit{array-like} data type (such as a 3D point) and another method ``invertPoint(int, int, int)'' takes 3 integer arguments, then the invocation of ``invertPoint(randomPoint())'' is legal and the array or object from the inner method call will be automatically expanded into the separate 3 values. This is especially handy when dealing with multidimensional arrays, as regular indexing would require manual extraction of method return values into variables to then be used in accessing the different array dimensions. With automatic expansion, a three-dimensional array could directly be accessed with aforementioned method via ``array[randomPoint()]''.
 
-\subsection{Constraints}
+\section{Constraints}
 \label{sec:constraints}
 
 Simply put, constraints are expressions that evaluate to a Boolean result. 
 Apart from native Boolean expressions (such as comparisons, Boolean literals or Boolean functions), \ac{iql} allows certain evaluations as syntactic sugar, listed in \cref{tab:constraints-translation}.
 Note that those conversions are only active if the respective switches to disable them (\ref{sec:json-ld-switches}) have not been set.
 
-\begin{table}
-	\centering
+\begin{table}[!htb]\centering
 	\begin{tabular}{|l|c|c|}
 		\hline 
 		\textbf{Type} & \textbf{Condition} & \textbf{Value} \\ 
@@ -1439,7 +1441,7 @@ Besides their obvious role as filters, constraints can also be used to expand th
 The assignment operation (\ref{sec:assignment}) allows arbitrary expressions to be evaluated and having their results stored in either a general variable or, in case of a result type compatible to \repoLink{\modelsUrl members/item/Item.java}{items}, actual member variable (\ref{sec:variables-references}).
 %TODO assigment part, explain how results can be expanded after absic candidates have been matched
 
-\subsection{Payload Structure}
+\section{Payload Structure}
 \label{sec:payload-structure}
 
 The Payload section in \ac{iql} consists of either the sole \keyword{ALL} keyword or a selection statement (\ref{sec:selection}) with optional binding (\ref{sec:bindings}) definition and filter constraints (\ref{sec:filter-constraints}) preceding it.
@@ -1470,7 +1472,7 @@ In this case the only way of restricting results is by using the \iqlType{Result
 	\end{samepage}
 \end{gram}
 
-\subsubsection{Filter Constraints}
+\subsection{Filter Constraints}
 \label{sec:filter-constraints}
 \noindent For complex (i.e. structural) queries, \ac{iql} offers a way of filtering the \acp{uoi} before they are processed by the matchers for sequence, tree or graph structures (cf. \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}).
 A dedicated \keyword{FILTER BY} section in the query payload preceding the actual structural constraints is available to define filtering rules that have to evaluate to \keyword{true} for a \ac{uoi} to be considered for actual matching.
@@ -1478,7 +1480,7 @@ Constraints within a filtering rules have only access to general properties of t
 The do \textbf{not} have access to bound member variables, apart from those defined for the top-level members of lanes (\ref{sec:lanes})!
 Note that filter constraints are \textbf{not} compatible with flat constraints (\ref{sec:flat-constraints}) as they both essentially fill the same function and flat constraints take precedence.
 
-\subsubsection{Match Modifiers}
+\subsection{Match Modifiers}
 \label{sec:match-modifiers}
 Per default, the search in \ac{iql} is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
 For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as tree entries in the result if the query was only meant to find instances of the lemma ``the''.
@@ -1492,7 +1494,7 @@ All three available modifiers can also take an optional numerical argument that 
 This \textit{limit} must be a positive non-zero integer that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
 If a modifier is accompanied by a limit value, the \ac{icqp} will report a number of hits per \ac{uoi} no greater than this limit.
 
-\subsubsection{Bindings}
+\subsection{Bindings}
 \label{sec:bindings}
 A binding is a collection of member references (\ref{sec:variables-references}) that get declared to belong to a certain member type or part of the corpus. 
 The \keyword{DISTINCT} keyword enforces that multiple bound member references in this binding do \textbf{not} match the same target. 
@@ -1520,7 +1522,7 @@ In this case using \keyword{DISTINCT} is redundant, as bound edges are implicitl
 
 \noindent Raw binding definitions in the payload are parsed and stored in their JSON counterpart (\iqlType{Binding},~\ref{sec:json-ld-binding}) during query processing.
 
-\subsubsection{Selection Statement}
+\subsection{Selection Statement}
 \label{sec:selection}
 
 Constraints are further divided into local constraints as part of node or edge definitions and global ones (with the \keyword{HAVING} keyword). 
@@ -1556,7 +1558,7 @@ Since there is no way for an evaluation engine to assess the complexity of user 
 
 %TODO a few words about nodeStatement and link to section about structural constraints?
 
-\subsubsection{Lanes}
+\subsection{Lanes}
 \label{sec:lanes}
 \noindent Lane statements can be used to extract information from concurrent structures that exist for the \ac{uoi} of the payload.
 Each lane statement is introduced by the \keyword{LANE} keyword and an identifier that matches the name or alias of a layer in the outer query definition (cf. \cref{gram:selection}).
@@ -1571,7 +1573,7 @@ They also introduce certain limitations on what can be expressed or searched (e.
 However, global constraints can introduce arbitrary constraints or relations and thereby increase the evaluation complexity, potentially without limits. 
 Since there is no way for an evaluation engine to assess the complexity of user macros or extensions, extensive use of global constraints could in fact lead to extremely slow searches or even create situations where an evaluation will never terminate at all.
 
-\subsubsection{Flat Constraints}
+\subsection{Flat Constraints}
 \label{sec:flat-constraints}
 
 Flat constraints provide no extra helpers to declare structural properties of the query. 
@@ -1579,7 +1581,7 @@ They consist of arbitrary basic constraints \cref{sec:constraints} and disallow 
 Note that flat constraints rely on the availability of member references from the binding or lane sections in the query payload to have access to any content at all.
 In this regard they behave very similar to global constraints.
 
-\subsubsection{Structural Constraints}
+\subsection{Structural Constraints}
 \label{sec:structural-constraints}
 
 \ac{iql} provides several classes of structural constraints that each feature distinctive syntax features to express structures of increasing complexity.
@@ -1626,8 +1628,9 @@ In the syntax used for tree nodes in \ac{iql} information about the incoming edg
 For graphs where no simple association between nodes and edges exists, there is a necessity to have explicit edge declarations available for querying.
 As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder that can be filled with either node or edge declarations.
 
-\paragraph{Nodes}
-\noindent \ac{iql} uses square brackets (\lit{[} and \lit{]}) to mark individual nodes.
+\subsubsection{Nodes}
+\label{sec:nodes}
+\ac{iql} uses square brackets (\lit{[} and \lit{]}) to mark individual nodes.
 \cref{gram:node} gives an overview of the syntax used for defining nodes with all the optional content elements.
 \begin{gram}[\synt{node}]
 	\label{gram:node}
@@ -1694,8 +1697,9 @@ If a \synt{node} is used within a tree environment, it can also contain a \textb
 The target item a node is matched against during query evaluation defines the structural context that is then in turn being used for matching the nested \synt{node} instances.
 Note that this opens up the entire spectrum of node grouping, disjunctions and arrangement modifiers to define constraints on (sub-)trees.
 
-\paragraph{Quantification}
-\noindent \ac{iql} knows a staggering total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
+\subsubsection{Quantification}
+\label{sec:quantification}
+\ac{iql} knows a staggering total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
 Those basic sets are \textit{existential negation}, \textit{universal quantification}, \textit{exact}, \textit{at-least}, \textit{at-most} and \textit{range}.
 Some quantifiers differentiate between \textit{greedy} (the default), \textit{reluctant} and \textit{possessive} mode.
 The differences of those three modes are explained below, assuming that the quantifier in question occurred on a node constraint $n_i$ that is followed by an optional sequence of additional node constraints $n_{i+1}..n_N$.
@@ -1760,8 +1764,9 @@ The primary effect caused by different modes is the size and number of matches r
 */
 \end{comment}
 
-\paragraph{Edges}
-\noindent Edges are a structural element that is available exclusively to \textbf{graph} constraints (\ref{sec:graph-constraints}).
+\subsubsection{Edges}
+\label{sec:edges}
+Edges are a structural element that is available exclusively to \textbf{graph} constraints (\ref{sec:graph-constraints}).
 Each edge minimally consists of a source and target node and a type indicator\footnote{Type indicators for empty edges (i.e. edges without an inner constraint or label definition) always consist of three symbols, cf. \cref{gram:edge}} to signal whether the edge is meant to be undirected, uni- or bidirectional and in the case of unidirectional edges which direction between source and target node it takes.
 
 \begin{gram}[\synt{edge}]
@@ -1807,11 +1812,12 @@ The following examples illustrate some use cases for quantification on edges:
 [$x:]-->![$y:]
 \end{Verbatim}
 
-\noindent Note that edge definitions cannot be chained, so the query ``find x linked to y, linked to z'' must be expressed in two separate edge definitions, one linking \member{x} to \member{y} and one linking \member{y} to \member{z}.
+Note that edge definitions cannot be chained, so the query ``find x linked to y, linked to z'' must be expressed in two separate edge definitions, one linking \member{x} to \member{y} and one linking \member{y} to \member{z}.
 This means that graph constraints (\ref{sec:graph-constraints}) require some redundancy, but the linked section also explains some easy strategies to minimize overhead.
 
-\paragraph{Node Grouping}
-\noindent Nodes (or elements) can be grouped together within curly brackets (\lit{\{}~and~\lit{\}}) as defined by the first \synt{nodeStatement} rule in \cref{gram:node-statement}.
+\subsubsection{Node Grouping}
+\label{sec:node-grouping}
+Nodes (or elements) can be grouped together within curly brackets (\lit{\{}~and~\lit{\}}) as defined by the first \synt{nodeStatement} rule in \cref{gram:node-statement}.
 This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
 Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
 However, those directives are \textbf{not} automatically \textbf{inherited} to the inner collection of nodes in the group, allowing for expressions such as the following node sequence:
@@ -1822,19 +1828,22 @@ ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
 Note that the adjacency modifier does not apply to the inner sequences a+b and c+d, which are only subject to the implicit order of the sequence declaration.\footnote{An additional \keyword{ORDERED} in each of the groups would make that explicit, but is redundant.}
 The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
 
-\paragraph{Node Sequence}
+\subsubsection{Node Sequence}
+\label{sec:node-sequences}
 \noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule in \cref{gram:node-statement}).
 Instances of \synt{node} in a sequence are defined one after another without special separator symbols.
 They may optionally be preceded by a \synt{nodeArrangement} directive to guide the matching progress.
 Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
 
-\paragraph{Element Sequence}
+\subsubsection{Element Sequence}
+\label{sec:element-sequence}
 \noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement} in \cref{gram:node-statement}), but with noticeable differences: 
 Element sequences do use a separator symbol (a simple comma \lit{,}) between \synt{element} definitions.
 Since \ac{iql} does not use keywords to signal the structural type to be expected in a query payload\footnote{An earlier draft made use of \keyword{TREE} and \keyword{GRAPH} keywords to distinguish those types from the basic node sequence, but in an effort to reduce the overall number of keywords (that users had to learn) this approach was dropped.} this approach was necessary to easily detect the type of structure.
 It also hints at the second difference, that is, element sequences do not support arrangement modifiers (as \synt{element} instances can be either nodes or edges, with the latter not being suitable for this kind of ordering) and as such can be more intuitively be understood as sets of \synt{element} instances.
 
-\paragraph{Structural Disjunction}
+\subsubsection{Structural Disjunction}
+\label{sec:structural-disjunction}
 \noindent As the forth option of \synt{nodeStatement} in \cref{gram:node-statement}, the disjunction of entire node statements provides a very powerful tool to express complex queries.
 Two node statements are linked with the \keyword{OR} keyword to mark them as ``either or'' cases.
 Since this opens up recursion, a complex disjunction may contain more than two node statements in total.
@@ -1849,7 +1858,7 @@ For illustration, the second example below might match an instance of \verb|[$y:
 [$x: [$y: [$z: [$a:] or [$b:]]] or [$z]]
 \end{Verbatim}
 
-\subsubsection{Sequence Constraints}
+\subsection{Sequence Constraints}
 \label{sec:sequence-constraints}
 
 As the most basic form of structural constraints this type is used to match sequences of nodes to \repoLink{\modelsUrl members/item/Item.java}{items} in the target corpus.
@@ -1890,7 +1899,7 @@ ADJACENT [$a:][$b:] <0+>[] [$c:][$d:]
 {ADJACENT [$a:][$b:]} {ADJACENT [$c:][$d:]}
 \end{Verbatim}
 
-\subsubsection{Tree Constraints}
+\subsection{Tree Constraints}
 \label{sec:tree-constraints}
 
 Located between mere sequences (\ref{sec:sequence-constraints}) and graphs (\ref{sec:graph-constraints}) this type of structural constraints is meant to target tree structures, such as (but not limited to) syntax trees, coreference structures, discourse, etc.
@@ -1971,12 +1980,12 @@ The tree contains 3 possible matches for the query, specifically the pairs \text
 	[\textcolor{darkred}{Y\textsubscript{3}}]]]
 }
 
-\subsubsection{Graph Constraints}
+\subsection{Graph Constraints}
 \label{sec:graph-constraints}
 
 \todo[inline]{content, explain node and edge composition, mention referencing as a strategy to minimize edge declaration overhead, etc...}
 
-\subsubsection{Global Constraints}
+\subsection{Global Constraints}
 \label{sec:global-constraints}
 
 Global constraints can be any basic constraint \cref{sec:constraints} and follow after the main section of structural constraints, indicated by the \keyword{HAVING} keyword (cf. \cref{gram:selection}).
@@ -2011,21 +2020,21 @@ In the example above the matcher would evaluate the global constraint \query{\$x
 Note that only very specific global constraints can successfully be hoisted! 
 \todo{list properties required for hoisting and mention hoisting of constraint fragments, since IQL splits boolean expressions into fragments}
 
-\subsection{Result Processing}
+\section{Result Processing}
 \label{sec:result-processing}
 
 There be dragons\dots
 
 (Content of the result section will be added as \ac{iql} evolves)
 
-\section{Utility Markers \& Functions}
+\chapter{Utility Markers \& Functions}
 \label{sec:utility}
 
 The following utility features are provided by the \ac{icqp} but are \textbf{not} part of the core specification. 
 As such it is possible for engine extensions to override them, change their behavior or completely remove them if desired.
 They are listed here as per default they all are available and provide valuable improvements for performance and usability.
 
-\subsection{Position Markers}
+\section{Position Markers}
 \label{sec:position-markers}
 
 Every node (\ref{sec:structural-constraints}) in a query has an implicit \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} context that it is hosted  or contained in.\footnote{The \ac{icmf} specifies that each item can only be hosted (or more accurately \textit{owned}) by a single container or derived object, but be contained within an arbitrary number of additional containers or structures.}
@@ -2132,7 +2141,7 @@ Note that there is no performance benefit by using those methods in global const
 The version for global constraints merely serves as syntactic sugar.
 However, since those methods are not subject to the same limitations as mentioned int the section about stacking above, they can be used freely inside local constraints (both in nested and disjunctive expressions).
 
-\subsection{Tree Markers}
+\section{Tree Markers}
 \label{sec:tree-markers}
 
 While the basic positional markers described in \cref{sec:position-markers} limit a node's overall position in the surrounding container, tree markers work on the hierarchical properties of tree structures.
@@ -2172,7 +2181,7 @@ It can therefore make sense to define additional precedence constraints via glob
 	\label{tab:tree-position-markers}
 \end{table}
 
-\subsubsection{Hierarchy Markers}
+\subsection{Hierarchy Markers}
 \label{sec:hierarchy-markers}
 Apart from the horizontal domain described above, tree markers also cover the hierarchical aspect of tree structures.
 A series of additional markers is available to specify a node's vertical location in the tree, as shown in \cref{tab:tree-hierarchy-markers}.
@@ -2229,7 +2238,7 @@ The \query{isRoot} marker however cannot be combined with any other hierarchy-re
 If the \query{isRoot} marker is being used within a nested node, an error will be issued as the query will be impossible to satisfy.\footnote{The \ac{icqp} does this for any kinds of obviously erroneous queries when the planning phase results in unsolvable issues.}
 
 
-\subsubsection{Path Markers}
+\subsection{Path Markers}
 \label{sec:path-markers}
 
 While hierarchical and regular tree markers (\ref{sec:tree-markers}, \ref{sec:hierarchy-markers}) operate on strictly one of either the horizontal or vertical dimension within a tree, path markers effectively combine horizontal and vertical navigation into a single marker.
@@ -2298,13 +2307,13 @@ If for instance a quantifier requires more than one instance of the node to be m
 <2>[isLeftmost && isGeneration(3)]
 \end{Verbatim}
 
-\subsubsection{Evaluation Performance}
+\subsection{Evaluation Performance}
 \label{sec:hierarchy-markers-performance}
 Tree-related methods for fetching hierarchical information (such as height and depth of a node) are optional in \ac{icmf}.
 As a result the \ac{icqp} might have to compute the data required for evaluating a query at runtime, generating some additional overhead from tree traversals. 
 This is especially critical for hierarchical markers that use reverse indices, as knowledge about the overall tree height is required to effectively translate relative indices into absolute intervals of legal (generation) values.
 
-\subsection{Sequence Functions}
+\section{Sequence Functions}
 \label{sec:sequence-functions}
 \todo[inline]{finish}
 
@@ -2326,7 +2335,7 @@ This is especially critical for hierarchical markers that use reverse indices, a
 	\label{tab:sequence-functions}
 \end{table}
 
-\subsection{Spatial Functions}
+\section{Spatial Functions}
 \label{sec:relative-markers}
 
 To provide fine control over horizontal positioning of nodes, as set of utility functions is provided that models specific spatial relations regarding (relative) positioning, overlap or inclusion of a pair of nodes.
@@ -2362,7 +2371,7 @@ To provide fine control over horizontal positioning of nodes, as set of utility 
 \label{tab:spatial-functions}
 \end{table}
 
-\subsection{Tree Functions}
+\section{Tree Functions}
 \label{sec:tree-functions}
 
 \begin{table}[!htb]\centering
@@ -2398,7 +2407,7 @@ Besides the differences in appearance those two approaches also differ greatly i
 While the bottom-up query can be efficiently solved in $\mathcal{O}(nh)$ time for trees with $n$ nodes and height $h$ \footnote{Construction of a reverse lookup between indices and the nodes beginning/ending there and subsequent production of adjacent pairs for \member{x} and \member{y} requires $\mathcal{O}(n)$ time. Without a dedicated utility data structure, determining the first common ancestor of \member{x} and \member{y} is linear in the maximum depth of the two nodes.}, the top-down query results in a vastly more expensive search.
 Since node \member{a} does not provide any strong filter mechanism besides needing at least 2 child nodes, the matcher will have to move the search tree through the target tree and repeatedly check any possible combination of descendant nodes matching \member{x} and \member{y} to be adjacent.
 
-\subsection{Graph Functions}
+\section{Graph Functions}
 \label{sec:graph-functions}
 
 There be dragons\dots
@@ -2409,7 +2418,7 @@ There be dragons\dots
 
 
 \begin{appendices}
-\section{Extended Grammar Diagrams}
+\chapter{Extended Grammar Diagrams}
 
 
 \begin{gram*}
