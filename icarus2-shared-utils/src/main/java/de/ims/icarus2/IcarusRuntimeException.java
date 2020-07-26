@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 
+import javax.annotation.Nullable;
+
 /**
  * General runtime exception that carries with it an error code
  * for further details.
@@ -37,8 +39,8 @@ public class IcarusRuntimeException extends RuntimeException {
 	 * @param message
 	 * @param cause
 	 */
-	public IcarusRuntimeException(ErrorCode errorCode, String message, Throwable cause) {
-		super(message, cause);
+	public IcarusRuntimeException(ErrorCode errorCode, String message, @Nullable Throwable cause) {
+		super(requireNonNull(message), cause);
 		this.errorCode = requireNonNull(errorCode);
 	}
 
@@ -46,14 +48,14 @@ public class IcarusRuntimeException extends RuntimeException {
 	 * @param message
 	 */
 	public IcarusRuntimeException(ErrorCode errorCode, String message) {
-		super(message);
+		super(requireNonNull(message));
 		this.errorCode = requireNonNull(errorCode);
 	}
 
 	/**
 	 * @param cause
 	 */
-	public IcarusRuntimeException(ErrorCode errorCode, Throwable cause) {
+	public IcarusRuntimeException(ErrorCode errorCode, @Nullable Throwable cause) {
 		super(cause);
 		this.errorCode = requireNonNull(errorCode);
 	}

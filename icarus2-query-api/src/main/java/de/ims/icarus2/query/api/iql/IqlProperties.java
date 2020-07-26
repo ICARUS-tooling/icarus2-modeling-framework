@@ -111,6 +111,8 @@ public final class IqlProperties {
 
 	public static final String QUANTIFIER_TYPE = IQL_NS_PREFIX+"quantifierType";
 
+	public static final String QUANTIFIER_MODIFIER = IQL_NS_PREFIX+"quantifierModifier";
+
 	public static final String LOWER_BOUND = IQL_NS_PREFIX+"lowerBound";
 
 	public static final String UPPER_BOUND = IQL_NS_PREFIX+"upperBound";

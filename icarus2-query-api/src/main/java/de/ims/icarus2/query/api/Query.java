@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Wrapper class so we don't need to hand around mere Strings as queries.
- * Might receive additional field si nthe future.
+ * Might receive additional fields in the future.
  *
  * @author Markus Gärtner
  *

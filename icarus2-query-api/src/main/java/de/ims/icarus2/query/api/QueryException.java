@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 
@@ -35,22 +37,24 @@ public class QueryException extends IcarusRuntimeException {
 	/** Part of the original query that led to this error */
 	private final Optional<QueryFragment> fragment;
 
-	public QueryException(ErrorCode errorCode, String message, QueryFragment fragment, Throwable cause) {
+	public QueryException(ErrorCode errorCode, String message, @Nullable QueryFragment fragment,
+			@Nullable Throwable cause) {
 		super(errorCode, message, cause);
 		this.fragment = Optional.ofNullable(fragment);
 	}
 
-	public QueryException(ErrorCode errorCode, String message, QueryFragment fragment) {
+	public QueryException(ErrorCode errorCode, String message, @Nullable QueryFragment fragment) {
 		super(errorCode, message);
 		this.fragment = Optional.ofNullable(fragment);
 	}
 
-	public QueryException(ErrorCode errorCode, QueryFragment fragment, Throwable cause) {
+	public QueryException(ErrorCode errorCode, @Nullable QueryFragment fragment,
+			@Nullable Throwable cause) {
 		super(errorCode, cause);
 		this.fragment = Optional.ofNullable(fragment);
 	}
 
-	public QueryException(ErrorCode errorCode, String message, Throwable cause) {
+	public QueryException(ErrorCode errorCode, String message, @Nullable Throwable cause) {
 		super(errorCode, message, cause);
 		this.fragment = Optional.empty();
 
@@ -61,7 +65,7 @@ public class QueryException extends IcarusRuntimeException {
 		this.fragment = Optional.empty();
 	}
 
-	public QueryException(ErrorCode errorCode, Throwable cause) {
+	public QueryException(ErrorCode errorCode, @Nullable Throwable cause) {
 		super(errorCode, cause);
 		this.fragment = Optional.empty();
 	}

@@ -75,6 +75,10 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	@JsonProperty(value=IqlProperties.QUANTIFIER_TYPE, required=true)
 	private QuantifierType quantifierType;
 
+	@JsonProperty(value=IqlProperties.QUANTIFIER_MODIFIER)
+	@JsonInclude(Include.NON_DEFAULT)
+	private QuantifierModifier quantifierModifier = QuantifierModifier.GREEDY;
+
 	@JsonProperty(IqlProperties.VALUE)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt value = OptionalInt.empty();
@@ -125,6 +129,8 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 	public QuantifierType getQuantifierType() { return quantifierType; }
 
+	public QuantifierModifier getQuantifierModifier() { return quantifierModifier; }
+
 	public OptionalInt getValue() { return value; }
 
 	public OptionalInt getLowerBound() { return lowerBound; }
@@ -132,6 +138,8 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	public OptionalInt getUpperBound() { return upperBound; }
 
 	public void setQuantifierType(QuantifierType quantifierType) { this.quantifierType = requireNonNull(quantifierType); }
+
+	public void setQuantifierModifier(QuantifierModifier quantifierModifier) { this.quantifierModifier = requireNonNull(quantifierModifier); }
 
 	public void setValue(int value) { this.value = _set(value); }
 
@@ -161,6 +169,27 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		private final String label;
 
 		private QuantifierType(String label) {
+			this.label = label;
+		}
+
+		@JsonValue
+		public String getLabel() {
+			return label;
+		}
+	}
+
+	public enum QuantifierModifier {
+		/** Match as many as possible while still considering subsequent constraints or nodes */
+		GREEDY("greedy"),
+		/** Match as few as possible, considering subsequent constraints or nodes */
+		RELUCTANT("reluctanct"),
+		/** Match as many as possible without consideration for subsequent constraints or nodes */
+		POSSESSIVE("possessive"),
+		;
+
+		private final String label;
+
+		private QuantifierModifier(String label) {
 			this.label = label;
 		}
 

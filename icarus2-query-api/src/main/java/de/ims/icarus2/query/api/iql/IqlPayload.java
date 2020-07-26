@@ -19,12 +19,14 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -45,6 +47,10 @@ public class IqlPayload extends IqlUnique {
 	@JsonProperty(value=IqlProperties.QUERY_MODIFIER)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<QueryModifier> queryModifier = Optional.empty();
+
+	@JsonProperty(value=IqlProperties.LIMIT)
+	@JsonInclude(Include.NON_ABSENT)
+	private OptionalInt limit = OptionalInt.empty();
 
 	@JsonProperty(IqlProperties.NAME)
 	@JsonInclude(Include.NON_ABSENT)
@@ -90,6 +96,9 @@ public class IqlPayload extends IqlUnique {
 					"must either define a global 'constraint' or at least one 'lanes' entry");
 		}
 
+		checkCondition(queryModifier.isPresent() || !limit.isPresent(), "limit/modifier",
+				"cannot define limit without modifier");
+
 		checkCollection(bindings);
 		checkOptionalNested(constraint);
 		checkCollection(lanes);
@@ -98,6 +107,8 @@ public class IqlPayload extends IqlUnique {
 	public QueryType getQueryType() { return queryType; }
 
 	public Optional<QueryModifier> getQueryModifier() { return queryModifier; }
+
+	public OptionalInt getLimit() { return limit; }
 
 	public Optional<String> getName() { return name; }
 
@@ -113,6 +124,11 @@ public class IqlPayload extends IqlUnique {
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
 
 	public void setQueryModifier(QueryModifier queryModifier) { this.queryModifier = Optional.of(queryModifier); }
+
+	public void setLimit(int limit) {
+		checkArgument("Limit must be positive", limit>0);
+		this.limit = OptionalInt.of(limit);
+	}
 
 	public void setName(String name) { this.name = Optional.of(checkNotEmpty(name)); }
 

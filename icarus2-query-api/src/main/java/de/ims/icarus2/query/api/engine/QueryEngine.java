@@ -335,11 +335,27 @@ public class QueryEngine {
 		}
 	}
 
+	/**
+	 * Helper class to store registered extensions, codecs and other globally
+	 * usable utility components. Anything not resolvable from this registry
+	 * will cause an exception when the {@link QueryEngine} prepares the matcher
+	 * automaton for a new query.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	static class ExtensionRegistry {
+
+
+	}
+
 	public static class Builder extends AbstractBuilder<Builder, QueryEngine> {
 
 		private ObjectMapper mapper;
 
 		private CorpusManager corpusManager;
+
+		private final ExtensionRegistry extensionRegistry = new ExtensionRegistry();
 
 		private Builder() {
 			// no-op

@@ -108,7 +108,11 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| bindingsList? (FILTER BY constraint)? FIND (FIRST | LAST | ANY)? selectionStatement EOF
+	| bindingsList? (FILTER BY constraint)? FIND matchModifier? selectionStatement EOF
+	;
+	
+matchModifier
+	: (FIRST | LAST | ANY) (PureDigits HITS)?
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -413,18 +417,39 @@ type
 	| FLOAT // all kinds of floating point types (up to 64bit double precision)
 	;
 	
+/*
+ * Quantification rules (N is assumed to be the collection of subsequent nodes):
+ * 
+ * not  - existential negation
+ * 
+ * all  - universal quantification
+ * 
+ * X    - greedily match exactly X instances
+ * X?   - reluctantly match X instances if subsequent nodes can still be matched by N
+ * X!   - possessively match X instances, extending without consideration for N
+ * 
+ * X+   - greedily match X or more instances, considering N
+ * X+?  - reluctantly match X or more instances, considering N
+ * X+!  - possessively match at least X instances, extending without consideration for N
+ * 
+ * X-   - greedily match up to X instances, considering N
+ * X-?  - reluctantly match up to X instances, considering N
+ * X-!  - possessively match up to X instances, extending without consideration for N
+ * 
+ * X-Y  - greedily match X to Y instances, leaving room for N
+ * X-Y? - reluctantly match X to Y instances, leaving room for N
+ * X-Y! - possessively match X to Y instances, extending without consideration for N
+ */
 quantifier
 	: simpleQuantifier ( PIPE simpleQuantifier )*  
 	| LT simpleQuantifier ( PIPE simpleQuantifier )* GT
 	;
 	
 simpleQuantifier
-	: all
-	| not
-	| value=PureDigits 						
-	| value=PureDigits PLUS					
-	| value=PureDigits MINUS					
-	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits
+	: not
+	| all (QMARK | PLUS)?
+	| value=PureDigits (PLUS | MINUS)? (QMARK | EXMARK)?
+	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits (QMARK | PLUS)?
 	;
 	
 not
@@ -535,6 +560,7 @@ FOREACH : 'FOREACH' | 'foreach' ;
 FROM : 'FROM' | 'from' ;
 GROUP : 'GROUP' | 'group' ;
 HAVING : 'HAVING' | 'having' ;
+HITS : 'HITS' | 'hits' ;
 IN : 'IN' | 'in' ;
 LABEL : 'LABEL' | 'label' ;
 LANE : 'LANE' | 'lane' ;

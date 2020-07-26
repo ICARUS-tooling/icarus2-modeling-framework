@@ -36,6 +36,7 @@ public class QueryProcessingException extends QueryException {
 	private static final long serialVersionUID = 3726584869955100248L;
 
 	//TODO make transient or ensure proper serialization of reports in general?
+	// Report serialization not possible due to embedding of arbitrary argument arrays?!
 	private final Report<ReportItem> report;
 
 	public QueryProcessingException(String message, Report<ReportItem> report) {

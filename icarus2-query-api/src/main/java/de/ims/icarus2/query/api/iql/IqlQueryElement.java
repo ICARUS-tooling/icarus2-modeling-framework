@@ -45,6 +45,8 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 @JsonAutoDetect(getterVisibility=Visibility.NONE, isGetterVisibility=Visibility.NONE)
 public interface IqlQueryElement extends DataObject {
 
+	//TODO add support for storing the original query fragment with offsets and text snippet
+
 	/**
 	 * Return the type information for this element, i.e. the {@link IqlType#getId() type id}
 	 * to be used when serializing. Note that the {@link IqlType#getType() type} reported by the

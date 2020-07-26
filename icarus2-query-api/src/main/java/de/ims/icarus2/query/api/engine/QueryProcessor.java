@@ -72,6 +72,7 @@ import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
+import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlReference;
@@ -98,6 +99,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LaneStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchModifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeAlternativesContext;
@@ -367,12 +369,19 @@ public class QueryProcessor {
 			}
 
 			// Handle modifiers
-			if(ctx.FIRST()!=null) {
-				payload.setQueryModifier(QueryModifier.FIRST);
-			} else if(ctx.LAST()!=null) {
-				payload.setQueryModifier(QueryModifier.LAST);
-			} else if(ctx.ANY()!=null) {
-				payload.setQueryModifier(QueryModifier.ANY);
+			MatchModifierContext mmctx = ctx.matchModifier();
+			if(mmctx!=null) {
+				if(mmctx.FIRST()!=null) {
+					payload.setQueryModifier(QueryModifier.FIRST);
+				} else if(mmctx.LAST()!=null) {
+					payload.setQueryModifier(QueryModifier.LAST);
+				} else if(mmctx.ANY()!=null) {
+					payload.setQueryModifier(QueryModifier.ANY);
+				}
+
+				if(mmctx.PureDigits()!=null) {
+					payload.setLimit(pureDigits(mmctx.PureDigits().getSymbol()));
+				}
 			}
 
 			// Handle actual selection statement variants
@@ -727,6 +736,7 @@ public class QueryProcessor {
 		private IqlQuantifier processSimpleQuantifier(SimpleQuantifierContext ctx) {
 			IqlQuantifier quantifier = new IqlQuantifier();
 
+			// Basic quantifier type
 			if(ctx.all()!=null) {
 				// Universally quantified
 				quantifier.setQuantifierType(QuantifierType.ALL);
@@ -759,6 +769,14 @@ public class QueryProcessor {
 				quantifier.setQuantifierType(QuantifierType.EXACT);
 				quantifier.setValue(pureDigits(ctx.value));
 			}
+
+			// Quantifier modifier
+			if(ctx.QMARK()!=null) {
+				quantifier.setQuantifierModifier(QuantifierModifier.RELUCTANT);
+			} else if(ctx.EXMARK()!=null) {
+				quantifier.setQuantifierModifier(QuantifierModifier.POSSESSIVE);
+			}
+
 			return quantifier;
 		}
 

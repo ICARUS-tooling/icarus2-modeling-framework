@@ -26,6 +26,7 @@ import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.Report;
+import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 
 /**
@@ -147,6 +148,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 * has been called.
 	 */
 	PROXY_CALL(303),
+
+	/**
+	 * Constructing a matcher failed due to the respective (and obligatory)
+	 * element store missing from the associated {@link EvaluationContext}.
+	 */
+	MISSING_ELEMENT_STORE(304),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;
