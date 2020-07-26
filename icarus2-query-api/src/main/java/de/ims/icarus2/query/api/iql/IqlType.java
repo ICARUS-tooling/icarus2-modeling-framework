@@ -54,6 +54,7 @@ public enum IqlType {
 	EDGE("Edge", "edge", IqlElement.IqlEdge.class),
 	NODE("Node", "node", IqlElement.IqlNode.class),
 	NODE_SET("NodeSet", "nodes", IqlElement.IqlNodeSet.class),
+	ELEMENT_GROUPING("ElementGrouping", "elements", IqlElement.IqlElementGrouping.class),
 	TREE_NODE("TreeNode", "tree", IqlElement.IqlTreeNode.class),
 	ELEMENT_DISJUNCTION("ElementDisjunction", "choice", IqlElement.IqlElementDisjunction.class),
 	RESULT("Result", null, IqlResult.class),

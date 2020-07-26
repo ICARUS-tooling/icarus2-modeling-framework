@@ -43,10 +43,8 @@ import org.antlr.v4.runtime.Token;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
-import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.iql.AntlrUtils;
@@ -59,6 +57,7 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
@@ -81,6 +80,7 @@ import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
+import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUnique;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
@@ -91,6 +91,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementGroupingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EmptyEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
@@ -105,7 +106,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeAlternativesContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeArrangementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeGroupingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.OrderExpressionContext;
@@ -119,6 +119,8 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.StaticIdentity;
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 
 /**
@@ -321,6 +323,10 @@ public class QueryProcessor {
 
 
 
+		private int pureDigits(Token token) {
+			return Integer.parseInt(textOf(token));
+		}
+
 		/** Unwraps arbitrarily nested wrapping expression to the deepest nested one */
 		private ExpressionContext unwrap(ExpressionContext ctx) {
 			ExpressionContext original = ctx;
@@ -336,12 +342,21 @@ public class QueryProcessor {
 			return ctx;
 		}
 
-		/** Unwraps arbitrarily nested wrapping of node statements */
+		/**
+		 * Unwraps arbitrarily nested wrapping of node statements as long as they
+		 * do not provide explicit quantification. In other words, only unwrap
+		 * superfluous wrappings!
+		 */
 		private NodeStatementContext unwrap(NodeStatementContext ctx) {
 			NodeStatementContext original = ctx;
 			int depth = 0;
-			while(ctx instanceof NodeGroupingContext) {
-				ctx = ((NodeGroupingContext)ctx).nodeStatement();
+			while(ctx instanceof ElementGroupingContext) {
+				ElementGroupingContext ectx = (ElementGroupingContext) ctx;
+				// Stop as soon as we see any explicit quantification
+				if(ectx.quantifier()!=null) {
+					break;
+				}
+				ctx = ectx.nodeStatement();
 				depth++;
 			}
 			if(depth>1) {
@@ -590,32 +605,66 @@ public class QueryProcessor {
 		}
 
 		/** Process given node statement and honor limitations of specified query type */
-		private IqlElement processNodeStatement(NodeStatementContext ctx,
-				IqlTreeNode parent) {
-			ctx = unwrap(ctx);
+		private IqlElement processNodeStatement(NodeStatementContext ctx, TreeInfo tree) {
 
-			if(ctx instanceof NodeSequenceContext) {
-				return processNodeSequence((NodeSequenceContext) ctx, parent);
+			if(ctx instanceof ElementGroupingContext) {
+				return processElementGrouping((ElementGroupingContext) ctx, tree);
+			} else if(ctx instanceof NodeSequenceContext) {
+				return processNodeSequence((NodeSequenceContext) ctx, tree);
 			} else if (ctx instanceof ElementSequenceContext) {
-				return processElementSequence((ElementSequenceContext) ctx, parent);
+				return processElementSequence((ElementSequenceContext) ctx, tree);
 			} else if (ctx instanceof NodeAlternativesContext) {
-				return processNodeAlternatives((NodeAlternativesContext) ctx, parent);
+				return processNodeAlternatives((NodeAlternativesContext) ctx, tree);
 			}
 
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private IqlNodeSet processNodeSequence(NodeSequenceContext ctx,
-				@Nullable IqlTreeNode parent) {
+		private IqlElementGrouping processElementGrouping(ElementGroupingContext ctx,
+				TreeInfo tree) {
+			IqlElementGrouping grouping = new IqlElementGrouping();
+			genId(grouping);
+
+			boolean negated = grouping.isExistentiallyNegated();
+
+			if(ctx.quantifier()!=null) {
+				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
+				quantifiers.forEach(grouping::addQuantifier);
+
+				if(tree.isNegated() && negated) {
+					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
+							"Double negation of nested node grouping '{1}' - try to express query positively instead", textOf(ctx));
+				}
+			}
+
+			tree.enter(grouping, negated);
+			IqlElement element = processNodeStatement(ctx.nodeStatement(), tree);
+			tree.exit();
+
+			if(element.getType()==IqlType.ELEMENT_GROUPING) {
+				reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
+						"Superfluous and illegal nesting of element grouping: {1}",
+						textOf(ctx));
+			}
+
+			grouping.setElement(element);
+
+			return grouping;
+		}
+
+		private IqlNodeSet processNodeSequence(NodeSequenceContext ctx, TreeInfo tree) {
 			IqlNodeSet nodeSet = new IqlNodeSet();
 			genId(nodeSet);
 
-			for(NodeContext nctx : ctx.node()) {
-				nodeSet.addNode(processNode(nctx, parent));
-			}
 			if(ctx.nodeArrangement()!=null) {
 				nodeSet.setNodeArrangement(processNodeArrangement(ctx.nodeArrangement()));
 			}
+
+			tree.enter(nodeSet, false);
+			for(NodeContext nctx : ctx.node()) {
+				nodeSet.addNode(processNode(nctx, tree));
+			}
+			tree.exit();
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
 			if(nodeSet.getNodeArrangement()!=NodeArrangement.UNSPECIFIED
@@ -628,14 +677,16 @@ public class QueryProcessor {
 			return nodeSet;
 		}
 
-		private IqlNodeSet processElementSequence(ElementSequenceContext ctx,
-				@Nullable IqlTreeNode parent) {
+		private IqlNodeSet processElementSequence(ElementSequenceContext ctx, TreeInfo tree) {
 			IqlNodeSet elements = new IqlNodeSet();
 			genId(elements);
 
+			tree.enter(elements, false);
 			for(ElementContext ectx : ctx.element()) {
-				elements.addNode(processElement(ectx, parent));
+				elements.addNode(processElement(ectx, tree));
 			}
+			tree.exit();
+
 			return elements;
 		}
 
@@ -650,24 +701,24 @@ public class QueryProcessor {
 			}
 		}
 
-		private IqlNodeSet ensureChildren(IqlTreeNode node) {
-			Optional<IqlElement> children = node.getChildren();
-			if(!children.isPresent()) {
-				node.setChildren(new IqlNodeSet());
-				children = node.getChildren();
-			}
+//		private IqlNodeSet ensureChildren(IqlTreeNode node) {
+//			Optional<IqlElement> children = node.getChildren();
+//			if(!children.isPresent()) {
+//				node.setChildren(new IqlNodeSet());
+//				children = node.getChildren();
+//			}
+//
+//			assert children.isPresent();
+//			IqlElement element = children.get();
+//			if(!(element instanceof IqlNodeSet))
+//				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+//						Messages.mismatch("Type of parent's children object mismatch",
+//								IqlNodeSet.class, element.getClass()));
+//
+//			return (IqlNodeSet)element;
+//		}
 
-			assert children.isPresent();
-			IqlElement element = children.get();
-			if(!(element instanceof IqlNodeSet))
-				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
-						Messages.mismatch("Type of parent's children object mismatch",
-								IqlNodeSet.class, element.getClass()));
-
-			return (IqlNodeSet)element;
-		}
-
-		private IqlNode processNode(NodeContext ctx, @Nullable IqlTreeNode parent) {
+		private IqlNode processNode(NodeContext ctx, TreeInfo tree) {
 			IqlNode node;
 			// Decide on type of node
 			if(ctx.nodeStatement()!=null) {
@@ -684,35 +735,23 @@ public class QueryProcessor {
 
 			processProperElement0(node, ctx.memberLabel(), ctx.constraint());
 
+			final boolean negated = node.isExistentiallyNegated();
+
 			if(ctx.quantifier()!=null) {
 				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
 				quantifiers.forEach(node::addQuantifier);
 
-				if(parent!=null && parent.isNegated() && node.isNegated()) {
+				if(tree.isNegated() && node.isExistentiallyNegated()) {
 					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
-							"Double negation of nested nodes '{1}' - try to express query positively instead", textOf(ctx));
-				} else if(parent==null && node.isUniversallyQuantified()) {
-					//TODO need to revisit this limitation in the IQL specification!! (we might allow universal quantification here)
-					/* Info for TODO: nodes are typically bound to items that are embedded into a
-					 * surrounding grouping (e.g. sentences) that provides a natural limitation for
-					 * the scope of universal quantification. So a universally quantified node would read
-					 * 'find container (sentence) where _ALL_ items match this one'. As a result we
-					 * would move the sanity check one level up and ensure that there cannot be any
-					 * concurrent nodes (i.e. the universally quantified node must be the sole top
-					 * level node, either globally or within its node alternative group).
-					 */
-					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
-							"Cannot universally qualify top-level nodes: {1}", textOf(ctx));
+							"Double negation of nested node '{1}' - try to express query positively instead", textOf(ctx));
 				}
 			}
 
-			if(parent!=null) {
-				ensureChildren(parent).addNode(node);
-			}
-
-			// Finally process actual children
+			// Finally process and add actual children
 			if(ctx.nodeStatement()!=null) {
-				processNodeStatement(ctx.nodeStatement(), (IqlTreeNode) node);
+				tree.enter(node, negated);
+				((IqlTreeNode) node).setChildren(processNodeStatement(ctx.nodeStatement(), tree));
+				tree.exit();
 			}
 
 			return node;
@@ -729,10 +768,6 @@ public class QueryProcessor {
 					.collect(Collectors.toList());
 		}
 
-		private int pureDigits(Token token) {
-			return Integer.parseInt(textOf(token));
-		}
-
 		private IqlQuantifier processSimpleQuantifier(SimpleQuantifierContext ctx) {
 			IqlQuantifier quantifier = new IqlQuantifier();
 
@@ -745,9 +780,11 @@ public class QueryProcessor {
 				quantifier.setQuantifierType(QuantifierType.EXACT);
 				quantifier.setValue(0);
 			} else if(ctx.PLUS()!=null) {
+				// At-Least quantifier
 				quantifier.setQuantifierType(QuantifierType.AT_LEAST);
 				quantifier.setValue(pureDigits(ctx.value));
 			} else if(ctx.MINUS()!=null) {
+				// At-Most quantifier
 				quantifier.setQuantifierType(QuantifierType.AT_MOST);
 				int value = pureDigits(ctx.value);
 				if(value==0) {
@@ -756,6 +793,7 @@ public class QueryProcessor {
 				}
 				quantifier.setValue(value);
 			} else if(ctx.DOUBLE_DOT()!=null) {
+				// Bounded-Range quantifier
 				quantifier.setQuantifierType(QuantifierType.RANGE);
 				int lower = pureDigits(ctx.lowerBound);
 				int upper = pureDigits(ctx.upperBound);
@@ -766,11 +804,12 @@ public class QueryProcessor {
 				quantifier.setLowerBound(lower);
 				quantifier.setUpperBound(upper);
 			} else {
+				// Exact quantifier
 				quantifier.setQuantifierType(QuantifierType.EXACT);
 				quantifier.setValue(pureDigits(ctx.value));
 			}
 
-			// Quantifier modifier
+			// Quantifier modifier (GREEDY is the default)
 			if(ctx.QMARK()!=null) {
 				quantifier.setQuantifierModifier(QuantifierModifier.RELUCTANT);
 			} else if(ctx.EXMARK()!=null) {
@@ -780,7 +819,7 @@ public class QueryProcessor {
 			return quantifier;
 		}
 
-		private IqlElement processElement(ElementContext ctx, @Nullable IqlTreeNode parent) {
+		private IqlElement processElement(ElementContext ctx, TreeInfo tree) {
 			if(ctx.edge()!=null) {
 				if(treeFeaturesUsed) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -789,8 +828,8 @@ public class QueryProcessor {
 					graphFeaturesUsed = true;
 				}
 
-				IqlNode source = processNode(ctx.source, parent);
-				IqlNode target = processNode(ctx.target, parent);
+				IqlNode source = processNode(ctx.source, tree);
+				IqlNode target = processNode(ctx.target, tree);
 
 				if(source.hasQuantifiers() && target.hasQuantifiers()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -801,7 +840,7 @@ public class QueryProcessor {
 				return edge;
 			}
 
-			return processNode(ctx.content, parent);
+			return processNode(ctx.content, tree);
 		}
 
 		private IqlEdge processEdge(EdgeContext ctx, IqlNode source, IqlNode target) {
@@ -873,21 +912,40 @@ public class QueryProcessor {
 		}
 
 		private IqlElementDisjunction processNodeAlternatives(NodeAlternativesContext ctx,
-				@Nullable IqlTreeNode parent) {
+				TreeInfo tree) {
 			IqlElementDisjunction dis = new IqlElementDisjunction();
 			genId(dis);
 
+			tree.enter(dis, false);
 			// Try to collapse any nested alternatives into a single list
 			NodeStatementContext tail = ctx;
 			while(tail instanceof NodeAlternativesContext) {
 				NodeAlternativesContext nactx = (NodeAlternativesContext) tail;
-				dis.addAlternative(processNodeStatement(nactx.left, parent));
+				dis.addAlternative(processNodeStatement(nactx.left, tree));
 				tail = unwrap(nactx.right);
 			}
 			// Now add the final dangling expression (note that we have to forward the original parent!)
-			dis.addAlternative(processNodeStatement(tail, parent));
+			dis.addAlternative(processNodeStatement(tail, tree));
+			tree.exit();
 
 			return dis;
 		}
+	}
+
+	private static class TreeInfo {
+		private final ObjectArrayList<IqlElement> trace = new ObjectArrayList<>();
+		private final BooleanArrayList negated = new BooleanArrayList();
+
+		void enter(IqlElement node, boolean negated) {
+			trace.push(requireNonNull(node));
+			this.negated.push(negated);
+		}
+
+		boolean hasParent() { return !trace.isEmpty() && trace.top() instanceof IqlTreeNode; }
+		boolean isNegated() { return negated.contains(true); }
+
+		IqlTreeNode parent() { return (IqlTreeNode) trace.top(); }
+
+		IqlElement exit() { negated.pop(); return trace.pop(); }
 	}
 }

@@ -22,6 +22,8 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -66,7 +68,7 @@ public class ModelException extends IcarusRuntimeException {
 	private final Reference<Corpus> source;
 	private final boolean corpusSet;
 
-	public ModelException(ErrorCode errorCode, String message, Throwable cause) {
+	public ModelException(ErrorCode errorCode, String message, @Nullable Throwable cause) {
 		super(errorCode, message, cause);
 
 		this.source = null;

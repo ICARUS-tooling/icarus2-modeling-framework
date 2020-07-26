@@ -51,6 +51,7 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
@@ -173,6 +174,7 @@ public class IqlQueryGenerator {
 		case DATA: prepareData((IqlData) element, build, config); break;
 		case EDGE: prepareEdge((IqlEdge) element, build, config); break;
 		case ELEMENT_DISJUNCTION: prepareElementDisjunction((IqlElementDisjunction) element, build, config); break;
+		case ELEMENT_GROUPING: prepareElementWrapper((IqlElementGrouping) element, build, config); break;
 		case EXPRESSION: prepareExpression((IqlExpression) element, build, config); break;
 		case GROUP: prepareGroup((IqlGroup) element, build, config); break;
 		case IMPORT: prepareImport((IqlImport) element, build, config); break;
@@ -316,7 +318,7 @@ public class IqlQueryGenerator {
 		prepareProperElement0(node, build, config);
 
 		for (int i = 0; i < config.getCount(IqlType.QUANTIFIER, DEFAULT_COUNT); i++) {
-			build.addNestedChange(IqlProperties.QUANTIFIER_TYPE, IqlType.QUANTIFIER, config, node, node::addQuantifier);
+			build.addNestedChange(IqlProperties.QUANTIFIERS, IqlType.QUANTIFIER, config, node, node::addQuantifier);
 		}
 	}
 
@@ -374,6 +376,24 @@ public class IqlQueryGenerator {
 
 		for (int i = 0; i < 3; i++) {
 			dis.addAlternative((IqlNodeSet)generateFull(IqlType.NODE_SET, config));
+		}
+	}
+
+	private void prepareElementWrapper(IqlElementGrouping wrapper, IncrementalBuild<?> build, Config config) {
+		prepareElement0(wrapper, build, config);
+
+		if(config.tryNested(IqlType.ELEMENT_GROUPING)) {
+			// Must have at least 1 node
+			wrapper.setElement(generateFull(IqlType.NODE, config));
+
+			for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT-1); i++) {
+				build.addNestedChange(IqlProperties.NODES, IqlType.NODE, config, wrapper, wrapper::setElement);
+			}
+			config.endNested(IqlType.ELEMENT_GROUPING);
+		}
+
+		for (int i = 0; i < config.getCount(IqlType.QUANTIFIER, DEFAULT_COUNT); i++) {
+			build.addNestedChange(IqlProperties.QUANTIFIERS, IqlType.QUANTIFIER, config, wrapper, wrapper::addQuantifier);
 		}
 	}
 

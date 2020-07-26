@@ -77,6 +77,70 @@ public abstract class IqlElement extends IqlUnique {
 
 	}
 
+	private static boolean isExistentiallyQuantified(List<IqlQuantifier> quantifiers) {
+		if(quantifiers.isEmpty()) {
+			return true;
+		}
+		for(IqlQuantifier quantifier : quantifiers) {
+			if(quantifier.isExistentiallyQuantified()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean isUniversallyQuantified(List<IqlQuantifier> quantifiers) {
+		return quantifiers.size()==1
+				&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
+	}
+
+	private static boolean isExistentiallyNegated(List<IqlQuantifier> quantifiers) {
+		return quantifiers.size()==1
+				&& quantifiers.get(0).isExistentiallyNegated();
+	}
+
+	public static class IqlElementGrouping extends IqlElement {
+
+		@JsonProperty(IqlProperties.QUANTIFIERS)
+		@JsonInclude(Include.NON_EMPTY)
+		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
+
+		@JsonProperty(value=IqlProperties.ELEMENT, required=true)
+		private IqlElement element;
+
+		@Override
+		public IqlType getType() { return IqlType.ELEMENT_GROUPING; }
+
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+
+			checkCollection(quantifiers);
+			checkNestedNotNull(element, IqlProperties.ELEMENT);
+		}
+
+		public IqlElement getElement() { return element; }
+
+		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }
+
+		public void addQuantifier(IqlQuantifier quantifier) { quantifiers.add(requireNonNull(quantifier)); }
+
+		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers.forEach(requireNonNull(action)); }
+
+		public void setElement(IqlElement element) { this.element = requireNonNull(element); }
+
+
+		// utility
+
+		public boolean hasQuantifiers() { return !quantifiers.isEmpty(); }
+
+		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified(quantifiers); }
+
+		public boolean isUniversallyQuantified() { return isUniversallyQuantified(quantifiers); }
+
+		public boolean isExistentiallyNegated() { return isExistentiallyNegated(quantifiers); }
+	}
+
 	public static class IqlNode extends IqlProperElement {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
@@ -101,31 +165,13 @@ public abstract class IqlElement extends IqlUnique {
 
 		// utility
 
-		public boolean hasQuantifiers() {
-			return !quantifiers.isEmpty();
-		}
+		public boolean hasQuantifiers() { return !quantifiers.isEmpty(); }
 
-		public boolean isExistentiallyQuantified() {
-			if(quantifiers.isEmpty()) {
-				return true;
-			}
-			for(IqlQuantifier quantifier : quantifiers) {
-				if(quantifier.isExistentiallyQuantified()) {
-					return true;
-				}
-			}
-			return false;
-		}
+		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified(quantifiers); }
 
-		public boolean isUniversallyQuantified() {
-			return quantifiers.size()==1
-					&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
-		}
+		public boolean isUniversallyQuantified() { return isUniversallyQuantified(quantifiers); }
 
-		public boolean isNegated() {
-			return quantifiers.size()==1
-					&& quantifiers.get(0).isExistentiallyNegated();
-		}
+		public boolean isExistentiallyNegated() { return isExistentiallyNegated(quantifiers); }
 	}
 
 	public static class IqlNodeSet extends IqlElement {

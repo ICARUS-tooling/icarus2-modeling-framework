@@ -163,10 +163,10 @@ laneStatement
  * {[],[]} or []-->[]			grouping with alternative
  */
 nodeStatement
-	: LBRACE nodeStatement RBRACE				#nodeGrouping
-	| nodeArrangement? node+										#nodeSequence
-	| element (COMMA element)*					#elementSequence	
-	| <assoc=right> left=nodeStatement or right=nodeStatement			#nodeAlternatives
+	: quantifier? LBRACE nodeStatement RBRACE					#elementGrouping
+	| nodeArrangement? node+									#nodeSequence
+	| element (COMMA element)*									#elementSequence	
+	| <assoc=right> left=nodeStatement or right=nodeStatement	#nodeAlternatives
 	;
 	
 nodeArrangement

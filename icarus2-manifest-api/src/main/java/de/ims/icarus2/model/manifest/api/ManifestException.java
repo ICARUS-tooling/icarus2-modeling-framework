@@ -18,6 +18,8 @@ package de.ims.icarus2.model.manifest.api;
 
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -67,7 +69,7 @@ public class ManifestException extends IcarusRuntimeException {
 	 * @param cause
 	 */
 	public ManifestException(ErrorCode errorCode, String message,
-			Throwable cause) {
+			@Nullable Throwable cause) {
 		super(errorCode, message, cause);
 	}
 
@@ -83,7 +85,7 @@ public class ManifestException extends IcarusRuntimeException {
 	 * @param errorCode
 	 * @param cause
 	 */
-	public ManifestException(ErrorCode errorCode, Throwable cause) {
+	public ManifestException(ErrorCode errorCode, @Nullable Throwable cause) {
 		super(errorCode, cause);
 	}
 }
