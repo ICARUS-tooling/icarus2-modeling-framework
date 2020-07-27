@@ -1,36 +1,43 @@
 
-\usepackage{standalone}
-\usepackage[hscale=0.75,vscale=0.8]{geometry}
 
+%packages that need to be loaded early to avoid option clashes
+\usepackage[dvipsnames]{xcolor}
+
+% packages that can be loaded in random order
+\usepackage{acro}
+\usepackage[chapter]{algorithm}
+\usepackage[toc,page]{appendix}
+\usepackage{bera}% optional: just to have a nice mono-spaced font
+\usepackage{comment} % for commenting out the huge draft lists
+\usepackage{cprotect}
+\usepackage{enumitem}
+\usepackage{fancyvrb}
 \usepackage[T1]{fontenc}
-\usepackage{times}
 \usepackage{fontspec}
+\usepackage{forest}
+\usepackage[hscale=0.75,vscale=0.8]{geometry}
+\usepackage{hyperref}
 \usepackage{latexsym}
-\usepackage{url}
-\usepackage{natbib}
+\usepackage{listings}
 \usepackage{multicol}
+\usepackage{natbib}
+\usepackage{ntheorem}
+\usepackage[section]{placeins} % to keep floats within the section they have been defined in
+\usepackage{standalone}
+\usepackage{subcaption}
+\usepackage[rounded]{syntax}
+\usepackage{tikz}
+\usepackage{times}
+\usepackage{todonotes}
+\usepackage{url}
+\usepackage{wrapfig}
 \usepackage{xstring}
 \usepackage{xspace}
-\usepackage{todonotes}
-\usepackage[toc,page]{appendix}
-\usepackage{comment} % for commenting out the huge draft lists
-%\usepackage{inconsolata} % to have Consolas as font for verbatim and tt
-\usepackage{bera}% optional: just to have a nice mono-spaced font
-\usepackage{listings}
-\usepackage[section]{placeins} % to keep floats within the section they have been defined in
-\usepackage{enumitem}
-\usepackage{cprotect}
-\usepackage{fancyvrb}
-\usepackage{xcolor}
-\usepackage{forest}
-\usepackage[rounded]{syntax}
-\usepackage{wrapfig}
-\usepackage{hyperref}
-\usepackage{ntheorem}
-\usepackage[capitalise]{cleveref} % must be loaded after hyperref!
-\usepackage[chapter]{algorithm}
 
-\usepackage{acro}
+%packages that need specific prerequisites
+\usepackage[capitalise]{cleveref} % must be loaded after hyperref!
+
+\usetikzlibrary{shapes.arrows, chains, positioning}
 
 \DeclareAcronym{cql}{short = CQL, long = corpus query language}
 \DeclareAcronym{cqs}{short = CQS, long = corpus query system}

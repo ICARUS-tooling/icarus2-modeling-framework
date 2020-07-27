@@ -213,10 +213,10 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 	\item[\iqlType{id}] Identifier to uniquely identify the element within the entire query.
 	\item[\iqlType{consumed}] Signals that the element has already been \textit{used up} in the context of a partial query evaluation. An element that has been consumed can safely be ignored in the further evaluation of the query. Note that this state can be propagated according to the following rules:
 	\begin{itemize}[leftmargin=*,topsep=0pt]\compresslist
-		\item A \iqlType{Node}(\ref{sec:json-ld-node}) can be marked as \texttt{consumed} if its \iqlType{constraint} is marked as \texttt{solved} and its match count satisfies the \iqlType{quantifiers} requirement. Note that cross-referencing constraints can only be considered solved when all other aspects of the involved elements support the \texttt{consumed} state.
-		\item A \iqlType{TreeNode}(\ref{sec:json-ld-tree-node}) can be marked as \texttt{consumed} if above conditions are met and all nested \iqlType{children} are marked \texttt{consumed}.
+		\item An \iqlType{Node}(\ref{sec:json-ld-node}) can be marked as \texttt{consumed} if its \iqlType{constraint} is marked as \texttt{solved} and its match count satisfies the \iqlType{quantifiers} requirement. Note that cross-referencing constraints can only be considered solved when all other aspects of the involved elements support the \texttt{consumed} state.
+		\item An \iqlType{TreeNode}(\ref{sec:json-ld-tree-node}) can be marked as \texttt{consumed} if above conditions are met and all nested \iqlType{children} are marked \texttt{consumed}.
 		\item An \iqlType{Edge}(\ref{sec:json-ld-edge}) is considered \texttt{consumed} when both its terminals are \texttt{consumed} and the same conditions regarding its \iqlType{constraint} are fulfilled as mentioned above.
-		\item A \iqlType{ElementDisjunction}(\ref{sec:json-ld-element-disjunction}) is considered \texttt{consumed} if at least one of its \iqlType{alternatives} has been marked \texttt{consumed}.
+		\item An \iqlType{ElementDisjunction}(\ref{sec:json-ld-element-disjunction}) is considered \texttt{consumed} if at least one of its \iqlType{alternatives} has been marked \texttt{consumed}.
 	\end{itemize}
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -230,7 +230,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 %\item nodeArrangement
 %\end{itemize}
 \desc{Wrapper around a list of \iqlType{Element} (\ref{sec:json-ld-element}) instances to group them for either nesting or disjunction.}
-\extends{\iqlType{Node}}{\ref{sec:json-ld-node}}
+\extends{\iqlType{Element}}{\ref{sec:json-ld-element}}
 \begin{attributes}{\iqlType{NodeSet}}
 	\attribute{nodeArrangement}{enum}{no}{unspecified}
 \end{attributes}
@@ -242,6 +242,26 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 \end{elements}
 \begin{description}
 	\item[\iqlType{nodes}] List of nested \iqlBaseType{Element} instances. Legal types depend on the context in which this set is being used.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     ELEMENT GROUPING
+\subsection{Element Grouping}
+\label{sec:json-ld-element-grouping}
+%\begin{itemize}
+%\item elements
+%\item quantifiers
+%\end{itemize}
+\desc{Wrapper around an \iqlType{Element} (\ref{sec:json-ld-element}) instance to allow for additional grouping and/or quantification.}
+\extends{\iqlType{Element}}{\ref{sec:json-ld-node}}
+\begin{elements}{\iqlType{ElementGrouping}}
+	\element{element}{\iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
+	\element{quantifiers}{array of \iqlType{Quantifier} (\ref{sec:json-ld-quantifier})}{no}
+\end{elements}
+\begin{description}
+	\item[\iqlType{element}] Nested \iqlBaseType{Element} instance. Legal types depend on the context in which this grouping is being used.
+	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this grouping required for a positive evaluation. Multiple quantifiers behave disjunctively.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -268,7 +288,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 \end{elements}
 \begin{description}
 	\item[\iqlType{constraint}] Optional local constraint to be matched against the content of potential target candidates during query evaluation.
-	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation. Multiple quantifiers behave disjunctively. Note that \ac{iql} defines some restrictions on the legal combinations of quantifiers: The all-quantifier (\texttt{*} or \texttt{all}) and not-quantifier (\texttt{!} or \texttt{not}) can only be used in isolation, all other quantifiers can be combined in disjunctive fashion.
+	\item[\iqlType{quantifiers}] Optional quantifiers to define the multiplicity of matches of this node required for a positive evaluation. Multiple quantifiers behave disjunctively.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1734,6 +1754,87 @@ The primary effect caused by different modes is the size and number of matches r
 	\label{tab:quantifiers}
 \end{table}
 
+An illustration of how the different quantification modes affect matching in an example sequence is shown in \cref{fig:quantifier-examples}.
+Using two independent properties of the elements in a sequence (in this case color and shape) and an example query that uses them both a conflicting scenario is provided where individual elements can be matched by both query ``nodes''.
+The \cref{fig:greedy-quantifier,fig:reluctant-quantifier,fig:possessive-quantifier} depict in simple terms how the different modes behave in such a conflicting situation.
+
+The greedy mode (\ref{fig:greedy-quantifier}) will always produce the smallest amount of total matches of the entire query, as it is possible for adjacent matches to collapse.
+On the other hand, the reluctant mode (\ref{fig:reluctant-quantifier}) will produce the maximum number of matches of an entire query, as it enforces the smallest individual match sizes.
+Finally \cref{fig:possessive-quantifier} shows how the possessive mode can cause an entire query to fail by blindly consuming elements that otherwise could have been used by subsequent constraints to produce a successful match.
+If in the example however the node \lit{8} was square instead of round, the entire query could still have been successfully matched.
+
+\begin{figure}[!htb]\centering
+	\tikzset{
+		red node/.style={draw=red!60, fill=red!5, very thick},
+		green node/.style={draw=green!60, fill=green!5, very thick},	
+		sized node/.style={minimum size=7mm},	
+		redround/.style={circle, red node, sized node},
+		greenround/.style={circle, green node, sized node},
+		redsquare/.style={rectangle, red node, sized node},
+		greensquare/.style={rectangle, green node, sized node},
+		hit/.style={red!60, draw, dashed, line width=0.7pt},
+		match/.style={black!50, draw, very thin}
+	}
+
+	\newcommand{\targetNodes}{
+		\node[greenround]       at (0,0) {1};
+		\node[greensquare]      at (1.5,0) {2};
+		\node[redround]    (x1) at (3,0) {3};
+		\node[redround]    (x2) at (4.5,0) {4};
+		\node[redsquare]   (x3) at (6,0) {5};
+		\node[redround]    (x4) at (7.5,0) {6};
+		\node[redsquare]   (x5) at (9,0) {7};
+		\node[greenround]       at (10.5,0) {8};
+		\node[greensquare]      at (12,0) {9};
+	}
+
+	\begin{subfigure}{.8\textwidth}\centering
+		\begin{tikzpicture}
+		\targetNodes
+		\end{tikzpicture}
+		\caption{Target Sequence}
+	\end{subfigure}
+	\par\bigskip % force a bit of vertical whitespace
+	\begin{subfigure}{.8\textwidth}\centering
+		\begin{tikzpicture}
+		\targetNodes
+		
+		\node[hit, label={[label distance=.2em]270:red+}, fit=(x1)(x4)](hit1){};
+		\node[hit, label={[label distance=.2em]270:box}, fit=(x5)](hit2){};
+		\end{tikzpicture}
+		\caption{Hits for greedy mode: \query{red+ box}.}
+		\label{fig:greedy-quantifier}
+	\end{subfigure}
+	\par\bigskip % force a bit of vertical whitespace
+	\begin{subfigure}{.8\textwidth}\centering
+		\begin{tikzpicture}
+		\targetNodes
+		
+		\node[hit, label={[label distance=.4em]270:red+}, fit=(x1)(x2)](hit1){};
+		\node[hit, label={[label distance=.4em]270:box}, fit=(x3)](hit2){};
+		\node[hit, label={[label distance=.4em]270:red+}, fit=(x4)](hit3){};
+		\node[hit, label={[label distance=.4em]270:box}, fit=(x5)](hit4){};
+		
+		\node[match, fit=(hit1)(hit2)](m1){};
+		\node[match, fit=(hit3)(hit4)](m2){};
+		\end{tikzpicture}
+		\caption{Hits for reluctant mode: \query{red+? box}. Since \query{red+?} leaves allows \query{box} to match the first red square (5), the entire query can actually be matched twice.}
+		\label{fig:reluctant-quantifier}
+	\end{subfigure}
+	\par\bigskip % force a bit of vertical whitespace
+	\begin{subfigure}{.8\textwidth}\centering
+		\begin{tikzpicture}
+		\targetNodes
+		
+		\node[hit, label={[label distance=.2em]270:red+}, fit=(x1)(x5)](hit1){};
+		\end{tikzpicture}
+		\caption{Partial hits for possessive mode: \query{red+! box}. Note that the query fails since \query{red+!} already consumes all the elements that could have been matched by \query{box}.}
+		\label{fig:possessive-quantifier}
+	\end{subfigure}
+	
+	\caption[Illustration of quantification]{Graphical illustration of the different quantifier modes. The example query used is \query{red+ box}, looking for first a sequence of red nodes and then a single square formed one.}
+	\label{fig:quantifier-examples}
+\end{figure}
 
 
 \begin{comment}
@@ -2421,6 +2522,7 @@ There be dragons\dots
 \chapter{Extended Grammar Diagrams}
 
 
+\begin{samepage}
 \begin{gram*}
 	\label{gram:expression}
 	\begin{rrdiag*}{expression}
@@ -2456,6 +2558,7 @@ There be dragons\dots
 		\est
 	\end{rrdiag*}
 \end{gram*}
+\end{samepage}
 
 \end{appendices}
 \end{document}
