@@ -56,7 +56,6 @@ public class IQLNodeStatementTest {
 
 	@CsvSource({
 		"[], [[[\\[][\\]]]], single empty node",
-		"[] [], [[\\[\\]][\\[\\]]], two empty nodes",
 	})
 	@ParameterizedTest
 	void testEmptyNodes(String statement, String expected, String desc) {
@@ -65,7 +64,6 @@ public class IQLNodeStatementTest {
 
 	@CsvSource({
 		"[$a:], [[[\\[][$a:][\\]]]], single named node",
-		"[$a:] [$b:], [[\\[$a:\\]][\\[$b:\\]]], two named nodes",
 	})
 	@ParameterizedTest
 	void testNamedNodes(String statement, String expected, String desc) {
@@ -91,7 +89,6 @@ public class IQLNodeStatementTest {
 	@CsvSource({
 		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
 		"[a>3 && pos=~\"N[NP]\"], [[[\\[][a>3&&pos=~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
-		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two nodes with constraints",
 	})
 	@ParameterizedTest
 	void testNodesWithInnerConstraints(String statement, String expected, String desc) {
@@ -121,7 +118,6 @@ public class IQLNodeStatementTest {
 
 	@CsvSource({
 		"[$a:], [[[\\[][$a:][\\]]]], single named tree",
-		"[$a:] [$b:], [[\\[$a:\\]][\\[$b:\\]]], two named trees",
 		"[$a: [$b:]], [[[\\[][$a:][\\[$b:\\]][\\]]]], two named nested trees",
 	})
 	@ParameterizedTest
@@ -132,22 +128,10 @@ public class IQLNodeStatementTest {
 	@CsvSource({
 		"[a>3], [[[\\[][a>3][\\]]]], single node with simple constraint",
 		"[a>3 && pos=~\"N[NP]\"], [[[\\[][a>3&&pos=~\"N\\[NP\\]\"][\\]]]], single node with complex constraint",
-		"[pos==\"NN\"] [chars()<7], [[\\[pos==\"NN\"\\]][\\[chars()<7\\]]], two trees with constraints",
 		"[pos==\"NN\" [chars()<7]], [[[\\[][pos==\"NN\"][[\\[chars()<7\\]]][\\]]]], two nested trees with constraints",
 	})
 	@ParameterizedTest
 	void testTreeNodesWithInnerConstraints(String statement, String expected, String desc) {
-		assertNodeStatament(statement, expected, desc);
-	}
-
-	@CsvSource({
-		"[x] or [y], [[\\[x\\]][or][\\[y\\]]], 2 alternative nodes",
-		"[x][y] or [z], [[[\\[x\\]][\\[y\\]]][or][\\[z\\]]], node set vs single node",
-		"{[x][y]} or [z], [[[{][[\\[x\\]][\\[y\\]]][}]][or][\\[z\\]]], node set vs single node with braces",
-		//TODO add more tests for braced or disjunctive tree statements
-	})
-	@ParameterizedTest
-	void testTreeDisjunction(String statement, String expected, String desc) {
 		assertNodeStatament(statement, expected, desc);
 	}
 
@@ -233,18 +217,7 @@ public class IQLNodeStatementTest {
 		"4-[]<-[a<23]->[]; [[[4-\\[\\]][[<-][\\[][a<23][\\]][->]][\\[\\]]]]; bidirectional empty left-quantified edge",
 	})
 	@ParameterizedTest
-	void testGraphElementsWithCosntraints(String statement, String expected, String desc) {
-		assertNodeStatament(statement, expected, desc);
-	}
-
-	@CsvSource(delimiter=';', value={
-		"[x] or [y]; [[\\[x\\]][or][\\[y\\]]]; 2 alternative nodes",
-		"[x],[y] or [z]; [[[\\[x\\]][,][\\[y\\]]][or][\\[z\\]]]; node set vs single node",
-		"{[x],[y]} or [z]; [[[{][[\\[x\\]][,][\\[y\\]]][}]][or][\\[z\\]]]; node set vs single node with braces",
-		//TODO add more tests for braced or disjunctive graph statements
-	})
-	@ParameterizedTest
-	void testGraphDisjunction(String statement, String expected, String desc) {
+	void testGraphElementsWithConstraints(String statement, String expected, String desc) {
 		assertNodeStatament(statement, expected, desc);
 	}
 }
