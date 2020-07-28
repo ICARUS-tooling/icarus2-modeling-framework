@@ -28,19 +28,19 @@
 \newpage
 
 \chapter*{Introduction}
-\label{sec:intro}
+\label{chap:intro}
 
 Queries in the \ac{iql} are designed to be self-contained with logical sections for specifying all the information required to determine the target of a query and its granularity, resolve additional dependencies such as extensions or scripts, link and validate constraints to parts of the target corpus or corpora and finally optional pre- and post-processing steps.
 To achieve this complex task \ac{iql} embeds a keyword-based syntax for the query payload within a JSON-LD structure to drive declaration of all the aforementioned information. 
 As a side effect queries can become quite verbose and potentially cumbersome to define manually. 
-As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}, cf. \cref{sec:inner-iql-elements}). 
+As a countermeasure the overall structure of a query is composed of blocks that can be glued together incrementally and that make it very easy for an application built on top of it to provision boilerplate query code based on settings or a GUI so that the user only needs to type the actual constraints used in the query (the so called \textit{query payload}, cf. \cref{chap:inner-iql-elements}). 
 This document lists the basic building blocks of queries and their compositions.
 
-\Cref{sec:elements} gives an overview on the JSON-LD elements available in the ``outer'' section of the \ac{iql} protocol.
-\Cref{sec:inner-iql-elements} provides the specification for the actual query language used in a query's ``inner'' payload and \cref{sec:utility} finally contains various collections of utility functions available to make queries both simpler to declare and more efficient to evaluate by the \ac{icqp}.
+\Cref{chap:elements} gives an overview on the JSON-LD elements available in the ``outer'' section of the \ac{iql} protocol.
+\Cref{chap:inner-iql-elements} provides the specification for the actual query language used in a query's ``inner'' payload and \cref{chap:utility} finally contains various collections of utility functions available to make queries both simpler to declare and more efficient to evaluate by the \ac{icqp}.
 
 \chapter{JSON-LD Elements}
-\label{sec:elements}
+\label{chap:elements}
 
 The ``outer layer'' of every serialized \ac{iql} query is a JSON-LD object with various (optional) properties to hold all the required information for proper query evaluation.
 
@@ -222,33 +222,33 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     NODE SET
-\subsection{Node Set}
-\label{sec:json-ld-node-set}
+%     SEQUQNCE
+\subsection{Sequence}
+\label{sec:json-ld-sequence}
 %\begin{itemize}
 %\item nodes
-%\item nodeArrangement
+%\item arrangement
 %\end{itemize}
 \desc{Wrapper around a list of \iqlType{Element} (\ref{sec:json-ld-element}) instances to group them for either nesting or disjunction.}
 \extends{\iqlType{Element}}{\ref{sec:json-ld-element}}
 \begin{attributes}{\iqlType{NodeSet}}
-	\attribute{nodeArrangement}{enum}{no}{unspecified}
+	\attribute{arrangement}{enum}{no}{unspecified}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{nodeArrangement}] Defines what kind of order or arrangement should be assumed between the elements in this set. Legal values are \texttt{unspecified}, \texttt{ordered} (matched elements must occur in exactly the order specified in this set but need not form a continuous span) or \texttt{adjacent} (matched elements must form a continuous span).
+	\item[\iqlType{arrangement}] Defines what kind of order or arrangement should be assumed between the elements in this sequence. Legal values are \texttt{unspecified}, \texttt{ordered} (matched elements must occur in exactly the order specified in this set but need not form a continuous span) or \texttt{adjacent} (matched elements must form a continuous span).
 \end{description}
 \begin{elements}{\iqlType{NodeSet}}
 	\element{nodes}{array of \iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
 \end{elements}
 \begin{description}
-	\item[\iqlType{nodes}] List of nested \iqlBaseType{Element} instances. Legal types depend on the context in which this set is being used.
+	\item[\iqlType{nodes}] List of nested \iqlBaseType{Element} instances. Legal types depend on the context in which this sequqnce is being used.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     ELEMENT GROUPING
-\subsection{Element Grouping}
-\label{sec:json-ld-element-grouping}
+%     GROUPING
+\subsection{Grouping}
+\label{sec:json-ld-grouping}
 %\begin{itemize}
 %\item elements
 %\item quantifiers
@@ -825,10 +825,10 @@ iql.parall.off			  & Forces the query evaluation engine to run single-threaded. 
 
 
 \chapter{Inner \ac{iql} ELements}
-\label{sec:inner-iql-elements}
+\label{chap:inner-iql-elements}
 
 Certain parts of an \ac{iql} query can be defined in \textit{raw} form, that is, in a keyword-driven formal language.
-During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{sec:elements} (unless of course the query or query fragments are provided fully processed).
+During the first phase of query evaluation they get (partly) translated into their respective JSON-LD counterparts described in \cref{chap:elements} (unless of course the query or query fragments are provided fully processed).
 This section defines the syntax and additional rules for those raw statements.
 Note that the textual form of all following \ac{iql} elements is expected to be encoded in UTF-8, so no special escape mechanisms are needed for unicode content.
 
@@ -1616,11 +1616,11 @@ More detailed illustrations of the various components (\synt{node}, \synt{quanti
 	\label{gram:node-statement}
 	\begin{grammar}			
 		<nodeStatement> ::= `\{' <nodeStatement> `\}'
-		\alt <nodeArrangement>? <node>+
+		\alt <arrangement>? <node>+
 		\alt <element> (`,' <element>)*
 		\alt <nodeStatement> `or' <nodeStatement>
 		
-		<nodeArrangement> ::= `ORDERED' | `ADJACENT'
+		<arrangement> ::= `ORDERED' | `ADJACENT'
 		
 		<memberLabel> ::= <member> `:'
 		
@@ -1810,15 +1810,15 @@ If in the example however the node \lit{8} was square instead of round, the enti
 		\begin{tikzpicture}
 		\targetNodes
 		
-		\node[hit, label={[label distance=.4em]270:red+}, fit=(x1)(x2)](hit1){};
+		\node[hit, label={[label distance=.4em]270:red+?}, fit=(x1)(x2)](hit1){};
 		\node[hit, label={[label distance=.4em]270:box}, fit=(x3)](hit2){};
-		\node[hit, label={[label distance=.4em]270:red+}, fit=(x4)](hit3){};
+		\node[hit, label={[label distance=.4em]270:red+?}, fit=(x4)](hit3){};
 		\node[hit, label={[label distance=.4em]270:box}, fit=(x5)](hit4){};
 		
 		\node[match, fit=(hit1)(hit2)](m1){};
 		\node[match, fit=(hit3)(hit4)](m2){};
 		\end{tikzpicture}
-		\caption{Hits for reluctant mode: \query{red+? box}. Since \query{red+?} leaves allows \query{box} to match the first red square (5), the entire query can actually be matched twice.}
+		\caption{Hits for reluctant mode: \query{red+? box}. Since \query{red+?} allows \query{box} to match the first red square (5), the entire query can actually be matched twice.}
 		\label{fig:reluctant-quantifier}
 	\end{subfigure}
 	\par\bigskip % force a bit of vertical whitespace
@@ -1826,7 +1826,7 @@ If in the example however the node \lit{8} was square instead of round, the enti
 		\begin{tikzpicture}
 		\targetNodes
 		
-		\node[hit, label={[label distance=.2em]270:red+}, fit=(x1)(x5)](hit1){};
+		\node[hit, label={[label distance=.2em]270:red+!}, fit=(x1)(x5)](hit1){};
 		\end{tikzpicture}
 		\caption{Partial hits for possessive mode: \query{red+! box}. Note that the query fails since \query{red+!} already consumes all the elements that could have been matched by \query{box}.}
 		\label{fig:possessive-quantifier}
@@ -1933,7 +1933,7 @@ The concept of node grouping is especially important for the tree (\ref{sec:tree
 \label{sec:node-sequences}
 \noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule in \cref{gram:node-statement}).
 Instances of \synt{node} in a sequence are defined one after another without special separator symbols.
-They may optionally be preceded by a \synt{nodeArrangement} directive to guide the matching progress.
+They may optionally be preceded by a \synt{arrangement} directive to guide the matching progress.
 Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
 
 \subsubsection{Element Sequence}
@@ -2101,7 +2101,7 @@ FIND [$x: [$y:]] HAVING $x.indexOf($y) == $x.size-1
 \end{Verbatim}
 This will cause the structural matcher to potentially propose \textbf{all} children of \member{x} as candidates to be processed by the global constraints section.
 Subsequently, for a node of size $N$ this will produce $N-1$ candidates that are bound to fail the global constraint check.
-\cref{sec:utility} lists several families of utility markers and functions that can be used to signal the evaluation engine that certain local constraints are to be treated as special filters.
+\cref{chap:utility} lists several families of utility markers and functions that can be used to signal the evaluation engine that certain local constraints are to be treated as special filters.
 With the use of those utility markers, above query looks like the following and will be vastly more efficient to evaluate:
 \begin{Verbatim}[samepage=true]
 FIND [$x: [$y: isLastChild]]
@@ -2129,7 +2129,7 @@ There be dragons\dots
 (Content of the result section will be added as \ac{iql} evolves)
 
 \chapter{Utility Markers \& Functions}
-\label{sec:utility}
+\label{chap:utility}
 
 The following utility features are provided by the \ac{icqp} but are \textbf{not} part of the core specification. 
 As such it is possible for engine extensions to override them, change their behavior or completely remove them if desired.
