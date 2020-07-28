@@ -51,11 +51,10 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlElementSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlStructure;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -174,15 +173,15 @@ public class IqlQueryGenerator {
 		case CORPUS: prepareCorpus((IqlCorpus) element, build, config); break;
 		case DATA: prepareData((IqlData) element, build, config); break;
 		case EDGE: prepareEdge((IqlEdge) element, build, config); break;
-		case ELEMENT_DISJUNCTION: prepareElementDisjunction((IqlElementDisjunction) element, build, config); break;
-		case ELEMENT_GROUPING: prepareElementGrouping((IqlElementGrouping) element, build, config); break;
+		case DISJUNCTION: prepareElementDisjunction((IqlElementDisjunction) element, build, config); break;
+		case GROUPING: prepareElementGrouping((IqlGrouping) element, build, config); break;
 		case EXPRESSION: prepareExpression((IqlExpression) element, build, config); break;
 		case GROUP: prepareGroup((IqlGroup) element, build, config); break;
 		case IMPORT: prepareImport((IqlImport) element, build, config); break;
 		case LANE: prepareLane((IqlLane) element, build, config); break;
 		case LAYER: prepareLayer((IqlLayer) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
-		case ELEMENT_SET: prepareElementSet((IqlElementSet) element, build, config); break;
+		case SEQUENCE: prepareElementSet((IqlSequence) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
 		case PREDICATE: preparePredicate((IqlPredicate) element, build, config); break;
 		case PROPERTY: prepareProperty((IqlProperty) element, build, config); break;
@@ -194,7 +193,6 @@ public class IqlQueryGenerator {
 		case SCOPE: prepareScope((IqlScope) element, build, config); break;
 		case SORTING: prepareSorting((IqlSorting) element, build, config); break;
 		case STREAM: prepareStream((IqlStream) element, build, config); break;
-		case STRUCTURE: prepareStructure((IqlStructure) element, build, config); break;
 		case TERM: prepareTerm((IqlTerm) element, build, config); break;
 		case TREE_NODE: prepareTreeNode((IqlTreeNode) element, build, config); break;
 
@@ -316,16 +314,6 @@ public class IqlQueryGenerator {
 		build.addNestedChange(IqlProperties.CONSTRAINT, IqlType.PREDICATE, config, element, element::setConstraint);
 	}
 
-	private void prepareStructure(IqlStructure structure, IncrementalBuild<?> build, Config config) {
-		prepareElement0(structure, build, config);
-
-		structure.addElement(generateFull(IqlType.NODE, config));
-
-		build.addNestedChange(IqlProperties.ELEMENTS, IqlType.ELEMENT_GROUPING, config, structure, structure::addElement);
-		build.addNestedChange(IqlProperties.ELEMENTS, IqlType.ELEMENT_DISJUNCTION, config, structure, structure::addElement);
-		build.addNestedChange(IqlProperties.ELEMENTS, IqlType.ELEMENT_SET, config, structure, structure::addElement);
-	}
-
 	private void prepareNode(IqlNode node, IncrementalBuild<?> build, Config config) {
 		prepareProperElement0(node, build, config);
 
@@ -334,16 +322,16 @@ public class IqlQueryGenerator {
 		}
 	}
 
-	private void prepareElementSet(IqlElementSet nodeSet, IncrementalBuild<?> build, Config config) {
+	private void prepareElementSet(IqlSequence nodeSet, IncrementalBuild<?> build, Config config) {
 		prepareElement0(nodeSet, build, config);
 
 		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
-			build.addEnumFieldChange(nodeSet::setNodeArrangement, IqlProperties.NODE_ARRANGEMENT, nodeArrangement);
+			build.addEnumFieldChange(nodeSet::setArrangement, IqlProperties.ARRANGEMENT, nodeArrangement);
 		}
 
 		if(config.tryNested(IqlType.TREE_NODE)) {
 			for (int i = 0; i < config.getCount(IqlType.TREE_NODE, DEFAULT_COUNT); i++) {
-				build.addNestedChange(IqlProperties.NODES, IqlType.TREE_NODE, config, nodeSet, nodeSet::addNode);
+				build.addNestedChange(IqlProperties.NODES, IqlType.TREE_NODE, config, nodeSet, nodeSet::addElement);
 			}
 			config.endNested(IqlType.TREE_NODE);
 		}
@@ -353,7 +341,7 @@ public class IqlQueryGenerator {
 		prepareNode(treeNode, build, config);
 
 		if(config.tryNested(IqlType.TREE_NODE)) {
-			build.addNestedChange(IqlProperties.CHILDREN, IqlType.STRUCTURE, config, treeNode, treeNode::setChildren);
+			build.addNestedChange(IqlProperties.CHILDREN, IqlType.TREE_NODE, config, treeNode, treeNode::setChildren);
 			config.endNested(IqlType.TREE_NODE);
 		}
 	}
@@ -377,21 +365,21 @@ public class IqlQueryGenerator {
 		prepareElement0(dis, build, config);
 
 		for (int i = 0; i < 3; i++) {
-			dis.addAlternative((IqlElementSet)generateFull(IqlType.ELEMENT_SET, config));
+			dis.addAlternative((IqlSequence)generateFull(IqlType.SEQUENCE, config));
 		}
 	}
 
-	private void prepareElementGrouping(IqlElementGrouping wrapper, IncrementalBuild<?> build, Config config) {
+	private void prepareElementGrouping(IqlGrouping wrapper, IncrementalBuild<?> build, Config config) {
 		prepareElement0(wrapper, build, config);
 
-		if(config.tryNested(IqlType.ELEMENT_GROUPING)) {
+		if(config.tryNested(IqlType.GROUPING)) {
 			// Must have at least 1 node
 			wrapper.addElement(generateFull(IqlType.NODE, config));
 
 			for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT-1); i++) {
 				build.addNestedChange(IqlProperties.NODES, IqlType.NODE, config, wrapper, wrapper::addElement);
 			}
-			config.endNested(IqlType.ELEMENT_GROUPING);
+			config.endNested(IqlType.GROUPING);
 		}
 
 		for (int i = 0; i < config.getCount(IqlType.QUANTIFIER, DEFAULT_COUNT); i++) {
@@ -449,7 +437,7 @@ public class IqlQueryGenerator {
 
 		// mandatory data
 		lane.setLaneType(LaneType.SEQUENCE);
-		lane.setElements(generateFull(IqlType.ELEMENT_SET, config));
+		lane.setElements(generateFull(IqlType.SEQUENCE, config));
 
 		for(LaneType laneType : LaneType.values()) {
 			build.addEnumFieldChange(lane::setLaneType, IqlProperties.LANE_TYPE, laneType);

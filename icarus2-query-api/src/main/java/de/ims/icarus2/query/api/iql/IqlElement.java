@@ -99,30 +99,7 @@ public abstract class IqlElement extends IqlUnique {
 				&& quantifiers.get(0).isExistentiallyNegated();
 	}
 
-	public static class IqlStructure extends IqlElement {
-
-		@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
-		@JsonInclude(Include.NON_EMPTY)
-		private final List<IqlElement> elements = new ArrayList<>();
-
-		@Override
-		public IqlType getType() { return IqlType.STRUCTURE; }
-
-		@Override
-		public void checkIntegrity() {
-			super.checkIntegrity();
-
-			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
-		}
-
-		public List<IqlElement> getElements() { return elements; }
-
-		public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
-
-		public void forEachElement(Consumer<? super IqlElement> action) { elements.forEach(requireNonNull(action)); }
-	}
-
-	public static class IqlElementGrouping extends IqlElement {
+	public static class IqlGrouping extends IqlElement {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
@@ -133,7 +110,7 @@ public abstract class IqlElement extends IqlUnique {
 		private final List<IqlElement> elements = new ArrayList<>();
 
 		@Override
-		public IqlType getType() { return IqlType.ELEMENT_GROUPING; }
+		public IqlType getType() { return IqlType.GROUPING; }
 
 		@Override
 		public void checkIntegrity() {
@@ -200,42 +177,42 @@ public abstract class IqlElement extends IqlUnique {
 		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
-	public static class IqlElementSet extends IqlElement {
+	public static class IqlSequence extends IqlElement {
 
-		@JsonProperty(IqlProperties.CHILDREN)
+		@JsonProperty(IqlProperties.ELEMENTS)
 		@JsonInclude(Include.NON_EMPTY)
-		private final List<IqlElement> nodes = new ArrayList<>();
+		private final List<IqlElement> elements = new ArrayList<>();
 
-		@JsonProperty(IqlProperties.NODE_ARRANGEMENT)
+		@JsonProperty(IqlProperties.ARRANGEMENT)
 		@JsonInclude(Include.NON_DEFAULT)
 		private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
 
 		@Override
-		public IqlType getType() { return IqlType.ELEMENT_SET; }
+		public IqlType getType() { return IqlType.SEQUENCE; }
 
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
 
-			checkCollection(nodes);
+			checkCollection(elements);
 		}
 
-		public List<IqlElement> getNodes() { return CollectionUtils.unmodifiableListProxy(nodes); }
+		public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
-		public NodeArrangement getNodeArrangement() { return nodeArrangement; }
+		public NodeArrangement getArrangement() { return nodeArrangement; }
 
 
-		public void addNode(IqlElement child) { nodes.add(requireNonNull(child)); }
+		public void addElement(IqlElement child) { elements.add(requireNonNull(child)); }
 
-		public void setNodeArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = requireNonNull(nodeArrangement); }
+		public void setArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = requireNonNull(nodeArrangement); }
 
-		public void forEachNode(Consumer<? super IqlElement> action) { nodes.forEach(requireNonNull(action)); }
+		public void forEachElement(Consumer<? super IqlElement> action) { elements.forEach(requireNonNull(action)); }
 
 	}
 
 	/**
 	 * Implementation note: we use {@link IqlStructure} as child type so that
-	 * {@link IqlElementDisjunction} and {@link IqlElementSet} are also allowed.
+	 * {@link IqlElementDisjunction} and {@link IqlSequence} are also allowed.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -244,7 +221,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		/**
 		 * Children of this tree node, can either be a single (tree)node,
-		 * an IqlElementSet or an IqlElementDisjunction.
+		 * an IqlSequence or an IqlElementDisjunction.
 		 */
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_ABSENT)
@@ -344,7 +321,7 @@ public abstract class IqlElement extends IqlUnique {
 		private final List<IqlElement> alternatives = new ArrayList<>();
 
 		@Override
-		public IqlType getType() { return IqlType.ELEMENT_DISJUNCTION; }
+		public IqlType getType() { return IqlType.DISJUNCTION; }
 
 		@Override
 		public void checkIntegrity() {

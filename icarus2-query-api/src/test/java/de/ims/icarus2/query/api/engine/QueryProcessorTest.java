@@ -52,10 +52,10 @@ import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlElementSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -510,13 +510,13 @@ class QueryProcessorTest {
 		}
 
 		@SafeVarargs
-		private final Consumer<IqlElement> nodeSet(NodeArrangement arrangement,
+		private final Consumer<IqlElement> sequence(NodeArrangement arrangement,
 				Consumer<IqlElement>...asserters) {
 			return element -> {
-				assertThat(element).isInstanceOf(IqlElementSet.class);
-				IqlElementSet set = (IqlElementSet)element;
-				assertThat(set.getNodeArrangement()).isSameAs(arrangement);
-				List<IqlElement> items = set.getNodes();
+				assertThat(element).isInstanceOf(IqlSequence.class);
+				IqlSequence set = (IqlSequence)element;
+				assertThat(set.getArrangement()).isSameAs(arrangement);
+				List<IqlElement> items = set.getElements();
 				assertThat(items).hasSize(asserters.length);
 				for (int i = 0; i < asserters.length; i++) {
 					asserters[i].accept(items.get(i));
@@ -525,11 +525,11 @@ class QueryProcessorTest {
 		}
 
 		@SafeVarargs
-		private final Consumer<IqlElement> nodeGrouping(Consumer<IqlQuantifier> qAsserter,
+		private final Consumer<IqlElement> grouping(Consumer<IqlQuantifier> qAsserter,
 				Consumer<IqlElement>...asserters) {
 			return element -> {
-				assertThat(element).isInstanceOf(IqlElementGrouping.class);
-				IqlElementGrouping grouping = (IqlElementGrouping)element;
+				assertThat(element).isInstanceOf(IqlGrouping.class);
+				IqlGrouping grouping = (IqlGrouping)element;
 				if(qAsserter!=null) {
 					List<IqlQuantifier> quantifiers = grouping.getQuantifiers();
 					assertThat(quantifiers).hasSize(1);
@@ -765,8 +765,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
 				}
 
 				@Test
@@ -775,8 +774,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node("node1", null))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", null)));
 				}
 
 				@Test
@@ -785,8 +783,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, pred("pos!=\"NNP\"")))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, pred("pos!=\"NNP\""))));
 				}
 
 				@Test
@@ -795,8 +792,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node("node1", pred("pos!=\"NNP\"")))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", pred("pos!=\"NNP\""))));
 				}
 
 			}
@@ -811,8 +807,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null, quantAll()))));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quantAll())));
 				}
 
 				@ParameterizedTest
@@ -822,8 +818,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null, quant(QuantifierType.EXACT, quantifier)))));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.EXACT, quantifier))));
 				}
 
 				@ParameterizedTest
@@ -833,8 +829,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null, quant(QuantifierType.AT_LEAST, quantifier)))));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.AT_LEAST, quantifier))));
 				}
 
 				@ParameterizedTest
@@ -844,8 +840,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null, quant(QuantifierType.AT_MOST, quantifier)))));
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							node(null, null, quant(QuantifierType.AT_MOST, quantifier))));
 				}
 
 				@ParameterizedTest
@@ -855,8 +851,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null, quant(QuantifierType.EXACT, 0)))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null, quant(QuantifierType.EXACT, 0))));
 				}
 
 				@ParameterizedTest
@@ -870,8 +865,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null, quant(lower, upper)))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null, quant(lower, upper))));
 				}
 
 				@Test
@@ -880,12 +874,12 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE,
 							node(null, null,
 								quant(QuantifierType.EXACT, 2),
 								quant(QuantifierType.EXACT, 10),
 								quant(5, 7),
-								quant(QuantifierType.AT_LEAST, 1000)))));
+								quant(QuantifierType.AT_LEAST, 1000))));
 				}
 
 				@Test
@@ -894,12 +888,12 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE,
 							node("node1", pred("pos!=\"NNP\""),
 								quant(QuantifierType.EXACT, 2),
 								quant(QuantifierType.EXACT, 10),
 								quant(5, 7),
-								quant(QuantifierType.AT_LEAST, 1000)))));
+								quant(QuantifierType.AT_LEAST, 1000))));
 				}
 
 				@Test
@@ -908,7 +902,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
 							node(null, null), node(null, null), node(null, null))));
 				}
 
@@ -918,7 +912,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
 							node(null, null, quant(QuantifierType.AT_MOST, 4)),
 							node(null, null, quant(2, 10)),
 							node(null, null, quant(QuantifierType.EXACT, 3), quant(QuantifierType.AT_LEAST, 5)),
@@ -936,8 +930,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("layer1", false, "token"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node(null, null))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
 				}
 
 				@Test
@@ -946,8 +939,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("layer1", false, "token"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
-							node("token", null))));
+					assertLanes(payload, lane(LaneType.SEQUENCE, node("token", null)));
 				}
 
 				@Test
@@ -956,7 +948,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("layer1", false, "token1", "token2"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
 							node("token1", null), node("token2", null))));
 				}
  			}
@@ -976,7 +968,7 @@ class QueryProcessorTest {
 					assertBindings(payload,
 							bind("layer1", true, "token1", "token2"),
 							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, nodeSet(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
 							node("token1", pred("pos!=\"NNP\"")),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
 							node("token2", pred("length()>12")))));
@@ -1008,8 +1000,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE, nodeSet(NodeArrangement.UNSPECIFIED,
-							tree(null, null, node()))));
+					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node())));
 				}
 
 				@Test
@@ -1018,8 +1009,9 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE, nodeSet(NodeArrangement.UNSPECIFIED,
-							tree(null, null, node(), node()))));
+					assertLanes(payload, lane(LaneType.TREE,
+							tree(null, null, sequence(NodeArrangement.UNSPECIFIED,
+									node(), node()))));
 				}
 
 				@Test
@@ -1028,8 +1020,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE, nodeSet(NodeArrangement.UNSPECIFIED,
-							tree(null, null, tree(null, null, node())))));
+					assertLanes(payload, lane(LaneType.TREE,
+							tree(null, null, tree(null, null, node()))));
 				}
 			}
 
@@ -1043,8 +1035,8 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE, nodeSet(NodeArrangement.UNSPECIFIED,
-							tree(null, null, node(null, null, quantAll())))));
+					assertLanes(payload, lane(LaneType.TREE,
+							tree(null, null, node(null, null, quantAll()))));
 				}
 			}
 
@@ -1064,14 +1056,14 @@ class QueryProcessorTest {
 					assertBindings(payload,
 							bind("layer1", true, "token1", "token2"),
 							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.TREE, nodeSet(NodeArrangement.ORDERED,
-							tree(null, null,
+					assertLanes(payload, lane(LaneType.TREE, sequence(NodeArrangement.ORDERED,
+							tree(null, null, sequence(NodeArrangement.UNSPECIFIED,
 									node(null, null, quant(QuantifierType.AT_MOST, 5)),
-									node("token1", pred("pos!=\"NNP\""))),
+									node("token1", pred("pos!=\"NNP\"")))),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
-							tree("token2", pred("length()>12"),
+							tree("token2", pred("length()>12"), sequence(NodeArrangement.UNSPECIFIED,
 									node(null, pred("pos==\"DET\""), quantNone()),
-									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3))))));
+									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3)))))));
 					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
 							pred("$p.contains($token1)"),
 							pred("!$p.contains($token2)")));

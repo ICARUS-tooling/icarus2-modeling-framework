@@ -57,11 +57,10 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlElementSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlStructure;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -617,8 +616,15 @@ public class QueryProcessor {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private IqlStructure processStructuralSequence(StructureSequenceContext ctx, TreeInfo tree) {
-			IqlStructure structure = new IqlStructure();
+		private IqlElement processStructuralSequence(StructureSequenceContext ctx, TreeInfo tree) {
+			// If we only have a single node, don't wrap it needlessly
+			List<NodeStatementContext> nodes = ctx.nodeStatement();
+			if(nodes.size()==1) {
+				return processNodeStatement(nodes.get(0), tree);
+			}
+
+			// More than one node -> wrap into a proper sequence
+			IqlSequence structure = new IqlSequence();
 			genId(structure);
 
 			tree.enter(structure, false);
@@ -646,9 +652,9 @@ public class QueryProcessor {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private IqlElementGrouping processElementGrouping(ElementGroupingContext ctx,
+		private IqlGrouping processElementGrouping(ElementGroupingContext ctx,
 				TreeInfo tree) {
-			IqlElementGrouping grouping = new IqlElementGrouping();
+			IqlGrouping grouping = new IqlGrouping();
 			genId(grouping);
 
 			boolean negated = false;
@@ -674,23 +680,23 @@ public class QueryProcessor {
 			return grouping;
 		}
 
-		private IqlElementSet processElementArrangement(ElementArrangementContext ctx, TreeInfo tree) {
-			IqlElementSet nodeSet = new IqlElementSet();
+		private IqlSequence processElementArrangement(ElementArrangementContext ctx, TreeInfo tree) {
+			IqlSequence nodeSet = new IqlSequence();
 			genId(nodeSet);
 
 			if(ctx.nodeArrangement()!=null) {
-				nodeSet.setNodeArrangement(processNodeArrangement(ctx.nodeArrangement()));
+				nodeSet.setArrangement(processNodeArrangement(ctx.nodeArrangement()));
 			}
 
 			tree.enter(nodeSet, false);
 			for(NodeStatementContext nctx : ctx.nodeStatement()) {
-				nodeSet.addNode(processNodeStatement(nctx, tree));
+				nodeSet.addElement(processNodeStatement(nctx, tree));
 			}
 			tree.exit();
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(nodeSet.getNodeArrangement()!=NodeArrangement.UNSPECIFIED
-					&& countExistentialElements(nodeSet.getNodes())<2) {
+			if(nodeSet.getArrangement()!=NodeArrangement.UNSPECIFIED
+					&& countExistentialElements(nodeSet.getElements())<2) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 						"For node arrangement feature to be effective the query needs at least"
 						+ " two distinct nodes that are existentially quantified.");
@@ -699,13 +705,13 @@ public class QueryProcessor {
 			return nodeSet;
 		}
 
-		private IqlElementSet processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
-			IqlElementSet elements = new IqlElementSet();
+		private IqlSequence processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
+			IqlSequence elements = new IqlSequence();
 			genId(elements);
 
 			tree.enter(elements, false);
 			for(ElementContext ectx : ctx.element()) {
-				elements.addNode(processElement(ectx, tree));
+				elements.addElement(processElement(ectx, tree));
 			}
 			tree.exit();
 
@@ -723,21 +729,21 @@ public class QueryProcessor {
 			}
 		}
 
-//		private IqlElementSet ensureChildren(IqlTreeNode node) {
+//		private IqlSequence ensureChildren(IqlTreeNode node) {
 //			Optional<IqlElement> children = node.getChildren();
 //			if(!children.isPresent()) {
-//				node.setChildren(new IqlElementSet());
+//				node.setChildren(new IqlSequence());
 //				children = node.getChildren();
 //			}
 //
 //			assert children.isPresent();
 //			IqlElement element = children.get();
-//			if(!(element instanceof IqlElementSet))
+//			if(!(element instanceof IqlSequence))
 //				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
 //						Messages.mismatch("Type of parent's children object mismatch",
-//								IqlElementSet.class, element.getClass()));
+//								IqlSequence.class, element.getClass()));
 //
-//			return (IqlElementSet)element;
+//			return (IqlSequence)element;
 //		}
 
 		private IqlNode processNode(NodeContext ctx, TreeInfo tree) {
