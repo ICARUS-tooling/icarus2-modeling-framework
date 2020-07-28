@@ -307,6 +307,14 @@ public class RandomGenerator implements Cloneable {
 				.toArray();
 	}
 
+	public boolean[] randomBooleans(int size) {
+		boolean[] array = new boolean[size];
+		for (int i = 0; i < array.length; i++) {
+			array[i] = nextBoolean();
+		}
+		return array;
+	}
+
 	public long[] randomLongs(int size, long min, long max) {
 		return longs(size, min, max).toArray();
 	}

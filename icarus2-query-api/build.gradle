@@ -6,7 +6,8 @@ apply plugin: 'antlr'
 // internal dependencies
 dependencies {
  	api(project(':icarus2-model-api'))
- 	
+	 
+	testImplementation(project(':icarus2-model-defaults'))
  	testImplementation(project(':icarus2-shared-tests'))
 	testImplementation project(path: ':icarus2-model-api', configuration: 'tests')
 	

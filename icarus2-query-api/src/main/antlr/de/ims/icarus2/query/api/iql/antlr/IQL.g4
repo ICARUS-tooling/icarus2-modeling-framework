@@ -138,7 +138,7 @@ binding
 
 selectionStatement
 	: constraint // plain
-	| (nodeStatement | laneStatementsList) (HAVING constraint)? //structural constraints
+	| (structuralConstraint | laneStatementsList) (HAVING constraint)? //structural constraints
 	;	
 
 laneStatementsList
@@ -146,7 +146,11 @@ laneStatementsList
 	;
 	
 laneStatement
-	: LANE name=Identifier (AS member)? nodeStatement
+	: LANE name=Identifier (AS member)? structuralConstraint
+	;
+	
+structuralConstraint
+	: nodeStatement+
 	;
 	
 /**
@@ -157,15 +161,24 @@ laneStatement
  * {[][]} or [] 		grouping with alternative
  * {[][]} or {[] or {[][]}} complex alternatives
  * 
+ * Using grouping to create scopes:
+ * {ADJACENT [][]} []
+ * {ADJACENT [][]} {ADJACENT [][]}
+ * 
+ * Group quantification:
+ * <3+>{[][]}
+ * <3+>{{[][]} or []} !{[][]}
+ * 
  * For Graphs:
  * [],[],[]---[],[]-->[]		unconnected nodes and edges
  * [] or []-->[]				alternatives
  * {[],[]} or []-->[]			grouping with alternative
  */
 nodeStatement
-	: quantifier? LBRACE nodeStatement RBRACE					#elementGrouping
-	| nodeArrangement? node+									#nodeSequence
-	| element (COMMA element)*									#elementSequence	
+	: quantifier? LBRACE nodeStatement+ RBRACE					#elementGrouping
+	| nodeArrangement nodeStatement+							#elementArrangement
+	| node														#singleNode
+	| element (COMMA element)*									#graphFragment	
 	| <assoc=right> left=nodeStatement or right=nodeStatement	#nodeAlternatives
 	;
 	
@@ -189,7 +202,7 @@ nodeArrangement
  */
  // The grammar overgenerates here due to 'nodeStatement' allowing graph structures, but we handle that later 
 node
-	: quantifier? LBRACK memberLabel? constraint? nodeStatement? RBRACK
+	: quantifier? LBRACK memberLabel? constraint? structuralConstraint RBRACK
 	;
 	
 memberLabel

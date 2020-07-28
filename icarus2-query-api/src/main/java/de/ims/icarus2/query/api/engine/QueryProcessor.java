@@ -58,9 +58,10 @@ import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlStructure;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -80,7 +81,6 @@ import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
-import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUnique;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
@@ -90,12 +90,13 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementArrangementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementGroupingContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EmptyEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.FilledEdgeContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.GraphFragmentContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LaneStatementContext;
@@ -106,7 +107,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeAlternativesContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeArrangementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.OrderExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PayloadStatementContext;
@@ -115,6 +115,8 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectionStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SimpleQuantifierContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.SingleNodeContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.StructuralConstraintContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
@@ -342,29 +344,29 @@ public class QueryProcessor {
 			return ctx;
 		}
 
-		/**
-		 * Unwraps arbitrarily nested wrapping of node statements as long as they
-		 * do not provide explicit quantification. In other words, only unwrap
-		 * superfluous wrappings!
-		 */
-		private NodeStatementContext unwrap(NodeStatementContext ctx) {
-			NodeStatementContext original = ctx;
-			int depth = 0;
-			while(ctx instanceof ElementGroupingContext) {
-				ElementGroupingContext ectx = (ElementGroupingContext) ctx;
-				// Stop as soon as we see any explicit quantification
-				if(ectx.quantifier()!=null) {
-					break;
-				}
-				ctx = ectx.nodeStatement();
-				depth++;
-			}
-			if(depth>1) {
-				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
-						"Superfluous wrapping of node statement '{1}'", textOf(original));
-			}
-			return ctx;
-		}
+//		/**
+//		 * Unwraps arbitrarily nested wrapping of node statements as long as they
+//		 * do not provide explicit quantification. In other words, only unwrap
+//		 * superfluous wrappings!
+//		 */
+//		private NodeStatementContext unwrap(NodeStatementContext ctx) {
+//			NodeStatementContext original = ctx;
+//			int depth = 0;
+//			while(ctx instanceof ElementGroupingContext) {
+//				ElementGroupingContext ectx = (ElementGroupingContext) ctx;
+//				// Stop as soon as we see any explicit quantification
+//				if(ectx.quantifier()!=null) {
+//					break;
+//				}
+//				ctx = ectx.nodeStatement();
+//				depth++;
+//			}
+//			if(depth>1) {
+//				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+//						"Superfluous wrapping of node statement '{1}'", textOf(original));
+//			}
+//			return ctx;
+//		}
 
 		private IqlPayload processPayloadStatement(PayloadStatementContext ctx) {
 			IqlPayload payload = new IqlPayload();
@@ -420,13 +422,13 @@ public class QueryProcessor {
 					reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
 							"Can omit 'LANE' declaration if using only a single lane.");
 				}
-			} else if(sctx.nodeStatement()!=null) {
+			} else if(sctx.structuralConstraint()!=null) {
 				// Structure statement [sequence,tree,graph]
 				IqlLane lane = new IqlLane();
 				genId(lane);
 				lane.setName(IqlLane.PROXY_NAME);
 
-				processLaneContent(lane, sctx.nodeStatement());
+				processLaneContent(lane, sctx.structuralConstraint());
 
 				payload.addLane(lane);
 				payload.setQueryType(QueryType.SINGLE_LANE);
@@ -460,7 +462,7 @@ public class QueryProcessor {
 				.map(this::extractMemberName)
 				.ifPresent(lane::setAlias);
 
-			processLaneContent(lane, ctx.nodeStatement());
+			processLaneContent(lane, ctx.structuralConstraint());
 
 			return lane;
 		}
@@ -475,10 +477,10 @@ public class QueryProcessor {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private void processLaneContent(IqlLane lane, NodeStatementContext ctx) {
+		private void processLaneContent(IqlLane lane, StructuralConstraintContext ctx) {
 
 			try {
-				lane.setElements(processNodeStatement(ctx, new TreeInfo()));
+				lane.setElements(processStructuralConstraint(ctx, new TreeInfo()));
 
 				LaneType laneType = LaneType.SEQUENCE;
 				if(treeFeaturesUsed) {
@@ -603,15 +605,30 @@ public class QueryProcessor {
 			return term;
 		}
 
+		private IqlStructure processStructuralConstraint(StructuralConstraintContext ctx, TreeInfo tree) {
+			IqlStructure structure = new IqlStructure();
+			genId(structure);
+
+			tree.enter(structure, false);
+			for(NodeStatementContext nctx : ctx.nodeStatement()) {
+				structure.addElement(processNodeStatement(nctx, tree));
+			}
+			tree.exit();
+
+			return structure;
+		}
+
 		/** Process given node statement and honor limitations of specified query type */
 		private IqlElement processNodeStatement(NodeStatementContext ctx, TreeInfo tree) {
 
 			if(ctx instanceof ElementGroupingContext) {
 				return processElementGrouping((ElementGroupingContext) ctx, tree);
-			} else if(ctx instanceof NodeSequenceContext) {
-				return processNodeSequence((NodeSequenceContext) ctx, tree);
-			} else if (ctx instanceof ElementSequenceContext) {
-				return processElementSequence((ElementSequenceContext) ctx, tree);
+			} else if(ctx instanceof ElementArrangementContext) {
+				return processElementArrangement((ElementArrangementContext) ctx, tree);
+			} else if (ctx instanceof SingleNodeContext) {
+				return processNode(((SingleNodeContext)ctx).node(), tree);
+			} else if (ctx instanceof GraphFragmentContext) {
+				return processGraphFragment((GraphFragmentContext) ctx, tree);
 			} else if (ctx instanceof NodeAlternativesContext) {
 				return processNodeAlternatives((NodeAlternativesContext) ctx, tree);
 			}
@@ -639,22 +656,16 @@ public class QueryProcessor {
 			}
 
 			tree.enter(grouping, negated);
-			IqlElement element = processNodeStatement(ctx.nodeStatement(), tree);
-			tree.exit();
-
-			if(element.getType()==IqlType.ELEMENT_GROUPING) {
-				reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
-						"Superfluous and illegal nesting of element grouping: {1}",
-						textOf(ctx));
+			for(NodeStatementContext nctx : ctx.nodeStatement()) {
+				grouping.addElement(processNodeStatement(nctx, tree));
 			}
-
-			grouping.setElement(element);
+			tree.exit();
 
 			return grouping;
 		}
 
-		private IqlNodeSet processNodeSequence(NodeSequenceContext ctx, TreeInfo tree) {
-			IqlNodeSet nodeSet = new IqlNodeSet();
+		private IqlElementSet processElementArrangement(ElementArrangementContext ctx, TreeInfo tree) {
+			IqlElementSet nodeSet = new IqlElementSet();
 			genId(nodeSet);
 
 			if(ctx.nodeArrangement()!=null) {
@@ -662,8 +673,8 @@ public class QueryProcessor {
 			}
 
 			tree.enter(nodeSet, false);
-			for(NodeContext nctx : ctx.node()) {
-				nodeSet.addNode(processNode(nctx, tree));
+			for(NodeStatementContext nctx : ctx.nodeStatement()) {
+				nodeSet.addNode(processNodeStatement(nctx, tree));
 			}
 			tree.exit();
 
@@ -678,8 +689,8 @@ public class QueryProcessor {
 			return nodeSet;
 		}
 
-		private IqlNodeSet processElementSequence(ElementSequenceContext ctx, TreeInfo tree) {
-			IqlNodeSet elements = new IqlNodeSet();
+		private IqlElementSet processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
+			IqlElementSet elements = new IqlElementSet();
 			genId(elements);
 
 			tree.enter(elements, false);
@@ -702,27 +713,27 @@ public class QueryProcessor {
 			}
 		}
 
-//		private IqlNodeSet ensureChildren(IqlTreeNode node) {
+//		private IqlElementSet ensureChildren(IqlTreeNode node) {
 //			Optional<IqlElement> children = node.getChildren();
 //			if(!children.isPresent()) {
-//				node.setChildren(new IqlNodeSet());
+//				node.setChildren(new IqlElementSet());
 //				children = node.getChildren();
 //			}
 //
 //			assert children.isPresent();
 //			IqlElement element = children.get();
-//			if(!(element instanceof IqlNodeSet))
+//			if(!(element instanceof IqlElementSet))
 //				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
 //						Messages.mismatch("Type of parent's children object mismatch",
-//								IqlNodeSet.class, element.getClass()));
+//								IqlElementSet.class, element.getClass()));
 //
-//			return (IqlNodeSet)element;
+//			return (IqlElementSet)element;
 //		}
 
 		private IqlNode processNode(NodeContext ctx, TreeInfo tree) {
 			IqlNode node;
 			// Decide on type of node
-			if(ctx.nodeStatement()!=null) {
+			if(ctx.structuralConstraint()!=null) {
 				if(graphFeaturesUsed) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
 							"Cannot mix tree and graph features - query type already determined to be GRAPH: '{1}'", textOf(ctx));
@@ -751,9 +762,9 @@ public class QueryProcessor {
 			}
 
 			// Finally process and add actual children
-			if(ctx.nodeStatement()!=null) {
+			if(ctx.structuralConstraint()!=null) {
 				tree.enter(node, negated);
-				((IqlTreeNode) node).setChildren(processNodeStatement(ctx.nodeStatement(), tree));
+				((IqlTreeNode) node).setChildren(processStructuralConstraint(ctx.structuralConstraint(), tree));
 				tree.exit();
 			}
 
@@ -925,7 +936,7 @@ public class QueryProcessor {
 			while(tail instanceof NodeAlternativesContext) {
 				NodeAlternativesContext nactx = (NodeAlternativesContext) tail;
 				dis.addAlternative(processNodeStatement(nactx.left, tree));
-				tail = unwrap(nactx.right);
+				tail = nactx.right;
 			}
 			// Now add the final dangling expression (note that we have to forward the original parent!)
 			dis.addAlternative(processNodeStatement(tail, tree));

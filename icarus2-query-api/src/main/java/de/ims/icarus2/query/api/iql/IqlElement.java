@@ -99,14 +99,38 @@ public abstract class IqlElement extends IqlUnique {
 				&& quantifiers.get(0).isExistentiallyNegated();
 	}
 
+	public static class IqlStructure extends IqlElement {
+
+		@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
+		@JsonInclude(Include.NON_EMPTY)
+		private final List<IqlElement> elements = new ArrayList<>();
+
+		@Override
+		public IqlType getType() { return IqlType.STRUCTURE; }
+
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+
+			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
+		}
+
+		public List<IqlElement> getElements() { return elements; }
+
+		public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
+
+		public void forEachElement(Consumer<? super IqlElement> action) { elements.forEach(requireNonNull(action)); }
+	}
+
 	public static class IqlElementGrouping extends IqlElement {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
 
-		@JsonProperty(value=IqlProperties.ELEMENT, required=true)
-		private IqlElement element;
+		@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
+		@JsonInclude(Include.NON_EMPTY)
+		private final List<IqlElement> elements = new ArrayList<>();
 
 		@Override
 		public IqlType getType() { return IqlType.ELEMENT_GROUPING; }
@@ -116,10 +140,10 @@ public abstract class IqlElement extends IqlUnique {
 			super.checkIntegrity();
 
 			checkCollection(quantifiers);
-			checkNestedNotNull(element, IqlProperties.ELEMENT);
+			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
 		}
 
-		public IqlElement getElement() { return element; }
+		public List<IqlElement> getElements() { return elements; }
 
 		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }
 
@@ -127,7 +151,9 @@ public abstract class IqlElement extends IqlUnique {
 
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers.forEach(requireNonNull(action)); }
 
-		public void setElement(IqlElement element) { this.element = requireNonNull(element); }
+		public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
+
+		public void forEachElement(Consumer<? super IqlElement> action) { elements.forEach(requireNonNull(action)); }
 
 
 		// utility
@@ -174,7 +200,7 @@ public abstract class IqlElement extends IqlUnique {
 		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
-	public static class IqlNodeSet extends IqlElement {
+	public static class IqlElementSet extends IqlElement {
 
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_EMPTY)
@@ -185,7 +211,7 @@ public abstract class IqlElement extends IqlUnique {
 		private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
 
 		@Override
-		public IqlType getType() { return IqlType.NODE_SET; }
+		public IqlType getType() { return IqlType.ELEMENT_SET; }
 
 		@Override
 		public void checkIntegrity() {
@@ -208,8 +234,8 @@ public abstract class IqlElement extends IqlUnique {
 	}
 
 	/**
-	 * Implementation note: we use {@link IqlElement} as child type so that
-	 * {@link IqlElementDisjunction} and {@link IqlNodeSet} are also allowed.
+	 * Implementation note: we use {@link IqlStructure} as child type so that
+	 * {@link IqlElementDisjunction} and {@link IqlElementSet} are also allowed.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -218,18 +244,18 @@ public abstract class IqlElement extends IqlUnique {
 
 		/**
 		 * Children of this tree node, can either be a single (tree)node,
-		 * an IqlNodeSet or an IqlElementDisjunction.
+		 * an IqlElementSet or an IqlElementDisjunction.
 		 */
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_ABSENT)
-		private Optional<IqlElement> children = Optional.empty();
+		private Optional<IqlStructure> children = Optional.empty();
 
 		@Override
 		public IqlType getType() { return IqlType.TREE_NODE; }
 
-		public Optional<IqlElement> getChildren() { return children; }
+		public Optional<IqlStructure> getChildren() { return children; }
 
-		public void setChildren(IqlElement children) { this.children = Optional.of(children); }
+		public void setChildren(IqlStructure children) { this.children = Optional.of(children); }
 	}
 
 	public static class IqlEdge extends IqlProperElement {

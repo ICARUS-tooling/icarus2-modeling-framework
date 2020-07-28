@@ -52,9 +52,10 @@ import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlNodeSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlStructure;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -512,8 +513,8 @@ class QueryProcessorTest {
 		private final Consumer<IqlElement> nodeSet(NodeArrangement arrangement,
 				Consumer<IqlElement>...asserters) {
 			return element -> {
-				assertThat(element).isInstanceOf(IqlNodeSet.class);
-				IqlNodeSet set = (IqlNodeSet)element;
+				assertThat(element).isInstanceOf(IqlElementSet.class);
+				IqlElementSet set = (IqlElementSet)element;
 				assertThat(set.getNodeArrangement()).isSameAs(arrangement);
 				List<IqlElement> items = set.getNodes();
 				assertThat(items).hasSize(asserters.length);
@@ -549,10 +550,9 @@ class QueryProcessorTest {
 				assertThat(element).isInstanceOf(IqlTreeNode.class);
 				IqlTreeNode tree = (IqlTreeNode) element;
 				assertProperElement(tree, label, constraint);
-				Optional<IqlElement> children = tree.getChildren();
+				Optional<IqlStructure> children = tree.getChildren();
 				assertThat(children.isPresent()).isTrue();
-				assertThat(children.get()).isInstanceOf(IqlNodeSet.class);
-				List<IqlElement> nodes = ((IqlNodeSet)children.get()).getNodes();
+				List<IqlElement> nodes = children.get().getElements();
 				assertThat(nodes).hasSize(nAsserters.length);
 				for (int i = 0; i < nAsserters.length; i++) {
 					nAsserters[i].accept(nodes.get(i));
