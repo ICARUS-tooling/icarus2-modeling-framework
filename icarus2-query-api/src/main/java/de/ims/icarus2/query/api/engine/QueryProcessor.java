@@ -91,6 +91,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementArrangementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementDisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementGroupingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EmptyEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
@@ -114,9 +115,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SelectionStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SimpleQuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SingleNodeContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.StructuralAlternativesContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StructuralConstraintContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.StructureSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.VariableContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.WrappingExpressionContext;
 import de.ims.icarus2.util.id.Identity;
@@ -606,17 +605,6 @@ public class QueryProcessor {
 		}
 
 		private IqlElement processStructuralConstraint(StructuralConstraintContext ctx, TreeInfo tree) {
-
-			if(ctx instanceof StructureSequenceContext) {
-				return processStructuralSequence((StructureSequenceContext) ctx, tree);
-			} else if(ctx instanceof StructuralAlternativesContext) {
-				return processStructuralAlternatives((StructuralAlternativesContext) ctx, tree);
-			}
-
-			return failForUnhandledAlternative(ctx);
-		}
-
-		private IqlElement processStructuralSequence(StructureSequenceContext ctx, TreeInfo tree) {
 			// If we only have a single node, don't wrap it needlessly
 			List<NodeStatementContext> nodes = ctx.nodeStatement();
 			if(nodes.size()==1) {
@@ -647,6 +635,8 @@ public class QueryProcessor {
 				return processNode(((SingleNodeContext)ctx).node(), tree);
 			} else if (ctx instanceof GraphFragmentContext) {
 				return processGraphFragment((GraphFragmentContext) ctx, tree);
+			} else if(ctx instanceof ElementDisjunctionContext) {
+				return processElementDisjunction((ElementDisjunctionContext) ctx, tree);
 			}
 
 			return failForUnhandledAlternative(ctx);
@@ -941,21 +931,21 @@ public class QueryProcessor {
 			return edge;
 		}
 
-		private IqlElementDisjunction processStructuralAlternatives(StructuralAlternativesContext ctx,
+		private IqlElementDisjunction processElementDisjunction(ElementDisjunctionContext ctx,
 				TreeInfo tree) {
 			IqlElementDisjunction dis = new IqlElementDisjunction();
 			genId(dis);
 
 			tree.enter(dis, false);
 			// Try to collapse any nested alternatives into a single list
-			StructuralConstraintContext tail = ctx;
-			while(tail instanceof StructuralAlternativesContext) {
-				StructuralAlternativesContext nactx = (StructuralAlternativesContext) tail;
-				dis.addAlternative(processStructuralConstraint(nactx.left, tree));
+			NodeStatementContext tail = ctx;
+			while(tail instanceof ElementDisjunctionContext) {
+				ElementDisjunctionContext nactx = (ElementDisjunctionContext) tail;
+				dis.addAlternative(processNodeStatement(nactx.left, tree));
 				tail = nactx.right;
 			}
 			// Now add the final dangling expression
-			dis.addAlternative(processStructuralConstraint(tail, tree));
+			dis.addAlternative(processNodeStatement(tail, tree));
 			tree.exit();
 
 			return dis;

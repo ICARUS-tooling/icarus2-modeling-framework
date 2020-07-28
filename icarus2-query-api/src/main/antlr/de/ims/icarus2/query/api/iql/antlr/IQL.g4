@@ -155,8 +155,7 @@ laneStatement
  * multiple trees, graph fragment, sequences or node groups. 
  */
 structuralConstraint
-	: nodeStatement+														#structureSequence
-	| <assoc=right> left=structuralConstraint or right=structuralConstraint	#structuralAlternatives
+	: nodeStatement+
 	;
 	
 /**
@@ -187,6 +186,7 @@ nodeStatement
 	| nodeArrangement nodeStatement+							#elementArrangement
 	| node														#singleNode
 	| element (COMMA element)*									#graphFragment	
+	| <assoc=right> left=nodeStatement or right=nodeStatement	#elementDisjunction
 	;
 	
 nodeArrangement

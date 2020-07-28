@@ -90,9 +90,9 @@ public class IQLStructuralConstraintTest {
 	}
 
 	@CsvSource({
-		"[x] or [y], [[\\[x\\]][or][\\[y\\]]], 2 alternative nodes",
-		"[x][y] or [z], [[[\\[x\\]][\\[y\\]]][or][\\[z\\]]], node set vs single node",
-		"{[x][y]} or [z], [[[{\\[x\\]\\[y\\]}]][or][[\\[z\\]]]], node set vs single node with braces",
+		"[x] or [y], [[\\[x\\]or\\[y\\]]], 2 alternative nodes",
+		"[x][y] or [z], [[\\[x\\]][\\[y\\]or\\[z\\]]], node plus disjunction",
+		"{[x][y]} or [z], [[{\\[x\\]\\[y\\]}or\\[z\\]]], node set vs single node with braces",
 		//TODO add more tests for braced or disjunctive tree statements
 	})
 	@ParameterizedTest
@@ -101,9 +101,9 @@ public class IQLStructuralConstraintTest {
 	}
 
 	@CsvSource(delimiter=';', value={
-		"[x] or [y]; [[\\[x\\]][or][\\[y\\]]]; 2 alternative nodes",
-		"[x],[y] or [z]; [[[\\[x\\],\\[y\\]]][or][[\\[z\\]]]]; node set vs single node",
-		"{[x],[y]} or [z]; [[[{\\[x\\],\\[y\\]}]][or][[\\[z\\]]]]; node set vs single node with braces",
+		"[x] or [y]; [[\\[x\\]or\\[y\\]]]; 2 alternative nodes",
+		"[x],[y] or [z]; [[\\[x\\],\\[y\\]or\\[z\\]]]; node set vs single node",
+		"{[x],[y]} or [z]; [[{\\[x\\],\\[y\\]}or\\[z\\]]]; node set vs single node with braces",
 		//TODO add more tests for braced or disjunctive graph statements
 	})
 	@ParameterizedTest
