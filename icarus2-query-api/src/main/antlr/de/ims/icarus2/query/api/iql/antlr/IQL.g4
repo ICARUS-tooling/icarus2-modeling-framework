@@ -93,6 +93,7 @@ public static final int COMMENTS = 2;
 
 // Standalone statement parts
 standaloneNodeStatement : nodeStatement EOF ;
+standaloneStructuralConstraint : structuralConstraint EOF ;
 standaloneSelectiveStatement : selectionStatement EOF ;
 
 // Standalone helpers
@@ -149,11 +150,18 @@ laneStatement
 	: LANE name=Identifier (AS member)? structuralConstraint
 	;
 	
+/**
+ * This extra level exists to better model complex compositions of
+ * multiple trees, graph fragment, sequences or node groups. 
+ */
 structuralConstraint
-	: nodeStatement+
+	: nodeStatement+														#structureSequence
+	| <assoc=right> left=structuralConstraint or right=structuralConstraint	#structuralAlternatives
 	;
 	
 /**
+ * A node statement models either a grouping, sequence, tree or graph fragment.
+ * 
  * Possible scenarios for node composition:
  * []					singleton
  * [][]					siblings
@@ -179,7 +187,6 @@ nodeStatement
 	| nodeArrangement nodeStatement+							#elementArrangement
 	| node														#singleNode
 	| element (COMMA element)*									#graphFragment	
-	| <assoc=right> left=nodeStatement or right=nodeStatement	#nodeAlternatives
 	;
 	
 nodeArrangement
@@ -202,7 +209,7 @@ nodeArrangement
  */
  // The grammar overgenerates here due to 'nodeStatement' allowing graph structures, but we handle that later 
 node
-	: quantifier? LBRACK memberLabel? constraint? structuralConstraint RBRACK
+	: quantifier? LBRACK memberLabel? constraint? structuralConstraint? RBRACK
 	;
 	
 memberLabel

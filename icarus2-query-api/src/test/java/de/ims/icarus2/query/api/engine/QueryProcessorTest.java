@@ -52,10 +52,10 @@ import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlStructure;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -524,6 +524,25 @@ class QueryProcessorTest {
 			};
 		}
 
+		@SafeVarargs
+		private final Consumer<IqlElement> nodeGrouping(Consumer<IqlQuantifier> qAsserter,
+				Consumer<IqlElement>...asserters) {
+			return element -> {
+				assertThat(element).isInstanceOf(IqlElementGrouping.class);
+				IqlElementGrouping grouping = (IqlElementGrouping)element;
+				if(qAsserter!=null) {
+					List<IqlQuantifier> quantifiers = grouping.getQuantifiers();
+					assertThat(quantifiers).hasSize(1);
+					qAsserter.accept(quantifiers.get(0));
+				}
+				List<IqlElement> items = grouping.getElements();
+				assertThat(items).hasSize(asserters.length);
+				for (int i = 0; i < asserters.length; i++) {
+					asserters[i].accept(items.get(i));
+				}
+			};
+		}
+
 		private Consumer<IqlElement> node() {
 			return node(null, null);
 		}
@@ -543,20 +562,15 @@ class QueryProcessorTest {
 			};
 		}
 
-		@SafeVarargs
 		private final Consumer<IqlElement> tree(String label, Consumer<IqlConstraint> constraint,
-				Consumer<IqlElement>...nAsserters) {
+				Consumer<IqlElement> childAsserter) {
 			return element -> {
 				assertThat(element).isInstanceOf(IqlTreeNode.class);
 				IqlTreeNode tree = (IqlTreeNode) element;
 				assertProperElement(tree, label, constraint);
-				Optional<IqlStructure> children = tree.getChildren();
+				Optional<IqlElement> children = tree.getChildren();
 				assertThat(children.isPresent()).isTrue();
-				List<IqlElement> nodes = children.get().getElements();
-				assertThat(nodes).hasSize(nAsserters.length);
-				for (int i = 0; i < nAsserters.length; i++) {
-					nAsserters[i].accept(nodes.get(i));
-				}
+				childAsserter.accept(children.get());
 			};
 		}
 

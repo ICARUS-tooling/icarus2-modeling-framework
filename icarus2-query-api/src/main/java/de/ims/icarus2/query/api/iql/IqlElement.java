@@ -248,14 +248,14 @@ public abstract class IqlElement extends IqlUnique {
 		 */
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_ABSENT)
-		private Optional<IqlStructure> children = Optional.empty();
+		private Optional<IqlElement> children = Optional.empty();
 
 		@Override
 		public IqlType getType() { return IqlType.TREE_NODE; }
 
-		public Optional<IqlStructure> getChildren() { return children; }
+		public Optional<IqlElement> getChildren() { return children; }
 
-		public void setChildren(IqlStructure children) { this.children = Optional.of(children); }
+		public void setChildren(IqlElement children) { this.children = Optional.of(children); }
 	}
 
 	public static class IqlEdge extends IqlProperElement {
