@@ -51,7 +51,7 @@ public enum QuerySwitch {
 	ANY_TO_BOOLEAN_OFF("any2bool.off", "Deactivates the interpretation of anything non-boolean as boolean value. "
 			+ "This is a combination of 'iql.string2bool.off', 'iql.int2bool.off', 'iql.float2bool.off' and  'iql.obj2bool.off'+*."),
 
-	DIRECTION_REVERSE("direction.reverse", "Reverses the direction used to traverse corpus data for a search."),
+	DIRECTION_REVERSE("direction.reverse", "Reverses the direction used to traverse top-level corpus data for a search."),
 
 	@Deprecated
 	ARRAY_ZERO("array.zero", "Change array access to be 0-based."),

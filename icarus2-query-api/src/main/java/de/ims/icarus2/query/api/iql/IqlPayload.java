@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -50,7 +50,7 @@ public class IqlPayload extends IqlUnique {
 
 	@JsonProperty(value=IqlProperties.LIMIT)
 	@JsonInclude(Include.NON_ABSENT)
-	private OptionalInt limit = OptionalInt.empty();
+	private OptionalLong limit = OptionalLong.empty();
 
 	@JsonProperty(IqlProperties.NAME)
 	@JsonInclude(Include.NON_ABSENT)
@@ -108,7 +108,7 @@ public class IqlPayload extends IqlUnique {
 
 	public Optional<QueryModifier> getQueryModifier() { return queryModifier; }
 
-	public OptionalInt getLimit() { return limit; }
+	public OptionalLong getLimit() { return limit; }
 
 	public Optional<String> getName() { return name; }
 
@@ -125,9 +125,9 @@ public class IqlPayload extends IqlUnique {
 
 	public void setQueryModifier(QueryModifier queryModifier) { this.queryModifier = Optional.of(queryModifier); }
 
-	public void setLimit(int limit) {
+	public void setLimit(long limit) {
 		checkArgument("Limit must be positive", limit>0);
-		this.limit = OptionalInt.of(limit);
+		this.limit = OptionalLong.of(limit);
 	}
 
 	public void setName(String name) { this.name = Optional.of(checkNotEmpty(name)); }
