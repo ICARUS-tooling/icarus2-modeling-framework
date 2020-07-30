@@ -6,6 +6,7 @@
 % packages that can be loaded in random order
 \usepackage{acro}
 \usepackage[chapter]{algorithm}
+\usepackage{algpseudocode} %loads algorithmicx and applies pseudocode style
 \usepackage[toc,page]{appendix}
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{comment} % for commenting out the huge draft lists
@@ -28,6 +29,7 @@
 \usepackage[rounded]{syntax}
 \usepackage{tikz}
 \usepackage{times}
+%\usepackage{titlesec} % for modifying title styles (especially paragraph in report class)
 \usepackage{todonotes}
 \usepackage{url}
 \usepackage{wrapfig}
@@ -38,6 +40,8 @@
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
 
 \usetikzlibrary{shapes.arrows, chains, positioning}
+
+%\titleformat{\paragraph}[hang]{\normalfont\bfseries}{\theparagraph}{.5em}{}
 
 \DeclareAcronym{cql}{short = CQL, long = corpus query language}
 \DeclareAcronym{cqs}{short = CQS, long = corpus query system}

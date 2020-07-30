@@ -1,0 +1,238 @@
+%
+% File icqp_specification.tex
+%
+
+\documentclass[11pt,a4paper]{report}
+
+\usepackage{icarus2}
+
+\title{ICARUS2 Corpus Query Processor Specification}
+
+\author{Markus Gärtner}
+
+\date{2020}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+\listofalgorithms 
+
+\newpage
+
+\chapter*{Introduction}
+\label{sec:intro}
+
+The \ac{icqp} is a custom evaluation engine for corpus queries that follow the \ac{iql} specification.
+
+\chapter{Notations and Definitions}
+\label{chap:definitions}
+
+\begin{description}
+	\item[sequence] xxx
+	\item[tree] xxx
+	\item[search node] a \textit{search node} $n$ is a tuple $(c,\delta_p,\delta_s)$ where $c$ is the local constraint predicate taking as argument a target node $n_i$ from a sequence, $\delta_p$ is the minimum distance to the node's predecessor and  
+	\item[tree search node] a \textit{tree search node} $v$ is a tuple $(c,l,)$
+	\item[sequence] xxx
+	\item[sequence] xxx
+	\item[sequence] xxx
+	\item[sequence] xxx
+	\item[sequence] xxx
+\end{description}
+
+
+\section{Tree Inclusion}
+\label{sec:tree-inclusion}
+
+Let $T$ be a \textit{rooted} tree. 
+We say that $T$ is \textit{annotated} if each node $v$ in $T$ is assigned a set of annotations $a_1(v)..a_n(v)$ where each annotation function $a_i$ provides its own alphabet $\Sigma_i$ of available annotation values.
+This definition is similar to the basic notion of a \textit{labeled} tree where each node is assigned a single label or value from a common alphabet $\Sigma$, but to accommodate the nature of multi-layer annotations in linguistic corpora, we extend this definition.
+$T$ is further \textit{ordered} if for any node $v$ its children $v_1..v_n$ follow a globally consistent ordering scheme.
+If not specified otherwise, all trees in this document are \textit{rooted} and \textit{annotated}.
+
+A tree $P$ is said to be \textit{included} in $T$, denoted $P \sqsubseteq T$, if deleting nodes in $T$ can yield $P$.
+Deleting a node $v$ in $T$ means replacing $v$ with the sequence of its children.
+Solving the tree inclusion problem means determining if $P$ actually is included in $T$ and then also returning all (or up to a specified number of) subtrees of $T$ that include $P$.
+
+\chapter{Plain Matching}
+\label{chap:plain-matching}
+
+\chapter{Sequence Matching}
+\label{chap:sequence-matching}
+
+Elements participating in sequence matching:
+\begin{description}
+	\item[node] singular and optionally quantified element
+	\item[sequence] sequence of elements that adhere to given arrangement
+	\item[grouping] sequence of elements that is optionally quantified as a whole
+	\item[disjunction] two or more alternative elements
+\end{description}
+
+\section{Definitions}
+\label{sec:seq-def}
+
+Let $L$ be a list, then $N_L = |L|$ is its length and $l_{i} \in L$ denotes the element at position $i$ of the list where $1 \leq  i \leq N_L$.
+Let $T$ be the list of target elements and $S$ the tree of search nodes.
+
+Utility procedures and functions used in the algorithms of this section:
+\begin{description}
+	\item[atom($s$)] Returns the single wrapped child node for $s$. 
+	\item[child($s, i$)] Returns the child node $s_i$ on index $i$ for $s$. 
+	\item[eval($s,t$)] Evaluates the inner constraints of search node $s$ on the target item $t$. The result is a cache entry with a boolean value indicating whether the evaluation was successful.
+	\item[cacheGet($s,t$)] Retrieve a cached entry for the evaluation of search node $s$ on target element $t$. If no entry exist, $nil$ is returned.
+	\item[cacheSet($s, t, entry$)] Stores the given $entry$ in the cache for the evaluation of search node $s$ on target element $t$.  
+	\item[next($s$)] Returns the next search node in the sequence after $s$.
+	\item[size($s$)] Returns the number of child nodes attached to $s$.
+	\item[type($s$)] Returns the type of the given search node, one of the following:\footnote{Nested nodes can be obtained with $atom(s)$ for single embeddings or $atom(s,i)$ for indexed elements where $atoms(s)$ returns the number of embedded nodes and $1 \leq i \leq atom(s)$.}
+	\begin{description}
+		\item[$single$] A single atomic node that is existentially quantified.
+		\item[$sequence$] A group of adjacent search nodes.
+		\item[$group$] A group of ordered (but not necessarily adjacent) search nodes. 
+		\item[$repetition$] A quantifier $(c_{min},c_{max})$ and an associated $atom$ search node.
+		\item[$negation$] An embedded node that must not match.
+		\item[$universal$] An embedded node that is expected to match all available target elements. Note that universal quantification is only allowed if the node is the only one in the (resolved) global context.
+		\item[$choice$] A group of nodes that represent logical alternatives.
+		\item[$region$] An embedded node and associated index interval $i_{start} = first(s)$ to $i_{end}=last(s)$ of legal positions for matching.
+		\item[$spot$] An embedded node and a single associated index for matching.
+	\end{description}
+\item[VALUE($entry$)] Extracts the actual boolean result value from a cache entry.
+\end{description}
+
+\section{Rules}
+\label{sec:seq-rules}
+
+\tikzset{
+	search node/.style={rectangle, draw=black!50, thick}
+}
+
+\newcommand{\rNode}[4]{\node[rectangle, draw=black!50, thick](#3) at(#1,#2) {#4}}
+
+This section describes the recursive rules for constructing the object graph of search nodes from the original elements in the query.
+All rules assume the existence of already processed nodes that resulted in some \textit{head} part to the left that is connected to a \textit{tail} to the left, as illustrated below:
+\begin{center}
+	\begin{tikzpicture}\centering
+		\rNode{1}{0}{h}{.. head};
+		\rNode{4}{0}{t}{tail ..};
+		\draw[->] (h) -- (t);
+	\end{tikzpicture}
+\end{center}
+Initially the \textit{head} node is just a generic entry point and the \textit{tail} simply implements the final acceptance node that ensures that all actual search nodes in the query have been evaluated already.
+
+The elements in the query are effectively processed left to right and for every encountered element a new node is inserted between the current \textit{head} and \textit{tail}: %TODO reformulate, LtR is oversimplifying it
+\begin{center}
+	\begin{tikzpicture}\centering
+		\node[search node](h) at(0,0) {.. head};
+		\node[search node](t) at(4,0) {tail ..};
+		\draw[->] (h) -- (t);
+		\node[rectangle, fit=(h)(t)](group){};
+		\node[draw](element) [below=of group] {element};
+		\draw[->] (element) -- (group);
+	\end{tikzpicture}
+\end{center}
+This process is recursive and builds the graph of interconnected search nodes used in the algorithms described in the respective sub sections.
+
+\subsection{Single Node}
+\label{sec:seq-single}
+
+
+\begin{algorithm}[H]
+	\caption[Constraint matching]{Local constraint matching with memoization to prevent redundant calls to costly constraint evaluation.}
+	\label{alg:local-constraint}
+	\begin{algorithmic}[1]
+		\Procedure{LOCAL-MATCH}{$s, t$}
+			\State $entry \gets $ \Call{cacheGet}{$s,t$}
+			\If{$entry = nil$}
+				\State $entry \gets$ \Call{eval}{$s,t$}
+				\State \Call{cacheSet}{$s, t, entry}$
+			\EndIf
+			\State \textbf{return} \Call{value}{$entry$}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+	\caption{Single node matching}
+	\label{alg:match-node}
+	\begin{algorithmic}[1]
+		\Procedure{MATCH-NODE}{$s, T, j_{start}, j_{max}$} \Comment{$j_{start} \leq j_{max}$}
+			\State $j \gets j_{start}$
+			\While{$j <= j_{max}$}
+				\If{\Call{LOCAL-MATCH}{$s,t_j$}}
+					\State $tails \gets next(s)$
+					\State \textbf{return} \Call{MATCH}{$tail, T, j, j_{max}$}
+				\EndIf
+				\State $j \gets j + 1$
+			\EndWhile
+			\State \textbf{return} $false$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\section{Algorithm}
+\label{sec:seq-alg}
+
+\begin{algorithm}[H]
+	\caption{Generic node matching}
+	\label{alg:match}
+	\begin{algorithmic}[1]
+		\Procedure{MATCH}{$s, T, j_{start}, j_{max}$} \Comment{$j_{start} \leq j_{max}$}
+			\State $type_s \gets$ \Call{type}{$s$}
+			\If{$type_s = single$}
+			\State \textbf{return} $j$
+			\EndIf
+			\State $j \gets j + 1$
+			\State \textbf{return} $false$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+	\caption{Adjacent sequence matching}
+	\label{alg:match-adjacent}
+	\begin{algorithmic}[1]
+		\Procedure{MATCH-ADJACENT}{$C, T, j_{start}, j_{max}$} \Comment{$j_{start} \leq j_{max}, C \subseteq S$}
+		\State $j \gets j_{start}$
+		\While{$j <= j_{max}$}
+		\If{$\mathrm{LOCAL\_MATCH}(s,t_j)$}
+		\State \textbf{return} $j$
+		\EndIf
+		\State $j \gets j + 1$
+		\EndWhile
+		\State \textbf{return} $-1$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+	\caption{Quantified matching}
+	\label{alg:match-quantified}
+	\begin{algorithmic}[1]
+		\Procedure{MATCH-QUANTIFIED}{$s, T, j_{start}, j_{max}$} \Comment{$j_{start} \leq j_{max}$}
+		\State $j \gets j_{start}$
+		\While{$j <= j_{max}$}
+		\If{$\mathrm{LOCAL\_MATCH}(s,t_j)$}
+		\State \textbf{return} $j$
+		\EndIf
+		\State $j \gets j + 1$
+		\EndWhile
+		\State \textbf{return} $-1$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+
+%TODO intervals per node
+
+\chapter{Tree Matching}
+\label{chap:tree-matching}
+
+\begin{appendices}
+
+\end{appendices}
+\end{document}
