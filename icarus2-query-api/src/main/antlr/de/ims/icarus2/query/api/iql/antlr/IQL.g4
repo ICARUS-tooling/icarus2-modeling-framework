@@ -159,7 +159,8 @@ structuralConstraint
 	;
 	
 /**
- * A node statement models either a grouping, sequence, tree or graph fragment.
+ * A node statement models either a grouping, sequence, tree or graph fragment and
+ * also allows for disjunction.
  * 
  * Possible scenarios for node composition:
  * []					singleton

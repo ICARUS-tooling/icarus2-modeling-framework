@@ -581,7 +581,7 @@ iql.obj2bool.off            & Deactivates the interpretation of arbitrary object
 \hline
 iql.any2bool.off            & Deactivates the interpretation of anything non-Boolean as Boolean value. This is a combination of ``iql.string2bool.off'', ``iql.int2bool.off'', ``iql.float2bool.off'' and  ``iql.obj2bool.off''.  \\ 
 \hline
-iql.direction.reverse       & Reverses the direction used to traverse corpus data for a search.  \\ 
+iql.direction.reverse       & Reverses the direction used to traverse top-level corpus data for a search.  \\ 
 \hline
 iql.array.zero              & Change array access (\ref{sec:list-access}) to be 0-based.  \\ 
 \hline
@@ -1609,14 +1609,17 @@ Those structures are sequences (\ref{sec:sequence-constraints}), trees (\ref{sec
 They all get explained in more detail in their respective sections, but the syntactic basics for all of them will be defined here.
 To simplify the overall \ac{iql} grammar, a general syntax exists for the declaration of nodes (and edges).
 This general form honors the aspects specific to each of those structure types, but generally over-generates and only some of its features are actually applicable in concrete use cases.
-\Cref{gram:node-statement} shows the basic for defining structural constraints in \ac{iql}.
+\Cref{gram:structural-constraint} shows the basic for defining structural constraints in \ac{iql}.
 More detailed illustrations of the various components (\synt{node}, \synt{quantifier} and \synt{edge}) follow below.
 
-\begin{gram}[\synt{nodeStatement}]
-	\label{gram:node-statement}
-	\begin{grammar}			
-		<nodeStatement> ::= `\{' <nodeStatement> `\}'
-		\alt <arrangement>? <node>+
+\begin{gram}[\synt{structuralConstraint}]
+	\label{gram:structural-constraint}
+	\begin{grammar}		
+		<structuralConstraint> ::= <nodeStatement>+
+			
+		<nodeStatement> ::= <quantifier>? `\{' <nodeStatement>+ `\}'
+		\alt <arrangement> <nodeStatement>+
+		\alt <node>
 		\alt <element> (`,' <element>)*
 		\alt <nodeStatement> `or' <nodeStatement>
 		
@@ -1629,9 +1632,10 @@ More detailed illustrations of the various components (\synt{node}, \synt{quanti
 	\diagsep
 	\begin{rrdiag*}{nodeStatement}
 		\sst
-			`\{' <nodeStatement> `\}' \\
+			\sst \\ <quantifier> \est `\{' \srp <nodeStatement> \\ \erp `\}' \\
+			<node> \\
 			<nodeStatement> `or' <nodeStatement> \\
-			\sst \\ `ORDERED' \\ `ADJACENT' \est \srp <node> \\ \erp \\
+			\sst `ORDERED' \\ `ADJACENT' \est \srp <nodeStatement> \\ \erp \\
 			<element> \srp \\ `,' <element> \erp
 		\est
 	\end{rrdiag*}
@@ -1646,7 +1650,7 @@ The distinction between node and element sequences exists to easily distinguish 
 Sequence queries do not include hierarchical structural information and as such have no use for edges.
 In the syntax used for tree nodes in \ac{iql} information about the incoming edge is implicitly available from every nested node and constraints related to outgoing edges are to be attached to the respective child terminals of those edges.
 For graphs where no simple association between nodes and edges exists, there is a necessity to have explicit edge declarations available for querying.
-As such the \synt{element} rule in \cref{gram:node-statement} is a placeholder that can be filled with either node or edge declarations.
+As such the \synt{element} rule in \cref{gram:structural-constraint} is a placeholder that can be filled with either node or edge declarations.
 
 \subsubsection{Nodes}
 \label{sec:nodes}
@@ -1687,14 +1691,16 @@ Note that this \textit{context} of a quantifier plays a fundamental role, as for
 		
 		<simpleQuantifier> ::=  (`ALL' | `*')
 		\alt (`NOT' | `!')
-		\alt <digits> (`+' | `-')?
-		\alt <digits> `..' <digits>
+		\alt <digits> (`+' | `-')? (`? ' | `!')?
+		\alt <digits> `..' <digits> (`? ' | `!')?
 	\end{grammar}
 	\diagsep	
 	\begin{rrdiag*}{quantifier}
 		\sst \\ `\textless' \est \srp
-		\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ <digits> `..' <digits> \\ 
-		<digits> \sst \\ `+' \\ `-' \est 
+		\sst `ALL' \\ `*' \\ `NOT' \\ `!' \\ \sst 
+			<digits> `..' <digits> \\ 
+			<digits> \sst \\ `+' \\ `-' \est 
+			\est \sst \\ `?' \\ `!' \est
 		\est
 		\\ `|' \erp \sst \\ `\textgreater' \est
 	\end{rrdiag*}
@@ -1721,6 +1727,9 @@ Note that this opens up the entire spectrum of node grouping, disjunctions and a
 \label{sec:quantification}
 \ac{iql} knows a staggering total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
 Those basic sets are \textit{existential negation}, \textit{universal quantification}, \textit{exact}, \textit{at-least}, \textit{at-most} and \textit{range}.
+Note that the \textit{at-most} quantifier implies existential quantification, so it cannot quantify to less than one element. 
+For modeling optional existence the \textit{range} quantifier should be used with a lower bound of 0, as in \query{0..4}.
+
 Some quantifiers differentiate between \textit{greedy} (the default), \textit{reluctant} and \textit{possessive} mode.
 The differences of those three modes are explained below, assuming that the quantifier in question occurred on a node constraint $n_i$ that is followed by an optional sequence of additional node constraints $n_{i+1}..n_N$.
 Note that the complete query will only succeed if $n_i$ \textbf{and} all its successors successfully match!
@@ -1916,10 +1925,16 @@ The following examples illustrate some use cases for quantification on edges:
 Note that edge definitions cannot be chained, so the query ``find x linked to y, linked to z'' must be expressed in two separate edge definitions, one linking \member{x} to \member{y} and one linking \member{y} to \member{z}.
 This means that graph constraints (\ref{sec:graph-constraints}) require some redundancy, but the linked section also explains some easy strategies to minimize overhead.
 
-\subsubsection{Node Grouping}
+\subsubsection{Grouping}
 \label{sec:node-grouping}
-Nodes (or elements) can be grouped together within curly brackets (\lit{\{}~and~\lit{\}}) as defined by the first \synt{nodeStatement} rule in \cref{gram:node-statement}.
+Nodes (or elements) can be grouped together within curly brackets (\lit{\{}~and~\lit{\}}) as defined by the first \synt{nodeStatement} rule in \cref{gram:structural-constraint}.
 This is useful for either restricting the scope of modifiers or directives such as the \keyword{ADJACENT} keyword to only a selected few nodes or when expressing a disjunction.
+Optionally a node grouping can also be assigned quantifiers (\ref{sec:quantification}) similar to normal nodes (\ref{sec:nodes}) and as such can be used to express very powerful pattern such as repetition of sequences:
+\begin{Verbatim}[samepage=true]
+ADJACENT <3+>{ADJACENT [$a:][$b:]} [$c:]
+\end{Verbatim}
+The above query will match at least three repetitions of the pair a+b and the entire repeated sequence is followed by an adjacent node c.
+
 Note that a group counts as an individual node statement inside the outer scope and as such is subject to order directives defined there.
 However, those directives are \textbf{not} automatically \textbf{inherited} to the inner collection of nodes in the group, allowing for expressions such as the following node sequence:
 \begin{Verbatim}[samepage=true]
@@ -1931,21 +1946,21 @@ The concept of node grouping is especially important for the tree (\ref{sec:tree
 
 \subsubsection{Node Sequence}
 \label{sec:node-sequences}
-\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule in \cref{gram:node-statement}).
+\noindent Nodes usable for sequences (\ref{sec:sequence-constraints}) and trees (\ref{sec:tree-constraints}) are defined in a simple sequence style (second \synt{nodeStatement} rule in \cref{gram:structural-constraint}).
 Instances of \synt{node} in a sequence are defined one after another without special separator symbols.
 They may optionally be preceded by a \synt{arrangement} directive to guide the matching progress.
 Currently there are only two directives available to specify the node arrangement (\keyword{ORDERED} and \keyword{ADJACENT}), but this might increase in the future, making node grouping a very important tool for defining complex structural compositions.
 
 \subsubsection{Element Sequence}
 \label{sec:element-sequence}
-\noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement} in \cref{gram:node-statement}), but with noticeable differences: 
+\noindent Similar to node sequences, \synt{element} instances can also be used in a list-style collection (third rule of \synt{nodeStatement} in \cref{gram:structural-constraint}), but with noticeable differences: 
 Element sequences do use a separator symbol (a simple comma \lit{,}) between \synt{element} definitions.
 Since \ac{iql} does not use keywords to signal the structural type to be expected in a query payload\footnote{An earlier draft made use of \keyword{TREE} and \keyword{GRAPH} keywords to distinguish those types from the basic node sequence, but in an effort to reduce the overall number of keywords (that users had to learn) this approach was dropped.} this approach was necessary to easily detect the type of structure.
 It also hints at the second difference, that is, element sequences do not support arrangement modifiers (as \synt{element} instances can be either nodes or edges, with the latter not being suitable for this kind of ordering) and as such can be more intuitively be understood as sets of \synt{element} instances.
 
 \subsubsection{Structural Disjunction}
 \label{sec:structural-disjunction}
-\noindent As the forth option of \synt{nodeStatement} in \cref{gram:node-statement}, the disjunction of entire node statements provides a very powerful tool to express complex queries.
+\noindent As the forth option of \synt{nodeStatement} in \cref{gram:structural-constraint}, the disjunction of entire node statements provides a very powerful tool to express complex queries.
 Two node statements are linked with the \keyword{OR} keyword to mark them as ``either or'' cases.
 Since this opens up recursion, a complex disjunction may contain more than two node statements in total.
 Note that the order of node statements in a disjunction does not imply a specific priority the evaluation engine has to follow.
@@ -1980,17 +1995,9 @@ ADJACENT [$x:][$y:] // node y directly following node x
 
 \paragraph{Sequence Matching}
 \noindent Sequence constraints only provide a single dimension for \textit{moving} the query sequence through the search space of the target corpus.
-Matching is performed greedily in order of node appearance in the query, following the direction specified by the corpus itself.
-If the switch to reverse direction (cf.~\ref{sec:json-ld-switches}) is set, then matching attempts will start from the very end of each matching context (such as a container or structure), but the order of nodes to match will remain the same.
+Matching is performed greedily by default in order of node appearance in the query, following the direction specified by the corpus itself.
 That is, in a node sequence \verb|[$x:][$y:]| the node matched by \member{x} will \textbf{always} be before the node matched by \member{y} according to the original direction of items in the corpus.
-Only the direction from which the overall matching attempt will start changes with the respective switch.
-This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned match to either the first or last, with respect to the current direction.
-
-%\paragraph{Special Note:}
-%\noindent Evaluation of quantified nodes in \ac{iql} is done greedily per default, i.e. the engine will try to match as many instances as possible.
-%However, since an empty node does only provide the constraint of existential quantification, the above example will find the first occurrence of pair c+d after the initial hit on pair a-b.
-%An extension of the quantifier syntax or a change in the ``at most'' semantics is on the drawing board, but currently not considered to be implemented (a new keyword \keyword{inf} could potentially be used with the ``at most'' quantifier to create a hint to greedily expand empty nodes to the total limit instead of a ``first hit'' eager strategy, such as \lit{<inf->}).
-%TODO this is obsolete with the quantifier rework?
+This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned matches to either the first or last ones, with respect to the current direction.
 
 Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
@@ -2157,29 +2164,22 @@ However, globally accessible information or any data provided by surrounding con
 	\hline 
 	isLast & - & Node is the last in its context ($index = N$). \\  
 	\hline 
-	isAfter & int & Node occurs after designated position ($index > arg$). Legal values are: $1 \leq arg < N$. \\  
+	isAfter & int & Node occurs after designated position ($index > arg$). Legal values are: $1 \leq arg < N$ (or $-N \leq arg < -1$ for reverse indices). \\  
 	\hline 
-	isBefore & int & Node occurs before designated position ($index < arg$). Legal values are: $1 < arg \leq N$. \\  
+	isBefore & int & Node occurs before designated position ($index < arg$). Legal values are: $1 < arg \leq N$ (or $-N < arg \leq -1$ for reverse indices). \\  
 	\hline 
-	isInside & int, int & Node occurs inside designated interval ($arg_1 \leq index \leq arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$. \\  
+	isInside & int, int & Node occurs inside designated interval ($arg_1 \leq index \leq arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$ (or $-N \leq arg_1 < arg_2 \leq -1$ for reverse indices). \\  
 	\hline 
-	isOutside & int, int & Node occurs outside designated interval ($index < arg_1$ and $index>arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$. \\  
+	isOutside & int, int & Node occurs outside designated interval ($index < arg_1$ and $index>arg_2$). Legal values are: $1 \leq arg_1 < arg_2 \leq N$ (or $-N \leq arg_1 < arg_2 \leq -1$ for reverse indices). \\  
 	\hline 
-	isAt & int & Node occurs at specific position ($index = arg$). Legal values are: $1 \leq arg \leq N$. \\  
+	isAt & int & Node occurs at specific position ($index = arg$). Legal values are: $1 \leq arg \leq N$ (or $-N \leq arg \leq -1$ for reverse indices). \\  
 	\hline 
-	isNotAt & int & Node occurs at any position except the designated one ($index \neq arg$). Legal values are: $1 \leq arg \leq N$. \\  
+	isNotAt & int & Node occurs at any position except the designated one ($index \neq arg$). Legal values are: $1 \leq arg \leq N$ (or $-N \leq arg \leq -1$ for reverse indices). \\  
 	\hline 
 \end{tabular}
 \caption[Global position markers]{Position markers provided by the default evaluation engine for \ac{iql}. The conditions in the last column assume a container of size \textit{N} as context. If a marker function takes arguments, they appear in the conditions as $arg$ for the sole argument or $arg_i$ for the $i$-th argument list, with $arg_1$ being the first argument.}
 \label{tab:position-markers}
 \end{table} 
-
-\paragraph{Direction}
-\noindent Position markers follow the direction specified for the whole query, same as all structural constraints (\ref{sec:structural-constraints}).
-This means they are also subject to reversing via switch (\ref{sec:json-ld-switches}) the order in which \acp{uoi} are traversed.
-Note that this effectively reverses the semantics of all the markers listed in \cref{tab:position-markers} (see below section about negation for examples on how construct markers that cover the inverse index interval).
-For instance \query{isFirst} will target the last item when traversing a container in the original direction.
-Users need to keep this in mind when mixing position markers with switches that influence the order of traversal during node matching.
 
 \paragraph{Negation}
 \noindent Position markers cannot be negated when used in a constraint expression.\footnote{Depending on the query configuration doing so would either fail the evaluation process with an error or silently ignore the issue, potentially producing invalid results.}
@@ -2247,7 +2247,7 @@ However, since those methods are not subject to the same limitations as mentione
 
 While the basic positional markers described in \cref{sec:position-markers} limit a node's overall position in the surrounding container, tree markers work on the hierarchical properties of tree structures.
 As such they define legal positions of a node within its parent's list of children.
-All tree markers are subject to the same rules as position markers regarding negation, direction, relative and reverse indices, as well as stacking.
+All tree markers are subject to the same rules as position markers regarding negation, relative and reverse indices, as well as stacking.
 Note however, that the default order for traversing child nodes in a tree does not necessarily\footnote{The \ac{icmf} does however strongly encourage tree structures to order children according to their begin-offsets if it does not interfere with their intended semantics.} reflect the actual order of the child nodes position when projected onto the underlying foundation layer.
 It can therefore make sense to define additional precedence constraints via global constraints if needed.
 
