@@ -183,7 +183,7 @@ public class ApiGuard<T> extends DummyCache<ApiGuard<T>, T> {
 	}
 
 	/**
-	 * Registers a new default vlaue for the given {@code property} or removes
+	 * Registers a new default value for the given {@code property} or removes
 	 * and previously registered one if the {@code value} parameter is {@code null}.
 	 *
 	 * @param property

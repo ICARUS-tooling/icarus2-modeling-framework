@@ -50,26 +50,26 @@ public class DummyCache<C extends DummyCache<C, T>, T> {
 
 		// Primitives and their wrappers
 
-		map.put(Byte.TYPE, Byte.valueOf((byte) (Byte.MAX_VALUE/2)));
-		map.put(Byte.class, Byte.valueOf((byte) (Byte.MAX_VALUE/2)));
+		map.put(Byte.TYPE, Byte.valueOf((byte) 34));
+		map.put(Byte.class, Byte.valueOf((byte) 34));
 
-		map.put(Short.TYPE, Short.valueOf((short) (Short.MAX_VALUE/2)));
-		map.put(Short.class, Short.valueOf((short) (Short.MAX_VALUE/2)));
+		map.put(Short.TYPE, Short.valueOf((short) 456));
+		map.put(Short.class, Short.valueOf((short) 456));
 
-		map.put(Integer.TYPE, Integer.valueOf(Integer.MAX_VALUE/2));
-		map.put(Integer.class, Integer.valueOf(Integer.MAX_VALUE/2));
+		map.put(Integer.TYPE, Integer.valueOf(678));
+		map.put(Integer.class, Integer.valueOf(678));
 
-		map.put(Character.TYPE, Character.valueOf((char) (Character.MAX_VALUE/2)));
-		map.put(Character.class, Character.valueOf((char) (Character.MAX_VALUE/2)));
+		map.put(Character.TYPE, Character.valueOf('x'));
+		map.put(Character.class, Character.valueOf('x'));
 
-		map.put(Long.TYPE, Long.valueOf(Long.MAX_VALUE/2));
-		map.put(Long.class, Long.valueOf(Long.MAX_VALUE/2));
+		map.put(Long.TYPE, Long.valueOf(6789));
+		map.put(Long.class, Long.valueOf(6789));
 
-		map.put(Float.TYPE, Float.valueOf(Float.MAX_VALUE));
-		map.put(Float.class, Float.valueOf(Float.MAX_VALUE));
+		map.put(Float.TYPE, Float.valueOf(12.34F));
+		map.put(Float.class, Float.valueOf(12.34F));
 
-		map.put(Double.TYPE, Double.valueOf(Double.MAX_VALUE));
-		map.put(Double.class, Double.valueOf(Double.MAX_VALUE));
+		map.put(Double.TYPE, Double.valueOf(123.456));
+		map.put(Double.class, Double.valueOf(123.456));
 
 		map.put(Boolean.TYPE, Boolean.TRUE);
 		map.put(Boolean.class, Boolean.TRUE);
