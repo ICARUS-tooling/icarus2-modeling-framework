@@ -125,29 +125,27 @@ public class ExpressionFactory {
 		handlers = new Object2ObjectOpenHashMap<>();
 
 	static {
-		handlers.put(PrimaryExpressionContext.class, (f,ctx) -> f.processPrimary((PrimaryExpressionContext)ctx));
-		handlers.put(PathAccessContext.class, (f,ctx) -> f.processPathAccess((PathAccessContext) ctx));
-		handlers.put(MethodInvocationContext.class, (f,ctx) -> f.processMethodInvocation((MethodInvocationContext) ctx));
-		handlers.put(ListAccessContext.class, (f,ctx) -> f.processListAccess((ListAccessContext) ctx));
-		handlers.put(AnnotationAccessContext.class, (f,ctx) -> f.processAnnotationAccess((AnnotationAccessContext) ctx));
-		handlers.put(CastExpressionContext.class, (f,ctx) -> f.processCastExpression((CastExpressionContext) ctx));
-		handlers.put(WrappingExpressionContext.class, (f,ctx) -> f.processWrappingExpression((WrappingExpressionContext) ctx));
-		handlers.put(SetPredicateContext.class, (f,ctx) -> f.processSetPredicate((SetPredicateContext) ctx));
-		handlers.put(UnaryOpContext.class, (f,ctx) -> f.processUnaryOp((UnaryOpContext) ctx));
-		handlers.put(MultiplicativeOpContext.class, (f,ctx) -> f.processMultiplicativeOp((MultiplicativeOpContext) ctx));
 		handlers.put(AdditiveOpContext.class, (f,ctx) -> f.processAdditiveOp((AdditiveOpContext) ctx));
+		handlers.put(AnnotationAccessContext.class, (f,ctx) -> f.processAnnotationAccess((AnnotationAccessContext) ctx));
+		handlers.put(AssignmentOpContext.class, (f,ctx) -> f.processAssignmentOp((AssignmentOpContext) ctx));
 		handlers.put(BitwiseOpContext.class, (f,ctx) -> f.processBitwiseOp((BitwiseOpContext) ctx));
+		handlers.put(CastExpressionContext.class, (f,ctx) -> f.processCastExpression((CastExpressionContext) ctx));
 		handlers.put(ComparisonOpContext.class, (f,ctx) -> f.processComparisonOp((ComparisonOpContext) ctx));
-		handlers.put(StringOpContext.class, (f,ctx) -> f.processStringOp((StringOpContext) ctx));
-		handlers.put(EqualityCheckContext.class, (f,ctx) -> f.processEqualityCheck((EqualityCheckContext) ctx));
 		handlers.put(ConjunctionContext.class, (f,ctx) -> f.processConjunction((ConjunctionContext) ctx));
 		handlers.put(DisjunctionContext.class, (f,ctx) -> f.processDisjunction((DisjunctionContext) ctx));
-		handlers.put(TernaryOpContext.class, (f,ctx) -> f.processTernaryOp((TernaryOpContext) ctx));
+		handlers.put(EqualityCheckContext.class, (f,ctx) -> f.processEqualityCheck((EqualityCheckContext) ctx));
 		handlers.put(ForEachContext.class, (f,ctx) -> f.processForEach((ForEachContext) ctx));
-		handlers.put(AssignmentOpContext.class, (f,ctx) -> f.processAssignmentOp((AssignmentOpContext) ctx));
+		handlers.put(ListAccessContext.class, (f,ctx) -> f.processListAccess((ListAccessContext) ctx));
+		handlers.put(MethodInvocationContext.class, (f,ctx) -> f.processMethodInvocation((MethodInvocationContext) ctx));
+		handlers.put(MultiplicativeOpContext.class, (f,ctx) -> f.processMultiplicativeOp((MultiplicativeOpContext) ctx));
+		handlers.put(PathAccessContext.class, (f,ctx) -> f.processPathAccess((PathAccessContext) ctx));
+		handlers.put(PrimaryExpressionContext.class, (f,ctx) -> f.processPrimary((PrimaryExpressionContext)ctx));
+		handlers.put(SetPredicateContext.class, (f,ctx) -> f.processSetPredicate((SetPredicateContext) ctx));
+		handlers.put(StringOpContext.class, (f,ctx) -> f.processStringOp((StringOpContext) ctx));
+		handlers.put(TernaryOpContext.class, (f,ctx) -> f.processTernaryOp((TernaryOpContext) ctx));
+		handlers.put(UnaryOpContext.class, (f,ctx) -> f.processUnaryOp((UnaryOpContext) ctx));
+		handlers.put(WrappingExpressionContext.class, (f,ctx) -> f.processWrappingExpression((WrappingExpressionContext) ctx));
 	}
-	//TODO handle assignmentOp "exp AS (member | var)", a special expression that returns true if the assignment produces a value other than 0 or null
-
 	public ExpressionFactory(EvaluationContext context) { this.context = requireNonNull(context); }
 
 	public EvaluationContext getContext() { return context; }
@@ -611,11 +609,6 @@ public class ExpressionFactory {
 		ListExpression<?, ?> source = ensureList(processAndResolveExpression0(ctx.source));
 		Expression<?>[] indices = processExpressionList(ctx.indices);
 
-		if(indices.length<1)
-			// FIXME actually not possible due to IQL rule
-			throw new QueryException(QueryErrorCode.INCORRECT_USE,
-					"List access needs at least 1 index argument: "+textOf(ctx), asFragment(ctx));
-
 		// Special handling for access expressions with only 1 argument
 		if(indices.length==1) {
 			// Single argument can still be a list
@@ -636,11 +629,6 @@ public class ExpressionFactory {
 	Expression<?> processAnnotationAccess(AnnotationAccessContext ctx) {
 		Expression<?> source = processAndResolveExpression0(ctx.source);
 		Expression<?>[] arguments = processExpressionList(ctx.keys);
-
-		if(arguments.length<1)
-			// FIXME actually not possible due to IQL rule
-			throw new QueryException(QueryErrorCode.INCORRECT_USE,
-					"Annotation access needs at least 1 key argument: "+textOf(ctx), asFragment(ctx));
 
 		// AnnotationAccess handles the single-argument specialization
 		return AnnotationAccess.of(ensureItem(source), context, ensureText(arguments));

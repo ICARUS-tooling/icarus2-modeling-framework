@@ -1017,16 +1017,12 @@ public abstract class EvaluationContext {
 	 * can be restricted to be return type compatible to a desired target type.
 	 * If the
 	 *
-	 * @throws QueryException of type {@link QueryErrorCode#UNKNOWN_IDENTIFIER} iff
-	 * the specified {@code name} could not be resolved to a target that satisfies
-	 * the given {@code filter} (if present).
-	 *
 	 * @param scope the optional context that defines the scope of resolution
 	 * @param name the identifier to be used for resolution
 	 * @param filter optional restriction on the allowed types of obejcts to be resolved
 	 *
 	 * @throws QueryException of type {@link QueryErrorCode#UNKNOWN_IDENTIFIER} iff
-	 * the specified {@code name} could not be resolved to a method that satisfies
+	 * the specified {@code name} could not be resolved to a target that satisfies
 	 * the given {@code argument} specification and {@code resultFilter} (if present).
 	 */
 	public Optional<Expression<?>> resolve(@Nullable Expression<?> scope, String name,
