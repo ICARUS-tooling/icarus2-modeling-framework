@@ -20,7 +20,7 @@
 package de.ims.icarus2.query.api;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -474,7 +474,7 @@ public class IqlQueryGenerator {
 			build.addEnumFieldChange(payload::setQueryModifier, IqlProperties.QUERY_MODIFIER, queryModifier);
 		}
 		for(int limit : new int[] {1, 5, 10}) {
-			build.addFieldChange(payload::setLimit, IqlProperties.LIMIT, _int(limit));
+			build.addFieldChange(payload::setLimit, IqlProperties.LIMIT, _long(limit));
 		}
 	}
 
