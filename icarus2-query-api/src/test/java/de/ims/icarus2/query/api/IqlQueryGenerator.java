@@ -328,6 +328,8 @@ public class IqlQueryGenerator {
 
 		// mandatory data
 		expression.setExpressionType(MarkerExpressionType.CONJUNCTION);
+		expression.addItem(generateFull(IqlType.MARKER_CALL, config));
+		expression.addItem(generateFull(IqlType.MARKER_CALL, config));
 
 		if(config.tryNested(IqlType.MARKER_CALL)) {
 			for (int i = 0; i < config.getCount(IqlType.MARKER_CALL, DEFAULT_COUNT); i++) {
