@@ -80,6 +80,41 @@ public final class CollectionUtils {
 		// no-op
 	}
 
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+	public static int growSize(int oldSize) {
+		return growSize(oldSize, oldSize+1);
+	}
+
+	public static int growSize(int oldSize, int minSize) {
+
+        if (oldSize==0) {
+        	minSize = Math.max(CollectionUtils.DEFAULT_COLLECTION_CAPACITY, minSize);
+        }
+
+        // overflow-conscious code
+        if (minSize - oldSize > 0) {
+            // overflow-conscious code
+            int oldCapacity = oldSize;
+            int newCapacity = oldCapacity + (oldCapacity >> 1);
+            if (newCapacity - minSize < 0)
+                newCapacity = minSize;
+            if (newCapacity - MAX_ARRAY_SIZE > 0)
+                newCapacity = hugeCapacity(minSize);
+            return newCapacity;
+        }
+
+        return oldSize;
+	}
+
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+            throw new OutOfMemoryError();
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+            Integer.MAX_VALUE :
+            MAX_ARRAY_SIZE;
+    }
+
 	public static <E extends Object> void forEach(E[] array, Consumer<? super E> action) {
 		if(array==null || array.length==0) {
 			return;

@@ -438,28 +438,15 @@ public class LookupList<E> extends AbstractList<E> implements Iterable<E>, Clear
         addDirtyRegion(index0);
     }
 
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
     public void ensureCapacity(int minCapacity) {
 
-        if (items == EMPTY_ITEMS) {
-            minCapacity = Math.max(CollectionUtils.DEFAULT_COLLECTION_CAPACITY, minCapacity);
-        }
+    	int oldCapacity = items.length;
+    	int newCapacity = CollectionUtils.growSize(oldCapacity, minCapacity);
 
-        modCount++;
-
-        // overflow-conscious code
-        if (minCapacity - items.length > 0) {
-            // overflow-conscious code
-            int oldCapacity = items.length;
-            int newCapacity = oldCapacity + (oldCapacity >> 1);
-            if (newCapacity - minCapacity < 0)
-                newCapacity = minCapacity;
-            if (newCapacity - MAX_ARRAY_SIZE > 0)
-                newCapacity = hugeCapacity(minCapacity);
-            // minCapacity is usually close to size, so this is a win:
+    	if(newCapacity!=oldCapacity) {
+            modCount++;
             items = Arrays.copyOf(items, newCapacity);
-        }
+    	}
     }
 
     /**
@@ -531,13 +518,5 @@ public class LookupList<E> extends AbstractList<E> implements Iterable<E>, Clear
     	if(item!=null && lookup!=null) {
     		lookup.removeInt(item);
     	}
-    }
-
-    private static int hugeCapacity(int minCapacity) {
-        if (minCapacity < 0) // overflow
-            throw new OutOfMemoryError();
-        return (minCapacity > MAX_ARRAY_SIZE) ?
-            Integer.MAX_VALUE :
-            MAX_ARRAY_SIZE;
     }
 }

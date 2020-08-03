@@ -26,11 +26,10 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.StampedLock;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.io.Bits;
 
 /**
@@ -288,9 +287,7 @@ public final class ByteAllocator implements AutoCloseable {
 		if(policy!=GrowthPolicy.NO_GROWTH && chunkIndex>=chunkCount) {
 			// Grow our buffer depending on the given policy as needed
 			if(chunkIndex>=chunks.length) {
-				int newSize = Math.max(chunks.length*2, chunkIndex);
-				if(newSize<=0)
-					throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Size overflow");
+				int newSize = CollectionUtils.growSize(chunks.length, chunkIndex);
 				chunks = Arrays.copyOf(chunks, newSize);
 			}
 			while(chunkIndex>=chunkCount) {
