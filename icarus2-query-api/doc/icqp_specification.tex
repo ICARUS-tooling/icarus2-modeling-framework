@@ -5,6 +5,8 @@
 \documentclass[11pt,a4paper]{report}
 
 \usepackage{icarus2}
+\usepackage{xr-hyper}
+\externaldocument[IQL-]{iql_specification}
 
 \title{ICARUS2 Corpus Query Processor Specification}
 
@@ -87,21 +89,26 @@ Utility procedures and functions used in the algorithms of this section:
 	\item[eval($s,t$)] Evaluates the inner constraints of search node $s$ on the target item $t$. The result is a cache entry with a boolean value indicating whether the evaluation was successful.
 	\item[cacheGet($s,t$)] Retrieve a cached entry for the evaluation of search node $s$ on target element $t$. If no entry exist, $nil$ is returned.
 	\item[cacheSet($s, t, entry$)] Stores the given $entry$ in the cache for the evaluation of search node $s$ on target element $t$.  
+	\item[finished()] Returns whether or not the state machine has produced a sufficient number of matches for the current target sequence. This function is required for nodes that can produce multiple matches such as $repetirion$ and $scan$.
+	\item[mark($s,t$)] Stores the fact that $s$ matched $t$ in the preliminary result buffer. Note that each $s$ that models an instance of \iqlType{IqlNode} is assigned a stack to manage result candidates, so in the case of quantification that allows repetition multiple hits can be stored.
+	\item[minSize($s$)] Returns the minimum number of elements needed to satisfy a node.
 	\item[next($s$)] Returns the next search node in the sequence after $s$.
 	\item[size($s$)] Returns the number of child nodes attached to $s$.
-	\item[type($s$)] Returns the type of the given search node, one of the following:\footnote{Nested nodes can be obtained with $atom(s)$ for single embeddings or $atom(s,i)$ for indexed elements where $atoms(s)$ returns the number of embedded nodes and $1 \leq i \leq atom(s)$.}
+	\item[scopeCreate()] Registers and returns a scope marker that can later be used to reset all marked matches in the result buffer, back until this marker.
+	\item[scopeReset($scope$)] Removes from the result buffer all matches registered via $mark(s,t)$ that have been added since $scope$ has been created. This is used by nodes that have to explore many alternative or iterative scenarios, such as $scan$, $repetition$ or $branch$.
+	\item[type($s$)] Returns the type of the given search node, one of the following:\footnote{Nested nodes can be obtained with $atom(s)$ for single embeddings or $child(s,i)$ for indexed elements where $size(s)$ returns the number of embedded nodes and $1 \leq i \leq atom(s)$.}
 	\begin{description}
 		\item[$single$] A single atomic node that is existentially quantified.
-		\item[$sequence$] A group of adjacent search nodes.
-		\item[$group$] A group of ordered (but not necessarily adjacent) search nodes. 
 		\item[$repetition$] A quantifier $(c_{min},c_{max})$ and an associated $atom$ search node.
-		\item[$negation$] An embedded node that must not match.
+		\item[$negation$] An embedded node that must \textbf{not} match.
 		\item[$universal$] An embedded node that is expected to match all available target elements. Note that universal quantification is only allowed if the node is the only one in the (resolved) global context.
-		\item[$choice$] A group of nodes that represent logical alternatives.
+		\item[$branch$] A group of nodes that represent logical alternatives.
+		\item[$scan$] An embedded node is iteratively checked against all remaining index positions in the target sequence.
 		\item[$region$] An embedded node and associated index interval $i_{start} = first(s)$ to $i_{end}=last(s)$ of legal positions for matching.
-		\item[$spot$] An embedded node and a single associated index for matching.
+		\item[$spot$] An embedded node and a single associated fixed index $i = exact(s)$ for matching.
 	\end{description}
-\item[VALUE($entry$)] Extracts the actual boolean result value from a cache entry.
+	\item[unmark($s,t$)] Removes the fact that $s$ matched $t$ from the preliminary result buffer.
+	\item[value($entry$)] Extracts the actual boolean result value from a cache entry.
 \end{description}
 
 \section{Rules}
@@ -124,7 +131,7 @@ All rules assume the existence of already processed nodes that resulted in some 
 \end{center}
 Initially the \textit{head} node is just a generic entry point and the \textit{tail} simply implements the final acceptance node that ensures that all actual search nodes in the query have been evaluated already.
 
-The elements in the query are effectively processed left to right and for every encountered element a new node is inserted between the current \textit{head} and \textit{tail}: %TODO reformulate, LtR is oversimplifying it
+The elements in the query are effectively processed top-down and left-to-right and for every encountered \iqlBaseType{IqlElement} instance a new node is inserted between the current \textit{head} and \textit{tail}: %TODO reformulate, LtR is oversimplifying it
 \begin{center}
 	\begin{tikzpicture}\centering
 		\node[search node](h) at(0,0) {.. head};
@@ -137,60 +144,157 @@ The elements in the query are effectively processed left to right and for every 
 \end{center}
 This process is recursive and builds the graph of interconnected search nodes used in the algorithms described in the respective sub sections.
 
-\subsection{Single Node}
-\label{sec:seq-single}
-
-
 \begin{algorithm}[H]
-	\caption[Constraint matching]{Local constraint matching with memoization to prevent redundant calls to costly constraint evaluation.}
-	\label{alg:local-constraint}
+	\caption[Generic node matching]{Match a generic node at a specified position. This procedure exists merely for multiplexing to the specialized counterparts depending on the type of $s$.}
+	\label{alg:match}
 	\begin{algorithmic}[1]
-		\Procedure{LOCAL-MATCH}{$s, t$}
-			\State $entry \gets $ \Call{cacheGet}{$s,t$}
-			\If{$entry = nil$}
-				\State $entry \gets$ \Call{eval}{$s,t$}
-				\State \Call{cacheSet}{$s, t, entry}$
-			\EndIf
-			\State \textbf{return} \Call{value}{$entry$}
+		\Procedure{MATCH}{$s, T, j$}
+		\State $type_s \gets$ \Call{type}{$s$} \label{line:type-switch}
+		\If{$type_s = single$}
+			\State \textbf{return} \Call{MATCH-NODE}{$s,T,j$}
+		\ElsIf{$type_s = repetition$}
+			\State \textbf{return} \Call{MATCH-REPETITION}{$s,T,j$}
+		\ElsIf{$type_s = negation$}
+			\State \textbf{return} \Call{MATCH-NEGATION}{$s,T,j$}
+		\ElsIf{$type_s = universal$}
+			\State \textbf{return} \Call{MATCH-ALL}{$s,T,j$}
+		\ElsIf{$type_s = branch$}
+			\State \textbf{return} \Call{MATCH-BRANCH}{$s,T,j$}
+		\ElsIf{$type_s = scan$}
+			\State \textbf{return} \Call{MATCH-SCAN}{$s,T,j$}
+		\ElsIf{$type_s = region$}
+			\State \textbf{return} \Call{MATCH-REGION}{$s,T,j$}
+		\ElsIf{$type_s = spot$}
+			\State \textbf{return} \Call{MATCH-SPOT}{$s,T,j$}
+		\EndIf
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
 
+Actual sequence matching is subsequently performed by calling \Call{MATCH}{$root,T,1$} with $root$ being the first node of the state machine to.
+This function takes care of multiplexing the call to the specialized procedure depending on a node's type (as provided by $type(s)$ in line \ref{line:type-switch} of \cref{alg:match}).
+
+\subsection{Single Node}
+\label{sec:seq-single}
+
+A single instance of \iqlType{IqlNode} (IQL, \cref{IQL-sec:json-ld-node}) is the most basic constraint fragment in an \ac{iql} query.
+Note that in the presence of quantifiers (IQL, \cref{IQL-sec:json-ld-quantifier}) on a node the evaluation is split into two levels:
+First the \iqlType{IqlNode} content is processed into a search node $s$ of type $single$ and then the quantifiers are handled (which will result in a combination of $repetition$, $branch$, $negation$, $universal$ nodes, depending on the complexity of the quantifiers involved), resulting in a potentially very complex node structure with node $s$ as atom.
+
 \begin{algorithm}[H]
-	\caption{Single node matching}
+	\caption[Single node matching]{Matching of a single node at a specific position. Local constraints and the tail of $s$ are taken into account. Memoization is employed for evaluation of local constraints to prevent repeatedly executing costly constraint expressions.}
 	\label{alg:match-node}
 	\begin{algorithmic}[1]
-		\Procedure{MATCH-NODE}{$s, T, j_{start}, j_{max}$} \Comment{$j_{start} \leq j_{max}$}
-			\State $j \gets j_{start}$
-			\While{$j <= j_{max}$}
-				\If{\Call{LOCAL-MATCH}{$s,t_j$}}
-					\State $tails \gets next(s)$
-					\State \textbf{return} \Call{MATCH}{$tail, T, j, j_{max}$}
-				\EndIf
-				\State $j \gets j + 1$
-			\EndWhile
+		\Procedure{MATCH-NODE}{$s, T, j$}
+			\State $entry \gets $ \Call{cacheGet}{$s,t_j$}\label{line:node-mem-start}
+			\If{$entry = nil$}
+				\State $entry \gets$ \Call{eval}{$s,t_j$}
+				\State \Call{cacheSet}{$s, t_j, entry}$
+			\EndIf
+			\Statex
+			\State $matched \gets$ \Call{value}{$entry$}\label{line:node-mem-end}
+			\If{$matched = true$}
+				\State $tail \gets next(s)$
+				\State $matched \gets$ \Call{MATCH}{$tail, T, j+1$} \label{line:node-tail}
+			\EndIf
+			\If{$matched = true$}
+				\State \Call{mark}{$s,t_j$} \label{line:node-mark}
+			\EndIf
+			\Statex
+			\State \textbf{return} $matched$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+Matching a single node is pretty straightforward, as shown in \cref{alg:match-node}.
+The only local evaluation concerns the execution of the internal constrain expression, for which memoization is employed in order to prevent repeatedly executing it for the same target element.
+Only if the local constraint evaluates to \code{true} further evaluation is delegated to the tail of the state machine via matching the $next(s)$ node in line \ref{line:node-tail}.
+A successful match is automatically stored in the associated result buffer.
+Note that surrounding $scan$ or $repetition$ nodes that can produce multiple matches have the ability to reset the state of this result buffer.
+So if a match fails, the individual nodes won't have to do any cleanup work.
+
+\subsection{Node Repetition}
+\label{sec:seq-repetition}
+
+\subsection{Existential Negation}
+\label{sec:seq-negation}
+
+\subsection{Universal Quantification}
+\label{sec:seq-universal}
+
+This special node can only occur as either the root node or as direct element within a disjunction (\cref{sec:seq-branch}) that in turn is the root.
+It effectively makes the embedded atom the only node that is allowed to match and it is required to all targets in the current \ac{uoi}.
+The implementation is very similar to that of scanning (\cref{sec:seq-scan}) in that it moves the atom through the target sequence and aborting as soon as it fails to match a single element.
+
+\subsection{Node Disjunction}
+\label{sec:seq-branch}
+
+\subsection{Iterative Scan}
+\label{sec:seq-scan}
+
+Normally matching a node is done on a single specific position in the target sequence.
+This covers situations such as node groups with the \keyword{ADJACENT} arrangement.
+But groups that are merely \keyword{ORDERED} (also the default for sequences in IQL when no explicit arrangement is defined) need some sort of scanning mechanism, as individual nodes can be matched at any index position after their predecessor (if one exists).
+Therefore the $scan$ node takes the index argument $j$ of the matcher function as entry point for an iterative search forward that incrementally tries positions until running out of search space or if the result buffer is filled.
+
+\begin{algorithm}[H]
+	\caption[Iterative scan matching]{Match an embedded search node at any of the remaining spots in the target sequence, beginning at $j$.}
+	\label{alg:match-scan}
+	\begin{algorithmic}[1]
+		\Procedure{MATCH-SCAN}{$s, T, j$}
+		\State $atom \gets$ \Call{atom}{$s$}
+		\State $fence \gets N_T -$ \Call{minSize}{$s$} $ + 1$
+		\State $i \gets j$
+		\State $result \gets false$
+		\While{$i \leq fence \land \lnot$\Call{finished}{$ $}} \Comment{result limit can end the loop early}
+			\State $matched \gets$ \Call{MATCH}{$atom, T, i$}\label{line:scan-nested}
+			\If{$matched$}
+				\State $result \gets true$
+			\EndIf
+			\State $i \gets i +1$
+		\EndWhile
+		\State \textbf{return} $result$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\Cref{alg:match-scan} displays the simple algorithm for iterative scanning.
+Note that this version is (i) not using caching to speed up exploration in the nested $atom$ and also only implements the default left-to-right traversal direction.
+A specialized alternative exists that shifts $atom$ through the search space right-to-left and another one that uses caching to skip known dead-ends when matching the nested $atom$ (line \ref{line:scan-nested}).
+It is not possible to skip known positive sub-results, as we must still allow nested nodes to register with the result buffer for any such ``new'' sub-result in the context of a new host node $s$.
+When traversing backwards, the algorithm uses the same boundaries, but simply reverses the direction of the loop variable.
+
+\subsection{Region Interval}
+\label{sec:seq-region}
+
+All position markers (IQL, \cref{sec:position-markers}) that effectively declare intervals are translated into $region$ nodes.
+Each region node manages one or more index intervals of legal values.
+Those intervals are refreshed for every \ac{uoi} at most once.
+When matching, membership of the current index $j$ to at least one interval is checked first.
+If this check fails, the entire match call is aborted before the next node is even considered.
+
+\subsection{Fixed Spot}
+\label{sec:seq-spot}
+
+Node implementation of the markers \query{IsFirst}, \query{IsLast} and \query{IsAt} that all define a fixed index for the target, only influenced by the size of the \ac{uoi} during matching.
+
+\begin{algorithm}[H]
+	\caption[Fixed spot matching]{Match search node only at a fixed location in the target sequence}
+	\label{alg:match-spot}
+	\begin{algorithmic}[1]
+		\Procedure{MATCH-SPOT}{$s, T, j$}
+		\State $spot \gets$ \Call{exact}{$s$}
+		\If{$j \neq spot$}
 			\State \textbf{return} $false$
+		\EndIf
+		\State $node \gets$ \Call{atom}{$s$}
+		\State \textbf{return} \Call{MATCH}{$node, T, j$}
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
 
 \section{Algorithm}
 \label{sec:seq-alg}
-
-\begin{algorithm}[H]
-	\caption{Generic node matching}
-	\label{alg:match}
-	\begin{algorithmic}[1]
-		\Procedure{MATCH}{$s, T, j_{start}, j_{max}$} \Comment{$j_{start} \leq j_{max}$}
-			\State $type_s \gets$ \Call{type}{$s$}
-			\If{$type_s = single$}
-			\State \textbf{return} $j$
-			\EndIf
-			\State $j \gets j + 1$
-			\State \textbf{return} $false$
-		\EndProcedure
-	\end{algorithmic}
-\end{algorithm}
 
 \begin{algorithm}[H]
 	\caption{Adjacent sequence matching}

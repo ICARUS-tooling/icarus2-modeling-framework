@@ -1,12 +1,12 @@
 
 
 %packages that need to be loaded early to avoid option clashes
+\usepackage{float}
 \usepackage[dvipsnames]{xcolor}
 
 % packages that can be loaded in random order
 \usepackage{acro}
 \usepackage[chapter]{algorithm}
-\usepackage{algpseudocode} %loads algorithmicx and applies pseudocode style
 \usepackage[toc,page]{appendix}
 \usepackage{bera}% optional: just to have a nice mono-spaced font
 \usepackage{comment} % for commenting out the huge draft lists
@@ -28,7 +28,7 @@
 \usepackage{subcaption}
 \usepackage[rounded]{syntax}
 \usepackage{tikz}
-\usepackage{times}
+%\usepackage{times}
 %\usepackage{titlesec} % for modifying title styles (especially paragraph in report class)
 \usepackage{todonotes}
 \usepackage{url}
@@ -38,6 +38,7 @@
 
 %packages that need specific prerequisites
 \usepackage[capitalise]{cleveref} % must be loaded after hyperref!
+\usepackage{algpseudocode} %loads algorithmicx and applies pseudocode style
 
 \usetikzlibrary{shapes.arrows, chains, positioning}
 
@@ -55,7 +56,7 @@
 
 \setcounter{secnumdepth}{3}
 
-\newfontfamily\DejaSans{DejaVu Sans}
+%\newfontfamily\DejaSans{DejaVu Sans}
 
 \setmonofont{Consolas}
 
@@ -75,6 +76,8 @@
 \newtheorem{gram}{Grammar Snippet}[chapter]
 
 \crefname{gram}{snippet}{snippets}
+%\crefname{algorithm}{alg.}{algs.}
+%\Crefname{algorithm}{Algorithm}{Algorithms}
 
 \newcommand{\compresslist}{ % Define a command to reduce spacing within itemize/enumerate environments, this is used right after \begin{itemize} or \begin{enumerate}
 	\setlength{\topsep}{0pt}
@@ -89,6 +92,7 @@
 
 \newcommand{\member}[1]{\texttt{#1}}
 
+\newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\query}[1]{\texttt{#1}}
 \newcommand{\switch}[1]{``\texttt{#1}''}
 
@@ -234,3 +238,7 @@
 	breakatwhitespace=true,
 	tabsize=4,
 }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FIXES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
