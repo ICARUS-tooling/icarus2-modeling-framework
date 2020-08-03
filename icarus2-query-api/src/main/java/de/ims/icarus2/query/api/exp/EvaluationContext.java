@@ -442,12 +442,10 @@ public abstract class EvaluationContext {
 		@Override
 		public Container compute() { return container; }
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public Assignable<Container> duplicate(EvaluationContext context) {
-			return (Assignable<Container>) context.getContainerStore().orElseThrow(
-					() -> EvaluationUtils.forInternalError(
-					"Target context does not provide container store"));
+			requireNonNull(context);
+			return new ContainerStore(type);
 		}
 	}
 
@@ -493,12 +491,12 @@ public abstract class EvaluationContext {
 			return new ItemStore(type);
 		}
 
+		private Item item;
+		private final TypeInfo type;
+
 		private ItemStore(TypeInfo type) {
 			this.type = requireNonNull(type);
 		}
-
-		private Item item;
-		private final TypeInfo type;
 
 		@Override
 		public void assign(Object value) { setItem((Item) value);}
@@ -516,10 +514,8 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Assignable<Item> duplicate(EvaluationContext context) {
-			return context.getElementStore()
-					.map(EvaluationUtils::castMember)
-					.orElseThrow(() -> EvaluationUtils.forInternalError(
-							"Target context does not provide element store"));
+			requireNonNull(context);
+			return new ItemStore(type);
 		}
 	}
 

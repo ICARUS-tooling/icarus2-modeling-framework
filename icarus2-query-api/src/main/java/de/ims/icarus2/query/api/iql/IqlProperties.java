@@ -71,6 +71,8 @@ public final class IqlProperties {
 
 	public static final String PRIMARY = IQL_NS_PREFIX+"primary";
 
+	public static final String MARKER = IQL_NS_PREFIX+"marker";
+
 	public static final String ALL_MEMBERS = IQL_NS_PREFIX+"allMembers";
 
 	public static final String SCOPE = IQL_NS_PREFIX+"scope";
@@ -168,4 +170,8 @@ public final class IqlProperties {
 	public static final String STOP = IQL_NS_PREFIX+"stop";
 
 	public static final String FRAGMENT = IQL_NS_PREFIX+"fragment";
+
+	public static final String ARGUMENTS = IQL_NS_PREFIX+"arguments";
+
+	public static final String EXPRESSION_TYPE = IQL_NS_PREFIX+"expressionType";
 }

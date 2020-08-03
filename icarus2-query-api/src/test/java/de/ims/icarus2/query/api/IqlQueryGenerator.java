@@ -19,7 +19,10 @@
  */
 package de.ims.icarus2.query.api;
 
+import static de.ims.icarus2.test.TestUtils.other;
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives._double;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +65,9 @@ import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlLayer;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
+import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
 import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
@@ -180,6 +186,8 @@ public class IqlQueryGenerator {
 		case IMPORT: prepareImport((IqlImport) element, build, config); break;
 		case LANE: prepareLane((IqlLane) element, build, config); break;
 		case LAYER: prepareLayer((IqlLayer) element, build, config); break;
+		case MARKER_CALL: prepareMarkerCall((IqlMarkerCall) element, build, config); break;
+		case MARKER_EXPRESSION: prepareMarkerExpression((IqlMarkerExpression) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
 		case SEQUENCE: prepareElementSet((IqlSequence) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
@@ -301,6 +309,38 @@ public class IqlQueryGenerator {
 		}
 	}
 
+	private void prepareMarkerCall(IqlMarkerCall call, IncrementalBuild<?> build, Config config) {
+		prepareQueryElement0(call, build, config);
+
+		// mandatory data
+		call.setName(index("name"));
+
+		build.addFieldChange(call::setName, IqlProperties.NAME, index("name"));
+
+		build.addFieldChange(call::setArguments, IqlProperties.ARGUMENTS,
+				new Number[] {_int(2), _int(12)});
+		build.addFieldChange(call::setArguments, IqlProperties.ARGUMENTS,
+				new Number[] {_double(0.6)});
+	}
+
+	private void prepareMarkerExpression(IqlMarkerExpression expression, IncrementalBuild<?> build, Config config) {
+		prepareQueryElement0(expression, build, config);
+
+		// mandatory data
+		expression.setExpressionType(MarkerExpressionType.CONJUNCTION);
+
+		if(config.tryNested(IqlType.MARKER_CALL)) {
+			for (int i = 0; i < config.getCount(IqlType.MARKER_CALL, DEFAULT_COUNT); i++) {
+				build.addNestedChange(IqlProperties.ITEMS, IqlType.MARKER_CALL, config,
+						expression, expression::addItem);
+			}
+			config.endNested(IqlType.MARKER_CALL);
+		}
+
+		build.addFieldChange(expression::setExpressionType, IqlProperties.EXPRESSION_TYPE,
+				other(MarkerExpressionType.CONJUNCTION));
+	}
+
 	private void prepareElement0(IqlElement element, IncrementalBuild<?> build, Config config) {
 		prepareUnique0(element, build, config);
 
@@ -310,7 +350,7 @@ public class IqlQueryGenerator {
 	private void prepareProperElement0(IqlProperElement element, IncrementalBuild<?> build, Config config) {
 		prepareElement0(element, build, config);
 
-		build.addFieldChange(element::setLabel, "label", index("label"));
+		build.addFieldChange(element::setLabel, IqlProperties.LABEL, index("label"));
 		build.addNestedChange(IqlProperties.CONSTRAINT, IqlType.PREDICATE, config, element, element::setConstraint);
 	}
 

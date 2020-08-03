@@ -79,6 +79,12 @@ public class Conditions {
 			throw new IndexOutOfBoundsException();
 	}
 
+	public static <E> E[] checkNotEmpty(E[] array) {
+		requireNonNull(array);
+		checkArgument("Array must not be empty", array.length>0);
+		return array;
+	}
+
 	public static String checkNotEmpty(String s) {
 		requireNonNull(s);
 		if(s.isEmpty())

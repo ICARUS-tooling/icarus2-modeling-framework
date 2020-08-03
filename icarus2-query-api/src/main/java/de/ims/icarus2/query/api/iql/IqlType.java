@@ -61,6 +61,8 @@ public enum IqlType {
 	SORTING("Sorting", null, IqlSorting.class),
 	STREAM("Stream", "stream", IqlStream.class),
 	RESULT_INSTRUCTION("ResultInstruction", "res", IqlResultInstruction.class),
+	MARKER_EXPRESSION("MarkerExpression", null, IqlMarker.IqlMarkerExpression.class),
+	MARKER_CALL("MarkerCall", null, IqlMarker.IqlMarkerCall.class),
 	;
 
 	private IqlType(String id, String uidPrefix, Class<?> type) {

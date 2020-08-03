@@ -503,7 +503,6 @@ public class ExpressionFactory {
 			// Grab identifier and let context resolve it to member expression
 			result = processMember(ctx.member());
 		} else if(ctx.Identifier()!=null) {
-			//TODO check first if it is a special marker (e.g. 'last', 'first') and then send to EvaluationContext (after checking for negated context)
 			// Wrap into source-less path proxy for delayed resolution
 			result = Expressions.pathProxy(processIdentifier(ctx.Identifier()), ctx);
 		} else if(ctx.qualifiedIdentifier()!=null) {

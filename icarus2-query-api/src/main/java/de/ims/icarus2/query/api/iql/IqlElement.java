@@ -150,6 +150,10 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
 
+		@JsonProperty(IqlProperties.MARKER)
+		@JsonInclude(Include.NON_ABSENT)
+		private Optional<IqlMarker> marker = Optional.empty();
+
 		@Override
 		public IqlType getType() { return IqlType.NODE; }
 
@@ -160,7 +164,11 @@ public abstract class IqlElement extends IqlUnique {
 			checkCollection(quantifiers);
 		}
 
+		public Optional<IqlMarker> getMarker() { return marker; }
+
 		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }
+
+		public void setMarker(IqlMarker marker) { this.marker = Optional.of(marker); }
 
 		public void addQuantifier(IqlQuantifier quantifier) { quantifiers.add(requireNonNull(quantifier)); }
 

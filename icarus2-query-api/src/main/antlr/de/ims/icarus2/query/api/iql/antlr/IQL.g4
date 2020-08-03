@@ -210,11 +210,22 @@ nodeArrangement
  */
  // The grammar overgenerates here due to 'nodeStatement' allowing graph structures, but we handle that later 
 node
-	: quantifier? LBRACK memberLabel? constraint? structuralConstraint? RBRACK
+	: quantifier? LBRACK memberLabel? (positionMarker COMMA)? constraint? structuralConstraint? RBRACK
 	;
 	
 memberLabel
 	: member COLON
+	;
+	
+positionMarker
+	: Identifier (LPAREN positionArgument (COMMA positionArgument)* RPAREN)?	#markerCall
+	| LPAREN positionMarker RPAREN 												#markerWrapping
+	| positionMarker AND positionMarker											#markerConjunction
+	| positionMarker OR positionMarker											#markerDisjunction
+	;
+	
+positionArgument
+	: signedIntegerLiteral | signedFloatingPointLiteral
 	;
 	
 /**
