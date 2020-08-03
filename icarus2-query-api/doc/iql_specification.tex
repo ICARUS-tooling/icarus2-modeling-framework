@@ -499,6 +499,61 @@ In case no layer is explicitly marked as ``primary'', the one specified by the c
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MARKER
+\section{Marker}
+\label{sec:json-ld-marker}
+\desc{Abstract base type for all positional, hierarchical or other sorts of (tree) markers available in \ac{iql}.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MARKER CALL
+\subsection{Marker Call}
+\label{sec:json-ld-marker-call}
+%\begin{itemize}
+%\item name
+%\item arguments
+%\end{itemize}
+\desc{Identifies a marker by name and optionally provides a set of numerical arguments for instantiating the marker.}
+\extends{\iqlBaseType{Marker}}{\ref{sec:json-ld-marker}}
+\begin{attributes}{\iqlType{MarkerCall}}
+	\attribute{name}{string}{yes}{}
+\end{attributes}
+\begin{description}
+\item[\iqlType{name}] The name to uniquely identify the marker. Although in their introduction chapter \ref{chap:utility} they appear camel-cased, actual resolution of markers by name is done case-insensitive.
+\end{description}
+\begin{elements}{\iqlType{Payload}}
+\element{arguments}{array of numbers}{no}
+\end{elements}
+\begin{description}
+\item[\iqlType{arguments}] Optional array of numerical arguments for the marker. Note that markers support both absolute (integer) and relative (floating point) index arguments, as well as negative ones to express reverse indices.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MARKER EXPRESSION
+\subsection{Marker Expression}
+\label{sec:json-ld-marker-expression}
+%\begin{itemize}
+%\item expressionType
+%\item items
+%\end{itemize}
+\desc{Used to group multiple markers into boolean expressions.}
+\extends{\iqlBaseType{Marker}}{\ref{sec:json-ld-marker}}
+\begin{attributes}{\iqlType{MarkerExpression}}
+	\attribute{expressionType}{enum}{yes}{}
+\end{attributes}
+\begin{description}
+	\item[\iqlType{expressionType}] Defines whether the group should be treated as a \texttt{disjunctive} or \texttt{conjunctive} expression. \texttt{disjunctive}
+\end{description}
+\begin{elements}{\iqlType{Payload}}
+	\element{items}{array of \iqlBaseType{Marker}(\ref{sec:json-ld-marker})}{yes}
+\end{elements}
+\begin{description}
+	\item[\iqlType{items}] List of the nested markers to be evaluated.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     PAYLOAD
 \section{Payload}
 \label{sec:json-ld-payload}
@@ -1659,18 +1714,20 @@ As such the \synt{element} rule in \cref{gram:structural-constraint} is a placeh
 \begin{gram}[\synt{node}]
 	\label{gram:node}
 	\begin{grammar}			
-		<node> ::= <quantifier>? `[' <memberLabel>? <constraint>? <nodeStatement>? `]'
+		<node> ::= <quantifier>? `[' <memberLabel>? (<marker> `,')? <constraint>? <nodeStatement>? `]'
 		
 		<memberLabel> ::= <member> `:'
 	\end{grammar}
+	%TODO add grammar fragment for markers
 	\diagsep
 	\rrhead{node}
 	\noindent\begin{rrfrag}{>-}{...}
 		\sst \\ <quantifier> \est `[' 
 		\sst \\ <memberLabel> \est
-		\sst \\ <constraint> \est
+		\sst \\ <marker> `,' \est
 	\end{rrfrag}\\
 	\begin{rrfrag}{...}{->}
+		\sst \\ <constraint> \est
 		\sst \\ <nodeStatement> \est `]'
 	\end{rrfrag}\\
 \end{gram}
@@ -1709,8 +1766,13 @@ Note that this \textit{context} of a quantifier plays a fundamental role, as for
 A node's inner content can optionally have an initial \textbf{member label} (identifier with a colon \lit{:} afterwards) to link this node to a previously defined member binding (\ref{sec:bindings}).
 Such as binding restricts the type of corpus member that the node can be matched against.
 It also provides a point of reference that subsequent constraints (e.g. in the global constraints section, cf. \cref{sec:global-constraints}) can use to access information of the target the node has been matched against.
-Note that cross-referencing between nodes from within local constraints (such as in \verb|[$x:][$y: pos!=$x.pos]|) is discouraged\footnote{The reason behind this is that the \ac{icqp} per default is not required to honor the order of nodes defined in a query or the linking relations between them when planning the automaton for evaluation. As such there is no guarantee that node \member{x} will have already been matched against a valid target when the cross-reference constraint inside \member{y} is evaluated. This would cause an error during evaluation time to occur, which in turn will abort the entire search.} and global constraints should be used for this.
+Note that cross-referencing between nodes from within local constraints (such as in \verb|[$x:][$y: pos!=$x.pos]|) is discouraged\footnote{The reason behind this is that the \ac{icqp} per default is not required to honor the order of nodes defined in a query or the linking relations between them when planning the state machine for evaluation. As such there is no guarantee that node \member{x} will have already been matched against a valid target when the cross-reference constraint inside \member{y} is evaluated. This would cause an error during evaluation time to occur, which in turn will abort the entire search.} and global constraints should be used for this.
 This approach guarantees that by the time such cross-reference constraints (or ``joins'', to use database terminology) are evaluated all involved member variables will be assigned preliminary candidates.
+
+Besides the local constraint described below, nodes can declare special \textbf{marker} expressions, separated from regular constraint or nested nodes by a single comma `,' \footnote{The \ac{iql} grammar declares this comma as mandatory, even if no local constraints or other contents succeeds the marker. This way they can be unambiguously distinguished from normal constraints, both by the \ac{icqp} and human readers.}.
+Marker can be regarded as glorified flags and functions that are used to specify a node's intended place in a sequence, hierarchy or tree path.
+The are logically separated from normal constraints, as they are used to construct an independent part of the \ac{icqp} state machine with the sole purpose of pruning the search space by limiting the actual target elements to be visited for individual nodes.
+A comprehensive introduction to the available markers of various types is given in \cref{chap:utility}. 
 
 Nodes can also optionally define \textbf{local constraints} that must evaluate to \keyword{true} for target item to be considered as result candidate.
 Local constraints have full access to properties and annotations of the target item currently being inspected and can take any form described in \cref{sec:constraints}.
@@ -1748,7 +1810,7 @@ The primary effect caused by different modes is the size and number of matches r
 		\hline  
 		not &  &  & Existential negation. Alternatively the exclamation mark \lit{!} can be used instead of the \keyword{not} keyword. \\ 
 		\hline  
-		all &  &  & Universal quantification. Alternatively the asterisk \lit{*} can be used instead of the \keyword{all} keyword. Note that using this quantifier on a node that is not the only one within its context will cause an error. \\ 
+		all &  &  & Universal quantification. Alternatively the asterisk \lit{*} can be used instead of the \keyword{all} keyword. Note that this quantifier can only be used directly on nodes and using it on a node that is not the only one within its context will cause an error. \\ 
 		\hline 
 		X &  &  & Exact quantification of $X$ instances. \\ 
 		\hline 
@@ -1845,34 +1907,27 @@ If in the example however the node \lit{8} was square instead of round, the enti
 	\label{fig:quantifier-examples}
 \end{figure}
 
+\subsubsection{Marker}
+\label{sec:marker}
 
-\begin{comment}
-/*
-* Quantification rules (N is assumed to be the collection of subsequent nodes):
-*
-* not  - existential negation
-* 
-* all  - greedy universal quantification -> match as many as possible, considering N
-* all? - reluctant universal quantification -> match as few as possible, considering N
-* all! - possessive universal quantification -> match ALL available with no regard for N
-* 
-* X    - greedily match exactly X instances
-* X?   - reluctantly match X instances if subsequent nodes can still be matched by N
-* X!   - possessively match X instances, extending without consideration for N
-* 
-* X+   - greedily match X or more instances, considering N
-* X+?  - reluctantly match X or more instances, considering N
-* X+!  - possessively match at least X instances, extending without consideration for N
-* 
-* X-   - greedily match up to X instances, considering N
-* X-?  - reluctantly match up to X instances, considering N
-* X-!  - possessively match up to X instances, extending without consideration for N
-* 
-* X-Y  - greedily match X to Y instances, leaving room for N
-* X-Y? - reluctantly match X to Y instances, leaving room for N
-* X-Y! - possessively match X to Y instances, extending without consideration for N
-*/
-\end{comment}
+\begin{gram}[\synt{marker}]
+	\label{gram:marker}
+	\begin{grammar}	
+		<marker> ::= <identifier> (`(' <number> (`,' <number>)* `)')?
+		\alt `(' <marker> `)'
+		\alt <marker> (`AND' | `\&\&') <marker>
+		\alt <marker> (`OR' | `||') <marker>
+	\end{grammar}
+	\diagsep
+	\begin{rrdiag*}{marker}
+		\sst 
+		<identifier> \sst \\ `(' \srp <number> \\ `,' \erp `)' \est \\
+		`(' <marker> `)' \\
+		<marker> \sst `AND' \\ `\&\&' \est <marker> \\
+		<marker> \sst `OR' \\ `||' \est <marker> 
+		\est
+	\end{rrdiag*}
+\end{gram}
 
 \subsubsection{Edges}
 \label{sec:edges}
@@ -2181,19 +2236,22 @@ However, globally accessible information or any data provided by surrounding con
 \label{tab:position-markers}
 \end{table} 
 
-\paragraph{Negation}
-\noindent Position markers cannot be negated when used in a constraint expression.\footnote{Depending on the query configuration doing so would either fail the evaluation process with an error or silently ignore the issue, potentially producing invalid results.}
+\subsection{Negation}
+\label{sec:marker-negation}
+Position markers cannot be negated when used in a constraint expression.\footnote{Depending on the query configuration doing so would either fail the evaluation process with an error or silently ignore the issue, potentially producing invalid results.}
 For every function/marker in \cref{tab:position-markers} there exists a complement that can be used to easily express the negated condition.
 For instance \query{isBefore(n)} can be negated into \query{isAfter(n-1)}, but the engine will not perform this conversion and it up to the user to properly provide the intended negated form.
 Trying to negate a position marker inside structural constraints will result in an error during the preprocessing of the query payload.
 
-\paragraph{Reverse Indices}
-\noindent Any position marker that takes at least one argument also supports negative values that are treated as reverse indices, starting from the end of the surrounding container's size.
+\subsection{Reverse Indices}
+\label{sec:marker-reverse}
+Any position marker that takes at least one argument also supports negative values that are treated as reverse indices, starting from the end of the surrounding container's size.
 This follows the same semantics as the index scheme for arrays or lists (\ref{sec:list-access}).
 Note that certain position markers with interval arguments (such as \query{inBetween($arg_1$,~$arg_2$)}) still require actual interval boundaries to be in the proper order (generally $arg_1 \leq arg_2$).
 
-\paragraph{Relative Indices}
-\noindent Per default all the position markers that take argument expect them to be integer values for explicit designation of the desired index or index range.
+\subsection{Relative Indices}
+\label{sec:marker-relative}
+Per default all the position markers that take argument expect them to be integer values for explicit designation of the desired index or index range.
 This means that any other type of argument will be automatically converted to an integer value if the query configuration permits it.
 However, if the associated switch (\ref{sec:json-ld-switches}) is active\footnote{This switch is off by default as it interferes with the automatic type conversion of arguments. If it is active, arguments must explicitly be cast if not already an integer or floating-point number. If the switch is not active, any floating-point argument will be cast to an integer (typically 0 if any of the arguments are intended to be reverse indices).}, position markers can use relative arguments in the form of floating-point numbers.
 Relative indices are expected to be in the open interval $(0..1)$ (or $(-1..0)$ for negative reverse indices) and are treated as percentages of the total size of the surrounding container.
@@ -2210,34 +2268,28 @@ It is easily possible to define the same position marker with relative indices i
 For instance, \query{isBefore(0.8)} and \query{isBefore(-0.2)} both describe the same 80\% interval.
 As a general rule, relative indices should only be used with regular (positive) arguments.
 
-\paragraph{Marker Stacking}
-\noindent Position markers generally may \textbf{only} be used as top-level terms in a constraint expression.
-\ac{iql} allows multiple position markers to occur in the same constraint expression, with the following condition:
-When the expression is viewed in conjunctive normal form, positional markers may not be mixed with non-marker terms inside a single clause.
-Multiple marker-only clauses are allowed however.
+\subsection{Marker Stacking}
+\label{sec:marker-stacking}
+Position markers can be freely mixed in disjunctive or conjunctive expressions.
+The \ac{icqp} first converts them into DNF\footnote{\textbf{D}isjunctive \textbf{N}ormal \textbf{F}orm} and then generates a separate branch in the state machine for every term in the DNF.
 \begin{Verbatim}[samepage=true]
 // legal use cases
-[isLast]
-[pos!="NN" && isBefore(10)]
-[pos!="NN" && (isBefore(10) || isAfter(24))]
-[pos!="NN" && isNotAt(5) && (isBefore(10) || isAfter(24))]
-
-// illegal use of position markers (see rules above)
-[pos!="NN" || isLast]
-// above constraint must be expressed via node disjunction
-{[pos!="NN"] or [isLast]}
+[isLast,]
+[isBefore(10), pos!="NN"]
+[isBefore(10) || isAfter(24), pos!="NN"]
+[isNotAt(5) && (isBefore(10) || isAfter(24)), pos!="NN"]
 \end{Verbatim}
-The reasons for this limitation in stacking position markers stems from the underlying interval arithmetic.
-Each positional marker effectively describes a non-empty interval of possible index values for the node.
+The reasons for this stems from the underlying interval arithmetic.
+Each positional marker effectively describes one or more non-empty intervals of possible index values for the node based on the overall size of the target container.
 Conjunction of markers results in the intersection of their intervals, possibly creating an empty set, which will render the node constraint impossible to satisfy.
 Disjunction of markers on the other hand creates a union of their intervals, either joining them if they overlap or creating a set of disjoint intervals that denotes a discontinuous collection of legal values.
 The final result is a fixed\footnote{Fixed in the sense that it only depends on the overall size of the surrounding container.} collection of index values that can be iterated to check for potential result candidates.
 In the absence of any kind of positional marker this default index set to be traversed is the complete interval $[1..N]$ for a host container of size $N$.
-In case of disjunction between a positional marker and a non-marker term, this would render the marker's filter function useless.\footnote{Joining the complete interval $[1..N]$ with any sub-interval does not reduce the number of indices to be traversed}
 
-\paragraph{Markers in Global Constraints}
-\noindent Global constraints (\ref{sec:global-constraints}) have access to an extended version of the ``local'' position markers that acts as a general predicate for items (and additional index arguments, depending on the marker).
-So for example \query{isLast(\$x)} is the method-equivalent to the local marker \query{[\$x: isLast]}.
+\subsection{Markers in Global Constraints}
+\label{sec:marker-global}
+Global constraints (\ref{sec:global-constraints}) have access to an extended version of the ``local'' position markers that acts as a general predicate for items (and additional index arguments, depending on the marker).
+So for example \query{isLast(\$x)} is the method-equivalent to the local marker \query{[\$x: isLast,]}.
 Note that there is no performance benefit by using those methods in global constraints, as actual position markers are only recognized within structural constraints.
 The version for global constraints merely serves as syntactic sugar.
 However, since those methods are not subject to the same limitations as mentioned int the section about stacking above, they can be used freely inside local constraints (both in nested and disjunctive expressions).
@@ -2334,7 +2386,7 @@ If a constraint related to the nesting distance between transitively nested node
 If no generation markers are used within a node constraint and the node is nested, a direct parent-child relation is assumed, which is equivalent to \query{isGeneration(1)}.
 Nodes that represent the root of a tree query can also use generation-based markers to indicate where in a prospective target tree the associated item should be located.
 Regular tree hierarchy markers can also be combined with generation-based markers to  further specify the location within a tree.
-For instance, \query{[\$x: [isGenerationAfter(2) \&\& isNoLeaf]]} will match any node that is nested at least 3 steps deep within \member{x} but ignores leaves.
+For instance, \query{[\$x: [isGenerationAfter(2) \&\& isNoLeaf,]]} will match any node that is nested at least 3 steps deep within \member{x} but ignores leaves.
 The \query{isRoot} marker however cannot be combined with any other hierarchy-related markers, as only designated roots in the target structure can match it and the only sensible combinations would be with normal (horizontal) position markers (\ref{sec:position-markers}).
 If the \query{isRoot} marker is being used within a nested node, an error will be issued as the query will be impossible to satisfy.\footnote{The \ac{icqp} does this for any kinds of obviously erroneous queries when the planning phase results in unsolvable issues.}
 
@@ -2400,12 +2452,12 @@ If for instance a quantifier requires more than one instance of the node to be m
 
 \paragraph{Examples:}\footnote{Node references based on the example tree in \cref{fig:tree-fringe}.}
 \begin{Verbatim}[samepage=true]
-[isLeftmost && isLeaf]            // node 11
-[isRightmost && isGeneration(-2)] // node 3
+[isLeftmost && isLeaf,]            // node 11
+[isRightmost && isGeneration(-2),] // node 3
 // go down 2 to 4 nodes alongside the left fringe
-<2-4>[isLeftmost]
+<2-4>[isLeftmost,]
 // impossible query
-<2>[isLeftmost && isGeneration(3)]
+<2>[isLeftmost && isGeneration(3),]
 \end{Verbatim}
 
 \subsection{Evaluation Performance}
@@ -2500,8 +2552,8 @@ This will first try to find two adjacent instances for \member{x} and \member{y}
 The same can be achieved in a top-down fashion with a slightly more verbose query:
 \begin{Verbatim}[samepage=true]
 FIND [$a: childCount>=2
-    [$x: isAnyGeneration] 
-    [$y: isAnyGeneration]]
+    [$x: isAnyGeneration,] 
+    [$y: isAnyGeneration,]]
 HAVING isAdjacent($x, $y)
 \end{Verbatim}
 Besides the differences in appearance those two approaches also differ greatly in their respective evaluation complexity.
