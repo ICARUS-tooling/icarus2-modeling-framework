@@ -1,3 +1,19 @@
+/*
+ * ICARUS2 Corpus Modeling Framework
+ * Copyright (C) 2014-2020 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  *
  */
@@ -36,37 +52,37 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * @author Markus Gärtner
  *
  */
-class NodeMatcherTest implements ApiGuardedTest<NodeMatcher> {
+class CachedNodeMatcherTest implements ApiGuardedTest<CachedNodeMatcher> {
 
 	/**
 	 * @see de.ims.icarus2.test.TargetedTest#getTestTargetClass()
 	 */
 	@Override
-	public Class<?> getTestTargetClass() { return NodeMatcher.class; }
+	public Class<?> getTestTargetClass() { return CachedNodeMatcher.class; }
 
 	/**
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@SuppressWarnings("boxing")
 	@Override
-	public NodeMatcher createTestInstance(TestSettings settings) {
+	public CachedNodeMatcher createTestInstance(TestSettings settings) {
 		Assignable<? extends Item> element = mock(Assignable.class);
 		Expression<?> constraint = mock(Expression.class);
 		when(constraint.isBoolean()).thenReturn(Boolean.TRUE);
 
-		return settings.process(new NodeMatcher(1, element, constraint));
+		return settings.process(new CachedNodeMatcher(1, element, constraint));
 	}
 
 	@Test
 	void testUnknown() {
-		NodeMatcher matcher = create();
+		CachedNodeMatcher matcher = create();
 		for (int i = 0; i < matcher.cacheSize(); i++) {
 			assertThat(matcher.hasEntry(i)).isFalse();
 		}
 	}
 
 	@Provider
-	private NodeMatcher create(Item...items) {
+	private CachedNodeMatcher create(Item...items) {
 		final MutableObject<?> current = new MutableObject<>();
 		final Set<Item> lookup = new ReferenceOpenHashSet<>();
 		Collections.addAll(lookup, items);
@@ -84,14 +100,14 @@ class NodeMatcherTest implements ApiGuardedTest<NodeMatcher> {
 			return _boolean(item!=null && lookup.contains(item));
 		});
 
-		return new NodeMatcher(1, element, constraint);
+		return new CachedNodeMatcher(1, element, constraint);
 	}
 
 	@Test
 	@RandomizedTest
 	void testRememberFalse(RandomGenerator rng) {
 		Item item = mockItem();
-		NodeMatcher matcher = create();
+		CachedNodeMatcher matcher = create();
 		int index = rng.nextInt(matcher.cacheSize());
 
 		assertThat(matcher.matches(index, item)).isFalse();
@@ -103,7 +119,7 @@ class NodeMatcherTest implements ApiGuardedTest<NodeMatcher> {
 	@RandomizedTest
 	void testRememberTrue(RandomGenerator rng) {
 		Item item = mockItem();
-		NodeMatcher matcher = create(item);
+		CachedNodeMatcher matcher = create(item);
 		int index = rng.nextInt(matcher.cacheSize());
 
 		assertThat(matcher.matches(index, item)).isTrue();
@@ -113,7 +129,7 @@ class NodeMatcherTest implements ApiGuardedTest<NodeMatcher> {
 
 	@Test
 	void testGrowCache() {
-		NodeMatcher matcher = create();
+		CachedNodeMatcher matcher = create();
 		int initialSize = matcher.cacheSize();
 
 		matcher.matches(matcher.cacheSize()+1, mockItem());
@@ -126,7 +142,7 @@ class NodeMatcherTest implements ApiGuardedTest<NodeMatcher> {
 	@Test
 	@RandomizedTest
 	void testReset(RandomGenerator rng) {
-		NodeMatcher matcher = create();
+		CachedNodeMatcher matcher = create();
 		int index = rng.nextInt(matcher.cacheSize());
 		Item item = mockItem();
 
@@ -152,7 +168,7 @@ class NodeMatcherTest implements ApiGuardedTest<NodeMatcher> {
 				.filter(item -> data[strictToInt(item.getId())])
 				.toArray(Item[]::new);
 
-		NodeMatcher matcher = create(contained);
+		CachedNodeMatcher matcher = create(contained);
 
 		// First pass -> fill everything
 		for(int index = 0; index < size; index++) {
