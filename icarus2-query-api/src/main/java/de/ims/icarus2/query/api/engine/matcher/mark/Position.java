@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.engine.matcher.mark;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -36,16 +37,12 @@ interface Position {
 		requireNonNull(num);
 		Class<?> cls = num.getClass();
 
-		// Only handle explicit floating point types special
+		// Only handle explicit floating point types in a special way
 		if(cls==Float.class || cls==Double.class) {
-			double value = num.doubleValue();
-			if(value<0.0) {
-				value += 1.0;
-			}
-			return new Relative(value);
+			return new Relative(num.doubleValue());
 		}
 
-		int value = num.intValue();
+		int value = strictToInt(num.longValue());
 		if(value < 0) {
 			return new Inverse(value);
 		}
@@ -87,8 +84,14 @@ interface Position {
 		private final double value;
 
 		Relative(double value) {
-			checkArgument("Value must be between 0 and 1 (both inclusive)",
-					value>=0.0 && value<=1.0);
+			if(value<0.0) {
+				checkArgument("Value must be between -1 (inclusive) and 0 (exclusive)",
+						value>=-1.0 && value<0.0);
+				value += 1.0;
+			} else {
+				checkArgument("Value must be between 0 and 1 (both inclusive)",
+						value>=0.0 && value<=1.0);
+			}
 			this.value = value;
 		}
 
