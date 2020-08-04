@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.engine.matcher.seq;
+package de.ims.icarus2.query.api.engine.matcher;
 
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
@@ -36,9 +36,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.query.api.engine.matcher.AbstractMatcher;
-import de.ims.icarus2.query.api.engine.matcher.Matcher;
-import de.ims.icarus2.query.api.engine.matcher.NodeMatcher;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.Expression;
