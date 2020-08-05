@@ -322,7 +322,23 @@ public class QueryProcessor {
 		private boolean treeFeaturesUsed = false;
 		private boolean graphFeaturesUsed = false;
 
+		private void reportTreeFeaturesUsed(ParserRuleContext ctx) {
+			if(graphFeaturesUsed) {
+				reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
+						"Cannot mix tree and graph features - query type already determined to be GRAPH: '{1}'", textOf(ctx));
+			} else {
+				treeFeaturesUsed = true;
+			}
+		}
 
+		private void reportGraphFeaturesUsed(ParserRuleContext ctx) {
+			if(treeFeaturesUsed) {
+				reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
+						"Cannot mix tree and graph features - query type already determined to be TREE: '{1}'", textOf(ctx));
+			} else {
+				graphFeaturesUsed = true;
+			}
+		}
 
 		private int pureDigits(Token token) {
 			return Integer.parseInt(textOf(token));
@@ -719,33 +735,11 @@ public class QueryProcessor {
 			}
 		}
 
-//		private IqlSequence ensureChildren(IqlTreeNode node) {
-//			Optional<IqlElement> children = node.getChildren();
-//			if(!children.isPresent()) {
-//				node.setChildren(new IqlSequence());
-//				children = node.getChildren();
-//			}
-//
-//			assert children.isPresent();
-//			IqlElement element = children.get();
-//			if(!(element instanceof IqlSequence))
-//				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
-//						Messages.mismatch("Type of parent's children object mismatch",
-//								IqlSequence.class, element.getClass()));
-//
-//			return (IqlSequence)element;
-//		}
-
 		private IqlNode processNode(NodeContext ctx, TreeInfo tree) {
 			IqlNode node;
 			// Decide on type of node
 			if(ctx.structuralConstraint()!=null) {
-				if(graphFeaturesUsed) {
-					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Cannot mix tree and graph features - query type already determined to be GRAPH: '{1}'", textOf(ctx));
-				} else {
-					treeFeaturesUsed = true;
-				}
+				reportTreeFeaturesUsed(ctx);
 				node = new IqlTreeNode();
 			} else {
 				node = new IqlNode();
@@ -841,12 +835,7 @@ public class QueryProcessor {
 
 		private IqlElement processElement(ElementContext ctx, TreeInfo tree) {
 			if(ctx.edge()!=null) {
-				if(treeFeaturesUsed) {
-					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
-							"Cannot mix tree and graph features - query type already determined to be TREE: '{1}'", textOf(ctx));
-				} else {
-					graphFeaturesUsed = true;
-				}
+				reportGraphFeaturesUsed(ctx);
 
 				IqlNode source = processNode(ctx.source, tree);
 				IqlNode target = processNode(ctx.target, tree);
@@ -966,6 +955,6 @@ public class QueryProcessor {
 
 		IqlTreeNode parent() { return (IqlTreeNode) trace.top(); }
 
-		IqlElement exit() { negated.pop(); return trace.pop(); }
+		IqlElement exit() { negated.popBoolean(); return trace.pop(); }
 	}
 }
