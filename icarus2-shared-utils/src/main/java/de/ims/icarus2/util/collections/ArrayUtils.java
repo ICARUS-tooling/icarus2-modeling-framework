@@ -43,6 +43,11 @@ import de.ims.icarus2.util.lang.Primitives;
  */
 public class ArrayUtils {
 
+	@SafeVarargs
+	public static <T> T[] array(T...values) {
+		return values;
+	}
+
 	/**
 	 * Returns {@code true} iff both arrays have the same length and for every index
 	 * contain the exact same object, determined by reference equality.
