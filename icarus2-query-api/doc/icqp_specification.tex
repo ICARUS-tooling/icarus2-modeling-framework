@@ -259,7 +259,7 @@ Therefore the $scan$ node takes the index argument $j$ of the matcher function a
 \end{algorithm}
 
 \Cref{alg:match-scan} displays the simple algorithm for iterative scanning.
-Note that this version is (i) not using caching to speed up exploration in the nested $atom$ and also only implements the default left-to-right traversal direction.
+Note that this version is not using caching to speed up exploration in the nested $atom$ and also only implements the default left-to-right traversal direction.
 A specialized alternative exists that shifts $atom$ through the search space right-to-left and another one that uses caching to skip known dead-ends when matching the nested $atom$ (line \ref{line:scan-nested}).
 It is not possible to skip known positive sub-results, as we must still allow nested nodes to register with the result buffer for any such ``new'' sub-result in the context of a new host node $s$.
 When traversing backwards, the algorithm uses the same boundaries, but simply reverses the direction of the loop variable.
