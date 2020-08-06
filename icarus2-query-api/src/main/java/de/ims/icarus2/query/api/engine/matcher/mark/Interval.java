@@ -58,6 +58,8 @@ public class Interval {
 
 	public void reset() { from = UNSET_INT; to = UNSET_INT; }
 
+	public int size() { return to-from+1; }
+
 	public boolean isEmpty() { return to<from; }
 
 	/**
