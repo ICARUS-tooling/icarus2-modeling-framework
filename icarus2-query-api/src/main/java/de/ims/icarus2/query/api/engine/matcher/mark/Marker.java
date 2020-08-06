@@ -25,7 +25,7 @@ package de.ims.icarus2.query.api.engine.matcher.mark;
  */
 public interface Marker {
 
-	/** Returns the type of this marker. */
+	/** Returns the general type of this marker to define the legal context of its usage. */
 	MarkerType getType();
 
 	/**
@@ -48,8 +48,21 @@ public interface Marker {
 	 */
 	boolean isDynamic();
 
-	//TODO need a method to update the interval for matching
-
+	/**
+	 * Models markers that translate into one or more continuous
+	 * collections of index values when evaluated.
+	 * <p>
+	 * The idea is that each branch in the matcher's state machine dealing
+	 * with a node directly or indirectly which also has range markers
+	 * assigned to it (chained with a conjunctive Boolean connective) can
+	 * easily evaluate the remaining legal indices for traversal by iteratively
+	 * intersecting the intervals produced by different markers.
+	 * This way large portions of the search space can easily be pruned even
+	 * before the actual node matching starts.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface RangeMarker extends Marker {
 
 		/** The number of intervals this marker manages */
@@ -58,7 +71,8 @@ public interface Marker {
 		/**
 		 * Adjusts a selection of intervals managed by this marker and
 		 * returns {@code true} iff at least a single legal index has
-		 * been produced.
+		 * been produced (i.e. at least one of the managed intervals is
+		 * not {@link Interval#isEmpty() empty} after adjusting it).
 		 *
 		 * @return {@code true} iff at least one of intervals managed by this
 		 * marker is not {@code Interval#isEmpty() empty}.

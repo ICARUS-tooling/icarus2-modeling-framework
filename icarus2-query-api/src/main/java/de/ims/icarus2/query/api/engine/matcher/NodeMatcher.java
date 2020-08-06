@@ -62,4 +62,8 @@ public class NodeMatcher extends AbstractMatcher<Item> {
 		// Now evaluate constraint (expensive op)
 		return constraint.computeAsBoolean();
 	}
+
+	public void reset() {
+		element.clear();
+	}
 }
