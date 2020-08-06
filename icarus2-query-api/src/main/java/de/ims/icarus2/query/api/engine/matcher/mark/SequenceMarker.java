@@ -23,6 +23,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.stream.Stream;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
@@ -50,7 +52,8 @@ public abstract class SequenceMarker {
 		return Stream.of(numbers).map(Position::of).toArray(Position[]::new);
 	}
 
-	private static abstract class MarkerBase implements Marker.RangeMarker {
+	@VisibleForTesting
+	static abstract class MarkerBase implements Marker.RangeMarker {
 
 		private final Name name;
 		private final boolean dynamic;
@@ -62,6 +65,11 @@ public abstract class SequenceMarker {
 			this.name = requireNonNull(name);
 			this.dynamic = dynamic;
 			this.intervalCount = intervalCount;
+		}
+
+		@VisibleForTesting
+		Name getRawName() {
+			return name;
 		}
 
 		@Override
@@ -128,7 +136,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsNotAt(Position position) {
-			super(Name.AT, true, 2);
+			super(Name.NOT_AT, true, 2);
 			this.pos = requireNonNull(position);
 		}
 
@@ -242,23 +250,23 @@ public abstract class SequenceMarker {
 			}
 		},
 
-		AFTER("After", 1){
+		AFTER("IsAfter", 1){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsAfter(posAt(positions, 0));
 			}},
-		BEFORE("Before", 1){
+		BEFORE("IsBefore", 1){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsBefore(posAt(positions, 0));
 			}},
 
-		INSIDE("Inside", 2){
+		INSIDE("IsInside", 2){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsInside(posAt(positions, 0), posAt(positions, 1));
 			}},
-		OUTSIDE("Outside", 2){
+		OUTSIDE("IsOutside", 2){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsOutside(posAt(positions, 0), posAt(positions, 1));
@@ -292,7 +300,7 @@ public abstract class SequenceMarker {
 		public String getStringValue() { return label; }
 
 		private static final LazyStore<Name, String> store
-				= LazyStore.forStringResource(Name.class);
+				= new LazyStore<>(Name.class, Name::getLabel, String::toLowerCase);
 
 		public static Name parseName(String s) {
 			return store.lookup(s);
