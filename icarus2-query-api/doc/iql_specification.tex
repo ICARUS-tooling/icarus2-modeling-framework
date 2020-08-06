@@ -2260,24 +2260,27 @@ The following examples illustrate this approach (assume the markers are used ins
 // the token can only occur in the first half of the sentence
 isBefore(0.5)
 
-// the token must occur after the first 20% and before the last 80%
+// the token must occur in the closed interval [20%, 80%]
 isBetween(0.2, 0.8)
 \end{Verbatim}
-The actual index values to be used for determining the legal position of the node are calculated by multiplying the context's size attribute (e.g. the length of the surrounding sentence) with the marker's relative argument and then rounding down the result to the nearest integer.
+The actual index values to be used for determining the legal position of the node are calculated by multiplying the context's size attribute (e.g. the length of the surrounding sentence) with the marker's relative argument and then rounding up the result to the nearest integer, after which a conversion into 0-based index space is applied.
 It is easily possible to define the same position marker with relative indices in both normal and reverse form.
 For instance, \query{isBefore(0.8)} and \query{isBefore(-0.2)} both describe the same 80\% interval.
 As a general rule, relative indices should only be used with regular (positive) arguments.
 
 \subsection{Marker Stacking}
 \label{sec:marker-stacking}
-Position markers can be freely mixed in disjunctive or conjunctive expressions.
-The \ac{icqp} first converts them into DNF\footnote{\textbf{D}isjunctive \textbf{N}ormal \textbf{F}orm} and then generates a separate branch in the state machine for every term in the DNF.
+Position markers can be mixed in disjunctive or conjunctive expressions.
+The \ac{icqp} expects them to be DNF\footnote{\textbf{D}isjunctive \textbf{N}ormal \textbf{F}orm} and then generates a separate branch in the state machine for every term in the DNF.
 \begin{Verbatim}[samepage=true]
 // legal use cases
 [isLast,]
 [isBefore(10), pos!="NN"]
 [isBefore(10) || isAfter(24), pos!="NN"]
+// illegal combination, has to be in DNF for now
 [isNotAt(5) && (isBefore(10) || isAfter(24)), pos!="NN"]
+// above example rewritten to match the DNF rule
+[(isNotAt(5) && isBefore(10)) || (isNotAt(5) &&isAfter(24)), pos!="NN"]
 \end{Verbatim}
 The reasons for this stems from the underlying interval arithmetic.
 Each positional marker effectively describes one or more non-empty intervals of possible index values for the node based on the overall size of the target container.
@@ -2286,13 +2289,28 @@ Disjunction of markers on the other hand creates a union of their intervals, eit
 The final result is a fixed\footnote{Fixed in the sense that it only depends on the overall size of the surrounding container.} collection of index values that can be iterated to check for potential result candidates.
 In the absence of any kind of positional marker this default index set to be traversed is the complete interval $[1..N]$ for a host container of size $N$.
 
+\subsection{Markers \& Quantification}
+\label{sec:marker-quantification}
+Markers can be freely combined with quantifiers on the same node, with the following rules:
+\begin{itemize}
+	\item Markers apply to \textbf{all} instances of a node, so they effectively take priority over quantifiers that allow multiple instances of a node to match.
+	\item A node that bears at least one marker is effectively existentially quantified and so it is \textbf{not} possible to combine markers and the \textit{existential negation} quantifier.
+	\item In similar fashion, universal quantification is not compatible with markers of any kind, even if they would allow the entire target sequence as legal index interval.
+\end{itemize}
+
+To illustrate the interaction of quantifiers and markers, consider the example of a node \query{3..5[\$x: isInside(0,0.25),]}.
+This query requires at least three, but no more than five instances of \member{x} to be matched in the first 25\% of a target sequence.
+Evaluated against a sequence of size 10, this query will automatically fail, as the legal interval produced by the marker only provides access to the first two elements of the sequence\footnote{Markers round down to the nearest integer size for relative indices, see \cref{sec:marker-relative}.}.
+A sequence of size 12 is the smallest target that even has a chance of being matched.
+Note however that until the target size for this example reaches 20, the total number of hits for \member{x} will never satisfy the upper bound for the range quantifier, as the marker's index interval won't support enough elements.
+
 \subsection{Markers in Global Constraints}
 \label{sec:marker-global}
 Global constraints (\ref{sec:global-constraints}) have access to an extended version of the ``local'' position markers that acts as a general predicate for items (and additional index arguments, depending on the marker).
 So for example \query{isLast(\$x)} is the method-equivalent to the local marker \query{[\$x: isLast,]}.
 Note that there is no performance benefit by using those methods in global constraints, as actual position markers are only recognized within structural constraints.
 The version for global constraints merely serves as syntactic sugar.
-However, since those methods are not subject to the same limitations as mentioned int the section about stacking above, they can be used freely inside local constraints (both in nested and disjunctive expressions).
+However, since those methods are not subject to the same limitations as mentioned int the section about stacking above, they can be used freely inside local constraints.
 
 \section{Tree Markers}
 \label{sec:tree-markers}
@@ -2556,8 +2574,9 @@ FIND [$a: childCount>=2
     [$y: isAnyGeneration,]]
 HAVING isAdjacent($x, $y)
 \end{Verbatim}
+%TODO actuall the top-down one is not guaranteed to produce the same result
 Besides the differences in appearance those two approaches also differ greatly in their respective evaluation complexity.
-While the bottom-up query can be efficiently solved in $\mathcal{O}(nh)$ time for trees with $n$ nodes and height $h$ \footnote{Construction of a reverse lookup between indices and the nodes beginning/ending there and subsequent production of adjacent pairs for \member{x} and \member{y} requires $\mathcal{O}(n)$ time. Without a dedicated utility data structure, determining the first common ancestor of \member{x} and \member{y} is linear in the maximum depth of the two nodes.}, the top-down query results in a vastly more expensive search.
+While the bottom-up query can be efficiently solved in $\mathcal{O}(n+h)$ time for trees with $n$ nodes and height $h$ \footnote{Construction of a reverse lookup between indices and the nodes beginning/ending there and subsequent production of adjacent pairs for \member{x} and \member{y} requires $\mathcal{O}(n)$ time. Without a dedicated utility data structure, determining the first common ancestor of \member{x} and \member{y} is linear in the maximum depth of the two nodes.}, the top-down query results in a vastly more expensive search.
 Since node \member{a} does not provide any strong filter mechanism besides needing at least 2 child nodes, the matcher will have to move the search tree through the target tree and repeatedly check any possible combination of descendant nodes matching \member{x} and \member{y} to be adjacent.
 
 \section{Graph Functions}
