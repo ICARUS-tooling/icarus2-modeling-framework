@@ -33,6 +33,19 @@ import static java.util.Objects.requireNonNull;
  */
 interface Position {
 
+	/**
+	 * Turns the given numerical value into an actual {@link Position} instance
+	 * with the following rules:
+	 * <ul>
+	 * <li>if {@code num} is a floating point value, create a relative position</li>
+	 * <li>if {@code num} is a negative integer value, create a reverse position</li>
+	 * <li>if {@code num} is a positive integer value, decrement it by {@code} to
+	 * translate from the 1-based IQL system, and then create a fixed position</li>
+	 * </ul>
+	 *
+	 * @param num the raw numerical value
+	 * @return
+	 */
 	public static Position of(Number num) {
 		requireNonNull(num);
 		Class<?> cls = num.getClass();
@@ -44,9 +57,12 @@ interface Position {
 
 		int value = strictToInt(num.longValue());
 		if(value < 0) {
+			// Inverse values keep their raw form, as they nicely fit into 0-based space
 			return new Inverse(value);
 		}
 
+		// Translate into our 0-based system
+		value--;
 		return new Fixed(value);
 	}
 
