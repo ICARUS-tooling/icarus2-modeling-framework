@@ -210,7 +210,7 @@ public class ExpressionFactory {
 			String name = path.getName();
 
 			// Simple identifiers inside element context can resolve to annotation keys
-			Optional<Assignable<? extends Item>> item = context.getElementStore();
+			Optional<Assignable<Item>> item = context.getElementStore();
 			if(source==null && item.isPresent()) {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
 				Optional<AnnotationInfo> annotation = context.findAnnotation(identifier);

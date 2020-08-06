@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
  * @author Markus Gärtner
  *
  */
-public interface Assignable<T> extends Expression<T> {
+public interface Assignable<T> extends Expression<T>, AutoCloseable {
 
 	void assign(@Nullable Object value);
 
@@ -52,6 +52,10 @@ public interface Assignable<T> extends Expression<T> {
 	}
 
 	void clear();
+
+	/** Delegates to {@link #clear()}. */
+	@Override
+	default void close() { clear(); }
 
 	@Override
 	Assignable<T> duplicate(EvaluationContext context);

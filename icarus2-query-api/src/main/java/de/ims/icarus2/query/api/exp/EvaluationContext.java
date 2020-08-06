@@ -85,6 +85,7 @@ import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.concurrent.CloseableThreadLocal;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -162,12 +163,13 @@ public abstract class EvaluationContext {
 		/**
 		 * Dynamically populated lookup for variable expressions.
 		 */
-		private final Map<String, Assignable<?>> variables = new Object2ObjectOpenHashMap<>();
+		private final Map<String, CloseableThreadLocal<Assignable<?>>> variables
+			= new Object2ObjectOpenHashMap<>();
 		/** Maps member labels to layers */
 		private final Map<String, BindingInfo> bindings;
 		/** Maps member names to assignable expressions */
 		//TODO make sure that any implementation properly duplicates on the target context
-		private final Map<String, Assignable<? extends Item>> members;
+		private final Map<String, CloseableThreadLocal<Assignable<? extends Item>>> members;
 
 		private RootContext(RootContextBuilder builder) {
 			super(builder);
@@ -222,7 +224,9 @@ public abstract class EvaluationContext {
 			members = new Object2ObjectOpenHashMap<>();
 			for(Entry<String, BindingInfo> entry : bindings.entrySet()) {
 				TypeInfo type = resolveMemberType(entry.getValue());
-				members.put(entry.getKey(), References.member(entry.getKey(), type));
+				String name = entry.getKey();
+				members.put(entry.getKey(), CloseableThreadLocal.withInitial(
+						() -> References.member(name, type)));
 			}
 		}
 
@@ -302,12 +306,14 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Assignable<?> getVariable(String name) {
-			return variables.computeIfAbsent(name, References::variable);
+			return variables.computeIfAbsent(name,
+					k -> CloseableThreadLocal.withInitial(() -> References.variable(k))).get();
 		}
 
 		@Override
 		public Optional<Assignable<? extends Item>> getMember(String name) {
-			return Optional.ofNullable(members.get(requireNonNull(name)));
+			return Optional.ofNullable(members.get(requireNonNull(name)))
+					.map(CloseableThreadLocal::get);
 		}
 
 		@Override
@@ -444,8 +450,9 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Assignable<Container> duplicate(EvaluationContext context) {
-			requireNonNull(context);
-			return new ContainerStore(type);
+			return context.getContainerStore().orElseThrow(
+					() -> EvaluationUtils.forInternalError(
+					"Target context does not provide container store"));
 		}
 	}
 
@@ -514,8 +521,10 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Assignable<Item> duplicate(EvaluationContext context) {
-			requireNonNull(context);
-			return new ItemStore(type);
+			return context.getElementStore()
+					.map(EvaluationUtils::castMember)
+					.orElseThrow(() -> EvaluationUtils.forInternalError(
+							"Target context does not provide element store"));
 		}
 	}
 
@@ -532,7 +541,7 @@ public abstract class EvaluationContext {
 		/** Uplink to the mandatory RootContext */
 		private final RootContext parent;
 		private final LaneInfo lane;
-		private final ContainerStore containerStore;
+		private final CloseableThreadLocal<ContainerStore> containerStore;
 
 		private LaneContext(LaneContextBuilder builder) {
 			super(builder);
@@ -540,7 +549,11 @@ public abstract class EvaluationContext {
 			parent = builder.parent;
 
 			lane = resolve(builder.lane);
-			containerStore = ContainerStore.from(lane);
+			containerStore = lane==null ? null: CloseableThreadLocal.withInitial(this::createStore);
+		}
+
+		private ContainerStore createStore() {
+			return ContainerStore.from(lane);
 		}
 
 		@Override
@@ -573,7 +586,9 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		public Optional<Assignable<? extends Container>> getContainerStore() { return Optional.ofNullable(containerStore); }
+		public Optional<Assignable<Container>> getContainerStore() {
+			return Optional.ofNullable(containerStore==null ? null : containerStore.get());
+		}
 	}
 
 	@NotThreadSafe
@@ -584,7 +599,7 @@ public abstract class EvaluationContext {
 
 		private final ElementInfo element;
 
-		private final ItemStore itemStore;
+		private final CloseableThreadLocal<ItemStore> itemStore;
 
 		/**
 		 * Lazily constructed lookup to map from annotation keys to actual sources.
@@ -607,7 +622,11 @@ public abstract class EvaluationContext {
 
 			element = resolve(builder.element);
 
-			itemStore = ItemStore.from(element);
+			itemStore = element==null ? null : CloseableThreadLocal.withInitial(this::createStore);
+		}
+
+		private ItemStore createStore() {
+			return ItemStore.from(element);
 		}
 
 		@Override
@@ -729,7 +748,9 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		public Optional<Assignable<? extends Item>> getElementStore() { return Optional.ofNullable(itemStore); }
+		public Optional<Assignable<Item>> getElementStore() {
+			return Optional.ofNullable(itemStore==null ? null : itemStore.get());
+		}
 
 		@Override
 		public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) {
@@ -949,9 +970,9 @@ public abstract class EvaluationContext {
 
 	public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) { return Optional.empty(); }
 
-	public Optional<Assignable<? extends Container>> getContainerStore() { return getLaneContext().getContainerStore(); }
+	public Optional<Assignable<Container>> getContainerStore() { return getLaneContext().getContainerStore(); }
 
-	public Optional<Assignable<? extends Item>> getElementStore() { return Optional.empty(); }
+	public Optional<Assignable<Item>> getElementStore() { return Optional.empty(); }
 
 	protected Graph<Layer> getLayerGraph() { return getRootContext().getLayerGraph(); }
 
