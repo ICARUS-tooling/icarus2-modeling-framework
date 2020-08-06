@@ -101,20 +101,23 @@ interface Position {
 
 		Relative(double value) {
 			if(value<0.0) {
-				checkArgument("Value must be between -1 (inclusive) and 0 (exclusive)",
-						value>=-1.0 && value<0.0);
+				checkArgument("Value must be between -1 (exclusive) and 0 (exclusive)",
+						value>-1.0 && value<0.0);
 				value += 1.0;
 			} else {
-				checkArgument("Value must be between 0 and 1 (both inclusive)",
-						value>=0.0 && value<=1.0);
+				checkArgument("Value must be between 0 and 1 (both exclusive)",
+						value>0.0 && value<1.0);
 			}
 			this.value = value;
 		}
 
 		@Override
-		public int translate(int size) { return (int)Math.floor(size * value); }
+		public int translate(int size) { return (int)Math.ceil(size * value) - 1; }
 	}
 
-	/** Translate the internally stored value into an actual index within the size bounds. */
+	/**
+	 * Translate the internally stored value into an actual index within the size bounds.
+	 * @param size size of the index space, never smaller than {@code 1}
+	 */
 	int translate(int size);
 }

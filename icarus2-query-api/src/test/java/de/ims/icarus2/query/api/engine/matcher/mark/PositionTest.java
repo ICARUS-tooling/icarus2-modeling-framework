@@ -63,21 +63,21 @@ class PositionTest {
 		}
 
 		@ParameterizedTest
-		@ValueSource(doubles = {-1.0, 0.0, 1.0, 0.5, -0.5})
+		@ValueSource(doubles = {-0.9, 0.1, 0.9, 0.5, -0.5})
 		void testRelative(double value) {
 			Position pos = Position.of(Double.valueOf(value));
 			assertThat(pos).isInstanceOf(Relative.class);
 		}
 
 		@ParameterizedTest
-		@ValueSource(floats = {-1.0f, 0.0f, 1.0f, 0.5f, -0.5f})
+		@ValueSource(floats = {-0.9f, 0.1f, 0.9f, 0.5f, -0.5f})
 		void testRelativeFloat(float value) {
 			Position pos = Position.of(Float.valueOf(value));
 			assertThat(pos).isInstanceOf(Relative.class);
 		}
 
 		@ParameterizedTest
-		@ValueSource(doubles = {-1.01, 1.01, 100.5, -100.6})
+		@ValueSource(doubles = {0.0, 1.0, -1.0, -1.01, 1.01, 100.5, -100.6})
 		void testInvalidRelative(double value) {
 			assertThatIllegalArgumentException().isThrownBy(
 					() -> Position.of(Double.valueOf(value)));
@@ -114,23 +114,23 @@ class PositionTest {
 
 		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
 		@CsvSource({
-			"10, 0.5, 5",
-			"10, 0.1, 1",
+			"10, 0.5, 4",
+			"10, 0.1, 0",
 			"10, 0.05, 0",
 
-			"100, 0.5, 50",
-			"100, 0.1, 10",
-			"100, 0.11, 11",
+			"100, 0.5, 49",
+			"100, 0.1, 9",
+			"100, 0.11, 10",
 			"100, 0.001, 0",
-			"100, 0.99, 99",
+			"100, 0.99, 98",
 
-			"10, -0.5, 5",
-			"10, -0.1, 9",
+			"10, -0.5, 4",
+			"10, -0.1, 8",
 			"10, -0.15, 8",
 
-			"100, -0.5, 50",
-			"100, -0.1, 90",
-			"100, -0.11, 89",
+			"100, -0.5, 49",
+			"100, -0.1, 89",
+			"100, -0.11, 88",
 			"100, -0.99, 1",
 			"100, -0.001, 99",
 		})
