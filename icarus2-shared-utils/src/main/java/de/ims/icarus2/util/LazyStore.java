@@ -22,6 +22,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.Map;
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.strings.StringResource;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -45,6 +47,7 @@ public class LazyStore<F extends Object, K extends Object> {
 	private final Class<F> clazz;
 
 	private final Function<F, K> keyGen;
+	private final Function<K, K> keyMod;
 
 	/**
 	 * @param clazz enum class from which to obtain instances
@@ -52,9 +55,23 @@ public class LazyStore<F extends Object, K extends Object> {
 	 * instance should be ignored.
 	 */
 	public LazyStore(Class<F> clazz, Function<F, K> keyGen) {
+		this(clazz, keyGen, null);
+	}
+
+	/**
+	 * @param clazz enum class from which to obtain instances
+	 * @param keyGen function to generate lookup keys. a {@code null} key indicates that an
+	 * instance should be ignored.
+	 */
+	public LazyStore(Class<F> clazz, Function<F, K> keyGen, @Nullable Function<K, K> keyMod) {
 		this.clazz = requireNonNull(clazz);
 		this.keyGen = requireNonNull(keyGen);
+		this.keyMod = keyMod;
 		checkArgument("Class must be an enum type", clazz.isEnum());
+	}
+
+	private K adjust(K key) {
+		return keyMod==null ? key : keyMod.apply(key);
 	}
 
 	public synchronized F lookup(K key) {
@@ -67,12 +84,12 @@ public class LazyStore<F extends Object, K extends Object> {
 			for(F value : values) {
 				K generatedKey = keyGen.apply(value);
 				if(generatedKey!=null) {
-					lookup.put(generatedKey, value);
+					lookup.put(adjust(generatedKey), value);
 				}
 			}
 		}
 
-		F flag = lookup.get(key);
+		F flag = lookup.get(adjust(key));
 		if(flag==null)
 			throw new IllegalArgumentException("Unknown key: "+key);
 		return flag;
