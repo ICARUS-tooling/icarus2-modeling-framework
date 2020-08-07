@@ -39,7 +39,7 @@ interface Position {
 	 * <ul>
 	 * <li>if {@code num} is a floating point value, create a relative position</li>
 	 * <li>if {@code num} is a negative integer value, create a reverse position</li>
-	 * <li>if {@code num} is a positive integer value, decrement it by {@code} to
+	 * <li>if {@code num} is a positive integer value, decrement it by {@code 1} to
 	 * translate from the 1-based IQL system, and then create a fixed position</li>
 	 * </ul>
 	 *
@@ -66,6 +66,16 @@ interface Position {
 		return new Fixed(value);
 	}
 
+	/**
+	 * Translate the internally stored value into an actual index within the size bounds.
+	 * @param size size of the index space, never smaller than {@code 1}
+	 */
+	int asPosition(int size);
+
+	default int asLowerBound(int size) { return asPosition(size); }
+
+	default int asUpperBound(int size) { return asPosition(size); }
+
 	/** Implements absolute and fixed indices. */
 	final class Fixed implements Position {
 
@@ -77,7 +87,7 @@ interface Position {
 		}
 
 		@Override
-		public int translate(int size) { return value; }
+		public int asPosition(int size) { return value; }
 	}
 
 	/** Implements absolute reverse indices. */
@@ -91,17 +101,17 @@ interface Position {
 		}
 
 		@Override
-		public int translate(int size) { return size+value; }
+		public int asPosition(int size) { return size+value; }
 	}
 
-	/** Models relative indices and does not support reverse indices. Use value+1.0 instead. */
+	/** Models relative indices and does not support reverse indices. */
 	final class Relative implements Position {
 
 		private final double value;
 
 		Relative(double value) {
 			if(value<0.0) {
-				checkArgument("Value must be between -1 (exclusive) and 0 (exclusive)",
+				checkArgument("Value must be between -1 and 0 (both exclusive)",
 						value>-1.0 && value<0.0);
 				value += 1.0;
 			} else {
@@ -111,13 +121,16 @@ interface Position {
 			this.value = value;
 		}
 
+		/** Rounded integer -1, cannot go below 0 */
 		@Override
-		public int translate(int size) { return (int)Math.ceil(size * value) - 1; }
-	}
+		public int asPosition(int size) { return Math.max(0, strictToInt(Math.round(size * value)) - 1); }
 
-	/**
-	 * Translate the internally stored value into an actual index within the size bounds.
-	 * @param size size of the index space, never smaller than {@code 1}
-	 */
-	int translate(int size);
+		/** Rounded up integer -1 */
+		@Override
+		public int asLowerBound(int size) { return (int)Math.ceil(size * value) - 1; }
+
+		/** Rounded down integer -1, can create invalid intervals */
+		@Override
+		public int asUpperBound(int size) { return (int)Math.floor(size * value) - 1; }
+	}
 }

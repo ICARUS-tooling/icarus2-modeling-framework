@@ -85,7 +85,9 @@ class PositionTest {
 	}
 
 	@Nested
-	class ForTranslation {
+	class AsPosition {
+
+		protected int transform(Position pos, int size) { return pos.asPosition(size); }
 
 		@ParameterizedTest
 		@ValueSource(ints = {1, 2, 10, 10_000})
@@ -93,9 +95,9 @@ class PositionTest {
 			Position pos = Position.of(Integer.valueOf(value));
 			int expected = value-1;
 			// Minimum assertion
-			assertThat(pos.translate(1)).isEqualTo(expected);
+			assertThat(transform(pos, 1)).isEqualTo(expected);
 			// Make sure large size has no impact
-			assertThat(pos.translate(Integer.MAX_VALUE)).isEqualTo(expected);
+			assertThat(transform(pos, Integer.MAX_VALUE)).isEqualTo(expected);
 		}
 
 		@ParameterizedTest
@@ -106,10 +108,10 @@ class PositionTest {
 			int offset = Math.abs(value);
 			// Minimum assertion
 			int size1 = offset;
-			assertThat(pos.translate(size1)).isEqualTo(size1-offset);
+			assertThat(transform(pos, size1)).isEqualTo(size1-offset);
 			// Make sure large size has no impact
 			int size2 = 10_000_000;
-			assertThat(pos.translate(size2)).isEqualTo(size2-offset);
+			assertThat(transform(pos, size2)).isEqualTo(size2-offset);
 		}
 
 		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
@@ -126,7 +128,58 @@ class PositionTest {
 
 			"10, -0.5, 4",
 			"10, -0.1, 8",
+			"10, -0.05, 9",
+			"10, -0.09, 8",
 			"10, -0.15, 8",
+			"10, -0.16, 7",
+
+			"100, -0.5, 49",
+			"100, -0.1, 89",
+			"100, -0.11, 88",
+			"100, -0.99, 0",
+			"100, -0.001, 99",
+		})
+		void testRelative(int size, double value, int translated) {
+			Position pos = Position.of(Double.valueOf(value));
+
+			assertThat(transform(pos, size)).isEqualTo(translated);
+		}
+	}
+
+	@Nested
+	class AsLowerBound extends AsPosition {
+
+		@Override
+		protected int transform(Position pos, int size) { return pos.asLowerBound(size); }
+
+		@Override
+		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
+		@CsvSource({
+			"10, 0.5,  4",
+			"10, 0.04, 0",
+			"10, 0.05, 0",
+			"10, 0.09, 0",
+			"10, 0.1,  0",
+			"10, 0.11, 1",
+			"10, 0.14, 1",
+			"10, 0.15, 1",
+			"10, 0.19, 1",
+			"10, 0.2,  1",
+			"10, 0.24, 2",
+
+			"100, 0.5, 49",
+			"100, 0.1, 9",
+			"100, 0.11, 10",
+			"100, 0.001, 0",
+			"100, 0.99, 98",
+			"100, 0.999, 99",
+
+			"10, -0.5, 4",
+			"10, -0.1, 8",
+			"10, -0.05, 9",
+			"10, -0.09, 9",
+			"10, -0.15, 8",
+			"10, -0.16, 8",
 
 			"100, -0.5, 49",
 			"100, -0.1, 89",
@@ -137,7 +190,55 @@ class PositionTest {
 		void testRelative(int size, double value, int translated) {
 			Position pos = Position.of(Double.valueOf(value));
 
-			assertThat(pos.translate(size)).isEqualTo(translated);
+			assertThat(transform(pos, size)).isEqualTo(translated);
+		}
+	}
+
+	@Nested
+	class AsUpperBound extends AsPosition {
+
+		@Override
+		protected int transform(Position pos, int size) { return pos.asUpperBound(size); }
+
+		@Override
+		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
+		@CsvSource({
+			"10, 0.5,  4",
+			"10, 0.04, -1",
+			"10, 0.05, -1",
+			"10, 0.09, -1",
+			"10, 0.1,  0",
+			"10, 0.11, 0",
+			"10, 0.14, 0",
+			"10, 0.15, 0",
+			"10, 0.19, 0",
+			"10, 0.2,  1",
+			"10, 0.24, 1",
+
+			"100, 0.5, 49",
+			"100, 0.1, 9",
+			"100, 0.11, 10",
+			"100, 0.001, -1",
+			"100, 0.99, 98",
+			"100, 0.999, 98",
+
+			"10, -0.5, 4",
+			"10, -0.1, 8",
+			"10, -0.05, 8",
+			"10, -0.09, 8",
+			"10, -0.15, 7",
+			"10, -0.16, 7",
+
+			"100, -0.5, 49",
+			"100, -0.1, 89",
+			"100, -0.11, 88",
+			"100, -0.99, 0",
+			"100, -0.001, 98",
+		})
+		void testRelative(int size, double value, int translated) {
+			Position pos = Position.of(Double.valueOf(value));
+
+			assertThat(transform(pos, size)).isEqualTo(translated);
 		}
 	}
 }
