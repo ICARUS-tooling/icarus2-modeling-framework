@@ -66,6 +66,9 @@ interface Position {
 		return new Fixed(value);
 	}
 
+	boolean isRelative();
+	boolean isReverse();
+
 	/**
 	 * Translate the internally stored value into an actual index within the size bounds.
 	 * @param size size of the index space, never smaller than {@code 1}
@@ -100,6 +103,12 @@ interface Position {
 
 		@Override
 		public int asPosition(int size) { return value; }
+
+		@Override
+		public boolean isRelative() { return false; }
+
+		@Override
+		public boolean isReverse() { return false; }
 	}
 
 	/** Implements absolute reverse indices. */
@@ -114,24 +123,40 @@ interface Position {
 
 		@Override
 		public int asPosition(int size) { return size+value; }
+
+		@Override
+		public boolean isRelative() { return false; }
+
+		@Override
+		public boolean isReverse() { return true; }
 	}
 
 	/** Models relative indices and does not support reverse indices. */
 	final class Relative implements Position {
 
 		private final double value;
+		private final boolean reverse;
 
 		Relative(double value) {
+			boolean reverse = false;
 			if(value<0.0) {
 				checkArgument("Value must be between -1 and 0 (both exclusive)",
 						value>-1.0 && value<0.0);
 				value += 1.0;
+				reverse = true;
 			} else {
 				checkArgument("Value must be between 0 and 1 (both exclusive)",
 						value>0.0 && value<1.0);
 			}
 			this.value = value;
+			this.reverse = reverse;
 		}
+
+		@Override
+		public boolean isRelative() { return true; }
+
+		@Override
+		public boolean isReverse() { return reverse; }
 
 		/** Rounded integer -1, cannot go below 0 */
 		@Override

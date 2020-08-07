@@ -52,6 +52,91 @@ public abstract class SequenceMarker {
 		return Stream.of(numbers).map(Position::of).toArray(Position[]::new);
 	}
 
+	private static Position checkNotRelative(Position pos) {
+		checkArgument("Relative position not supported", !pos.isRelative());
+		return pos;
+	}
+
+	public static enum Name implements StringResource {
+		FIRST("IsFirst", 0) {
+			@Override
+			public RangeMarker instantiate(Position[] positions) { return IsFirst.INSTANCE; }
+		},
+		LAST("IsLast", 0) {
+			@Override
+			public RangeMarker instantiate(Position[] positions) { return IsLast.INSTANCE; }
+		},
+
+		AT("IsAt", 1) {
+			@Override
+			public RangeMarker instantiate(Position[] positions) {
+				return new IsAt(posAt(positions, 0));
+			}
+		},
+		NOT_AT("IsNotAt", 1) {
+			@Override
+			public RangeMarker instantiate(Position[] positions) {
+				return new IsNotAt(posAt(positions, 0));
+			}
+		},
+
+		AFTER("IsAfter", 1){
+			@Override
+			public RangeMarker instantiate(Position[] positions) {
+				return new IsAfter(posAt(positions, 0));
+			}},
+		BEFORE("IsBefore", 1){
+			@Override
+			public RangeMarker instantiate(Position[] positions) {
+				return new IsBefore(posAt(positions, 0));
+			}},
+
+		INSIDE("IsInside", 2){
+			@Override
+			public RangeMarker instantiate(Position[] positions) {
+				return new IsInside(posAt(positions, 0), posAt(positions, 1));
+			}},
+		OUTSIDE("IsOutside", 2){
+			@Override
+			public RangeMarker instantiate(Position[] positions) {
+				return new IsOutside(posAt(positions, 0), posAt(positions, 1));
+			}},
+		;
+
+		private final String label;
+		private final int argCount;
+
+		private Name(String label, int argCount) {
+			this.label = checkNotEmpty(label);
+			checkArgument(argCount>=0);
+			this.argCount = argCount;
+		}
+
+		protected Position posAt(Position[] positions, int index) {
+			if(index>=positions.length)
+				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
+						String.format("No position available for index %d - %s needs %d arguments, %d provided",
+								_int(index), label, _int(argCount), _int(positions.length)));
+			return positions[index];
+		}
+
+		public abstract Marker.RangeMarker instantiate(Position[] positions);
+
+		public int getArgCount() { return argCount; }
+
+		public String getLabel() { return label; }
+
+		@Override
+		public String getStringValue() { return label; }
+
+		private static final LazyStore<Name, String> store
+				= new LazyStore<>(Name.class, Name::getLabel, String::toLowerCase);
+
+		public static Name parseName(String s) {
+			return store.lookup(s);
+		}
+	}
+
 	@VisibleForTesting
 	static abstract class MarkerBase implements Marker.RangeMarker {
 
@@ -59,7 +144,6 @@ public abstract class SequenceMarker {
 		private final boolean dynamic;
 		private final int intervalCount;
 
-		/** No defensive copying of the 'positions' array */
 		private MarkerBase(Name name, boolean dynamic, int intervalCount) {
 			checkArgument(intervalCount>=1);
 			this.name = requireNonNull(name);
@@ -121,7 +205,8 @@ public abstract class SequenceMarker {
 
 		IsAt(Position position) {
 			super(Name.AT, false, 1);
-			this.pos = requireNonNull(position);
+			requireNonNull(position);
+			this.pos = checkNotRelative(position);
 		}
 
 		@Override
@@ -137,7 +222,8 @@ public abstract class SequenceMarker {
 
 		IsNotAt(Position position) {
 			super(Name.NOT_AT, true, 2);
-			this.pos = requireNonNull(position);
+			requireNonNull(position);
+			this.pos = checkNotRelative(position);
 		}
 
 		@Override
@@ -223,86 +309,6 @@ public abstract class SequenceMarker {
 			iv2.from = end.asLowerBound(size, false);
 			iv2.to = size-1;
 			return !iv1.isEmpty() || !iv2.isEmpty();
-		}
-	}
-
-	public static enum Name implements StringResource {
-		FIRST("IsFirst", 0) {
-			@Override
-			public RangeMarker instantiate(Position[] positions) { return IsFirst.INSTANCE; }
-		},
-		LAST("IsLast", 0) {
-			@Override
-			public RangeMarker instantiate(Position[] positions) { return IsLast.INSTANCE; }
-		},
-
-		AT("IsAt", 1) {
-			@Override
-			public RangeMarker instantiate(Position[] positions) {
-				return new IsAt(posAt(positions, 0));
-			}
-		},
-		NOT_AT("IsNotAt", 1) {
-			@Override
-			public RangeMarker instantiate(Position[] positions) {
-				return new IsNotAt(posAt(positions, 0));
-			}
-		},
-
-		AFTER("IsAfter", 1){
-			@Override
-			public RangeMarker instantiate(Position[] positions) {
-				return new IsAfter(posAt(positions, 0));
-			}},
-		BEFORE("IsBefore", 1){
-			@Override
-			public RangeMarker instantiate(Position[] positions) {
-				return new IsBefore(posAt(positions, 0));
-			}},
-
-		INSIDE("IsInside", 2){
-			@Override
-			public RangeMarker instantiate(Position[] positions) {
-				return new IsInside(posAt(positions, 0), posAt(positions, 1));
-			}},
-		OUTSIDE("IsOutside", 2){
-			@Override
-			public RangeMarker instantiate(Position[] positions) {
-				return new IsOutside(posAt(positions, 0), posAt(positions, 1));
-			}},
-		;
-
-		private final String label;
-		private final int argCount;
-
-		private Name(String label, int argCount) {
-			this.label = checkNotEmpty(label);
-			checkArgument(argCount>=0);
-			this.argCount = argCount;
-		}
-
-		protected Position posAt(Position[] positions, int index) {
-			if(index>=positions.length)
-				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
-						String.format("No position available for index %d - %s needs %d arguments, %d provided",
-								_int(index), label, _int(argCount), _int(positions.length)));
-			return positions[index];
-		}
-
-		public abstract Marker.RangeMarker instantiate(Position[] positions);
-
-		public int getArgCount() { return argCount; }
-
-		public String getLabel() { return label; }
-
-		@Override
-		public String getStringValue() { return label; }
-
-		private static final LazyStore<Name, String> store
-				= new LazyStore<>(Name.class, Name::getLabel, String::toLowerCase);
-
-		public static Name parseName(String s) {
-			return store.lookup(s);
 		}
 	}
 }

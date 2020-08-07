@@ -22,6 +22,7 @@ package de.ims.icarus2.query.api.engine.matcher.mark;
 import static de.ims.icarus2.util.collections.ArrayUtils.array;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import java.util.function.Consumer;
@@ -90,6 +91,20 @@ class SequenceMarkerTest {
 		}
 	}
 
+	@Nested
+	class UnsupportedRelativePositions {
+		@Test
+		void onIsAt() {
+			assertThatIllegalArgumentException().isThrownBy(
+					() -> SequenceMarker.of("IsAt", Double.valueOf(0.5)));
+		}
+		@Test
+		void onIsNotAt() {
+			assertThatIllegalArgumentException().isThrownBy(
+					() -> SequenceMarker.of("IsNotAt", Double.valueOf(0.5)));
+		}
+	}
+
 	@ParameterizedTest
 	@ValueSource(ints={1, 10, 100, Integer.MAX_VALUE})
 	void testFirst(int size) {
@@ -123,18 +138,6 @@ class SequenceMarkerTest {
 		"IsAt,  -1, 10, false, 9, 9",
 		"IsAt,  -4, 10, false, 6, 6",
 		"IsAt, -10, 10, false, 0, 0",
-		// IsAt with relative index
-		"IsAt,  0.1, 10, false, 0, 0",
-		"IsAt,  0.15, 10, false, 1, 1",
-		"IsAt,  0.9, 10, false, 8, 8",
-		"IsAt,  0.5, 10, false, 4, 4",
-		// IsAt with relative reverse index
-		"IsAt,  -0.1, 10, false, 8, 8",
-		"IsAt,  -0.05, 10, false, 9, 9",
-		"IsAt,  -0.15, 10, false, 8, 8",
-		"IsAt,  -0.9, 10, false, 0, 0",
-		"IsAt,  -0.95, 10, false, 0, 0",
-		"IsAt,  -0.5, 10, false, 4, 4",
 
 		// IsAfter with fixed index
 		"IsAfter,  1, 10, false, 1, 9",
@@ -179,8 +182,6 @@ class SequenceMarkerTest {
 		"IsBefore,  -0.5, 10, false, 0, 3",
 		"IsBefore,  -0.9, 10, true, 0, -1",
 		"IsBefore,  -0.95, 10, true, 0, -1",
-
-		//TODO
 	})
 	@DisplayName("1 arg -> 1 interval")
 	void testSingleIntervalMarkersWith1Arg(String name,
@@ -191,5 +192,95 @@ class SequenceMarkerTest {
 		assertThat(marker.adjust(array(interval), 0, size)).isNotEqualTo(empty);
 		assertThat(interval.from).isEqualTo(begin);
 		assertThat(interval.to).isEqualTo(end);
+	}
+
+	@ParameterizedTest(name="{0}({1}) on {2} elements gives intervals [{4},{5}] and [{6},{7}], empty={3}")
+	@CsvSource({
+		// IsNotAt with fixed index
+		"IsNotAt, 1, 10, false, 0, -1, 1, 9",
+		"IsNotAt, 5, 10, false, 0, 3, 5, 9",
+		"IsNotAt, 10, 10, false, 0, 8, 10, 9",
+		// IsNotAt with reverse index
+		"IsNotAt, -1, 10, false, 0, 8, 10, 9",
+		"IsNotAt, -5, 10, false, 0, 4, 6, 9",
+		"IsNotAt, -10, 10, false, 0, -1, 1, 9",
+	})
+	@DisplayName("1 arg -> 2 intervals")
+	void testDualIntervalMarkersWith1Arg(String name,
+			@ConvertWith(NumberConverter.class) Number arg,
+			int size, boolean empty, int begin1, int end1, int begin2, int end2) {
+		RangeMarker marker = SequenceMarker.of(name, arg);
+		Interval interval1 = new Interval();
+		Interval interval2 = new Interval();
+		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
+		assertThat(interval1.from).isEqualTo(begin1);
+		assertThat(interval1.to).isEqualTo(end1);
+		assertThat(interval2.from).isEqualTo(begin2);
+		assertThat(interval2.to).isEqualTo(end2);
+	}
+
+	@ParameterizedTest(name="{0}({1}{2}) on {3} elements gives intervals [{5},{6}], empty={4}")
+	@CsvSource({
+		// IsInside with fixed indices
+		"IsInside, 1, 10, 10, false, 0, 9",
+		"IsInside, 3, 7, 10, false, 2, 6",
+		"IsInside, 5, 5, 10, false, 4, 4",
+		"IsInside, 6, 5, 10, true, 5, 4",
+		// IsInside with reverse indices
+		"IsInside, -10, -1, 10, false, 0, 9",
+		"IsInside, -7, -3, 10, false, 3, 7",
+		"IsInside, -5, -5, 10, false, 5, 5",
+		"IsInside, -6, -5, 10, false, 4, 5",
+		"IsInside, -5, -6, 10, true, 5, 4",
+		// IsInside with relative indices
+		"IsInside, 0.05, 0.95, 10, false, 0, 8",
+		"IsInside, 0.1, 0.9, 10, false, 0, 8",
+		"IsInside, 0.5, 0.5, 10, false, 4, 4",
+		"IsInside, 0.7, 0.3, 10, true, 6, 2",
+		// IsInside with relative reverse indices
+		"IsInside, -0.95, -0.05, 10, false, 0, 8",
+		"IsInside, -0.9, -0.1, 10, false, 0, 8",
+		"IsInside, -0.5, -0.5, 10, false, 4, 4",
+		"IsInside, -0.3, -0.7, 10, true, 6, 2",
+		// IsInside with mixed indices
+		"IsInside, 1, 0.5, 10, false, 0, 4",
+		"IsInside, 1, -0.5, 10, false, 0, 4",
+		"IsInside, 0.5, 10, 10, false, 4, 9",
+		"IsInside, -0.5, 10, 10, false, 4, 9",
+		"IsInside, -7, 0.8, 10, false, 3, 7",
+		"IsInside, -7, -0.2, 10, false, 3, 7",
+		"IsInside, 0.4, -3, 10, false, 3, 7",
+		"IsInside, -0.6, -3, 10, false, 3, 7",
+	})
+	@DisplayName("2 args -> 1 interval")
+	void testSingleIntervalMarkersWith2Arg(String name,
+			@ConvertWith(NumberConverter.class) Number arg1, @ConvertWith(NumberConverter.class) Number arg2,
+			int size, boolean empty, int begin, int end) {
+		RangeMarker marker = SequenceMarker.of(name, arg1, arg2);
+		Interval interval1 = new Interval();
+		Interval interval2 = new Interval();
+		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
+		assertThat(interval1.from).isEqualTo(begin);
+		assertThat(interval1.to).isEqualTo(end);
+	}
+
+	@ParameterizedTest(name="{0}({1}{2}) on {3} elements gives intervals [{5},{6}] and [{7},{8}], empty={4}")
+	@CsvSource({
+		// IsOutside with fixed index
+		"IsOutside, 1, 10, 10, true, 0, -1, 10, 9",
+		//TODO
+	})
+	@DisplayName("2 args -> 2 intervals")
+	void testDualIntervalMarkersWith2Arg(String name,
+			@ConvertWith(NumberConverter.class) Number arg1, @ConvertWith(NumberConverter.class) Number arg2,
+			int size, boolean empty, int begin1, int end1, int begin2, int end2) {
+		RangeMarker marker = SequenceMarker.of(name, arg1, arg2);
+		Interval interval1 = new Interval();
+		Interval interval2 = new Interval();
+		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
+		assertThat(interval1.from).isEqualTo(begin1);
+		assertThat(interval1.to).isEqualTo(end1);
+		assertThat(interval2.from).isEqualTo(begin2);
+		assertThat(interval2.to).isEqualTo(end2);
 	}
 }
