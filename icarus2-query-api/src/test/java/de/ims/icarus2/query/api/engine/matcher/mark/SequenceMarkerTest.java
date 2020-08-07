@@ -125,6 +125,7 @@ class SequenceMarkerTest {
 		"IsAt, -10, 10, false, 0, 0",
 		// IsAt with relative index
 		"IsAt,  0.1, 10, false, 0, 0",
+		"IsAt,  0.15, 10, false, 1, 1",
 		"IsAt,  0.9, 10, false, 8, 8",
 		"IsAt,  0.5, 10, false, 4, 4",
 

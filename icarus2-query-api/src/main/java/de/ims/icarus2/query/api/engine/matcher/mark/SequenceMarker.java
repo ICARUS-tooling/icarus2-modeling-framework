@@ -127,7 +127,7 @@ public abstract class SequenceMarker {
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
-			iv.from = iv.to = pos.translate(size);
+			iv.from = iv.to = pos.asPosition(size);
 			return !iv.isEmpty() && size>iv.from;
 		}
 	}
@@ -144,10 +144,9 @@ public abstract class SequenceMarker {
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv1 = intervals[index];
 			Interval iv2 = intervals[index+1];
-			int v = pos.translate(size);
 			iv1.from = 0;
-			iv1.to = v-1;
-			iv2.from = v+1;
+			iv1.to = pos.asUpperBound(size)-1;
+			iv2.from = pos.asLowerBound(size)+1;
 			iv2.to = size-1;
 			// We're good if at least 1 interval is not empty
 			return !iv1.isEmpty() || !iv2.isEmpty();
@@ -165,7 +164,7 @@ public abstract class SequenceMarker {
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
-			iv.from = pos.translate(size)+1;
+			iv.from = pos.asLowerBound(size)+1;
 			iv.to = size-1;
 			return !iv.isEmpty();
 		}
@@ -183,7 +182,7 @@ public abstract class SequenceMarker {
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
 			iv.from = 0;
-			iv.to = pos.translate(size)-1;
+			iv.to = pos.asUpperBound(size)-1;
 			return !iv.isEmpty();
 		}
 	}
@@ -200,8 +199,8 @@ public abstract class SequenceMarker {
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
-			iv.from = start.translate(size);
-			iv.to = end.translate(size);
+			iv.from = start.asLowerBound(size);
+			iv.to = end.asUpperBound(size);
 			return !iv.isEmpty();
 		}
 	}
@@ -220,8 +219,8 @@ public abstract class SequenceMarker {
 			Interval iv1 = intervals[index];
 			Interval iv2 = intervals[index+1];
 			iv1.from = 0;
-			iv1.to = start.translate(size)-1;
-			iv2.from = end.translate(size)+1;
+			iv1.to = start.asUpperBound(size)-1;
+			iv2.from = end.asLowerBound(size)+1;
 			iv2.to = size-1;
 			return !iv1.isEmpty() || !iv2.isEmpty();
 		}
