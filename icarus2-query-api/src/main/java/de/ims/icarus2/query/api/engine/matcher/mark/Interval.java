@@ -73,4 +73,25 @@ public class Interval {
 		to = Math.min(to, other.to);
 		return from<=to;
 	}
+
+	@Override
+	public String toString() {
+		return "["+from+","+to+"]";
+	}
+
+	@Override
+	public int hashCode() {
+		return from * to;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			return true;
+		} else if(obj instanceof Interval) {
+			Interval other = (Interval)obj;
+			return from==other.from && to==other.to;
+		}
+		return false;
+	}
 }
