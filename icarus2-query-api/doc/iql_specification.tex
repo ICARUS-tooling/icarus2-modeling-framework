@@ -2251,6 +2251,7 @@ Note that certain position markers with interval arguments (such as \query{inBet
 
 \subsection{Relative Indices}
 \label{sec:marker-relative}
+%TODO rework the rounding explanation
 Per default all the position markers that take argument expect them to be integer values for explicit designation of the desired index or index range.
 This means that any other type of argument will be automatically converted to an integer value if the query configuration permits it.
 However, if the associated switch (\ref{sec:json-ld-switches}) is active\footnote{This switch is off by default as it interferes with the automatic type conversion of arguments. If it is active, arguments must explicitly be cast if not already an integer or floating-point number. If the switch is not active, any floating-point argument will be cast to an integer (typically 0 if any of the arguments are intended to be reverse indices).}, position markers can use relative arguments in the form of floating-point numbers.
@@ -2298,7 +2299,7 @@ Markers can be freely combined with quantifiers on the same node, with the follo
 	\item In similar fashion, universal quantification is not compatible with markers of any kind, even if they would allow the entire target sequence as legal index interval.
 \end{itemize}
 
-To illustrate the interaction of quantifiers and markers, consider the example of a node \query{3..5[\$x: isInside(0,0.25),]}.
+To illustrate the interaction of quantifiers and markers, consider the example of a node \query{<3..5>[\$x: isInside(1,0.25),]}.
 This query requires at least three, but no more than five instances of \member{x} to be matched in the first 25\% of a target sequence.
 Evaluated against a sequence of size 10, this query will automatically fail, as the legal interval produced by the marker only provides access to the first two elements of the sequence\footnote{Markers round down to the nearest integer size for relative indices, see \cref{sec:marker-relative}.}.
 A sequence of size 12 is the smallest target that even has a chance of being matched.
