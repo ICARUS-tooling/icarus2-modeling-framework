@@ -143,7 +143,7 @@ interface Position {
 			double raw = (size * value) - 1;
 			int index = (int)Math.ceil(raw);
 			// Only shift for exclusive bounds when the raw value wasn't already a proper integer
-			if(!inclusive && raw==index) {
+			if(!inclusive && (raw==index || raw<0.0)) {
 				index++;
 			}
 			return index;
