@@ -72,9 +72,21 @@ interface Position {
 	 */
 	int asPosition(int size);
 
-	default int asLowerBound(int size) { return asPosition(size); }
+	default int asLowerBound(int size, boolean inclusive) {
+		int index = asPosition(size);
+		if(!inclusive) {
+			index++;
+		}
+		return index;
+	}
 
-	default int asUpperBound(int size) { return asPosition(size); }
+	default int asUpperBound(int size, boolean inclusive) {
+		int index = asPosition(size);
+		if(!inclusive) {
+			index--;
+		}
+		return index;
+	}
 
 	/** Implements absolute and fixed indices. */
 	final class Fixed implements Position {
@@ -127,10 +139,26 @@ interface Position {
 
 		/** Rounded up integer -1 */
 		@Override
-		public int asLowerBound(int size) { return (int)Math.ceil(size * value) - 1; }
+		public int asLowerBound(int size, boolean inclusive) {
+			double raw = (size * value) - 1;
+			int index = (int)Math.ceil(raw);
+			// Only shift for exclusive bounds when the raw value wasn't already a proper integer
+			if(!inclusive && raw==index) {
+				index++;
+			}
+			return index;
+		}
 
 		/** Rounded down integer -1, can create invalid intervals */
 		@Override
-		public int asUpperBound(int size) { return (int)Math.floor(size * value) - 1; }
+		public int asUpperBound(int size, boolean inclusive) {
+			double raw = (size * value) - 1;
+			int index = (int)Math.floor(raw);
+			// Only shift for exclusive bounds when the raw value wasn't already a proper integer
+			if(!inclusive && raw==index) {
+				index--;
+			}
+			return index;
+		}
 	}
 }

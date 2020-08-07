@@ -147,10 +147,10 @@ class PositionTest {
 	}
 
 	@Nested
-	class AsLowerBound extends AsPosition {
+	class AsLowerBoundInclusive extends AsPosition {
 
 		@Override
-		protected int transform(Position pos, int size) { return pos.asLowerBound(size); }
+		protected int transform(Position pos, int size) { return pos.asLowerBound(size, true); }
 
 		@Override
 		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
@@ -195,10 +195,10 @@ class PositionTest {
 	}
 
 	@Nested
-	class AsUpperBound extends AsPosition {
+	class AsUpperBoundInclusive extends AsPosition {
 
 		@Override
-		protected int transform(Position pos, int size) { return pos.asUpperBound(size); }
+		protected int transform(Position pos, int size) { return pos.asUpperBound(size, true); }
 
 		@Override
 		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
@@ -232,6 +232,156 @@ class PositionTest {
 			"100, -0.5, 49",
 			"100, -0.1, 89",
 			"100, -0.11, 88",
+			"100, -0.99, 0",
+			"100, -0.001, 98",
+		})
+		void testRelative(int size, double value, int translated) {
+			Position pos = Position.of(Double.valueOf(value));
+
+			assertThat(transform(pos, size)).isEqualTo(translated);
+		}
+	}
+
+	@Nested
+	class AsLowerBoundExclusive extends AsPosition {
+
+		@Override
+		protected int transform(Position pos, int size) { return pos.asLowerBound(size, false); }
+
+		@Override
+		@ParameterizedTest
+		@ValueSource(ints = {1, 2, 10, 10_000})
+		void testFixed(int value) {
+			Position pos = Position.of(Integer.valueOf(value));
+			int expected = value;
+			// Minimum assertion
+			assertThat(transform(pos, 1)).isEqualTo(expected);
+			// Make sure large size has no impact
+			assertThat(transform(pos, Integer.MAX_VALUE)).isEqualTo(expected);
+		}
+
+		@Override
+		@ParameterizedTest
+		@ValueSource(ints = {-1, -10, -10_000})
+		void testReverse(int value) {
+			Position pos = Position.of(Integer.valueOf(value));
+
+			int offset = Math.abs(value);
+			// Minimum assertion
+			int size1 = offset;
+			assertThat(transform(pos, size1)).isEqualTo(size1-offset+1);
+			// Make sure large size has no impact
+			int size2 = 10_000_000;
+			assertThat(transform(pos, size2)).isEqualTo(size2-offset+1);
+		}
+
+		@Override
+		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
+		@CsvSource({
+			"10, 0.5,  5",
+			"10, 0.04, 0",
+			"10, 0.05, 0",
+			"10, 0.09, 0",
+			"10, 0.1,  1",
+			"10, 0.11, 1",
+			"10, 0.14, 1",
+			"10, 0.15, 1",
+			"10, 0.19, 1",
+			"10, 0.2,  2",
+			"10, 0.24, 2",
+
+			"100, 0.5, 50",
+			"100, 0.1, 10",
+			"100, 0.11, 11",
+			"100, 0.001, 0",
+			"100, 0.99, 99",
+			"100, 0.999, 99",
+
+			"10, -0.5, 5",
+			"10, -0.1, 9",
+			"10, -0.05, 9",
+			"10, -0.09, 9",
+			"10, -0.15, 8",
+			"10, -0.16, 8",
+
+			"100, -0.5, 50",
+			"100, -0.1, 90",
+			"100, -0.11, 89",
+			"100, -0.99, 1",
+			"100, -0.001, 99",
+		})
+		void testRelative(int size, double value, int translated) {
+			Position pos = Position.of(Double.valueOf(value));
+
+			assertThat(transform(pos, size)).isEqualTo(translated);
+		}
+	}
+
+	@Nested
+	class AsUpperBoundExclusive extends AsPosition {
+
+		@Override
+		protected int transform(Position pos, int size) { return pos.asUpperBound(size, false); }
+
+		@Override
+		@ParameterizedTest
+		@ValueSource(ints = {1, 2, 10, 10_000})
+		void testFixed(int value) {
+			Position pos = Position.of(Integer.valueOf(value));
+			int expected = value-2;
+			// Minimum assertion
+			assertThat(transform(pos, 1)).isEqualTo(expected);
+			// Make sure large size has no impact
+			assertThat(transform(pos, Integer.MAX_VALUE)).isEqualTo(expected);
+		}
+
+		@Override
+		@ParameterizedTest
+		@ValueSource(ints = {-1, -10, -10_000})
+		void testReverse(int value) {
+			Position pos = Position.of(Integer.valueOf(value));
+
+			int offset = Math.abs(value);
+			// Minimum assertion
+			int size1 = offset;
+			assertThat(transform(pos, size1)).isEqualTo(size1-offset-1);
+			// Make sure large size has no impact
+			int size2 = 10_000_000;
+			assertThat(transform(pos, size2)).isEqualTo(size2-offset-1);
+		}
+
+		@Override
+		@ParameterizedTest(name="size= {1}, val= {0}, expected= {2}")
+		@CsvSource({
+			"10, 0.5,  3",
+			"10, 0.04, -1",
+			"10, 0.05, -1",
+			"10, 0.09, -1",
+			"10, 0.1,  -1",
+			"10, 0.11, 0",
+			"10, 0.14, 0",
+			"10, 0.15, 0",
+			"10, 0.19, 0",
+			"10, 0.2,  0",
+			"10, 0.24, 1",
+
+			"100, 0.5, 48",
+			"100, 0.1, 8",
+			"100, 0.11, 9",
+			"100, 0.001, -1",
+			"100, 0.99, 97",
+			"100, 0.999, 98",
+
+			"10, -0.5, 3",
+			"10, -0.1, 7",
+			"10, -0.05, 8",
+			"10, -0.09, 8",
+			"10, -0.15, 7",
+			"10, -0.16, 7",
+
+			"100, -0.5, 48",
+			"100, -0.1, 88",
+			"100, -0.11, 87",
 			"100, -0.99, 0",
 			"100, -0.001, 98",
 		})
