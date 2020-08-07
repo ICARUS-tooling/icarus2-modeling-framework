@@ -128,6 +128,57 @@ class SequenceMarkerTest {
 		"IsAt,  0.15, 10, false, 1, 1",
 		"IsAt,  0.9, 10, false, 8, 8",
 		"IsAt,  0.5, 10, false, 4, 4",
+		// IsAt with relative reverse index
+		"IsAt,  -0.1, 10, false, 8, 8",
+		"IsAt,  -0.05, 10, false, 9, 9",
+		"IsAt,  -0.15, 10, false, 8, 8",
+		"IsAt,  -0.9, 10, false, 0, 0",
+		"IsAt,  -0.95, 10, false, 0, 0",
+		"IsAt,  -0.5, 10, false, 4, 4",
+
+		// IsAfter with fixed index
+		"IsAfter,  1, 10, false, 1, 9",
+		"IsAfter,  5, 10, false, 5, 9",
+		"IsAfter,  9, 10, false, 9, 9",
+		"IsAfter,  10, 10, true, 10, 9",
+		// IsAfter with reverse index
+		"IsAfter,  -1, 10, true, 10, 9",
+		"IsAfter,  -2, 10, false, 9, 9",
+		"IsAfter,  -5, 10, false, 6, 9",
+		"IsAfter,  -10, 10, false, 1, 9",
+		// IsAfter with relative index
+		"IsAfter,  0.1, 10, false, 1, 9",
+		"IsAfter,  0.5, 10, false, 5, 9",
+		"IsAfter,  0.9, 10, false, 9, 9",
+		"IsAfter,  0.95, 10, false, 9, 9",
+		// IsAfter with relative reverse index
+		"IsAfter,  -0.05, 10, false, 9, 9",
+		"IsAfter,  -0.1, 10, false, 9, 9",
+		"IsAfter,  -0.5, 10, false, 5, 9",
+		"IsAfter,  -0.9, 10, false, 1, 9",
+		"IsAfter,  -0.95, 10, false, 1, 9",
+
+		// IsBefore with fixed index
+		"IsBefore,  1, 10, true, 0, -1",
+		"IsBefore,  5, 10, false, 0, 3",
+		"IsBefore,  9, 10, false, 0, 7",
+		"IsBefore,  10, 10, false, 0, 8",
+		// IsBefore with reverse index
+		"IsBefore,  -1, 10, false, 0, 8",
+		"IsBefore,  -2, 10, false, 0, 7",
+		"IsBefore,  -5, 10, false, 0, 4",
+		"IsBefore,  -10, 10, true, 0, -1",
+		// IsBefore with relative index
+		"IsBefore,  0.1, 10, true, 0, -1",
+		"IsBefore,  0.5, 10, false, 0, 3",
+		"IsBefore,  0.9, 10, false, 0, 7",
+		"IsBefore,  0.95, 10, false, 0, 8",
+		// IsBefore with relative reverse index
+		"IsBefore,  -0.05, 10, false, 0, 8",
+		"IsBefore,  -0.1, 10, false, 0, 7",
+		"IsBefore,  -0.5, 10, false, 0, 3",
+		"IsBefore,  -0.9, 10, true, 0, -1",
+		"IsBefore,  -0.95, 10, true, 0, -1",
 
 		//TODO
 	})

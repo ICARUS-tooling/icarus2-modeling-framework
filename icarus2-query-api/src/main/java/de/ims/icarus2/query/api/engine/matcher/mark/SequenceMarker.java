@@ -145,8 +145,8 @@ public abstract class SequenceMarker {
 			Interval iv1 = intervals[index];
 			Interval iv2 = intervals[index+1];
 			iv1.from = 0;
-			iv1.to = pos.asUpperBound(size)-1;
-			iv2.from = pos.asLowerBound(size)+1;
+			iv1.to = pos.asUpperBound(size, false);
+			iv2.from = pos.asLowerBound(size, false);
 			iv2.to = size-1;
 			// We're good if at least 1 interval is not empty
 			return !iv1.isEmpty() || !iv2.isEmpty();
@@ -164,7 +164,7 @@ public abstract class SequenceMarker {
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
-			iv.from = pos.asLowerBound(size)+1;
+			iv.from = pos.asLowerBound(size, false);
 			iv.to = size-1;
 			return !iv.isEmpty();
 		}
@@ -182,7 +182,7 @@ public abstract class SequenceMarker {
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
 			iv.from = 0;
-			iv.to = pos.asUpperBound(size)-1;
+			iv.to = pos.asUpperBound(size, false);
 			return !iv.isEmpty();
 		}
 	}
@@ -199,8 +199,8 @@ public abstract class SequenceMarker {
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
 			Interval iv = intervals[index];
-			iv.from = start.asLowerBound(size);
-			iv.to = end.asUpperBound(size);
+			iv.from = start.asLowerBound(size, true);
+			iv.to = end.asUpperBound(size, true);
 			return !iv.isEmpty();
 		}
 	}
@@ -219,8 +219,8 @@ public abstract class SequenceMarker {
 			Interval iv1 = intervals[index];
 			Interval iv2 = intervals[index+1];
 			iv1.from = 0;
-			iv1.to = start.asUpperBound(size)-1;
-			iv2.from = end.asLowerBound(size)+1;
+			iv1.to = start.asUpperBound(size, false);
+			iv2.from = end.asLowerBound(size, false);
 			iv2.to = size-1;
 			return !iv1.isEmpty() || !iv2.isEmpty();
 		}
