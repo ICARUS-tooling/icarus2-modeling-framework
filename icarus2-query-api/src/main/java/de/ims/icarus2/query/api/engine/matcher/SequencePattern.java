@@ -96,70 +96,95 @@ public class SequencePattern {
 		return new Builder();
 	}
 
-	/** The IQL source of structural constraints for this matcher. */
-	private final IqlElement source;
-	/** Stores all the raw node definitions from the query extracted from {@link #source} */
-	private final IqlNode[] nodes;
-	/** Defines the general direction for matching. ANY is equivalent to FIRST here. */
-	private final QueryModifier modifier;
-	/** Maximum number of reported to report per container. Either -1 or a positive value. */
-	private final long limit;
-	/** THe root context for evaluations in this pattern */
-	private final EvaluationContext context;
-	/** Constraint from the 'FILTER BY' section */
-	private final FilterDef filterConstraint;
-	/** COnstraint from the 'HAVING' section */
-	private final ExpressionDef globalConstraint;
-
 
 	/** Dummy node usable as tail if query is simple */
 	static Node accept = new Node();
 
-	/** Entry point to the object graph of the state machine */
-	private final Node root;
-	/** Total number of caches needed for this pattern */
-	private final int cacheCount;
-	/** Total number of managed {@link Interval} instances */
-	private final int intervalCount;
-	/** Total number of int[] buffers needed by nodes */
-	private final int bufferCount;
-	/** Original referential intervals */
-	private final IntervalRef[] intervalRefs;
-	/** Keeps track of all the proper nodes. Used for monitoring */
-	private final ProperNode[] properNodes;
-	/** Lists all the markers used by original nodes */
-	private final RangeMarker[] markers;
-	/** Blueprints for creating new {@link NodeMatcher} instances per thread */
-	private final List<NodeDef> nodeDefs;
-
 	private final AtomicInteger matcherIdGen = new AtomicInteger(0);
+
+	/** The IQL source of structural constraints for this matcher. */
+	private final IqlElement source;
+	/** Defines the general direction for matching. ANY is equivalent to FIRST here. */
+	private final QueryModifier modifier;
+	/** The root context for evaluations in this pattern */
+	private final EvaluationContext context;
+
+	private final StateMachine stateMachine;
+
+	static class StateMachine {
+
+		/** Stores all the raw node definitions from the query extracted from {@link #source} */
+		IqlNode[] nodes;
+		/** Constraint from the 'FILTER BY' section */
+		FilterDef filterConstraint;
+		/** Constraint from the 'HAVING' section */
+		ExpressionDef globalConstraint;
+		/** Maximum number of reported to report per container. Either -1 or a positive value. */
+		long limit;
+		/** Entry point to the object graph of the state machine */
+		Node root;
+		/** Total number of caches needed for this pattern */
+		int cacheCount;
+		/** Total number of managed {@link Interval} instances */
+		int intervalCount;
+		/** Total number of int[] buffers needed by nodes */
+		int bufferCount;
+		/** Original referential intervals */
+		IntervalRef[] intervalRefs;
+		/** Keeps track of all the proper nodes. Used for monitoring */
+		ProperNode[] properNodes;
+		/** Lists all the markers used by original nodes */
+		RangeMarker[] markers;
+		/** Blueprints for creating new {@link NodeMatcher} instances per thread */
+		List<NodeDef> nodeDefs;
+
+		// Access methods for the matcher
+		Node getRoot() { return root; }
+		RangeMarker[] getMarkers() { return markers; }
+		IqlNode[] getNodes() { return nodes; }
+		int[] getHits() { return new int[nodes.length]; }
+		ContainerMatcher makeFilterConstraint() { return instantiate(filterConstraint); }
+		Expression<?> makeGlobalConstraint() { return instantiate(globalConstraint); }
+		NodeMatcher[] makeNodeMatchers() {
+			return nodeDefs.stream()
+				.map(NodeDef::matcher)
+				.toArray(NodeMatcher[]::new);
+		}
+		Cache[] makeCaches() {
+			return IntStream.range(0, cacheCount)
+				.mapToObj(i -> new Cache())
+				.toArray(Cache[]::new);
+		}
+		Interval[] makeIntervals() {
+			return IntStream.range(0, intervalCount)
+				.mapToObj(i -> new Interval())
+				.toArray(Interval[]::new);
+		}
+		IntervalRef[] makeIntervalRefs() {
+			return  Stream.of(intervalRefs)
+				.map(IntervalRef::clone)
+				.toArray(IntervalRef[]::new);
+		}
+		int[][] makeBuffer() {
+			return IntStream.range(0, bufferCount)
+				.mapToObj(i -> new int[INITIAL_SIZE])
+				.toArray(int[][]::new);
+		}
+	}
 
 	private SequencePattern(Builder builder) {
 		modifier = builder.getModifier();
-		limit = builder.getLimit();
 		source = builder.getRoot();
 		context = builder.geContext();
 
-		SequenceProcessor proc = new SequenceProcessor(context, builder.geExpressionFactory());
-		proc.process(source, builder.getFilterConstraint(), builder.getGlobalConstraint());
-
-		root = proc.root;
-		filterConstraint = proc.filter;
-		globalConstraint = proc.global;
-		nodes = proc.nodes.toArray(new IqlNode[0]);
-		properNodes = proc.properNodes.stream().sorted().toArray(ProperNode[]::new);
-		cacheCount = proc.cacheCount;
-		intervalCount = proc.intervalCount;
-		bufferCount = proc.bufferCount;
-		intervalRefs = proc.intervalRefs.toArray(new IntervalRef[0]);
-		markers = proc.markers.toArray(new RangeMarker[0]);
-		nodeDefs = proc.nodeDefs;
+		SequenceQueryProcessor proc = new SequenceQueryProcessor(builder);
+		stateMachine = proc.createStateMachine();
 
 		//TODO
 	}
 
 	/** Utility class for generating the state machine */
-	static class SequenceProcessor {
+	static class SequenceQueryProcessor {
 		Node root;
 		Node tail = accept;
 		int cacheCount;
@@ -169,21 +194,48 @@ public class SequencePattern {
 		ExpressionDef global;
 
 		final EvaluationContext rootContext;
+		final QueryModifier modifier;
 		final ExpressionFactory expressionFactory;
 		final List<IqlNode> nodes = new ArrayList<>();
 		final List<IntervalRef> intervalRefs = new ArrayList<>();
 		final List<NodeDef> nodeDefs = new ArrayList<>();
 		final Set<ProperNode> properNodes = new ReferenceOpenHashSet<>();
 		final List<RangeMarker> markers = new ArrayList<>();
+		final long limit;
+		final IqlElement rootElement;
+		final IqlConstraint filterConstraint;
+		final IqlConstraint globalConstraint;
 
-		SequenceProcessor(EvaluationContext rootContext, ExpressionFactory expressionFactory) {
-			this.rootContext = requireNonNull(rootContext);
-			this.expressionFactory = requireNonNull(expressionFactory);
+		SequenceQueryProcessor(Builder builder) {
+			rootContext = builder.geContext();
+			expressionFactory = builder.geExpressionFactory();
+			modifier = builder.getModifier();
+			limit = builder.getLimit();
+			rootElement = builder.getRoot();
+			filterConstraint = builder.getFilterConstraint();
+			globalConstraint = builder.getGlobalConstraint();
 		}
 
-		void process(IqlElement root, IqlConstraint filterConstraint,
-				IqlConstraint globalConstraint) {
+		StateMachine createStateMachine() {
+			StateMachine sm = new StateMachine();
+			//TODO implement the converter
 
+			// Fill state machine
+			sm.properNodes = properNodes.stream().sorted().toArray(ProperNode[]::new);
+			sm.filterConstraint = filter;
+			sm.globalConstraint = global;
+			sm.nodes = nodes.toArray(new IqlNode[0]);
+			sm.limit = this.limit;
+			sm.root = this.root;
+			sm.properNodes = properNodes.stream().sorted().toArray(ProperNode[]::new);
+			sm.cacheCount = cacheCount;
+			sm.intervalCount = intervalCount;
+			sm.bufferCount = bufferCount;
+			sm.intervalRefs = intervalRefs.toArray(new IntervalRef[0]);
+			sm.markers = markers.toArray(new RangeMarker[0]);
+			sm.nodeDefs = nodeDefs;
+
+			return sm;
 		}
 	}
 
@@ -200,7 +252,7 @@ public class SequencePattern {
 	public Matcher<Container> matcher() {
 		int id = matcherIdGen.getAndIncrement();
 
-		return new SequenceMatcher(this, id);
+		return new SequenceMatcher(stateMachine, id);
 	}
 
 	private static Expression<?> instantiate(ExpressionDef def) {
@@ -211,6 +263,8 @@ public class SequencePattern {
 		return def==null ? null : def.matcher();
 	}
 
+	private static final int INITIAL_SIZE = 1<<10;
+
 	/**
 	 * Public entry point for sequence matching and holder of the
 	 * state during a matching operation.
@@ -220,9 +274,8 @@ public class SequencePattern {
 	 */
 	static class SequenceMatcher extends AbstractMatcher<Container> {
 
-		private static final int INITIAL_SIZE = 1<<10;
-
-		//TODO have pattern record the thread we used to create this matcher and verify when matching?
+		/** The only thread allowed to call {@link #matches(long, Container)} on this instance */
+		private final Thread thread;
 
 		/** Last allowed index to match. Typically equal to {@code size - 1}. */
 		private int to = UNSET_INT;
@@ -231,12 +284,10 @@ public class SequencePattern {
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
 		private boolean finished;
 
-		/** Target sequence to be searched */
-		private Container sequence;
+		/** The node of the state machine to start matching with. */
+		private final Node root;
 		/** Items in target container, copied for faster access */
 		private Item[] items = new Item[INITIAL_SIZE];
-		/** Index of the container being matched */
-		private long index = UNSET_LONG;
 
 		/** Total number of reported reported so far */
 		private long reported = 0;
@@ -257,9 +308,10 @@ public class SequencePattern {
 		 */
 		private int last = 0;
 
-		/** The source of this matcher */
-		private final SequencePattern pattern;
-		/** Raw nodes from the query */
+//		/** The source of this matcher */
+//		private final SequencePattern pattern;
+
+		/** Raw nodes from the query, order matches the items in 'matchers' */
 		private final IqlNode[] nodes;
 		/** All the atomic nodes defined in the query */
 		private final NodeMatcher[] matchers;
@@ -281,33 +333,26 @@ public class SequencePattern {
 
 		//TODO add
 
-		private SequenceMatcher(SequencePattern pattern, int id) {
+		private SequenceMatcher(StateMachine stateMachine, int id) {
 			super(id);
 
-			this.pattern = requireNonNull(pattern);
+			thread = Thread.currentThread();
 
-			this.markers = pattern.markers;
-			this.nodes = pattern.nodes;
-			this.hits = new int[nodes.length];
+			synchronized(stateMachine) {
+				this.root = stateMachine.getRoot();
+				this.markers = stateMachine.getMarkers();
+				this.nodes = stateMachine.getNodes();
+				this.hits = stateMachine.getHits();
 
-			this.filterConstraint = instantiate(pattern.filterConstraint);
-			this.globalConstraint = instantiate(pattern.globalConstraint);
+				this.filterConstraint = stateMachine.makeFilterConstraint();
+				this.globalConstraint = stateMachine.makeGlobalConstraint();
 
-			this.matchers = pattern.nodeDefs.stream()
-					.map(NodeDef::matcher)
-					.toArray(NodeMatcher[]::new);
-			this.caches = IntStream.range(0, pattern.cacheCount)
-					.mapToObj(i -> new Cache())
-					.toArray(Cache[]::new);
-			this.intervals = IntStream.range(0, pattern.intervalCount)
-					.mapToObj(i -> new Interval())
-					.toArray(Interval[]::new);
-			this.intervalRefs = Stream.of(pattern.intervalRefs)
-					.map(IntervalRef::clone)
-					.toArray(IntervalRef[]::new);
-			this.buffers = IntStream.range(0, pattern.bufferCount)
-					.mapToObj(i -> new int[INITIAL_SIZE])
-					.toArray(int[][]::new);
+				this.matchers = stateMachine.makeNodeMatchers();
+				this.caches = stateMachine.makeCaches();
+				this.intervals = stateMachine.makeIntervals();
+				this.intervalRefs = stateMachine.makeIntervalRefs();
+				this.buffers = stateMachine.makeBuffer();
+			}
 		}
 
 		/**
@@ -315,14 +360,12 @@ public class SequencePattern {
 		 */
 		@Override
 		public boolean matches(long index, Container target) {
+			checkState("Illegal access from foreign thread", thread==Thread.currentThread());
 
 			// Apply pre-filtering if available to reduce matcher overhead
 			if(filterConstraint!=null && !filterConstraint.matches(index, target)) {
 				return false;
 			}
-
-			this.index = index;
-			this.sequence = target;
 
 			int size = strictToInt(target.getItemCount());
 			// If new size exceeds buffer, grow all storages
@@ -335,7 +378,7 @@ public class SequencePattern {
 					buffers[i] = new int[newSize];
 				}
 			}
-			// Now copy container content into our buffer
+			// Now copy container content into our buffer for faster access during matching
 			for (int i = 0; i < size; i++) {
 				items[i] = target.getItemAt(i);
 			}
@@ -355,19 +398,17 @@ public class SequencePattern {
 			}
 
 			// Let the state machine do its work
-			boolean matched = pattern.root.match(this, 0);
+			boolean matched = root.match(this, 0);
 			// From here on down all hits have already been reported
 
 			// Global constraints have already been taken into account at this point
 
 			// Cleanup duty -> we must erase all references to target and its elements
 			Arrays.fill(items, 0, size, null);
-			sequence = null;
 			for (int i = 0; i < matchers.length; i++) {
 				matchers[i].reset();
 			}
 			Arrays.fill(hits, UNSET_INT);
-			//TODO should we cleanup the node map as well?
 			entry = 0;
 
 			return matched;
@@ -388,7 +429,7 @@ public class SequencePattern {
 			entry++;
 		}
 
-		void dispatch() {
+		void dispatchMatch() {
 			//TODO create immutable and serializable object from current state and send it to subscriber
 			//TODO increment reported counter upon dispatching
 		}
@@ -407,7 +448,7 @@ public class SequencePattern {
 
 		//TODO add fields for configuring the result buffer
 
-		private Builder() { /* no-op */ };
+		private Builder() { /* no-op */ }
 
 		//TODO add all the setter methods
 
@@ -490,6 +531,7 @@ public class SequencePattern {
 		}
 	}
 
+	/** Encapsulates information to instantiate a new {@link Expression}. */
 	static class ExpressionDef {
 		final Expression<?> constraint;
 		final EvaluationContext context;
@@ -519,7 +561,6 @@ public class SequencePattern {
 			this.element = requireNonNull(element);
 		}
 
-		//TODO relies on the internal threadlocal instances of the context (rly a good idea?)
 		NodeMatcher matcher() {
 			Assignable<? extends Item> element = context.duplicate(this.element);
 			Expression<?> constraint = constraint();
@@ -540,7 +581,6 @@ public class SequencePattern {
 			this.element = requireNonNull(lane);
 		}
 
-		//TODO relies on the internal threadlocal instances of the context (rly a good idea?)
 		ContainerMatcher matcher() {
 			Assignable<? extends Container> lane = context.duplicate(this.element);
 			Expression<?> constraint = constraint();
@@ -595,11 +635,11 @@ public class SequencePattern {
 
 	static class Cache {
 		/**
-		 * Paired booleans for each entry, leaving capacity for 256 entries by default.
+		 * Paired booleans for each entry, leaving capacity for 512 entries by default.
 		 * First value of each entry indicates whether it is actually set, second one
 		 * stores the cached value.
 		 */
-		boolean[] data = new boolean[512];
+		boolean[] data = new boolean[INITIAL_SIZE];
 
 		void reset(int size) {
 			int capacity = size<<1;
@@ -700,14 +740,16 @@ public class SequencePattern {
 	 * as a result.
 	 */
 	static final class Finish extends Node {
+		final long limit;
+
+		public Finish(long limit) { this.limit = limit; }
+
 		@Override
 		boolean match(SequenceMatcher matcher, int pos) {
-			final SequencePattern pattern = matcher.pattern;
-
-			matcher.dispatch();
+			matcher.dispatchMatch();
 
 			matcher.reported++;
-			if(pattern.limit!=UNSET_LONG && matcher.reported>=pattern.limit) {
+			if(limit!=UNSET_LONG && matcher.reported>=limit) {
 				matcher.finished = true;
 			}
 
@@ -882,6 +924,7 @@ public class SequencePattern {
 	static final class Scan extends ProperNode {
 		int minSize = 0;
 
+		//TODO add pointer to a single interval
 		final int cacheId;
 		final boolean forward;
 
@@ -893,6 +936,7 @@ public class SequencePattern {
 
 		@Override
 		boolean match(SequenceMatcher matcher, int pos) {
+			//TODO add support for interval restriction in sub-match methods
 			if(cacheId!=UNSET_INT) {
 				return matchForwardCached(matcher, pos);
 			} else if(forward) {
