@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
 import static de.ims.icarus2.util.lang.Primitives._boolean;
-import static de.ims.icarus2.util.lang.Primitives.cast;
+import static de.ims.icarus2.util.lang.Primitives.unbox;
 
 import java.util.Optional;
 import java.util.Set;
@@ -114,7 +114,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	@Unguarded(Unguarded.DELEGATE)
 	@Override
 	public void setValue(Item item, String key, Object value) {
-		setBoolean(item, key, cast((Boolean)value));
+		setBoolean(item, key, unbox((Boolean)value));
 	}
 
 	@Override

@@ -19,7 +19,7 @@ package de.ims.icarus2.model.standard.view.paged;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives._int;
-import static de.ims.icarus2.util.lang.Primitives.cast;
+import static de.ims.icarus2.util.lang.Primitives.unbox;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.ref.Reference;
@@ -115,7 +115,7 @@ public class DefaultPageControl extends AbstractPart<PagedCorpusView> implements
 
 							@Override
 							public IndexSet load(Integer key) throws Exception {
-								return DefaultPageControl.this.pageBuffer.createPage(cast(key));
+								return DefaultPageControl.this.pageBuffer.createPage(unbox(key));
 							}
 						});
 			}

@@ -93,35 +93,35 @@ public class Primitives {
 
 	//TODO add documentation for all the cast and boxing methods!
 
-	public static int cast(Integer value) {
+	public static int unbox(Integer value) {
 		return value==null ? 0 : value.intValue();
 	}
 
-	public static long cast(Long value) {
+	public static long unbox(Long value) {
 		return value==null ? 0L : value.intValue();
 	}
 
-	public static double cast(Double value) {
+	public static double unbox(Double value) {
 		return value==null ? 0D : value.doubleValue();
 	}
 
-	public static float cast(Float value) {
+	public static float unbox(Float value) {
 		return value==null ? 0F : value.floatValue();
 	}
 
-	public static short cast(Short value) {
+	public static short unbox(Short value) {
 		return value==null ? 0 : value.shortValue();
 	}
 
-	public static byte cast(Byte value) {
+	public static byte unbox(Byte value) {
 		return value==null ? 0 : value.byteValue();
 	}
 
-	public static boolean cast(Boolean value) {
+	public static boolean unbox(Boolean value) {
 		return value==null ? false : value.booleanValue();
 	}
 
-	public static char cast(Character value) {
+	public static char unbox(Character value) {
 		return value==null ? 0 : value.charValue();
 	}
 

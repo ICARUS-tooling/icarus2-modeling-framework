@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.util.func;
 
-import static de.ims.icarus2.util.lang.Primitives.cast;
+import static de.ims.icarus2.util.lang.Primitives.unbox;
 
 import java.util.function.Consumer;
 
@@ -42,7 +42,7 @@ public interface AnnotationConsumer<E extends Object> {
 
 		@Override
 		default void apply(Item item, String key, Integer value) {
-			applyInt(item, key, cast(value));
+			applyInt(item, key, unbox(value));
 		}
 
 		void applyInt(Item item, String key, int value);
@@ -53,7 +53,7 @@ public interface AnnotationConsumer<E extends Object> {
 
 		@Override
 		default void apply(Item item, String key, Long value) {
-			applyLong(item, key, cast(value));
+			applyLong(item, key, unbox(value));
 		}
 
 		void applyLong(Item item, String key, long value);
@@ -64,7 +64,7 @@ public interface AnnotationConsumer<E extends Object> {
 
 		@Override
 		default void apply(Item item, String key, Float value) {
-			applyFloat(item, key, cast(value));
+			applyFloat(item, key, unbox(value));
 		}
 
 		void applyFloat(Item item, String key, float value);
@@ -75,7 +75,7 @@ public interface AnnotationConsumer<E extends Object> {
 
 		@Override
 		default void apply(Item item, String key, Double value) {
-			applyDouble(item, key, cast(value));
+			applyDouble(item, key, unbox(value));
 		}
 
 		void applyDouble(Item item, String key, double value);
@@ -86,7 +86,7 @@ public interface AnnotationConsumer<E extends Object> {
 
 		@Override
 		default void apply(Item item, String key, Boolean value) {
-			applyBoolean(item, key, cast(value));
+			applyBoolean(item, key, unbox(value));
 		}
 
 		void applyBoolean(Item item, String key, boolean value);
