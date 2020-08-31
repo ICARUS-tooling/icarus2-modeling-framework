@@ -60,10 +60,11 @@ public class NodeMatcher extends AbstractMatcher<Item> {
 		element.assign(target);
 
 		// Now evaluate constraint (expensive op)
-		return constraint.computeAsBoolean();
-	}
+		boolean result = constraint.computeAsBoolean();
 
-	public void reset() {
+		// Don't keep a reference to target item around!!
 		element.clear();
+
+		return result;
 	}
 }

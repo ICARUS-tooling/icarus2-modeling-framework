@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.engine.matcher.mark;
 
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
+import java.util.stream.IntStream;
+
 /**
  * Models a simple bounded interval in {@code int} space.
  * <p>
@@ -46,6 +48,10 @@ public class Interval {
 		return iv;
 	}
 
+	public static Interval blank() { return new Interval(); }
+
+	protected Interval() { /* no-op */ }
+
 	/** The first legal index */
 	public int from = UNSET_INT;
 
@@ -60,7 +66,9 @@ public class Interval {
 
 	public int size() { return to-from+1; }
 
-	public boolean isEmpty() { return to<from; }
+	public boolean isEmpty() { return to<from || to==UNSET_INT || from==UNSET_INT; }
+
+	public IntStream stream() { return IntStream.rangeClosed(from, to); }
 
 	/**
 	 * Reduces this interval's boundaries to encompass the index intersection

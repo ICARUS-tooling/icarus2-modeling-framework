@@ -19,15 +19,13 @@
  */
 package de.ims.icarus2.query.api.engine.matcher;
 
-import de.ims.icarus2.model.api.members.item.Item;
-
 /**
  * @author Markus Gärtner
  *
  */
-public interface Matcher<I extends Item> {
+public interface Matcher<E> {
 
-	boolean matches(long index, I target);
+	boolean matches(long index, E target);
 
 	int id();
 }
