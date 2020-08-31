@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -82,8 +83,12 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * ...                                                           // configure builder
  * SequencePattern pattern = builder.build();                    // obtain state machine
  *
+ * SequenceMatcher matcher = pattern.matcher();                  // instantiate a new matcher
  *
  * </code></pre>
+ *
+ * @param <C> Type of the surrounding context (typically the sequence itself)
+ * @param <E> Type of individual elements matched by the state machine
  *
  * @author Markus Gärtner
  *
@@ -108,47 +113,87 @@ public class SequencePattern {
 	private final QueryModifier modifier;
 	/** The root context for evaluations in this pattern */
 	private final EvaluationContext context;
+	/** Blueprint for instantiating a new {@link SequenceMatcher} */
+	private final StateMachineSetup setup;
 
-	private final StateMachine stateMachine;
+	private SequencePattern(Builder builder) {
+		modifier = builder.getModifier();
+		source = builder.getRoot();
+		context = builder.geContext();
 
-	static class StateMachine {
+		SequenceQueryProcessor proc = new SequenceQueryProcessor(builder);
+		setup = proc.createStateMachine();
+
+		//TODO
+	}
+
+	/**
+	 * Crates a new matcher that uses this state machine and that can be safely used from
+	 * within a single thread.
+	 * <p>
+	 * Important Note:<br>
+	 * This method <b>MUST</b> be called from the thread that is intended to
+	 * be used for the actual matching, as the underlying {@link EvaluationContext}
+	 * instances use {@link ThreadLocal} to fetch expressions and assignables.
+	 */
+	//TODO add arguments to delegate result buffer dispatch output and monitoring
+	public Matcher<Container> matcher() {
+		int id = matcherIdGen.getAndIncrement();
+
+		return new SequenceMatcher(setup, id);
+	}
+
+	private static final int INITIAL_SIZE = 1<<10;
+
+	/**
+	 * Encapsulates all the information needed to instantiate a matcher for
+	 * the sequence matching state machine.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	static class StateMachineSetup {
 
 		/** Stores all the raw node definitions from the query extracted from {@link #source} */
-		IqlNode[] nodes;
+		IqlNode[] nodes = {};
 		/** Constraint from the 'FILTER BY' section */
-		FilterDef filterConstraint;
+		Supplier<Matcher<Container>> filterConstraint;
 		/** Constraint from the 'HAVING' section */
-		ExpressionDef globalConstraint;
+		Supplier<Expression<?>> globalConstraint;
 		/** Maximum number of reported to report per container. Either -1 or a positive value. */
-		long limit;
+		long limit = UNSET_LONG;
 		/** Entry point to the object graph of the state machine */
 		Node root;
 		/** Total number of caches needed for this pattern */
-		int cacheCount;
+		int cacheCount = 0;
 		/** Total number of managed {@link Interval} instances */
-		int intervalCount;
+		int intervalCount = 0;
 		/** Total number of int[] buffers needed by nodes */
-		int bufferCount;
+		int bufferCount = 0;
 		/** Original referential intervals */
-		IntervalRef[] intervalRefs;
+		IntervalRef[] intervalRefs = {};
 		/** Keeps track of all the proper nodes. Used for monitoring */
-		ProperNode[] properNodes;
+		ProperNode[] properNodes = {};
 		/** Lists all the markers used by original nodes */
-		RangeMarker[] markers;
+		RangeMarker[] markers = {};
 		/** Blueprints for creating new {@link NodeMatcher} instances per thread */
-		List<NodeDef> nodeDefs;
+		Supplier<Matcher<Item>>[] nodeDefs;
 
-		// Access methods for the matcher
+		// Access methods for the matcher/state
 		Node getRoot() { return root; }
 		RangeMarker[] getMarkers() { return markers; }
 		IqlNode[] getNodes() { return nodes; }
 		int[] getHits() { return new int[nodes.length]; }
-		ContainerMatcher makeFilterConstraint() { return instantiate(filterConstraint); }
-		Expression<?> makeGlobalConstraint() { return instantiate(globalConstraint); }
-		NodeMatcher[] makeNodeMatchers() {
-			return nodeDefs.stream()
-				.map(NodeDef::matcher)
-				.toArray(NodeMatcher[]::new);
+		Matcher<Container> makeFilterConstraint() {
+			return filterConstraint==null ? null : filterConstraint.get();
+		}
+		Expression<?> makeGlobalConstraint() {
+			return globalConstraint==null ? null : globalConstraint.get();
+		}
+		Matcher<Item>[] makeNodeMatchers() {
+			return Stream.of(nodeDefs)
+				.map(Supplier::get)
+				.toArray(Matcher[]::new);
 		}
 		Cache[] makeCaches() {
 			return IntStream.range(0, cacheCount)
@@ -157,7 +202,7 @@ public class SequencePattern {
 		}
 		Interval[] makeIntervals() {
 			return IntStream.range(0, intervalCount)
-				.mapToObj(i -> new Interval())
+				.mapToObj(i -> Interval.blank())
 				.toArray(Interval[]::new);
 		}
 		IntervalRef[] makeIntervalRefs() {
@@ -172,17 +217,6 @@ public class SequencePattern {
 		}
 	}
 
-	private SequencePattern(Builder builder) {
-		modifier = builder.getModifier();
-		source = builder.getRoot();
-		context = builder.geContext();
-
-		SequenceQueryProcessor proc = new SequenceQueryProcessor(builder);
-		stateMachine = proc.createStateMachine();
-
-		//TODO
-	}
-
 	/** Utility class for generating the state machine */
 	static class SequenceQueryProcessor {
 		Node root;
@@ -190,8 +224,8 @@ public class SequencePattern {
 		int cacheCount;
 		int intervalCount;
 		int bufferCount;
-		FilterDef filter;
-		ExpressionDef global;
+		Supplier<Matcher<Container>> filter;
+		Supplier<Expression<?>> global;
 
 		final EvaluationContext rootContext;
 		final QueryModifier modifier;
@@ -216,8 +250,8 @@ public class SequencePattern {
 			globalConstraint = builder.getGlobalConstraint();
 		}
 
-		StateMachine createStateMachine() {
-			StateMachine sm = new StateMachine();
+		StateMachineSetup createStateMachine() {
+			StateMachineSetup sm = new StateMachineSetup();
 			//TODO implement the converter
 
 			// Fill state machine
@@ -233,37 +267,118 @@ public class SequencePattern {
 			sm.bufferCount = bufferCount;
 			sm.intervalRefs = intervalRefs.toArray(new IntervalRef[0]);
 			sm.markers = markers.toArray(new RangeMarker[0]);
-			sm.nodeDefs = nodeDefs;
+			sm.nodeDefs = nodeDefs.toArray(new Supplier[0]);
 
 			return sm;
 		}
 	}
 
 	/**
-	 * Crates a new matcher that uses this state machine and that can be safely used from
-	 * within a single thread.
+	 * Contains all the state information for a {@link SequenceMatcher}
+	 * operating on a single thread.
 	 * <p>
-	 * Important Note:<br>
-	 * This method <b>MUST</b> be called from the thread that is intended to
-	 * be used for the actual matching, as the underlying {@link EvaluationContext}
-	 * instances use {@link ThreadLocal} to fetch expressions and assignables.
+	 * This class mainly exists as an intermediary access point for
+	 * testing the functionality of {@link Node} implementations and
+	 * other aspects of the state machine for sequence matching.
+	 *
+	 * @author Markus Gärtner
+	 *
 	 */
-	//TODO add arguments to delegate result buffer dispatch output and monitoring
-	public Matcher<Container> matcher() {
-		int id = matcherIdGen.getAndIncrement();
+	static class State {
+		/** Items in target container, copied for faster access */
+		Item[] elements;
 
-		return new SequenceMatcher(stateMachine, id);
+		/** Raw nodes from the query, order matches the items in 'matchers' */
+		final IqlNode[] nodes;
+		/** All the atomic nodes defined in the query */
+		final Matcher<Item>[] matchers;
+		/** Caches used by various nodes */
+		final Cache[] caches;
+		/** Raw position intervals used by nodes */
+		final Interval[] intervals;
+		/** Referential intervals used by nodes to delegate positional information*/
+		final IntervalRef[] intervalRefs;
+		/** All the raw markers that  */
+		final RangeMarker[] markers;
+		/** Keeps track of the last hit index for every raw node */
+		final int[] hits;
+		/** The available int[] buffers used by various node implementations */
+		final int[][] buffers;
+
+		final Matcher<Container> filterConstraint;
+		final Expression<?> globalConstraint;
+
+		/** Total number of reported full matches so far */
+		long reported = 0;
+
+
+		/** Number of mappings stored so far and also the next insertion index */
+		int entry = 0;
+
+		/** Keys for the node mapping */
+		int[] m_node = new int[INITIAL_SIZE];
+		/** Values for the node mapping, i.e. the associated indices */
+		int[] m_pos = new int[INITIAL_SIZE];
+
+		/** Last allowed index to match. Typically equal to {@code size - 1}. */
+		int to = UNSET_INT;
+		/** Total number of elements in the target sequence. */
+		int size = UNSET_INT;
+		/** Set by the Finish node if a result limit exists and we already found enough matches. */
+		boolean finished;
+
+		/**
+		 * End index of the last (sub)match, used by repetitions to keep track.
+		 * Initially {@code 0}, turned to {@code -1} for failed matches and to
+		 * the next index to be visited when a match occurred.
+		 */
+		int last = 0;
+
+		State(StateMachineSetup stateMachineSetup) {
+			this.elements = new Item[INITIAL_SIZE];
+			this.markers = stateMachineSetup.getMarkers();
+			this.nodes = stateMachineSetup.getNodes();
+			this.hits = stateMachineSetup.getHits();
+
+			this.filterConstraint = stateMachineSetup.makeFilterConstraint();
+			this.globalConstraint = stateMachineSetup.makeGlobalConstraint();
+
+			this.matchers = stateMachineSetup.makeNodeMatchers();
+			this.caches = stateMachineSetup.makeCaches();
+			this.intervals = stateMachineSetup.makeIntervals();
+			this.intervalRefs = stateMachineSetup.makeIntervalRefs();
+			this.buffers = stateMachineSetup.makeBuffer();
+		}
+
+		int scope() {
+			return entry;
+		}
+
+		void reset(int scope) {
+			entry = scope;
+		}
+
+		/** Resolve raw node for 'nodeId' and map to 'index' in result buffer. */
+		void map(int nodeId, int index) {
+			m_node[entry] = nodeId;
+			m_pos[entry] = index;
+			entry++;
+		}
+
+		void reset() {
+			// Cleanup duty -> we must erase all references to target and its elements
+			Arrays.fill(elements, 0, size, null);
+			Arrays.fill(hits, UNSET_INT);
+			entry = 0;
+			last = 0;
+			to = 0;
+		}
+
+		void dispatchMatch() {
+			//TODO create immutable and serializable object from current state and send it to subscriber
+			//TODO increment reported counter upon dispatching
+		}
 	}
-
-	private static Expression<?> instantiate(ExpressionDef def) {
-		return def==null ? null : def.constraint();
-	}
-
-	private static ContainerMatcher instantiate(FilterDef def) {
-		return def==null ? null : def.matcher();
-	}
-
-	private static final int INITIAL_SIZE = 1<<10;
 
 	/**
 	 * Public entry point for sequence matching and holder of the
@@ -272,94 +387,38 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class SequenceMatcher extends AbstractMatcher<Container> {
+	static class SequenceMatcher extends State implements Matcher<Container> {
 
 		/** The only thread allowed to call {@link #matches(long, Container)} on this instance */
-		private final Thread thread;
+		final Thread thread;
 
-		/** Last allowed index to match. Typically equal to {@code size - 1}. */
-		private int to = UNSET_INT;
-		/** Total number of elements in the target sequence. */
-		private int size = UNSET_INT;
-		/** Set by the Finish node if a result limit exists and we already found enough matches. */
-		private boolean finished;
+		final int id;
 
 		/** The node of the state machine to start matching with. */
-		private final Node root;
-		/** Items in target container, copied for faster access */
-		private Item[] items = new Item[INITIAL_SIZE];
-
-		/** Total number of reported reported so far */
-		private long reported = 0;
-
-
-		/** Number of mappings stored so far and also the next insertion index */
-		private int entry = 0;
-
-		/** Keys for the node mapping */
-		private int[] m_node = new int[INITIAL_SIZE];
-		/** Values for the node mapping, i.e. the associated indices */
-		private int[] m_pos = new int[INITIAL_SIZE];
-
-		/**
-		 * End index of the last (sub)match, used by repetitions to keep track.
-		 * Initially {@code 0}, turned to {@code -1} for failed matches and to
-		 * the next index to be visited when a match occurred.
-		 */
-		private int last = 0;
+		final Node root;
 
 //		/** The source of this matcher */
 //		private final SequencePattern pattern;
 
-		/** Raw nodes from the query, order matches the items in 'matchers' */
-		private final IqlNode[] nodes;
-		/** All the atomic nodes defined in the query */
-		private final NodeMatcher[] matchers;
-		/** Caches used by various nodes */
-		private final Cache[] caches;
-		/** Raw position intervals used by nodes */
-		private final Interval[] intervals;
-		/** Referential intervals used by nodes to delegate positional information*/
-		private final IntervalRef[] intervalRefs;
-		/** All the raw markers that  */
-		private final RangeMarker[] markers;
-		/** Keeps track of the last hit index for every raw node */
-		private final int[] hits;
-		/** The available int[] buffers used by various node implementations */
-		private final int[][] buffers;
-
-		private final ContainerMatcher filterConstraint;
-		private final Expression<?> globalConstraint;
-
 		//TODO add
 
-		private SequenceMatcher(StateMachine stateMachine, int id) {
-			super(id);
+		SequenceMatcher(StateMachineSetup stateMachineSetup, int id) {
+			super(stateMachineSetup);
 
+			this.id = id;
 			thread = Thread.currentThread();
-
-			synchronized(stateMachine) {
-				this.root = stateMachine.getRoot();
-				this.markers = stateMachine.getMarkers();
-				this.nodes = stateMachine.getNodes();
-				this.hits = stateMachine.getHits();
-
-				this.filterConstraint = stateMachine.makeFilterConstraint();
-				this.globalConstraint = stateMachine.makeGlobalConstraint();
-
-				this.matchers = stateMachine.makeNodeMatchers();
-				this.caches = stateMachine.makeCaches();
-				this.intervals = stateMachine.makeIntervals();
-				this.intervalRefs = stateMachine.makeIntervalRefs();
-				this.buffers = stateMachine.makeBuffer();
-			}
+			this.root = stateMachineSetup.getRoot();
 		}
+
+		@Override
+		public int id() { return 0; }
 
 		/**
 		 * @see de.ims.icarus2.query.api.engine.matcher.Matcher#matches(long, de.ims.icarus2.model.api.members.item.Item)
 		 */
 		@Override
 		public boolean matches(long index, Container target) {
+			// Sanity check to make sure we operate on the correct thread
 			checkState("Illegal access from foreign thread", thread==Thread.currentThread());
 
 			// Apply pre-filtering if available to reduce matcher overhead
@@ -369,9 +428,9 @@ public class SequencePattern {
 
 			int size = strictToInt(target.getItemCount());
 			// If new size exceeds buffer, grow all storages
-			if(size>=items.length) {
-				int newSize = CollectionUtils.growSize(items.length, size);
-				items = new Item[newSize];
+			if(size>=elements.length) {
+				int newSize = CollectionUtils.growSize(elements.length, size);
+				elements = new Item[newSize];
 				m_node = new int[newSize];
 				m_pos = new int[newSize];
 				for (int i = 0; i < buffers.length; i++) {
@@ -380,9 +439,10 @@ public class SequencePattern {
 			}
 			// Now copy container content into our buffer for faster access during matching
 			for (int i = 0; i < size; i++) {
-				items[i] = target.getItemAt(i);
+				elements[i] = target.getItemAt(i);
 			}
 			this.size = size;
+			to = size-1;
 
 			// Update raw intervals
 			int intervalIndex = 0;
@@ -399,39 +459,14 @@ public class SequencePattern {
 
 			// Let the state machine do its work
 			boolean matched = root.match(this, 0);
-			// From here on down all hits have already been reported
-
-			// Global constraints have already been taken into account at this point
-
-			// Cleanup duty -> we must erase all references to target and its elements
-			Arrays.fill(items, 0, size, null);
-			for (int i = 0; i < matchers.length; i++) {
-				matchers[i].reset();
-			}
-			Arrays.fill(hits, UNSET_INT);
-			entry = 0;
+			/*
+			 * Stable predicates at this point:
+			 *  - All hits have already been reported.
+			 *  - Global constraints have already been taken into account.
+			 */
+			reset();
 
 			return matched;
-		}
-
-		int scope() {
-			return size;
-		}
-
-		void reset(int scope) {
-			entry = scope;
-		}
-
-		/** Resolve raw node for 'nodeId' and map to 'index' in result buffer. */
-		void map(int nodeId, int index) {
-			m_node[entry] = nodeId;
-			m_pos[entry] = index;
-			entry++;
-		}
-
-		void dispatchMatch() {
-			//TODO create immutable and serializable object from current state and send it to subscriber
-			//TODO increment reported counter upon dispatching
 		}
 	}
 
@@ -481,7 +516,6 @@ public class SequencePattern {
 
 		@Override
 		protected SequencePattern create() { return new SequencePattern(this); }
-
 	}
 
 	//TODO add mechanics to properly collect results from multiple buffers
@@ -532,7 +566,7 @@ public class SequencePattern {
 	}
 
 	/** Encapsulates information to instantiate a new {@link Expression}. */
-	static class ExpressionDef {
+	static class ExpressionDef implements Supplier<Expression<?>> {
 		final Expression<?> constraint;
 		final EvaluationContext context;
 
@@ -541,7 +575,8 @@ public class SequencePattern {
 			this.context = requireNonNull(context);
 		}
 
-		Expression<?> constraint() {
+		@Override
+		public Expression<?> get() {
 			return context.duplicate(constraint);
 		}
 	}
@@ -550,20 +585,24 @@ public class SequencePattern {
 	 * Buffer for all the information needed to create a {@link NodeMatcher}
 	 * for a new {@link SequenceMatcher} instance.
 	 */
-	static class NodeDef extends ExpressionDef {
+	static class NodeDef implements Supplier<Matcher<Item>> {
 		final Assignable<? extends Item> element;
+		final Supplier<Expression<?>> constraints;
+		final EvaluationContext context;
 		final int id;
 
 		public NodeDef(int id, Assignable<? extends Item> element, Expression<?> constraint,
 				EvaluationContext context) {
-			super(constraint, context);
+			this.context = requireNonNull(context);
+			this.constraints = new ExpressionDef(constraint, context);
 			this.id = id;
 			this.element = requireNonNull(element);
 		}
 
-		NodeMatcher matcher() {
+		@Override
+		public Matcher<Item> get() {
 			Assignable<? extends Item> element = context.duplicate(this.element);
-			Expression<?> constraint = constraint();
+			Expression<?> constraint = constraints.get();
 			return new NodeMatcher(id, element, constraint);
 		}
 	}
@@ -572,18 +611,22 @@ public class SequencePattern {
 	 * Buffer for all the information needed to create a {@link ContainerMatcher}
 	 * for a new {@link SequenceMatcher} instance.
 	 */
-	static class FilterDef extends ExpressionDef {
+	static class FilterDef implements Supplier<Matcher<Container>> {
 		final Assignable<? extends Container> element;
+		final Supplier<Expression<?>> constraints;
+		final EvaluationContext context;
 
 		public FilterDef(Assignable<? extends Container> lane, Expression<?> constraint,
 				EvaluationContext context) {
-			super(constraint, context);
+			this.context = requireNonNull(context);
+			this.constraints = new ExpressionDef(constraint, context);
 			this.element = requireNonNull(lane);
 		}
 
-		ContainerMatcher matcher() {
+		@Override
+		public Matcher<Container> get() {
 			Assignable<? extends Container> lane = context.duplicate(this.element);
-			Expression<?> constraint = constraint();
+			Expression<?> constraint = constraints.get();
 			return new ContainerMatcher(lane, constraint);
 		}
 	}
@@ -698,8 +741,8 @@ public class SequencePattern {
 	static class Node {
 		Node next = accept;
 
-		boolean match(SequenceMatcher matcher, int pos) {
-			matcher.last = pos;
+		boolean match(State state, int pos) {
+			state.last = pos;
 			return true;
 		}
 
@@ -734,6 +777,8 @@ public class SequencePattern {
 //		abstract void append(StringBuilder sb);
 	}
 
+	//TODO make a Begin node class that only verifies the total sequence length against minSize of tree info
+
 	/**
 	 * Implements a final accept node that verifies that all existentially
 	 * quantified nodes have been matched and which records the entire match
@@ -745,12 +790,12 @@ public class SequencePattern {
 		public Finish(long limit) { this.limit = limit; }
 
 		@Override
-		boolean match(SequenceMatcher matcher, int pos) {
-			matcher.dispatchMatch();
+		boolean match(State state, int pos) {
+			state.dispatchMatch();
 
-			matcher.reported++;
-			if(limit!=UNSET_LONG && matcher.reported>=limit) {
-				matcher.finished = true;
+			state.reported++;
+			if(limit!=UNSET_LONG && state.reported>=limit) {
+				state.finished = true;
 			}
 
 			return true;
@@ -764,12 +809,12 @@ public class SequencePattern {
 		}
 
 		@Override
-		boolean match(SequenceMatcher matcher, int pos) {
+		boolean match(State state, int pos) {
 			//TODO do we need to anchor all member labels here?
-			if(!matcher.globalConstraint.computeAsBoolean()) {
+			if(!state.globalConstraint.computeAsBoolean()) {
 				return false;
 			}
-			return next.match(matcher, pos);
+			return next.match(state, pos);
 		}
 
 		@Override
@@ -790,8 +835,8 @@ public class SequencePattern {
 		}
 
 		@Override
-		boolean match(SequenceMatcher matcher, int pos) {
-			final Interval[] intervals = matcher.intervals;
+		boolean match(State state, int pos) {
+			final Interval[] intervals = state.intervals;
 			final int fence = intervalIndex + intervalCount;
 
 			boolean allowed = false;
@@ -806,7 +851,7 @@ public class SequencePattern {
 				return false;
 			}
 
-			return next.match(matcher, pos);
+			return next.match(state, pos);
 		}
 
 		@Override
@@ -879,29 +924,33 @@ public class SequencePattern {
 		}
 
 		@Override
-		boolean match(SequenceMatcher matcher, int pos) {
-			final Cache cache = matcher.caches[cacheId];
+		boolean match(State state, int pos) {
+			if(pos>state.to) {
+				return false;
+			}
+
+			final Cache cache = state.caches[cacheId];
 
 			boolean value;
 
 			if(cache.isSet(pos)) {
 				value = cache.getValue(pos);
 			} else {
-				// Unknown index -> compute atom once and cache result
-				final NodeMatcher m = matcher.matchers[nodeId];
-				value = m.matches(pos, matcher.items[pos]);
+				// Unknown index -> compute local constraints once and cache result
+				final Matcher<Item> m = state.matchers[nodeId];
+				value = m.matches(pos, state.elements[pos]);
 				cache.setValue(pos, value);
 			}
 
 			if(value) {
 				// Keep track of preliminary match
-				matcher.map(nodeId, pos);
+				state.map(nodeId, pos);
 
-				value = next.match(matcher, pos+1);
+				value = next.match(state, pos+1);
 
 				if(value) {
 					// Store last successful match
-					matcher.hits[nodeId] = pos;
+					state.hits[nodeId] = pos;
 				}
 			}
 
@@ -922,7 +971,7 @@ public class SequencePattern {
 	 * by iteratively scanning for matches of the current tail.
 	 */
 	static final class Scan extends ProperNode {
-		int minSize = 0;
+		int minSize = 1; // can't be less than 1 since at some point inside we need a proper node
 
 		//TODO add pointer to a single interval
 		final int cacheId;
@@ -935,14 +984,14 @@ public class SequencePattern {
 		}
 
 		@Override
-		boolean match(SequenceMatcher matcher, int pos) {
+		boolean match(State state, int pos) {
 			//TODO add support for interval restriction in sub-match methods
 			if(cacheId!=UNSET_INT) {
-				return matchForwardCached(matcher, pos);
+				return matchForwardCached(state, pos);
 			} else if(forward) {
-				return matchForwardUncached(matcher, pos);
+				return matchForwardUncached(state, pos);
 			}
-			return matchBackwards(matcher, pos);
+			return matchBackwards(state, pos);
 		}
 
 		/**
@@ -953,15 +1002,15 @@ public class SequencePattern {
 		 * scanning when there is no benefit from caching as every node will
 		 * only be visited once anyway.
 		 */
-		private boolean matchForwardUncached(SequenceMatcher matcher, int pos) {
-			final int fence = matcher.to - minSize;
+		private boolean matchForwardUncached(State state, int pos) {
+			final int fence = state.to - minSize + 1;
 
 			boolean result = false;
 
-			for (int i = pos; i <= fence && !matcher.finished; i++) {
-				int scope = matcher.scope();
-				result |= next.match(matcher, i);
-				matcher.reset(scope);
+			for (int i = pos; i <= fence && !state.finished; i++) {
+				int scope = state.scope();
+				result |= next.match(state, i);
+				state.reset(scope);
 			}
 
 			return result;
@@ -975,36 +1024,36 @@ public class SequencePattern {
 		 * continue down all further nodes in the state machine, but we can
 		 * effectively rule out unsuccessful paths.
 		 */
-		private boolean matchForwardCached(SequenceMatcher matcher, int pos) {
-			Cache cache = matcher.caches[cacheId];
+		private boolean matchForwardCached(State state, int pos) {
+			Cache cache = state.caches[cacheId];
 
-			int fence = matcher.to - minSize;
+			int fence = state.to - minSize + 1;
 
 			boolean result = false;
 
-			for (int i = pos; i <= fence && !matcher.finished; i++) {
-				int scope = matcher.scope();
+			for (int i = pos; i <= fence && !state.finished; i++) {
+				int scope = state.scope();
 				boolean stored = cache.isSet(i);
 				boolean matched;
 				if(stored) {
 					matched = cache.getValue(i);
 					if(matched) {
 						// Continue matching, but we know it will succeed
-						next.match(matcher, i);
+						next.match(state, i);
 					} else {
 						// We know this is a dead-end, so skip
-						matcher.reset(scope);
+						state.reset(scope);
 						continue;
 					}
 				} else {
 					// Previously unseen index, so explore and cache result
-					matched = next.match(matcher, i);
+					matched = next.match(state, i);
 					cache.setValue(i, matched);
 				}
 
 				result |= matched;
 
-				matcher.reset(scope);
+				state.reset(scope);
 			}
 
 			return result;
@@ -1017,14 +1066,16 @@ public class SequencePattern {
 		 * This variant does not use memoization and is intended for top-level
 		 * scanning when there is no benefit from caching as every node will
 		 * only be visited once anyway.
+		 * The main purpose for this separate implementation is to handle the
+		 * LAST query modifier.
 		 */
-		private boolean matchBackwards(SequenceMatcher matcher, int pos) {
+		private boolean matchBackwards(State state, int pos) {
 			boolean result = false;
 
-			for (int i = matcher.to - minSize; i >= pos && !matcher.finished; i++) {
-				int scope = matcher.scope();
-				result |= next.match(matcher, i);
-				matcher.reset(scope);
+			for (int i = state.to - minSize + 1; i >= pos && !state.finished; i--) {
+				int scope = state.scope();
+				result |= next.match(state, i);
+				state.reset(scope);
 			}
 
 			return result;
@@ -1032,9 +1083,9 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
-			//TODO store 'info' state and merge atom and next info
 			next.study(info);
 			minSize = info.minSize;
+
 			assert minSize>0 : "zero-width atom";
 
 			info.deterministic = false;
@@ -1045,13 +1096,13 @@ public class SequencePattern {
 
 	/**
      * Guard node at the end of each branch to block the {@link #study(TreeInfo)}
-     * chain but forward the {@link #match(SequenceMatcher, int)} call to 'next'.
+     * chain but forward the {@link #match(State, int)} call to 'next'.
      */
     static final class BranchConn extends Node {
         BranchConn() {}
         @Override
-		boolean match(SequenceMatcher matcher, int pos) {
-            return next.match(matcher, pos);
+		boolean match(State state, int pos) {
+            return next.match(state, pos);
         }
         @Override
 		boolean study(TreeInfo info) {
@@ -1076,13 +1127,13 @@ public class SequencePattern {
 		}
 
     	@Override
-    	boolean match(SequenceMatcher matcher, int pos) {
+    	boolean match(State state, int pos) {
             for (int n = 0; n < atoms.length; n++) {
                 if (atoms[n] == null) {
                 	// zero-width path
-                    if (conn.next.match(matcher, pos))
+                    if (conn.next.match(state, pos))
                         return true;
-                } else if (atoms[n].match(matcher, pos)) {
+                } else if (atoms[n].match(state, pos)) {
                     return true;
                 }
             }
@@ -1142,35 +1193,35 @@ public class SequencePattern {
 		}
 
         @Override
-		boolean match(SequenceMatcher matcher, int pos) {
+		boolean match(State state, int pos) {
         	// Save state for entire match call
-        	int scope = matcher.scope();
+        	int scope = state.scope();
 
         	boolean matched = true;
 
         	// Try to match minimum number of repetitions
             int count;
             for (count = 0; count < cmin; count++) {
-                if (!atom.match(matcher, pos)) {
+                if (!atom.match(state, pos)) {
     				matched = false;
     				break;
                 }
                 // Successful atom match -> move forward
-                pos = matcher.last;
+                pos = state.last;
             }
 
             if(matched) {
 	            if (type == GREEDY)
-	            	matched = matchGreedy(matcher, pos, count);
+	            	matched = matchGreedy(state, pos, count);
 	            else if (type == RELUCTANT)
-	            	matched = matchReluctant(matcher, pos, count);
+	            	matched = matchReluctant(state, pos, count);
 	            else
-	            	matched = matchPossessive(matcher, pos, count);
+	            	matched = matchPossessive(state, pos, count);
             }
 
-            // Rollback all our mappings
+            // Roll back all our mappings if we failed
             if(!matched) {
-            	matcher.reset(scope);
+            	state.reset(scope);
             }
 
             return matched;
@@ -1183,30 +1234,30 @@ public class SequencePattern {
          * @param count the index to start matching at
          * @param count the number of atoms that have matched already
          */
-        boolean matchGreedy(SequenceMatcher matcher, int pos, int count) {
+        boolean matchGreedy(State state, int pos, int count) {
 			int backLimit = count;
 			// Stores scope handles for reset when backing off
-			int[] b_scope = matcher.buffers[scopeBuf];
+			int[] b_scope = state.buffers[scopeBuf];
 			// Stores matcher positions for backing off
-			int[] b_pos = matcher.buffers[posBuf];
+			int[] b_pos = state.buffers[posBuf];
 			// We are greedy so match as many as we can
 			while (count<cmax) {
 				// Keep track of scope and position
-				int scope = matcher.scope();
+				int scope = state.scope();
 				b_pos[count] = pos;
 				b_scope[count] = scope;
 				// Try advancing
-				if(!atom.match(matcher, pos)) {
-					matcher.reset(scope);
+				if(!atom.match(state, pos)) {
+					state.reset(scope);
 					break;
 				}
 				 // Zero length match
-				if (pos == matcher.last) {
-					matcher.reset(scope);
+				if (pos == state.last) {
+					state.reset(scope);
 					break;
 				}
 				// Move up index and number matched
-				pos = matcher.last;
+				pos = state.last;
 				count++;
 			}
 
@@ -1214,13 +1265,13 @@ public class SequencePattern {
 
 			// Handle backing off if match fails
 			while (count >= backLimit) {
-				if (next.match(matcher, pos)) {
+				if (next.match(state, pos)) {
 					return true;
 				}
 				// Need to backtrack one more step
 				count--;
 				pos = b_pos[count];
-				matcher.reset(b_scope[count]);
+				state.reset(b_scope[count]);
 			}
 			// Could not find a match for next, so fail
 			return false;
@@ -1232,32 +1283,32 @@ public class SequencePattern {
          * @param pos the index to start matching at
          * @param count the number of atoms that have matched already
          */
-        boolean matchReluctant(SequenceMatcher matcher, int pos, int count) {
+        boolean matchReluctant(State state, int pos, int count) {
 			for (;;) {
                 // Try finishing match without consuming any more
-				int scope = matcher.scope();
-				if (next.match(matcher, pos)) {
+				int scope = state.scope();
+				if (next.match(state, pos)) {
 					return true;
 				}
-				matcher.reset(scope);
+				state.reset(scope);
                 // At the maximum, no match found
 				if (count >= cmax) {
 					return false;
 				}
                 // Okay, must try one more atom
-				scope = matcher.scope();
-				if (!atom.match(matcher, pos)) {
-					matcher.reset(scope);
+				scope = state.scope();
+				if (!atom.match(state, pos)) {
+					state.reset(scope);
 					return false;
 				}
                 // If we haven't moved forward then must break out
 				// zero-width atom match
-				if (pos == matcher.last) {
-					matcher.reset(scope);
+				if (pos == state.last) {
+					state.reset(scope);
 					return false;
 				}
                 // Move up index and number matched
-				pos = matcher.last;
+				pos = state.last;
 				count++;
             }
         }
@@ -1267,24 +1318,24 @@ public class SequencePattern {
          * @param pos the index to start matching at
          * @param count the number of atoms that have matched already
          */
-        boolean matchPossessive(SequenceMatcher matcher, int pos, int count) {
+        boolean matchPossessive(State state, int pos, int count) {
 			for (; count < cmax; count++) {
 				// Try as many elements as possible
-				int scope = matcher.scope();
-				if (!atom.match(matcher, pos)) {
-					matcher.reset(scope);
+				int scope = state.scope();
+				if (!atom.match(state, pos)) {
+					state.reset(scope);
 					break;
 				}
 				// zero-width atom match
-				if (pos == matcher.last) {
-					matcher.reset(scope);
+				if (pos == state.last) {
+					state.reset(scope);
 					break;
 				}
                 // Move up index and number matched
-				pos = matcher.last;
+				pos = state.last;
 				count++;
 			}
-			return next.match(matcher, pos);
+			return next.match(state, pos);
         }
         @Override
 		boolean study(TreeInfo info) {

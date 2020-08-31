@@ -19,24 +19,42 @@
  */
 package de.ims.icarus2.query.api.engine.matcher;
 
-import static de.ims.icarus2.util.lang.Primitives._boolean;
-import static de.ims.icarus2.util.lang.Primitives.unbox;
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.stream.LongStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachine;
-import it.unimi.dsi.fastutil.longs.LongArraySet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Scan;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
+import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.test.util.Pair;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 /**
  * @author Markus Gärtner
@@ -44,38 +62,602 @@ import it.unimi.dsi.fastutil.longs.LongSet;
  */
 class SequencePatternTest {
 
+	private static Matcher<Item> matcher(int id, char c) {
+		return new Matcher<Item>() {
+
+			@Override
+			public boolean matches(long index, Item target) {
+				String s = target.toString();
+				assertThat(s).hasSize(1);
+				return s.charAt(0)==c;
+			}
+
+			@Override
+			public int id() { return id; }
+		};
+	}
+
+	private static Supplier<Matcher<Item>> sup(Matcher<Item> m) { return () -> m; }
+
+	@SafeVarargs
+	private static Supplier<Matcher<Item>>[] nodeDefs(Matcher<Item>...matchers) {
+		return Stream.of(matchers).map(SequencePatternTest::sup).toArray(Supplier[]::new);
+	}
+
+	private static Item item(int index, char c) {
+		Item item = mockItem();
+		when(_long(item.getIndex())).thenReturn(_long(index));
+		when(item.toString()).thenReturn(String.valueOf(c));
+		return item;
+	}
+
+	private static Node seq(Node...nodes) {
+		for (int i = 1; i < nodes.length; i++) {
+			nodes[i-1].next = nodes[i];
+		}
+		nodes[0].study(new TreeInfo());
+		return nodes[0];
+	}
+
+	private static final char SENTINEL_1 = 'X';
+	private static final char SENTINEL_2 = 'Y';
+	private static final int NODE_1 = 0;
+	private static final int NODE_2 = 1;
+	private static final int CACHE_1 = 0;
+	private static final int CACHE_2 = 1;
+	private static final int BUFFER_1 = 0;
+	private static final int BUFFER_2 = 1;
+
 	@Test
 	void testBuilder() {
 		assertThat(SequencePattern.builder()).isNotNull();
 	}
 
-	private static NodeMatcher mockNode(long...hits) {
-		final LongSet set = new LongArraySet();
-		LongStream.of(hits).forEach(set::add);
+	@Nested
+	class ForSingle {
 
-		NodeMatcher nm = mock(NodeMatcher.class);
-		when(_boolean(nm.matches(anyLong(), any()))).then(invoc -> {
-			long index = unbox((Long)invoc.getArgument(0));
-			return _boolean(set.contains(index));
-		});
+		@Nested
+		class WithOneNode extends NodeTest {
 
-		return nm;
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[1];
+				sms.cacheCount = 1;
+				sms.root = seq(new Single(0, NODE_1, CACHE_1), new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				return sms;
+			}
+
+			@DisplayName("1 node with cache and mapping")
+			@CsvSource({
+				"-, 0, false",
+				"X, 0, true",
+				"-X-, 0, false",
+				"-X-, 1, true",
+				"-X-, 2, false",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}, match={2}")
+			void testFull(String target, int startPos, boolean expectedResult) {
+				assertResult(target, match(startPos, expectedResult, expectedResult ? 1 : 0)
+						.cache(cache(CACHE_1, true).hits(expectedResult, startPos))
+						.map(expectedResult, NODE_1, startPos)
+						.node(node(NODE_1).last(expectedResult, startPos))
+				);
+			}
+		}
+
+		@Nested
+		class WithTwoNodes extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[2];
+				sms.cacheCount = 2;
+				sms.root = seq(
+						new Single(0, NODE_1, CACHE_1),
+						new Single(1, NODE_2, CACHE_2),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1), matcher(1, SENTINEL_2));
+				return sms;
+			}
+
+			@DisplayName("2 adjacent nodes with cache and mapping")
+			@CsvSource({
+				"--, 0, false, false, false",
+				"X-, 0, false, true, false",
+				"-Y, 0, false, false, false",
+				"XY, 0, true, true, true",
+				"-X--, 1, false, true, false",
+				"--Y-, 1, false, false, false",
+				"-XY-, 0, false, false, false",
+				"-XY-, 1, true, true, true",
+				"-XY-, 2, false, false, false",
+			})
+			@ParameterizedTest(name="{index}: XY in [{0}], start at {1}, match={2}")
+			void testFull(String target, int startPos, boolean expectedResult,
+					boolean node1Hit, boolean node2Hit) {
+				assertResult(target, match(startPos, expectedResult, expectedResult ? 1 : 0)
+						.cache(cache(CACHE_1, true)
+								.window(startPos)
+								.hits(node1Hit, startPos))
+						.cache(cache(CACHE_2, false)
+								.window(startPos+1)
+								.hits(node2Hit, startPos+1)
+								.set(node1Hit, startPos+1))
+						.map(node1Hit, NODE_1, startPos)
+						.map(node2Hit, NODE_2, startPos+1)
+						.node(node(NODE_1).last(expectedResult, startPos))
+						.node(node(NODE_2).last(expectedResult, startPos+1))
+				);
+			}
+		}
 	}
 
 	@Nested
-	class IndividualNodeTests {
+	class ForScan {
 
 		@Nested
-		class ForSingle {
+		class ForwardSingle extends NodeTest {
 
-			@ParameterizedTest
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[1];
+				sms.cacheCount = 1;
+				sms.root = seq(
+						new Scan(0, UNSET_INT, true),
+						new Single(1, NODE_1, CACHE_1),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				return sms;
+			}
+
+			@DisplayName("scan of 1 match")
 			@CsvSource({
-				"xXx",
+				"-, 0",
+				"--, 0",
+				"--, 1",
+				"-X-, 2",
 			})
-			void testMatch(String s, int pos) {
-				StateMachine sm = new StateMachine();
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testFail(String target, int startPos) {
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(CACHE_1, true))
+				);
+			}
 
+			@DisplayName("scan of 1 match")
+			@CsvSource({
+				"X, 0, 0",
+
+				"X--, 0, 0",
+				"-X-, 0, 1",
+				"--X, 0, 2",
+
+				"-X-, 1, 1",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testFindSingle(String target, int startPos, int hit) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).hits(hit))
+						.node(node(NODE_1).last(hit))
+				);
+			}
+
+			@DisplayName("scan of up to 3 matches")
+			@CsvSource({
+				"X--, 0, 1, 0",
+				"XX-, 0, 2, 1",
+				"XXX, 0, 3, 2",
+				"-XX, 0, 2, 2",
+				"-XX, 1, 2, 2",
+				"XXX, 1, 2, 2",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
+			void testMultiMatch(String target, int startPos, int matchCount, int last) {
+				assertResult(target, match(startPos, true, matchCount)
+						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.node(node(NODE_1).last(last))
+				);
 			}
 		}
+
+		@Nested
+		class ForwardSingleCached extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[1];
+				sms.cacheCount = 2;
+				sms.root = seq(
+						new Scan(0, CACHE_1, true),
+						new Single(1, NODE_1, CACHE_2),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				return sms;
+			}
+
+			@DisplayName("scan of 1 match")
+			@CsvSource({
+				"-, 0",
+				"---, 0",
+				"-X-, 2",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testFail(String target, int startPos) {
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(CACHE_1, true))
+				);
+			}
+
+			@DisplayName("scan of 1 match")
+			@CsvSource({
+				"X, 0, 0",
+
+				"X--, 0, 0",
+				"-X-, 0, 1",
+				"--X, 0, 2",
+
+				"-X-, 1, 1",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testSingleMatch(String target, int startPos, int last) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.node(node(NODE_1).last(last))
+				);
+			}
+
+			@DisplayName("scan of up to 3 matches")
+			@CsvSource({
+				"X--, 0, 1, 0",
+				"XX-, 0, 2, 1",
+				"XXX, 0, 3, 2",
+				"-XX, 0, 2, 2",
+				"-XX, 1, 2, 2",
+				"XXX, 1, 2, 2",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testMultiMatch(String target, int startPos, int matchCount, int last) {
+				assertResult(target, match(startPos, true, matchCount)
+						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.node(node(NODE_1).last(last))
+				);
+			}
+		}
+
+		@Nested
+		class BackwardSingle extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[1];
+				sms.cacheCount = 1;
+				sms.root = seq(
+						new Scan(0, UNSET_INT, false),
+						new Single(1, NODE_1, CACHE_1),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				return sms;
+			}
+
+			@DisplayName("scan of 1 match")
+			@CsvSource({
+				"-, 0, false",
+				"---, 0, false",
+				"-X-, 2, false",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testFail(String target, int startPos) {
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(CACHE_1, true))
+				);
+			}
+
+			@DisplayName("scan of 1 match")
+			@CsvSource({
+				"X, 0, 0",
+
+				"X--, 0, 0",
+				"-X-, 0, 1",
+				"--X, 0, 2",
+
+				"-X-, 1, 1",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
+			void testSingleMatch(String target, int startPos, int last) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.node(node(NODE_1).last(last))
+				);
+			}
+
+			@DisplayName("scan of up to 3 matches")
+			@CsvSource({
+				"X--, 0, 1, 0, 2, 0",
+				"XX-, 0, 2, 0, 2, 0",
+				"XXX, 0, 3, 0, 2, 0",
+				"-XX, 0, 2, 0, 2, 1",
+				"-XX, 1, 2, 1, 2, 1",
+				"XXX, 1, 2, 1, 2, 1",
+			})
+			@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
+			void testMultiMatch(String target, int startPos, int matchCount, int from, int to, int last) {
+				assertResult(target, match(startPos, true, matchCount)
+						.cache(cache(CACHE_1, true)
+								.window(from, to)
+								.hits(target, SENTINEL_1))
+						.node(node(NODE_1).last(last))
+				);
+			}
+		}
+	}
+
+	@Nested
+	class ForClosedRepetition {
+
+		private final int CMIN = 2;
+		private final int CMAX = 4;
+
+		@Nested
+		class Greedy extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[1];
+				sms.cacheCount = 1;
+				sms.bufferCount = 2;
+				sms.root = seq(
+						new Repetition(0, new Single(1, NODE_1, CACHE_1),
+								CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				return sms;
+			}
+
+			@CsvSource({
+				"-, 0, 0, 0",
+				"X, 0, 0, 0",
+				"X-, 0, 0, 1",
+				"-X, 0, 0, 0",
+				"XY, 0, 0, 1",
+				"XYX, 0, 0, 1",
+				"XXY, 1, 1, 2",
+			})
+			@ParameterizedTest(name="{index}: X'{2,4}' in [{0}], start at {1}")
+			void testFail(String target, int startPos, int from, int to) {
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(CACHE_1, true).window(from, to).hits(target, SENTINEL_1))
+				);
+			}
+
+			@CsvSource({
+				"XX, 0, 0, 1, 1",
+				"-XX, 1, 1, 2, 2",
+				"YXX, 1, 1, 2, 2",
+				"-XX-, 1, 1, 3, 2",
+			})
+			@ParameterizedTest(name="{index}: X'{2,4}' in [{0}], start at {1}")
+			void testFindMinimum(String target, int startPos, int from, int to, int last) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).window(from, to).hits(target, SENTINEL_1))
+						.map(NODE_1, startPos, startPos+1)
+						.node(node(NODE_1).last(last))
+				);
+			}
+
+			@CsvSource({
+				"XXXX, 0, 0, 3, 3",
+				"-XXXX, 1, 1, 4, 4",
+				"YXXXXZ, 1, 1, 4, 4",
+				"-XXXXX, 1, 1, 4, 4",
+			})
+			@ParameterizedTest(name="{index}: X'{2,4}' in [{0}], start at {1}")
+			void testFindMaximum(String target, int startPos, int from, int to, int last) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).window(from, to).hits(target, SENTINEL_1))
+						.map(NODE_1, startPos, startPos+1, startPos+2, startPos+3)
+						.node(node(NODE_1).last(last))
+				);
+			}
+		}
+	}
+
+	abstract static class NodeTest {
+		abstract StateMachineSetup setup();
+
+//		State state(String s) {
+//			assertThat(s).isNotEmpty();
+//
+//			StateMachineSetup setup = setup();
+//
+//			State state = new State(setup);
+//			state.size = s.length();
+//			state.elements = IntStream.range(0, s.length())
+//					.mapToObj(i -> item(i, s.charAt(i)))
+//					.toArray(Item[]::new);
+//
+//			return state;
+//		}
+
+		void assertResult(String s, MatchConfig config) {
+			assertThat(s).isNotEmpty();
+
+			StateMachineSetup setup = setup();
+
+			State state = new State(setup);
+			state.size = s.length();
+			state.to = s.length()-1;
+			state.elements = IntStream.range(0, s.length())
+					.mapToObj(i -> item(i, s.charAt(i)))
+					.toArray(Item[]::new);
+
+			config.assertResult(setup.root, state);
+		}
+	}
+
+	static MatchConfig match(int startPos, boolean expectedResult, int expectedCount) {
+		return new MatchConfig(startPos, expectedResult, expectedCount);
+	}
+
+	/** Encapsulates the info for expected matches and hits inside a single target sequence */
+	static class MatchConfig {
+		/** Index in target sequence to start the test search at */
+		private final int startPos;
+		/** Expected success state */
+		private final boolean expectedResult;
+		/** Total number of matches we expect */
+		private final int expectedCount;
+		/** Individual node info regarding last hits etc... */
+		private final List<NodeConfig> nodes = new ArrayList<>();
+		private final List<CacheConfig> caches = new ArrayList<>();
+		/**  */
+		private final List<Pair<Integer, Integer>> mapping = new ArrayList<>();
+
+		MatchConfig(int startPos, boolean expectedResult, int expectedCount) {
+			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
+			assertThat(expectedCount).as("Negative expected count").isGreaterThanOrEqualTo(0);
+			this.startPos = startPos;
+			this.expectedResult = expectedResult;
+			this.expectedCount = expectedCount;
+		}
+
+		MatchConfig node(NodeConfig node) { nodes.add(requireNonNull(node)); return this; }
+
+		MatchConfig cache(CacheConfig cache) { caches.add(requireNonNull(cache)); return this; }
+
+		MatchConfig map(int nodeId, int...indices) {
+			IntStream.of(indices).mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add);
+			return this;
+		}
+
+		MatchConfig map(boolean condition, int nodeId, int...indices) { if(condition) map(nodeId, indices); return this;}
+
+		void assertResult(Node root, State state) {
+			// Verify correct result
+			assertThat(root.match(state, startPos))
+				.as("Result for start position %d", _int(startPos))
+				.isEqualTo(expectedResult);
+
+			assertThat(state.reported)
+				.as("Total number of matches")
+				.isEqualTo(expectedCount);
+
+			for (CacheConfig cache : caches) {
+				cache.assertResult(startPos, state);
+			}
+
+			assertMapping(state);
+
+			for (NodeConfig node : nodes) {
+				node.assertResult(state);
+			}
+		}
+
+		private void assertMapping(State state) {
+			int size = mapping.size();
+			assertThat(state.entry)
+				.as("Incorrect number of mappings")
+				.isEqualTo(size);
+
+			for (int i = 0; i < size; i++) {
+				Pair<Integer, Integer> m = mapping.get(i);
+				assertThat(state.m_node[i])
+					.as("Node id mismatch in mapping at index %d", _int(i))
+					.isEqualTo(m.first.intValue());
+				assertThat(state.m_pos[i])
+					.as("Position mismatch in mapping at index %d", _int(i))
+					.isEqualTo(m.second.intValue());
+			}
+		}
+	}
+
+	private static class CacheConfig {
+		private final int cacheId;
+		private final boolean expectWindowSet;
+		/** The range of target elements we expect to be visited. If null, only startPos should be used. */
+		private Interval window;
+		private final IntSet hits = new IntOpenHashSet();
+		private final IntSet set = new IntOpenHashSet();
+
+		private CacheConfig(int cacheId, boolean expectWindowSet) {
+			this.cacheId = cacheId;
+			this.expectWindowSet = expectWindowSet;
+		}
+
+		CacheConfig window(int from, int to) { window = Interval.of(from, to); return this; }
+
+		CacheConfig window(int spot) { window = Interval.of(spot); return this; }
+
+		CacheConfig hits(int...indices) { for(int i=0; i< indices.length; i++) hits.add(indices[i]); return this; }
+
+		CacheConfig hits(boolean condition, int...indices) { if(condition) hits(indices); return this; }
+
+		CacheConfig set(int...indices) { for(int i=0; i< indices.length; i++) set.add(indices[i]); return this; }
+
+		CacheConfig set(boolean condition, int...indices) { if(condition) set(indices); return this; }
+
+		CacheConfig hits(String s, char sentinel) {
+			for (int i = 0; i < s.length(); i++) {
+				if(s.charAt(i)==sentinel) {
+					hits.add(i);
+				}
+			}
+			return this;
+		}
+
+		void assertResult(int startPos, State state) {
+			Interval window = this.window;
+			if(window==null) {
+				window = Interval.of(startPos);
+			}
+			Cache cache = state.caches[cacheId];
+			for (int i = window.from; i <= window.to; i++) {
+				if(expectWindowSet) {
+					assertThat(cache.isSet(i))
+						.as("Cache %d slot not set for index %d", _int(cacheId), _int(i))
+						.isTrue();
+				} else {
+					assertThat(cache.isSet(i))
+						.as("Cache %d set mismatch for index %d", _int(cacheId), _int(i))
+						.isEqualTo(set.contains(i));
+				}
+				assertThat(cache.getValue(i))
+					.as("Cache %d mismatch at index %d", _int(cacheId), _int(i))
+					.isEqualTo(hits.contains(i));
+			}
+		}
+	}
+
+	static CacheConfig cache(int cacheId, boolean expectWindowSet) {
+		return new CacheConfig(cacheId, expectWindowSet);
+	}
+
+	private static class NodeConfig {
+		private final int nodeId;
+		private int last = UNSET_INT;
+
+		private NodeConfig(int nodeId) { this.nodeId = nodeId; }
+
+		void assertResult(State state) {
+			if(last!=UNSET_INT) {
+				assertThat(state.hits[nodeId])
+					.as("Last hot for node %d", _int(nodeId))
+					.isEqualTo(last);
+			}
+		}
+
+		NodeConfig last(int last) { this.last = last; return this; }
+
+		NodeConfig last(boolean condition, int last) { if(condition) last(last); return this; }
+	}
+
+	static NodeConfig node(int nodeId) {
+		return new NodeConfig(nodeId);
 	}
 }
