@@ -38,6 +38,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import de.ims.icarus2.model.api.members.item.Item;
@@ -62,19 +63,33 @@ import it.unimi.dsi.fastutil.ints.IntSet;
  */
 class SequencePatternTest {
 
-	private static Matcher<Item> matcher(int id, char c) {
+	private static Matcher<Item> matcher(int id, CharPredicate pred) {
 		return new Matcher<Item>() {
 
 			@Override
 			public boolean matches(long index, Item target) {
 				String s = target.toString();
 				assertThat(s).hasSize(1);
-				return s.charAt(0)==c;
+				return pred.test(s.charAt(0));
 			}
 
 			@Override
 			public int id() { return id; }
 		};
+	}
+
+	private interface CharPredicate {
+		boolean test(char c);
+	}
+
+	/** Match given character exactly */
+	private static CharPredicate eq(char sentinel) {
+		return c -> c==sentinel;
+	}
+
+	/** Match given character while ignoring case */
+	private static CharPredicate ic(char sentinel) {
+		return c -> c==Character.toLowerCase(sentinel) || c==Character.toUpperCase(sentinel);
 	}
 
 	private static Supplier<Matcher<Item>> sup(Matcher<Item> m) { return () -> m; }
@@ -99,8 +114,9 @@ class SequencePatternTest {
 		return nodes[0];
 	}
 
-	private static final char SENTINEL_1 = 'X';
-	private static final char SENTINEL_2 = 'Y';
+	private static final CharPredicate EQUALS_X = eq('X');
+	private static final CharPredicate EQUALS_X_IC = ic('x');
+	private static final CharPredicate EQUALS_Y = eq('Y');
 	private static final int NODE_1 = 0;
 	private static final int NODE_2 = 1;
 	private static final int CACHE_1 = 0;
@@ -125,7 +141,7 @@ class SequencePatternTest {
 				sms.nodes = new IqlNode[1];
 				sms.cacheCount = 1;
 				sms.root = seq(new Single(0, NODE_1, CACHE_1), new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
 				return sms;
 			}
 
@@ -159,7 +175,7 @@ class SequencePatternTest {
 						new Single(0, NODE_1, CACHE_1),
 						new Single(1, NODE_2, CACHE_2),
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1), matcher(1, SENTINEL_2));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X), matcher(1, EQUALS_Y));
 				return sms;
 			}
 
@@ -210,7 +226,7 @@ class SequencePatternTest {
 						new Scan(0, UNSET_INT, true),
 						new Single(1, NODE_1, CACHE_1),
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
 				return sms;
 			}
 
@@ -258,7 +274,7 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
 			void testMultiMatch(String target, int startPos, int matchCount, int last) {
 				assertResult(target, match(startPos, true, matchCount)
-						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.cache(cache(CACHE_1, true).hits(target, EQUALS_X))
 						.node(node(NODE_1).last(last))
 				);
 			}
@@ -276,7 +292,7 @@ class SequencePatternTest {
 						new Scan(0, CACHE_1, true),
 						new Single(1, NODE_1, CACHE_2),
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
 				return sms;
 			}
 
@@ -306,7 +322,7 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 			void testSingleMatch(String target, int startPos, int last) {
 				assertResult(target, match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.cache(cache(CACHE_1, true).hits(target, EQUALS_X))
 						.node(node(NODE_1).last(last))
 				);
 			}
@@ -323,7 +339,7 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 			void testMultiMatch(String target, int startPos, int matchCount, int last) {
 				assertResult(target, match(startPos, true, matchCount)
-						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.cache(cache(CACHE_1, true).hits(target, EQUALS_X))
 						.node(node(NODE_1).last(last))
 				);
 			}
@@ -341,15 +357,15 @@ class SequencePatternTest {
 						new Scan(0, UNSET_INT, false),
 						new Single(1, NODE_1, CACHE_1),
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
 				return sms;
 			}
 
 			@DisplayName("scan of 1 match")
 			@CsvSource({
-				"-, 0, false",
-				"---, 0, false",
-				"-X-, 2, false",
+				"-, 0",
+				"---, 0",
+				"-X-, 2",
 			})
 			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 			void testFail(String target, int startPos) {
@@ -371,26 +387,27 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 			void testSingleMatch(String target, int startPos, int last) {
 				assertResult(target, match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).hits(target, SENTINEL_1))
+						.cache(cache(CACHE_1, true).hits(target, EQUALS_X))
 						.node(node(NODE_1).last(last))
 				);
 			}
 
 			@DisplayName("scan of up to 3 matches")
 			@CsvSource({
-				"X--, 0, 1, 0, 2, 0",
-				"XX-, 0, 2, 0, 2, 0",
-				"XXX, 0, 3, 0, 2, 0",
-				"-XX, 0, 2, 0, 2, 1",
-				"-XX, 1, 2, 1, 2, 1",
-				"XXX, 1, 2, 1, 2, 1",
+				"X--, 0, 1, 0-2, 0",
+				"XX-, 0, 2, 0-2, 0",
+				"XXX, 0, 3, 0-2, 0",
+				"-XX, 0, 2, 0-2, 1",
+				"-XX, 1, 2, 1-2, 1",
+				"XXX, 1, 2, 1-2, 1",
 			})
 			@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
-			void testMultiMatch(String target, int startPos, int matchCount, int from, int to, int last) {
+			void testMultiMatch(String target, int startPos, int matchCount,
+					@ConvertWith(IntervalConverter.class) Interval window, int last) {
 				assertResult(target, match(startPos, true, matchCount)
 						.cache(cache(CACHE_1, true)
-								.window(from, to)
-								.hits(target, SENTINEL_1))
+								.window(window)
+								.hits(target, EQUALS_X))
 						.node(node(NODE_1).last(last))
 				);
 			}
@@ -401,7 +418,7 @@ class SequencePatternTest {
 	class ForClosedRepetition {
 
 		private final int CMIN = 2;
-		private final int CMAX = 4;
+		private final int CMAX = 5;
 
 		@Nested
 		class Greedy extends NodeTest {
@@ -416,53 +433,235 @@ class SequencePatternTest {
 						new Repetition(0, new Single(1, NODE_1, CACHE_1),
 								CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, SENTINEL_1));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
 				return sms;
 			}
 
 			@CsvSource({
-				"-, 0, 0, 0",
-				"X, 0, 0, 0",
-				"X-, 0, 0, 1",
-				"-X, 0, 0, 0",
-				"XY, 0, 0, 1",
-				"XYX, 0, 0, 1",
-				"XXY, 1, 1, 2",
+				"-, 0, 0",
+				"X, 0, 0",
+				"X-, 0, 0-1",
+				"-X, 0, 0",
+				"XY, 0, 0-1",
+				"XYX, 0, 0-1",
+				"XXY, 1, 1-2",
 			})
-			@ParameterizedTest(name="{index}: X'{2,4}' in [{0}], start at {1}")
-			void testFail(String target, int startPos, int from, int to) {
+			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+			void testFail(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window) {
 				assertResult(target, match(startPos, false, 0)
-						.cache(cache(CACHE_1, true).window(from, to).hits(target, SENTINEL_1))
+						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
 				);
 			}
 
 			@CsvSource({
-				"XX, 0, 0, 1, 1",
-				"-XX, 1, 1, 2, 2",
-				"YXX, 1, 1, 2, 2",
-				"-XX-, 1, 1, 3, 2",
+				"XX, 0, 0-1, 1",
+				"-XX, 1, 1-2, 2",
+				"YXX, 1, 1-2, 2",
+				"-XX-, 1, 1-3, 2",
 			})
-			@ParameterizedTest(name="{index}: X'{2,4}' in [{0}], start at {1}")
-			void testFindMinimum(String target, int startPos, int from, int to, int last) {
+			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+			void testFindMinimum(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window, int last) {
 				assertResult(target, match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(from, to).hits(target, SENTINEL_1))
+						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
 						.map(NODE_1, startPos, startPos+1)
 						.node(node(NODE_1).last(last))
 				);
 			}
 
 			@CsvSource({
-				"XXXX, 0, 0, 3, 3",
-				"-XXXX, 1, 1, 4, 4",
-				"YXXXXZ, 1, 1, 4, 4",
-				"-XXXXX, 1, 1, 4, 4",
+				"XXXXX, 0, 0-4, 4",
+				"-XXXXX, 1, 1-5, 5",
+				"YXXXXXZ, 1, 1-5, 5",
+				"-XXXXXX, 1, 1-5, 5",
 			})
-			@ParameterizedTest(name="{index}: X'{2,4}' in [{0}], start at {1}")
-			void testFindMaximum(String target, int startPos, int from, int to, int last) {
+			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+			void testFindMaximum(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window, int last) {
 				assertResult(target, match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(from, to).hits(target, SENTINEL_1))
-						.map(NODE_1, startPos, startPos+1, startPos+2, startPos+3)
+						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_1, Interval.of(startPos, startPos+4).asArray())
 						.node(node(NODE_1).last(last))
+				);
+			}
+		}
+
+		@Nested
+		class GreedyExpansion extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[2];
+				sms.cacheCount = 2;
+				sms.bufferCount = 2;
+				sms.root = seq(
+						new Repetition(0, new Single(1, NODE_1, CACHE_1),
+								CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
+						new Single(1, NODE_2, CACHE_2),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(
+						matcher(0, EQUALS_X_IC),
+						matcher(1, EQUALS_X));
+				return sms;
+			}
+
+			@CsvSource({
+				"xxX, 0, 0-2, 0-1, 2, 2, 2, 2",
+				"xxXX, 0, 0-3, 0-2, 3, 3, 3, 3",
+				"xxXX-, 0, 0-4, 0-2, 3, 3-4, 3, 3",
+				"xxxXX-, 0, 0-4, 0-3, 4, 4-5, 4, 4",
+				"xxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
+			})
+			@ParameterizedTest(name="{index}: [Xx]'{2,5}'X in [{0}], start at {1}")
+			void testExpansion(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visited1,
+					@ConvertWith(IntervalConverter.class) Interval matched1,
+					int last1,
+					@ConvertWith(IntervalConverter.class) Interval visited2,
+					@ConvertWith(IntervalConverter.class) Interval matched2,
+					int last2) {
+
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+						.map(NODE_1, matched1.asArray())
+						.node(node(NODE_1).last(last1))
+
+						.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
+						.map(NODE_2, matched2.asArray())
+						.node(node(NODE_2).last(last2))
+				);
+			}
+		}
+
+		@Nested
+		class Possessive extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[1];
+				sms.cacheCount = 1;
+				sms.bufferCount = 2;
+				sms.root = seq(
+						new Repetition(0, new Single(1, NODE_1, CACHE_1),
+								CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
+				return sms;
+			}
+
+			@CsvSource({
+				"-, 0, 0",
+				"X, 0, 0",
+				"X-, 0, 0-1",
+				"-X, 0, 0",
+				"XY, 0, 0-1",
+				"XYX, 0, 0-1",
+				"XXY, 1, 1-2",
+			})
+			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+			void testFail(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window) {
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+				);
+			}
+
+			@CsvSource({
+				"XX, 0, 0-1, 1",
+				"-XX, 1, 1-2, 2",
+				"YXX, 1, 1-2, 2",
+				"-XX-, 1, 1-3, 2",
+			})
+			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+			void testFindMinimum(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window, int last) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_1, startPos, startPos+1)
+						.node(node(NODE_1).last(last))
+				);
+			}
+
+			@CsvSource({
+				"XXXXX, 0, 0-4, 4",
+				"-XXXXX, 1, 1-5, 5",
+				"YXXXXXZ, 1, 1-5, 5",
+				"-XXXXXX, 1, 1-5, 5",
+			})
+			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+			void testFindMaximum(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window, int last) {
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_1, Interval.of(startPos, startPos+4).asArray())
+						.node(node(NODE_1).last(last))
+				);
+			}
+		}
+
+		@Nested
+		class PossessiveExpansion extends NodeTest {
+
+			@Override
+			StateMachineSetup setup() {
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[2];
+				sms.cacheCount = 2;
+				sms.bufferCount = 2;
+				sms.root = seq(
+						new Repetition(0, new Single(1, NODE_1, CACHE_1),
+								CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+						new Single(1, NODE_2, CACHE_2),
+						new Finish(UNSET_LONG));
+				sms.nodeDefs = nodeDefs(
+						matcher(0, EQUALS_X_IC),
+						matcher(1, EQUALS_X));
+				return sms;
+			}
+
+			@DisplayName("consume too much")
+			@CsvSource({
+				"xxX, 0, 0-2, 2, -",
+				"xxXX, 0, 0-3, 3, -",
+				"xxXX-, 0, 0-4, 3, 4",
+				"xxxXX-, 0, 0-4, 4, 5",
+			})
+			@ParameterizedTest(name="{index}: [Xx]'{2,5}!'X in [{0}], start at {1}")
+			void testFail(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visited1, int last,
+					@ConvertWith(IntervalConverter.class) Interval visited2) {
+
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+						.node(node(NODE_1).last(last))
+
+						.cache(cache(CACHE_2, true).window(visited2))
+				);
+			}
+
+			@CsvSource({
+				"xxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
+			})
+			@ParameterizedTest(name="{index}: [Xx]'{2,5}'X in [{0}], start at {1}")
+			void testExpansion(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visited1,
+					@ConvertWith(IntervalConverter.class) Interval matched1,
+					int last1,
+					@ConvertWith(IntervalConverter.class) Interval visited2,
+					@ConvertWith(IntervalConverter.class) Interval matched2,
+					int last2) {
+
+				assertResult(target, match(startPos, true, 1)
+						.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+						.map(NODE_1, matched1.asArray())
+						.node(node(NODE_1).last(last1))
+
+						.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
+						.map(NODE_2, matched2.asArray())
+						.node(node(NODE_2).last(last2))
 				);
 			}
 		}
@@ -590,6 +789,8 @@ class SequencePatternTest {
 			this.expectWindowSet = expectWindowSet;
 		}
 
+		CacheConfig window(Interval window) { this.window = window; return this; }
+
 		CacheConfig window(int from, int to) { window = Interval.of(from, to); return this; }
 
 		CacheConfig window(int spot) { window = Interval.of(spot); return this; }
@@ -602,9 +803,9 @@ class SequencePatternTest {
 
 		CacheConfig set(boolean condition, int...indices) { if(condition) set(indices); return this; }
 
-		CacheConfig hits(String s, char sentinel) {
+		CacheConfig hits(String s, CharPredicate pred) {
 			for (int i = 0; i < s.length(); i++) {
-				if(s.charAt(i)==sentinel) {
+				if(pred.test(s.charAt(i))) {
 					hits.add(i);
 				}
 			}
@@ -615,6 +816,9 @@ class SequencePatternTest {
 			Interval window = this.window;
 			if(window==null) {
 				window = Interval.of(startPos);
+			}
+			if(window.isEmpty()) {
+				return;
 			}
 			Cache cache = state.caches[cacheId];
 			for (int i = window.from; i <= window.to; i++) {
@@ -647,7 +851,7 @@ class SequencePatternTest {
 		void assertResult(State state) {
 			if(last!=UNSET_INT) {
 				assertThat(state.hits[nodeId])
-					.as("Last hot for node %d", _int(nodeId))
+					.as("Last hit for node %d", _int(nodeId))
 					.isEqualTo(last);
 			}
 		}

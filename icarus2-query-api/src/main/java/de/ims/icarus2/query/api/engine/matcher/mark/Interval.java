@@ -68,7 +68,14 @@ public class Interval {
 
 	public boolean isEmpty() { return to<from || to==UNSET_INT || from==UNSET_INT; }
 
-	public IntStream stream() { return IntStream.rangeClosed(from, to); }
+	public IntStream stream() {
+		if(isEmpty()) {
+			return IntStream.empty();
+		}
+		return IntStream.rangeClosed(from, to);
+	}
+
+	public int[] asArray() { return stream().toArray(); }
 
 	/**
 	 * Reduces this interval's boundaries to encompass the index intersection

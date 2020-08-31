@@ -1319,7 +1319,7 @@ public class SequencePattern {
          * @param count the number of atoms that have matched already
          */
         boolean matchPossessive(State state, int pos, int count) {
-			for (; count < cmax; count++) {
+			for (; count < cmax;) {
 				// Try as many elements as possible
 				int scope = state.scope();
 				if (!atom.match(state, pos)) {
