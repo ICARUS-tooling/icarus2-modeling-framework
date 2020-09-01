@@ -45,12 +45,15 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Proxy;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Scan;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
+import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.RepetitionUtils.ClosedBase;
+import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.RepetitionUtils.OpenBase;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.test.util.Pair;
@@ -87,9 +90,19 @@ class SequencePatternTest {
 		return c -> c==sentinel;
 	}
 
+	/** Match anything but given character */
+	private static CharPredicate neq(char sentinel) {
+		return c -> c!=sentinel;
+	}
+
 	/** Match given character while ignoring case */
 	private static CharPredicate ic(char sentinel) {
 		return c -> c==Character.toLowerCase(sentinel) || c==Character.toUpperCase(sentinel);
+	}
+
+	/** Match no character -> always return false */
+	private static CharPredicate none() {
+		return c -> false;
 	}
 
 	private static Supplier<Matcher<Item>> sup(Matcher<Item> m) { return () -> m; }
@@ -115,6 +128,7 @@ class SequencePatternTest {
 	}
 
 	private static final CharPredicate EQUALS_X = eq('X');
+	private static final CharPredicate EQUALS_NOT_X = neq('X');
 	private static final CharPredicate EQUALS_X_IC = ic('x');
 	private static final CharPredicate EQUALS_Y = eq('Y');
 	private static final int NODE_1 = 0;
@@ -133,10 +147,10 @@ class SequencePatternTest {
 	class ForSingle {
 
 		@Nested
-		class WithOneNode extends NodeTest {
+		class WithOneNode implements NodeTest {
 
 			@Override
-			StateMachineSetup setup() {
+			public StateMachineSetup setup() {
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.nodes = new IqlNode[1];
 				sms.cacheCount = 1;
@@ -164,10 +178,10 @@ class SequencePatternTest {
 		}
 
 		@Nested
-		class WithTwoNodes extends NodeTest {
+		class WithTwoNodes implements NodeTest {
 
 			@Override
-			StateMachineSetup setup() {
+			public StateMachineSetup setup() {
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.nodes = new IqlNode[2];
 				sms.cacheCount = 2;
@@ -215,10 +229,10 @@ class SequencePatternTest {
 	class ForScan {
 
 		@Nested
-		class ForwardSingle extends NodeTest {
+		class ForwardSingle implements NodeTest {
 
 			@Override
-			StateMachineSetup setup() {
+			public StateMachineSetup setup() {
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.nodes = new IqlNode[1];
 				sms.cacheCount = 1;
@@ -281,10 +295,10 @@ class SequencePatternTest {
 		}
 
 		@Nested
-		class ForwardSingleCached extends NodeTest {
+		class ForwardSingleCached implements NodeTest {
 
 			@Override
-			StateMachineSetup setup() {
+			public StateMachineSetup setup() {
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.nodes = new IqlNode[1];
 				sms.cacheCount = 2;
@@ -346,10 +360,10 @@ class SequencePatternTest {
 		}
 
 		@Nested
-		class BackwardSingle extends NodeTest {
+		class BackwardSingle implements NodeTest {
 
 			@Override
-			StateMachineSetup setup() {
+			public StateMachineSetup setup() {
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.nodes = new IqlNode[1];
 				sms.cacheCount = 1;
@@ -414,28 +428,9 @@ class SequencePatternTest {
 		}
 	}
 
-	@Nested
-	class ForClosedRepetition {
+	static class RepetitionUtils {
 
-		private final int CMIN = 2;
-		private final int CMAX = 5;
-
-		@Nested
-		class Greedy extends NodeTest {
-
-			@Override
-			StateMachineSetup setup() {
-				StateMachineSetup sms = new StateMachineSetup();
-				sms.nodes = new IqlNode[1];
-				sms.cacheCount = 1;
-				sms.bufferCount = 2;
-				sms.root = seq(
-						new Repetition(0, new Single(1, NODE_1, CACHE_1),
-								CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
-						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
-				return sms;
-			}
+		interface ClosedBase extends NodeTest {
 
 			@CsvSource({
 				"-, 0, 0",
@@ -447,7 +442,7 @@ class SequencePatternTest {
 				"XXY, 1, 1-2",
 			})
 			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
-			void testFail(String target, int startPos,
+			default void testFail(String target, int startPos,
 					@ConvertWith(IntervalConverter.class) Interval window) {
 				assertResult(target, match(startPos, false, 0)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
@@ -461,7 +456,7 @@ class SequencePatternTest {
 				"-XX-, 1, 1-3, 2",
 			})
 			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
-			void testFindMinimum(String target, int startPos,
+			default void testFindMinimum(String target, int startPos,
 					@ConvertWith(IntervalConverter.class) Interval window, int last) {
 				assertResult(target, match(startPos, true, 1)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
@@ -477,7 +472,7 @@ class SequencePatternTest {
 				"-XXXXXX, 1, 1-5, 5",
 			})
 			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
-			void testFindMaximum(String target, int startPos,
+			default void testFindMaximum(String target, int startPos,
 					@ConvertWith(IntervalConverter.class) Interval window, int last) {
 				assertResult(target, match(startPos, true, 1)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
@@ -487,70 +482,7 @@ class SequencePatternTest {
 			}
 		}
 
-		@Nested
-		class GreedyExpansion extends NodeTest {
-
-			@Override
-			StateMachineSetup setup() {
-				StateMachineSetup sms = new StateMachineSetup();
-				sms.nodes = new IqlNode[2];
-				sms.cacheCount = 2;
-				sms.bufferCount = 2;
-				sms.root = seq(
-						new Repetition(0, new Single(1, NODE_1, CACHE_1),
-								CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
-						new Single(1, NODE_2, CACHE_2),
-						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(
-						matcher(0, EQUALS_X_IC),
-						matcher(1, EQUALS_X));
-				return sms;
-			}
-
-			@CsvSource({
-				"xxX, 0, 0-2, 0-1, 2, 2, 2, 2",
-				"xxXX, 0, 0-3, 0-2, 3, 3, 3, 3",
-				"xxXX-, 0, 0-4, 0-2, 3, 3-4, 3, 3",
-				"xxxXX-, 0, 0-4, 0-3, 4, 4-5, 4, 4",
-				"xxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
-			})
-			@ParameterizedTest(name="{index}: [Xx]'{2,5}'X in [{0}], start at {1}")
-			void testExpansion(String target, int startPos,
-					@ConvertWith(IntervalConverter.class) Interval visited1,
-					@ConvertWith(IntervalConverter.class) Interval matched1,
-					int last1,
-					@ConvertWith(IntervalConverter.class) Interval visited2,
-					@ConvertWith(IntervalConverter.class) Interval matched2,
-					int last2) {
-
-				assertResult(target, match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-						.map(NODE_1, matched1.asArray())
-						.node(node(NODE_1).last(last1))
-
-						.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-						.map(NODE_2, matched2.asArray())
-						.node(node(NODE_2).last(last2))
-				);
-			}
-		}
-
-		@Nested
-		class Possessive extends NodeTest {
-
-			@Override
-			StateMachineSetup setup() {
-				StateMachineSetup sms = new StateMachineSetup();
-				sms.nodes = new IqlNode[1];
-				sms.cacheCount = 1;
-				sms.bufferCount = 2;
-				sms.root = seq(
-						new Repetition(0, new Single(1, NODE_1, CACHE_1),
-								CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
-				return sms;
-			}
+		interface OpenBase extends NodeTest {
 
 			@CsvSource({
 				"-, 0, 0",
@@ -561,8 +493,8 @@ class SequencePatternTest {
 				"XYX, 0, 0-1",
 				"XXY, 1, 1-2",
 			})
-			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
-			void testFail(String target, int startPos,
+			@ParameterizedTest(name="{index}: X'{2,}' in [{0}], start at {1}")
+			default void testFail(String target, int startPos,
 					@ConvertWith(IntervalConverter.class) Interval window) {
 				assertResult(target, match(startPos, false, 0)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
@@ -575,8 +507,8 @@ class SequencePatternTest {
 				"YXX, 1, 1-2, 2",
 				"-XX-, 1, 1-3, 2",
 			})
-			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
-			void testFindMinimum(String target, int startPos,
+			@ParameterizedTest(name="{index}: X'{2,}' in [{0}], start at {1}")
+			default void testFindMinimum(String target, int startPos,
 					@ConvertWith(IntervalConverter.class) Interval window, int last) {
 				assertResult(target, match(startPos, true, 1)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
@@ -586,89 +518,581 @@ class SequencePatternTest {
 			}
 
 			@CsvSource({
-				"XXXXX, 0, 0-4, 4",
-				"-XXXXX, 1, 1-5, 5",
-				"YXXXXXZ, 1, 1-5, 5",
-				"-XXXXXX, 1, 1-5, 5",
+				"XXXXX, 0, 0-4, 0-4, 4",
+				"-XXXXX, 1, 1-5, 1-5, 5",
+				"YXXXXXZ, 1, 1-6, 1-5, 5",
+				"-XXXXXXXX, 1, 1-8, 1-8, 8",
 			})
-			@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
-			void testFindMaximum(String target, int startPos,
-					@ConvertWith(IntervalConverter.class) Interval window, int last) {
+			@ParameterizedTest(name="{index}: X'{2,}' in [{0}], start at {1}")
+			default void testFindMaximum(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval window,
+					@ConvertWith(IntervalConverter.class) Interval matched, int last) {
 				assertResult(target, match(startPos, true, 1)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, Interval.of(startPos, startPos+4).asArray())
+						.map(NODE_1, matched.asArray())
 						.node(node(NODE_1).last(last))
 				);
 			}
-		}
 
-		@Nested
-		class PossessiveExpansion extends NodeTest {
-
-			@Override
-			StateMachineSetup setup() {
-				StateMachineSetup sms = new StateMachineSetup();
-				sms.nodes = new IqlNode[2];
-				sms.cacheCount = 2;
-				sms.bufferCount = 2;
-				sms.root = seq(
-						new Repetition(0, new Single(1, NODE_1, CACHE_1),
-								CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-						new Single(1, NODE_2, CACHE_2),
-						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(
-						matcher(0, EQUALS_X_IC),
-						matcher(1, EQUALS_X));
-				return sms;
-			}
-
-			@DisplayName("consume too much")
-			@CsvSource({
-				"xxX, 0, 0-2, 2, -",
-				"xxXX, 0, 0-3, 3, -",
-				"xxXX-, 0, 0-4, 3, 4",
-				"xxxXX-, 0, 0-4, 4, 5",
-			})
-			@ParameterizedTest(name="{index}: [Xx]'{2,5}!'X in [{0}], start at {1}")
-			void testFail(String target, int startPos,
-					@ConvertWith(IntervalConverter.class) Interval visited1, int last,
-					@ConvertWith(IntervalConverter.class) Interval visited2) {
-
-				assertResult(target, match(startPos, false, 0)
-						.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-						.node(node(NODE_1).last(last))
-
-						.cache(cache(CACHE_2, true).window(visited2))
-				);
-			}
-
-			@CsvSource({
-				"xxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
-			})
-			@ParameterizedTest(name="{index}: [Xx]'{2,5}'X in [{0}], start at {1}")
-			void testExpansion(String target, int startPos,
-					@ConvertWith(IntervalConverter.class) Interval visited1,
-					@ConvertWith(IntervalConverter.class) Interval matched1,
-					int last1,
-					@ConvertWith(IntervalConverter.class) Interval visited2,
-					@ConvertWith(IntervalConverter.class) Interval matched2,
-					int last2) {
-
-				assertResult(target, match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-						.map(NODE_1, matched1.asArray())
-						.node(node(NODE_1).last(last1))
-
-						.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-						.map(NODE_2, matched2.asArray())
-						.node(node(NODE_2).last(last2))
-				);
-			}
 		}
 	}
 
-	abstract static class NodeTest {
-		abstract StateMachineSetup setup();
+	@Nested
+	class ForRepetition {
+
+		@Nested
+		class ForClosedRepetition {
+
+			private final int CMIN = 2;
+			private final int CMAX = 5;
+
+			@Nested
+			class Greedy {
+
+				@Nested
+				class BasicBehavior implements ClosedBase {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[1];
+						sms.cacheCount = 1;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
+						return sms;
+					}
+
+				}
+
+				@Nested
+				class Expansion implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[2];
+						sms.cacheCount = 2;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
+								new Single(1, NODE_2, CACHE_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X_IC),
+								matcher(1, EQUALS_X));
+						return sms;
+					}
+
+					@CsvSource({
+						"xxX, 0, 0-2, 0-1, 2, 2, 2, 2",
+						"xxXX, 0, 0-3, 0-2, 3, 3, 3, 3",
+						"xxXX-, 0, 0-4, 0-2, 3, 3-4, 3, 3",
+						"xxxXX-, 0, 0-4, 0-3, 4, 4-5, 4, 4",
+						"xxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,5}'X in [{0}], start at {1}")
+					void testExpansion(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1,
+							@ConvertWith(IntervalConverter.class) Interval matched1,
+							int last1,
+							@ConvertWith(IntervalConverter.class) Interval visited2,
+							@ConvertWith(IntervalConverter.class) Interval matched2,
+							int last2) {
+
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.map(NODE_1, matched1.asArray())
+								.node(node(NODE_1).last(last1))
+
+								.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
+								.map(NODE_2, matched2.asArray())
+								.node(node(NODE_2).last(last2))
+						);
+					}
+				}
+			}
+
+			@Nested
+			class Possessive {
+
+				@Nested
+				class BasicBehavior implements ClosedBase {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[1];
+						sms.cacheCount = 1;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
+						return sms;
+					}
+
+				}
+
+				@Nested
+				class Expansion implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[2];
+						sms.cacheCount = 2;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+								new Single(1, NODE_2, CACHE_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X_IC),
+								matcher(1, EQUALS_X));
+						return sms;
+					}
+
+					@DisplayName("consume too much")
+					@CsvSource({
+						"xxX, 0, 0-2, 2, -",
+						"xxXX, 0, 0-3, 3, -",
+						"xxXX-, 0, 0-4, 3, 4",
+						"xxxXX-, 0, 0-4, 4, 5",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,5}!'X in [{0}], start at {1}")
+					void testFail(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1, int last,
+							@ConvertWith(IntervalConverter.class) Interval visited2) {
+
+						assertResult(target, match(startPos, false, 0)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.node(node(NODE_1).last(last))
+
+								.cache(cache(CACHE_2, true).window(visited2))
+						);
+					}
+
+					@CsvSource({
+						"xxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,5}'X in [{0}], start at {1}")
+					void testExpansion(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1,
+							@ConvertWith(IntervalConverter.class) Interval matched1,
+							int last1,
+							@ConvertWith(IntervalConverter.class) Interval visited2,
+							@ConvertWith(IntervalConverter.class) Interval matched2,
+							int last2) {
+
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.map(NODE_1, matched1.asArray())
+								.node(node(NODE_1).last(last1))
+
+								.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
+								.map(NODE_2, matched2.asArray())
+								.node(node(NODE_2).last(last2))
+						);
+					}
+				}
+			}
+
+			@Nested
+			class Reluctant {
+
+				@Nested
+				class WithoutProxy implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[1];
+						sms.cacheCount = 1;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X));
+						return sms;
+					}
+
+					@CsvSource({
+						"-, 0, 0",
+						"X, 0, 0",
+						"X-, 0, 0-1",
+						"-X, 0, 0",
+						"XY, 0, 0-1",
+						"XYX, 0, 0-1",
+						"XXY, 1, 1-2",
+					})
+					@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+					void testFail(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval window) {
+						assertResult(target, match(startPos, false, 0)
+								.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+						);
+					}
+
+					@CsvSource({
+						"XX, 0, 0-1, 1",
+						"-XX, 1, 1-2, 2",
+						"YXX, 1, 1-2, 2",
+						"-XX-, 1, 1-2, 2",
+					})
+					@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+					void testFindMinimum(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval window, int last) {
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+								.map(NODE_1, startPos, startPos+1)
+								.node(node(NODE_1).last(last))
+						);
+					}
+
+					// Reluctant expansion will always stop after CMIN if we can produce a valid result
+					@CsvSource({
+						"XXXXX, 0, 0-1, 1",
+						"-XXXXX, 1, 1-2, 2",
+						"YXXXXXZ, 1, 1-2, 2",
+						"-XXXXXX, 1, 1-2, 2",
+					})
+					@ParameterizedTest(name="{index}: X'{2,5}' in [{0}], start at {1}")
+					void testFindMaximum(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval window, int last) {
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+								.map(NODE_1, Interval.of(startPos, startPos+1).asArray())
+								.node(node(NODE_1).last(last))
+						);
+					}
+
+				}
+
+				@Nested
+				class WithProxy implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[1];
+						sms.cacheCount = 1;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
+								new Proxy(NODE_2), // we need this to motivate the reluctant expansion
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X),
+								matcher(1, EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
+						return sms;
+					}
+
+					@CsvSource({
+						"XX-, 0, 0-1, 1",
+						"-XX-, 1, 1-2, 2",
+						"YXXY, 1, 1-2, 2",
+					})
+					@ParameterizedTest(name="{index}: X'{2,5}'?^X in [{0}], start at {1}")
+					void testFindMinimum(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval window, int last) {
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+								.map(NODE_1, startPos, startPos+1)
+								.node(node(NODE_1).last(last))
+						);
+					}
+
+					/*
+					 * We need the additional delimiter at the end of the XXX sequence
+					 * so that reluctant expansion can use another node for probing ahead.
+					 * Otherwise we'd stop after CMIN occurrences of X and never reach CMAX.
+					 */
+					@CsvSource({
+						"XXXXX-, 0, 0-4, 4",
+						"-XXXXX-, 1, 1-5, 5",
+						"YXXXXXZ, 1, 1-5, 5",
+						"-XXXXXx, 1, 1-5, 5",
+					})
+					@ParameterizedTest(name="{index}: X'{2,5}'?^X in [{0}], start at {1}")
+					void testFindMaximum(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval window, int last) {
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+								.map(NODE_1, Interval.of(startPos, startPos+4).asArray())
+								.node(node(NODE_1).last(last))
+						);
+					}
+
+				}
+
+				@Nested
+				class Expansion implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[2];
+						sms.cacheCount = 2;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
+								new Single(2, NODE_2, CACHE_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X_IC),
+								matcher(1, EQUALS_X));
+						return sms;
+					}
+
+					@DisplayName("consume too little")
+					@CsvSource({
+						"xX, 0, 0-1, 1, -",
+						"xxxxxxX, 0, 0-4, 4, 5",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,5}'?X in [{0}], start at {1}")
+					void testFail(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1, int last,
+							@ConvertWith(IntervalConverter.class) Interval visited2) {
+
+						assertResult(target, match(startPos, false, 0)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.node(node(NODE_1).last(last))
+
+								.cache(cache(CACHE_2, true).window(visited2))
+						);
+					}
+
+					@CsvSource({
+						"xxXXXXX, 0, 0-1, 0-1, 1, 2, 2, 2",
+						"xxxXXXX, 0, 0-2, 0-2, 2, 3, 3, 3",
+						"xxxxxXX, 0, 0-4, 0-4, 4, 5, 5, 5",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,5}'?X in [{0}], start at {1}")
+					void testExpansion(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1,
+							@ConvertWith(IntervalConverter.class) Interval matched1,
+							int last1,
+							@ConvertWith(IntervalConverter.class) Interval visited2,
+							@ConvertWith(IntervalConverter.class) Interval matched2,
+							int last2) {
+
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.map(NODE_1, matched1.asArray())
+								.node(node(NODE_1).last(last1))
+
+								.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
+								.map(NODE_2, matched2.asArray())
+								.node(node(NODE_2).last(last2))
+						);
+					}
+				}
+			}
+		}
+
+		@Nested
+		class ForOpenRepetition {
+
+			private final int CMIN = 2;
+			private final int CINF = Integer.MAX_VALUE;
+
+			@Nested
+			class Greedy {
+
+				@Nested
+				class BasicBehavior implements OpenBase {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[1];
+						sms.cacheCount = 1;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CINF, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
+						return sms;
+					}
+
+				}
+
+				@Nested
+				class Expansion implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[2];
+						sms.cacheCount = 2;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CINF, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
+								new Single(1, NODE_2, CACHE_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X_IC),
+								matcher(1, EQUALS_X));
+						return sms;
+					}
+
+					@CsvSource({
+						"xxX, 0, 0-2, 0-1, 2, 2, 2, 2",
+						"xxXX, 0, 0-3, 0-2, 3, 3, 3, 3",
+						"xxXX-, 0, 0-4, 0-2, 3, 3-4, 3, 3",
+						"xxxXX-, 0, 0-4, 0-3, 4, 4-5, 4, 4",
+						"xxxxxXX, 0, 0-6, 0-5, 6, 6, 6, 6",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,}'X in [{0}], start at {1}")
+					void testExpansion(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1,
+							@ConvertWith(IntervalConverter.class) Interval matched1,
+							int last1,
+							@ConvertWith(IntervalConverter.class) Interval visited2,
+							@ConvertWith(IntervalConverter.class) Interval matched2,
+							int last2) {
+
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.map(NODE_1, matched1.asArray())
+								.node(node(NODE_1).last(last1))
+
+								.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
+								.map(NODE_2, matched2.asArray())
+								.node(node(NODE_2).last(last2))
+						);
+					}
+				}
+			}
+
+			@Nested
+			class Possessive {
+
+				@Nested
+				class BasicBehavior implements OpenBase {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[1];
+						sms.cacheCount = 1;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(matcher(0, EQUALS_X));
+						return sms;
+					}
+
+				}
+
+				@Nested
+				class OverExpansion implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[2];
+						sms.cacheCount = 2;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+								new Single(1, NODE_2, CACHE_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X_IC),
+								matcher(1, EQUALS_X));
+						return sms;
+					}
+
+					@DisplayName("consume too much")
+					@CsvSource({
+						"xxX, 0, 0-2, 2, -",
+						"xxXX, 0, 0-3, 3, -",
+						"xxXX-, 0, 0-4, 3, 4",
+						"xxxxXX-, 0, 0-5, 5, 6",
+					})
+					@ParameterizedTest(name="{index}: [Xx]'{2,5}!'X in [{0}], start at {1}")
+					void testFail(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1, int last,
+							@ConvertWith(IntervalConverter.class) Interval visited2) {
+
+						assertResult(target, match(startPos, false, 0)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
+								.node(node(NODE_1).last(last))
+
+								.cache(cache(CACHE_2, true).window(visited2))
+						);
+					}
+				}
+
+				@Nested
+				class Expansion implements NodeTest {
+
+					@Override
+					public StateMachineSetup setup() {
+						StateMachineSetup sms = new StateMachineSetup();
+						sms.nodes = new IqlNode[2];
+						sms.cacheCount = 2;
+						sms.bufferCount = 2;
+						sms.root = seq(
+								new Repetition(0, new Single(1, NODE_1, CACHE_1),
+										CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
+								new Single(1, NODE_2, CACHE_2),
+								new Finish(UNSET_LONG));
+						sms.nodeDefs = nodeDefs(
+								matcher(0, EQUALS_X),
+								matcher(1, EQUALS_Y));
+						return sms;
+					}
+
+					@CsvSource({
+						"XXXXXXXXYY, 0, 0-7, 0-7, 7, 8, 8, 8",
+					})
+					@ParameterizedTest(name="{index}: X'{2,}'Y in [{0}], start at {1}")
+					void testExpansion(String target, int startPos,
+							@ConvertWith(IntervalConverter.class) Interval visited1,
+							@ConvertWith(IntervalConverter.class) Interval matched1,
+							int last1,
+							@ConvertWith(IntervalConverter.class) Interval visited2,
+							@ConvertWith(IntervalConverter.class) Interval matched2,
+							int last2) {
+
+						assertResult(target, match(startPos, true, 1)
+								.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X))
+								.map(NODE_1, matched1.asArray())
+								.node(node(NODE_1).last(last1))
+
+								.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_Y))
+								.map(NODE_2, matched2.asArray())
+								.node(node(NODE_2).last(last2))
+						);
+					}
+				}
+			}
+
+			//TODO add tests for reluctant repetition
+		}
+
+	}
+
+	interface NodeTest {
+		StateMachineSetup setup();
 
 //		State state(String s) {
 //			assertThat(s).isNotEmpty();
@@ -684,7 +1108,7 @@ class SequencePatternTest {
 //			return state;
 //		}
 
-		void assertResult(String s, MatchConfig config) {
+		default void assertResult(String s, MatchConfig config) {
 			assertThat(s).isNotEmpty();
 
 			StateMachineSetup setup = setup();

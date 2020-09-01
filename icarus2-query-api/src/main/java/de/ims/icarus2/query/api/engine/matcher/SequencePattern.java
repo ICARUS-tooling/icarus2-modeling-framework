@@ -912,6 +912,82 @@ public class SequencePattern {
 //		}
 //	}
 
+	//	/** Interval filter based on raw intervals in the matcher */
+	//	static final class RegionRef extends Node {
+	//		final int intervalRefIndex;
+	//		final int intervalRefCount;
+	//		RegionRef(int intervalRefIndex, int intervalRefCount) {
+	//			this.intervalRefIndex = intervalRefIndex;
+	//			this.intervalRefCount = intervalRefCount;
+	//		}
+	//
+	//		@Override
+	//		boolean match(SequenceMatcher matcher, int j) {
+	//			final IntervalRef[] intervals = matcher.intervalRefs;
+	//			final int fence = intervalRefIndex + intervalRefCount;
+	//			boolean allowed = false;
+	//			for (int i = intervalRefIndex; i < fence; i++) {
+	//				if(intervals[i].contains(j)) {
+	//					allowed = true;
+	//					break;
+	//				}
+	//			}
+	//
+	//			if(!allowed) {
+	//				return false;
+	//			}
+	//
+	//			return next.match(matcher, j);
+	//		}
+	//
+	//		@Override
+	//		boolean study(TreeInfo info) {
+	//			next.study(info);
+	//
+	//			int[] intervals = new int[intervalRefCount];
+	//			for (int i = 0; i < intervals.length; i++) {
+	//				intervals[i] = intervalRefIndex+i;
+	//			}
+	//			info.intervals = intervals;
+	//			info.intervalRefs = true;
+	//
+	//			return info.deterministic;
+	//		}
+	//	}
+
+		/** Matches an inner constraint, but neither caches nor maps the result. */
+		static final class Proxy extends Node {
+			final int nodeId;
+
+			Proxy(int nodeId) {
+				this.nodeId = nodeId;
+			}
+
+			@Override
+			boolean match(State state, int pos) {
+				if(pos>state.to) {
+					return false;
+				}
+
+				final Matcher<Item> m = state.matchers[nodeId];
+				boolean value = m.matches(pos, state.elements[pos]);
+
+				if(value) {
+					value = next.match(state, pos+1);
+				}
+
+				return value;
+			}
+
+			@Override
+			boolean study(TreeInfo info) {
+				info.minSize++;
+				info.maxSize++;
+				info.offset++;
+				return next.study(info);
+			}
+		}
+
 	/** Matches an inner constraint to a specific node, employing memoization. */
 	static final class Single extends ProperNode {
 		final int nodeId;
