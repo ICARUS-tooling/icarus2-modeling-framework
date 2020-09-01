@@ -955,39 +955,6 @@ public class SequencePattern {
 	//		}
 	//	}
 
-		/** Matches an inner constraint, but neither caches nor maps the result. */
-		static final class Proxy extends Node {
-			final int nodeId;
-
-			Proxy(int nodeId) {
-				this.nodeId = nodeId;
-			}
-
-			@Override
-			boolean match(State state, int pos) {
-				if(pos>state.to) {
-					return false;
-				}
-
-				final Matcher<Item> m = state.matchers[nodeId];
-				boolean value = m.matches(pos, state.elements[pos]);
-
-				if(value) {
-					value = next.match(state, pos+1);
-				}
-
-				return value;
-			}
-
-			@Override
-			boolean study(TreeInfo info) {
-				info.minSize++;
-				info.maxSize++;
-				info.offset++;
-				return next.study(info);
-			}
-		}
-
 	/** Matches an inner constraint to a specific node, employing memoization. */
 	static final class Single extends ProperNode {
 		final int nodeId;

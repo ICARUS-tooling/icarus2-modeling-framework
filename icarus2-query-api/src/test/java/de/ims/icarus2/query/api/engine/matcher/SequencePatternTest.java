@@ -47,7 +47,6 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.BranchConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Proxy;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Scan;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
@@ -104,6 +103,39 @@ class SequencePatternTest {
 		private static final int BUFFER_1 = 0;
 		private static final int BUFFER_2 = 1;
 
+	}
+
+	/** Matches an inner constraint, but neither caches nor maps the result. */
+	static final class Proxy extends Node {
+		final int nodeId;
+
+		Proxy(int nodeId) {
+			this.nodeId = nodeId;
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			if(pos>state.to) {
+				return false;
+			}
+
+			final Matcher<Item> m = state.matchers[nodeId];
+			boolean value = m.matches(pos, state.elements[pos]);
+
+			if(value) {
+				value = next.match(state, pos+1);
+			}
+
+			return value;
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			info.minSize++;
+			info.maxSize++;
+			info.offset++;
+			return next.study(info);
+		}
 	}
 
 	/** Match given character exactly */
