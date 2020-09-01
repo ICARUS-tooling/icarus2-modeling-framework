@@ -1200,6 +1200,7 @@ public class SequencePattern {
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
 			this.atoms = atoms;
 			this.conn = conn;
+			//TODO ensure that all the atoms use conn as next?
 		}
 
     	@Override
