@@ -74,9 +74,7 @@ public class LazyStore<F extends Object, K extends Object> {
 		return keyMod==null ? key : keyMod.apply(key);
 	}
 
-	public synchronized F lookup(K key) {
-		requireNonNull(key);
-
+	private void ensureLookup() {
 		if(lookup==null) {
 			lookup = new Object2ObjectOpenHashMap<>();
 
@@ -88,10 +86,21 @@ public class LazyStore<F extends Object, K extends Object> {
 				}
 			}
 		}
+	}
 
-		F flag = lookup.get(adjust(key));
-		if(flag==null)
+	public synchronized F lookup(K key) {
+		requireNonNull(key);
+		ensureLookup();
+
+		F value = lookup.get(adjust(key));
+		if(value==null)
 			throw new IllegalArgumentException("Unknown key: "+key);
-		return flag;
+		return value;
+	}
+
+	public synchronized boolean hasKey(K key) {
+		requireNonNull(key);
+		ensureLookup();
+		return lookup.containsKey(adjust(key));
 	}
 }
