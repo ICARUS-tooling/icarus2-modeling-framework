@@ -87,13 +87,9 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  *
  * </code></pre>
  *
- * @param <C> Type of the surrounding context (typically the sequence itself)
- * @param <E> Type of individual elements matched by the state machine
- *
  * @author Markus Gärtner
  *
  */
-//TODO add link for ICQL specification!!
 @NotThreadSafe
 public class SequencePattern {
 
@@ -461,8 +457,8 @@ public class SequencePattern {
 			boolean matched = root.match(this, 0);
 			/*
 			 * Stable predicates at this point:
-			 *  - All hits have already been reported.
-			 *  - Global constraints have already been taken into account.
+			 *  - All hits reported.
+			 *  - Global constraints evaluated.
 			 */
 			reset();
 
@@ -1129,7 +1125,7 @@ public class SequencePattern {
 			next.study(info);
 			minSize = info.minSize;
 
-			assert minSize>0 : "zero-width atom";
+			checkState("Minimum size of nested atom must be greater than or equal 1", minSize>0);
 
 			info.deterministic = false;
 
@@ -1185,36 +1181,37 @@ public class SequencePattern {
     	}
 
     	@Override
-    	boolean study(TreeInfo info) {
-            int minL = info.minSize;
-            int maxL = info.maxSize;
-            boolean maxV = info.maxValid;
+		boolean study(TreeInfo info) {
+			int minL = info.minSize;
+			int maxL = info.maxSize;
+			boolean maxV = info.maxValid;
 
-            info.reset();
-            int minL2 = Integer.MAX_VALUE; //arbitrary large enough num
-            int maxL2 = -1;
+			info.reset();
+			int minL2 = Integer.MAX_VALUE; // arbitrary large enough num
+			int maxL2 = -1;
 
-            for (int n = 0; n < atoms.length; n++) {
-                if (atoms[n] != null)
-                    atoms[n].study(info);
-                minL2 = Math.min(minL2, info.minSize);
-                maxL2 = Math.max(maxL2, info.maxSize);
-                maxV = (maxV & info.maxValid);
-                info.reset();
-            }
+			for (int n = 0; n < atoms.length; n++) {
+				if (atoms[n] != null) {
+					atoms[n].study(info);
+				}
+				minL2 = Math.min(minL2, info.minSize);
+				maxL2 = Math.max(maxL2, info.maxSize);
+				maxV = (maxV & info.maxValid);
+				info.reset();
+			}
 
-            minL += minL2;
-            maxL += maxL2;
+			minL += minL2;
+			maxL += maxL2;
 
-            conn.next.study(info);
+			conn.next.study(info);
 
-            info.minSize += minL;
-            info.maxSize += maxL;
-            info.maxValid &= maxV;
-            info.deterministic = false;
+			info.minSize += minL;
+			info.maxSize += maxL;
+			info.maxValid &= maxV;
+			info.deterministic = false;
 
-            return false;
-    	}
+			return false;
+		}
     }
 
     static final class Repetition extends ProperNode {

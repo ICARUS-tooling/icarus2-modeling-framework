@@ -382,6 +382,11 @@ class SequencePatternTest {
 	}
 
 	@Nested
+	class ForCache {
+		//TODO test the Cache utility class!!
+	}
+
+	@Nested
 	class ForSingle {
 
 		@Nested
@@ -805,6 +810,8 @@ class SequencePatternTest {
 					}
 
 				}
+
+				//TODO test case of X{2,5}Y on XXXB so that we can evaluate proper backtracking with fail
 
 				@Nested
 				class Expansion implements NodeTest {
@@ -1546,6 +1553,21 @@ class SequencePatternTest {
 						matcher(0, Utils.OPTION_A),
 						matcher(1, Utils.OPTION_B));
 				return sms;
+			}
+
+			@CsvSource({
+				"-, 0",
+				"X, 0",
+				"XY, 1",
+			})
+			@ParameterizedTest(name="{index}: A|B in [{0}], start at {1}")
+			void testFail(String target, int startPos) {
+
+				assertResult(target, match(startPos, false, 0)
+						.cache(cache(Utils.CACHE_1, true).window(startPos))
+
+						.cache(cache(Utils.CACHE_2, true).window(startPos))
+				);
 			}
 
 			@CsvSource({
