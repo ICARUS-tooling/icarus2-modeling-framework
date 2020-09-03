@@ -111,6 +111,7 @@ class SequencePatternTest {
 
 		private static final int NO_CACHE = UNSET_INT;
 		private static final int NO_INTERVAL = UNSET_INT;
+		private static final int NO_LIMIT = UNSET_INT;
 	}
 
 	/** Matches an inner constraint, but neither caches nor maps the result. */
@@ -529,17 +530,17 @@ class SequencePatternTest {
 		class WithoutRegion {
 
 			@Nested
-			class ForwardSingle implements NodeTest {
+			class ForwardSingle {
 
-				@Override
-				public StateMachineSetup setup() {
+				StateMachineSetup setup(int limit) {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 1;
+					sms.limit = limit;
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.NO_INTERVAL, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1),
-							new Finish(UNSET_LONG));
+							new Finish(limit));
 					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
@@ -552,8 +553,9 @@ class SequencePatternTest {
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testFail(String target, int startPos) {
-					assertResult(target, setup(), match(startPos, false, 0)
-							.cache(cache(Utils.CACHE_1, true))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, false, 0)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1))
 					);
 				}
 
@@ -569,8 +571,10 @@ class SequencePatternTest {
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testFindSingle(String target, int startPos, int hit) {
-					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(Utils.CACHE_1, true).hits(hit))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, 1)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1)
+									.hits(hit))
 							.node(node(Utils.NODE_1).last(hit))
 					);
 				}
@@ -584,29 +588,63 @@ class SequencePatternTest {
 					"-XX, 1, 2, 2",
 					"XXX, 1, 2, 2",
 					"X-X, 0, 2, 2",
-					"-XX, 0, 2, 2",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
 				void testMultiMatch(String target, int startPos, int matchCount, int last) {
-					assertResult(target, setup(), match(startPos, true, matchCount)
-							.cache(cache(Utils.CACHE_1, true).hits(target, Utils.EQUALS_X))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1)
+									.hits(target, Utils.EQUALS_X))
+							.node(node(Utils.NODE_1).last(last))
+					);
+				}
+
+				@DisplayName("scan of up to 3 matches with limit")
+				@CsvSource({
+					"X--, 1, 0, 1, 0",
+
+					"XX-, 1, 0, 1, 0",
+					"XX-, 2, 0, 2, 1",
+
+					"XXX, 1, 0, 1, 0",
+					"XXX, 2, 0, 2, 1",
+					"XXX, 3, 0, 3, 2",
+
+					"-XX, 1, 0, 1, 1",
+					"-XX, 2, 0, 2, 2",
+
+					"-XX, 1, 1, 1, 1",
+					"-XX, 2, 1, 2, 2",
+
+					"XXX, 1, 1, 1, 1",
+					"XXX, 2, 1, 2, 2",
+
+					"X-X, 1, 0, 1, 0",
+					"X-X, 2, 0, 2, 2",
+				})
+				@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, start at {2}, count={3}")
+				void testLimitedMultiMatch(String target, int limit, int startPos, int matchCount, int last) {
+					assertResult(target, setup(limit), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, last)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
 			}
 
 			@Nested
-			class ForwardSingleCached implements NodeTest {
+			class ForwardSingleCached {
 
-				@Override
-				public StateMachineSetup setup() {
+				StateMachineSetup setup(int limit) {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 2;
+					sms.limit = limit;
 					sms.root = seq(
 							new Scan(0, Utils.CACHE_1, Utils.NO_INTERVAL, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_2),
-							new Finish(UNSET_LONG));
+							new Finish(limit));
 					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
@@ -618,8 +656,9 @@ class SequencePatternTest {
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testFail(String target, int startPos) {
-					assertResult(target, setup(), match(startPos, false, 0)
-							.cache(cache(Utils.CACHE_1, true))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, false, 0)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1))
 					);
 				}
 
@@ -635,8 +674,10 @@ class SequencePatternTest {
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testSingleMatch(String target, int startPos, int last) {
-					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(Utils.CACHE_1, true).hits(target, Utils.EQUALS_X))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, 1)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
@@ -649,28 +690,71 @@ class SequencePatternTest {
 					"-XX, 0, 2, 2",
 					"-XX, 1, 2, 2",
 					"XXX, 1, 2, 2",
+					"X-X, 0, 2, 2",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testMultiMatch(String target, int startPos, int matchCount, int last) {
-					assertResult(target, setup(), match(startPos, true, matchCount)
-							.cache(cache(Utils.CACHE_1, true).hits(target, Utils.EQUALS_X))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1)
+									.hits(target, Utils.EQUALS_X))
+							.cache(cache(Utils.CACHE_2, true)
+									.window(startPos, target.length()-1).
+									hits(target, Utils.EQUALS_X))
+							.node(node(Utils.NODE_1).last(last))
+					);
+				}
+
+				@DisplayName("scan of up to 3 matches with limit")
+				@CsvSource({
+					"X--, 1, 0, 1, 0",
+
+					"XX-, 1, 0, 1, 0",
+					"XX-, 2, 0, 2, 1",
+
+					"XXX, 1, 0, 1, 0",
+					"XXX, 2, 0, 2, 1",
+					"XXX, 3, 0, 3, 2",
+
+					"-XX, 1, 0, 1, 1",
+					"-XX, 2, 0, 2, 2",
+
+					"-XX, 1, 1, 1, 1",
+					"-XX, 2, 1, 2, 2",
+
+					"XXX, 1, 1, 1, 1",
+					"XXX, 2, 1, 2, 2",
+
+					"X-X, 1, 0, 1, 0",
+					"X-X, 2, 0, 2, 2",
+				})
+				@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, start at {2}, count={3}")
+				void testLimitedMultiMatch(String target, int limit, int startPos,
+						int matchCount, int last) {
+					assertResult(target, setup(limit), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, last)
+									.hits(target, Utils.EQUALS_X))
+							.cache(cache(Utils.CACHE_2, true)
+									.window(startPos, last)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
 			}
 
 			@Nested
-			class BackwardSingle implements NodeTest {
+			class BackwardSingle {
 
-				@Override
-				public StateMachineSetup setup() {
+				StateMachineSetup setup(int  limit) {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 1;
+					sms.limit = limit;
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.NO_INTERVAL, false),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1),
-							new Finish(UNSET_LONG));
+							new Finish(limit));
 					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
@@ -682,8 +766,9 @@ class SequencePatternTest {
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testFail(String target, int startPos) {
-					assertResult(target, setup(), match(startPos, false, 0)
-							.cache(cache(Utils.CACHE_1, true))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, false, 0)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1))
 					);
 				}
 
@@ -699,8 +784,10 @@ class SequencePatternTest {
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testSingleMatch(String target, int startPos, int last) {
-					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(Utils.CACHE_1, true).hits(target, Utils.EQUALS_X))
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, 1)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, target.length()-1)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
@@ -713,13 +800,47 @@ class SequencePatternTest {
 					"-XX, 0, 2, 0-2, 1",
 					"-XX, 1, 2, 1-2, 1",
 					"XXX, 1, 2, 1-2, 1",
+					"X-X, 0, 2, 0-2, 0",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
 				void testMultiMatch(String target, int startPos, int matchCount,
 						@ConvertWith(IntervalConverter.class) Interval window, int last) {
-					assertResult(target, setup(), match(startPos, true, matchCount)
+					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, matchCount)
 							.cache(cache(Utils.CACHE_1, true)
 									.window(window)
+									.hits(target, Utils.EQUALS_X))
+							.node(node(Utils.NODE_1).last(last))
+					);
+				}
+
+				@DisplayName("scan of up to 3 matches with limit")
+				@CsvSource({
+					"X--, 1, 0, 1, 0",
+
+					"XX-, 1, 0, 1, 1",
+					"XX-, 2, 0, 2, 0",
+
+					"XXX, 1, 0, 1, 2",
+					"XXX, 2, 0, 2, 1",
+					"XXX, 3, 0, 3, 0",
+
+					"-XX, 1, 0, 1, 2",
+					"-XX, 2, 0, 2, 1",
+
+					"-XX, 1, 1, 1, 2",
+					"-XX, 2, 1, 2, 1",
+
+					"XXX, 1, 1, 1, 2",
+					"XXX, 2, 1, 2, 1",
+
+					"X-X, 1, 0, 1, 2",
+					"X-X, 2, 0, 2, 0",
+				})
+				@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, start at {2}, count={3}")
+				void testLimitedMultiMatch(String target, int limit, int startPos, int matchCount, int last) {
+					assertResult(target, setup(limit), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(last, target.length()-1)
 									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
@@ -734,15 +855,16 @@ class SequencePatternTest {
 			@Nested
 			class ForwardSingle {
 
-				StateMachineSetup setup(Interval region) {
+				StateMachineSetup setup(Interval region, int limit) {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 1;
+					sms.limit = limit;
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.REGION_1, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1),
-							new Finish(UNSET_LONG));
+							new Finish(limit));
 					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
@@ -761,7 +883,7 @@ class SequencePatternTest {
 				void testFail(String target,
 						@ConvertWith(IntervalConverter.class) Interval region, int startPos,
 						@ConvertWith(IntervalConverter.class) Interval visited) {
-					assertResult(target, setup(region), match(startPos, false, 0)
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, false, 0)
 							.cache(cache(Utils.CACHE_1, true).window(visited))
 					);
 				}
@@ -787,7 +909,7 @@ class SequencePatternTest {
 				void testFindSingle(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
 						int startPos, int hit) {
-					assertResult(target, setup(region), match(startPos, true, 1)
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, 1)
 							.cache(cache(Utils.CACHE_1, true).hits(hit))
 							.node(node(Utils.NODE_1).last(hit))
 					);
@@ -813,8 +935,50 @@ class SequencePatternTest {
 				void testMultiMatch(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
 						int startPos, int matchCount, int last) {
-					assertResult(target, setup(region), match(startPos, true, matchCount)
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, matchCount)
 							.cache(cache(Utils.CACHE_1, true).hits(target, Utils.EQUALS_X))
+							.node(node(Utils.NODE_1).last(last))
+					);
+				}
+
+				@DisplayName("scan of up to 3 matches with limit")
+				@CsvSource({
+					"X---X-X, 1, 2-4, 2, 1, 4",
+					"X--X--X, 1, 2-4, 2, 1, 3",
+					"X-X---X, 1, 2-4, 2, 1, 2",
+					"X---X-X, 2, 2-4, 2, 1, 4",
+					"X--X--X, 2, 2-4, 2, 1, 3",
+					"X-X---X, 2, 2-4, 2, 1, 2",
+
+					"X-X-X-X, 1, 2-4, 2, 1, 2",
+					"X-XX--X, 1, 2-4, 2, 1, 2",
+					"X--XX-X, 1, 2-4, 2, 1, 3",
+					"X-X-X-X, 2, 2-4, 2, 2, 4",
+					"X-XX--X, 2, 2-4, 2, 2, 3",
+					"X--XX-X, 2, 2-4, 2, 2, 4",
+
+					"X-XXX-X, 1, 2-3, 2, 1, 2",
+					"X-XX--X, 1, 2-3, 2, 1, 2",
+					"X--XX-X, 1, 2-3, 2, 1, 3",
+					"X-XXX-X, 2, 2-3, 2, 2, 3",
+					"X-XX--X, 2, 2-3, 2, 2, 3",
+
+					"X-XXX-X, 1, 2-4, 2, 1, 2",
+					"X-XXX-X, 2, 2-4, 2, 2, 3",
+					"X-XXX-X, 3, 2-4, 2, 3, 4",
+
+					"X-XXX-X, 1, 2-4, 3, 1, 3",
+					"X-XXX-X, 2, 2-4, 3, 2, 4",
+					"X-XXX-X, 3, 2-4, 3, 2, 4",
+				})
+				@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, clip {2}, start at {3}, count={4}")
+				void testLimitedMultiMatch(String target, int limit,
+						@ConvertWith(IntervalConverter.class) Interval region,
+						int startPos, int matchCount, int last) {
+					assertResult(target, setup(region, limit), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, last)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
@@ -823,94 +987,141 @@ class SequencePatternTest {
 			@Nested
 			class ForwardSingleCached {
 
-				StateMachineSetup setup(Interval region) {
+				StateMachineSetup setup(Interval region, int limit) {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 2;
+					sms.limit = limit;
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
 							new Scan(0, Utils.CACHE_1, Utils.REGION_1, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_2),
-							new Finish(UNSET_LONG));
+							new Finish(limit));
 					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
 				@CsvSource({
-					"-XXX, 0,   0, 0",
-					"--XX, 0-1, 0, 0-1",
-					"--XX, 0-1, 1, 1",
-					"---X, 0-2, 0, 0-2",
-					"---X, 1-2, 1, 1-2",
-					"---X, 1-2, 2, 2",
-					"---X, 0,   0, 0",
-					"----, 0-3, 0, 0-3",
+					"-XXX, 0,   0",
+					"--XX, 0-1, 0",
+					"--XX, 0-1, 1",
+					"---X, 0-2, 0",
+					"---X, 1-2, 1",
+					"---X, 1-2, 2",
+					"---X, 0,   0",
+					"----, 0-3, 0",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], clip {1}, start at {2}")
 				void testFail(String target,
-						@ConvertWith(IntervalConverter.class) Interval region, int startPos,
-						@ConvertWith(IntervalConverter.class) Interval visited) {
-					assertResult(target, setup(region), match(startPos, false, 0)
-							.cache(cache(Utils.CACHE_1, true).window(visited))
-							.cache(cache(Utils.CACHE_2, true).window(visited))
+						@ConvertWith(IntervalConverter.class) Interval region, int startPos) {
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, false, 0)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, region.to))
+							.cache(cache(Utils.CACHE_2, true)
+									.window(startPos, region.to))
 					);
 				}
 
 				@DisplayName("scan of 1 match")
 				@CsvSource({
 					//singleton
-					"X, 0, 0, 0, 0",
+					"X, 0, 0, 0",
 					//left clip
-					"XX--, 1-3, 1, 1-3, 1",
-					"XX--, 0-3, 1, 1-3, 1",
-					"XX--, 0-2, 1, 1-2, 1",
+					"XX--, 1-3, 1, 1",
+					"XX--, 0-3, 1, 1",
+					"XX--, 0-2, 1, 1",
 					//right clip
-					"--XX, 0-2, 0, 0-2, 2",
-					"--XX, 0-2, 1, 1-2, 2",
-					"--XX, 1-2, 1, 1-2, 2",
+					"--XX, 0-2, 0, 2",
+					"--XX, 0-2, 1, 2",
+					"--XX, 1-2, 1, 2",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], clip {1}, start at {2}, hit= {4}")
 				void testFindSingle(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
-						int startPos,
-						@ConvertWith(IntervalConverter.class) Interval visited,
-						int hit) {
-					assertResult(target, setup(region), match(startPos, true, 1)
-							.cache(cache(Utils.CACHE_1, true).window(visited).hits(hit))
-							.cache(cache(Utils.CACHE_2, true).window(visited).hits(hit))
+						int startPos, int hit) {
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, 1)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, region.to)
+									.hits(hit))
+							.cache(cache(Utils.CACHE_2, true)
+									.window(startPos, region.to)
+									.hits(hit))
 							.node(node(Utils.NODE_1).last(hit))
 					);
 				}
 
 				@DisplayName("scan of up to 3 matches")
 				@CsvSource({
-					"X---X-X, 2-4, 2, 2-4, 1, 4",
-					"X--X--X, 2-4, 2, 2-4, 1, 3",
-					"X-X---X, 2-4, 2, 2-4, 1, 2",
+					"X---X-X, 2-4, 2, 1, 4",
+					"X--X--X, 2-4, 2, 1, 3",
+					"X-X---X, 2-4, 2, 1, 2",
 
-					"X-X-X-X, 2-4, 2, 2-4, 2, 4",
-					"X-XX--X, 2-4, 2, 2-4, 2, 3",
-					"X--XX-X, 2-4, 2, 2-4, 2, 4",
+					"X-X-X-X, 2-4, 2, 2, 4",
+					"X-XX--X, 2-4, 2, 2, 3",
+					"X--XX-X, 2-4, 2, 2, 4",
 
-					"X-XXX-X, 2-3, 2, 2-3, 2, 3",
-					"X-XX--X, 2-3, 2, 2-3, 2, 3",
-					"X--XX-X, 2-3, 2, 2-3, 1, 3",
+					"X-XXX-X, 2-3, 2, 2, 3",
+					"X-XX--X, 2-3, 2, 2, 3",
+					"X--XX-X, 2-3, 2, 1, 3",
 
-					"X-XXX-X, 2-4, 3, 3-4, 2, 4",
+					"X-XXX-X, 2-4, 3, 2, 4",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], clip {1}, start at {2}, count={3}")
 				void testMultiMatch(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
-						int startPos,
-						@ConvertWith(IntervalConverter.class) Interval visited,
-						int matchCount, int last) {
-					assertResult(target, setup(region), match(startPos, true, matchCount)
+						int startPos, int matchCount, int last) {
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, matchCount)
 							.cache(cache(Utils.CACHE_1, true)
-									.window(visited)
-									.hits(target, visited, Utils.EQUALS_X))
+									.window(startPos, region.to)
+									.hits(target, region, Utils.EQUALS_X))
 							.cache(cache(Utils.CACHE_2, true)
-									.window(visited)
-									.hits(target, visited, Utils.EQUALS_X))
+									.window(startPos, region.to)
+									.hits(target, region, Utils.EQUALS_X))
+							.node(node(Utils.NODE_1).last(last))
+					);
+				}
+
+				@DisplayName("scan of up to 3 matches with limit")
+				@CsvSource({
+					"X---X-X, 1, 2-4, 2, 1, 4",
+					"X--X--X, 1, 2-4, 2, 1, 3",
+					"X-X---X, 1, 2-4, 2, 1, 2",
+					"X---X-X, 2, 2-4, 2, 1, 4",
+					"X--X--X, 2, 2-4, 2, 1, 3",
+					"X-X---X, 2, 2-4, 2, 1, 2",
+
+					"X-X-X-X, 1, 2-4, 2, 1, 2",
+					"X-XX--X, 1, 2-4, 2, 1, 2",
+					"X--XX-X, 1, 2-4, 2, 1, 3",
+					"X-X-X-X, 2, 2-4, 2, 2, 4",
+					"X-XX--X, 2, 2-4, 2, 2, 3",
+					"X--XX-X, 2, 2-4, 2, 2, 4",
+
+					"X-XXX-X, 1, 2-3, 2, 1, 2",
+					"X-XX--X, 1, 2-3, 2, 1, 2",
+					"X--XX-X, 1, 2-3, 2, 1, 3",
+					"X-XXX-X, 2, 2-3, 2, 2, 3",
+					"X-XX--X, 2, 2-3, 2, 2, 3",
+
+					"X-XXX-X, 1, 2-4, 2, 1, 2",
+					"X-XXX-X, 2, 2-4, 2, 2, 3",
+					"X-XXX-X, 3, 2-4, 2, 3, 4",
+
+					"X-XXX-X, 1, 2-4, 3, 1, 3",
+					"X-XXX-X, 2, 2-4, 3, 2, 4",
+					"X-XXX-X, 3, 2-4, 3, 2, 4",
+				})
+				@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, clip {2}, start at {3}, count={4}")
+				void testLimitedMultiMatch(String target, int limit,
+						@ConvertWith(IntervalConverter.class) Interval region,
+						int startPos, int matchCount, int last) {
+					assertResult(target, setup(region, limit), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, last)
+									.hits(target, Utils.EQUALS_X))
+							.cache(cache(Utils.CACHE_2, true)
+									.window(startPos, last)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
@@ -919,86 +1130,126 @@ class SequencePatternTest {
 			@Nested
 			class BackwardSingle {
 
-				StateMachineSetup setup(Interval region) {
+				StateMachineSetup setup(Interval region, int limit) {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 1;
+					sms.limit = limit;
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.REGION_1, false),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1),
-							new Finish(UNSET_LONG));
+							new Finish(limit));
 					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
 				@DisplayName("scan of 1 match")
 				@CsvSource({
-					"X-X,     1, 1, 1",
-					"X---X, 1-3, 1, 1-3",
-					"X---X, 1-3, 2, 2-3",
-					"X---X, 1-3, 3, 3",
-					"X-X-X, 1-3, 3, 3",
+					"X-X,     1, 1",
+					"X---X, 1-3, 1",
+					"X---X, 1-3, 2",
+					"X---X, 1-3, 3",
+					"X-X-X, 1-3, 3",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testFail(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
-						int startPos,
-						@ConvertWith(IntervalConverter.class) Interval visited) {
-					assertResult(target, setup(region), match(startPos, false, 0)
-							.cache(cache(Utils.CACHE_1, true).window(visited))
+						int startPos) {
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, false, 0)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(startPos, region.to))
 					);
 				}
 
 				@DisplayName("scan of 1 match")
 				@CsvSource({
-					"XXX, 1, 1, 1, 1",
+					"XXX, 1, 1, 1",
 
-					"XX--X, 1-3, 1, 1-3, 1",
-					"X-X-X, 1-3, 1, 1-3, 2",
-					"X--XX, 1-3, 1, 1-3, 3",
+					"XX--X, 1-3, 1, 1",
+					"X-X-X, 1-3, 1, 2",
+					"X--XX, 1-3, 1, 3",
 
-					"X-X-X, 1-3, 2, 2-3, 2",
+					"X-X-X, 1-3, 2, 2",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testSingleMatch(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
-						int startPos,
-						@ConvertWith(IntervalConverter.class) Interval visited, int last) {
-					assertResult(target, setup(region), match(startPos, true, 1)
+						int startPos, int last) {
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, 1)
 							.cache(cache(Utils.CACHE_1, true)
-									.window(visited)
-									.hits(target, visited, Utils.EQUALS_X))
+									.window(startPos, region.to)
+									.hits(target, region, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
 
 				@DisplayName("scan of up to 3 matches")
 				@CsvSource({
-					"X---X-X, 2-4, 2, 2-4, 1, 4",
-					"X--X--X, 2-4, 2, 2-4, 1, 3",
-					"X-X---X, 2-4, 2, 2-4, 1, 2",
+					"X---X-X, 2-4, 2, 1, 4",
+					"X--X--X, 2-4, 2, 1, 3",
+					"X-X---X, 2-4, 2, 1, 2",
 
-					"X-X-X-X, 2-4, 2, 2-4, 2, 2",
-					"X-XX--X, 2-4, 2, 2-4, 2, 2",
-					"X--XX-X, 2-4, 2, 2-4, 2, 3",
+					"X-X-X-X, 2-4, 2, 2, 2",
+					"X-XX--X, 2-4, 2, 2, 2",
+					"X--XX-X, 2-4, 2, 2, 3",
 
-					"X-XXX-X, 2-3, 2, 2-3, 2, 2",
-					"X-XX--X, 2-3, 2, 2-3, 2, 2",
-					"X--XX-X, 2-3, 2, 2-3, 1, 3",
+					"X-XXX-X, 2-3, 2, 2, 2",
+					"X-XX--X, 2-3, 2, 2, 2",
+					"X--XX-X, 2-3, 2, 1, 3",
 
-					"X-XXX-X, 2-4, 3, 3-4, 2, 3",
+					"X-XXX-X, 2-4, 3, 2, 3",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], clip {1}, start at {2}, count={3}")
 				void testMultiMatch(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
-						int startPos,
-						@ConvertWith(IntervalConverter.class) Interval visited,
-						int matchCount, int last) {
-					assertResult(target, setup(region), match(startPos, true, matchCount)
+						int startPos, int matchCount, int last) {
+					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, matchCount)
 							.cache(cache(Utils.CACHE_1, true)
-									.window(visited)
-									.hits(target, visited, Utils.EQUALS_X))
+									.window(startPos, region.to)
+									.hits(target, region, Utils.EQUALS_X))
+							.node(node(Utils.NODE_1).last(last))
+					);
+				}
+
+				@DisplayName("scan of up to 3 matches with limit")
+				@CsvSource({
+					"X---X-X, 1, 2-4, 2, 1, 4",
+					"X--X--X, 1, 2-4, 2, 1, 3",
+					"X-X---X, 1, 2-4, 2, 1, 2",
+					"X---X-X, 2, 2-4, 2, 1, 4",
+					"X--X--X, 2, 2-4, 2, 1, 3",
+					"X-X---X, 2, 2-4, 2, 1, 2",
+
+					"X-X-X-X, 1, 2-4, 2, 1, 4",
+					"X-XX--X, 1, 2-4, 2, 1, 3",
+					"X--XX-X, 1, 2-4, 2, 1, 4",
+					"X-X-X-X, 2, 2-4, 2, 2, 2",
+					"X-XX--X, 2, 2-4, 2, 2, 2",
+					"X--XX-X, 2, 2-4, 2, 2, 3",
+
+					"X-XXX-X, 1, 2-3, 2, 1, 3",
+					"X-XX--X, 1, 2-3, 2, 1, 3",
+					"X--XX-X, 1, 2-3, 2, 1, 3",
+					"X-XXX-X, 2, 2-3, 2, 2, 2",
+					"X-XX--X, 2, 2-3, 2, 2, 2",
+
+					"X-XXX-X, 1, 2-4, 2, 1, 4",
+					"X-XXX-X, 2, 2-4, 2, 2, 3",
+					"X-XXX-X, 3, 2-4, 2, 3, 2",
+
+					"X-XXX-X, 1, 2-4, 3, 1, 4",
+					"X-XXX-X, 2, 2-4, 3, 2, 3",
+					"X-XXX-X, 3, 2-4, 3, 2, 3",
+				})
+				@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, clip {2}, start at {3}, count={4}")
+				void testLimitedMultiMatch(String target, int limit,
+						@ConvertWith(IntervalConverter.class) Interval region,
+						int startPos, int matchCount, int last) {
+					assertResult(target, setup(region, limit), match(startPos, true, matchCount)
+							.cache(cache(Utils.CACHE_1, true)
+									.window(last, region.to)
+									.hits(target, Utils.EQUALS_X))
 							.node(node(Utils.NODE_1).last(last))
 					);
 				}
