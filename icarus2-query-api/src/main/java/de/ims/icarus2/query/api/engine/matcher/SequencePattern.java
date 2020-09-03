@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -330,6 +331,8 @@ public class SequencePattern {
 		 */
 		int last = 0;
 
+		Consumer<State> resultHandler;
+
 		State(StateMachineSetup setup) {
 			elements = new Item[INITIAL_SIZE];
 			markers = setup.getMarkers();
@@ -397,6 +400,9 @@ public class SequencePattern {
 		}
 
 		void dispatchMatch() {
+			if(resultHandler!=null) {
+				resultHandler.accept(this);
+			}
 			//TODO create immutable and serializable object from current state and send it to subscriber
 			//TODO increment reported counter upon dispatching
 		}
@@ -809,7 +815,7 @@ public class SequencePattern {
 	static final class Finish extends Node {
 		final long limit;
 
-		public Finish(long limit) { this.limit = limit; }
+		Finish(long limit) { this.limit = limit; }
 
 		@Override
 		boolean match(State state, int pos) {
@@ -1027,10 +1033,11 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
+			next.study(info);
 			info.minSize++;
 			info.maxSize++;
 			info.offset++;
-			return next.study(info);
+			return info.deterministic;
 		}
 	}
 

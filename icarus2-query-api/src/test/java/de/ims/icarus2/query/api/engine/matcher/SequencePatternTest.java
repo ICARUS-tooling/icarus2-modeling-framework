@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -97,8 +98,9 @@ class SequencePatternTest {
 		private static final CharPredicate EQUALS_X_IC = ic('x');
 		private static final CharPredicate EQUALS_Y = eq('Y');
 
-		private static final CharPredicate OPTION_A = eq('A');
-		private static final CharPredicate OPTION_B = eq('B');
+		private static final CharPredicate EQUALS_A = eq('A');
+		private static final CharPredicate EQUALS_B = eq('B');
+		private static final CharPredicate EQUALS_C = eq('C');
 
 		private static final int NODE_1 = 0;
 		private static final int NODE_2 = 1;
@@ -221,7 +223,7 @@ class SequencePatternTest {
 	}
 
 	/** Encapsulates the info for expected matches and hits inside a single target sequence */
-	static class MatchConfig {
+	static class MatchConfig implements Consumer<State> {
 		/** Index in target sequence to start the test search at */
 		private final int startPos;
 		/** Expected success state */
@@ -231,8 +233,13 @@ class SequencePatternTest {
 		/** Individual node info regarding last hits etc... */
 		private final List<NodeConfig> nodes = new ArrayList<>();
 		private final List<CacheConfig> caches = new ArrayList<>();
-		/**  */
-		private final List<Pair<Integer, Integer>> mapping = new ArrayList<>();
+		/** Results expected to be dispatched */
+		private final List<ResultConfig> results = new ArrayList<>();
+		/** Pointer to the next expected result entry */
+		private int nextResult = 0;
+
+		/** Intermediate mappings expected to exist during result assertion */
+		private final ResultConfig mapping = new ResultConfig(-1);
 
 		MatchConfig(int startPos, boolean expectedResult, int expectedCount) {
 			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
@@ -246,12 +253,20 @@ class SequencePatternTest {
 
 		MatchConfig cache(CacheConfig cache) { caches.add(requireNonNull(cache)); return this; }
 
-		MatchConfig map(int nodeId, int...indices) {
-			IntStream.of(indices).mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add);
-			return this;
-		}
+		MatchConfig map(int nodeId, int...indices) { mapping.map(nodeId, indices); return this; }
 
 		MatchConfig map(boolean condition, int nodeId, int...indices) { if(condition) map(nodeId, indices); return this;}
+
+		MatchConfig result(ResultConfig result) { results.add(requireNonNull(result)); return this; }
+
+		@Override
+		public void accept(State state) {
+			assertThat(nextResult)
+				.as("No more resutls buffered - only got %d", _int(results.size()))
+				.isLessThan(results.size());
+
+			results.get(nextResult++).assertMapping(state);
+		}
 
 		void assertResult(Node root, State state) {
 			// Verify correct result
@@ -267,27 +282,10 @@ class SequencePatternTest {
 				cache.assertResult(startPos, state);
 			}
 
-			assertMapping(state);
+			mapping.assertMapping(state);
 
 			for (NodeConfig node : nodes) {
 				node.assertResult(state);
-			}
-		}
-
-		private void assertMapping(State state) {
-			int size = mapping.size();
-			assertThat(state.entry)
-				.as("Incorrect number of mappings")
-				.isEqualTo(size);
-
-			for (int i = 0; i < size; i++) {
-				Pair<Integer, Integer> m = mapping.get(i);
-				assertThat(state.m_node[i])
-					.as("Node id mismatch in mapping at index %d", _int(i))
-					.isEqualTo(m.first.intValue());
-				assertThat(state.m_pos[i])
-					.as("Position mismatch in mapping at index %d", _int(i))
-					.isEqualTo(m.second.intValue());
 			}
 		}
 	}
@@ -388,6 +386,47 @@ class SequencePatternTest {
 
 	static NodeConfig node(int nodeId) {
 		return new NodeConfig(nodeId);
+	}
+
+	static class ResultConfig {
+		private final int index;
+		private final List<Pair<Integer, Integer>> mapping = new ArrayList<>();
+
+		ResultConfig(int index) { this.index = index; }
+
+		ResultConfig map(int nodeId, int...indices) {
+			IntStream.of(indices).mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add);
+			return this;
+		}
+
+		ResultConfig map(int nodeId, Interval indices) {
+			indices.stream().mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add);
+			return this;
+		}
+
+		ResultConfig map(boolean condition, int nodeId, int...indices) { if(condition) map(nodeId, indices); return this;}
+		ResultConfig map(boolean condition, int nodeId, Interval indices) { if(condition) map(nodeId, indices); return this;}
+
+		void assertMapping(State state) {
+			int size = mapping.size();
+			assertThat(state.entry)
+				.as("Incorrect number of mappings in result #%d", _int(index))
+				.isEqualTo(size);
+
+			for (int i = 0; i < size; i++) {
+				Pair<Integer, Integer> m = mapping.get(i);
+				assertThat(state.m_node[i])
+					.as("Node id mismatch in mapping at index %d in result #%d", _int(i), _int(index))
+					.isEqualTo(m.first.intValue());
+				assertThat(state.m_pos[i])
+					.as("Position mismatch in mapping at index %d in result #%d", _int(i), _int(index))
+					.isEqualTo(m.second.intValue());
+			}
+		}
+	}
+
+	static ResultConfig result(int index) {
+		return new ResultConfig(index);
 	}
 
 	// TESTS BEGIN HERE
@@ -576,6 +615,7 @@ class SequencePatternTest {
 									.window(startPos, target.length()-1)
 									.hits(hit))
 							.node(node(Utils.NODE_1).last(hit))
+							.result(result(0).map(Utils.NODE_1, hit))
 					);
 				}
 
@@ -673,12 +713,13 @@ class SequencePatternTest {
 					"-X-, 1, 1",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
-				void testSingleMatch(String target, int startPos, int last) {
+				void testSingleMatch(String target, int startPos, int hit) {
 					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, 1)
 							.cache(cache(Utils.CACHE_1, true)
 									.window(startPos, target.length()-1)
 									.hits(target, Utils.EQUALS_X))
-							.node(node(Utils.NODE_1).last(last))
+							.node(node(Utils.NODE_1).last(hit))
+							.result(result(0).map(Utils.NODE_1, hit))
 					);
 				}
 
@@ -783,12 +824,13 @@ class SequencePatternTest {
 					"-X-, 1, 1",
 				})
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
-				void testSingleMatch(String target, int startPos, int last) {
+				void testSingleMatch(String target, int startPos, int hit) {
 					assertResult(target, setup(Utils.NO_LIMIT), match(startPos, true, 1)
 							.cache(cache(Utils.CACHE_1, true)
 									.window(startPos, target.length()-1)
 									.hits(target, Utils.EQUALS_X))
-							.node(node(Utils.NODE_1).last(last))
+							.node(node(Utils.NODE_1).last(hit))
+							.result(result(0).map(Utils.NODE_1, hit))
 					);
 				}
 
@@ -912,6 +954,7 @@ class SequencePatternTest {
 					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, 1)
 							.cache(cache(Utils.CACHE_1, true).hits(hit))
 							.node(node(Utils.NODE_1).last(hit))
+							.result(result(0).map(Utils.NODE_1, hit))
 					);
 				}
 
@@ -1047,6 +1090,7 @@ class SequencePatternTest {
 									.window(startPos, region.to)
 									.hits(hit))
 							.node(node(Utils.NODE_1).last(hit))
+							.result(result(0).map(Utils.NODE_1, hit))
 					);
 				}
 
@@ -1175,12 +1219,13 @@ class SequencePatternTest {
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 				void testSingleMatch(String target,
 						@ConvertWith(IntervalConverter.class) Interval region,
-						int startPos, int last) {
+						int startPos, int hit) {
 					assertResult(target, setup(region, Utils.NO_LIMIT), match(startPos, true, 1)
 							.cache(cache(Utils.CACHE_1, true)
 									.window(startPos, region.to)
 									.hits(target, region, Utils.EQUALS_X))
-							.node(node(Utils.NODE_1).last(last))
+							.node(node(Utils.NODE_1).last(hit))
+							.result(result(0).map(Utils.NODE_1, hit))
 					);
 				}
 
@@ -2136,8 +2181,8 @@ class SequencePatternTest {
 						conn,
 						new Finish(UNSET_LONG));
 				sms.nodeDefs = nodeDefs(
-						matcher(0, Utils.OPTION_A),
-						matcher(1, Utils.OPTION_B));
+						matcher(0, Utils.EQUALS_A),
+						matcher(1, Utils.EQUALS_B));
 				return sms;
 			}
 
@@ -2209,7 +2254,7 @@ class SequencePatternTest {
 						conn,
 						new Finish(UNSET_LONG));
 				sms.nodeDefs = nodeDefs(
-						matcher(0, Utils.OPTION_A));
+						matcher(0, Utils.EQUALS_A));
 				return sms;
 			}
 
@@ -2261,8 +2306,8 @@ class SequencePatternTest {
 						new Single(2, Utils.NODE_2, Utils.CACHE_2), // needed to force reluctant expansion
 						new Finish(UNSET_LONG));
 				sms.nodeDefs = nodeDefs(
-						matcher(0, Utils.OPTION_A),
-						matcher(1, Utils.OPTION_B));
+						matcher(0, Utils.EQUALS_A),
+						matcher(1, Utils.EQUALS_B));
 				return sms;
 			}
 
@@ -2307,6 +2352,174 @@ class SequencePatternTest {
 	class ForCombinations {
 
 		@Nested
+		class PlainSequence {
+			private Node[] nodes(int limit, CharPredicate...predicates) {
+				int id = 0;
+				List<Node> nodes = new ArrayList<>();
+				for (int i = 0; i < predicates.length; i++) {
+					nodes.add(new Scan(id++, Utils.NO_CACHE, Utils.NO_INTERVAL, true));
+					nodes.add(new Single(id++, i, i));
+				}
+				nodes.add(new Finish(limit));
+				return nodes.toArray(new Node[0]);
+			}
+
+			@SuppressWarnings("unchecked")
+			private StateMachineSetup setup(int limit, CharPredicate...predicates) {
+				int nodeCount = predicates.length;
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.nodes = new IqlNode[nodeCount];
+				sms.cacheCount = nodeCount;
+				sms.limit = limit;
+				sms.root = seq(nodes(limit, predicates));
+				sms.nodeDefs = nodeDefs(IntStream.range(0, nodeCount)
+							.mapToObj(i -> matcher(i, predicates[i]))
+							.toArray(Matcher[]::new));
+				return sms;
+			}
+
+			@DisplayName("fail to find 2 nodes")
+			@CsvSource({
+				// min size violation
+				"B, 0, -, -, -",
+				"A, 0, -, -, -",
+				// missing partner
+				"BB, 0, 0, -, -",
+				"AA, 0, 0, 1, 0",
+				"B--B, 0, 0-2, -, -",
+				"A--A, 0, 0-2, 1-3, 0",
+			})
+			@ParameterizedTest(name="{index}: A B in [{0}], start at {1}")
+			void testDualNodeFail(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visitedA,
+					@ConvertWith(IntervalConverter.class) Interval visitedB,
+					@ConvertWith(IntervalConverter.class) Interval hitsA) {
+
+				assertResult(target, setup(Utils.NO_LIMIT, Utils.EQUALS_A, Utils.EQUALS_B),
+						match(startPos, false, 0)
+						.cache(cache(Utils.CACHE_1, true)
+								.window(visitedA)
+								.hits(hitsA.asArray()))
+						.cache(cache(Utils.CACHE_2, true)
+								.window(visitedB))
+				);
+			}
+
+			@DisplayName("find 2 nodes exactly once")
+			@CsvSource({
+				"AB, 0, 0, 1, 0, 1",
+				"A--B, 0, 0-2, 1-3, 0, 3",
+				"-A--B, 0, 0-3, 2-4, 1, 4",
+				"-A--B-, 0, 0-4, 2-4, 1, 4",
+			})
+			@ParameterizedTest(name="{index}: A B in [{0}], start at {1}")
+			void testDualNodeSingleHit(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visitedA,
+					@ConvertWith(IntervalConverter.class) Interval visitedB,
+					int hitA, int hitB) {
+
+				assertResult(target, setup(Utils.NO_LIMIT, Utils.EQUALS_A, Utils.EQUALS_B),
+						match(startPos, true, 1)
+						.cache(cache(Utils.CACHE_1, true)
+								.window(visitedA)
+								.hits(hitA))
+						.cache(cache(Utils.CACHE_2, true)
+								.window(visitedB)
+								.hits(hitB))
+						.result(result(0)
+								.map(Utils.NODE_1, hitA)
+								.map(Utils.NODE_2, hitB))
+				);
+			}
+
+			@DisplayName("find 2 nodes and partial sequence")
+			@CsvSource({
+				"ABA-, 0, 0-2, 1-3, 0, 2, 1",
+				"-A--B--A--, 0, 0-8, 2-9, 1, 7, 4",
+			})
+			@ParameterizedTest(name="{index}: A B in [{0}], start at {1}")
+			void testDualNodeSequenceRestart(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visitedA,
+					@ConvertWith(IntervalConverter.class) Interval visitedB,
+					int hitA1, int hitA2, int hitB) {
+
+				assertResult(target, setup(Utils.NO_LIMIT, Utils.EQUALS_A, Utils.EQUALS_B),
+						match(startPos, true, 1)
+						.cache(cache(Utils.CACHE_1, true)
+								.window(visitedA)
+								.hits(hitA1)
+								.hits(hitA2)) // 2nd hit for A only reflected in cache, no dispatched result
+						.cache(cache(Utils.CACHE_2, true)
+								.window(visitedB)
+								.hits(hitB))
+						.result(result(0)
+								.map(Utils.NODE_1, hitA1)
+								.map(Utils.NODE_2, hitB))
+				);
+			}
+
+			@DisplayName("find 2 sequences for 2 nodes (based on A)")
+			@CsvSource({
+				"AAB-, 0, 0-2, 1-3, 0, 1, 2",
+				"-A--A--B--, 0, 0-8, 2-9, 1, 4, 7",
+			})
+			@ParameterizedTest(name="{index}: A B in [{0}], start at {1}")
+			void testDualNodeDualResultFromA(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visitedA,
+					@ConvertWith(IntervalConverter.class) Interval visitedB,
+					int hitA1, int hitA2, int hitB) {
+
+				assertResult(target, setup(Utils.NO_LIMIT, Utils.EQUALS_A, Utils.EQUALS_B),
+						match(startPos, true, 2)
+						.cache(cache(Utils.CACHE_1, true)
+								.window(visitedA)
+								.hits(hitA1)
+								.hits(hitA2))
+						.cache(cache(Utils.CACHE_2, true)
+								.window(visitedB)
+								.hits(hitB))
+						.result(result(0)
+								.map(Utils.NODE_1, hitA1)
+								.map(Utils.NODE_2, hitB))
+						.result(result(1)
+								.map(Utils.NODE_1, hitA2)
+								.map(Utils.NODE_2, hitB))
+				);
+			}
+
+			@DisplayName("find 2 sequences for 2 nodes (based on B)")
+			@CsvSource({
+				"A-BB, 0, 0-2, 1-3, 0, 2, 3",
+				"-A--B--B--, 0, 0-8, 2-9, 1, 4, 7",
+			})
+			@ParameterizedTest(name="{index}: A B in [{0}], start at {1}")
+			void testDualNodeDualResultFromB(String target, int startPos,
+					@ConvertWith(IntervalConverter.class) Interval visitedA,
+					@ConvertWith(IntervalConverter.class) Interval visitedB,
+					int hitA, int hitB1, int hitB2) {
+
+				assertResult(target, setup(Utils.NO_LIMIT, Utils.EQUALS_A, Utils.EQUALS_B),
+						match(startPos, true, 2)
+						.cache(cache(Utils.CACHE_1, true)
+								.window(visitedA)
+								.hits(hitA))
+						.cache(cache(Utils.CACHE_2, true)
+								.window(visitedB)
+								.hits(hitB1)
+								.hits(hitB2))
+						.result(result(0)
+								.map(Utils.NODE_1, hitA)
+								.map(Utils.NODE_2, hitB1))
+						.result(result(1)
+								.map(Utils.NODE_1, hitA)
+								.map(Utils.NODE_2, hitB2))
+				);
+			}
+
+			//TODO scan for multiple matches (at least 2)
+		}
+
+		@Nested
 		class BranchAndRepetition {
 			private StateMachineSetup setup(Node...options) {
 				StateMachineSetup sms = new StateMachineSetup();
@@ -2318,8 +2531,8 @@ class SequencePatternTest {
 						conn,
 						new Finish(UNSET_LONG));
 				sms.nodeDefs = nodeDefs(
-						matcher(0, Utils.OPTION_A),
-						matcher(1, Utils.OPTION_B));
+						matcher(0, Utils.EQUALS_A),
+						matcher(1, Utils.EQUALS_B));
 				return sms;
 			}
 
