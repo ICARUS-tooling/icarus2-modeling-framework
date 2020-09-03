@@ -46,6 +46,8 @@ public abstract class SequenceMarker {
 		return n.instantiate(pos);
 	}
 
+	public static boolean isSequenceMarker(String name) { return Name.isValidName(name); }
+
 	private static final Position[] NO_ARGS = {};
 
 	private static Position[] toPos(Number[] numbers) {
@@ -132,9 +134,9 @@ public abstract class SequenceMarker {
 		private static final LazyStore<Name, String> store
 				= new LazyStore<>(Name.class, Name::getLabel, String::toLowerCase);
 
-		public static Name parseName(String s) {
-			return store.lookup(s);
-		}
+		public static Name parseName(String s) { return store.lookup(s); }
+
+		public static boolean isValidName(String s) { return store.hasKey(s); }
 	}
 
 	@VisibleForTesting
@@ -152,9 +154,7 @@ public abstract class SequenceMarker {
 		}
 
 		@VisibleForTesting
-		Name getRawName() {
-			return name;
-		}
+		Name getRawName() { return name; }
 
 		@Override
 		public MarkerType getType() { return MarkerType.SEQUENCE; }
@@ -173,9 +173,7 @@ public abstract class SequenceMarker {
 	private static final class IsFirst extends MarkerBase {
 		static final IsFirst INSTANCE = new IsFirst();
 
-		IsFirst() {
-			super(Name.FIRST, false, 1);
-		}
+		IsFirst() { super(Name.FIRST, false, 1); }
 
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
@@ -188,9 +186,7 @@ public abstract class SequenceMarker {
 	private static final class IsLast extends MarkerBase {
 		static final IsLast INSTANCE = new IsLast();
 
-		IsLast() {
-			super(Name.LAST, false, 1);
-		}
+		IsLast() { super(Name.LAST, false, 1); }
 
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {

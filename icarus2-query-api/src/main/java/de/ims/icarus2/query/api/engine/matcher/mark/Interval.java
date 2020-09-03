@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
  * @author Markus Gärtner
  *
  */
-public class Interval {
+public class Interval implements Cloneable {
 
 	public static Interval of(int value) {
 		Interval iv = new Interval();
@@ -63,6 +63,10 @@ public class Interval {
 	public boolean isValid() { return from!=UNSET_INT && to!=UNSET_INT; }
 
 	public void reset() { from = UNSET_INT; to = UNSET_INT; }
+
+	public void reset(int from, int to) { this.from = from; this.to = to; }
+
+	public void reset(Interval other) { this.from = other.from; this.to = other.to; }
 
 	public int size() { return to-from+1; }
 
@@ -108,5 +112,15 @@ public class Interval {
 			return from==other.from && to==other.to;
 		}
 		return false;
+	}
+
+	/** Since this implementation only holds pointer values we can do shallow copy */
+	@Override
+	public Interval clone() {
+		try {
+			return (Interval) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError("Class is cloneable", e);
+		}
 	}
 }

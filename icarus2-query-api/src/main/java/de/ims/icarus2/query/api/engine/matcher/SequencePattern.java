@@ -38,6 +38,8 @@ import java.util.stream.Stream;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
@@ -53,6 +55,10 @@ import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
@@ -162,22 +168,23 @@ public class SequencePattern {
 		Node root;
 		/** Total number of caches needed for this pattern */
 		int cacheCount = 0;
-		/** Total number of managed {@link Interval} instances */
-		int intervalCount = 0;
 		/** Total number of int[] buffers needed by nodes */
 		int bufferCount = 0;
 		/** Original referential intervals */
-		IntervalRef[] intervalRefs = {};
+		Interval[] intervals = {};
 		/** Keeps track of all the proper nodes. Used for monitoring */
 		ProperNode[] properNodes = {};
 		/** Lists all the markers used by original nodes */
 		RangeMarker[] markers = {};
+		/** Positions into 'intervals' to signal what intervals to update for what marker */
+		int[] markerPos = {};
 		/** Blueprints for creating new {@link NodeMatcher} instances per thread */
 		Supplier<Matcher<Item>>[] nodeDefs;
 
 		// Access methods for the matcher/state
 		Node getRoot() { return root; }
 		RangeMarker[] getMarkers() { return markers; }
+		int[] getMarkerPos() { return markerPos; }
 		IqlNode[] getNodes() { return nodes; }
 		int[] getHits() { return new int[nodes.length]; }
 		Matcher<Container> makeFilterConstraint() {
@@ -197,14 +204,9 @@ public class SequencePattern {
 				.toArray(Cache[]::new);
 		}
 		Interval[] makeIntervals() {
-			return IntStream.range(0, intervalCount)
-				.mapToObj(i -> Interval.blank())
-				.toArray(Interval[]::new);
-		}
-		IntervalRef[] makeIntervalRefs() {
-			return  Stream.of(intervalRefs)
-				.map(IntervalRef::clone)
-				.toArray(IntervalRef[]::new);
+			return  Stream.of(intervals)
+					.map(Interval::clone)
+					.toArray(Interval[]::new);
 		}
 		int[][] makeBuffer() {
 			return IntStream.range(0, bufferCount)
@@ -218,7 +220,6 @@ public class SequencePattern {
 		Node root;
 		Node tail = accept;
 		int cacheCount;
-		int intervalCount;
 		int bufferCount;
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
@@ -227,10 +228,11 @@ public class SequencePattern {
 		final QueryModifier modifier;
 		final ExpressionFactory expressionFactory;
 		final List<IqlNode> nodes = new ArrayList<>();
-		final List<IntervalRef> intervalRefs = new ArrayList<>();
+		final List<Interval> intervals = new ArrayList<>();
 		final List<NodeDef> nodeDefs = new ArrayList<>();
 		final Set<ProperNode> properNodes = new ReferenceOpenHashSet<>();
 		final List<RangeMarker> markers = new ArrayList<>();
+		final IntList markerPos = new IntArrayList();
 		final long limit;
 		final IqlElement rootElement;
 		final IqlConstraint filterConstraint;
@@ -259,9 +261,7 @@ public class SequencePattern {
 			sm.root = this.root;
 			sm.properNodes = properNodes.stream().sorted().toArray(ProperNode[]::new);
 			sm.cacheCount = cacheCount;
-			sm.intervalCount = intervalCount;
-			sm.bufferCount = bufferCount;
-			sm.intervalRefs = intervalRefs.toArray(new IntervalRef[0]);
+			sm.markerPos = markerPos.toIntArray();
 			sm.markers = markers.toArray(new RangeMarker[0]);
 			sm.nodeDefs = nodeDefs.toArray(new Supplier[0]);
 
@@ -280,7 +280,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class State {
+	static class State extends Interval {
 		/** Items in target container, copied for faster access */
 		Item[] elements;
 
@@ -290,12 +290,14 @@ public class SequencePattern {
 		final Matcher<Item>[] matchers;
 		/** Caches used by various nodes */
 		final Cache[] caches;
-		/** Raw position intervals used by nodes */
+		/** Raw position intervals and referential intervals used by nodes */
 		final Interval[] intervals;
-		/** Referential intervals used by nodes to delegate positional information*/
-		final IntervalRef[] intervalRefs;
-		/** All the raw markers that  */
+		/** All the raw markers that produce restrictions on node positions */
 		final RangeMarker[] markers;
+		/** Positions into 'intervals' to signal what intervals to update for what marker */
+		final int[] markerPos;
+		/** Positions of referential intervals */
+		final int[] intervalRefs;
 		/** Keeps track of the last hit index for every raw node */
 		final int[] hits;
 		/** The available int[] buffers used by various node implementations */
@@ -316,8 +318,6 @@ public class SequencePattern {
 		/** Values for the node mapping, i.e. the associated indices */
 		int[] m_pos = new int[INITIAL_SIZE];
 
-		/** Last allowed index to match. Typically equal to {@code size - 1}. */
-		int to = UNSET_INT;
 		/** Total number of elements in the target sequence. */
 		int size = UNSET_INT;
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
@@ -330,20 +330,45 @@ public class SequencePattern {
 		 */
 		int last = 0;
 
-		State(StateMachineSetup stateMachineSetup) {
-			this.elements = new Item[INITIAL_SIZE];
-			this.markers = stateMachineSetup.getMarkers();
-			this.nodes = stateMachineSetup.getNodes();
-			this.hits = stateMachineSetup.getHits();
+		State(StateMachineSetup setup) {
+			elements = new Item[INITIAL_SIZE];
+			markers = setup.getMarkers();
+			markerPos = setup.getMarkerPos();
+			nodes = setup.getNodes();
+			hits = setup.getHits();
 
-			this.filterConstraint = stateMachineSetup.makeFilterConstraint();
-			this.globalConstraint = stateMachineSetup.makeGlobalConstraint();
+			filterConstraint = setup.makeFilterConstraint();
+			globalConstraint = setup.makeGlobalConstraint();
 
-			this.matchers = stateMachineSetup.makeNodeMatchers();
-			this.caches = stateMachineSetup.makeCaches();
-			this.intervals = stateMachineSetup.makeIntervals();
-			this.intervalRefs = stateMachineSetup.makeIntervalRefs();
-			this.buffers = stateMachineSetup.makeBuffer();
+			matchers = setup.makeNodeMatchers();
+			caches = setup.makeCaches();
+			intervals = setup.makeIntervals();
+			buffers = setup.makeBuffer();
+
+			intervalRefs = complement(markerPos, intervals.length);
+
+			from = 0;
+			to = 0;
+		}
+
+		private static int[] complement(int[] markerPos, int size) {
+			if(size==0) {
+				return new int[0];
+			}
+
+			IntSet markers = new IntOpenHashSet();
+			for (int pos : markerPos) {
+				markers.add(pos);
+			}
+
+			IntList comp = new IntArrayList();
+			for (int i = 0; i < size; i++) {
+				if(!markers.contains(i)) {
+					comp.add(i);
+				}
+			}
+
+			return comp.toIntArray();
 		}
 
 		int scope() {
@@ -361,7 +386,8 @@ public class SequencePattern {
 			entry++;
 		}
 
-		void reset() {
+		@Override
+		public void reset() {
 			// Cleanup duty -> we must erase all references to target and its elements
 			Arrays.fill(elements, 0, size, null);
 			Arrays.fill(hits, UNSET_INT);
@@ -441,16 +467,15 @@ public class SequencePattern {
 			to = size-1;
 
 			// Update raw intervals
-			int intervalIndex = 0;
 			for (int i = 0; i < markers.length; i++) {
 				RangeMarker marker = markers[i];
-				marker.adjust(intervals, intervalIndex, size);
-				intervalIndex += marker.intervalCount();
+				marker.adjust(intervals, markerPos[i], size);
 			}
 
 			// Update interval refs
 			for (int i = 0; i < intervalRefs.length; i++) {
-				intervalRefs[i].update(this);
+				IntervalRef ref = (IntervalRef) intervals[intervalRefs[i]];
+				ref.update(this);
 			}
 
 			// Let the state machine do its work
@@ -637,7 +662,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static final class IntervalRef extends Interval implements Cloneable {
+	static final class IntervalRef extends Interval {
 		/** Expansion amount of the interval, typically a negative value */
 		private final int shift;
 		/** Pointer to the original interval to be used for shifting */
@@ -655,20 +680,10 @@ public class SequencePattern {
 		}
 
 		/** Looks up the original interval and updates own content from it by applying shift */
-		void update(SequenceMatcher matcher) {
-			Interval source = matcher.intervals[intervalIndex];
+		void update(State state) {
+			Interval source = state.intervals[intervalIndex];
 			from = source.from+shift;
 			to = source.to+shift;
-		}
-
-		/** Since this implementation only holds pointer values we can do shallow copy */
-		@Override
-		public IntervalRef clone() {
-			try {
-				return (IntervalRef) super.clone();
-			} catch (CloneNotSupportedException e) {
-				throw new InternalError("Class is cloneable", e);
-			}
 		}
 	}
 
@@ -689,6 +704,11 @@ public class SequencePattern {
 			}
 		}
 
+		@VisibleForTesting
+		int size() {
+			return data.length>>1;
+		}
+
 		boolean isSet(int index) {
 			return data[index<<1];
 		}
@@ -699,6 +719,8 @@ public class SequencePattern {
 
 		void setValue(int index, boolean value) {
 			index <<= 1;
+			if(data[index])
+				throw new IllegalStateException("Slot already set: "+index);
 			data[index] = true;
 			data[index+1] = value;
 		}
@@ -748,6 +770,10 @@ public class SequencePattern {
 			}
 
 			return info.deterministic;
+		}
+
+		boolean isProxy() {
+			return false;
 		}
 	}
 
@@ -829,6 +855,9 @@ public class SequencePattern {
 			this.intervalIndex = intervalIndex;
 			this.intervalCount = intervalCount;
 		}
+
+		@Override
+		boolean isProxy() { return super.isProxy(); }
 
 		@Override
 		boolean match(State state, int pos) {
@@ -1015,22 +1044,28 @@ public class SequencePattern {
 		//TODO add pointer to a single interval
 		final int cacheId;
 		final boolean forward;
+		final int intervalIndex;
 
-		Scan(int id, int cacheId, boolean forward) {
+		Scan(int id, int cacheId, int intervalIndex, boolean forward) {
 			super(id);
 			this.cacheId = cacheId;
+			this.intervalIndex = intervalIndex;
 			this.forward = forward;
 		}
 
 		@Override
 		boolean match(State state, int pos) {
-			//TODO add support for interval restriction in sub-match methods
-			if(cacheId!=UNSET_INT) {
-				return matchForwardCached(state, pos);
-			} else if(forward) {
-				return matchForwardUncached(state, pos);
+			Interval region = intervalIndex==UNSET_INT ? state : state.intervals[intervalIndex];
+			// Bail early if we can't accommodate 'pos'
+			if(!region.contains(pos)) {
+				return false;
 			}
-			return matchBackwards(state, pos);
+			if(cacheId!=UNSET_INT) {
+				return matchForwardCached(state, pos, region.to);
+			} else if(forward) {
+				return matchForwardUncached(state, pos, region.to);
+			}
+			return matchBackwards(state, pos, region.to);
 		}
 
 		/**
@@ -1041,8 +1076,8 @@ public class SequencePattern {
 		 * scanning when there is no benefit from caching as every node will
 		 * only be visited once anyway.
 		 */
-		private boolean matchForwardUncached(State state, int pos) {
-			final int fence = state.to - minSize + 1;
+		private boolean matchForwardUncached(State state, int pos, int to) {
+			final int fence = to - minSize + 1;
 
 			boolean result = false;
 
@@ -1063,10 +1098,10 @@ public class SequencePattern {
 		 * continue down all further nodes in the state machine, but we can
 		 * effectively rule out unsuccessful paths.
 		 */
-		private boolean matchForwardCached(State state, int pos) {
+		private boolean matchForwardCached(State state, int pos, int to) {
 			Cache cache = state.caches[cacheId];
 
-			int fence = state.to - minSize + 1;
+			int fence = to - minSize + 1;
 
 			boolean result = false;
 
@@ -1108,10 +1143,10 @@ public class SequencePattern {
 		 * The main purpose for this separate implementation is to handle the
 		 * LAST query modifier.
 		 */
-		private boolean matchBackwards(State state, int pos) {
+		private boolean matchBackwards(State state, int pos, int to) {
 			boolean result = false;
 
-			for (int i = state.to - minSize + 1; i >= pos && !state.finished; i--) {
+			for (int i = to - minSize + 1; i >= pos && !state.finished; i--) {
 				int scope = state.scope();
 				result |= next.match(state, i);
 				state.reset(scope);
