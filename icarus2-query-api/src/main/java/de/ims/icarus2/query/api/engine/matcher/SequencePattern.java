@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.engine.matcher;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
@@ -37,23 +38,47 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
+import de.ims.icarus2.query.api.engine.matcher.mark.SequenceMarker;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
+import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.Expression;
 import de.ims.icarus2.query.api.exp.ExpressionFactory;
+import de.ims.icarus2.query.api.exp.Literals;
+import de.ims.icarus2.query.api.exp.LogicalOperators;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
+import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
 import de.ims.icarus2.query.api.iql.IqlElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlExpression;
+import de.ims.icarus2.query.api.iql.IqlMarker;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
+import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
+import de.ims.icarus2.query.api.iql.IqlUtils;
+import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -115,7 +140,7 @@ public class SequencePattern {
 	/** Defines the general direction for matching. ANY is equivalent to FIRST here. */
 	private final QueryModifier modifier;
 	/** The root context for evaluations in this pattern */
-	private final EvaluationContext context;
+	private final LaneContext context;
 	/** Blueprint for instantiating a new {@link SequenceMatcher} */
 	private final StateMachineSetup setup;
 
@@ -180,7 +205,12 @@ public class SequencePattern {
 		/** Positions into 'intervals' to signal what intervals to update for what marker */
 		int[] markerPos = {};
 		/** Blueprints for creating new {@link NodeMatcher} instances per thread */
-		Supplier<Matcher<Item>>[] nodeDefs;
+		@SuppressWarnings("unchecked")
+		Supplier<Matcher<Item>>[] matchers = new Supplier[0];
+		/** Blueprints for creating member storages per thread */
+		@SuppressWarnings("unchecked")
+		Supplier<Assignable<? extends Item>>[] members = new Supplier[0];
+
 
 		// Access methods for the matcher/state
 		Node getRoot() { return root; }
@@ -194,10 +224,15 @@ public class SequencePattern {
 		Expression<?> makeGlobalConstraint() {
 			return globalConstraint==null ? null : globalConstraint.get();
 		}
-		Matcher<Item>[] makeNodeMatchers() {
-			return Stream.of(nodeDefs)
+		Matcher<Item>[] makeMatchers() {
+			return Stream.of(matchers)
 				.map(Supplier::get)
 				.toArray(Matcher[]::new);
+		}
+		Assignable<? extends Item>[] makeMembers() {
+			return Stream.of(members)
+				.map(Supplier::get)
+				.toArray(Assignable[]::new);
 		}
 		Cache[] makeCaches() {
 			return IntStream.range(0, cacheCount)
@@ -218,19 +253,34 @@ public class SequencePattern {
 
 	/** Utility class for generating the state machine */
 	static class SequenceQueryProcessor {
-		Node root;
+		private static final ObjectMapper mapper = IqlUtils.createMapper();
+		private static String serialize(IqlElement element) {
+			try {
+				return mapper.writeValueAsString(element);
+			} catch (JsonProcessingException e) {
+				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+						"Failed to serialize element", e);
+			}
+		}
+
+		Node head;
 		Node tail = accept;
 		int cacheCount;
 		int bufferCount;
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
+		ElementContext context;
+		ExpressionFactory expressionFactory;
+		IqlMarker pendingMarker;
 
-		final EvaluationContext rootContext;
+		int id;
+
+		final LaneContext rootContext;
 		final QueryModifier modifier;
-		final ExpressionFactory expressionFactory;
 		final List<IqlNode> nodes = new ArrayList<>();
 		final List<Interval> intervals = new ArrayList<>();
-		final List<NodeDef> nodeDefs = new ArrayList<>();
+		final List<NodeDef> matchers = new ArrayList<>();
+		final List<MemberDef> members = new ArrayList<>();
 		final Set<ProperNode> properNodes = new ReferenceOpenHashSet<>();
 		final List<RangeMarker> markers = new ArrayList<>();
 		final IntList markerPos = new IntArrayList();
@@ -241,7 +291,6 @@ public class SequencePattern {
 
 		SequenceQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
-			expressionFactory = builder.geExpressionFactory();
 			modifier = builder.getModifier();
 			limit = builder.getLimit();
 			rootElement = builder.getRoot();
@@ -249,22 +298,408 @@ public class SequencePattern {
 			globalConstraint = builder.getGlobalConstraint();
 		}
 
+		/** Process element and link to active sequence */
+		private Node process(IqlElement source) {
+			Node node;
+
+			switch (source.getType()) {
+			case GROUPING: node = grouping((IqlGrouping) source); break;
+			case SEQUENCE: node = sequence((IqlSequence) source); break;
+			case NODE: node = node((IqlNode) source); break;
+			case DISJUNCTION: node = disjunction((IqlElementDisjunction) source); break;
+
+			default:
+				// We do not support IqlTreeNode and IqlEdge here!!
+				throw EvaluationUtils.forUnsupportedQueryFragment("element", source.getType());
+			}
+
+			pushTail(node);
+
+			//TODO post-process node?
+
+			return node;
+		}
+
+		// RAW ELEMENT PROCESSING
+
+		/** Process single node and link to active sequence */
+		private Node node(IqlNode source) {
+
+			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
+			final IqlMarker marker = source.getMarker().orElse(null);
+			final IqlConstraint constraint = source.getConstraint().orElse(null);
+			final String label = source.getLabel().orElse(null);
+
+			if(marker!=null && pendingMarker!=null) {
+				if(pendingMarker!=null)
+					throw new QueryException(QueryErrorCode.INCORRECT_USE,
+							"Unresolved pending marker, this usually happens when using the "
+							+ "'ADJACENT' modifier with multiple marker-bearing nodes. Affected node:\n"
+							+ serialize(source));
+
+				pendingMarker = marker;
+			}
+
+			// Prepare context
+			context = rootContext.derive()
+					.element(source)
+					.build();
+
+			// Process actual node content
+			Node atom;
+			if(constraint==null) {
+				atom = empty(label);
+			} else {
+				expressionFactory = new ExpressionFactory(context);
+				atom = single(label, constraint);
+				expressionFactory = null;
+			}
+
+			// Handle quantifiers
+			Node node = quantify(atom, quantifiers);
+
+			// Reset context
+			context = null;
+
+			return node;
+		}
+
+		/** Process (quantified) node group and link to active sequence */
+		private Node grouping(IqlGrouping source) {
+			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
+
+			final Node oldTail = replaceTail(accept);
+			final Node head = looseGroup(source.getElements());
+			replaceTail(oldTail);
+
+			return quantify(head, quantifiers);
+		}
+
+		/** Process (ordered or adjacent) node sequence and link to active sequence */
+		private Node sequence(IqlSequence source) {
+			final List<IqlElement> elements = source.getElements();
+			if(source.getArrangement()==NodeArrangement.ADJACENT) {
+				return adjacentGroup(elements);
+			}
+			return looseGroup(elements);
+		}
+
+		/** Process alternatives and link to active sequence */
+		private Node disjunction(IqlElementDisjunction source) {
+			final List<IqlElement> elements = source.getAlternatives();
+			final List<Node> atoms = new ArrayList<>(elements.size());
+			final Node conn = branchStart();
+			for(IqlElement element : elements) {
+				atoms.add(process(element));
+				branchRestart(conn);
+			}
+			return branchEnd(conn, atoms.toArray(new Node[atoms.size()]));
+		}
+
+		// INTERNAL HELPERS
+
+		/** Fetch current tail */
+		private Node tail() { return tail; }
+
+		/** Link node to tail, set tail to new node and return it */
+		private <N extends Node> N pushTail(N node) {
+			node.next = tail;
+			tail = node;
+			return node;
+		}
+
+		/** Replace tail by node and return old tail */
+		private Node replaceTail(Node node) {
+			final Node oldTail = tail;
+			tail = node;
+			return oldTail;
+		}
+
+		private int id() { return id++; }
+
+		private int member(@Nullable String label) {
+			if(label==null) {
+				return UNSET_INT;
+			}
+			final MemberDef memberDef = new MemberDef(label, context);
+			final int memberId = members.size();
+			members.add(memberDef);
+			return memberId;
+		}
+
+		private Assignable<? extends Item> elementStore() {
+			return context.getElementStore().orElseThrow(
+					() -> EvaluationUtils.forInternalError("No element store available"));
+		}
+
+		/**
+		 * Transforms a {@link IqlConstraint constraint} object into a boolean
+		 * expression that is linked to the specified {@link EvaluationContext}.
+		 * <p>
+		 * If the {@code constraint} is already marked as {@link IqlConstraint#isSolved() solved},
+		 * this method will only return a constant expression bearing the corresponding
+		 * {@link IqlConstraint#isSolvedAs() value}.
+		 */
+		private Expression<?> constraint(IqlConstraint source) {
+			if(source.isSolved()) {
+				return Literals.of(source.isSolvedAs());
+			}
+
+			switch (source.getType()) {
+			case TERM: {
+				final IqlTerm term = (IqlTerm) source;
+				return term(term.getOperation()==BooleanOperation.DISJUNCTION, term.getItems());
+			}
+			case PREDICATE: {
+				final IqlPredicate predicate = (IqlPredicate) source;
+				return predicate(predicate.getExpression());
+			}
+			default:
+				throw EvaluationUtils.forUnsupportedQueryFragment("constraint", source.getType());
+			}
+		}
+
+		private Expression<?> term(boolean disjunction, List<IqlConstraint> expressions) {
+			final Expression<?>[] elements = expressions.stream()
+					.map(this::constraint)
+					.toArray(Expression[]::new);
+			// Don't care about optimization here, the NodeDef wrapper will take care of this
+			return disjunction ? LogicalOperators.disjunction(elements, true)
+					: LogicalOperators.conjunction(elements, true);
+		}
+
+		private Expression<?> predicate(IqlExpression expression) {
+			return expressionFactory.process(expression.getContent());
+		}
+
+		private int matcher(IqlConstraint constraint) {
+			assert context!=null: "missing evaluation context";
+			assert expressionFactory!=null: "missing expression factory";
+
+			final NodeDef nodeDef = new NodeDef(id(), elementStore(), constraint(constraint), context);
+			final int nodeId = matchers.size();
+			matchers.add(nodeDef);
+			return nodeId;
+		}
+
+		/** Attaches a scan to current tail that honors (multiple) intervals */
+		private Node explore(boolean forward, boolean cached) {
+			/*
+			 * No matter how complex the potentially pending marker construct is,
+			 * the attached scan will always work with the same tail (at least
+			 * content-wise). Therefore we can use a shared cache for all the
+			 * branches and save evaluation time.
+			 */
+			final int cacheId = cached ? cache() : UNSET_INT;
+
+			if(pendingMarker!=null) {
+				//TODO analyze marker and build branch/clip/intersection nodes
+			}
+
+			//TODO in case of multiple branches for intervals, consider using a shared cache for scans?
+			return pushTail(scan(forward, cacheId, UNSET_INT));
+		}
+
+		private int cache() { return cacheCount++; }
+
+		private int buffer() { return bufferCount++; }
+
+		private RangeMarker marker(IqlMarkerCall call) {
+			Number[] arguments = IntStream.range(0, call.getArgumentCount())
+					.mapToObj(call::getArgument)
+					.map(Number.class::cast)
+					.toArray(Number[]::new);
+			return SequenceMarker.of(call.getName(), arguments);
+		}
+
+		/** Push intervals for given marker on the stack and return index of first interval */
+		private int interval(RangeMarker marker) {
+			final int intervalIndex = intervals.size();
+			for (int i = 0; i < marker.intervalCount(); i++) {
+				markerPos.add(intervals.size());
+				intervals.add(Interval.blank());
+			}
+			return intervalIndex;
+		}
+
+		private int interval() {
+			final int intervalIndex = intervals.size();
+			intervals.add(Interval.blank());
+			return intervalIndex;
+		}
+
+		private int intervalRef(int targetIndex, int shift) {
+			final int intervalIndex = intervals.size();
+			intervals.add(new IntervalRef(targetIndex, shift));
+			return intervalIndex;
+		}
+
+		private Empty empty(@Nullable String label) {
+			return new Empty(member(label));
+		}
+
+		private Begin begin() { return new Begin(); }
+
+		private Finish finish(long limit) { return new Finish(limit); }
+
+		private Single single(@Nullable String label, IqlConstraint constraint) {
+			return new Single(id(), matcher(constraint), cache(), member(label));
+		}
+
+		private Scan scan(boolean forward, int cacheId, int intervalIndex) {
+			return new Scan(id(), cacheId, intervalIndex, forward);
+		}
+
+		private Negation negate(Node atom) {
+			return new Negation(id(), atom);
+		}
+
+		/** Start a branch by placing a fresh {@link BranchConn} as tail */
+		private BranchConn branchStart() { return pushTail(new BranchConn()); }
+
+		/** Replace tail by given {@link BranchConn} instance */
+		private void branchRestart(Node conn) { replaceTail(conn); }
+
+		/** Wrap up branch by replacing tail with new {@link Branch} instance */
+		private Branch branchEnd(Node conn, Node...atoms) {
+			final Branch branch = new Branch(id(), conn, atoms);
+			replaceTail(branch);
+			return branch;
+		}
+
+		private Repetition repetition(Node atom, int cmin, int cmax, int mode) {
+			return new Repetition(id(), atom, cmin, cmax, mode, buffer(), buffer());
+		}
+
+		/** Sequential scanning of ordered elements */
+		private Node looseGroup(List<IqlElement> elements) {
+			Node head = null;
+			for(int i=elements.size()-1; i>=0; i--) {
+				head = process(elements.get(i));
+				head = explore(true, true);
+			}
+			return head;
+		}
+
+		/** Sequential check without scanning */
+		private Node adjacentGroup(List<IqlElement> elements) {
+			Node head = null;
+			for(int i=elements.size()-1; i>=0; i--) {
+				head = process(elements.get(i));
+			}
+			return head;
+		}
+
+		private int mode(IqlQuantifier quantifier) {
+			switch (quantifier.getQuantifierModifier()) {
+			case GREEDY: return GREEDY;
+			case POSSESSIVE: return POSSESSIVE;
+			case RELUCTANT: return RELUCTANT;
+			default: throw EvaluationUtils.forUnsupportedQueryFragment("quantifier mode",
+					quantifier.getQuantifierModifier());
+			}
+		}
+
+		/** Creates nodes to handle quantification and attaches to sequence */
+		private Node quantify(Node atom, List<IqlQuantifier> quantifiers) {
+			if(quantifiers.isEmpty()) {
+				// No quantification -> use atom as is
+				return pushTail(atom);
+			} else if(quantifiers.size()==1) {
+				// Singular quantifier -> simple wrapping
+				return quantify(atom, quantifiers.get(0));
+			} else {
+				// Combine all quantifiers into a branch structure
+				final Node conn = branchStart();
+				final List<Node> atoms = new ArrayList<>(quantifiers.size());
+				for(IqlQuantifier quantifier : quantifiers) {
+					atoms.add(quantify(atom, quantifier));
+					branchRestart(conn);
+				}
+				return branchEnd(conn, atoms.toArray(new Node[atoms.size()]));
+			}
+		}
+
+		/** Wraps a quantification node around atom and attaches to sequence */
+		private Node quantify(Node atom, IqlQuantifier quantifier) {
+			Node node;
+			if(quantifier.isExistentiallyNegated()) {
+				node = negate(atom);
+			} else {
+				int min = 1;
+				int max = Integer.MAX_VALUE;
+				int mode = GREEDY;
+				switch (quantifier.getQuantifierType()) {
+				case ALL: { // *
+					mode = POSSESSIVE;
+				} break;
+				case EXACT: { // n
+					min = max = quantifier.getValue().getAsInt();
+					mode = GREEDY;
+				} break;
+				case AT_LEAST: { // n+
+					min = quantifier.getValue().getAsInt();
+					mode = mode(quantifier);
+				} break;
+				case AT_MOST: { // 1..n
+					max = quantifier.getValue().getAsInt();
+					mode = mode(quantifier);
+				} break;
+				case RANGE: { // n..m
+					min = quantifier.getLowerBound().getAsInt();
+					max = quantifier.getUpperBound().getAsInt();
+				} break;
+
+				default:
+					throw EvaluationUtils.forUnsupportedQueryFragment("quantifier", quantifier.getQuantifierType());
+				}
+
+				if(min==max && min==1) {
+					// Don't bother with repetition for single count
+					node = atom;
+				} else {
+					node = repetition(atom, min, max, mode);
+				}
+			}
+			return pushTail(node);
+		}
+
 		StateMachineSetup createStateMachine() {
-			StateMachineSetup sm = new StateMachineSetup();
-			//TODO implement the converter
+			// Ensure we have a proper structural constraint here
+			rootElement.checkIntegrity();
+
+			//TODO run a verification of marker+quantifier combinations
+
+			// Start at the end of the state machine
+			replaceTail(finish(limit));
+
+			//TODO for now we don't honor the 'consumed' flag on IqlElement instances
+			Node root = process(rootElement);
+
+			// Prepare top-level scan
+			replaceTail(root);
+			if(modifier==QueryModifier.LAST) {
+				root = explore(false, false); // backwards scan
+			} else {
+				root = explore(true, false); // default forward scan
+			}
+
+			// Add size-based filter
+			root = pushTail(begin());
 
 			// Fill state machine
+			StateMachineSetup sm = new StateMachineSetup();
 			sm.properNodes = properNodes.stream().sorted().toArray(ProperNode[]::new);
 			sm.filterConstraint = filter;
 			sm.globalConstraint = global;
 			sm.nodes = nodes.toArray(new IqlNode[0]);
-			sm.limit = this.limit;
-			sm.root = this.root;
+			sm.limit = limit;
+			sm.root = root;
 			sm.properNodes = properNodes.stream().sorted().toArray(ProperNode[]::new);
 			sm.cacheCount = cacheCount;
 			sm.markerPos = markerPos.toIntArray();
 			sm.markers = markers.toArray(new RangeMarker[0]);
-			sm.nodeDefs = nodeDefs.toArray(new Supplier[0]);
+			sm.matchers = matchers.toArray(new Supplier[0]);
 
 			return sm;
 		}
@@ -289,6 +724,8 @@ public class SequencePattern {
 		final IqlNode[] nodes;
 		/** All the atomic nodes defined in the query */
 		final Matcher<Item>[] matchers;
+		/** Storage end points for mapping member labels to matched instances */
+		final Assignable<? extends Item>[] members;
 		/** Caches used by various nodes */
 		final Cache[] caches;
 		/** Raw position intervals and referential intervals used by nodes */
@@ -343,7 +780,8 @@ public class SequencePattern {
 			filterConstraint = setup.makeFilterConstraint();
 			globalConstraint = setup.makeGlobalConstraint();
 
-			matchers = setup.makeNodeMatchers();
+			matchers = setup.makeMatchers();
+			members = setup.makeMembers();
 			caches = setup.makeCaches();
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
@@ -505,8 +943,7 @@ public class SequencePattern {
 		private long limit = UNSET_LONG;
 		private IqlConstraint filterConstraint;
 		private IqlConstraint globalConstraint;
-		private EvaluationContext context;
-		private ExpressionFactory expressionFactory;
+		private LaneContext context;
 
 		//TODO add fields for configuring the result buffer
 
@@ -526,9 +963,7 @@ public class SequencePattern {
 
 		public IqlConstraint getGlobalConstraint() { return globalConstraint; }
 
-		public EvaluationContext geContext() { return context; }
-
-		public ExpressionFactory geExpressionFactory() { return expressionFactory; }
+		public LaneContext geContext() { return context; }
 
 		@Override
 		protected void validate() {
@@ -538,7 +973,6 @@ public class SequencePattern {
 			checkState("Id not defined", id>=0);
 			checkState("Context not defined", context!=null);
 			checkState("Context is not a root context", context.isRoot());
-			checkState("Expression factory not defined", expressionFactory!=null);
 		}
 
 		@Override
@@ -546,6 +980,7 @@ public class SequencePattern {
 	}
 
 	//TODO add mechanics to properly collect results from multiple buffers
+	@Deprecated
 	static class ResultBuffer {
 		/** Index of the UoI that is being searched */
 		private long index = UNSET_LONG;
@@ -592,14 +1027,19 @@ public class SequencePattern {
 		}
 	}
 
-	/** Encapsulates information to instantiate a new {@link Expression}. */
+	/**
+	 * Encapsulates information to instantiate a new {@link Expression}.
+	 * THe constraint {@link Expression} supplied will be
+	 * {@link EvaluationContext#optimize(Expression) optimized} autoamtically.
+	 */
 	static class ExpressionDef implements Supplier<Expression<?>> {
 		final Expression<?> constraint;
 		final EvaluationContext context;
 
-		public ExpressionDef(Expression<?> constraint, EvaluationContext context) {
-			this.constraint = requireNonNull(constraint);
+		ExpressionDef(Expression<?> constraint, EvaluationContext context) {
+			requireNonNull(constraint);
 			this.context = requireNonNull(context);
+			this.constraint = context.optimize(constraint);
 		}
 
 		@Override
@@ -618,7 +1058,7 @@ public class SequencePattern {
 		final EvaluationContext context;
 		final int id;
 
-		public NodeDef(int id, Assignable<? extends Item> element, Expression<?> constraint,
+		NodeDef(int id, Assignable<? extends Item> element, Expression<?> constraint,
 				EvaluationContext context) {
 			this.context = requireNonNull(context);
 			this.constraints = new ExpressionDef(constraint, context);
@@ -643,7 +1083,7 @@ public class SequencePattern {
 		final Supplier<Expression<?>> constraints;
 		final EvaluationContext context;
 
-		public FilterDef(Assignable<? extends Container> lane, Expression<?> constraint,
+		FilterDef(Assignable<? extends Container> lane, Expression<?> constraint,
 				EvaluationContext context) {
 			this.context = requireNonNull(context);
 			this.constraints = new ExpressionDef(constraint, context);
@@ -655,6 +1095,22 @@ public class SequencePattern {
 			Assignable<? extends Container> lane = context.duplicate(this.element);
 			Expression<?> constraint = constraints.get();
 			return new ContainerMatcher(lane, constraint);
+		}
+	}
+
+	static class MemberDef implements Supplier<Assignable<? extends Item>> {
+		final String name;
+		final EvaluationContext context;
+
+		MemberDef(String name, EvaluationContext context) {
+			this.name = checkNotEmpty(name);
+			this.context = requireNonNull(context);
+		}
+
+		@Override
+		public Assignable<? extends Item> get() {
+			return context.getMember(name).orElseThrow(
+					() -> EvaluationUtils.forUnknownIdentifier(name, "assignable item"));
 		}
 	}
 
@@ -675,7 +1131,7 @@ public class SequencePattern {
 		private final int intervalIndex;
 
 		/** Basic constructor to link a ref to an existing interval */
-		public IntervalRef(int intervalIndex, int shift) {
+		IntervalRef(int intervalIndex, int shift) {
 			this.intervalIndex = intervalIndex;
 			this.shift = shift;
 		}
@@ -796,6 +1252,42 @@ public class SequencePattern {
 	static final int RELUCTANT = QuantifierModifier.RELUCTANT.ordinal();
 	static final int POSSESSIVE = QuantifierModifier.POSSESSIVE.ordinal();
 
+	/** Helper for "empty" nodes that are only existentially quantified. */
+	static final class Empty extends Node {
+		final int memberId;
+
+		Empty(int memberId) { this.memberId = memberId; }
+
+		@Override
+		boolean match(State state, int pos) {
+			// Ensure existence
+			if(pos>state.to) {
+				return false;
+			}
+
+			// Store member mapping so that other constraints can reference it
+			if(memberId!=UNSET_INT) {
+				state.members[memberId].assign(state.elements[pos]);
+			}
+			// Immediately forward to next node
+			boolean result = next.match(state, pos+1);
+			// Ensure we don't keep item references
+			if(memberId!=UNSET_INT) {
+				state.members[memberId].clear();
+			}
+			return result;
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			next.study(info);
+			info.minSize++;
+			info.maxSize++;
+			info.offset++;
+			return info.deterministic;
+		}
+	}
+
 	static abstract class ProperNode extends Node implements Comparable<ProperNode> {
 		final int id;
 		ProperNode(int id) { this.id = id; }
@@ -805,7 +1297,28 @@ public class SequencePattern {
 //		abstract void append(StringBuilder sb);
 	}
 
-	//TODO make a Begin node class that only verifies the total sequence length against minSize of tree info
+	/** Intermediate helper to filter out target sequences that are too short */
+	static final class Begin extends Node {
+		int minSize;
+
+		Begin() { /* no-op */ }
+
+		@Override
+		boolean match(State state, int pos) {
+			if(state.size < minSize) {
+				return false;
+			}
+			return next.match(state, pos);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			next.study(info);
+			minSize = info.minSize;
+			checkState("Minimum size of sequence must be greater than or equal 1", minSize>0);
+			return info.deterministic;
+		}
+	}
 
 	/**
 	 * Implements a final accept node that verifies that all existentially
@@ -830,6 +1343,7 @@ public class SequencePattern {
 		}
 	}
 
+	/** Proxy for evaluating the global constraints. */
 	static final class GlobalConstraint extends ProperNode {
 
 		GlobalConstraint(int id) {
@@ -854,10 +1368,11 @@ public class SequencePattern {
 	}
 
 	/** Interval filter based on raw intervals in the matcher */
-	static final class Region extends Node {
+	@Deprecated
+	static final class Clip extends Node {
 		final int intervalIndex;
 		final int intervalCount;
-		Region(int intervalIndex, int intervalCount) {
+		Clip(int intervalIndex, int intervalCount) {
 			this.intervalIndex = intervalIndex;
 			this.intervalCount = intervalCount;
 		}
@@ -900,101 +1415,42 @@ public class SequencePattern {
 		}
 	}
 
-//	/** Interval filter based on raw intervals in the matcher */
-//	static final class RegionRef extends Node {
-//		final int intervalRefIndex;
-//		final int intervalRefCount;
-//		RegionRef(int intervalRefIndex, int intervalRefCount) {
-//			this.intervalRefIndex = intervalRefIndex;
-//			this.intervalRefCount = intervalRefCount;
-//		}
-//
-//		@Override
-//		boolean match(SequenceMatcher matcher, int j) {
-//			final IntervalRef[] intervals = matcher.intervalRefs;
-//			final int fence = intervalRefIndex + intervalRefCount;
-//			boolean allowed = false;
-//			for (int i = intervalRefIndex; i < fence; i++) {
-//				if(intervals[i].contains(j)) {
-//					allowed = true;
-//					break;
-//				}
-//			}
-//
-//			if(!allowed) {
-//				return false;
-//			}
-//
-//			return next.match(matcher, j);
-//		}
-//
-//		@Override
-//		boolean study(TreeInfo info) {
-//			next.study(info);
-//
-//			int[] intervals = new int[intervalRefCount];
-//			for (int i = 0; i < intervals.length; i++) {
-//				intervals[i] = intervalRefIndex+i;
-//			}
-//			info.intervals = intervals;
-//			info.intervalRefs = true;
-//
-//			return info.deterministic;
-//		}
-//	}
+	static final class Negation extends ProperNode {
+		final Node atom;
 
-	//	/** Interval filter based on raw intervals in the matcher */
-	//	static final class RegionRef extends Node {
-	//		final int intervalRefIndex;
-	//		final int intervalRefCount;
-	//		RegionRef(int intervalRefIndex, int intervalRefCount) {
-	//			this.intervalRefIndex = intervalRefIndex;
-	//			this.intervalRefCount = intervalRefCount;
-	//		}
-	//
-	//		@Override
-	//		boolean match(SequenceMatcher matcher, int j) {
-	//			final IntervalRef[] intervals = matcher.intervalRefs;
-	//			final int fence = intervalRefIndex + intervalRefCount;
-	//			boolean allowed = false;
-	//			for (int i = intervalRefIndex; i < fence; i++) {
-	//				if(intervals[i].contains(j)) {
-	//					allowed = true;
-	//					break;
-	//				}
-	//			}
-	//
-	//			if(!allowed) {
-	//				return false;
-	//			}
-	//
-	//			return next.match(matcher, j);
-	//		}
-	//
-	//		@Override
-	//		boolean study(TreeInfo info) {
-	//			next.study(info);
-	//
-	//			int[] intervals = new int[intervalRefCount];
-	//			for (int i = 0; i < intervals.length; i++) {
-	//				intervals[i] = intervalRefIndex+i;
-	//			}
-	//			info.intervals = intervals;
-	//			info.intervalRefs = true;
-	//
-	//			return info.deterministic;
-	//		}
-	//	}
+		public Negation(int id, Node atom) {
+			super(id);
+			this.atom = requireNonNull(atom);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			if(atom.match(state, pos)) {
+				return false;
+			}
+
+			return next.match(state, pos);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			next.study(info);
+			info.deterministic = false;
+			return false;
+		}
+	}
 
 	/** Matches an inner constraint to a specific node, employing memoization. */
 	static final class Single extends ProperNode {
 		final int nodeId;
 		final int cacheId;
+		final int memberId;
 
-		Single(int id, int nodeId, int cacheId) {
+		Single(int id, int nodeId, int cacheId, int memberId) {
 			super(id);
 			this.nodeId = nodeId;
 			this.cacheId = cacheId;
+			this.memberId = memberId;
 		}
 
 		@Override
@@ -1020,7 +1476,18 @@ public class SequencePattern {
 				// Keep track of preliminary match
 				state.map(nodeId, pos);
 
+				// Store member mapping so that other constraints can reference it
+				if(memberId!=UNSET_INT) {
+					state.members[memberId].assign(state.elements[pos]);
+				}
+
+				// Continue down the path
 				value = next.match(state, pos+1);
+
+				// Ensure we don't keep item references
+				if(memberId!=UNSET_INT) {
+					state.members[memberId].clear();
+				}
 
 				if(value) {
 					// Store last successful match
@@ -1041,14 +1508,43 @@ public class SequencePattern {
 		}
 	}
 
+	/** Helper node to produce an intersection of intervals for a subsequent scan */
+	static final class Intersection extends ProperNode {
+		final int targetIndex; // marks the storage for the intersection
+		final int sourceIndex;
+		final int sourceCount; // must be 2 or more
+
+		Intersection(int id, int targetIndex, int sourceIndex, int sourceCount) {
+			super(id);
+			this.targetIndex = targetIndex;
+			this.sourceIndex = sourceIndex;
+			this.sourceCount = sourceCount;
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			Interval[] intervals = state.intervals;
+
+			Interval region = intervals[targetIndex];
+			region.reset(intervals[sourceIndex]);
+
+			for (int i = 1; i < sourceCount; i++) {
+				region.intersect(intervals[sourceIndex+i]);
+			}
+
+			// We do no actual matching here, but merely prepare the stage for next node
+			return next.match(state, pos);
+		}
+	}
+
 	/**
 	 * Implements the exhaustive exploration of remaining search space
 	 * by iteratively scanning for matches of the current tail.
+	 * This implementation honors marker intervals.
 	 */
 	static final class Scan extends ProperNode {
 		int minSize = 1; // can't be less than 1 since at some point inside we need a proper node
 
-		//TODO add pointer to a single interval
 		final int cacheId;
 		final boolean forward;
 		final int intervalIndex;
@@ -1063,10 +1559,12 @@ public class SequencePattern {
 		@Override
 		boolean match(State state, int pos) {
 			Interval region = intervalIndex==UNSET_INT ? state : state.intervals[intervalIndex];
+
 			// Bail early if we can't accommodate 'pos'
 			if(!region.contains(pos)) {
 				return false;
 			}
+
 			if(cacheId!=UNSET_INT) {
 				return matchForwardCached(state, pos, region.to);
 			} else if(forward) {
@@ -1170,6 +1668,7 @@ public class SequencePattern {
 			checkState("Minimum size of nested atom must be greater than or equal 1", minSize>0);
 
 			info.deterministic = false;
+			info.offset = 0; // Scan effectively consumes a marker interval
 
 			return false;
 		}
@@ -1180,7 +1679,7 @@ public class SequencePattern {
      * chain but forward the {@link #match(State, int)} call to 'next'.
      */
     static final class BranchConn extends Node {
-        BranchConn() {}
+        BranchConn() { /* no-op */ }
         @Override
 		boolean match(State state, int pos) {
             return next.match(state, pos);
@@ -1205,7 +1704,6 @@ public class SequencePattern {
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
 			this.atoms = atoms;
 			this.conn = conn;
-			//TODO ensure that all the atoms use conn as next?
 		}
 
     	@Override

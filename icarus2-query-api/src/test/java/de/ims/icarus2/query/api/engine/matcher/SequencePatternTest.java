@@ -114,6 +114,7 @@ class SequencePatternTest {
 		private static final int NO_CACHE = UNSET_INT;
 		private static final int NO_INTERVAL = UNSET_INT;
 		private static final int NO_LIMIT = UNSET_INT;
+		private static final int NO_MEMBER = UNSET_INT;
 	}
 
 	/** Matches an inner constraint, but neither caches nor maps the result. */
@@ -172,7 +173,7 @@ class SequencePatternTest {
 	private static Supplier<Matcher<Item>> sup(Matcher<Item> m) { return () -> m; }
 
 	@SafeVarargs
-	private static Supplier<Matcher<Item>>[] nodeDefs(Matcher<Item>...matchers) {
+	private static Supplier<Matcher<Item>>[] matchers(Matcher<Item>...matchers) {
 		return Stream.of(matchers).map(SequencePatternTest::sup).toArray(Supplier[]::new);
 	}
 
@@ -491,8 +492,10 @@ class SequencePatternTest {
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.nodes = new IqlNode[1];
 				sms.cacheCount = 1;
-				sms.root = seq(new Single(0, Utils.NODE_1, Utils.CACHE_1), new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+				sms.root = seq(
+						new Single(0, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
+						new Finish(UNSET_LONG));
+				sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 				return sms;
 			}
 
@@ -523,10 +526,10 @@ class SequencePatternTest {
 				sms.nodes = new IqlNode[2];
 				sms.cacheCount = 2;
 				sms.root = seq(
-						new Single(0, Utils.NODE_1, Utils.CACHE_1),
-						new Single(1, Utils.NODE_2, Utils.CACHE_2),
+						new Single(0, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
+						new Single(1, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X), matcher(1, Utils.EQUALS_Y));
+				sms.matchers = matchers(matcher(0, Utils.EQUALS_X), matcher(1, Utils.EQUALS_Y));
 				return sms;
 			}
 
@@ -578,9 +581,9 @@ class SequencePatternTest {
 					sms.limit = limit;
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.NO_INTERVAL, true),
-							new Single(1, Utils.NODE_1, Utils.CACHE_1),
+							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
-					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
@@ -683,9 +686,9 @@ class SequencePatternTest {
 					sms.limit = limit;
 					sms.root = seq(
 							new Scan(0, Utils.CACHE_1, Utils.NO_INTERVAL, true),
-							new Single(1, Utils.NODE_1, Utils.CACHE_2),
+							new Single(1, Utils.NODE_1, Utils.CACHE_2, Utils.NO_MEMBER),
 							new Finish(limit));
-					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
@@ -794,9 +797,9 @@ class SequencePatternTest {
 					sms.limit = limit;
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.NO_INTERVAL, false),
-							new Single(1, Utils.NODE_1, Utils.CACHE_1),
+							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
-					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
@@ -905,9 +908,9 @@ class SequencePatternTest {
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.REGION_1, true),
-							new Single(1, Utils.NODE_1, Utils.CACHE_1),
+							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
-					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
@@ -1038,9 +1041,9 @@ class SequencePatternTest {
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
 							new Scan(0, Utils.CACHE_1, Utils.REGION_1, true),
-							new Single(1, Utils.NODE_1, Utils.CACHE_2),
+							new Single(1, Utils.NODE_1, Utils.CACHE_2, Utils.NO_MEMBER),
 							new Finish(limit));
-					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
@@ -1182,9 +1185,9 @@ class SequencePatternTest {
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
 							new Scan(0, Utils.NO_CACHE, Utils.REGION_1, false),
-							new Single(1, Utils.NODE_1, Utils.CACHE_1),
+							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
-					sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 					return sms;
 				}
 
@@ -1433,10 +1436,10 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.GREEDY, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+						sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 						return sms;
 					}
 
@@ -1454,11 +1457,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.GREEDY, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(1, Utils.NODE_2, Utils.CACHE_2),
+								new Single(1, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X_IC),
 								matcher(1, Utils.EQUALS_X));
 						return sms;
@@ -1506,10 +1509,10 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.POSSESSIVE, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+						sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 						return sms;
 					}
 
@@ -1525,11 +1528,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.POSSESSIVE, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(1, Utils.NODE_2, Utils.CACHE_2),
+								new Single(1, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X_IC),
 								matcher(1, Utils.EQUALS_X));
 						return sms;
@@ -1593,10 +1596,10 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.RELUCTANT, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X));
 						return sms;
 					}
@@ -1663,11 +1666,11 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.RELUCTANT, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Proxy(Utils.NODE_2), // we need this to motivate the reluctant expansion
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X),
 								matcher(1, Utils.EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
 						return sms;
@@ -1721,11 +1724,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CMAX, SequencePattern.RELUCTANT, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(2, Utils.NODE_2, Utils.CACHE_2),
+								new Single(2, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X_IC),
 								matcher(1, Utils.EQUALS_X));
 						return sms;
@@ -1796,10 +1799,10 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.GREEDY, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+						sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 						return sms;
 					}
 
@@ -1815,11 +1818,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.GREEDY, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(1, Utils.NODE_2, Utils.CACHE_2),
+								new Single(1, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X_IC),
 								matcher(1, Utils.EQUALS_X));
 						return sms;
@@ -1867,10 +1870,10 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.POSSESSIVE, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(matcher(0, Utils.EQUALS_X));
+						sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
 						return sms;
 					}
 
@@ -1886,11 +1889,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.POSSESSIVE, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(1, Utils.NODE_2, Utils.CACHE_2),
+								new Single(1, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X_IC),
 								matcher(1, Utils.EQUALS_X));
 						return sms;
@@ -1927,11 +1930,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.POSSESSIVE, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(1, Utils.NODE_2, Utils.CACHE_2),
+								new Single(1, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X),
 								matcher(1, Utils.EQUALS_Y));
 						return sms;
@@ -1975,10 +1978,10 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.RELUCTANT, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X));
 						return sms;
 					}
@@ -2045,11 +2048,11 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.RELUCTANT, Utils.BUFFER_1, Utils.BUFFER_2),
 								new Proxy(Utils.NODE_2), // we need this to motivate the reluctant expansion
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X),
 								matcher(1, Utils.EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
 						return sms;
@@ -2104,11 +2107,11 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.bufferCount = 2;
 						sms.root = seq(
-								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Repetition(0, new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 										CMIN, CINF, SequencePattern.RELUCTANT, Utils.BUFFER_1, Utils.BUFFER_2),
-								new Single(2, Utils.NODE_2, Utils.CACHE_2),
+								new Single(2, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER),
 								new Finish(UNSET_LONG));
-						sms.nodeDefs = nodeDefs(
+						sms.matchers = matchers(
 								matcher(0, Utils.EQUALS_X_IC),
 								matcher(1, Utils.EQUALS_X));
 						return sms;
@@ -2176,11 +2179,11 @@ class SequencePatternTest {
 				BranchConn conn = new BranchConn();
 				sms.root = seq(
 						branch(0, conn,
-								new Single(1, Utils.NODE_1, Utils.CACHE_1),
-								new Single(2, Utils.NODE_2, Utils.CACHE_2)),
+								new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
+								new Single(2, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER)),
 						conn,
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(
+				sms.matchers = matchers(
 						matcher(0, Utils.EQUALS_A),
 						matcher(1, Utils.EQUALS_B));
 				return sms;
@@ -2249,11 +2252,11 @@ class SequencePatternTest {
 				BranchConn conn = new BranchConn();
 				sms.root = seq(
 						branch(0, conn,
-								new Single(1, Utils.NODE_1, Utils.CACHE_1),
+								new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 								null),
 						conn,
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(
+				sms.matchers = matchers(
 						matcher(0, Utils.EQUALS_A));
 				return sms;
 			}
@@ -2301,11 +2304,11 @@ class SequencePatternTest {
 				sms.root = seq(
 						branch(0, conn,
 								null,
-								new Single(1, Utils.NODE_1, Utils.CACHE_1)),
+								new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER)),
 						conn,
-						new Single(2, Utils.NODE_2, Utils.CACHE_2), // needed to force reluctant expansion
+						new Single(2, Utils.NODE_2, Utils.CACHE_2, Utils.NO_MEMBER), // needed to force reluctant expansion
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(
+				sms.matchers = matchers(
 						matcher(0, Utils.EQUALS_A),
 						matcher(1, Utils.EQUALS_B));
 				return sms;
@@ -2358,7 +2361,7 @@ class SequencePatternTest {
 				List<Node> nodes = new ArrayList<>();
 				for (int i = 0; i < predicates.length; i++) {
 					nodes.add(new Scan(id++, Utils.NO_CACHE, Utils.NO_INTERVAL, true));
-					nodes.add(new Single(id++, i, i));
+					nodes.add(new Single(id++, i, i, Utils.NO_MEMBER));
 				}
 				nodes.add(new Finish(limit));
 				return nodes.toArray(new Node[0]);
@@ -2372,7 +2375,7 @@ class SequencePatternTest {
 				sms.cacheCount = nodeCount;
 				sms.limit = limit;
 				sms.root = seq(nodes(limit, predicates));
-				sms.nodeDefs = nodeDefs(IntStream.range(0, nodeCount)
+				sms.matchers = matchers(IntStream.range(0, nodeCount)
 							.mapToObj(i -> matcher(i, predicates[i]))
 							.toArray(Matcher[]::new));
 				return sms;
@@ -2530,7 +2533,7 @@ class SequencePatternTest {
 						branch(0, conn, options),
 						conn,
 						new Finish(UNSET_LONG));
-				sms.nodeDefs = nodeDefs(
+				sms.matchers = matchers(
 						matcher(0, Utils.EQUALS_A),
 						matcher(1, Utils.EQUALS_B));
 				return sms;
