@@ -33,9 +33,12 @@ import static de.ims.icarus2.query.api.exp.EvaluationUtils.decideType;
 import static de.ims.icarus2.query.api.exp.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.exp.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
+import static de.ims.icarus2.query.api.iql.AntlrUtils.asSyntaxException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
+import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.isContinuous;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static java.util.Objects.requireNonNull;
 
@@ -50,6 +53,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -67,6 +71,8 @@ import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.exp.Expression.ListExpression;
 import de.ims.icarus2.query.api.exp.Expressions.PathProxy;
+import de.ims.icarus2.query.api.iql.IqlConstraint;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AssignmentOpContext;
@@ -94,6 +100,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.PrimaryExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QualifiedIdentifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ReferenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.SetPredicateContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.StandaloneExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.StringOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TernaryOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.TypeContext;
@@ -152,6 +159,30 @@ public class ExpressionFactory {
 
 	public CountingStats<StatsField,String> getStats() { return stats; }
 
+	/**
+	 * Transforms a {@link IqlConstraint constraint} object into a boolean
+	 * expression that is linked to the underlying {@link EvaluationContext}.
+	 * <p>
+	 * If the {@code constraint} is already marked as {@link IqlConstraint#isSolved() solved},
+	 * this method will only return a constant expression bearing the corresponding
+	 * {@link IqlConstraint#isSolvedAs() value}.
+	 *
+	 * @param constraint
+	 * @return
+	 */
+	public Expression<?> process(String expression) {
+		checkNotEmpty(expression);
+
+		IQLParser parser = createParser(expression, "expression");
+		try {
+			StandaloneExpressionContext ctx = parser.standaloneExpression();
+
+			return processExpression(ctx.expression());
+		} catch(RecognitionException e) {
+			throw asSyntaxException(e, "Failed to parse 'expression'");
+		}
+	}
+
 	private boolean isAllowUnicode() {
 		return !context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF);
 	}
@@ -178,7 +209,7 @@ public class ExpressionFactory {
 						"Unknown query fragment: "+ctx.getClass().getCanonicalName(), asFragment(ctx)));
 	}
 
-	public Expression<?> processExpression(ExpressionContext ctx) {
+	Expression<?> processExpression(ExpressionContext ctx) {
 		Expression<?> expression = processAndResolveExpression0(ctx);
 		//TODO call optimize() already?
 		return expression;

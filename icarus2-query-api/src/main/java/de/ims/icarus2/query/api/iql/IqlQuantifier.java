@@ -66,6 +66,7 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 				return q1==q2;
 			}
 			return Objects.equals(q1.quantifierType, q2.quantifierType)
+					&& q1.quantifierModifier==q2.quantifierModifier
 					&& q1.value.equals(q2.value)
 					&& q1.lowerBound.equals(q2.lowerBound)
 					&& q1.upperBound.equals(q2.upperBound);

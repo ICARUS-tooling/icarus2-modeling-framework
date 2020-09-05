@@ -536,7 +536,7 @@ public abstract class EvaluationContext {
 	}
 
 	@NotThreadSafe
-	private static class LaneContext extends EvaluationContext {
+	public static class LaneContext extends EvaluationContext {
 
 		/** Uplink to the mandatory RootContext */
 		private final RootContext parent;
@@ -592,7 +592,7 @@ public abstract class EvaluationContext {
 	}
 
 	@NotThreadSafe
-	private static class ElementContext extends EvaluationContext {
+	public static class ElementContext extends EvaluationContext {
 
 		/** Uplink to an arbitrary ElementContext */
 		private final EvaluationContext parent;

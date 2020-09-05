@@ -189,7 +189,7 @@ public class IqlQueryGenerator {
 		case MARKER_CALL: prepareMarkerCall((IqlMarkerCall) element, build, config); break;
 		case MARKER_EXPRESSION: prepareMarkerExpression((IqlMarkerExpression) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
-		case SEQUENCE: prepareElementSet((IqlSequence) element, build, config); break;
+		case SEQUENCE: prepareSequence((IqlSequence) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
 		case PREDICATE: preparePredicate((IqlPredicate) element, build, config); break;
 		case PROPERTY: prepareProperty((IqlProperty) element, build, config); break;
@@ -364,16 +364,19 @@ public class IqlQueryGenerator {
 		}
 	}
 
-	private void prepareElementSet(IqlSequence nodeSet, IncrementalBuild<?> build, Config config) {
-		prepareElement0(nodeSet, build, config);
+	private void prepareSequence(IqlSequence sequence, IncrementalBuild<?> build, Config config) {
+		prepareElement0(sequence, build, config);
+
+		// mandatory data
+		sequence.addElement(generateFull(IqlType.NODE, config));
 
 		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
-			build.addEnumFieldChange(nodeSet::setArrangement, IqlProperties.ARRANGEMENT, nodeArrangement);
+			build.addEnumFieldChange(sequence::setArrangement, IqlProperties.ARRANGEMENT, nodeArrangement);
 		}
 
 		if(config.tryNested(IqlType.TREE_NODE)) {
 			for (int i = 0; i < config.getCount(IqlType.TREE_NODE, DEFAULT_COUNT); i++) {
-				build.addNestedChange(IqlProperties.NODES, IqlType.TREE_NODE, config, nodeSet, nodeSet::addElement);
+				build.addNestedChange(IqlProperties.NODES, IqlType.TREE_NODE, config, sequence, sequence::addElement);
 			}
 			config.endNested(IqlType.TREE_NODE);
 		}

@@ -99,6 +99,14 @@ public abstract class IqlElement extends IqlUnique {
 				&& quantifiers.get(0).isExistentiallyNegated();
 	}
 
+	/**
+	 * Acts as a scope around a collection of {@link IqlElement elements} to
+	 * provide quantification or simply grouping them together for surrounding
+	 * query features.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class IqlGrouping extends IqlElement {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
@@ -144,6 +152,13 @@ public abstract class IqlElement extends IqlUnique {
 		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
+	/**
+	 * Plain or graph node with quantification and markers.
+	 * Inherits label and local constraints.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class IqlNode extends IqlProperElement {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
@@ -185,6 +200,12 @@ public abstract class IqlElement extends IqlUnique {
 		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
+	/**
+	 * Orders a collection of nodes according to a specific arrangement.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class IqlSequence extends IqlElement {
 
 		@JsonProperty(IqlProperties.ELEMENTS)
@@ -202,7 +223,7 @@ public abstract class IqlElement extends IqlUnique {
 		public void checkIntegrity() {
 			super.checkIntegrity();
 
-			checkCollection(elements);
+			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
 		}
 
 		public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
@@ -219,7 +240,9 @@ public abstract class IqlElement extends IqlUnique {
 	}
 
 	/**
-	 * Implementation note: we use {@link IqlStructure} as child type so that
+	 * Adds the ability of nesting to {@link IqlNode}.
+	 *
+	 * Implementation note: we use {@link IqlElement} as child type so that
 	 * {@link IqlElementDisjunction} and {@link IqlSequence} are also allowed.
 	 *
 	 * @author Markus Gärtner
@@ -243,6 +266,13 @@ public abstract class IqlElement extends IqlUnique {
 		public void setChildren(IqlElement children) { this.children = Optional.of(children); }
 	}
 
+	/**
+	 * Connection between a source and target node with a specified connection type.
+	 * Inherits label and local constraints.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class IqlEdge extends IqlProperElement {
 
 		@JsonProperty(value=IqlProperties.SOURCE, required=true)
@@ -323,6 +353,12 @@ public abstract class IqlElement extends IqlUnique {
 		}
 	}
 
+	/**
+	 * Logical connective to disjunctively group a collection of {@link IqlElement elements}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static class IqlElementDisjunction extends IqlElement {
 
 		@JsonProperty(value=IqlProperties.ALTERNATIVES, required=true)
@@ -341,14 +377,22 @@ public abstract class IqlElement extends IqlUnique {
 			}
 		}
 
-		public int getAlternativesCount() { return alternatives.size(); }
-
-		public IqlElement getAlternative(int index) { return alternatives.get(index); }
+		public List<IqlElement> getAlternatives() { return CollectionUtils.unmodifiableListProxy(alternatives); }
 
 		public void addAlternative(IqlElement alternative) {
 			alternatives.add(requireNonNull(alternative));
 		}
 	}
+
+//	public enum IqlElementType {
+//		GROUPING,
+//		NODE,
+//		SEQUENCE,
+//		TREE_NODE,
+//		EDGE,
+//		DISJUNCTION,
+//		;
+//	}
 
 	public enum EdgeType {
 		UNDIRECTED("simple"),

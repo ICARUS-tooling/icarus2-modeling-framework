@@ -154,6 +154,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 * element store missing from the associated {@link EvaluationContext}.
 	 */
 	MISSING_ELEMENT_STORE(304),
+
+	/**
+	 * Converting a {@link Query} instance into a matcher state machine failed due
+	 * to some fragments not being supported or being used incorrectly.
+	 */
+	UNSUPPORTED_QUERY_FRAGMENT(305),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;

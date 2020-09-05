@@ -330,6 +330,11 @@ public class EvaluationUtils {
 				"Operation does not support floating point types: "+op);
 	}
 
+	public static QueryException forUnsupportedQueryFragment(String context, Object type) {
+		return new QueryException(QueryErrorCode.UNSUPPORTED_QUERY_FRAGMENT,
+				String.format("Type not supported as '%s': %s", context, type));
+	}
+
 	public static QueryException forUnsupportedTextComp(String op) {
 		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
 				"Operation does not support textual comparison: "+op);
