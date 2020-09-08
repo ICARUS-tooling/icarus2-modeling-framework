@@ -102,7 +102,7 @@ public enum QueryErrorCode implements ErrorCode {
 	INVALID_LITERAL(205),
 
 	/**
-	 * An identifier (member name, variable, etc...) could not be resolved
+	 * An identifier (member name, variable, marker, etc...) could not be resolved
 	 * within the scope it was used.
 	 */
 	UNKNOWN_IDENTIFIER(210),

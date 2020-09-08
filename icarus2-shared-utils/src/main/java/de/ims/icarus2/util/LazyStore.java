@@ -98,6 +98,16 @@ public class LazyStore<F extends Object, K extends Object> {
 		return value;
 	}
 
+	public synchronized F lookup(K key, Function<K, ? extends RuntimeException> exGen) {
+		requireNonNull(key);
+		ensureLookup();
+
+		F value = lookup.get(adjust(key));
+		if(value==null)
+			throw exGen.apply(key);
+		return value;
+	}
+
 	public synchronized boolean hasKey(K key) {
 		requireNonNull(key);
 		ensureLookup();

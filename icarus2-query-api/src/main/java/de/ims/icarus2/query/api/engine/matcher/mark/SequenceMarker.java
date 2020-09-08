@@ -28,6 +28,7 @@ import com.google.common.annotations.VisibleForTesting;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
+import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
@@ -40,6 +41,9 @@ public abstract class SequenceMarker {
 	public static Marker.RangeMarker of(String name, Number...arguments) {
 		requireNonNull(name);
 		requireNonNull(arguments);
+
+		if(!Name.isValidName(name))
+			throw EvaluationUtils.forUnknownIdentifier(name, "marker");
 
 		Name n = Name.parseName(name);
 		Position[] pos = arguments.length==0 ? NO_ARGS : toPos(arguments);
@@ -134,7 +138,9 @@ public abstract class SequenceMarker {
 		private static final LazyStore<Name, String> store
 				= new LazyStore<>(Name.class, Name::getLabel, String::toLowerCase);
 
-		public static Name parseName(String s) { return store.lookup(s); }
+		public static Name parseName(String s) {
+			return store.lookup(s, name -> EvaluationUtils.forUnknownIdentifier(name, "marker"));
+		}
 
 		public static boolean isValidName(String s) { return store.hasKey(s); }
 	}
