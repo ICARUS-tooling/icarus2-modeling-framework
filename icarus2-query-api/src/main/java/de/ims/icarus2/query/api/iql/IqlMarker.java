@@ -88,8 +88,9 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
+			checkCondition(items.size()>1, IqlProperties.ITEMS, "Must have at least 2 items");
 
-			checkCollectionNotEmpty(items, IqlProperties.ITEMS);
+			checkCollection(items);
 			checkNotNull(expressionType, IqlProperties.EXPRESSION_TYPE);
 		}
 

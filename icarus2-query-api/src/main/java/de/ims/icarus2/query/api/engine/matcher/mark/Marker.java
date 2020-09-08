@@ -73,6 +73,9 @@ public interface Marker {
 		 * returns {@code true} iff at least a single legal index has
 		 * been produced (i.e. at least one of the managed intervals is
 		 * not {@link Interval#isEmpty() empty} after adjusting it).
+		 * <p>
+		 * Note that any {@link RangeMarker} that produces multiple
+		 * intervals, must do so in an ordered sequence!
 		 *
 		 * @return {@code true} iff at least one of intervals managed by this
 		 * marker is not {@code Interval#isEmpty() empty}.

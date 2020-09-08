@@ -48,6 +48,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Branch;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.BranchConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.DynamicClip;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
@@ -112,7 +113,7 @@ class SequencePatternTest {
 		private static final int REGION_2 = 1;
 
 		private static final int NO_CACHE = UNSET_INT;
-		private static final int NO_INTERVAL = UNSET_INT;
+//		private static final int NO_INTERVAL = UNSET_INT;
 		private static final int NO_LIMIT = UNSET_INT;
 		private static final int NO_MEMBER = UNSET_INT;
 	}
@@ -580,7 +581,7 @@ class SequencePatternTest {
 					sms.cacheCount = 1;
 					sms.limit = limit;
 					sms.root = seq(
-							new Scan(0, Utils.NO_CACHE, Utils.NO_INTERVAL, true),
+							new Scan(0, Utils.NO_CACHE, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
 					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
@@ -685,7 +686,7 @@ class SequencePatternTest {
 					sms.cacheCount = 2;
 					sms.limit = limit;
 					sms.root = seq(
-							new Scan(0, Utils.CACHE_1, Utils.NO_INTERVAL, true),
+							new Scan(0, Utils.CACHE_1, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_2, Utils.NO_MEMBER),
 							new Finish(limit));
 					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
@@ -796,7 +797,7 @@ class SequencePatternTest {
 					sms.cacheCount = 1;
 					sms.limit = limit;
 					sms.root = seq(
-							new Scan(0, Utils.NO_CACHE, Utils.NO_INTERVAL, false),
+							new Scan(0, Utils.NO_CACHE, false),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
 					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
@@ -907,7 +908,8 @@ class SequencePatternTest {
 					sms.limit = limit;
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
-							new Scan(0, Utils.NO_CACHE, Utils.REGION_1, true),
+							new DynamicClip(Utils.REGION_1),
+							new Scan(0, Utils.NO_CACHE, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
 					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
@@ -1040,7 +1042,8 @@ class SequencePatternTest {
 					sms.limit = limit;
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
-							new Scan(0, Utils.CACHE_1, Utils.REGION_1, true),
+							new DynamicClip(Utils.REGION_1),
+							new Scan(0, Utils.CACHE_1, true),
 							new Single(1, Utils.NODE_1, Utils.CACHE_2, Utils.NO_MEMBER),
 							new Finish(limit));
 					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
@@ -1184,7 +1187,8 @@ class SequencePatternTest {
 					sms.limit = limit;
 					sms.intervals = new Interval[]{ region };
 					sms.root = seq(
-							new Scan(0, Utils.NO_CACHE, Utils.REGION_1, false),
+							new DynamicClip(Utils.REGION_1),
+							new Scan(0, Utils.NO_CACHE, false),
 							new Single(1, Utils.NODE_1, Utils.CACHE_1, Utils.NO_MEMBER),
 							new Finish(limit));
 					sms.matchers = matchers(matcher(0, Utils.EQUALS_X));
@@ -2360,7 +2364,7 @@ class SequencePatternTest {
 				int id = 0;
 				List<Node> nodes = new ArrayList<>();
 				for (int i = 0; i < predicates.length; i++) {
-					nodes.add(new Scan(id++, Utils.NO_CACHE, Utils.NO_INTERVAL, true));
+					nodes.add(new Scan(id++, Utils.NO_CACHE, true));
 					nodes.add(new Single(id++, i, i, Utils.NO_MEMBER));
 				}
 				nodes.add(new Finish(limit));

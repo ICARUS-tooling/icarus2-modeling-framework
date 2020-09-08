@@ -370,7 +370,7 @@ public abstract class IqlElement extends IqlUnique {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
-			checkCondition(alternatives.size()>1, "alternatives", "Must have at least 2 alternatives");
+			checkCondition(alternatives.size()>1, IqlProperties.ALTERNATIVES, "Must have at least 2 alternatives");
 
 			for(int i=0; i<alternatives.size(); i++) {
 				checkNestedNotNull(alternatives.get(i), "alternatives["+i+"]");

@@ -245,7 +245,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsAfter(Position position) {
-			super(Name.AFTER, false, 1);
+			super(Name.AFTER, true, 1);
 			this.pos = requireNonNull(position);
 		}
 
@@ -262,7 +262,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsBefore(Position position) {
-			super(Name.BEFORE, false, 1);
+			super(Name.BEFORE, position.isRelative(), 1);
 			this.pos = requireNonNull(position);
 		}
 
@@ -279,7 +279,7 @@ public abstract class SequenceMarker {
 		private final Position start, end;
 
 		IsInside(Position start, Position end) {
-			super(Name.INSIDE, false, 1);
+			super(Name.INSIDE, start.isRelative() || end.isRelative(), 1);
 			this.start = requireNonNull(start);
 			this.end = requireNonNull(end);
 		}
@@ -297,7 +297,7 @@ public abstract class SequenceMarker {
 		private final Position start, end;
 
 		IsOutside(Position start, Position end) {
-			super(Name.OUTSIDE, false, 2);
+			super(Name.OUTSIDE, true, 2);
 			this.start = requireNonNull(start);
 			this.end = requireNonNull(end);
 		}
