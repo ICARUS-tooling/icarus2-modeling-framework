@@ -1771,7 +1771,7 @@ This approach guarantees that by the time such cross-reference constraints (or `
 
 Besides the local constraint described below, nodes can declare special \textbf{marker} expressions, separated from regular constraint or nested nodes by a single comma `,' \footnote{The \ac{iql} grammar declares this comma as mandatory, even if no local constraints or other contents succeeds the marker. This way they can be unambiguously distinguished from normal constraints, both by the \ac{icqp} and human readers.}.
 Marker can be regarded as glorified flags and functions that are used to specify a node's intended place in a sequence, hierarchy or tree path.
-The are logically separated from normal constraints, as they are used to construct an independent part of the \ac{icqp} state machine with the sole purpose of pruning the search space by limiting the actual target elements to be visited for individual nodes.
+They are logically separated from normal constraints, as they are used to construct an independent part of the \ac{icqp} state machine with the sole purpose of pruning the search space by limiting the actual target elements to be visited for individual nodes.
 A comprehensive introduction to the available markers of various types is given in \cref{chap:utility}. 
 
 Nodes can also optionally define \textbf{local constraints} that must evaluate to \keyword{true} for target item to be considered as result candidate.
@@ -1787,7 +1787,7 @@ Note that this opens up the entire spectrum of node grouping, disjunctions and a
 
 \subsubsection{Quantification}
 \label{sec:quantification}
-\ac{iql} knows a staggering total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
+\ac{iql} knows a total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
 Those basic sets are \textit{existential negation}, \textit{universal quantification}, \textit{exact}, \textit{at-least}, \textit{at-most} and \textit{range}.
 Note that the \textit{at-most} quantifier implies existential quantification, so it cannot quantify to less than one element. 
 For modeling optional existence the \textit{range} quantifier should be used with a lower bound of 0, as in \query{0..4}.
@@ -1803,7 +1803,7 @@ The primary effect caused by different modes is the size and number of matches r
 \end{description}
 
 \begin{table}[!htb]\centering
-	\begin{tabular}{|p{0.10\textwidth}|p{0.12\textwidth}|p{0.13\textwidth}|p{0.54\textwidth}|}
+	\begin{tabular}{|p{0.08\textwidth}|p{0.10\textwidth}|p{0.11\textwidth}|p{0.60\textwidth}|}
 		\hline 
 		\textbf{Greedy} & \textbf{Reluctant} & \textbf{Possessive} & \textbf{Description} \\ 
 		\hline 
@@ -1821,7 +1821,7 @@ The primary effect caused by different modes is the size and number of matches r
 		X-Y & X-Y? & X-Y! & Bounded quantification of \textit{at least} $X$, but \textit{at most} $Y$ instances. \\ 
 		\hline 
 	\end{tabular}
-	\caption[Node quantifiers]{Complete list of node quantifiers supported by \ac{iql}, separated into the six fundamental groups. For quantifier types that do not distinguish between modes the \textit{greedy} column shows the only way of formulating those.}
+	\caption[Node quantifiers]{Complete list of element quantifiers supported by \ac{iql}, separated into the six fundamental groups. For quantifier types that do not distinguish between modes the \textit{greedy} column shows the only way of formulating those. The effect of different modes is illustrated in \cref{fig:quantifier-examples}.}
 	\label{tab:quantifiers}
 \end{table}
 
@@ -1909,6 +1909,7 @@ If in the example however the node \lit{8} was square instead of round, the enti
 
 \subsubsection{Marker}
 \label{sec:marker}
+%TODO explanation?
 
 \begin{gram}[\synt{marker}]
 	\label{gram:marker}
@@ -2163,10 +2164,10 @@ FIND [$x: [$y:]] HAVING $x.indexOf($y) == $x.size-1
 \end{Verbatim}
 This will cause the structural matcher to potentially propose \textbf{all} children of \member{x} as candidates to be processed by the global constraints section.
 Subsequently, for a node of size $N$ this will produce $N-1$ candidates that are bound to fail the global constraint check.
-\cref{chap:utility} lists several families of utility markers and functions that can be used to signal the evaluation engine that certain local constraints are to be treated as special filters.
+\cref{chap:utility} lists several families of utility markers and functions that can be used to guide the evaluation engine into more efficient searches.
 With the use of those utility markers, above query looks like the following and will be vastly more efficient to evaluate:
 \begin{Verbatim}[samepage=true]
-FIND [$x: [$y: isLastChild]]
+FIND [$x: [$y: isLastChild,]]
 \end{Verbatim}
 Similarly global constraints are not the place to perform filtering on general properties of the current \ac{uoi}, such as sentence length (use the \keyword{FILTER BY} expression for that, cf. \cref{sec:filter-constraints}).
 
@@ -2271,18 +2272,14 @@ As a general rule, relative indices should only be used with regular (positive) 
 
 \subsection{Marker Stacking}
 \label{sec:marker-stacking}
-Position markers can be mixed in disjunctive or conjunctive expressions.
-The \ac{icqp} expects them to be DNF\footnote{\textbf{D}isjunctive \textbf{N}ormal \textbf{F}orm} and then generates a separate branch in the state machine for every term in the DNF.
+Position markers can freely be mixed in disjunctive or conjunctive expressions.
 \begin{Verbatim}[samepage=true]
-// legal use cases
 [isLast,]
 [isBefore(10), pos!="NN"]
 [isBefore(10) || isAfter(24), pos!="NN"]
-// illegal combination, has to be in DNF for now
 [isNotAt(5) && (isBefore(10) || isAfter(24)), pos!="NN"]
-// above example rewritten to match the DNF rule
-[(isNotAt(5) && isBefore(10)) || (isNotAt(5) &&isAfter(24)), pos!="NN"]
 \end{Verbatim}
+\todo{rework, since we dropped the DNF requirement}
 The reasons for this stems from the underlying interval arithmetic.
 Each positional marker effectively describes one or more non-empty intervals of possible index values for the node based on the overall size of the target container.
 Conjunction of markers results in the intersection of their intervals, possibly creating an empty set, which will render the node constraint impossible to satisfy.
