@@ -505,13 +505,27 @@ public class ExpressionFactory {
 		return result;
 	}
 
+	private static QueryException forMissingStore(MemberContext ctx) {
+		return new QueryException(QueryErrorCode.CORRUPTED_QUERY,
+				"No item or container store availabe in current evaluation context", asFragment(ctx));
+	}
+
+	@SuppressWarnings("resource")
 	private Assignable<? extends Item> processMember(MemberContext ctx) {
-		// Grab identifier and let context resolve it to member expression
-		String name = processIdentifier(ctx.Identifier());
-		Assignable<? extends Item> result = context.getMember(name).orElseThrow(
-				() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
-						"No member available for name: "+name, asFragment(ctx)));
-		stats.count(StatsField.MEMBER, name);
+		Assignable<? extends Item> result;
+		if(ctx.Identifier()==null) {
+			result = context.isLane() ?
+					context.getContainerStore().orElseThrow(() -> forMissingStore(ctx))
+					: context.getElementStore().orElseThrow(() -> forMissingStore(ctx));
+			stats.count(StatsField.MEMBER, EvaluationUtils.THIS);
+		} else {
+			// Grab identifier and let context resolve it to member expression
+			String name = processIdentifier(ctx.Identifier());
+			result = context.getMember(name).orElseThrow(
+					() -> new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+							"No member available for name: "+name, asFragment(ctx)));
+			stats.count(StatsField.MEMBER, name);
+		}
 		return result;
 	}
 

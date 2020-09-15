@@ -59,6 +59,9 @@ public class EvaluationUtils {
 
 	private EvaluationUtils() { /* no-op */ }
 
+	/** Reserved proxy name for the identifier-less member '$'. */
+	public static final String THIS = "this";
+
 	public static final Expression<?>[] NO_ARGS = {};
 
 	@SuppressWarnings("unchecked")

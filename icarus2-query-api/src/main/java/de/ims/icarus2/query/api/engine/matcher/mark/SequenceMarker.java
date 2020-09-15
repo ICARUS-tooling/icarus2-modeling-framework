@@ -192,7 +192,7 @@ public abstract class SequenceMarker {
 	private static final class IsLast extends MarkerBase {
 		static final IsLast INSTANCE = new IsLast();
 
-		IsLast() { super(Name.LAST, false, 1); }
+		IsLast() { super(Name.LAST, true, 1); }
 
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {

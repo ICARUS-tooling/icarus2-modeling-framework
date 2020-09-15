@@ -131,7 +131,7 @@ public abstract class EvaluationContext {
 	}
 
 	@NotThreadSafe
-	private static class RootContext extends EvaluationContext {
+	public static class RootContext extends EvaluationContext {
 
 		/** The corpus this context refers to. */
 		private final Corpus corpus;
@@ -557,7 +557,7 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		protected ContextType getType() { return ContextType.ROOT; }
+		protected ContextType getType() { return ContextType.LANE; }
 
 		@SuppressWarnings("unchecked")
 		@Override
@@ -630,7 +630,7 @@ public abstract class EvaluationContext {
 		}
 
 		@Override
-		protected ContextType getType() { return ContextType.ROOT; }
+		protected ContextType getType() { return ContextType.ELEMENT; }
 
 		@SuppressWarnings("unchecked")
 		@Override
@@ -899,25 +899,28 @@ public abstract class EvaluationContext {
 
 	protected abstract ContextType getType();
 
-	public boolean isRoot() { return getType()==ContextType.ROOT; }
+	public final boolean isRoot() { return getType()==ContextType.ROOT; }
 
-	public boolean isLane() { return getType()==ContextType.LANE; }
+	public final boolean isLane() { return getType()==ContextType.LANE; }
 
-	public boolean isElement() { return getType()==ContextType.ELEMENT; }
+	public final boolean isElement() { return getType()==ContextType.ELEMENT; }
 
-	@SuppressWarnings("null")
-	public @Nullable EvaluationContext getRootContext() {
+	private static QueryException forMissingRoot() {
+		return new QueryException(GlobalErrorCode.ILLEGAL_STATE,  "No root context available");
+	}
+
+	public final @Nullable EvaluationContext getRootContext() {
 		EvaluationContext ctx = this;
 		while(!ctx.isRoot()) {
-			ctx = getParent().orElse(null);
+			ctx = ctx.getParent().orElseThrow(EvaluationContext::forMissingRoot);
 		}
-		if(ctx==null || !ctx.isRoot())
-			throw new QueryException(GlobalErrorCode.ILLEGAL_STATE,  "No root context available");
+		if(!ctx.isRoot())
+			throw forMissingRoot();
 		return ctx;
 	}
 
 	@SuppressWarnings("null")
-	public @Nullable EvaluationContext getLaneContext() {
+	public final @Nullable EvaluationContext getLaneContext() {
 		EvaluationContext ctx = this;
 		while(!ctx.isLane()) {
 			ctx = getParent().orElse(null);
@@ -941,7 +944,7 @@ public abstract class EvaluationContext {
 	 * Effectively disables this context. After invoking this method, further calling
 	 * any of method on this instance can cause an exception.
 	 */
-	public void dispose() {
+	public final void dispose() {
 		disabled = true;
 
 		// Ensure our basic state is reset
@@ -964,6 +967,7 @@ public abstract class EvaluationContext {
 	public Optional<Layer> findLayer(String name) { return getRootContext().findLayer(name); }
 
 	public Layer requireLayer(String name) {
+		requireNonNull(name);
 		return findLayer(name).orElseThrow(
 				() -> EvaluationUtils.forUnknownIdentifier(name, "layer"));
 	}
@@ -971,7 +975,6 @@ public abstract class EvaluationContext {
 	public Optional<AnnotationInfo> findAnnotation(QualifiedIdentifier identifier) { return Optional.empty(); }
 
 	public Optional<Assignable<Container>> getContainerStore() { return getLaneContext().getContainerStore(); }
-
 	public Optional<Assignable<Item>> getElementStore() { return Optional.empty(); }
 
 	protected Graph<Layer> getLayerGraph() { return getRootContext().getLayerGraph(); }
@@ -1071,10 +1074,13 @@ public abstract class EvaluationContext {
 
 		private final Set<Environment> environments = new ReferenceOpenHashSet<>();
 
-		public B registerEnvironment(Environment environment) {
-			requireNonNull(environment);
-			checkState("Environment already added: "+environment, !environments.contains(environment));
-			environments.add(environment);
+		public B environment(Environment...environments) {
+			requireNonNull(environments);
+			checkArgument("Must provide at least 1 environment to add", environments.length>0);
+			for (Environment environment : environments) {
+				checkState("Environment already added: "+environment, !this.environments.contains(environment));
+				this.environments.add(environment);
+			}
 
 			return thisAsCast();
 		}

@@ -77,6 +77,7 @@ public class SharedUtilityEnvironments {
 			EntryBuilder builder = entryBuilder();
 
 			builder.method("toString", TypeInfo.TEXT)
+				.aliases("string") //TODO rethink this, as we might run into collisions
 				.instantiator((e, ctx, t, args) -> Expressions.<Object,String>wrapObj(e, Object::toString, t, args))
 				.commitAndReset();
 

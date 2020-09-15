@@ -22,8 +22,10 @@ package de.ims.icarus2.query.api.iql;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -198,5 +200,13 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		public String getLabel() {
 			return label;
 		}
+	}
+
+	public interface Quantifiable {
+		List<IqlQuantifier> getQuantifiers();
+
+		void addQuantifier(IqlQuantifier quantifier);
+
+		void forEachQuantifier(Consumer<? super IqlQuantifier> action);
 	}
 }

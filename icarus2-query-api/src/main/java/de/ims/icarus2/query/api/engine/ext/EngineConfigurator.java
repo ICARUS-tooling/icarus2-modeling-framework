@@ -47,9 +47,9 @@ public interface EngineConfigurator {
 	EngineConfigurator setSwitch(String name, boolean active);
 
 	/**
-	 * Adds a new environment.
+	 * Adds a set of new environments.
 	 *
-	 * @param environment
+	 * @param environments non-empty set of new environments to add
 	 */
-	EngineConfigurator registerEnvironment(Environment environment);
+	EngineConfigurator environment(Environment...environments);
 }

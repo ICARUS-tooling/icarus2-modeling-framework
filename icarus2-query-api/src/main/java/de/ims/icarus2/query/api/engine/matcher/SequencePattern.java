@@ -84,6 +84,7 @@ import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -134,7 +135,10 @@ public class SequencePattern {
 
 
 	/** Dummy node usable as tail if query is simple */
-	static Node accept = new Node();
+	static Node accept = new Node() {
+		@Override
+		public String toString() { return "Accept-Dummy"; }
+	};
 
 	private final AtomicInteger matcherIdGen = new AtomicInteger(0);
 
@@ -167,8 +171,8 @@ public class SequencePattern {
 	 * be used for the actual matching, as the underlying {@link EvaluationContext}
 	 * instances use {@link ThreadLocal} to fetch expressions and assignables.
 	 */
-	//TODO add arguments to delegate result buffer dispatch output and monitoring
-	public Matcher<Container> matcher() {
+	//TODO add arguments to delegate result buffer, dispatch output and attach monitoring
+	public SequenceMatcher matcher() {
 		int id = matcherIdGen.getAndIncrement();
 
 		return new SequenceMatcher(setup, id);
@@ -279,6 +283,9 @@ public class SequencePattern {
 		ElementContext context;
 		ExpressionFactory expressionFactory;
 		IqlMarker pendingMarker;
+		int pendingBorder = UNSET_INT;
+//		/** Keeps track of stacked single nodes between scans */
+//		int offset = 0;
 
 		int id;
 
@@ -289,6 +296,7 @@ public class SequencePattern {
 		final List<NodeDef> matchers = new ArrayList<>();
 		final List<MemberDef> members = new ArrayList<>();
 		final Set<ProperNode> properNodes = new ReferenceOpenHashSet<>();
+		final List<Node> sm = new ArrayList<>();
 		final List<RangeMarker> markers = new ArrayList<>();
 		final IntList markerPos = new IntArrayList();
 		final long limit;
@@ -320,7 +328,7 @@ public class SequencePattern {
 				throw EvaluationUtils.forUnsupportedQueryFragment("element", source.getType());
 			}
 
-			pushTail(node);
+			//pushTail(node);
 
 			//TODO post-process node?
 
@@ -328,6 +336,8 @@ public class SequencePattern {
 		}
 
 		// RAW ELEMENT PROCESSING
+
+		//FIXME currently we might distort the legal intervals when shifting them to the left
 
 		/** Process single node and link to active sequence */
 		private Node node(IqlNode source) {
@@ -337,41 +347,61 @@ public class SequencePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 
-			if(marker!=null && pendingMarker!=null) {
+			if(marker!=null) {
 				if(pendingMarker!=null)
 					throw new QueryException(QueryErrorCode.INCORRECT_USE,
 							"Unresolved pending marker, this usually happens when using the "
 							+ "'ADJACENT' modifier with multiple marker-bearing nodes. Affected node:\n"
 							+ serialize(source));
 
+				pendingBorder = border();
+				pushTail(border(false, pendingBorder));
 				pendingMarker = marker;
 			}
 
 
-			// Prepare context
-			context = rootContext.derive()
-					.element(source)
-					.build();
+			// If we need to add a marker construct, ensure a restore point after the node
+//			int pendingBorder = UNSET_INT;
+//			if(marker!=null) {
+//				pendingBorder = border();
+//				pushTail(border(false, pendingBorder));
+//				pendingMarker = marker;
+//			}
 
 			// Process actual node content as detached atom
-			final Node oldTail = detachTail(!quantifiers.isEmpty());
+			final Node oldTail = detachTail();
 			Node atom;
 			if(constraint==null) {
 				// Dummy nodes don't get added to the "proper nodes" list
 				atom = empty(label);
 			} else {
+				// Full fledged node with local constraints and potentially a member label
+
 				nodes.add(source);
+				// Prepare context and expression processing
+				context = rootContext.derive()
+						.element(source)
+						.build();
 				expressionFactory = new ExpressionFactory(context);
 				atom = single(label, constraint);
+				// Reset context
 				expressionFactory = null;
+				context = null;
 			}
+			// Restore old tail after atom
 			attachTail(oldTail);
 
-			// Handle quantifiers
-			final Node node = quantify(atom, quantifiers);
+//			offset++;
 
-			// Reset context
-			context = null;
+			// Handle quantifiers
+			Node node = quantify(atom, quantifiers);
+
+
+			// Handle markers
+//			if(marker!=null) {
+//				marker(marker);
+//				node = pushTail(border(true, pendingBorder));
+//			}
 
 			return node;
 		}
@@ -381,7 +411,7 @@ public class SequencePattern {
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 
 			// Make sure to process the group content as a detached atom
-			final Node oldTail = detachTail(!quantifiers.isEmpty());
+			final Node oldTail = detachTail();
 			final Node head = looseGroup(source.getElements());
 			attachTail(oldTail);
 
@@ -406,21 +436,38 @@ public class SequencePattern {
 
 		// INTERNAL HELPERS
 
+		private void maybeCloseMarker() {
+			if(pendingMarker!=null) {
+				marker(pendingMarker);
+				pushTail(border(true, pendingBorder));
+
+				pendingMarker = null;
+				pendingBorder = UNSET_INT;
+			}
+		}
+
 		/** Fetch current tail */
 		private Node tail() { return tail; }
 
-		private Node detachTail(boolean condition) {
-			return condition ? replaceTail(accept) : null;
+		/** Detach tail if condition is met */
+		private Node detachTail() {
+			return replaceTail(accept);
 		}
 
+		/** Returns true if tail is the {@link SequencePattern#accept} node */
+		private boolean tailDetached() { return tail==accept; }
+
+		/** Re-attaches the given old tail if it is not null */
 		private void attachTail(@Nullable Node oldTail) {
 			if(oldTail != null) replaceTail(oldTail);
 		}
 
 		/** Link node to tail, set tail to new node and return it */
 		private <N extends Node> N pushTail(N node) {
+			requireNonNull(node);
+			assert node!=tail : "Node already set as tail: "+node;
 			node.next = tail;
-			tail = requireNonNull(node);
+			tail = node;
 			return node;
 		}
 
@@ -432,6 +479,14 @@ public class SequencePattern {
 		}
 
 		private int id() { return id++; }
+
+		private <N extends Node> N store(N node) {
+			sm.add(node);
+			if(node instanceof ProperNode) {
+				properNodes.add((ProperNode) node);
+			}
+			return node;
+		}
 
 		private int member(@Nullable String label) {
 			if(label==null) {
@@ -505,22 +560,32 @@ public class SequencePattern {
 
 		/** Attaches a scan to current tail that honors (multiple) intervals */
 		private Node explore(boolean forward, boolean cached) {
-			if(pendingMarker!=null) {
-				pushTail(border(false));
-			}
+
 
 			/*
 			 * No matter how complex the potentially pending marker construct is,
 			 * the attached scan will always work with the same tail (at least
-			 * content-wise). Therefore we can use a shared cache for all the
-			 * branches and save evaluation time.
+			 * content-wise). Therefore we can use a shared cache and scan node
+			 * for all the branches and save evaluation time.
 			 */
 			pushTail(scan(forward, cached ? cache() : UNSET_INT));
 
-			if(pendingMarker!=null) {
-				marker(pendingMarker);
-				pushTail(border(true));
-			}
+			maybeCloseMarker();
+
+//			if(pendingMarker!=null) {
+//				final int shift = offset-1;
+//				assert shift>=0 : "no content nodes to explore";
+//				// Add marker construct
+//				marker(pendingMarker, shift);
+//				assert pendingBorder!=UNSET_INT : "no border id set";
+//				// Add savepoint
+//				pushTail(border(true, pendingBorder));
+//
+//				pendingBorder = UNSET_INT;
+//				pendingMarker = null;
+//			}
+//			// Scans effectively consume any offsets
+//			offset = 0;
 
 			return tail();
 		}
@@ -548,6 +613,7 @@ public class SequencePattern {
 
 		}
 
+
 		private Node range(RangeMarker marker) {
 			if(marker.isDynamic()) {
 				final int intervalIndex = interval(marker);
@@ -563,13 +629,23 @@ public class SequencePattern {
 
 			final Interval interval = Interval.blank();
 			marker.adjust(new Interval[] {interval}, 0, 1);
-			return new Fixed(interval.from, interval.to);
+			return fixed(interval.from, interval.to);
 		}
 
+		/** Attach single fixed clip to tail */
+		private Node fixed(int from, int to) {
+			return pushTail(store(new Fixed(from, to)));
+		}
+
+		/** Attach single dynamic clip to tail */
 		private Node clip(int intervalIndex) {
-			return new DynamicClip(intervalIndex);
+//			if(shift!=0) {
+//				return new ShiftedClip(intervalIndex);
+//			}
+			return pushTail(store(new DynamicClip(intervalIndex)));
 		}
 
+		/** Attach sequence of intersecting markers to tail */
 		private Node intersection(List<IqlMarker> markers) {
 			Node node = null;
 			for(IqlMarker marker : markers) {
@@ -578,6 +654,7 @@ public class SequencePattern {
 			return node;
 		}
 
+		/** Create branches for disjunctive markers and attach to tail */
 		private Node union(List<IqlMarker> markers) {
 			return branch(markers.size(), i -> marker(markers.get(i)));
 		}
@@ -598,46 +675,63 @@ public class SequencePattern {
 
 		/** Push intervals for given marker on the stack and return index of first interval */
 		private int interval(RangeMarker marker) {
+			final int markerIndex = markers.size();
+			markers.add(marker);
 			final int intervalIndex = intervals.size();
-			for (int i = 0; i < marker.intervalCount(); i++) {
-				markerPos.add(intervals.size());
+			markerPos.add(markerIndex);
+			final int count = marker.intervalCount();
+			for (int i = 0; i < count; i++) {
 				intervals.add(Interval.blank());
+			}
+//			if(shift>0) {
+//				return shiftLeft(intervalIndex, count, shift);
+//			}
+			return intervalIndex;
+		}
+
+		/** Create referential intervals for a group of source intervals, using a specific shift. */
+		@Deprecated
+		private int shiftLeft(int sourceIndex, int count, int shift) {
+			final int intervalIndex = intervals.size();
+			for (int i = 0; i < count; i++) {
+				intervalRef(sourceIndex+i, shift);
 			}
 			return intervalIndex;
 		}
 
-		private int interval() {
-			final int intervalIndex = intervals.size();
-			intervals.add(Interval.blank());
-			return intervalIndex;
-		}
-
+		@Deprecated
 		private int intervalRef(int targetIndex, int shift) {
 			final int intervalIndex = intervals.size();
-			intervals.add(new IntervalRef(targetIndex, shift));
+			final Interval source = intervals.get(targetIndex);
+			if(source instanceof IntervalRef) {
+				intervals.add(new IntervalRef((IntervalRef)source, shift));
+			} else {
+				intervals.add(new IntervalRef(targetIndex, shift));
+			}
 			return intervalIndex;
 		}
 
 		private Empty empty(@Nullable String label) {
-			return new Empty(member(label));
+			return store(new Empty(member(label)));
 		}
 
-		private Begin begin() { return new Begin(); }
+		private Begin begin() { return store(new Begin()); }
 
-		private Border border(boolean save) { return new Border(save, border()); }
+		/** Make a utility node that either saves or restores a border point  */
+		private Border border(boolean save, int borderId) { return store(new Border(save, borderId)); }
 
-		private Finish finish(long limit) { return new Finish(limit); }
+		private Finish finish(long limit) { return store(new Finish(limit)); }
 
 		private Single single(@Nullable String label, IqlConstraint constraint) {
-			return new Single(id(), matcher(constraint), cache(), member(label));
+			return store(new Single(id(), matcher(constraint), cache(), member(label)));
 		}
 
 		private Scan scan(boolean forward, int cacheId) {
-			return new Scan(id(), cacheId, forward);
+			return store(new Scan(id(), cacheId, forward));
 		}
 
 		private Negation negate(Node atom) {
-			return new Negation(id(), cache(), atom);
+			return store(new Negation(id(), cache(), atom));
 		}
 
 		private Node branch(int count, IntFunction<Node> atomGen) {
@@ -651,20 +745,20 @@ public class SequencePattern {
 		}
 
 		/** Start a branch by placing a fresh {@link BranchConn} as tail */
-		private BranchConn branchStart() { return pushTail(new BranchConn()); }
+		private BranchConn branchStart() { return pushTail(store(new BranchConn())); }
 
 		/** Replace tail by given {@link BranchConn} instance */
 		private void branchRestart(Node conn) { replaceTail(conn); }
 
 		/** Wrap up branch by replacing tail with new {@link Branch} instance */
-		private Branch branchEnd(Node conn, Node...atoms) {
-			final Branch branch = new Branch(id(), conn, atoms);
+		private Branch branchEnd(BranchConn conn, Node...atoms) {
+			final Branch branch = store(new Branch(id(), conn, atoms));
 			replaceTail(branch);
 			return branch;
 		}
 
 		private Repetition repetition(Node atom, int cmin, int cmax, int mode) {
-			return new Repetition(id(), atom, cmin, cmax, mode, buffer(), buffer());
+			return store(new Repetition(id(), atom, cmin, cmax, mode, buffer(), buffer()));
 		}
 
 		/** Sequential scanning of ordered elements */
@@ -778,15 +872,14 @@ public class SequencePattern {
 
 			// Prepare top-level scan if needed
 			if(!(root instanceof Scan)) {
-				if(modifier==QueryModifier.LAST) {
-					root = explore(false, false); // backwards scan
-				} else {
-					root = explore(true, false); // default forward scan
-				}
+				explore(modifier!=QueryModifier.LAST, false);
 			}
 
 			// Add size-based filter
 			root = pushTail(begin());
+
+			// Force optimization
+			root.study(new TreeInfo());
 
 			// Fill state machine
 			StateMachineSetup sm = new StateMachineSetup();
@@ -798,7 +891,10 @@ public class SequencePattern {
 			sm.root = root;
 			sm.properNodes = properNodes.stream().sorted().toArray(ProperNode[]::new);
 			sm.cacheCount = cacheCount;
+			sm.borderCount = borderCount;
+			sm.bufferCount = bufferCount;
 			sm.markerPos = markerPos.toIntArray();
+			sm.intervals = intervals.toArray(new Interval[0]);
 			sm.markers = markers.toArray(new RangeMarker[0]);
 			sm.matchers = matchers.toArray(new Supplier[0]);
 
@@ -889,10 +985,20 @@ public class SequencePattern {
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
 
-			intervalRefs = complement(markerPos, intervals.length);
+			intervalRefs = refs(intervals);
 
 			from = 0;
 			to = 0;
+		}
+
+		private static int[] refs(Interval[] intervals) {
+			IntList indices = new IntArrayList();
+			for (int i = 0; i < intervals.length; i++) {
+				if(intervals[i] instanceof IntervalRef) {
+					indices.add(i);
+				}
+			}
+			return indices.toIntArray();
 		}
 
 		private static int[] complement(int[] markerPos, int size) {
@@ -945,8 +1051,6 @@ public class SequencePattern {
 			if(resultHandler!=null) {
 				resultHandler.accept(this);
 			}
-			//TODO create immutable and serializable object from current state and send it to subscriber
-			//TODO increment reported counter upon dispatching
 		}
 	}
 
@@ -957,7 +1061,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class SequenceMatcher extends State implements Matcher<Container> {
+	public static class SequenceMatcher extends State implements Matcher<Container> {
 
 		/** The only thread allowed to call {@link #matches(long, Container)} on this instance */
 		final Thread thread;
@@ -966,9 +1070,6 @@ public class SequencePattern {
 
 		/** The node of the state machine to start matching with. */
 		final Node root;
-
-//		/** The source of this matcher */
-//		private final SequencePattern pattern;
 
 		//TODO add
 
@@ -981,7 +1082,7 @@ public class SequencePattern {
 		}
 
 		@Override
-		public int id() { return 0; }
+		public int id() { return id; }
 
 		/**
 		 * @see de.ims.icarus2.query.api.engine.matcher.Matcher#matches(long, de.ims.icarus2.model.api.members.item.Item)
@@ -1024,6 +1125,7 @@ public class SequencePattern {
 			for (int i = 0; i < intervalRefs.length; i++) {
 				IntervalRef ref = (IntervalRef) intervals[intervalRefs[i]];
 				ref.update(this);
+				assert false; // fail for any ref
 			}
 
 			// Let the state machine do its work
@@ -1057,17 +1159,66 @@ public class SequencePattern {
 
 		public int getId() { return id; }
 
+		public Builder id(int id) {
+			checkArgument("ID must be positive", id>=0);
+			checkState("ID already set", this.id==UNSET_INT);
+			this.id = id;
+			return this;
+		}
+
 		public QueryModifier getModifier() { return modifier; }
+
+		public Builder modifier(QueryModifier modifier) {
+			requireNonNull(modifier);
+			checkState("modifier already set", this.modifier==QueryModifier.ANY);
+			this.modifier = modifier;
+			return this;
+		}
 
 		public long getLimit() { return limit; }
 
+		public Builder limit(long limit) {
+			checkArgument("limit must be positive", limit>=0);
+			checkState("limit already set", this.limit==UNSET_LONG);
+			this.limit = limit;
+			return this;
+		}
+
 		public IqlElement getRoot() { return root; }
+
+		public Builder root(IqlElement root) {
+			requireNonNull(root);
+			checkState("root already set", this.root==null);
+			this.root = root;
+			return this;
+		}
 
 		public IqlConstraint getFilterConstraint() { return filterConstraint; }
 
+		public Builder filterConstraint(IqlConstraint filterConstraint) {
+			requireNonNull(filterConstraint);
+			checkState("filter constrint already set", this.filterConstraint==null);
+			this.filterConstraint = filterConstraint;
+			return this;
+		}
+
 		public IqlConstraint getGlobalConstraint() { return globalConstraint; }
 
+		public Builder globalConstraint(IqlConstraint globalConstraint) {
+			requireNonNull(globalConstraint);
+			checkState("global constrint already set", this.globalConstraint==null);
+			this.globalConstraint = globalConstraint;
+			return this;
+		}
+
 		public LaneContext geContext() { return context; }
+
+		public Builder context(LaneContext context) {
+			requireNonNull(context);
+			checkState("context already set", this.context==null);
+			this.context = context;
+			return this;
+		}
 
 		@Override
 		protected void validate() {
@@ -1076,7 +1227,7 @@ public class SequencePattern {
 			checkState("No root element defined", root!=null);
 			checkState("Id not defined", id>=0);
 			checkState("Context not defined", context!=null);
-			checkState("Context is not a root context", context.isRoot());
+			checkState("Context is not a lane context", context.isLane());
 		}
 
 		@Override
@@ -1162,10 +1313,10 @@ public class SequencePattern {
 
 		NodeDef(int id, Assignable<? extends Item> element, Expression<?> constraint,
 				EvaluationContext context) {
-			this.context = requireNonNull(context);
-			this.constraints = new ExpressionDef(constraint, context);
 			this.id = id;
 			this.element = requireNonNull(element);
+			this.constraints = new ExpressionDef(constraint, context);
+			this.context = requireNonNull(context);
 		}
 
 		@Override
@@ -1226,6 +1377,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@Deprecated
 	static final class IntervalRef extends Interval {
 		/** Expansion amount of the interval, typically a negative value */
 		private final int shift;
@@ -1290,7 +1442,7 @@ public class SequencePattern {
 		}
 	}
 
-	static class TreeInfo {
+	static class TreeInfo implements Cloneable {
 		/** Minimum number of elements to be matched by a subtree. */
 		int minSize = 0;
 		/** Maximum number of elements to be matched by a subtree. */
@@ -1317,6 +1469,13 @@ public class SequencePattern {
             to = UNSET_INT;
             offset = 0;
 		}
+
+		@Override
+		public TreeInfo clone() {
+			try {
+				return (TreeInfo) super.clone();
+			} catch (CloneNotSupportedException e) { throw new InternalError(e); }
+		}
 	}
 
 
@@ -1336,15 +1495,11 @@ public class SequencePattern {
 
 			return info.deterministic;
 		}
-	}
 
-	private static boolean isDangling(Node n) {
-		return n.next==accept || n.next==null;
-	}
-
-	private static <N extends Node> N detach(N node) {
-		node.next = null;
-		return node;
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this).build();
+		}
 	}
 
 	static final int GREEDY = QuantifierModifier.GREEDY.ordinal();
@@ -1355,7 +1510,9 @@ public class SequencePattern {
 	static final class Empty extends Node {
 		final int memberId;
 
-		Empty(int memberId) { this.memberId = memberId; }
+		Empty(int memberId) {
+			this.memberId = memberId;
+		}
 
 		@Override
 		boolean match(State state, int pos) {
@@ -1384,6 +1541,11 @@ public class SequencePattern {
 			info.maxSize++;
 			info.offset++;
 			return info.deterministic;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this).add("memberId", memberId).build();
 		}
 	}
 
@@ -1417,6 +1579,11 @@ public class SequencePattern {
 			checkState("Minimum size of sequence must be greater than or equal 1", minSize>0);
 			return info.deterministic;
 		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this).add("minSize", minSize).build();
+		}
 	}
 
 	/**
@@ -1439,6 +1606,11 @@ public class SequencePattern {
 			}
 
 			return true;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this).add("limit", limit).build();
 		}
 	}
 
@@ -1473,13 +1645,17 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
+			// Update search interval
 			intersect(state);
+			// Skip ahead if allowed
 			if(skip && pos<state.from) {
 				pos = state.from;
 			}
+			// Early bail in case we're outside of allowed search space
 			if(!state.contains(pos)) {
 				return false;
 			}
+			// Continue with actual search
 			return next.match(state, pos);
 		}
 	}
@@ -1499,12 +1675,26 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
+			boolean skip0 = info.skip;
+			info.skip = false;
 			next.study(info);
+			skip = info.skip;
+			info.skip = skip0;
+
 			//TODO verify that we don't have impossible interval requirements.
 			info.from = from;
 			info.to = to;
-			//TODO check if we can skip ahead for the next scan
+
 			return info.deterministic;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("from", from)
+					.add("to", to)
+					.add("skip", skip)
+					.build();
 		}
 	}
 
@@ -1522,14 +1712,61 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
+			boolean skip0 = info.skip;
+			info.skip = false;
+			next.study(info);
+			skip = info.skip;
+			info.skip = skip0;
+
+			return info.deterministic;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("intervalIndex", intervalIndex)
+					.add("skip", skip)
+					.build();
+		}
+	}
+
+	/** Interval filter based on shifted intervals in the matcher */
+	@Deprecated
+	static final class ShiftedClip extends Clip {
+		final int intervalIndex;
+		final int shift;
+		ShiftedClip(int intervalIndex, int shift) {
+			this.intervalIndex = intervalIndex;
+			this.shift = Math.abs(shift);
+			checkState("Shift must be positive", this.shift>0);
+		}
+
+		@Override
+		void intersect(State state) {
+			Interval ref = state.intervals[intervalIndex];
+			state.intersect(ref.from-shift, ref.to);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
 			int offset = info.offset;
 			next.study(info);
 			info.offset = offset;
 			//TODO check if we can skip ahead for the next scan
 			return info.deterministic;
 		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("intervalIndex", intervalIndex)
+					.add("shift", shift)
+					.add("skip", skip)
+					.build();
+		}
 	}
 
+	/** Save- or restore-point for the right interval boundary during marker constructs */
 	static final class Border extends Node {
 		final boolean save;
 		final int borderId;
@@ -1549,10 +1786,20 @@ public class SequencePattern {
 
 			return next.match(state, pos);
 		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("save", save)
+					.add("borderId", borderId)
+					.build();
+		}
 	}
 
+	/** Special scan that ensures no instance of atom appears before legal end of sequence/match. */
 	static final class Negation extends ProperNode {
 		int minSize = 0; // 0 means we have to check till end of sequence
+		int atomMinSize = 1; // cannot negate zero-width assertions
 		final Node atom;
 		final int cacheId;
 
@@ -1564,11 +1811,45 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			//TODO special case minSize=0, so that we do not allow dispatch before sequence is traversed!
+			if(minSize==0) {
+				return matchFull(state, pos);
+			}
+			return matchWithTail(state, pos);
+		}
+
+		private boolean matchFull(State state, int pos) {
     		final int from = state.from;
     		final int to = state.to;
 			final Cache cache = state.caches[cacheId];
-			final int fence = minSize==0 ? state.size-1 : state.to - minSize + 1;
+			final int fence = state.size-1;
+
+			for (int i = pos; i <= fence; i++) {
+				int scope = state.scope();
+				boolean stored = cache.isSet(i);
+				boolean matched;
+				if(stored) {
+					matched = cache.getValue(i);
+				} else {
+					// Previously unseen index, so explore and cache result
+					matched = !atom.match(state, pos);
+					cache.setValue(i, matched);
+				}
+
+				state.reset(scope);
+				state.reset(from, to);
+				if(!matched) {
+					return false;
+				}
+			}
+
+			return next.match(state, state.size-1);
+		}
+
+		private boolean matchWithTail(State state, int pos) {
+    		final int from = state.from;
+    		final int to = state.to;
+			final Cache cache = state.caches[cacheId];
+			final int fence = state.to - minSize + 1;
 
 			boolean result = false;
 
@@ -1608,7 +1889,24 @@ public class SequencePattern {
 			minSize = info.minSize-minSize0;
 
 			info.deterministic = false;
+
+			info = new TreeInfo();
+			atom.study(info);
+			atomMinSize = info.minSize;
+			checkState("Nested atom must not contain zero-width assertion!", atomMinSize>0);
+
 			return false;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("minSize", minSize)
+					.add("atomMinSize", atomMinSize)
+					.add("cacheId", cacheId)
+					.add("atom", atom)
+					.build();
 		}
 	}
 
@@ -1678,6 +1976,16 @@ public class SequencePattern {
 			info.offset++;
 			return info.deterministic;
 		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("nodeId", nodeId)
+					.add("cacheId", cacheId)
+					.add("memberId", memberId)
+					.build();
+		}
 	}
 
 	/**
@@ -1695,6 +2003,16 @@ public class SequencePattern {
 			super(id);
 			this.cacheId = cacheId;
 			this.forward = forward;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("forward", forward)
+					.add("cacheId", cacheId)
+					.add("minSize", minSize)
+					.build();
 		}
 
 		@Override
@@ -1805,6 +2123,7 @@ public class SequencePattern {
 		@Override
 		boolean study(TreeInfo info) {
 			int minSize0 = info.minSize;
+			int offset0 = info.offset;
 			next.study(info);
 			minSize = info.minSize-minSize0;
 
@@ -1812,6 +2131,7 @@ public class SequencePattern {
 
 			info.deterministic = false;
 			info.skip = true;
+			info.offset = offset0;
 
 			return false;
 		}
@@ -1822,6 +2142,7 @@ public class SequencePattern {
      * chain but forward the {@link #match(State, int)} call to 'next'.
      */
     static final class BranchConn extends Node {
+    	boolean skip;
         BranchConn() { /* no-op */ }
         @Override
 		boolean match(State state, int pos) {
@@ -1829,6 +2150,7 @@ public class SequencePattern {
         }
         @Override
 		boolean study(TreeInfo info) {
+        	info.skip = skip;
             return info.deterministic;
         }
     }
@@ -1839,10 +2161,10 @@ public class SequencePattern {
 	 * quantifiers.
 	 */
 	static final class Branch extends ProperNode {
-		final Node conn;
+		final BranchConn conn;
 		final Node[] atoms;
 
-		Branch(int id, Node conn, Node...atoms) {
+		Branch(int id, BranchConn conn, Node...atoms) {
 			super(id);
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
 			this.atoms = atoms;
@@ -1850,31 +2172,41 @@ public class SequencePattern {
 		}
 
 		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("atoms", Arrays.toString(atoms))
+					.build();
+		}
+
+		@Override
 		boolean match(State state, int pos) {
     		final int from = state.from;
     		final int to = state.to;
-	        for (int n = 0; n < atoms.length; n++) {
-	            if (atoms[n] == null) {
+    		boolean result = false;
+	        for (int n = 0; n < atoms.length && !state.finished; n++) {
+	        	Node atom = atoms[n];
+	        	if (atom==null) {
 	            	// zero-width path
-	                if (conn.next.match(state, pos))
-	                    return true;
-	            } else if (atoms[n].match(state, pos)) {
-	                return true;
+	                result |= conn.next.match(state, pos);
+	            } else {
+	                result |= atom.match(state, pos);
 	            }
                 state.reset(from, to);
 	        }
-	        return false;
+	        return result;
 		}
 
 		@Override
 		boolean study(TreeInfo info) {
-			int minL = info.minSize;
-			int maxL = info.maxSize;
-			int offset = info.offset;
-			boolean maxV = info.maxValid;
+			TreeInfo tmp = info.clone();
+
+			TreeInfo sentinel = new TreeInfo();
+			conn.next.study(sentinel);
+			conn.skip = sentinel.skip;
 
 			info.reset();
-			int minL2 = Integer.MAX_VALUE; // arbitrary large enough num
+			int minL2 = Integer.MAX_VALUE; // we only operate in int space here anyway
 			int maxL2 = -1;
 			int offset2 = -1;
 
@@ -1885,20 +2217,20 @@ public class SequencePattern {
 				minL2 = Math.min(minL2, info.minSize);
 				maxL2 = Math.max(maxL2, info.maxSize);
 				offset2 = Math.max(offset2, info.offset);
-				maxV = (maxV & info.maxValid);
+				tmp.maxValid &= info.maxValid;
 				info.reset();
 			}
 
-			minL += minL2;
-			maxL += maxL2;
-			offset += offset2;
+			tmp.maxSize += minL2;
+			tmp.maxSize += maxL2;
+			tmp.offset += offset2;
 
 			conn.next.study(info);
 
-			info.minSize += minL;
-			info.maxSize += maxL;
-			info.maxValid &= maxV;
-			info.offset += offset;
+			info.minSize += tmp.minSize;
+			info.maxSize += tmp.maxSize;
+			info.maxValid &= tmp.maxValid;
+			info.offset += tmp.offset;
 			info.deterministic = false;
 
 			return false;
@@ -1922,6 +2254,19 @@ public class SequencePattern {
 			this.type = type;
 			this.scopeBuf = scopeBuf;
 			this.posBuf = posBuf;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("cmin", cmin)
+					.add("cmax", cmax)
+					.add("atom", atom)
+					.add("type", type)
+					.add("scopeBuf", scopeBuf)
+					.add("posBuf", posBuf)
+					.build();
 		}
 
         @Override
@@ -2085,7 +2430,7 @@ public class SequencePattern {
 
             int temp = info.minSize * cmin + minL;
             if (temp < minL) {
-                temp = 0xFFFFFFF; // arbitrary large number
+                temp = Integer.MAX_VALUE; // we only operate in int space here anyway
             }
             info.minSize = temp;
 

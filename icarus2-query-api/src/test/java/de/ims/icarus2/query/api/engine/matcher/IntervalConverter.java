@@ -19,7 +19,13 @@
  */
 package de.ims.icarus2.query.api.engine.matcher;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import org.junit.jupiter.params.converter.ArgumentConversionException;
+import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
@@ -57,4 +63,10 @@ public class IntervalConverter extends SimpleArgumentConverter {
 				StringPrimitives.parseInt(s, sep+1, -1));
 	}
 
+	@Target({ ElementType.ANNOTATION_TYPE, ElementType.PARAMETER })
+	@Retention(RetentionPolicy.RUNTIME)
+	@ConvertWith(IntervalConverter.class)
+	public @interface IntervalArg {
+		// marker interface
+	}
 }

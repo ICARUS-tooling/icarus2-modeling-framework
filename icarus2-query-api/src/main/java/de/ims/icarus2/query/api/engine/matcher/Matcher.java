@@ -28,4 +28,18 @@ public interface Matcher<E> {
 	boolean matches(long index, E target);
 
 	int id();
+
+	public static final int MATCH_ALL_ID = -2;
+
+	public static final Matcher<Object> MATCH_ALL = new Matcher<Object>() {
+
+		@Override
+		public boolean matches(long index, Object target) { return true; }
+
+		@Override
+		public int id() { return MATCH_ALL_ID; }
+	};
+
+	@SuppressWarnings("unchecked")
+	public static <E> Matcher<E> matchAll() { return (Matcher<E>) MATCH_ALL; }
 }

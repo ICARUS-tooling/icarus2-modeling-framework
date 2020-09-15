@@ -107,7 +107,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class IqlGrouping extends IqlElement {
+	public static class IqlGrouping extends IqlElement implements IqlQuantifier.Quantifiable {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
@@ -130,10 +130,13 @@ public abstract class IqlElement extends IqlUnique {
 
 		public List<IqlElement> getElements() { return elements; }
 
+		@Override
 		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }
 
+		@Override
 		public void addQuantifier(IqlQuantifier quantifier) { quantifiers.add(requireNonNull(quantifier)); }
 
+		@Override
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers.forEach(requireNonNull(action)); }
 
 		public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
@@ -159,7 +162,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class IqlNode extends IqlProperElement {
+	public static class IqlNode extends IqlProperElement implements IqlQuantifier.Quantifiable  {
 
 		@JsonProperty(IqlProperties.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
@@ -181,12 +184,15 @@ public abstract class IqlElement extends IqlUnique {
 
 		public Optional<IqlMarker> getMarker() { return marker; }
 
+		@Override
 		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }
 
 		public void setMarker(IqlMarker marker) { this.marker = Optional.of(marker); }
 
+		@Override
 		public void addQuantifier(IqlQuantifier quantifier) { quantifiers.add(requireNonNull(quantifier)); }
 
+		@Override
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers.forEach(requireNonNull(action)); }
 
 		// utility

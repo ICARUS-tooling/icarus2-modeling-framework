@@ -23,6 +23,8 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
 import java.util.stream.IntStream;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Models a simple bounded interval in {@code int} space.
  * <p>
@@ -68,7 +70,14 @@ public class Interval implements Cloneable {
 
 	public void reset(Interval other) { this.from = other.from; this.to = other.to; }
 
-	public int size() { return to-from+1; }
+	public int size() { return isEmpty() ? 0 : to-from+1; }
+
+	@VisibleForTesting
+	public int indexAt(int idx) {
+		if(isEmpty() || idx<0 || idx>=size())
+			throw new ArrayIndexOutOfBoundsException();
+		return from+idx;
+	}
 
 	public boolean isEmpty() { return to<from || to==UNSET_INT || from==UNSET_INT; }
 
@@ -91,6 +100,12 @@ public class Interval implements Cloneable {
 		from = Math.max(from, other.from);
 		to = Math.min(to, other.to);
 		return from<=to;
+	}
+
+	public boolean intersect(int grom, int to) {
+		this.from = Math.max(this.from, from);
+		this.to = Math.min(this.to, to);
+		return this.from<=this.to;
 	}
 
 	@Override

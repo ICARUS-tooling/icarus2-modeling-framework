@@ -20,6 +20,8 @@ import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,11 +47,14 @@ import org.mockito.internal.stubbing.answers.CallsRealMethods;
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.model.api.corpus.Context;
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.VirtualIndexSet;
+import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -63,6 +68,7 @@ import de.ims.icarus2.model.api.raster.Rasterizer;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.collections.seq.DataSequence;
+import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArraySet;
@@ -77,17 +83,25 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  */
 public class ModelTestUtils {
 
-//	/**
-//	 * Produces a stream of {@value TestUtils#RUNS} random {@code long} values.
-//	 * @return
-//	 */
-//	public static LongStream randomIndices() {
-//		return random().longs(RUNS, 0L, Long.MAX_VALUE);
-//	}
+	public static Corpus mockCorpus() {
+		Corpus corpus = mock(Corpus.class, CALLS_REAL_METHODS);
+		return corpus;
+	}
 
-//	public static LongStream exhaustiveRandomIndices() {
-//		return random().longs(RUNS_EXHAUSTIVE, 0L, Long.MAX_VALUE);
-//	}
+	public static Context mockContext(Corpus corpus) {
+		Context context = mock(Context.class, CALLS_REAL_METHODS);
+		when(context.getCorpus()).thenReturn(corpus);
+		return context;
+	}
+
+	public static <L extends Layer> L mockLayer(Class<L> clazz, Context context) {
+		final Corpus corpus = requireNonNull(context.getCorpus());
+		final L layer = mock(clazz, CALLS_REAL_METHODS);
+		when(layer.getContext()).thenReturn(context);
+		when(layer.getCorpus()).thenReturn(corpus);
+		when(layer.getBaseLayers()).thenReturn(DataSet.emptySet());
+		return layer;
+	}
 
 	@SuppressWarnings("boxing")
 	public static <I extends Item> I stubId(I item, long id) {
@@ -95,8 +109,6 @@ public class ModelTestUtils {
 		String s = item.getMemberType()+"_"+id;
 		when(item.getId()).thenReturn(id);
 		when(item.toString()).thenReturn(s);
-//		when(item.equals(any())).then(
-//				invocation -> equals(item, invocation.getArgument(0)));
 		return item;
 	}
 
@@ -269,6 +281,20 @@ public class ModelTestUtils {
 		if(itemCount>0) {
 			stubItems(container);
 		}
+
+		return container;
+	}
+
+	public static Container mockContainer(Item...items) {
+		Container container = mock(Container.class);
+
+		stubItemCount(container, items.length);
+
+		when(container.getItemAt(anyLong())).thenAnswer(invoc -> {
+			@SuppressWarnings("boxing")
+			int index = strictToInt(invoc.getArgument(0));
+			return items[index];
+		});
 
 		return container;
 	}
