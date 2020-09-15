@@ -506,9 +506,14 @@ variable
 	: AT Identifier
 	;
 
-/** Models the actual member variables for a matching. */
+/** 
+ * Models the actual member variables for a matching.
+ * If no identifier is provided, the sole '$' is equivalent to
+ * the 'this' expression in Java, referencing the the nearest
+ * Item instance in the current scope. 
+ */
 member
-	: DOLLAR Identifier
+	: DOLLAR Identifier?
 	;
 	
 versionDeclaration
