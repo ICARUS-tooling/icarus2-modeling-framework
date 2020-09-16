@@ -78,7 +78,7 @@ public abstract class IqlElement extends IqlUnique {
 	}
 
 	private static boolean isExistentiallyQuantified0(List<IqlQuantifier> quantifiers) {
-		return quantifiers
+		return quantifiers.isEmpty() || quantifiers
 				.stream()
 				.filter(IqlQuantifier::isExistentiallyQuantified)
 				.findAny()
