@@ -16,22 +16,22 @@
  */
 package de.ims.icarus2.query.api.iql.antlr;
 
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.assertInvalidParse;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.assertParsedTree;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.binaryOps;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.binaryOpsHierarchy;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.comparisons;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.createParser;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.dummy;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.elements;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f1;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f1Tree;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f2;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.isKeywordOp;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.padOp;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.simplify;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.types;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.variateBinary;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.assertInvalidParse;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.assertParsedTree;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.binaryOps;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.binaryOpsHierarchy;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.comparisons;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.createParser;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.dummy;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.elements;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.f1;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.f1Tree;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.f2;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.isKeywordOp;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.padOp;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.simplify;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.types;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.variateBinary;
 import static de.ims.icarus2.test.TestTags.SLOW;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.IcarusUtils.notEq;
@@ -240,7 +240,7 @@ public class IQLExpressionTest {
 
 				tests.add(dynamicContainer(op.second+" <equal level>",
 						ops.stream().filter(notEq(op)).map(eqOp -> {
-							if(IQLTestUtils.isRightAssoc(op, eqOp)) {
+							if(AntlrTestUtils.isRightAssoc(op, eqOp)) {
 								return makeRightAssociativeOpTests(op, eqOp);
 							}
 

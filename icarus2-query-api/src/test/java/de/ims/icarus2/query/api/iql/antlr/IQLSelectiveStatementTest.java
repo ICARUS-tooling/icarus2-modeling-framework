@@ -3,9 +3,9 @@
  */
 package de.ims.icarus2.query.api.iql.antlr;
 
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.assertParsedTree;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.f1Tree;
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.randomExpressions;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.assertParsedTree;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.f1Tree;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.randomExpressions;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.stream.Stream;

@@ -59,7 +59,7 @@ import de.ims.icarus2.util.tree.TreeParser;
  * @author Markus Gärtner
  *
  */
-public class IQLTestUtils {
+public class AntlrTestUtils {
 
 	/*
 	 * gradlew.bat icarus2-query-api:clean icarus2-query-api:generateGrammarSource icarus2-query-api:generateTestGrammarSource

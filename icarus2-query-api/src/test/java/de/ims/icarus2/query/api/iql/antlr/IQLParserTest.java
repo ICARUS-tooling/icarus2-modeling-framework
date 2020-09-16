@@ -40,43 +40,43 @@ class IQLParserTest {
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedFloatingPointLiteral.csv"}, numLinesToSkip=1)
 	void testUnsignedFloatingPointLiteral(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::unsignedFloatingPointLiteralTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::unsignedFloatingPointLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedIntegerLiteral.csv"}, numLinesToSkip=1)
 	void testUnsignedIntegerLiteral(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::unsignedIntegerLiteralTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::unsignedIntegerLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_floatingPointLiteral.csv"}, numLinesToSkip=1)
 	void testFloatingPointLiteral(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::floatingPointLiteralTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::floatingPointLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_integerLiteral.csv"}, numLinesToSkip=1)
 	void testIntegerLiteral(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::integerLiteralTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::integerLiteralTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier.csv"}, numLinesToSkip=1)
 	void testUnsignedQuantifer(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::unsignedSimpleQuantifierTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::unsignedSimpleQuantifierTest);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
 	@CsvFileSource(resources={"parserTests_unsignedQuantifier_invalid.csv"}, numLinesToSkip=1)
 	void testInvalidUnsignedQuantifer(String text, String offendingToken, String description) {
-		IQLTestUtils.assertInvalidParse(text, description, offendingToken, IQL_TestParser::unsignedSimpleQuantifierTest);
+		AntlrTestUtils.assertInvalidParse(text, description, offendingToken, IQL_TestParser::unsignedSimpleQuantifierTest);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_quantifier.csv"}, numLinesToSkip=1)
 	void testQuantifer(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::quantifierTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::quantifierTest);
 	}
 
 	public static Stream<Arguments> createExpressions() {
@@ -91,19 +91,19 @@ class IQLParserTest {
 	@MethodSource("createExpressions")
 	@Deprecated // IQLExpressionTest now contains exhaustive tests for expressions without the need of CSV files
 	void testExpression(String text, String expected, String description) {
-		IQLTestUtils.assertValidParse(text, expected, description, IQL_TestParser::standaloneExpression);
+		AntlrTestUtils.assertValidParse(text, expected, description, IQL_TestParser::standaloneExpression);
 	}
 
 	@ParameterizedTest(name="{2}: {0} [offending: {1}]")
 	@CsvFileSource(resources={"parserTests_expression_invalid.csv"}, numLinesToSkip=1)
 	@Deprecated // IQLExpressionTest now contains exhaustive tests for expressions without the need of CSV files
 	void testInvalidExpression(String text, String offendingToken, String description) {
-		IQLTestUtils.assertInvalidParse(text, description, offendingToken, IQL_TestParser::standaloneExpression);
+		AntlrTestUtils.assertInvalidParse(text, description, offendingToken, IQL_TestParser::standaloneExpression);
 	}
 
 	@ParameterizedTest(name="{1}: {0}")
 	@CsvFileSource(resources={"parserTests_versionDeclaration.csv"}, numLinesToSkip=1)
 	void testVersionDeclaration(String text, String description) {
-		IQLTestUtils.assertValidParse(text, null, description, IQL_TestParser::versionDeclarationTest);
+		AntlrTestUtils.assertValidParse(text, null, description, IQL_TestParser::versionDeclarationTest);
 	}
 }

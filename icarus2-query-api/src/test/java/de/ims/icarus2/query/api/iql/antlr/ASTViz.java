@@ -19,7 +19,7 @@
  */
 package de.ims.icarus2.query.api.iql.antlr;
 
-import static de.ims.icarus2.query.api.iql.antlr.IQLTestUtils.createParser;
+import static de.ims.icarus2.query.api.iql.antlr.AntlrTestUtils.createParser;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 
 import org.antlr.v4.gui.TreeViewer;
