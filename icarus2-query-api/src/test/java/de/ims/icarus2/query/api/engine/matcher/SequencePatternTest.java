@@ -39,18 +39,25 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LABEL;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MARKER;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.branch;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.constraint;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.eq_exp;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.item;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.mark;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.matchers;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.seq;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_LABEL;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_MARKER;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.adjacent;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.constraint;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.exact;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.mark;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.negated;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.ordered;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantify;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.sequence;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
@@ -61,15 +68,12 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import javax.annotation.Nullable;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,21 +113,10 @@ import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
 import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
-import de.ims.icarus2.query.api.iql.IqlConstraint;
-import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
-import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlLane;
-import de.ims.icarus2.query.api.iql.IqlMarker;
-import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
-import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
-import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
-import de.ims.icarus2.query.api.iql.IqlQuantifier;
-import de.ims.icarus2.query.api.iql.IqlUnique;
-import de.ims.icarus2.query.api.iql.NodeArrangement;
+import de.ims.icarus2.query.api.iql.IqlTestUtils;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
@@ -225,94 +218,6 @@ class SequencePatternTest {
 				}
 			}
 			return new Branch(id, conn, atoms);
-		}
-
-		static final String NO_LABEL = null;
-		static final IqlMarker NO_MARKER = null;
-		static final IqlConstraint NO_CONSTRAINT = null;
-		static final String ID = "_id_";
-
-		private static void setId(IqlUnique unique) {
-			unique.setId(ID);
-		}
-
-		static IqlNode node(@Nullable String label, @Nullable IqlMarker marker,
-				@Nullable IqlConstraint constraint) {
-			IqlNode node = new IqlNode();
-			setId(node);
-			Optional.ofNullable(label).ifPresent(node::setLabel);
-			Optional.ofNullable(marker).ifPresent(node::setMarker);
-			Optional.ofNullable(constraint).ifPresent(node::setConstraint);
-			return node;
-		}
-
-		static <Q extends IqlQuantifier.Quantifiable> Q quantiy(Q target, IqlQuantifier quantifiers) {
-			Stream.of(quantifiers).forEach(target::addQuantifier);
-			return target;
-		}
-
-		static IqlGrouping grouping(IqlElement...elements) {
-			IqlGrouping grouping = new IqlGrouping();
-			setId(grouping);
-			Stream.of(elements).forEach(grouping::addElement);
-			return grouping;
-		}
-
-		static IqlSequence sequence(IqlElement...elements) {
-			IqlSequence sequence = new IqlSequence();
-			setId(sequence);
-			Stream.of(elements).forEach(sequence::addElement);
-			return sequence;
-		}
-
-		static IqlSequence adjacent(IqlElement...elements) {
-			IqlSequence sequence = sequence(elements);
-			sequence.setArrangement(NodeArrangement.ADJACENT);
-			return sequence;
-		}
-
-		static IqlSequence ordered(IqlElement...elements) {
-			IqlSequence sequence = sequence(elements);
-			sequence.setArrangement(NodeArrangement.ORDERED);
-			return sequence;
-		}
-
-		static IqlConstraint constraint(String content) {
-			IqlExpression expression = new IqlExpression();
-			expression.setContent(content);
-			IqlPredicate predicate = new IqlPredicate();
-			setId(predicate);
-			predicate.setExpression(expression);
-			return predicate;
-		}
-
-		static String eq_exp(char c) { return "$.toString()==\""+c+"\""; }
-
-		static String and(String...items) { return "(" + String.join(" && ", items) + ")"; }
-
-		static String or(String...items) { return "(" + String.join(" || ", items) + ")"; }
-
-		static IqlMarker mark(String name, Number...args) {
-			IqlMarkerCall call = new IqlMarkerCall();
-			call.setName(name);
-			if(args.length>0) {
-				call.setArguments(args);
-			}
-			return call;
-		}
-
-		static IqlMarker and(IqlMarker...markers) {
-			IqlMarkerExpression exp = new IqlMarkerExpression();
-			exp.setExpressionType(MarkerExpressionType.CONJUNCTION);
-			Stream.of(markers).forEach(exp::addItem);
-			return exp;
-		}
-
-		static IqlMarker or(IqlMarker...markers) {
-			IqlMarkerExpression exp = new IqlMarkerExpression();
-			exp.setExpressionType(MarkerExpressionType.DISJUNCTION);
-			Stream.of(markers).forEach(exp::addItem);
-			return exp;
 		}
 
 		static final String LANE_NAME = "test_lane";
@@ -437,6 +342,10 @@ class SequencePatternTest {
 		return new MatchConfig(expectedResult, expectedCount);
 	}
 
+	static MatchConfig mismatch() {
+		return new MatchConfig(false, 0);
+	}
+
 	/** Encapsulates the info for expected matches and hits inside a single target sequence */
 	static class MatchConfig implements Consumer<State> {
 		/** Index in target sequence to start the test search at */
@@ -475,11 +384,19 @@ class SequencePatternTest {
 
 		MatchConfig cache(CacheConfig cache) { caches.add(requireNonNull(cache)); return this; }
 
+		/** Map set of indices to nodeId in active mapping */
 		MatchConfig map(int nodeId, int...indices) { mapping.map(nodeId, indices); return this; }
 
+		/** Map region of indices to nodeId in active mapping */
+		MatchConfig map(int nodeId, Interval indices) { mapping.map(nodeId, indices); return this; }
+
+		/** Conditionally map set of indices to nodeId in active mapping */
 		MatchConfig map(boolean condition, int nodeId, int...indices) { if(condition) map(nodeId, indices); return this;}
 
+		/** Add complete result entry to assert */
 		MatchConfig result(ResultConfig result) { results.add(requireNonNull(result)); return this; }
+
+		/** Map a number of new entries depending on complex consumer */
 		MatchConfig results(int count, ObjIntConsumer<ResultConfig> action) {
 			for (int i = 0; i < count; i++) {
 				ResultConfig result = SequencePatternTest.result(results.size());
@@ -489,6 +406,27 @@ class SequencePatternTest {
 			return this;
 		}
 
+		/** Map all elements of given interval to specified nodeId */
+		MatchConfig results(int nodeId, Interval region) {
+			for (int i = 0; i < region.size(); i++) {
+				ResultConfig result = SequencePatternTest.result(results.size());
+				result.map(nodeId, region.indexAt(i));
+				results.add(result);
+			}
+			return this;
+		}
+
+		/** Map all elements of given set to specified nodeId */
+		MatchConfig results(int nodeId, int...indices) {
+			for (int i = 0; i < indices.length; i++) {
+				ResultConfig result = SequencePatternTest.result(results.size());
+				result.map(nodeId, indices[i]);
+				results.add(result);
+			}
+			return this;
+		}
+
+		/** Asserts the dispatched state based on the list of expected results */
 		@Override
 		public void accept(State state) {
 			assertThat(nextResult)
@@ -566,11 +504,23 @@ class SequencePatternTest {
 
 		CacheConfig hits(int...indices) { for(int i=0; i< indices.length; i++) hits.add(indices[i]); return this; }
 
+		CacheConfig hits(Interval region) { return hits(region.asArray()); }
+
 		CacheConfig hits(boolean condition, int...indices) { if(condition) hits(indices); return this; }
+
+		CacheConfig hitsForWindow() { return hits(requireNonNull(window, "Window undefined")); }
 
 		CacheConfig set(int...indices) { for(int i=0; i< indices.length; i++) set.add(indices[i]); return this; }
 
+		CacheConfig set(Interval region) { return set(region.asArray()); }
+
 		CacheConfig set(boolean condition, int...indices) { if(condition) set(indices); return this; }
+
+		CacheConfig setForWindow() { return set(requireNonNull(window, "Window undefined")); }
+
+		CacheConfig unset(int...indices) { for(int i=0; i< indices.length; i++) set.remove(indices[i]); return this; }
+
+		CacheConfig unset(Interval indices) { return unset(indices.asArray()); }
 
 		CacheConfig hits(String s, CharPredicate pred) {
 			for (int i = 0; i < s.length(); i++) {
@@ -751,7 +701,7 @@ class SequencePatternTest {
 					@IntervalArg Interval window, int last) {
 				assertResult(target, setup(), match(startPos, true, 1)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, Interval.of(startPos, startPos+4).asArray())
+						.map(NODE_1, Interval.of(startPos, startPos+4))
 						.node(node(NODE_1).last(last))
 				);
 			}
@@ -804,7 +754,7 @@ class SequencePatternTest {
 					@IntervalArg Interval matched, int last) {
 				assertResult(target, setup(), match(startPos, true, 1)
 						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, matched.asArray())
+						.map(NODE_1, matched)
 						.node(node(NODE_1).last(last))
 				);
 			}
@@ -1762,11 +1712,11 @@ class SequencePatternTest {
 
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1.asArray())
+									.map(NODE_1, matched1)
 									.node(node(NODE_1).last(last1))
 
 									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2.asArray())
+									.map(NODE_2, matched2)
 									.node(node(NODE_2).last(last2))
 							);
 						}
@@ -1849,11 +1799,11 @@ class SequencePatternTest {
 
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1.asArray())
+									.map(NODE_1, matched1)
 									.node(node(NODE_1).last(last1))
 
 									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2.asArray())
+									.map(NODE_2, matched2)
 									.node(node(NODE_2).last(last2))
 							);
 						}
@@ -1926,7 +1876,7 @@ class SequencePatternTest {
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, Interval.of(startPos, startPos+1).asArray())
+									.map(NODE_1, Interval.of(startPos, startPos+1))
 									.node(node(NODE_1).last(last))
 							);
 						}
@@ -1984,7 +1934,7 @@ class SequencePatternTest {
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, Interval.of(startPos, startPos+4).asArray())
+									.map(NODE_1, Interval.of(startPos, startPos+4))
 									.node(node(NODE_1).last(last))
 							);
 						}
@@ -2045,11 +1995,11 @@ class SequencePatternTest {
 
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1.asArray())
+									.map(NODE_1, matched1)
 									.node(node(NODE_1).last(last1))
 
 									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2.asArray())
+									.map(NODE_2, matched2)
 									.node(node(NODE_2).last(last2))
 							);
 						}
@@ -2123,11 +2073,11 @@ class SequencePatternTest {
 
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1.asArray())
+									.map(NODE_1, matched1)
 									.node(node(NODE_1).last(last1))
 
 									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2.asArray())
+									.map(NODE_2, matched2)
 									.node(node(NODE_2).last(last2))
 							);
 						}
@@ -2231,11 +2181,11 @@ class SequencePatternTest {
 
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X))
-									.map(NODE_1, matched1.asArray())
+									.map(NODE_1, matched1)
 									.node(node(NODE_1).last(last1))
 
 									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_Y))
-									.map(NODE_2, matched2.asArray())
+									.map(NODE_2, matched2)
 									.node(node(NODE_2).last(last2))
 							);
 						}
@@ -2308,7 +2258,7 @@ class SequencePatternTest {
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, Interval.of(startPos, startPos+1).asArray())
+									.map(NODE_1, Interval.of(startPos, startPos+1))
 									.node(node(NODE_1).last(last))
 							);
 						}
@@ -2367,7 +2317,7 @@ class SequencePatternTest {
 								@IntervalArg Interval matched, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, matched.asArray())
+									.map(NODE_1, matched)
 									.node(node(NODE_1).last(last))
 							);
 						}
@@ -2429,11 +2379,11 @@ class SequencePatternTest {
 
 							assertResult(target, setup(), match(startPos, true, 1)
 									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1.asArray())
+									.map(NODE_1, matched1)
 									.node(node(NODE_1).last(last1))
 
 									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2.asArray())
+									.map(NODE_2, matched2)
 									.node(node(NODE_2).last(last2))
 							);
 						}
@@ -2680,7 +2630,7 @@ class SequencePatternTest {
 							match(startPos, false, 0)
 							.cache(cache(CACHE_1, true)
 									.window(visitedA)
-									.hits(hitsA.asArray()))
+									.hits(hitsA))
 							.cache(cache(CACHE_2, true)
 									.window(visitedB))
 					);
@@ -2846,8 +2796,9 @@ class SequencePatternTest {
 			@DisplayName("Single node with no matches")
 			void testSingleNodeFail(String target) {
 				assertResult(target,
-						builder(Utils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X')))).build(),
-						match(false, 0));
+						builder(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+								constraint(eq_exp('X')))).build(),
+						mismatch());
 			}
 
 			@ParameterizedTest(name="{index}: [X] in {0}, hit={1}")
@@ -2861,7 +2812,8 @@ class SequencePatternTest {
 			@DisplayName("Single node at various positions")
 			void testSingleNodeHit(String target, int hit) {
 				assertResult(target,
-						builder(Utils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X')))).build(),
+						builder(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+								constraint(eq_exp('X')))).build(),
 						match(true, 1)
 							.cache(cache(CACHE_1, true)
 									.window(0, target.length()-1)
@@ -2883,7 +2835,9 @@ class SequencePatternTest {
 				@DisplayName("Node at first position")
 				void testIsFirst(String target) {
 					assertResult(target,
-							builder(Utils.node(NO_LABEL, mark("isFirst"), constraint(eq_exp('X')))).build(),
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isFirst"),
+									constraint(eq_exp('X')))).build(),
 							match(true, 1)
 								.cache(cache(CACHE_1, false)
 										.window(target)
@@ -2902,8 +2856,10 @@ class SequencePatternTest {
 				@DisplayName("Node mismatch at first position")
 				void testIsFirstFail(String target) {
 					assertResult(target,
-							builder(Utils.node(NO_LABEL, mark("isFirst"), constraint(eq_exp('X')))).build(),
-							match(false, 0)
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isFirst"),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
 							.cache(cache(CACHE_1, false)
 									.window(target)
 									.set(0))
@@ -2920,7 +2876,9 @@ class SequencePatternTest {
 				void testIsLast(String target) {
 					final int last = target.length()-1;
 					assertResult(target,
-							builder(Utils.node(NO_LABEL, mark("isLast"), constraint(eq_exp('X')))).build(),
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isLast"),
+									constraint(eq_exp('X')))).build(),
 							match(true, 1)
 								.cache(cache(CACHE_1, false)
 										.window(target)
@@ -2940,8 +2898,10 @@ class SequencePatternTest {
 				void testIsLastFail(String target) {
 					final int last = target.length()-1;
 					assertResult(target,
-							builder(Utils.node(NO_LABEL, mark("isLast"), constraint(eq_exp('X')))).build(),
-							match(false, 0)
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isLast"),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
 								.cache(cache(CACHE_1, false)
 										.window(target)
 										.set(last))
@@ -2962,7 +2922,9 @@ class SequencePatternTest {
 					final int last = target.length()-1;
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isAt", _int(pos+1)), constraint(eq_exp('X')))).build(),
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isAt", _int(pos+1)),
+									constraint(eq_exp('X')))).build(),
 							match(true, 1)
 								.cache(cache(CACHE_1, false)
 										.window(0, last)
@@ -2985,8 +2947,10 @@ class SequencePatternTest {
 				void testIsAtFail(String target, int pos) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isAt", _int(pos+1)), constraint(eq_exp('X')))).build(),
-							match(false, 0)
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isAt", _int(pos+1)),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
 								.cache(cache(CACHE_1, false)
 										.window(target)
 										.set(pos))
@@ -3003,13 +2967,15 @@ class SequencePatternTest {
 				void testIsAfter(String target, int arg, @IntervalArg Interval hits) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isAfter", _int(arg)), constraint(eq_exp('X')))).build(),
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isAfter", _int(arg)),
+									constraint(eq_exp('X')))).build(),
 							match(true, hits.size())
 								.cache(cache(CACHE_1, false)
 										.window(0, target.length()-1)
-										.set(hits.asArray())
-										.hits(hits.asArray()))
-								.results(hits.size(), (r, i) -> r.map(NODE_1, hits.indexAt(i)))
+										.set(hits)
+										.hits(hits))
+								.results(NODE_1, hits)
 					);
 				}
 
@@ -3024,11 +2990,13 @@ class SequencePatternTest {
 					final int last = target.length()-1;
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isAfter", _int(arg)), constraint(eq_exp('X')))).build(),
-							match(false, 0)
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isAfter", _int(arg)),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
 								.cache(cache(CACHE_1, false)
 										.window(target)
-										.set(Interval.of(arg, last).asArray()))
+										.set(Interval.of(arg, last)))
 					);
 				}
 
@@ -3042,13 +3010,13 @@ class SequencePatternTest {
 				void testIsBefore(String target, int arg, @IntervalArg Interval hits) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isBefore", _int(arg)), constraint(eq_exp('X')))).build(),
+							builder(IqlTestUtils.node(NO_LABEL, mark("isBefore", _int(arg)), constraint(eq_exp('X')))).build(),
 							match(true, hits.size())
 								.cache(cache(CACHE_1, false)
 										.window(0, target.length()-1)
-										.set(hits.asArray())
-										.hits(hits.asArray()))
-								.results(hits.size(), (r, i) -> r.map(NODE_1, hits.indexAt(i)))
+										.set(hits)
+										.hits(hits))
+								.results(NODE_1, hits)
 					);
 				}
 
@@ -3062,11 +3030,13 @@ class SequencePatternTest {
 				void testIsBeforeFail(String target, int arg) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isBefore", _int(arg)), constraint(eq_exp('X')))).build(),
-							match(false, 0)
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isBefore", _int(arg)),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
 								.cache(cache(CACHE_1, false)
 										.window(target)
-										.set(Interval.of(0, arg-2).asArray()))
+										.set(Interval.of(0, arg-2)))
 					);
 				}
 
@@ -3075,24 +3045,466 @@ class SequencePatternTest {
 					"XX, 1, -, 1",
 					"XXX, 1, -, 1-2",
 					"XXX, 2, 0, 2",
+					"XXX, 3, 0-1, -",
 				})
 				@DisplayName("Node at any but specific position")
 				void testIsNotAt(String target, int arg,
-						@IntervalArg Interval hits1, @IntervalArg Interval hits2) {
-					final int last = target.length()-1;
+						@IntervalArg Interval hits1,   // left section
+						@IntervalArg Interval hits2) { // right section
 					assertResult(target,
 							// Remember that markers use 1-based value space
-							builder(Utils.node(NO_LABEL, mark("isNotAt", _int(arg)), constraint(eq_exp('X')))).build(),
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isNotAt", _int(arg)),
+									constraint(eq_exp('X')))).build(),
 							match(true, hits1.size() + hits2.size())
 								.cache(cache(CACHE_1, false)
 										.window(target)
-										.set(Interval.of(0, arg-2).asArray())
-										.set(Interval.of(arg, last).asArray())
-										.hits(hits1.asArray())
-										.hits(hits2.asArray()))
-								.results(hits1.size(), (r, i) -> r.map(NODE_1, hits1.indexAt(i)))
-								.results(hits2.size(), (r, i) -> r.map(NODE_1, hits2.indexAt(i)))
+										.set(Interval.of(0, arg-2))
+										.set(Interval.of(arg, target.length()-1))
+										.hits(hits1)
+										.hits(hits2))
+								.results(NODE_1, hits1)
+								.results(NODE_1, hits2)
 					);
+				}
+
+				@ParameterizedTest(name="{index}: [isNotAt({1}),X] in {0}, hits1={2}, hits2={3}")
+				@CsvSource({
+					"X-, 1",
+					"X--, 1",
+					"-X-, 2",
+					"--X, 3",
+				})
+				@DisplayName("Node mismatch at any but specific position")
+				void testIsNotAtFail(String target, int arg) {
+					assertResult(target,
+							// Remember that markers use 1-based value space
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isNotAt", _int(arg)),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.set(Interval.of(0, arg-2))
+										.set(Interval.of(arg, target.length()-1)))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isInside({1},{2}),X] in {0}")
+				@CsvSource({
+					"X, 1, 1",
+					"XX, 1, 1",
+					"XX, 1, 2",
+					"XX, 2, 2",
+					"XXX, 1, 1",
+					"XXX, 1, 2",
+					"XXX, 2, 2",
+					"XXX, 2, 3",
+					"XXX, 3, 3",
+					"XXX, 1, 3",
+				})
+				@DisplayName("Node inside specific region [full region match]")
+				void testIsInside(String target, int from, int to) {
+					// Remember that markers use 1-based value space
+					final Interval region = Interval.of(from-1, to-1);
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isInside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							match(true, region.size())
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.set(region)
+										.hits(region))
+								.results(NODE_1, region)
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isInside({1},{2}),X] in {0}")
+				@CsvSource({
+					"X-, 1, 2, 0",
+					"-X, 1, 2, 1",
+					"X-X, 1, 2, 0",
+					"-XX, 1, 2, 1",
+					"XX-, 2, 3, 1",
+					"X-X, 2, 3, 2",
+					"X--, 1, 3, 0",
+					"-X-, 1, 3, 1",
+					"--X, 1, 3, 2",
+				})
+				@DisplayName("Node inside specific region [single node match]")
+				void testIsInsidePartial1(String target, int from, int to, int hit) {
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isInside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							match(true, 1)
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.set(Interval.of(from-1, to-1))
+										.hits(hit))
+								.result(result(0).map(NODE_1, hit))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isInside({1},{2}),X] in {0}")
+				@CsvSource({
+					"X-X, 1, 3, 0, 2",
+					"-XX, 1, 3, 1, 2",
+					"XX-, 1, 3, 0, 1",
+				})
+				@DisplayName("Node inside specific region [dual node match]")
+				void testIsInsidePartial2(String target, int from, int to, int hit1, int hit2) {
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isInside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							match(true, 2)
+								.cache(cache(CACHE_1, true)
+										.window(target)
+										.hits(hit1, hit2))
+								.result(result(0).map(NODE_1, hit1))
+								.result(result(1).map(NODE_1, hit2))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isInside({1},{2}),X] in {0}")
+				@CsvSource({
+					"-, 1, 1",
+					"-X, 1, 1",
+					"--, 1, 2",
+					"X-, 2, 2",
+					"-XX, 1, 1",
+					"--X, 1, 2",
+					"X-X, 2, 2",
+					"X--, 2, 3",
+					"XX-, 3, 3",
+					"---, 1, 3",
+				})
+				@DisplayName("Node mismatch inside specific region")
+				void testIsInsideFail(String target, int from, int to) {
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isInside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.set(Interval.of(from-1, to-1)))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isOutside({1},{2}),X] in {0}")
+				@CsvSource({
+					"XX, 1, 1, -, 1",
+					"XX, 2, 2, 0, -",
+					"XXX, 1, 1, -, 1-2",
+					"XXX, 1, 2, -, 2",
+					"XXX, 2, 2, 0, 2",
+					"XXX, 2, 3, 0, -",
+					"XXX, 3, 3, 0-1, -",
+				})
+				@DisplayName("Node outside specific region [full region match]")
+				void testIsOutside(String target, int from, int to,
+						@IntervalArg Interval hits1,   // left area
+						@IntervalArg Interval hits2) { // right area
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isOutside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							match(true, hits1.size() + hits2.size())
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.setForWindow()
+										.unset(Interval.of(from-1, to-1))
+										.hits(hits1)
+										.hits(hits2))
+								.results(NODE_1, hits1)
+								.results(NODE_1, hits2)
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isOutside({1},{2}),X] in {0}")
+				@CsvSource({
+					"XX--, 1, 1, 1",
+					"X-X-, 1, 1, 2",
+					"X--X, 1, 1, 3",
+
+					"XXX-, 1, 2, 2",
+					"XX-X, 1, 2, 3",
+
+					"XX--, 2, 2, 0",
+					"-XX-, 2, 2, 2",
+					"-X-X, 2, 2, 3",
+
+					"XXX-, 2, 3, 0",
+					"-XXX, 2, 3, 3",
+
+					"X-X-, 3, 3, 0",
+					"-XX-, 3, 3, 1",
+					"--XX, 3, 3, 3",
+
+					"X-XX, 3, 4, 0",
+					"-XXX, 3, 4, 1",
+
+					"X--X, 4, 4, 0",
+					"-X-X, 4, 4, 1",
+					"--XX, 4, 4, 2",
+				})
+				@DisplayName("Node outside specific region [single node match]")
+				void testIsOutsidePartial1(String target, int from, int to, int hit) {
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isOutside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							match(true, 1)
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.setForWindow()
+										.unset(Interval.of(from-1, to-1))
+										.hits(hit))
+								.result(result(0).map(NODE_1, hit))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isOutside({1},{2}),X] in {0}")
+				@CsvSource({
+					"XX-X, 1, 1, 1, 3",
+					"X-XX, 1, 1, 2, 3",
+					"XXX-, 1, 1, 1, 2",
+
+					"XXX-, 2, 2, 0, 2",
+					"XX-X, 2, 2, 0, 3",
+					"-XXX, 2, 2, 2, 3",
+
+					"XXX-, 3, 3, 0, 1",
+					"X-XX, 3, 3, 0, 3",
+					"-XXX, 3, 3, 1, 3",
+
+					"XX-X, 4, 4, 0, 1",
+					"X-XX, 4, 4, 0, 2",
+					"-XXX, 4, 4, 1, 2",
+
+					"XXXX-, 1, 2, 2, 3",
+					"XXX-X, 1, 2, 2, 4",
+					"XX-XX, 1, 2, 3, 4",
+
+					"XXXX-, 2, 3, 0, 3",
+					"XXX-X, 2, 3, 0, 4",
+					"-XXXX, 2, 3, 3, 4",
+
+					"XXXX-, 3, 4, 0, 1",
+					"X-XXX, 3, 4, 0, 4",
+					"-XXXX, 3, 4, 1, 4",
+
+					"XX-XX, 4, 5, 0, 1",
+					"X-XXX, 4, 5, 0, 2",
+					"-XXXX, 4, 5, 1, 2",
+				})
+				@DisplayName("Node outside specific region [dual node match]")
+				void testIsOutsidePartial2(String target, int from, int to, int hit1, int hit2) {
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isOutside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							match(true, 2)
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.setForWindow()
+										.unset(Interval.of(from-1, to-1))
+										.hits(hit1, hit2))
+								.results(NODE_1, hit1, hit2)
+					);
+				}
+
+				@ParameterizedTest(name="{index}: [isOutside({1},{2}),X] in {0}")
+				@CsvSource({
+					"X-, 1, 1",
+					"-X, 2, 2",
+
+					"X--, 1, 1",
+					"XX-, 1, 2",
+					"-X-, 2, 2",
+					"-XX, 2, 3",
+					"--X, 3, 3",
+				})
+				@DisplayName("Node mismatch outside specific region")
+				void testIsOutsideFail(String target, int from, int to) {
+					// Remember that markers use 1-based value space
+					assertResult(target,
+							builder(IqlTestUtils.node(NO_LABEL,
+									mark("isOutside", _int(from), _int(to)),
+									constraint(eq_exp('X')))).build(),
+							mismatch()
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.setForWindow()
+										.unset(Interval.of(from-1, to-1)))
+					);
+				}
+			}
+
+			@Nested
+			class WithQuantifier {
+
+				@ParameterizedTest(name="{index}: ![X] in {0}")
+				@CsvSource({
+					"-",
+					"Y",
+					"--",
+					"-Y-",
+				})
+				@DisplayName("Negated node")
+				void testNegated(String target) {
+					assertResult(target,
+							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+									constraint(eq_exp('X'))),
+									negated()
+									)).build(),
+							match(true, 1)
+								// Underlying cache of atom node
+								.cache(cache(CACHE_1, true)
+										.window(target))
+								// Cache of the negated search
+								.cache(cache(CACHE_2, true)
+										.window(target)
+										.hitsForWindow())
+					);
+				}
+
+				@ParameterizedTest(name="{index}: ![X] in {0}")
+				@CsvSource({
+					"X, 0",
+					"-X, 1",
+					"X-, 0",
+					"-X-, 1",
+					"--X, 2",
+				})
+				@DisplayName("Mismatch of negated node")
+				void testNegatedFail(String target, int hit) {
+					final Interval visited = Interval.of(0, hit);
+					assertResult(target,
+							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+									constraint(eq_exp('X'))),
+									negated()
+									)).build(),
+							mismatch()
+								// Underlying cache of atom node
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.set(visited)
+										.hits(hit))
+								// Cache of the negated search
+								.cache(cache(CACHE_2, false)
+										.window(target)
+										.set(visited)
+										.hits(Interval.of(0, hit-1)))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: *[X] in {0}")
+				@CsvSource({
+					"X",
+					"XX",
+					"XXX",
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+				})
+				@DisplayName("Universally quantified node")
+				void testUniversallyQuantified(String target) {
+					assertResult(target,
+							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+									constraint(eq_exp('X'))),
+									all()
+									)).build(),
+							match(true, 1)
+								// Underlying cache of atom node
+								.cache(cache(CACHE_1, true)
+										.window(target)
+										.hitsForWindow())
+					);
+				}
+
+				@ParameterizedTest(name="{index}: *[X] in {0}")
+				@CsvSource({
+					"Y, 0",
+					"YX, 0",
+					"XY, 1",
+					"XYX, 1",
+					"XXXXXXXXXXXXXX-XXXXXXXXXXXXXX, 14",
+				})
+				@DisplayName("Mismatch of universally quantified node")
+				void testUniversallyQuantifiedFail(String target, int gap) {
+					assertResult(target,
+							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+									constraint(eq_exp('X'))),
+									all()
+									)).build(),
+							mismatch()
+								// Underlying cache of atom node
+								.cache(cache(CACHE_1, true)
+										.window(Interval.of(0, gap))
+										.hits(Interval.of(0, gap-1)))
+					);
+				}
+
+				@ParameterizedTest(name="{index}: <{1}>[X] in {0}")
+				@CsvSource({
+					"X, 1, 0, 0",
+					"X-, 1, 0, 0-1",
+					"-X, 1, 1, 0-1",
+					"-X-, 1, 1, 0-2",
+					"--X, 1, 2, 0-2",
+
+					"XX, 2, 0, 0-1",
+					"XX-, 2, 0, 0-2",
+					"-XX, 2, 1, 0-2",
+					"-XX-, 2, 1, 0-3",
+					"--XX, 2, 2, 0-3",
+					"XX--, 2, 0, 0-2",
+
+					"--XXXXXXXXXX--, 10, 2, 0-12",
+				})
+				@DisplayName("Node with exact multiplicity")
+				void testExact(String target, int count, int hit, @IntervalArg Interval visited) {
+					// 'Repetition' node sets minSize so that scan can abort early
+					assertResult(target,
+							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+									constraint(eq_exp('X'))),
+									exact(count)
+									)).build(),
+							match(true, 1)
+								// Underlying cache of atom node
+								.cache(cache(CACHE_1, false)
+										.window(target)
+										.set(visited)
+										.hits(Interval.of(hit, hit+count-1)))
+					);
+				}
+
+				@Nested
+				class Explicit {
+
+				}
+
+				@Nested
+				class AtLeast {
+
+				}
+
+				@Nested
+				class AtMost {
+
+				}
+
+				@Nested
+				class Ranged {
+
 				}
 			}
 		}
@@ -3100,68 +3512,237 @@ class SequencePatternTest {
 		@Nested
 		class ForIqlSequence {
 
-			@ParameterizedTest(name="{index}: [X][Y] in {0}")
-			@CsvSource({
-				"-",
-				"--",
+			@DisplayName("no specified node arrangement")
+			@Nested
+			class WhenUnordered {
 
-				"--X",
-				"X--",
-				"-X-",
+				@ParameterizedTest(name="{index}: [X][Y] in {0}")
+				@CsvSource({
+					"-",
+					"--",
 
-				"--Y",
-				"Y--",
-				"-Y-",
+					"--X",
+					"X--",
+					"-X-",
 
-				"-YX",
-				"Y-X",
-				"YX-",
-			})
-			@DisplayName("Two nodes with no matches")
-			void testDualNodeFail(String target) {
-				assertResult(target,
-						builder(Utils.sequence(
-								Utils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
-								Utils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
-								).build(),
-						match(false, 0));
+					"--Y",
+					"Y--",
+					"-Y-",
+
+					"-YX",
+					"Y-X",
+					"YX-",
+				})
+				@DisplayName("Two nodes with no matches")
+				void testDualNodeFail(String target) {
+					assertResult(target,
+							builder(sequence(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							mismatch());
+				}
+
+				@ParameterizedTest(name="{index}: [X][Y] in {0}, hitX={1}, hitY={2}")
+				@CsvSource({
+					"XY,  0, 1",
+					"X-Y,  0, 2",
+					"-XY,  1, 2",
+					"-X-Y, 1, 3",
+					"--XY, 2, 3",
+					"-XY-, 1, 2",
+					"XY--, 0, 1",
+					"X--Y, 0, 3",
+				})
+				@DisplayName("Two nodes at various positions")
+				void testDualNodeHits(String target, int hitX, int hitY) {
+					assertResult(target,
+							builder(sequence(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							match(true, 1)
+								//  remember that our state machine is built back to front
+								.cache(cache(CACHE_1, true)
+										.window(hitX+1, target.length()-1)
+										.hits(hitY))
+								.cache(cache(CACHE_3, true)
+										.window(0, target.length()-2)
+										.hits(hitX))
+								.result(result(0)
+										.map(NODE_2, hitX)
+										.map(NODE_1, hitY))
+					);
+				}
+
 			}
 
-			@ParameterizedTest(name="{index}: [X][Y] in {0}, hitX={1}, hitY={2}")
-			@CsvSource({
-				"XY,  0, 1",
-				"X-Y,  0, 2",
-				"-XY,  1, 2",
-				"-X-Y, 1, 3",
-				"--XY, 2, 3",
-				"-XY-, 1, 2",
-				"XY--, 0, 1",
-				"X--Y, 0, 3",
-			})
-			@DisplayName("Two nodes at various positions")
-			void testDualNodeHits(String target, int hitX, int hitY) {
-				assertResult(target,
-						builder(Utils.sequence(
-								Utils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
-								Utils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
-								).build(),
-						match(true, 1)
-							//  remember that our state machine is built back to front
-							.cache(cache(CACHE_1, true)
-									.window(hitX+1, target.length()-1)
-									.hits(hitY))
-							.cache(cache(CACHE_3, true)
-									.window(0, target.length()-2)
-									.hits(hitX))
-							.result(result(0)
-									.map(NODE_2, hitX)
-									.map(NODE_1, hitY))
-				);
+			@DisplayName("node arrangement ORDERED")
+			@Nested
+			class WhenOrdered {
+
+				@ParameterizedTest(name="{index}: ORDERED [X][Y] in {0}")
+				@CsvSource({
+					"-",
+					"--",
+
+					"--X",
+					"X--",
+					"-X-",
+
+					"--Y",
+					"Y--",
+					"-Y-",
+
+					"-YX",
+					"Y-X",
+					"YX-",
+				})
+				@DisplayName("Two nodes with no matches")
+				void testDualNodeFail(String target) {
+					assertResult(target,
+							builder(ordered(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							mismatch());
+				}
+
+				@ParameterizedTest(name="{index}: ORDERED [X][Y] in {0}, hitX={1}, hitY={2}")
+				@CsvSource({
+					"XY,  0, 1",
+					"X-Y,  0, 2",
+					"-XY,  1, 2",
+					"-X-Y, 1, 3",
+					"--XY, 2, 3",
+					"-XY-, 1, 2",
+					"XY--, 0, 1",
+					"X--Y, 0, 3",
+				})
+				@DisplayName("Two nodes at various positions")
+				void testDualNodeHits(String target, int hitX, int hitY) {
+					assertResult(target,
+							builder(ordered(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							match(true, 1)
+								//  remember that our state machine is built back to front
+								.cache(cache(CACHE_1, true)
+										.window(hitX+1, target.length()-1)
+										.hits(hitY))
+								.cache(cache(CACHE_3, true)
+										.window(0, target.length()-2)
+										.hits(hitX))
+								.result(result(0)
+										.map(NODE_2, hitX)
+										.map(NODE_1, hitY))
+					);
+				}
+
+			}
+
+			@DisplayName("node arrangement ADJACENT")
+			@Nested
+			class WhenAdjacent {
+
+				@ParameterizedTest(name="{index}: ADJACENT [X][Y] in {0}")
+				@CsvSource({
+					"-",
+					"--",
+					"X-",
+					"Y-",
+
+					"--X",
+					"X--",
+					"X-Y",
+					"-X-",
+
+					"--Y",
+					"Y--",
+					"-Y-",
+
+					"-YX",
+					"Y-X",
+					"YX-",
+				})
+				@DisplayName("Two nodes with no matches")
+				void testDualNodeFail(String target) {
+					assertResult(target,
+							builder(adjacent(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							mismatch());
+				}
+
+				@ParameterizedTest(name="{index}: ADJACENT [X][Y] in {0}, hitX={1}, hitY={2}")
+				@CsvSource({
+					"XY,  0, 1",
+					"-XY,  1, 2",
+					"--XY, 2, 3",
+					"-XY-, 1, 2",
+					"XY--, 0, 1",
+				})
+				@DisplayName("Two nodes at various positions")
+				void testDualNodeHits(String target, int hitX, int hitY) {
+					assertResult(target,
+							builder(adjacent(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							match(true, 1)
+								//  remember that our state machine is built back to front
+								.cache(cache(CACHE_1, true)
+										.window(hitX+1)
+										.hits(hitY))
+								.cache(cache(CACHE_2, true)
+										.window(0, target.length()-2)
+										.hits(hitX))
+								.result(result(0)
+										.map(NODE_2, hitX)
+										.map(NODE_1, hitY))
+					);
+				}
 			}
 		}
 
 		@Nested
 		class ForIqlGrouping {
+
+			@Nested
+			class WithQuantifier {
+
+				@Nested
+				class Negated {
+
+				}
+
+				@Nested
+				class All {
+
+				}
+
+				@Nested
+				class Explicit {
+
+				}
+
+				@Nested
+				class AtLeast {
+
+				}
+
+				@Nested
+				class AtMost {
+
+				}
+
+				@Nested
+				class Ranged {
+
+				}
+			}
 
 		}
 

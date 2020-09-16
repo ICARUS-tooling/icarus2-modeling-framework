@@ -71,7 +71,7 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
@@ -319,7 +319,7 @@ public class SequencePattern {
 
 			switch (source.getType()) {
 			case GROUPING: node = grouping((IqlGrouping) source); break;
-			case SEQUENCE: node = sequence((IqlSequence) source); break;
+			case SET: node = sequence((IqlSet) source); break;
 			case NODE: node = node((IqlNode) source); break;
 			case DISJUNCTION: node = disjunction((IqlElementDisjunction) source); break;
 
@@ -347,6 +347,14 @@ public class SequencePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 
+			/*
+			 * We don't handle markers immediately at the node position they
+			 * appear, but on the first enclosing  explorative node, which
+			 * currently is only the Scan node. This way the state machine
+			 * can properly and early reduce the search space for exploration.
+			 * This also allows us to treat markers on multiple (nested) nodes
+			 * in an ADJACENT sequence as erroneous.
+			 */
 			if(marker!=null) {
 				if(pendingMarker!=null)
 					throw new QueryException(QueryErrorCode.INCORRECT_USE,
@@ -358,15 +366,6 @@ public class SequencePattern {
 				pushTail(border(false, pendingBorder));
 				pendingMarker = marker;
 			}
-
-
-			// If we need to add a marker construct, ensure a restore point after the node
-//			int pendingBorder = UNSET_INT;
-//			if(marker!=null) {
-//				pendingBorder = border();
-//				pushTail(border(false, pendingBorder));
-//				pendingMarker = marker;
-//			}
 
 			// Process actual node content as detached atom
 			final Node oldTail = detachTail();
@@ -391,19 +390,8 @@ public class SequencePattern {
 			// Restore old tail after atom
 			attachTail(oldTail);
 
-//			offset++;
-
 			// Handle quantifiers
-			Node node = quantify(atom, quantifiers);
-
-
-			// Handle markers
-//			if(marker!=null) {
-//				marker(marker);
-//				node = pushTail(border(true, pendingBorder));
-//			}
-
-			return node;
+			return quantify(atom, quantifiers);
 		}
 
 		/** Process (quantified) node group and link to active sequence */
@@ -420,7 +408,7 @@ public class SequencePattern {
 		}
 
 		/** Process (ordered or adjacent) node sequence and link to active sequence */
-		private Node sequence(IqlSequence source) {
+		private Node sequence(IqlSet source) {
 			final List<IqlElement> elements = source.getElements();
 			if(source.getArrangement()==NodeArrangement.ADJACENT) {
 				return adjacentGroup(elements);
@@ -734,6 +722,10 @@ public class SequencePattern {
 			return store(new Negation(id(), cache(), atom));
 		}
 
+		private All all(Node atom) {
+			return store(new All(id(), atom));
+		}
+
 		private Node branch(int count, IntFunction<Node> atomGen) {
 			List<Node> atoms = new ArrayList<>();
 			BranchConn conn = branchStart();
@@ -809,14 +801,16 @@ public class SequencePattern {
 			Node node;
 			if(quantifier.isExistentiallyNegated()) {
 				node = negate(atom);
+			} else if(quantifier.isUniversallyQuantified()) {
+				node = all(atom);
 			} else {
 				int min = 1;
 				int max = Integer.MAX_VALUE;
 				int mode = GREEDY;
 				switch (quantifier.getQuantifierType()) {
 				case ALL: { // *
-					mode = POSSESSIVE;
-				} break;
+					throw EvaluationUtils.forInternalError("Universal quantification not handled here");
+				}
 				case EXACT: { // n
 					min = max = quantifier.getValue().getAsInt();
 					mode = GREEDY;
@@ -871,7 +865,7 @@ public class SequencePattern {
 			replaceTail(root);
 
 			// Prepare top-level scan if needed
-			if(!(root instanceof Scan)) {
+			if(!root.isScanCapable()) {
 				explore(modifier!=QueryModifier.LAST, false);
 			}
 
@@ -1500,6 +1494,8 @@ public class SequencePattern {
 		public String toString() {
 			return ToStringBuilder.create(this).build();
 		}
+
+		boolean isScanCapable() { return false; }
 	}
 
 	static final int GREEDY = QuantifierModifier.GREEDY.ordinal();
@@ -1576,7 +1572,8 @@ public class SequencePattern {
 		boolean study(TreeInfo info) {
 			next.study(info);
 			minSize = info.minSize;
-			checkState("Minimum size of sequence must be greater than or equal 1", minSize>0);
+			// A nested negation allows for effective zero-width query!
+//			checkState("Minimum size of sequence must be greater than or equal 1", minSize>0);
 			return info.deterministic;
 		}
 
@@ -1810,6 +1807,9 @@ public class SequencePattern {
 		}
 
 		@Override
+		boolean isScanCapable() { return true; }
+
+		@Override
 		boolean match(State state, int pos) {
 			if(minSize==0) {
 				return matchFull(state, pos);
@@ -1831,7 +1831,7 @@ public class SequencePattern {
 					matched = cache.getValue(i);
 				} else {
 					// Previously unseen index, so explore and cache result
-					matched = !atom.match(state, pos);
+					matched = !atom.match(state, i);
 					cache.setValue(i, matched);
 				}
 
@@ -1905,6 +1905,47 @@ public class SequencePattern {
 					.add("minSize", minSize)
 					.add("atomMinSize", atomMinSize)
 					.add("cacheId", cacheId)
+					.add("atom", atom)
+					.build();
+		}
+	}
+
+	/** Special scan that implements universal quantification. */
+	static final class All extends ProperNode {
+		final Node atom;
+
+		public All(int id, Node atom) {
+			super(id);
+			this.atom = requireNonNull(atom);
+		}
+
+		@Override
+		boolean isScanCapable() { return true; }
+
+		@Override
+		boolean match(State state, int pos) {
+			//TODO ensure that we actually started at pos==0 ?
+			final int last = state.size-1;
+			for (int i = pos; i <= last; i++) {
+				if(!atom.match(state, i)) {
+					return false;
+				}
+			}
+			return next.match(state, last);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			//TODO implement a flag in TreeInfo to pass down info to atom nodes that no result mapping is desired
+			info.deterministic = false;
+			atom.study(info);
+			return false;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
 					.add("atom", atom)
 					.build();
 		}
@@ -2004,6 +2045,9 @@ public class SequencePattern {
 			this.cacheId = cacheId;
 			this.forward = forward;
 		}
+
+		@Override
+		boolean isScanCapable() { return true; }
 
 		@Override
 		public String toString() {
@@ -2127,7 +2171,7 @@ public class SequencePattern {
 			next.study(info);
 			minSize = info.minSize-minSize0;
 
-			checkState("Minimum size of nested atom must be greater than or equal 1", minSize>0);
+			checkState("Minimum size of scan target must be greater than or equal 1", minSize>0);
 
 			info.deterministic = false;
 			info.skip = true;
@@ -2139,10 +2183,13 @@ public class SequencePattern {
 
 	/**
      * Guard node at the end of each branch to block the {@link #study(TreeInfo)}
-     * chain but forward the {@link #match(State, int)} call to 'next'.
+     * chain but forward the {@link #match(State, int)} call to 'next'. This implementation
+     * will only forward part of the {@link #study(TreeInfo)} call at most <b>once</b>
+     * in order to gather information it needs to pass onto preceding nodes.
      */
     static final class BranchConn extends Node {
-    	boolean skip;
+    	boolean skip = false;
+    	boolean skipSet = false;
         BranchConn() { /* no-op */ }
         @Override
 		boolean match(State state, int pos) {
@@ -2150,6 +2197,13 @@ public class SequencePattern {
         }
         @Override
 		boolean study(TreeInfo info) {
+        	// Check once if we need to pass the 'skip' flag up the hierarchy
+        	if(!skipSet) {
+        		TreeInfo sentinel = new TreeInfo();
+        		next.study(sentinel);
+        		skip = sentinel.skip;
+        		skipSet = true;
+        	}
         	info.skip = skip;
             return info.deterministic;
         }
@@ -2200,10 +2254,6 @@ public class SequencePattern {
 		@Override
 		boolean study(TreeInfo info) {
 			TreeInfo tmp = info.clone();
-
-			TreeInfo sentinel = new TreeInfo();
-			conn.next.study(sentinel);
-			conn.skip = sentinel.skip;
 
 			info.reset();
 			int minL2 = Integer.MAX_VALUE; // we only operate in int space here anyway

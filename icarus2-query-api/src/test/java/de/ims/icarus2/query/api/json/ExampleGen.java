@@ -26,7 +26,7 @@ import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
@@ -89,7 +89,7 @@ public class ExampleGen {
 		gen.assignId(lane);
 		lane.setName("syntax");
 		lane.setLaneType(LaneType.SEQUENCE);
-		IqlSequence nodeSet = new IqlSequence();
+		IqlSet nodeSet = new IqlSet();
 		gen.assignId(nodeSet);
 		nodeSet.setArrangement(NodeArrangement.ADJACENT);
 		IqlNode node1 = new IqlNode();
