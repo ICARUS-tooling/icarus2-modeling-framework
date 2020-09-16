@@ -184,7 +184,7 @@ structuralConstraint
  */
 nodeStatement
 	: quantifier? LBRACE nodeStatement+ RBRACE					#elementGrouping
-	| nodeArrangement nodeStatement+							#elementArrangement
+	| nodeArrangement nodeStatement+							#elementSet
 	| node														#singleNode
 	| element (COMMA element)*									#graphFragment	
 	| <assoc=right> left=nodeStatement or right=nodeStatement	#elementDisjunction

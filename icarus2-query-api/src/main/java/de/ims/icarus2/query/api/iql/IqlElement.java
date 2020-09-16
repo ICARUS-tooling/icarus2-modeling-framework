@@ -78,25 +78,27 @@ public abstract class IqlElement extends IqlUnique {
 	}
 
 	private static boolean isExistentiallyQuantified0(List<IqlQuantifier> quantifiers) {
-		if(quantifiers.isEmpty()) {
-			return true;
-		}
-		for(IqlQuantifier quantifier : quantifiers) {
-			if(quantifier.isExistentiallyQuantified()) {
-				return true;
-			}
-		}
-		return false;
+		return quantifiers
+				.stream()
+				.filter(IqlQuantifier::isExistentiallyQuantified)
+				.findAny()
+				.isPresent();
 	}
 
 	private static boolean isUniversallyQuantified0(List<IqlQuantifier> quantifiers) {
-		return quantifiers.size()==1
-				&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
+		return quantifiers
+				.stream()
+				.filter(IqlQuantifier::isUniversallyQuantified)
+				.findAny()
+				.isPresent();
 	}
 
 	private static boolean isExistentiallyNegated0(List<IqlQuantifier> quantifiers) {
-		return quantifiers.size()==1
-				&& quantifiers.get(0).isExistentiallyNegated();
+		return quantifiers
+				.stream()
+				.filter(IqlQuantifier::isExistentiallyNegated)
+				.findAny()
+				.isPresent();
 	}
 
 	/**
@@ -212,7 +214,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class IqlSequence extends IqlElement {
+	public static class IqlSet extends IqlElement {
 
 		@JsonProperty(IqlProperties.ELEMENTS)
 		@JsonInclude(Include.NON_EMPTY)
@@ -223,7 +225,7 @@ public abstract class IqlElement extends IqlUnique {
 		private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
 
 		@Override
-		public IqlType getType() { return IqlType.SEQUENCE; }
+		public IqlType getType() { return IqlType.SET; }
 
 		@Override
 		public void checkIntegrity() {
@@ -249,7 +251,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * Adds the ability of nesting to {@link IqlNode}.
 	 *
 	 * Implementation note: we use {@link IqlElement} as child type so that
-	 * {@link IqlElementDisjunction} and {@link IqlSequence} are also allowed.
+	 * {@link IqlElementDisjunction} and {@link IqlSet} are also allowed.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -258,7 +260,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		/**
 		 * Children of this tree node, can either be a single (tree)node,
-		 * an IqlSequence or an IqlElementDisjunction.
+		 * an IqlSet or an IqlElementDisjunction.
 		 */
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_ABSENT)
@@ -393,7 +395,7 @@ public abstract class IqlElement extends IqlUnique {
 //	public enum IqlElementType {
 //		GROUPING,
 //		NODE,
-//		SEQUENCE,
+//		SET,
 //		TREE_NODE,
 //		EDGE,
 //		DISJUNCTION,

@@ -60,7 +60,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -89,10 +89,10 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementArrangementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementDisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementGroupingContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementSetContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EmptyEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.FilledEdgeContext;
@@ -628,7 +628,7 @@ public class QueryProcessor {
 			}
 
 			// More than one node -> wrap into a proper sequence
-			IqlSequence structure = new IqlSequence();
+			IqlSet structure = new IqlSet();
 			genId(structure);
 
 			tree.enter(structure, false);
@@ -645,8 +645,8 @@ public class QueryProcessor {
 
 			if(ctx instanceof ElementGroupingContext) {
 				return processElementGrouping((ElementGroupingContext) ctx, tree);
-			} else if(ctx instanceof ElementArrangementContext) {
-				return processElementArrangement((ElementArrangementContext) ctx, tree);
+			} else if(ctx instanceof ElementSetContext) {
+				return processElementSet((ElementSetContext) ctx, tree);
 			} else if (ctx instanceof SingleNodeContext) {
 				return processNode(((SingleNodeContext)ctx).node(), tree);
 			} else if (ctx instanceof GraphFragmentContext) {
@@ -686,8 +686,8 @@ public class QueryProcessor {
 			return grouping;
 		}
 
-		private IqlSequence processElementArrangement(ElementArrangementContext ctx, TreeInfo tree) {
-			IqlSequence nodeSet = new IqlSequence();
+		private IqlSet processElementSet(ElementSetContext ctx, TreeInfo tree) {
+			IqlSet nodeSet = new IqlSet();
 			genId(nodeSet);
 
 			if(ctx.nodeArrangement()!=null) {
@@ -711,8 +711,8 @@ public class QueryProcessor {
 			return nodeSet;
 		}
 
-		private IqlSequence processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
-			IqlSequence elements = new IqlSequence();
+		private IqlSet processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
+			IqlSet elements = new IqlSet();
 			genId(elements);
 
 			tree.enter(elements, false);

@@ -57,7 +57,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -189,7 +189,7 @@ public class IqlQueryGenerator {
 		case MARKER_CALL: prepareMarkerCall((IqlMarkerCall) element, build, config); break;
 		case MARKER_EXPRESSION: prepareMarkerExpression((IqlMarkerExpression) element, build, config); break;
 		case NODE: prepareNode((IqlNode) element, build, config); break;
-		case SEQUENCE: prepareSequence((IqlSequence) element, build, config); break;
+		case SET: prepareSequence((IqlSet) element, build, config); break;
 		case PAYLOAD: preparePayload((IqlPayload) element, build, config); break;
 		case PREDICATE: preparePredicate((IqlPredicate) element, build, config); break;
 		case PROPERTY: prepareProperty((IqlProperty) element, build, config); break;
@@ -364,10 +364,11 @@ public class IqlQueryGenerator {
 		}
 	}
 
-	private void prepareSequence(IqlSequence sequence, IncrementalBuild<?> build, Config config) {
+	private void prepareSequence(IqlSet sequence, IncrementalBuild<?> build, Config config) {
 		prepareElement0(sequence, build, config);
 
 		// mandatory data
+		sequence.addElement(generateFull(IqlType.NODE, config));
 		sequence.addElement(generateFull(IqlType.NODE, config));
 
 		for(NodeArrangement nodeArrangement : NodeArrangement.values()) {
@@ -410,7 +411,7 @@ public class IqlQueryGenerator {
 		prepareElement0(dis, build, config);
 
 		for (int i = 0; i < 3; i++) {
-			dis.addAlternative((IqlSequence)generateFull(IqlType.SEQUENCE, config));
+			dis.addAlternative((IqlSet)generateFull(IqlType.SET, config));
 		}
 	}
 
@@ -418,17 +419,14 @@ public class IqlQueryGenerator {
 		prepareElement0(wrapper, build, config);
 
 		if(config.tryNested(IqlType.GROUPING)) {
-			// Must have at least 1 node
+			// Must have at least 2 nodes
+			wrapper.addElement(generateFull(IqlType.NODE, config));
 			wrapper.addElement(generateFull(IqlType.NODE, config));
 
 			for (int i = 0; i < config.getCount(IqlType.NODE, DEFAULT_COUNT-1); i++) {
 				build.addNestedChange(IqlProperties.NODES, IqlType.NODE, config, wrapper, wrapper::addElement);
 			}
 			config.endNested(IqlType.GROUPING);
-		}
-
-		for (int i = 0; i < config.getCount(IqlType.QUANTIFIER, DEFAULT_COUNT); i++) {
-			build.addNestedChange(IqlProperties.QUANTIFIERS, IqlType.QUANTIFIER, config, wrapper, wrapper::addQuantifier);
 		}
 	}
 
@@ -482,7 +480,7 @@ public class IqlQueryGenerator {
 
 		// mandatory data
 		lane.setLaneType(LaneType.SEQUENCE);
-		lane.setElements(generateFull(IqlType.SEQUENCE, config));
+		lane.setElements(generateFull(IqlType.SET, config));
 
 		for(LaneType laneType : LaneType.values()) {
 			build.addEnumFieldChange(lane::setLaneType, IqlProperties.LANE_TYPE, laneType);

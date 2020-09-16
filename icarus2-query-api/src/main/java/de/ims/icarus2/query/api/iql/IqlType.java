@@ -53,7 +53,7 @@ public enum IqlType {
 	QUANTIFIER("Quantifier", null, IqlQuantifier.class),
 	EDGE("Edge", "edge", IqlElement.IqlEdge.class),
 	NODE("Node", "node", IqlElement.IqlNode.class),
-	SEQUENCE("Sequence", "sequence", IqlElement.IqlSequence.class),
+	SET("Set", "set", IqlElement.IqlSet.class),
 	GROUPING("Grouping", "grouping", IqlElement.IqlGrouping.class),
 	TREE_NODE("TreeNode", "tree", IqlElement.IqlTreeNode.class),
 	DISJUNCTION("Disjunction", "choice", IqlElement.IqlElementDisjunction.class),

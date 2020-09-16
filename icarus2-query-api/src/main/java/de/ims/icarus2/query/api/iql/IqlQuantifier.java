@@ -161,6 +161,10 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		return quantifierType==QuantifierType.EXACT && value.getAsInt()==0;
 	}
 
+	public boolean isUniversallyQuantified() {
+		return quantifierType==QuantifierType.ALL;
+	}
+
 	public enum QuantifierType {
 		ALL("all"),
 		EXACT("exact"),

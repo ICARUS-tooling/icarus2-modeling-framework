@@ -55,7 +55,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -513,8 +513,8 @@ class QueryProcessorTest {
 		private final Consumer<IqlElement> sequence(NodeArrangement arrangement,
 				Consumer<IqlElement>...asserters) {
 			return element -> {
-				assertThat(element).isInstanceOf(IqlSequence.class);
-				IqlSequence set = (IqlSequence)element;
+				assertThat(element).isInstanceOf(IqlSet.class);
+				IqlSet set = (IqlSet)element;
 				assertThat(set.getArrangement()).isSameAs(arrangement);
 				List<IqlElement> items = set.getElements();
 				assertThat(items).hasSize(asserters.length);
