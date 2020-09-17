@@ -68,7 +68,7 @@ public class IqlTestUtils {
 		return grouping;
 	}
 
-	public static IqlSet sequence(IqlElement...elements) {
+	public static IqlSet unordered(IqlElement...elements) {
 		IqlSet sequence = new IqlSet();
 		setId(sequence);
 		Stream.of(elements).forEach(sequence::addElement);
@@ -76,13 +76,13 @@ public class IqlTestUtils {
 	}
 
 	public static IqlSet adjacent(IqlElement...elements) {
-		IqlSet sequence = sequence(elements);
+		IqlSet sequence = unordered(elements);
 		sequence.setArrangement(NodeArrangement.ADJACENT);
 		return sequence;
 	}
 
 	public static IqlSet ordered(IqlElement...elements) {
-		IqlSet sequence = sequence(elements);
+		IqlSet sequence = unordered(elements);
 		sequence.setArrangement(NodeArrangement.ORDERED);
 		return sequence;
 	}
@@ -97,6 +97,11 @@ public class IqlTestUtils {
 	}
 
 	public static String eq_exp(char c) { return "$.toString()==\""+c+"\""; }
+	public static String ic_exp(char c) {
+		char c_l = Character.toLowerCase(c);
+		char c_u = Character.toUpperCase(c);
+		return or(eq_exp(c_l), eq_exp(c_u));
+	}
 
 	public static String and(String...items) { return "(" + String.join(" && ", items) + ")"; }
 

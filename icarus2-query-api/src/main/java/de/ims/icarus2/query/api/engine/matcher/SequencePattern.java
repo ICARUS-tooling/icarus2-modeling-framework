@@ -178,6 +178,12 @@ public class SequencePattern {
 		return new SequenceMatcher(setup, id);
 	}
 
+	@VisibleForTesting
+	NonResettingMatcher matcherForTesting() {
+		int id = matcherIdGen.getAndIncrement();
+		return new NonResettingMatcher(setup, id);
+	}
+
 	private static final int INITIAL_SIZE = 1<<10;
 
 	/**
@@ -753,12 +759,19 @@ public class SequencePattern {
 			return store(new Repetition(id(), atom, cmin, cmax, mode, buffer(), buffer()));
 		}
 
+		private static boolean needsCacheForScan(Node content) {
+			return !(content instanceof Single);
+		}
+
 		/** Sequential scanning of ordered elements */
 		private Node looseGroup(List<IqlElement> elements) {
 			Node head = null;
 			for(int i=elements.size()-1; i>=0; i--) {
 				head = process(elements.get(i));
-				head = explore(true, true);
+				if(!head.isScanCapable()) {
+					boolean cached = needsCacheForScan(head);
+					head = explore(true, cached);
+				}
 			}
 			return head;
 		}
@@ -1035,10 +1048,14 @@ public class SequencePattern {
 			// Cleanup duty -> we must erase all references to target and its elements
 			Arrays.fill(elements, 0, size, null);
 			Arrays.fill(hits, UNSET_INT);
+			for (int i = 0; i < caches.length; i++) {
+				caches[i].reset(size);
+			}
 			entry = 0;
 			last = 0;
 			from = 0;
 			to = 0;
+			size = 0;
 		}
 
 		void dispatchMatch() {
@@ -1101,6 +1118,9 @@ public class SequencePattern {
 				for (int i = 0; i < buffers.length; i++) {
 					buffers[i] = new int[newSize];
 				}
+				for (int i = 0; i < caches.length; i++) {
+					caches[i].reset(newSize);
+				}
 			}
 			// Now copy container content into our buffer for faster access during matching
 			for (int i = 0; i < size; i++) {
@@ -1132,6 +1152,38 @@ public class SequencePattern {
 			reset();
 
 			return matched;
+		}
+	}
+
+	@VisibleForTesting
+	static class NonResettingMatcher extends SequenceMatcher {
+
+		NonResettingMatcher(StateMachineSetup stateMachineSetup, int id) {
+			super(stateMachineSetup, id);
+		}
+
+		/**
+		 * Does nothing, so that we can properly assert the state machine's internal
+		 * state after matching.
+		 */
+		@Override
+		public void reset() { /* no-op */ }
+
+		/**
+		 * Replacement for the original {@link SequenceMatcher#reset()} method so
+		 * that test code can decide to reset matcher state if needed.
+		 */
+		void fullReset() { super.reset(); }
+
+		/** Only resets external references and the temporary result buffer. */
+		void softReset() {
+			Arrays.fill(elements, 0, size, null);
+			Arrays.fill(hits, UNSET_INT);
+			entry = 0;
+			last = 0;
+			from = 0;
+			to = 0;
+			size = 0;
 		}
 	}
 
