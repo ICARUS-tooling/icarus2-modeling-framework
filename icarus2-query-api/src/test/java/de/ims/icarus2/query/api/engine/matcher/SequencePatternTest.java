@@ -3616,13 +3616,26 @@ class SequencePatternTest {
 
 					@ParameterizedTest(name="{index}: <{1}>[X] in {0}, {2} matches")
 					@CsvSource({
+						"XX, 1, 2, 0-1, 0-1",
+						"XXX, 1, 3, 0-2, 0-2",
+						"XXXX, 1, 4, 0-3, 0-3",
+						"XXX-, 1, 3, 0-2, 0-3",
+
 						"XXX, 2, 1, 0-1, 0-1",
 						"XXXX, 2, 2, 0-3, 0-3",
 						"XXXXX, 2, 2, 0-3, 0-3",
 						"XXXX-, 2, 2, 0-3, 0-3",
 						"XXXX--, 2, 2, 0-3, 0-4",
+
+						"XXXX, 3, 1, 0-2, 0-2",
+						"XXXXX, 3, 1, 0-2, 0-2",
+						"XXXXXX, 3, 2, 0-5, 0-5",
+						"XXXXXXX, 3, 2, 0-5, 0-5",
+						"XXXXXXX-, 3, 2, 0-5, 0-5",
+						"XXXXXXX--, 3, 2, 0-6, 0-7",
+						"XXXXXXXXX, 3, 3, 0-8, 0-8",
 					})
-					@DisplayName("Node with exact multiplicity [disjoint hits]")
+					@DisplayName("Node with exact multiplicity [disjoint adjacent hits]")
 					void testExactDisjoint(String target, int count, int matches,
 							@IntervalArg Interval hits,
 							@IntervalArg Interval visited) {
@@ -4022,7 +4035,7 @@ class SequencePatternTest {
 
 					@Test
 					@DisplayName("verify reluctant expansion with multiple nodes and matches")
-					void testReluctantExoansion() {
+					void testReluctantExpansion() {
 						final String target = "-XXxXXx-";
 						assertResult(target,
 								builder(adjacent(
@@ -4100,6 +4113,64 @@ class SequencePatternTest {
 											.hits(hits))
 									.result(result(0)
 											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}+>[X] in {0}")
+					@CsvSource({
+						"X-, 2, 0-1, 0",
+						"-X, 2, 0, -", // early-abort from scan
+						"-X-, 2, 0-2, 1",
+					})
+					@DisplayName("Mismatch with a minimum multiplicity [possessive mode]")
+					void testPossessiveFail(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atLeastGreedy(count)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}+>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 1, 0-1, -, 0-1",
+						"XXx, 1, 0-2, -, 0-2",
+						"XXX-, 1, 0-3, 3, 0-2",
+						"XXx-, 1, 0-3, 3, 0-2",
+					})
+					@DisplayName("Mismatch due to possessive consumption")
+					void testPossessiveFail2(String target, int count,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(ordered(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atLeastPossessive(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates))
 						);
 					}
 
