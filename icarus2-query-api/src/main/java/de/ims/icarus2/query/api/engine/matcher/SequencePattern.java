@@ -29,6 +29,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,6 +79,7 @@ import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
+import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
@@ -146,6 +149,8 @@ public class SequencePattern {
 	private final IqlElement source;
 	/** Defines the general direction for matching. ANY is equivalent to FIRST here. */
 	private final QueryModifier modifier;
+	/** Additional flags controlling search aspects. */
+	private final Set<MatchFlag> flags;
 	/** The root context for evaluations in this pattern */
 	private final LaneContext context;
 	/** Blueprint for instantiating a new {@link SequenceMatcher} */
@@ -153,6 +158,7 @@ public class SequencePattern {
 
 	private SequencePattern(Builder builder) {
 		modifier = builder.getModifier();
+		flags = builder.geFlags();
 		source = builder.getRoot();
 		context = builder.geContext();
 
@@ -309,15 +315,19 @@ public class SequencePattern {
 		final IqlElement rootElement;
 		final IqlConstraint filterConstraint;
 		final IqlConstraint globalConstraint;
+		final Set<MatchFlag> flags;
 
 		SequenceQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
 			modifier = builder.getModifier();
+			flags = builder.geFlags();
 			limit = builder.getLimit();
 			rootElement = builder.getRoot();
 			filterConstraint = builder.getFilterConstraint();
 			globalConstraint = builder.getGlobalConstraint();
 		}
+
+		private boolean flagSet(MatchFlag flag) { return flags.contains(flag); }
 
 		/** Process element and link to active sequence */
 		private Node process(IqlElement source) {
@@ -714,7 +724,11 @@ public class SequencePattern {
 		/** Make a utility node that either saves or restores a border point  */
 		private Border border(boolean save, int borderId) { return store(new Border(save, borderId)); }
 
-		private Finish finish(long limit) { return store(new Finish(limit)); }
+		private Finish finish(long limit, boolean stopAfterMatch) {
+			return store(new Finish(limit, stopAfterMatch));
+		}
+
+		private Reset reset() { return store(new Reset()); }
 
 		private Single single(@Nullable String label, IqlConstraint constraint) {
 			return store(new Single(id(), matcher(constraint), cache(), member(label)));
@@ -862,8 +876,10 @@ public class SequencePattern {
 				expressionFactory = null;
 			}
 
+			final boolean disjoint = flagSet(MatchFlag.DISJOINT);
+
 			// Start at the end of the state machine
-			replaceTail(finish(limit));
+			replaceTail(finish(limit, disjoint));
 
 			if(globalConstraint != null) {
 				expressionFactory = new ExpressionFactory(rootContext);
@@ -880,6 +896,11 @@ public class SequencePattern {
 			// Prepare top-level scan if needed
 			if(!root.isScanCapable()) {
 				explore(modifier!=QueryModifier.LAST, false);
+			}
+
+			// If we need to reset search space after each match, add special Reset node
+			if(disjoint) {
+				pushTail(reset());
 			}
 
 			// Add size-based filter
@@ -965,9 +986,16 @@ public class SequencePattern {
 		int size = UNSET_INT;
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
 		boolean finished;
+		/**
+		 * Set by the Finish node if result limit is exceeded or the search is using
+		 * DISJOINT mode. Nodes that iteratively explore the search space should use this
+		 * flag as indicator. When using DISJOINT mode the Reset node will clear this flag
+		 * after each match and adjust the search space to exclude already exhausted areas.
+		 */
+		boolean stop;
 
 		/**
-		 * End index of the last (sub)match, used by repetitions to keep track.
+		 * End index of the last (sub)match, used by repetitions and similar nodes to keep track.
 		 * Initially {@code 0}, turned to {@code -1} for failed matches and to
 		 * the next index to be visited when a match occurred.
 		 */
@@ -1196,6 +1224,7 @@ public class SequencePattern {
 		private IqlConstraint filterConstraint;
 		private IqlConstraint globalConstraint;
 		private LaneContext context;
+		private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 
 		//TODO add fields for configuring the result buffer
 
@@ -1263,6 +1292,22 @@ public class SequencePattern {
 			requireNonNull(context);
 			checkState("context already set", this.context==null);
 			this.context = context;
+			return this;
+		}
+
+		public Set<MatchFlag> geFlags() { return EnumSet.copyOf(flags); }
+
+		public Builder flag(MatchFlag flag) {
+			requireNonNull(flag);
+			checkState("flag already set", !flags.contains(flag));
+			flags.add(flag);
+			return this;
+		}
+
+		public Builder flags(Collection<MatchFlag> flags) {
+			requireNonNull(flags);
+			checkArgument("set of flags must not be empty", !flags.isEmpty());
+			this.flags.addAll(flags);
 			return this;
 		}
 
@@ -1642,8 +1687,12 @@ public class SequencePattern {
 	 */
 	static final class Finish extends Node {
 		final long limit;
+		final boolean stopAfterMatch;
 
-		Finish(long limit) { this.limit = limit; }
+		Finish(long limit, boolean stopAfterMatch) {
+			this.limit = limit;
+			this.stopAfterMatch = stopAfterMatch;
+		}
 
 		@Override
 		boolean match(State state, int pos) {
@@ -1653,6 +1702,7 @@ public class SequencePattern {
 			if(limit!=UNSET_LONG && state.reported>=limit) {
 				state.finished = true;
 			}
+			state.stop = stopAfterMatch || state.finished;
 
 			return true;
 		}
@@ -1905,7 +1955,7 @@ public class SequencePattern {
 
 			boolean result = false;
 
-			for (int i = pos; i <= fence && !state.finished; i++) {
+			for (int i = pos; i <= fence && !state.stop; i++) {
 				int scope = state.scope();
 				boolean stored = cache.isSet(i);
 				boolean matched;
@@ -2136,7 +2186,7 @@ public class SequencePattern {
 
 			boolean result = false;
 
-			for (int i = pos; i <= fence && !state.finished; i++) {
+			for (int i = pos; i <= fence && !state.stop; i++) {
 				int scope = state.scope();
 				result |= next.match(state, i);
 				state.reset(scope);
@@ -2162,7 +2212,7 @@ public class SequencePattern {
 
 			boolean result = false;
 
-			for (int i = pos; i <= fence && !state.finished; i++) {
+			for (int i = pos; i <= fence && !state.stop; i++) {
 				int scope = state.scope();
 				boolean stored = cache.isSet(i);
 				boolean matched;
@@ -2206,7 +2256,7 @@ public class SequencePattern {
     		final int to = state.to;
 			boolean result = false;
 
-			for (int i = state.to - minSize + 1; i >= pos && !state.finished; i--) {
+			for (int i = state.to - minSize + 1; i >= pos && !state.stop; i--) {
 				int scope = state.scope();
 				result |= next.match(state, i);
 				state.reset(scope);
@@ -2290,7 +2340,7 @@ public class SequencePattern {
     		final int from = state.from;
     		final int to = state.to;
     		boolean result = false;
-	        for (int n = 0; n < atoms.length && !state.finished; n++) {
+	        for (int n = 0; n < atoms.length && !state.stop; n++) {
 	        	Node atom = atoms[n];
 	        	if (atom==null) {
 	            	// zero-width path
@@ -2554,4 +2604,29 @@ public class SequencePattern {
             return next.study(info);
         }
     }
+
+	static final class Reset extends Node {
+		@Override
+		boolean match(State state, int pos) {
+			final int from = state.from;
+			final int to = state.to;
+
+			boolean result = false;
+
+			while(!state.finished && state.contains(pos)) {
+				// Bail as soon as a new search fails
+				if(!next.match(state, pos)) {
+					break;
+				}
+				result = true;
+				state.reset(from, to);
+				// Remove entire length of match from search space
+				pos = state.last;
+				// Reset stop signal so exploration can have another try
+				state.stop = false;
+			}
+
+			return result;
+		}
+	}
 }

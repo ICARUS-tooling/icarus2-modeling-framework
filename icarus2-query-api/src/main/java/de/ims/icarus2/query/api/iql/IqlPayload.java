@@ -24,16 +24,20 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
@@ -55,6 +59,10 @@ public class IqlPayload extends IqlUnique {
 	@JsonProperty(IqlProperties.NAME)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> name = Optional.empty();
+
+	@JsonProperty(value=IqlProperties.MATCH_FLAG)
+	@JsonInclude(Include.NON_EMPTY)
+	private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 
 	/**
 	 * All the bindings to be usable for this query, if defined.
@@ -120,6 +128,10 @@ public class IqlPayload extends IqlUnique {
 
 	public Optional<IqlConstraint> getConstraint() { return constraint; }
 
+	public Set<MatchFlag> getFlags() { return CollectionUtils.unmodifiableSetProxy(flags); }
+
+	public boolean isFlagSet(MatchFlag flag) { return flags.contains(requireNonNull(flag)); }
+
 
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
 
@@ -139,6 +151,14 @@ public class IqlPayload extends IqlUnique {
 	public void setFilter(IqlConstraint filter) { this.filter = Optional.of(filter); }
 
 	public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
+
+	public void setFlag(MatchFlag flag, boolean active) {
+		if(active) {
+			flags.add(flag);
+		} else {
+			flags.remove(flag);
+		}
+	}
 
 	public enum QueryType {
 		/**
@@ -174,7 +194,7 @@ public class IqlPayload extends IqlUnique {
 		public boolean isAllowElements() { return allowElements; }
 	}
 
-	public enum QueryModifier {
+	public enum QueryModifier implements StringResource {
 		/** Only the first match is to be reported for every unit-of-interest */
 		FIRST("first"),
 		/** Only the last match is to be reported for every unit-of-interest */
@@ -185,15 +205,42 @@ public class IqlPayload extends IqlUnique {
 
 		private final String label;
 
-		private QueryModifier(String label) {
-			this.label = label;
-		}
+		private QueryModifier(String label) { this.label = label; }
+
+		@Override
+		public String getStringValue() { return label; }
 
 		@JsonValue
-		public String getLabel() {
-			return label;
+		public String getLabel() { return label; }
+
+		private static final LazyStore<QueryModifier, String> store =
+				LazyStore.forStringResource(QueryModifier.class);
+
+		public static QueryModifier parse(String s) {
+			return store.lookup(s);
 		}
 	}
 
+	public enum MatchFlag implements StringResource {
+		/** Matches must not overlap */
+		DISJOINT("disjoint"),
+		;
 
+		private final String label;
+
+		private MatchFlag(String label) { this.label = label; }
+
+		@Override
+		public String getStringValue() { return label; }
+
+		@JsonValue
+		public String getLabel() { return label; }
+
+		private static final LazyStore<MatchFlag, String> store =
+				LazyStore.forStringResource(MatchFlag.class);
+
+		public static MatchFlag parse(String s) {
+			return store.lookup(s);
+		}
+	}
 }

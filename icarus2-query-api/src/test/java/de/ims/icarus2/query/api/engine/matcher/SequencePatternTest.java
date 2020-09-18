@@ -25,22 +25,22 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockCorpus;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_1;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_2;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_B;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_NOT_X;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_X;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_X_IC;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_Y;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_1;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.branch;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.item;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.matchers;
@@ -50,6 +50,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_MARKER;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.adjacent;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastGreedy;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastPossessive;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastReluctant;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.constraint;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
@@ -59,6 +60,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.mark;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.negated;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.ordered;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantify;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.set;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.unordered;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
@@ -79,7 +81,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -119,6 +120,7 @@ import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlTestUtils;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
@@ -164,19 +166,18 @@ class SequencePatternTest {
 		static final CharPredicate EQUALS_B = eq('B');
 		static final CharPredicate EQUALS_C = eq('C');
 
-		static final int NODE_1 = 0;
-		static final int NODE_2 = 1;
-		static final int CACHE_1 = 0;
-		static final int CACHE_2 = 1;
-		static final int CACHE_3 = 2;
-		static final int CACHE_4 = 3;
-		static final int BUFFER_1 = 0;
-		static final int BUFFER_2 = 1;
-		static final int REGION_1 = 0;
-		static final int REGION_2 = 1;
+		static final int NODE_0 = 0;
+		static final int NODE_1 = 1;
+		static final int CACHE_0 = 0;
+		static final int CACHE_1 = 1;
+		static final int CACHE_2 = 2;
+		static final int CACHE_3 = 3;
+		static final int BUFFER_0 = 0;
+		static final int BUFFER_1 = 1;
+		static final int REGION_0 = 0;
+		static final int REGION_1 = 1;
 
 		static final int NO_CACHE = UNSET_INT;
-//		static final int NO_INTERVAL = UNSET_INT;
 		static final int NO_LIMIT = UNSET_INT;
 		static final int NO_MEMBER = UNSET_INT;
 		/** Match given character exactly */
@@ -645,7 +646,7 @@ class SequencePatternTest {
 
 	static class SM_Config {
 		private final List<SM_NodeConfig<?>> nodes = new ArrayList<>();
-		//TODO
+		//TODO for testing the structure of the state machine
 	}
 
 	static class SM_NodeConfig<N extends Node> {
@@ -653,7 +654,7 @@ class SequencePatternTest {
 		int id = UNSET_INT;
 		Class<N> type;
 		BiConsumer<SM_Config,N> asserter;
-		//TODO
+		//TODO for testing the structure of the state machine
 	}
 
 	static class ProcessorUtils {
@@ -679,7 +680,7 @@ class SequencePatternTest {
 			default void testFail(String target, int startPos,
 					@IntervalArg Interval window) {
 				assertResult(target, setup(), match(startPos, false, 0)
-						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+						.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
 				);
 			}
 
@@ -693,9 +694,9 @@ class SequencePatternTest {
 			default void testFindMinimum(String target, int startPos,
 					@IntervalArg Interval window, int last) {
 				assertResult(target, setup(), match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, startPos, startPos+1)
-						.node(node(NODE_1).last(last))
+						.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_0, startPos, startPos+1)
+						.node(node(NODE_0).last(last))
 				);
 			}
 
@@ -709,9 +710,9 @@ class SequencePatternTest {
 			default void testFindMaximum(String target, int startPos,
 					@IntervalArg Interval window, int last) {
 				assertResult(target, setup(), match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, Interval.of(startPos, startPos+4))
-						.node(node(NODE_1).last(last))
+						.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_0, Interval.of(startPos, startPos+4))
+						.node(node(NODE_0).last(last))
 				);
 			}
 		}
@@ -731,7 +732,7 @@ class SequencePatternTest {
 			default void testFail(String target, int startPos,
 					@IntervalArg Interval window) {
 				assertResult(target, setup(), match(startPos, false, 0)
-						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+						.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
 				);
 			}
 
@@ -745,9 +746,9 @@ class SequencePatternTest {
 			default void testFindMinimum(String target, int startPos,
 					@IntervalArg Interval window, int last) {
 				assertResult(target, setup(), match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, startPos, startPos+1)
-						.node(node(NODE_1).last(last))
+						.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_0, startPos, startPos+1)
+						.node(node(NODE_0).last(last))
 				);
 			}
 
@@ -762,9 +763,9 @@ class SequencePatternTest {
 					@IntervalArg Interval window,
 					@IntervalArg Interval matched, int last) {
 				assertResult(target, setup(), match(startPos, true, 1)
-						.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-						.map(NODE_1, matched)
-						.node(node(NODE_1).last(last))
+						.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+						.map(NODE_0, matched)
+						.node(node(NODE_0).last(last))
 				);
 			}
 
@@ -835,8 +836,8 @@ class SequencePatternTest {
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 1;
 					sms.root = seq(
-							new Single(0, NODE_1, CACHE_1, NO_MEMBER),
-							new Finish(UNSET_LONG));
+							new Single(0, NODE_0, CACHE_0, NO_MEMBER),
+							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X));
 					return sms;
 				}
@@ -852,9 +853,9 @@ class SequencePatternTest {
 				@ParameterizedTest(name="{index}: X in [{0}], start at {1}, match={2}")
 				void testFull(String target, int startPos, boolean expectedResult) {
 					assertResult(target, setup(), match(startPos, expectedResult, expectedResult ? 1 : 0)
-							.cache(cache(CACHE_1, true).hits(expectedResult, startPos))
-							.map(expectedResult, NODE_1, startPos)
-							.node(node(NODE_1).last(expectedResult, startPos))
+							.cache(cache(CACHE_0, true).hits(expectedResult, startPos))
+							.map(expectedResult, NODE_0, startPos)
+							.node(node(NODE_0).last(expectedResult, startPos))
 					);
 				}
 			}
@@ -868,9 +869,9 @@ class SequencePatternTest {
 					sms.nodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
-							new Single(0, NODE_1, CACHE_1, NO_MEMBER),
-							new Single(1, NODE_2, CACHE_2, NO_MEMBER),
-							new Finish(UNSET_LONG));
+							new Single(0, NODE_0, CACHE_0, NO_MEMBER),
+							new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X), matcher(1, EQUALS_Y));
 					return sms;
 				}
@@ -891,17 +892,17 @@ class SequencePatternTest {
 				void testFull(String target, int startPos, boolean expectedResult,
 						boolean node1Hit, boolean node2Hit) {
 					assertResult(target, setup(), match(startPos, expectedResult, expectedResult ? 1 : 0)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(startPos)
 									.hits(node1Hit, startPos))
-							.cache(cache(CACHE_2, false)
+							.cache(cache(CACHE_1, false)
 									.window(startPos+1)
 									.hits(node2Hit, startPos+1)
 									.set(node1Hit, startPos+1))
-							.map(node1Hit, NODE_1, startPos)
-							.map(node2Hit, NODE_2, startPos+1)
-							.node(node(NODE_1).last(expectedResult, startPos))
-							.node(node(NODE_2).last(expectedResult, startPos+1))
+							.map(node1Hit, NODE_0, startPos)
+							.map(node2Hit, NODE_1, startPos+1)
+							.node(node(NODE_0).last(expectedResult, startPos))
+							.node(node(NODE_1).last(expectedResult, startPos+1))
 					);
 				}
 			}
@@ -923,8 +924,8 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.root = seq(
 								new Scan(0, NO_CACHE, true),
-								new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-								new Finish(limit));
+								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -938,7 +939,7 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testFail(String target, int startPos) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, false, 0)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1))
 						);
 					}
@@ -956,11 +957,11 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testFindSingle(String target, int startPos, int hit) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, true, 1)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1)
 										.hits(hit))
-								.node(node(NODE_1).last(hit))
-								.result(result(0).map(NODE_1, hit))
+								.node(node(NODE_0).last(hit))
+								.result(result(0).map(NODE_0, hit))
 						);
 					}
 
@@ -977,10 +978,10 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}, count={2}")
 					void testMultiMatch(String target, int startPos, int matchCount, int last) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 
@@ -1010,10 +1011,10 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, start at {2}, count={3}")
 					void testLimitedMultiMatch(String target, int limit, int startPos, int matchCount, int last) {
 						assertResult(target, setup(limit), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, last)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 				}
@@ -1027,9 +1028,9 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.limit = limit;
 						sms.root = seq(
-								new Scan(0, CACHE_1, true),
-								new Single(1, NODE_1, CACHE_2, NO_MEMBER),
-								new Finish(limit));
+								new Scan(0, CACHE_0, true),
+								new Single(1, NODE_0, CACHE_1, NO_MEMBER),
+								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1042,7 +1043,7 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testFail(String target, int startPos) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, false, 0)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1))
 						);
 					}
@@ -1060,11 +1061,11 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testSingleMatch(String target, int startPos, int hit) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, true, 1)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(hit))
-								.result(result(0).map(NODE_1, hit))
+								.node(node(NODE_0).last(hit))
+								.result(result(0).map(NODE_0, hit))
 						);
 					}
 
@@ -1081,13 +1082,13 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testMultiMatch(String target, int startPos, int matchCount, int last) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1)
 										.hits(target, EQUALS_X))
-								.cache(cache(CACHE_2, true)
+								.cache(cache(CACHE_1, true)
 										.window(startPos, target.length()-1).
 										hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 
@@ -1118,13 +1119,13 @@ class SequencePatternTest {
 					void testLimitedMultiMatch(String target, int limit, int startPos,
 							int matchCount, int last) {
 						assertResult(target, setup(limit), match(startPos, true, matchCount)
+								.cache(cache(CACHE_0, true)
+										.window(startPos, last)
+										.hits(target, EQUALS_X))
 								.cache(cache(CACHE_1, true)
 										.window(startPos, last)
 										.hits(target, EQUALS_X))
-								.cache(cache(CACHE_2, true)
-										.window(startPos, last)
-										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 				}
@@ -1139,8 +1140,8 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.root = seq(
 								new Scan(0, NO_CACHE, false),
-								new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-								new Finish(limit));
+								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1153,7 +1154,7 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testFail(String target, int startPos) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, false, 0)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1))
 						);
 					}
@@ -1171,11 +1172,11 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], start at {1}")
 					void testSingleMatch(String target, int startPos, int hit) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, true, 1)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, target.length()-1)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(hit))
-								.result(result(0).map(NODE_1, hit))
+								.node(node(NODE_0).last(hit))
+								.result(result(0).map(NODE_0, hit))
 						);
 					}
 
@@ -1193,10 +1194,10 @@ class SequencePatternTest {
 					void testMultiMatch(String target, int startPos, int matchCount,
 							@IntervalArg Interval window, int last) {
 						assertResult(target, setup(NO_LIMIT), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(window)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 
@@ -1226,10 +1227,10 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: X in [{0}], limit= {1}, start at {2}, count={3}")
 					void testLimitedMultiMatch(String target, int limit, int startPos, int matchCount, int last) {
 						assertResult(target, setup(limit), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(last, target.length()-1)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 				}
@@ -1249,10 +1250,10 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(REGION_1),
+								new DynamicClip(REGION_0),
 								new Scan(0, NO_CACHE, true),
-								new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-								new Finish(limit));
+								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1272,7 +1273,7 @@ class SequencePatternTest {
 							@IntervalArg Interval region, int startPos,
 							@IntervalArg Interval visited) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, false, 0)
-								.cache(cache(CACHE_1, true).window(visited))
+								.cache(cache(CACHE_0, true).window(visited))
 						);
 					}
 
@@ -1298,9 +1299,9 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int hit) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, true, 1)
-								.cache(cache(CACHE_1, true).hits(hit))
-								.node(node(NODE_1).last(hit))
-								.result(result(0).map(NODE_1, hit))
+								.cache(cache(CACHE_0, true).hits(hit))
+								.node(node(NODE_0).last(hit))
+								.result(result(0).map(NODE_0, hit))
 						);
 					}
 
@@ -1325,8 +1326,8 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int matchCount, int last) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true).hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.cache(cache(CACHE_0, true).hits(target, EQUALS_X))
+								.node(node(NODE_0).last(last))
 						);
 					}
 
@@ -1365,10 +1366,10 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int matchCount, int last) {
 						assertResult(target, setup(region, limit), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, last)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 				}
@@ -1383,10 +1384,10 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(REGION_1),
-								new Scan(0, CACHE_1, true),
-								new Single(1, NODE_1, CACHE_2, NO_MEMBER),
-								new Finish(limit));
+								new DynamicClip(REGION_0),
+								new Scan(0, CACHE_0, true),
+								new Single(1, NODE_0, CACHE_1, NO_MEMBER),
+								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1405,9 +1406,9 @@ class SequencePatternTest {
 					void testFail(String target,
 							@IntervalArg Interval region, int startPos) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, false, 0)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, region.to))
-								.cache(cache(CACHE_2, true)
+								.cache(cache(CACHE_1, true)
 										.window(startPos, region.to))
 						);
 					}
@@ -1430,14 +1431,14 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int hit) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, true, 1)
+								.cache(cache(CACHE_0, true)
+										.window(startPos, region.to)
+										.hits(hit))
 								.cache(cache(CACHE_1, true)
 										.window(startPos, region.to)
 										.hits(hit))
-								.cache(cache(CACHE_2, true)
-										.window(startPos, region.to)
-										.hits(hit))
-								.node(node(NODE_1).last(hit))
-								.result(result(0).map(NODE_1, hit))
+								.node(node(NODE_0).last(hit))
+								.result(result(0).map(NODE_0, hit))
 						);
 					}
 
@@ -1462,13 +1463,13 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int matchCount, int last) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, true, matchCount)
+								.cache(cache(CACHE_0, true)
+										.window(startPos, region.to)
+										.hits(target, region, EQUALS_X))
 								.cache(cache(CACHE_1, true)
 										.window(startPos, region.to)
 										.hits(target, region, EQUALS_X))
-								.cache(cache(CACHE_2, true)
-										.window(startPos, region.to)
-										.hits(target, region, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 
@@ -1507,13 +1508,13 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int matchCount, int last) {
 						assertResult(target, setup(region, limit), match(startPos, true, matchCount)
+								.cache(cache(CACHE_0, true)
+										.window(startPos, last)
+										.hits(target, EQUALS_X))
 								.cache(cache(CACHE_1, true)
 										.window(startPos, last)
 										.hits(target, EQUALS_X))
-								.cache(cache(CACHE_2, true)
-										.window(startPos, last)
-										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 				}
@@ -1528,10 +1529,10 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(REGION_1),
+								new DynamicClip(REGION_0),
 								new Scan(0, NO_CACHE, false),
-								new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-								new Finish(limit));
+								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1549,7 +1550,7 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, false, 0)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, region.to))
 						);
 					}
@@ -1569,11 +1570,11 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int hit) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, true, 1)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, region.to)
 										.hits(target, region, EQUALS_X))
-								.node(node(NODE_1).last(hit))
-								.result(result(0).map(NODE_1, hit))
+								.node(node(NODE_0).last(hit))
+								.result(result(0).map(NODE_0, hit))
 						);
 					}
 
@@ -1598,10 +1599,10 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int matchCount, int last) {
 						assertResult(target, setup(region, NO_LIMIT), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(startPos, region.to)
 										.hits(target, region, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 
@@ -1640,10 +1641,10 @@ class SequencePatternTest {
 							@IntervalArg Interval region,
 							int startPos, int matchCount, int last) {
 						assertResult(target, setup(region, limit), match(startPos, true, matchCount)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(last, region.to)
 										.hits(target, EQUALS_X))
-								.node(node(NODE_1).last(last))
+								.node(node(NODE_0).last(last))
 						);
 					}
 				}
@@ -1672,9 +1673,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -1693,10 +1694,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
-									new Single(1, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1),
+									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -1720,13 +1721,13 @@ class SequencePatternTest {
 								int last2) {
 
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1)
-									.node(node(NODE_1).last(last1))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.map(NODE_0, matched1)
+									.node(node(NODE_0).last(last1))
 
-									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2)
-									.node(node(NODE_2).last(last2))
+									.cache(cache(CACHE_1, true).window(visited2).hits(target, EQUALS_X))
+									.map(NODE_1, matched2)
+									.node(node(NODE_1).last(last2))
 							);
 						}
 					}
@@ -1745,9 +1746,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -1764,10 +1765,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-									new Single(1, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1),
+									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -1787,10 +1788,10 @@ class SequencePatternTest {
 								@IntervalArg Interval visited2) {
 
 							assertResult(target, setup(), match(startPos, false, 0)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.node(node(NODE_0).last(last))
 
-									.cache(cache(CACHE_2, true).window(visited2))
+									.cache(cache(CACHE_1, true).window(visited2))
 							);
 						}
 
@@ -1807,13 +1808,13 @@ class SequencePatternTest {
 								int last2) {
 
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1)
-									.node(node(NODE_1).last(last1))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.map(NODE_0, matched1)
+									.node(node(NODE_0).last(last1))
 
-									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2)
-									.node(node(NODE_2).last(last2))
+									.cache(cache(CACHE_1, true).window(visited2).hits(target, EQUALS_X))
+									.map(NODE_1, matched2)
+									.node(node(NODE_1).last(last2))
 							);
 						}
 					}
@@ -1832,9 +1833,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
 							return sms;
@@ -1853,7 +1854,7 @@ class SequencePatternTest {
 						void testFail(String target, int startPos,
 								@IntervalArg Interval window) {
 							assertResult(target, setup(), match(startPos, false, 0)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
 							);
 						}
 
@@ -1867,9 +1868,9 @@ class SequencePatternTest {
 						void testFindMinimum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, startPos, startPos+1)
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, startPos, startPos+1)
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -1884,9 +1885,9 @@ class SequencePatternTest {
 						void testFindMaximum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, Interval.of(startPos, startPos+1))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, Interval.of(startPos, startPos+1))
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -1902,10 +1903,10 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
-									new Proxy(NODE_2), // we need this to motivate the reluctant expansion
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1),
+									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
 									matcher(1, EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
@@ -1921,9 +1922,9 @@ class SequencePatternTest {
 						void testFindMinimum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, startPos, startPos+1)
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, startPos, startPos+1)
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -1942,9 +1943,9 @@ class SequencePatternTest {
 						void testFindMaximum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, Interval.of(startPos, startPos+4))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, Interval.of(startPos, startPos+4))
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -1960,10 +1961,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
-									new Single(2, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1),
+									new Single(2, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -1981,10 +1982,10 @@ class SequencePatternTest {
 								@IntervalArg Interval visited2) {
 
 							assertResult(target, setup(), match(startPos, false, 0)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.node(node(NODE_0).last(last))
 
-									.cache(cache(CACHE_2, true).window(visited2))
+									.cache(cache(CACHE_1, true).window(visited2))
 							);
 						}
 
@@ -2003,13 +2004,13 @@ class SequencePatternTest {
 								int last2) {
 
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1)
-									.node(node(NODE_1).last(last1))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.map(NODE_0, matched1)
+									.node(node(NODE_0).last(last1))
 
-									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2)
-									.node(node(NODE_2).last(last2))
+									.cache(cache(CACHE_1, true).window(visited2).hits(target, EQUALS_X))
+									.map(NODE_1, matched2)
+									.node(node(NODE_1).last(last2))
 							);
 						}
 					}
@@ -2035,9 +2036,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -2054,10 +2055,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_1, BUFFER_2),
-									new Single(1, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1),
+									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2081,13 +2082,13 @@ class SequencePatternTest {
 								int last2) {
 
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1)
-									.node(node(NODE_1).last(last1))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.map(NODE_0, matched1)
+									.node(node(NODE_0).last(last1))
 
-									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2)
-									.node(node(NODE_2).last(last2))
+									.cache(cache(CACHE_1, true).window(visited2).hits(target, EQUALS_X))
+									.map(NODE_1, matched2)
+									.node(node(NODE_1).last(last2))
 							);
 						}
 					}
@@ -2106,9 +2107,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -2125,10 +2126,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-									new Single(1, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1),
+									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2148,10 +2149,10 @@ class SequencePatternTest {
 								@IntervalArg Interval visited2) {
 
 							assertResult(target, setup(), match(startPos, false, 0)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.node(node(NODE_0).last(last))
 
-									.cache(cache(CACHE_2, true).window(visited2))
+									.cache(cache(CACHE_1, true).window(visited2))
 							);
 						}
 					}
@@ -2166,10 +2167,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_1, BUFFER_2),
-									new Single(1, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1),
+									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
 									matcher(1, EQUALS_Y));
@@ -2189,13 +2190,13 @@ class SequencePatternTest {
 								int last2) {
 
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X))
-									.map(NODE_1, matched1)
-									.node(node(NODE_1).last(last1))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X))
+									.map(NODE_0, matched1)
+									.node(node(NODE_0).last(last1))
 
-									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_Y))
-									.map(NODE_2, matched2)
-									.node(node(NODE_2).last(last2))
+									.cache(cache(CACHE_1, true).window(visited2).hits(target, EQUALS_Y))
+									.map(NODE_1, matched2)
+									.node(node(NODE_1).last(last2))
 							);
 						}
 					}
@@ -2214,9 +2215,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
 							return sms;
@@ -2235,7 +2236,7 @@ class SequencePatternTest {
 						void testFail(String target, int startPos,
 								@IntervalArg Interval window) {
 							assertResult(target, setup(), match(startPos, false, 0)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
 							);
 						}
 
@@ -2249,9 +2250,9 @@ class SequencePatternTest {
 						void testFindMinimum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, startPos, startPos+1)
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, startPos, startPos+1)
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -2266,9 +2267,9 @@ class SequencePatternTest {
 						void testFindMaximum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, Interval.of(startPos, startPos+1))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, Interval.of(startPos, startPos+1))
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -2284,10 +2285,10 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
-									new Proxy(NODE_2), // we need this to motivate the reluctant expansion
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1),
+									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
 									matcher(1, EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
@@ -2303,9 +2304,9 @@ class SequencePatternTest {
 						void testFindMinimum(String target, int startPos,
 								@IntervalArg Interval window, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, startPos, startPos+1)
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, startPos, startPos+1)
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -2325,9 +2326,9 @@ class SequencePatternTest {
 								@IntervalArg Interval window,
 								@IntervalArg Interval matched, int last) {
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(window).hits(target, EQUALS_X))
-									.map(NODE_1, matched)
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(window).hits(target, EQUALS_X))
+									.map(NODE_0, matched)
+									.node(node(NODE_0).last(last))
 							);
 						}
 
@@ -2343,10 +2344,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(0, new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_1, BUFFER_2),
-									new Single(2, NODE_2, CACHE_2, NO_MEMBER),
-									new Finish(UNSET_LONG));
+									new Repetition(0, new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1),
+									new Single(2, NODE_1, CACHE_1, NO_MEMBER),
+									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2364,10 +2365,10 @@ class SequencePatternTest {
 								@IntervalArg Interval visited2) {
 
 							assertResult(target, setup(), match(startPos, false, 0)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.node(node(NODE_1).last(last))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.node(node(NODE_0).last(last))
 
-									.cache(cache(CACHE_2, true).window(visited2))
+									.cache(cache(CACHE_1, true).window(visited2))
 							);
 						}
 
@@ -2387,13 +2388,13 @@ class SequencePatternTest {
 								int last2) {
 
 							assertResult(target, setup(), match(startPos, true, 1)
-									.cache(cache(CACHE_1, true).window(visited1).hits(target, EQUALS_X_IC))
-									.map(NODE_1, matched1)
-									.node(node(NODE_1).last(last1))
+									.cache(cache(CACHE_0, true).window(visited1).hits(target, EQUALS_X_IC))
+									.map(NODE_0, matched1)
+									.node(node(NODE_0).last(last1))
 
-									.cache(cache(CACHE_2, true).window(visited2).hits(target, EQUALS_X))
-									.map(NODE_2, matched2)
-									.node(node(NODE_2).last(last2))
+									.cache(cache(CACHE_1, true).window(visited2).hits(target, EQUALS_X))
+									.map(NODE_1, matched2)
+									.node(node(NODE_1).last(last2))
 							);
 						}
 					}
@@ -2415,10 +2416,10 @@ class SequencePatternTest {
 					BranchConn conn = new BranchConn();
 					sms.root = seq(
 							branch(0, conn,
-									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
-									new Single(2, NODE_2, CACHE_2, NO_MEMBER)),
+									new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+									new Single(2, NODE_1, CACHE_1, NO_MEMBER)),
 							conn,
-							new Finish(UNSET_LONG));
+							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
 							matcher(1, EQUALS_B));
@@ -2434,9 +2435,9 @@ class SequencePatternTest {
 				void testFail(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, false, 0)
-							.cache(cache(CACHE_1, true).window(startPos))
+							.cache(cache(CACHE_0, true).window(startPos))
 
-							.cache(cache(CACHE_2, true).window(startPos))
+							.cache(cache(CACHE_1, true).window(startPos))
 					);
 				}
 
@@ -2450,11 +2451,11 @@ class SequencePatternTest {
 				void testOptionA(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(CACHE_1, true).window(startPos).hits(startPos))
-							.node(node(NODE_1).last(startPos))
-							.map(NODE_1, startPos)
+							.cache(cache(CACHE_0, true).window(startPos).hits(startPos))
+							.node(node(NODE_0).last(startPos))
+							.map(NODE_0, startPos)
 
-							.cache(cache(CACHE_2, true).window(startPos))
+							.cache(cache(CACHE_1, true).window(startPos))
 					);
 				}
 
@@ -2468,11 +2469,11 @@ class SequencePatternTest {
 				void testOptionB(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(CACHE_1, true).window(startPos)) // option A must have been visited
+							.cache(cache(CACHE_0, true).window(startPos)) // option A must have been visited
 
-							.cache(cache(CACHE_2, true).window(startPos).hits(startPos))
-							.node(node(NODE_2).last(startPos))
-							.map(NODE_2, startPos)
+							.cache(cache(CACHE_1, true).window(startPos).hits(startPos))
+							.node(node(NODE_1).last(startPos))
+							.map(NODE_1, startPos)
 					);
 				}
 			}
@@ -2489,10 +2490,10 @@ class SequencePatternTest {
 					BranchConn conn = new BranchConn();
 					sms.root = seq(
 							branch(0, conn,
-									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Single(1, NODE_0, CACHE_0, NO_MEMBER),
 									null),
 							conn,
-							new Finish(1));
+							new Finish(1, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A));
 					return sms;
@@ -2508,9 +2509,9 @@ class SequencePatternTest {
 				void testGreedyPath(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(CACHE_1, true).window(startPos).hits(startPos))
-							.node(node(NODE_1).last(startPos))
-							.map(NODE_1, startPos)
+							.cache(cache(CACHE_0, true).window(startPos).hits(startPos))
+							.node(node(NODE_0).last(startPos))
+							.map(NODE_0, startPos)
 					);
 				}
 
@@ -2524,7 +2525,7 @@ class SequencePatternTest {
 				void testZeroWidthAssertion(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(CACHE_1, true).window(startPos)) // option A must have been visited
+							.cache(cache(CACHE_0, true).window(startPos)) // option A must have been visited
 					);
 				}
 			}
@@ -2541,10 +2542,10 @@ class SequencePatternTest {
 					sms.root = seq(
 							branch(0, conn,
 									null,
-									new Single(1, NODE_1, CACHE_1, NO_MEMBER)),
+									new Single(1, NODE_0, CACHE_0, NO_MEMBER)),
 							conn,
-							new Single(2, NODE_2, CACHE_2, NO_MEMBER), // needed to force reluctant expansion
-							new Finish(UNSET_LONG));
+							new Single(2, NODE_1, CACHE_1, NO_MEMBER), // needed to force reluctant expansion
+							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
 							matcher(1, EQUALS_B));
@@ -2560,13 +2561,13 @@ class SequencePatternTest {
 				void testReluctantPath(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(CACHE_1, true).window(startPos).hits(startPos))
-							.node(node(NODE_1).last(startPos))
-							.map(NODE_1, startPos)
+							.cache(cache(CACHE_0, true).window(startPos).hits(startPos))
+							.node(node(NODE_0).last(startPos))
+							.map(NODE_0, startPos)
 
-							.cache(cache(CACHE_2, true).window(startPos, startPos+1).hits(startPos+1))
-							.node(node(NODE_2).last(startPos+1))
-							.map(NODE_2, startPos+1)
+							.cache(cache(CACHE_1, true).window(startPos, startPos+1).hits(startPos+1))
+							.node(node(NODE_1).last(startPos+1))
+							.map(NODE_1, startPos+1)
 					);
 				}
 
@@ -2580,9 +2581,9 @@ class SequencePatternTest {
 				void testZeroWidthAssertion(String target, int startPos) {
 
 					assertResult(target, setup(), match(startPos, true, 1)
-							.cache(cache(CACHE_2, true).window(startPos).hits(startPos))
-							.node(node(NODE_2).last(startPos))
-							.map(NODE_2, startPos)
+							.cache(cache(CACHE_1, true).window(startPos).hits(startPos))
+							.node(node(NODE_1).last(startPos))
+							.map(NODE_1, startPos)
 					);
 				}
 			}
@@ -2600,7 +2601,7 @@ class SequencePatternTest {
 						nodes.add(new Scan(id++, NO_CACHE, true));
 						nodes.add(new Single(id++, i, i, NO_MEMBER));
 					}
-					nodes.add(new Finish(limit));
+					nodes.add(new Finish(limit, false));
 					return nodes.toArray(new Node[0]);
 				}
 
@@ -2637,10 +2638,10 @@ class SequencePatternTest {
 
 					assertResult(target, setup(NO_LIMIT, EQUALS_A, EQUALS_B),
 							match(startPos, false, 0)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(visitedA)
 									.hits(hitsA))
-							.cache(cache(CACHE_2, true)
+							.cache(cache(CACHE_1, true)
 									.window(visitedB))
 					);
 				}
@@ -2660,15 +2661,15 @@ class SequencePatternTest {
 
 					assertResult(target, setup(NO_LIMIT, EQUALS_A, EQUALS_B),
 							match(startPos, true, 1)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(visitedA)
 									.hits(hitA))
-							.cache(cache(CACHE_2, true)
+							.cache(cache(CACHE_1, true)
 									.window(visitedB)
 									.hits(hitB))
 							.result(result(0)
-									.map(NODE_1, hitA)
-									.map(NODE_2, hitB))
+									.map(NODE_0, hitA)
+									.map(NODE_1, hitB))
 					);
 				}
 
@@ -2685,16 +2686,16 @@ class SequencePatternTest {
 
 					assertResult(target, setup(NO_LIMIT, EQUALS_A, EQUALS_B),
 							match(startPos, true, 1)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(visitedA)
 									.hits(hitA1)
 									.hits(hitA2)) // 2nd hit for A only reflected in cache, no dispatched result
-							.cache(cache(CACHE_2, true)
+							.cache(cache(CACHE_1, true)
 									.window(visitedB)
 									.hits(hitB))
 							.result(result(0)
-									.map(NODE_1, hitA1)
-									.map(NODE_2, hitB))
+									.map(NODE_0, hitA1)
+									.map(NODE_1, hitB))
 					);
 				}
 
@@ -2711,19 +2712,19 @@ class SequencePatternTest {
 
 					assertResult(target, setup(NO_LIMIT, EQUALS_A, EQUALS_B),
 							match(startPos, true, 2)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(visitedA)
 									.hits(hitA1)
 									.hits(hitA2))
-							.cache(cache(CACHE_2, true)
+							.cache(cache(CACHE_1, true)
 									.window(visitedB)
 									.hits(hitB))
 							.result(result(0)
-									.map(NODE_1, hitA1)
-									.map(NODE_2, hitB))
+									.map(NODE_0, hitA1)
+									.map(NODE_1, hitB))
 							.result(result(1)
-									.map(NODE_1, hitA2)
-									.map(NODE_2, hitB))
+									.map(NODE_0, hitA2)
+									.map(NODE_1, hitB))
 					);
 				}
 
@@ -2740,19 +2741,19 @@ class SequencePatternTest {
 
 					assertResult(target, setup(NO_LIMIT, EQUALS_A, EQUALS_B),
 							match(startPos, true, 2)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(visitedA)
 									.hits(hitA))
-							.cache(cache(CACHE_2, true)
+							.cache(cache(CACHE_1, true)
 									.window(visitedB)
 									.hits(hitB1)
 									.hits(hitB2))
 							.result(result(0)
-									.map(NODE_1, hitA)
-									.map(NODE_2, hitB1))
+									.map(NODE_0, hitA)
+									.map(NODE_1, hitB1))
 							.result(result(1)
-									.map(NODE_1, hitA)
-									.map(NODE_2, hitB2))
+									.map(NODE_0, hitA)
+									.map(NODE_1, hitB2))
 					);
 				}
 
@@ -2769,7 +2770,7 @@ class SequencePatternTest {
 					sms.root = seq(
 							branch(0, conn, options),
 							conn,
-							new Finish(UNSET_LONG));
+							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
 							matcher(1, EQUALS_B));
@@ -2824,11 +2825,11 @@ class SequencePatternTest {
 						builder(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 								constraint(eq_exp('X')))).build(),
 						match(1)
-							.cache(cache(CACHE_1, true)
+							.cache(cache(CACHE_0, true)
 									.window(0, target.length()-1)
 									.hits(hit))
 							.result(result(0)
-									.map(NODE_1, hit))
+									.map(NODE_0, hit))
 				);
 			}
 
@@ -2848,11 +2849,11 @@ class SequencePatternTest {
 									mark("isFirst"),
 									constraint(eq_exp('X')))).build(),
 							match(1)
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(0)
 										.hits(0))
-								.result(result(0).map(NODE_1, 0))
+								.result(result(0).map(NODE_0, 0))
 					);
 				}
 
@@ -2869,7 +2870,7 @@ class SequencePatternTest {
 									mark("isFirst"),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-							.cache(cache(CACHE_1, false)
+							.cache(cache(CACHE_0, false)
 									.window(target)
 									.set(0))
 					);
@@ -2889,11 +2890,11 @@ class SequencePatternTest {
 									mark("isLast"),
 									constraint(eq_exp('X')))).build(),
 							match(1)
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(last)
 										.hits(last))
-								.result(result(0).map(NODE_1, target.length()-1))
+								.result(result(0).map(NODE_0, target.length()-1))
 					);
 				}
 
@@ -2911,7 +2912,7 @@ class SequencePatternTest {
 									mark("isLast"),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(last))
 					);
@@ -2935,11 +2936,11 @@ class SequencePatternTest {
 									mark("isAt", _int(pos+1)),
 									constraint(eq_exp('X')))).build(),
 							match(1)
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(0, last)
 										.set(pos)
 										.hits(pos))
-								.result(result(0).map(NODE_1, pos))
+								.result(result(0).map(NODE_0, pos))
 					);
 				}
 
@@ -2960,7 +2961,7 @@ class SequencePatternTest {
 									mark("isAt", _int(pos+1)),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(pos))
 					);
@@ -2980,11 +2981,11 @@ class SequencePatternTest {
 									mark("isAfter", _int(arg)),
 									constraint(eq_exp('X')))).build(),
 							match(hits.size())
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(0, target.length()-1)
 										.set(hits)
 										.hits(hits))
-								.results(NODE_1, hits)
+								.results(NODE_0, hits)
 					);
 				}
 
@@ -3003,7 +3004,7 @@ class SequencePatternTest {
 									mark("isAfter", _int(arg)),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(arg, last)))
 					);
@@ -3021,11 +3022,11 @@ class SequencePatternTest {
 							// Remember that markers use 1-based value space
 							builder(IqlTestUtils.node(NO_LABEL, mark("isBefore", _int(arg)), constraint(eq_exp('X')))).build(),
 							match(hits.size())
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(0, target.length()-1)
 										.set(hits)
 										.hits(hits))
-								.results(NODE_1, hits)
+								.results(NODE_0, hits)
 					);
 				}
 
@@ -3043,7 +3044,7 @@ class SequencePatternTest {
 									mark("isBefore", _int(arg)),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(0, arg-2)))
 					);
@@ -3066,14 +3067,14 @@ class SequencePatternTest {
 									mark("isNotAt", _int(arg)),
 									constraint(eq_exp('X')))).build(),
 							match(hits1.size() + hits2.size())
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(0, arg-2))
 										.set(Interval.of(arg, target.length()-1))
 										.hits(hits1)
 										.hits(hits2))
-								.results(NODE_1, hits1)
-								.results(NODE_1, hits2)
+								.results(NODE_0, hits1)
+								.results(NODE_0, hits2)
 					);
 				}
 
@@ -3092,7 +3093,7 @@ class SequencePatternTest {
 									mark("isNotAt", _int(arg)),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(0, arg-2))
 										.set(Interval.of(arg, target.length()-1)))
@@ -3121,11 +3122,11 @@ class SequencePatternTest {
 									mark("isInside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							match(region.size())
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(region)
 										.hits(region))
-								.results(NODE_1, region)
+								.results(NODE_0, region)
 					);
 				}
 
@@ -3149,11 +3150,11 @@ class SequencePatternTest {
 									mark("isInside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							match(1)
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(from-1, to-1))
 										.hits(hit))
-								.result(result(0).map(NODE_1, hit))
+								.result(result(0).map(NODE_0, hit))
 					);
 				}
 
@@ -3171,11 +3172,11 @@ class SequencePatternTest {
 									mark("isInside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							match(2)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(target)
 										.hits(hit1, hit2))
-								.result(result(0).map(NODE_1, hit1))
-								.result(result(1).map(NODE_1, hit2))
+								.result(result(0).map(NODE_0, hit1))
+								.result(result(1).map(NODE_0, hit2))
 					);
 				}
 
@@ -3200,7 +3201,7 @@ class SequencePatternTest {
 									mark("isInside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(from-1, to-1)))
 					);
@@ -3226,14 +3227,14 @@ class SequencePatternTest {
 									mark("isOutside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							match(hits1.size() + hits2.size())
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.setForWindow()
 										.unset(Interval.of(from-1, to-1))
 										.hits(hits1)
 										.hits(hits2))
-								.results(NODE_1, hits1)
-								.results(NODE_1, hits2)
+								.results(NODE_0, hits1)
+								.results(NODE_0, hits2)
 					);
 				}
 
@@ -3272,12 +3273,12 @@ class SequencePatternTest {
 									mark("isOutside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							match(1)
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.setForWindow()
 										.unset(Interval.of(from-1, to-1))
 										.hits(hit))
-								.result(result(0).map(NODE_1, hit))
+								.result(result(0).map(NODE_0, hit))
 					);
 				}
 
@@ -3323,12 +3324,12 @@ class SequencePatternTest {
 									mark("isOutside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							match(2)
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.setForWindow()
 										.unset(Interval.of(from-1, to-1))
 										.hits(hit1, hit2))
-								.results(NODE_1, hit1, hit2)
+								.results(NODE_0, hit1, hit2)
 					);
 				}
 
@@ -3351,7 +3352,7 @@ class SequencePatternTest {
 									mark("isOutside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
 							mismatch()
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.setForWindow()
 										.unset(Interval.of(from-1, to-1)))
@@ -3378,10 +3379,10 @@ class SequencePatternTest {
 									)).build(),
 							match(1)
 								// Underlying cache of atom node
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(target))
 								// Cache of the negated search
-								.cache(cache(CACHE_2, true)
+								.cache(cache(CACHE_1, true)
 										.window(target)
 										.hitsForWindow())
 					);
@@ -3405,12 +3406,12 @@ class SequencePatternTest {
 									)).build(),
 							mismatch()
 								// Underlying cache of atom node
-								.cache(cache(CACHE_1, false)
+								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(visited)
 										.hits(hit))
 								// Cache of the negated search
-								.cache(cache(CACHE_2, false)
+								.cache(cache(CACHE_1, false)
 										.window(target)
 										.set(visited)
 										.hits(Interval.of(0, hit-1)))
@@ -3433,7 +3434,7 @@ class SequencePatternTest {
 									)).build(),
 							match(1)
 								// Underlying cache of atom node
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(target)
 										.hitsForWindow())
 								//TODO once we added flag to disable mapping for universal quantification, add check here against mapping
@@ -3457,7 +3458,7 @@ class SequencePatternTest {
 									)).build(),
 							mismatch()
 								// Underlying cache of atom node
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(Interval.of(0, gap))
 										.hits(Interval.of(0, gap-1)))
 					);
@@ -3495,12 +3496,12 @@ class SequencePatternTest {
 										)).build(),
 								match(1)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits))
 									.result(result(0)
-											.map(NODE_1, hits))
+											.map(NODE_0, hits))
 						);
 					}
 
@@ -3531,7 +3532,7 @@ class SequencePatternTest {
 										)).build(),
 								mismatch()
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits))
@@ -3568,13 +3569,13 @@ class SequencePatternTest {
 										)).build(),
 								match(2)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits1)
 											.hits(hits2))
-									.result(result(0).map(NODE_1, hits1))
-									.result(result(1).map(NODE_1, hits2))
+									.result(result(0).map(NODE_0, hits1))
+									.result(result(1).map(NODE_0, hits2))
 						);
 					}
 
@@ -3604,12 +3605,44 @@ class SequencePatternTest {
 										)).build(),
 								match(matches)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits))
-									.results(matches, (r, i) -> r.map(NODE_1, Interval.of(
+									.results(matches, (r, i) -> r.map(NODE_0, Interval.of(
 											hits.from+i, hits.from+i+count-1)))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}>[X] in {0}, {2} matches")
+					@CsvSource({
+						"XXX, 2, 1, 0-1, 0-1",
+						"XXXX, 2, 2, 0-3, 0-3",
+						"XXXXX, 2, 2, 0-3, 0-3",
+						"XXXX-, 2, 2, 0-3, 0-3",
+						"XXXX--, 2, 2, 0-3, 0-4",
+					})
+					@DisplayName("Node with exact multiplicity [disjoint hits]")
+					void testExactDisjoint(String target, int count, int matches,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										exact(count)
+										)).flag(MatchFlag.DISJOINT).build(),
+								match(matches)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.results(matches, (r, i) -> {
+										int begin = hits.from+(i*count);
+										int end = begin + count-1;
+										r.map(NODE_0, Interval.of(begin, end));
+									})
 						);
 					}
 
@@ -3651,12 +3684,12 @@ class SequencePatternTest {
 								).limit(1).build(),
 								match(1)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits))
 									.result(result(0)
-											.map(NODE_1, hits))
+											.map(NODE_0, hits))
 						);
 					}
 
@@ -3679,7 +3712,7 @@ class SequencePatternTest {
 								).build(),
 								mismatch()
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(candidates))
@@ -3714,15 +3747,15 @@ class SequencePatternTest {
 								).build(),
 								match(2)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits1)
 											.hits(hits2))
 									.result(result(0)
-											.map(NODE_1, hits1))
+											.map(NODE_0, hits1))
 									.result(result(1)
-											.map(NODE_1, hits2))
+											.map(NODE_0, hits2))
 						);
 					}
 
@@ -3758,18 +3791,18 @@ class SequencePatternTest {
 						"Xxxx, 2, 0-2, 3, 0-3, 0-3, 3",
 						"Xxxx-, 2, 0-2, 3, 0-3, 0-4, 3-4",
 					})
-					@DisplayName("verify greedy expansion")
+					@DisplayName("verify greedy expansion with multiple nodes")
 					void testGreedyCompetition(String target,
 							int count, // argument for 'AtLeast' marker
 							@IntervalArg Interval hits1, // reported hits for first node
 							int hit2, // reported hit for second node
 							@IntervalArg Interval candidates, // cached hits for first node
 							@IntervalArg Interval visited1, // all slots visited for first node
-							@IntervalArg Interval visited2) { // all slots visited for second node) {
+							@IntervalArg Interval visited2) { // all slots visited for second node
 						/*
-						 * We expect NODE_2 to visit and greedily consume all the
+						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
-						 * reached for NODE_1.
+						 * reached for NODE_0.
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
@@ -3780,18 +3813,18 @@ class SequencePatternTest {
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
 									// Cache of second node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited2)
 											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_2, false)
+									.cache(cache(CACHE_1, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
 									.result(result(0)
-											.map(NODE_2, hits1)
-											.map(NODE_1, hit2))
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
 						);
 					}
 
@@ -3830,12 +3863,12 @@ class SequencePatternTest {
 								).limit(1).build(),
 								match(1)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits))
 									.result(result(0)
-											.map(NODE_1, hits))
+											.map(NODE_0, hits))
 						);
 					}
 
@@ -3858,7 +3891,7 @@ class SequencePatternTest {
 								).build(),
 								mismatch()
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(candidates))
@@ -3893,84 +3926,180 @@ class SequencePatternTest {
 								).build(),
 								match(2)
 									// Underlying cache of atom node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
 											.hits(hits1)
 											.hits(hits2))
 									.result(result(0)
-											.map(NODE_1, hits1))
+											.map(NODE_0, hits1))
 									.result(result(1)
-											.map(NODE_1, hits2))
+											.map(NODE_0, hits2))
 						);
 					}
 
-					@ParameterizedTest(name="{index}: <{1}+?>[x|X][x] in {0}")
+					@ParameterizedTest(name="{index}: <{2}+?>[x|X][x] in {0}, adjacent={1}")
 					@CsvSource({
-						// Expansion of size 1
-						"Xx, 1, 0, 1, 0-1, 0-1, 1",
-						"XXx, 1, 0-1, 2, 0-2, 0-2, 2",
-						"XXx-, 1, 0-1, 2, 0-2, 0-3, 2-3",
-						"-XXx, 1, 1-2, 3, 1-3, 0-3, 3",
-						"-XXx-, 1, 1-2, 3, 1-3, 0-4, 3-4",
-						"XxX, 1, 0, 1, 0-2, 0-2, 1-2",
-						"XxX-, 1, 0, 1, 0-2, 0-3, 1-3",
-						"-XxX, 1, 1, 2, 1-3, 0-3, 2-3",
-						"-XxX-, 1, 1, 2, 1-3, 0-4, 2-4",
-						// Expansion of size 2
-						"XXx, 2, 0-1, 2, 0-2, 0-2, 2",
-						"XXXx, 2, 0-2, 3, 0-3, 0-3, 3",
-						"XXxX, 2, 0-1, 2, 0-3, 0-3, 2-3",
-						"XXxX-, 2, 0-1, 2, 0-3, 0-4, 2-4",
-						"-XXxX, 2, 1-2, 3, 1-4, 0-4, 3-4",
-						"-XXxX-, 2, 1-2, 3, 1-4, 0-5, 3-5",
-						// Consume first target for second node
-						"XxXxX, 1, 0-2, 3, 0-4, 0-4, 3-4",
-						"XxXxX-, 1, 0-2, 3, 0-4, 0-5, 3-5",
-						"-XxXxX, 1, 1-3, 4, 1-5, 0-5, 4-5",
-						"-XxXxX-, 1, 1-3, 4, 1-5, 0-6, 4-6",
-						// Greediness
-						"Xxx, 1, 0-1, 2, 0-2, 0-2, 2",
-						"Xxxx, 1, 0-2, 3, 0-3, 0-3, 3",
-						"Xxxx-, 1, 0-2, 3, 0-3, 0-4, 3-4",
-						"Xxx, 2, 0-1, 2, 0-2, 0-2, 2",
-						"Xxxx, 2, 0-2, 3, 0-3, 0-3, 3",
-						"Xxxx-, 2, 0-2, 3, 0-3, 0-4, 3-4",
+						// Expansion of size 1 - ordered
+						"Xx, false, 1, 0, 1, 0, 1",
+						"XXx, false, 1, 0, 2, 0, 1-2",
+						"XXx-, false, 1, 0, 2, 0, 1-2",
+						"-XXx, false, 1, 1, 3, 0-1, 2-3",
+						"-XXx-, false, 1, 1, 3, 0-1, 2-3",
+						"XxX, false, 1, 0, 1, 0, 1",
+						"XxX-, false, 1, 0, 1, 0, 1",
+						"-XxX, false, 1, 1, 2, 0-1, 2",
+						"-XxX-, false, 1, 1, 2, 0-1, 2",
+						// Expansion of size 1 - adjacent
+						"Xx, true, 1, 0, 1, 0, 1",
+						"XXx, true, 1, 0-1, 2, 0-1, 1-2",
+						"XXXx, true, 1, 0-2, 3, 0-2, 1-3",
+						"XXx-, true, 1, 0-1, 2, 0-1, 1-2",
+						"-XXx, true, 1, 1-2, 3, 0-2, 2-3",
+						"-XXx-, true, 1, 1-2, 3, 0-2, 2-3",
+						"XxX, true, 1, 0, 1, 0, 1",
+						"XxX-, true, 1, 0, 1, 0, 1",
+						"-XxX, true, 1, 1, 2, 0-1, 2",
+						"-XxX-, true, 1, 1, 2, 0-1, 2",
+						// Expansion of size 2 - ordered
+						"XXx, false, 2, 0-1, 2, 0-1, 2",
+						"XXXx, false, 2, 0-1, 3, 0-1, 2-3",
+						"XXxX, false, 2, 0-1, 2, 0-1, 2",
+						"XXxX-, false, 2, 0-1, 2, 0-1, 2",
+						"-XXxX, false, 2, 1-2, 3, 0-2, 3",
+						"-XXxX-, false, 2, 1-2, 3, 0-2, 3",
+						// Expansion of size 2 - adjacent
+						"XXx, true, 2, 0-1, 2, 0-1, 2",
+						"XXXx, true, 2, 0-2, 3, 0-2, 2-3",
+						"XXXXx, true, 2, 0-3, 4, 0-3, 2-4",
+						"XXxX, true, 2, 0-1, 2, 0-1, 2",
+						"XXxX-, true, 2, 0-1, 2, 0-1, 2",
+						"-XXxX, true, 2, 1-2, 3, 0-2, 3",
+						"-XXxX-, true, 2, 1-2, 3, 0-2, 3",
+						// Reluctance - adjacent
+						"Xxx, true, 1, 0, 1, 0, 1",
+						"Xxxx, true, 1, 0, 1, 0, 1",
+						"Xxxx-, true, 1, 0, 1, 0, 1",
+						"Xxx, true, 2, 0-1, 2, 0-1, 2",
+						"Xxxx, true, 2, 0-1, 2, 0-1, 2",
+						"Xxxx-, true, 2, 0-1, 2, 0-1, 2",
 					})
-					@DisplayName("verify reluctant expansion")
-					@Disabled //TODO
+					@DisplayName("verify reluctant expansion with multiple nodes")
 					void testReluctantCompetition(String target,
+							boolean adjacent,
 							int count, // argument for 'AtLeast' marker
 							@IntervalArg Interval hits1, // reported hits for first node
 							int hit2, // reported hit for second node
-							@IntervalArg Interval candidates, // cached hits for first node
-							@IntervalArg Interval visited1, // all slots visited for first node
-							@IntervalArg Interval visited2) { // all slots visited for second node) {
+							@IntervalArg Interval visited1,  // all slots visited for first node
+							@IntervalArg Interval visited2) { // all slots visited for second node
 						/*
-						 * We expect NODE_2 to only proceed with consumption of slots
-						 * while NODE_1 does not already match the next one.
+						 * We expect NODE_1 to only proceed with consumption of slots
+						 * while NODE_0 does not already match the next one.
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(unordered(
+								builder(set(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastReluctant(count)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
 									// Cache of second node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited2)
 											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_2, false)
+									.cache(cache(CACHE_1, false)
 											.window(target)
 											.set(visited1)
-											.hits(candidates))
+											.hits(hits1))
 									.result(result(0)
-											.map(NODE_2, hits1)
-											.map(NODE_1, hit2))
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
+						);
+					}
+
+					@Test
+					@DisplayName("verify reluctant expansion with multiple nodes and matches")
+					void testReluctantExoansion() {
+						final String target = "-XXxXXx-";
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atLeastReluctant(2)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								match(4)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(Interval.of(3, 7))
+											.hits(3, 6))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(0, 7))
+											.hits(Interval.of(1, 6)))
+									// First normal-sized match
+									.result(result(0)
+											.map(NODE_1, 1, 2)
+											.map(NODE_0, 3))
+									// Intermediate match that forces NODE2 to consume a small'x'
+									.result(result(1)
+											.map(NODE_1, Interval.of(2, 5))
+											.map(NODE_0, 6))
+									// Intermediate match that forces NODE2 to start with small'x'
+									.result(result(2)
+											.map(NODE_1, Interval.of(3, 5))
+											.map(NODE_0, 6))
+									// Last normal-sized match
+									.result(result(3)
+											.map(NODE_1, 4, 5)
+											.map(NODE_0, 6))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}+!>[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0-1",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0-1, 0-2",
+						"-XX, 1, 1-2, 0-2",
+
+						"XX, 2, 0-1, 0-1",
+						"XX-, 2, 0-1, 0-2",
+						"XXX, 2, 0-2, 0-2",
+						"-XX, 2, 1-2, 0-2",
+						"-XX-, 2, 1-2, 0-3",
+						"-XXX, 2, 1-3, 0-3",
+						"XXX-, 2, 0-2, 0-3",
+						"--XX, 2, 2-3, 0-3",
+						"XX--, 2, 0-1, 0-2",
+
+						"--XXXXXXXXXX--, 10, 2-11, 0-12",
+						"--XXXXXXXXXXXX--, 10, 2-13, 0-14",
+					})
+					@DisplayName("Node with a minimum multiplicity [possessive mode, single hit, limit]")
+					void testPossessive(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atLeastPossessive(count)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
 						);
 					}
 
@@ -4042,16 +4171,16 @@ class SequencePatternTest {
 									).build(),
 							match(1)
 								//  remember that our state machine is built back to front
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(hitX+1, target.length()-1)
 										.hits(hitY))
 								// scan won't use cache if content is only a simple node
-								.cache(cache(CACHE_2, true)
+								.cache(cache(CACHE_1, true)
 										.window(0, target.length()-2)
 										.hits(hitX))
 								.result(result(0)
-										.map(NODE_2, hitX)
-										.map(NODE_1, hitY))
+										.map(NODE_1, hitX)
+										.map(NODE_0, hitY))
 					);
 				}
 
@@ -4108,16 +4237,16 @@ class SequencePatternTest {
 									).build(),
 							match(1)
 								// remember that our state machine is built back to front
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(hitX+1, target.length()-1)
 										.hits(hitY))
 								// scan won't use cache if content is only a simple node
-								.cache(cache(CACHE_2, true)
+								.cache(cache(CACHE_1, true)
 										.window(0, target.length()-2)
 										.hits(hitX))
 								.result(result(0)
-										.map(NODE_2, hitX)
-										.map(NODE_1, hitY))
+										.map(NODE_1, hitX)
+										.map(NODE_0, hitY))
 					);
 				}
 
@@ -4174,15 +4303,15 @@ class SequencePatternTest {
 									).build(),
 							match(1)
 								//  remember that our state machine is built back to front
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(hitX+1)
 										.hits(hitY))
-								.cache(cache(CACHE_2, true)
+								.cache(cache(CACHE_1, true)
 										.window(0, target.length()-2)
 										.hits(hitX))
 								.result(result(0)
-										.map(NODE_2, hitX)
-										.map(NODE_1, hitY))
+										.map(NODE_1, hitX)
+										.map(NODE_0, hitY))
 					);
 				}
 			}

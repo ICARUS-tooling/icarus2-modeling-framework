@@ -68,6 +68,10 @@ public class IqlTestUtils {
 		return grouping;
 	}
 
+	public static IqlSet set(boolean adjacent, IqlElement...elements) {
+		return adjacent ? adjacent(elements) : ordered(elements);
+	}
+
 	public static IqlSet unordered(IqlElement...elements) {
 		IqlSet sequence = new IqlSet();
 		setId(sequence);

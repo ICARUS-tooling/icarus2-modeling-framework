@@ -71,6 +71,7 @@ import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
 import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
+import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlProperties;
@@ -515,6 +516,9 @@ public class IqlQueryGenerator {
 		}
 		for(QueryModifier queryModifier : QueryModifier.values()) {
 			build.addEnumFieldChange(payload::setQueryModifier, IqlProperties.QUERY_MODIFIER, queryModifier);
+		}
+		for(MatchFlag flag : MatchFlag.values()) {
+			build.addEnumFieldChange(f -> payload.setFlag(f, true), IqlProperties.MATCH_FLAG, flag);
 		}
 		for(int limit : new int[] {1, 5, 10}) {
 			build.addFieldChange(payload::setLimit, IqlProperties.LIMIT, _long(limit));

@@ -143,6 +143,8 @@ public final class IqlProperties {
 
 	public static final String QUERY_MODIFIER = IQL_NS_PREFIX+"queryModifier";
 
+	public static final String MATCH_FLAG = IQL_NS_PREFIX+"matchFlag";
+
 	public static final String LANE_TYPE = IQL_NS_PREFIX+"laneType";
 
 	public static final String SOURCE = IQL_NS_PREFIX+"source";

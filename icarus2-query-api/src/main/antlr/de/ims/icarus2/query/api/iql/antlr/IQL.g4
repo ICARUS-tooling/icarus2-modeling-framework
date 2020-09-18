@@ -112,8 +112,13 @@ payloadStatement
 	| bindingsList? (FILTER BY constraint)? FIND matchModifier? selectionStatement EOF
 	;
 	
+//TODO add modifier to make ICQP only report non-overlapping matches, e.g. a "DISJOINT" flag
 matchModifier
-	: (FIRST | LAST | ANY) (PureDigits HITS)?
+	: (FIRST | LAST | ANY) (PureDigits HITS)? matchFlag*
+	;
+	
+matchFlag
+	: DISJOINT
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -572,6 +577,9 @@ sign
 
 //TODO add specification about unicode codepoints for all special characters we use here
 
+
+// BEGIN Keywords   [when adding new keywords, update /doc/keywords.txt file for documentation]
+
 ADJACENT : 'ADJACENT' | 'adjacent';
 ALL : 'ALL' | 'all' ;
 AND : 'AND' | 'and' ;
@@ -582,6 +590,7 @@ BY : 'BY' | 'by' ;
 COUNT : 'COUNT' | 'count' ;
 DEFAULT : 'DEFAULT' | 'default' ;
 DESC : 'DESC' | 'desc' ;
+DISJOINT : 'DISJOINT' | 'disjoint' ;
 DISTINCT : 'DISTINCT' | 'distinct' ;
 DO : 'DO' | 'do' ;
 EDGES : 'EDGES' | 'edges' ;
@@ -615,7 +624,7 @@ STEP : 'STEP' | 'step' ;
 TRUE : 'TRUE' | 'true' ;
 WITH : 'WITH' | 'with' ;
 
-// Keywords
+// END Keywords
 
 // Types
 INT : 'int' ;

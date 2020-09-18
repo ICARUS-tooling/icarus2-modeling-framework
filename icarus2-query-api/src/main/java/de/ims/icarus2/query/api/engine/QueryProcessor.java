@@ -68,6 +68,7 @@ import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
+import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
@@ -101,6 +102,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LaneStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchFlagContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchModifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
@@ -413,6 +415,11 @@ public class QueryProcessor {
 
 				if(mmctx.PureDigits()!=null) {
 					payload.setLimit(pureDigits(mmctx.PureDigits().getSymbol()));
+				}
+
+				for (MatchFlagContext mfctx : mmctx.matchFlag()) {
+					MatchFlag flag = MatchFlag.parse(mfctx.getText());
+					payload.setFlag(flag, true);
 				}
 			}
 
