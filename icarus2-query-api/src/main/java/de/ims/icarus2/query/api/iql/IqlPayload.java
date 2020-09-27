@@ -62,7 +62,7 @@ public class IqlPayload extends IqlUnique {
 
 	@JsonProperty(value=IqlProperties.MATCH_FLAG)
 	@JsonInclude(Include.NON_EMPTY)
-	private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
+	private final EnumSet<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 
 	/**
 	 * All the bindings to be usable for this query, if defined.

@@ -3,7 +3,7 @@ description = 'Shared utility classes for common tasks'
 
 // internal dependencies
 dependencies {
-	testImplementation(project(':icarus2-shared-tests'))
+	testImplementation(project(':icarus2-test-utils'))
 	api(project(':icarus2-apiguard'))
 }
 

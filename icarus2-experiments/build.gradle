@@ -4,5 +4,5 @@ description = 'Collection of experiments conducted during development of the fra
 // internal dependencies
 dependencies {
 	implementation project(':icarus2-shared-utils')
- 	testImplementation(project(':icarus2-shared-tests'))
+ 	testImplementation(project(':icarus2-test-utils'))
 }

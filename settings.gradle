@@ -12,7 +12,7 @@ rootProject.name = 'icarus2-core-tools'
 
 include 'icarus2-apiguard'
 include 'icarus2-shared-utils'
-include 'icarus2-shared-tests'
+include 'icarus2-test-utils'
 include 'icarus2-manifest-api'
 include 'icarus2-model-api'
 include 'icarus2-model-defaults'
