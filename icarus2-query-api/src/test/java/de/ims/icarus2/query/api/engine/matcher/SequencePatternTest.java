@@ -81,6 +81,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -4171,6 +4172,51 @@ class SequencePatternTest {
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+						);
+					}
+
+					//TODO adjust and fix
+					@Disabled
+					@ParameterizedTest(name="{index}: <{2}+!>[x|X][{1}] in {0}, adjacent={2}")
+					@CsvSource({
+						// Expansion of size 1 - ordered
+						"XxY, Y, false, 1, 0, 1, 0, 1",
+					})
+					@DisplayName("verify possessive expansion with multiple nodes")
+					void testPossessiveCompetition(String target,
+							char c2, // search symbol for second node
+							boolean adjacent,
+							int count, // argument for 'AtLeast' marker
+							@IntervalArg Interval hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval visited1,  // all slots visited for first node
+							@IntervalArg Interval visited2) { // all slots visited for second node
+						/*
+						 * We expect NODE_1 to aggressively consume slots with
+						 * no regards for NODE_0, so that in contrast to reluctant mode
+						 * we will miss some multi-match situations.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atLeastPossessive(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
+								).limit(1).build(), // we don't need multiple matches for confirmation
+								match(1)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(hits1))
+									.result(result(0)
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
 						);
 					}
 
