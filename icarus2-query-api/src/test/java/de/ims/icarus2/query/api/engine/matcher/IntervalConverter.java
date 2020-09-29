@@ -24,18 +24,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.params.converter.ArgumentConversionException;
 import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
+import de.ims.icarus2.test.annotations.ConvertAsArray;
+import de.ims.icarus2.test.util.convert.ArrayConverter;
+import de.ims.icarus2.test.util.convert.ComponentConverter;
 import de.ims.icarus2.util.strings.StringPrimitives;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class IntervalConverter extends SimpleArgumentConverter {
+public class IntervalConverter extends SimpleArgumentConverter implements ComponentConverter {
 
 	/**
 	 * @see org.junit.jupiter.params.converter.SimpleArgumentConverter#convert(java.lang.Object, java.lang.Class)
@@ -44,7 +48,7 @@ public class IntervalConverter extends SimpleArgumentConverter {
 	protected Object convert(Object source, Class<?> targetType) throws ArgumentConversionException {
 		if(targetType!=Interval.class)
 			throw new ArgumentConversionException("Unsupported target type: "+targetType);
-		if(source.getClass()!=String.class)
+		if(!String.class.isInstance(source))
 			throw new ArgumentConversionException("Unsupported source type: "+source.getClass());
 
 		String s = (String)source;
@@ -68,5 +72,22 @@ public class IntervalConverter extends SimpleArgumentConverter {
 	@ConvertWith(IntervalConverter.class)
 	public @interface IntervalArg {
 		// marker interface
+	}
+
+	@Target({ ElementType.ANNOTATION_TYPE, ElementType.PARAMETER })
+	@Retention(RetentionPolicy.RUNTIME)
+	@ConvertWith(ArrayConverter.class)
+	@ConvertAsArray(componentConverter=IntervalConverter.class)
+	public @interface IntervalArrayArg {
+		// marker interface
+	}
+
+	/**
+	 * @see de.ims.icarus2.test.util.convert.ComponentConverter#convert(java.lang.Object, org.junit.jupiter.api.extension.ParameterContext, java.lang.Class)
+	 */
+	@Override
+	public Object convert(Object source, ParameterContext context, Class<?> componentType)
+			throws ArgumentConversionException {
+		return convert(source, componentType);
 	}
 }
