@@ -52,6 +52,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastPossessive;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastReluctant;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.constraint;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.exact;
@@ -81,7 +82,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -98,6 +98,7 @@ import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArg;
+import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArrayArg;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Branch;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.BranchConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
@@ -411,17 +412,22 @@ class SequencePatternTest {
 			return this;
 		}
 
-		/** Map all elements of given interval to specified nodeId */
-		MatchConfig results(int nodeId, Interval region) {
-			for (int i = 0; i < region.size(); i++) {
+		/** Map all elements of given interval to specified nodeId in separate results */
+		MatchConfig results(int nodeId, Interval...regions) {
+			for(Interval region : regions) {
+				if(region.isEmpty()) {
+					continue;
+				}
 				ResultConfig result = SequencePatternTest.result(results.size());
-				result.map(nodeId, region.indexAt(i));
+				for (int i = 0; i < region.size(); i++) {
+					result.map(nodeId, region.indexAt(i));
+				}
 				results.add(result);
 			}
 			return this;
 		}
 
-		/** Map all elements of given set to specified nodeId */
+		/** Map all elements of given set to specified nodeId in separate results */
 		MatchConfig results(int nodeId, int...indices) {
 			for (int i = 0; i < indices.length; i++) {
 				ResultConfig result = SequencePatternTest.result(results.size());
@@ -435,7 +441,7 @@ class SequencePatternTest {
 		@Override
 		public void accept(State state) {
 			assertThat(nextResult)
-				.as("No more resutls buffered - only got %d", _int(results.size()))
+				.as("No more resutls buffered - only expected %d", _int(results.size()))
 				.isLessThan(results.size());
 
 			results.get(nextResult++).assertMapping(state);
@@ -515,7 +521,10 @@ class SequencePatternTest {
 
 		CacheConfig hits(int...indices) { for(int i=0; i< indices.length; i++) hits.add(indices[i]); return this; }
 
-		CacheConfig hits(Interval region) { return hits(region.asArray()); }
+		CacheConfig hits(Interval...regions) {
+			Stream.of(regions).map(Interval::asArray).forEach(this::hits);
+			return this;
+		}
 
 		CacheConfig hits(boolean condition, int...indices) { if(condition) hits(indices); return this; }
 
@@ -523,7 +532,10 @@ class SequencePatternTest {
 
 		CacheConfig set(int...indices) { for(int i=0; i< indices.length; i++) set.add(indices[i]); return this; }
 
-		CacheConfig set(Interval region) { return set(region.asArray()); }
+		CacheConfig set(Interval...regions) {
+			Stream.of(regions).map(Interval::asArray).forEach(this::set);
+			return this;
+		}
 
 		CacheConfig set(boolean condition, int...indices) { if(condition) set(indices); return this; }
 
@@ -615,13 +627,14 @@ class SequencePatternTest {
 			return this;
 		}
 
-		ResultConfig map(int nodeId, Interval indices) {
-			indices.stream().mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add);
+		ResultConfig map(int nodeId, Interval...indices) {
+			Stream.of(indices).forEach(interval ->
+				interval.stream().mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add));
 			return this;
 		}
 
 		ResultConfig map(boolean condition, int nodeId, int...indices) { if(condition) map(nodeId, indices); return this;}
-		ResultConfig map(boolean condition, int nodeId, Interval indices) { if(condition) map(nodeId, indices); return this;}
+		ResultConfig map(boolean condition, int nodeId, Interval...indices) { if(condition) map(nodeId, indices); return this;}
 
 		void assertMapping(State state) {
 			int size = mapping.size();
@@ -2970,18 +2983,18 @@ class SequencePatternTest {
 
 				@ParameterizedTest(name="{index}: [isAfter({1}),X] in {0}, hits={2}")
 				@CsvSource({
-					"XX, 1, 1",
-					"XXX, 1, 1-2",
-					"XXX, 2, 2",
+					"XX, 1, {1}",
+					"XXX, 1, {1;2}",
+					"XXX, 2, {2}",
 				})
 				@DisplayName("Node after specific position")
-				void testIsAfter(String target, int arg, @IntervalArg Interval hits) {
+				void testIsAfter(String target, int arg, @IntervalArrayArg Interval[] hits) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
 							builder(IqlTestUtils.node(NO_LABEL,
 									mark("isAfter", _int(arg)),
 									constraint(eq_exp('X')))).build(),
-							match(hits.size())
+							match(hits.length)
 								.cache(cache(CACHE_0, false)
 										.window(0, target.length()-1)
 										.set(hits)
@@ -3013,16 +3026,16 @@ class SequencePatternTest {
 
 				@ParameterizedTest(name="{index}: [isBefore({1}),X] in {0}, hits={2}")
 				@CsvSource({
-					"XX, 2, 0",
-					"XXX, 2, 0",
-					"XXX, 3, 0-1",
+					"XX, 2, {0}",
+					"XXX, 2, {0}",
+					"XXX, 3, {0;1}",
 				})
 				@DisplayName("Node before specific position")
-				void testIsBefore(String target, int arg, @IntervalArg Interval hits) {
+				void testIsBefore(String target, int arg, @IntervalArrayArg Interval[] hits) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
 							builder(IqlTestUtils.node(NO_LABEL, mark("isBefore", _int(arg)), constraint(eq_exp('X')))).build(),
-							match(hits.size())
+							match(hits.length)
 								.cache(cache(CACHE_0, false)
 										.window(0, target.length()-1)
 										.set(hits)
@@ -3053,29 +3066,26 @@ class SequencePatternTest {
 
 				@ParameterizedTest(name="{index}: [isNotAt({1}),X] in {0}, hits1={2}, hits2={3}")
 				@CsvSource({
-					"XX, 1, -, 1",
-					"XXX, 1, -, 1-2",
-					"XXX, 2, 0, 2",
-					"XXX, 3, 0-1, -",
+					"XX, 1, {1}",
+					"XXX, 1, {1;2}",
+					"XXX, 2, {0;2}",
+					"XXX, 3, {0;1}",
 				})
 				@DisplayName("Node at any but specific position")
 				void testIsNotAt(String target, int arg,
-						@IntervalArg Interval hits1,   // left section
-						@IntervalArg Interval hits2) { // right section
+						@IntervalArrayArg Interval[] hits) {
 					assertResult(target,
 							// Remember that markers use 1-based value space
 							builder(IqlTestUtils.node(NO_LABEL,
 									mark("isNotAt", _int(arg)),
 									constraint(eq_exp('X')))).build(),
-							match(hits1.size() + hits2.size())
+							match(hits.length)
 								.cache(cache(CACHE_0, false)
 										.window(target)
 										.set(Interval.of(0, arg-2))
 										.set(Interval.of(arg, target.length()-1))
-										.hits(hits1)
-										.hits(hits2))
-								.results(NODE_0, hits1)
-								.results(NODE_0, hits2)
+										.hits(hits))
+								.results(NODE_0, hits)
 					);
 				}
 
@@ -3127,7 +3137,7 @@ class SequencePatternTest {
 										.window(target)
 										.set(region)
 										.hits(region))
-								.results(NODE_0, region)
+								.results(NODE_0, region.asArray())
 					);
 				}
 
@@ -3210,32 +3220,29 @@ class SequencePatternTest {
 
 				@ParameterizedTest(name="{index}: [isOutside({1},{2}),X] in {0}")
 				@CsvSource({
-					"XX, 1, 1, -, 1",
-					"XX, 2, 2, 0, -",
-					"XXX, 1, 1, -, 1-2",
-					"XXX, 1, 2, -, 2",
-					"XXX, 2, 2, 0, 2",
-					"XXX, 2, 3, 0, -",
-					"XXX, 3, 3, 0-1, -",
+					"XX, 1, 1, {1}",
+					"XX, 2, 2, {0}",
+					"XXX, 1, 1, {1;2}",
+					"XXX, 1, 2, {2}",
+					"XXX, 2, 2, {0;2}",
+					"XXX, 2, 3, {0}",
+					"XXX, 3, 3, {0;1}",
 				})
 				@DisplayName("Node outside specific region [full region match]")
 				void testIsOutside(String target, int from, int to,
-						@IntervalArg Interval hits1,   // left area
-						@IntervalArg Interval hits2) { // right area
+						@IntervalArrayArg Interval[] hits) {
 					// Remember that markers use 1-based value space
 					assertResult(target,
 							builder(IqlTestUtils.node(NO_LABEL,
 									mark("isOutside", _int(from), _int(to)),
 									constraint(eq_exp('X')))).build(),
-							match(hits1.size() + hits2.size())
+							match(hits.length)
 								.cache(cache(CACHE_0, false)
 										.window(target)
 										.setForWindow()
 										.unset(Interval.of(from-1, to-1))
-										.hits(hits1)
-										.hits(hits2))
-								.results(NODE_0, hits1)
-								.results(NODE_0, hits2)
+										.hits(hits))
+								.results(NODE_0, hits)
 					);
 				}
 
@@ -3747,7 +3754,7 @@ class SequencePatternTest {
 
 						"-XXXX--XXXX-, 4, 1-4, 7-10, 0-11",
 					})
-					@DisplayName("Node with a minimum multiplicity [greedy mode, 2 hits]")
+					@DisplayName("Node with a minimum multiplicity [greedy mode, 2 hits, limited]")
 					void testGreedyMultiple(String target, int count,
 							@IntervalArg Interval hits1,
 							@IntervalArg Interval hits2,
@@ -3805,7 +3812,7 @@ class SequencePatternTest {
 						"Xxxx, 2, 0-2, 3, 0-3, 0-3, 3",
 						"Xxxx-, 2, 0-2, 3, 0-3, 0-4, 3-4",
 					})
-					@DisplayName("verify greedy expansion with multiple nodes")
+					@DisplayName("verify greedy expansion with multiple nodes [limited]")
 					void testGreedyCompetition(String target,
 							int count, // argument for 'AtLeast' marker
 							@IntervalArg Interval hits1, // reported hits for first node
@@ -3926,7 +3933,7 @@ class SequencePatternTest {
 
 						"-XXXX--XXXX-, 4, 1-4, 7-10, 0-11",
 					})
-					@DisplayName("Node with a minimum multiplicity [reluctant mode, 2 hits]")
+					@DisplayName("Node with a minimum multiplicity [reluctant mode, 2 hits, limited]")
 					void testReluctantMultiple(String target, int count,
 							@IntervalArg Interval hits1,
 							@IntervalArg Interval hits2,
@@ -4150,7 +4157,7 @@ class SequencePatternTest {
 						"XXX-, 1, 0-3, 3, 0-2",
 						"XXx-, 1, 0-3, 3, 0-2",
 					})
-					@DisplayName("Mismatch due to possessive consumption")
+					@DisplayName("Mismatch due to possessive consumption [ordered]")
 					void testPossessiveFail2(String target, int count,
 							@IntervalArg Interval visited1,
 							@IntervalArg Interval visited2,
@@ -4175,22 +4182,62 @@ class SequencePatternTest {
 						);
 					}
 
-					//TODO adjust and fix
-					@Disabled
-					@ParameterizedTest(name="{index}: <{2}+!>[x|X][{1}] in {0}, adjacent={2}")
+					@ParameterizedTest(name="{index}: <{1}+>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 1, 0-1, -, 0-1",
+						"XXx, 1, 0-2, -, 0-2",
+						"XXX-, 1, 0-3, 3, 0-2",
+						"XXx-, 1, 0-3, 3, 0-2",
+						"XXx-x, 1, 0-3, 3, 0-2",
+					})
+					@DisplayName("Mismatch due to possessive consumption [adjacent]")
+					void testPossessiveFail3(String target, int count,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atLeastPossessive(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{3}+!>[x|X][{1}] in {0}, adjacent={2}")
 					@CsvSource({
 						// Expansion of size 1 - ordered
-						"XxY, Y, false, 1, 0, 1, 0, 1",
+						"XY, Y, false, 1, {0}, {1}, {0-1}, {1}",
+						"XXY, Y, false, 1, {0-1;1}, {2;2}, {0-2}, {2}",
+						// Expansion of size 2 - ordered
+						"XXX-X, X, false, 2, {0-2;1-2}, {4;4}, {0-3}, {3-4}",
+						"XX-XX, X, false, 2, {0-1;0-1}, {3;4}, {0-2}, {2-4}",
+						"XXx-x, x, false, 2, {0-2;1-2}, {4;4}, {0-3}, {3-4}",
 					})
 					@DisplayName("verify possessive expansion with multiple nodes")
 					void testPossessiveCompetition(String target,
 							char c2, // search symbol for second node
 							boolean adjacent,
 							int count, // argument for 'AtLeast' marker
-							@IntervalArg Interval hits1, // reported hits for first node
-							int hit2, // reported hit for second node
-							@IntervalArg Interval visited1,  // all slots visited for first node
-							@IntervalArg Interval visited2) { // all slots visited for second node
+							@IntervalArrayArg Interval[] hits1, // reported hits for first node
+							@IntervalArrayArg Interval[] hit2, // reported hits for second node
+							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
+							@IntervalArrayArg Interval[] visited2) { // all slots visited for second node
+
+						// Sanity check since we expect symmetric results here
+						assertThat(hits1).hasSameSizeAs(hit2);
+
 						/*
 						 * We expect NODE_1 to aggressively consume slots with
 						 * no regards for NODE_0, so that in contrast to reluctant mode
@@ -4202,6 +4249,186 @@ class SequencePatternTest {
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
+								).build(), // we don't need multiple matches for confirmation
+								match(hits1.length)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(hits1))
+									.results(hits1.length, (r,i) -> r
+											.map(NODE_1, hits1[i])
+											.map(NODE_0, hit2[i]))
+						);
+					}
+
+				}
+
+				@Nested
+				class AtMost {
+
+					@ParameterizedTest(name="{index}: <{1}->[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0, 0",
+						"-XX, 1, 1, 0-1",
+
+						"XX, 2, 0-1, 0-1",
+						"X-, 2, 0, 0-1",
+						"XX-, 2, 0-1, 0-1",
+						"XXX, 2, 0-1, 0-1",
+						"-X-, 2, 1, 0-2",
+						"-XX, 2, 1-2, 0-2",
+						"-XX-, 2, 1-2, 0-2",
+						"-XXX, 2, 1-2, 0-2",
+						"XXX-, 2, 0-1, 0-1",
+						"--XX, 2, 2-3, 0-3",
+						"XX--, 2, 0-1, 0-1",
+
+						"--XXXXXXXXXX--, 10, 2-11, 0-11",
+						"--XXXXXXXXXXX--, 10, 2-11, 0-11",
+					})
+					@DisplayName("Node with a maximum multiplicity [greedy mode, single hit, limit]")
+					void testGreedy(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostGreedy(count)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}+>[X] in {0}")
+					@CsvSource({
+						"-, 1, 0, -",
+						"-Y, 2, 0-1, -",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [greedy mode]")
+					void testGreedyFail(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostGreedy(count)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}->[X] in {0}")
+					@CsvSource({
+						"XX, 1, {0;1}, 0-1",
+						"XX-, 1, {0;1}, 0-2",
+						"-XX, 1, {1;2}, 0-2",
+						"-XX-, 1, {1;2}, 0-3",
+
+						"XXX, 2, {0-1;1-2;2}, 0-2",
+						"-XXX, 2, {1-2;2-3;3}, 0-3",
+						"XXX-, 2, {0-1;1-2;2}, 0-3",
+						"-XXX-, 2, {1-2;2-3;3}, 0-4",
+
+						"-XXXX--XXXX-, 4, {1-4;2-4;3-4;4;7-10;8-10;9-10;10}, 0-11",
+					})
+					@DisplayName("Node with a maximum multiplicity [greedy mode]")
+					void testGreedyMultiple(String target, int count,
+							@IntervalArrayArg Interval[] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostGreedy(count)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}->[x|X][x] in {0}")
+					@CsvSource({
+						// Expansion of size 2
+						"Xx, 2, 0, 1, 0-1, 0-1, 1",
+						"XXx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"XXxx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"XXx-, 2, 0-1, 2, 0-1, 0-1, 2",
+						"-XXx, 2, 1-2, 3, 1-2, 0-2, 3",
+						"-XXx-, 2, 1-2, 3, 1-2, 0-2, 3",
+						"XxX, 2, 0, 1, 0-1, 0-1, 1-2",
+						"XxX-, 2, 0, 1, 0-1, 0-1, 1-3",
+						"-XxX, 2, 1, 2, 1-2, 0-2, 2-3",
+						"-XxX-, 2, 1, 2, 1-2, 0-2, 2-4",
+						// Expansion of size 3
+						"XXx, 3, 0-1, 2, 0-2, 0-2, 2",
+						"XXXx, 3, 0-2, 3, 0-2, 0-2, 3",
+						"XXxX, 3, 0-1, 2, 0-2, 0-2, 2-3",
+						"XXxX-, 3, 0-1, 2, 0-2, 0-2, 2-4",
+						"-XXxX, 3, 1-2, 3, 1-3, 0-3, 3-4",
+						"-XXxX-, 3, 1-2, 3, 1-3, 0-3, 3-5",
+						// Consume first target for second node
+						"XxXxX, 10, 0-2, 3, 0-4, 0-4, 3-4",
+						"XxXxX-, 10, 0-2, 3, 0-4, 0-5, 3-5",
+						"-XxXxX, 10, 1-3, 4, 1-5, 0-5, 4-5",
+						"-XxXxX-, 10, 1-3, 4, 1-5, 0-6, 4-6",
+						// Greediness
+						"Xxx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"Xxxx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"Xxxx-, 2, 0-1, 2, 0-1, 0-1, 2",
+						"Xxx, 3, 0-1, 2, 0-2, 0-2, 2",
+						"Xxxx, 3, 0-2, 3, 0-2, 0-2, 3",
+						"Xxxx-, 3, 0-2, 3, 0-2, 0-2, 3",
+					})
+					@DisplayName("verify greedy expansion with multiple nodes [limited]")
+					void testGreedyCompetition(String target,
+							int count, // argument for 'AtLeast' marker
+							@IntervalArg Interval hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval candidates, // cached hits for first node
+							@IntervalArg Interval visited1, // all slots visited for first node
+							@IntervalArg Interval visited2) { // all slots visited for second node
+						/*
+						 * We expect NODE_1 to visit and greedily consume all the
+						 * X and x slots and then back off until the first x is
+						 * reached for NODE_0.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(unordered(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostGreedy(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
 									// Cache of second node
@@ -4213,17 +4440,12 @@ class SequencePatternTest {
 									.cache(cache(CACHE_1, false)
 											.window(target)
 											.set(visited1)
-											.hits(hits1))
+											.hits(candidates))
 									.result(result(0)
 											.map(NODE_1, hits1)
 											.map(NODE_0, hit2))
 						);
 					}
-
-				}
-
-				@Nested
-				class AtMost {
 
 				}
 
