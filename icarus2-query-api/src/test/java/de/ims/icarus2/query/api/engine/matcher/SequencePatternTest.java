@@ -63,6 +63,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.mark;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.negated;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.ordered;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantify;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.rangeGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.set;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.unordered;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -418,9 +419,6 @@ class SequencePatternTest {
 		/** Map all elements of given interval to specified nodeId in separate results */
 		MatchConfig results(int nodeId, Interval...regions) {
 			for(Interval region : regions) {
-				if(region.isEmpty()) {
-					continue;
-				}
 				ResultConfig result = SequencePatternTest.result(results.size());
 				for (int i = 0; i < region.size(); i++) {
 					result.map(nodeId, region.indexAt(i));
@@ -4901,7 +4899,89 @@ class SequencePatternTest {
 				}
 
 				@Nested
-				class Ranged {
+				class Range {
+
+					@ParameterizedTest(name="{index}: <{1}..{2}>[X] in {0}")
+					@CsvSource({
+						// Optional
+						"Y, 0, 1, {-}, 0, -",
+						"Y-, 0, 1, {-;-}, 0-1, -",
+						"X, 0, 1, {0}, 0, {0}",
+						"-X, 0, 1, {-;1}, 0-1, {1}",
+						"X-, 0, 1, {0;-}, 0-1, {0}",
+						// Singular
+						"X, 1, 1, {0}, 0, {0}",
+						"X-, 1, 1, {0}, 0-1, {0}",
+						"-X, 1, 1, {1}, 0-1, {1}",
+						"XX-, 1, 1, {0;1}, 0-2, {0-1}",
+						"-XX, 1, 1, {1;2}, 0-2, {1-2}",
+						// Sequence of 1 to 2
+						"XX, 1, 2, {0-1;1}, 0-1, {0-1}",
+						"X-, 1, 2, {0}, 0-1, {0}",
+						"XX-, 1, 2, {0-1;1}, 0-2, {0-1}",
+						"XXX, 1, 2, {0-1;1-2;2}, 0-2, {0-2}",
+						"-X-, 1, 2, {1}, 0-2, {1}",
+						"-XX, 1, 2, {1-2;2}, 0-2, {1-2}",
+						"-XX-, 1, 2, {1-2;2}, 0-3, {1-2}",
+						"-XXX, 1, 2, {1-2;2-3;3}, 0-3, {1-3}",
+						"XXX-, 1, 2, {0-1;1-2;2}, 0-3, {0-2}",
+						"--XX, 1, 2, {2-3;3}, 0-3, {2-3}",
+						"XX--, 1, 2, {0-1;1}, 0-3, {0-1}",
+
+						"--XXXXXXXXXX--, 8, 10, {2-11;3-11;4-11}, 0-12, {2-11}",
+						"--XXXXXXXXXXX--, 8, 10, {2-11;3-12;4-12;5-12}, 0-13, {2-12}",
+					})
+					@DisplayName("Node with a range multiplicity [greedy mode, multiple hits]")
+					void testGreedy(String target, int min, int max,
+							@IntervalArrayArg Interval[] hits,
+							@IntervalArg Interval visited,
+							@IntervalArrayArg Interval[] candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeGreedy(min, max)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}+>[X] in {0}")
+					@CsvSource({
+						"-, 1, 1, 0, {-}",
+						"Y, 1, 1, 0, {-}",
+						"-Y, 2, 3, 0, {-}",
+						"-Y-, 2, 3, 0-1, {-}",
+						"X-X, 2, 3, 0-1, {0}",
+						"X-X-, 2, 3, 0-3, {0;2}",
+						"XX-XX-X, 3, 5, 0-5, {0-1;3-4}",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [greedy mode]")
+					void testGreedyFail(String target, int min, int max,
+							@IntervalArg Interval visited,
+							@IntervalArrayArg Interval[] candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeGreedy(min, max)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
 
 				}
 			}
