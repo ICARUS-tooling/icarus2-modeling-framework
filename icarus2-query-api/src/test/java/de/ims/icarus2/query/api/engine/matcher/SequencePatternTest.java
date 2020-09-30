@@ -53,6 +53,8 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastPossessive;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastReluctant;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostGreedy;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostPossessive;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostReluctant;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.constraint;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.exact;
@@ -646,10 +648,12 @@ class SequencePatternTest {
 			for (int i = 0; i < size; i++) {
 				Pair<Integer, Integer> m = mapping.get(i);
 				assertThat(state.m_node[i])
-					.as("Node id mismatch in mapping at index %d in result #%d", _int(i), _int(index))
+					.as("Node id mismatch in mapping at index %d in result #%d",
+							_int(i), _int(index))
 					.isEqualTo(m.first.intValue());
 				assertThat(state.m_pos[i])
-					.as("Position mismatch in mapping at index %d in result #%d", _int(i), _int(index))
+					.as("Position mismatch in mapping at index %d in result #%d for node %d",
+							_int(i), _int(index), _int(state.m_node[i]))
 					.isEqualTo(m.second.intValue());
 			}
 		}
@@ -4126,7 +4130,7 @@ class SequencePatternTest {
 						);
 					}
 
-					@ParameterizedTest(name="{index}: <{1}+>[X] in {0}")
+					@ParameterizedTest(name="{index}: <{1}+!>[X] in {0}")
 					@CsvSource({
 						"X-, 2, 0-1, 0",
 						"-X, 2, 0, -", // early-abort from scan
@@ -4140,7 +4144,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atLeastGreedy(count)
+										atLeastPossessive(count)
 										)
 								).build(),
 								mismatch()
@@ -4152,7 +4156,7 @@ class SequencePatternTest {
 						);
 					}
 
-					@ParameterizedTest(name="{index}: <{1}+>[X|x][x] in {0}")
+					@ParameterizedTest(name="{index}: <{1}+!>[X|x][x] in {0}")
 					@CsvSource({
 						"Xx, 1, 0-1, -, 0-1",
 						"XXx, 1, 0-2, -, 0-2",
@@ -4184,7 +4188,7 @@ class SequencePatternTest {
 						);
 					}
 
-					@ParameterizedTest(name="{index}: <{1}+>[X|x][x] in {0}")
+					@ParameterizedTest(name="{index}: <{1}+!>[X|x][x] in {0}")
 					@CsvSource({
 						"Xx, 1, 0-1, -, 0-1",
 						"XXx, 1, 0-2, -, 0-2",
@@ -4226,6 +4230,7 @@ class SequencePatternTest {
 						"XXX-X, X, false, 2, {0-2;1-2}, {4;4}, {0-3}, {3-4}",
 						"XX-XX, X, false, 2, {0-1;0-1}, {3;4}, {0-2}, {2-4}",
 						"XXx-x, x, false, 2, {0-2;1-2}, {4;4}, {0-3}, {3-4}",
+						//TODO adjacent cases
 					})
 					@DisplayName("verify possessive expansion with multiple nodes")
 					void testPossessiveCompetition(String target,
@@ -4322,7 +4327,9 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: <{1}+>[X] in {0}")
 					@CsvSource({
 						"-, 1, 0, -",
+						"Y, 1, 0, -",
 						"-Y, 2, 0-1, -",
+						"-Y-, 2, 0-2, -",
 					})
 					@DisplayName("Mismatch with a maximum multiplicity [greedy mode]")
 					void testGreedyFail(String target, int count,
@@ -4446,6 +4453,448 @@ class SequencePatternTest {
 									.result(result(0)
 											.map(NODE_1, hits1)
 											.map(NODE_0, hit2))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-?>[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0",
+						"XX, 1, 0, 0",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0, 0",
+						"-XX, 1, 1, 0-1",
+
+						"XX, 2, 0, 0",
+						"X-, 2, 0, 0",
+						"XX-, 2, 0, 0",
+						"XXX, 2, 0, 0",
+						"-XX, 2, 1, 0-1",
+						"-X-, 2, 1, 0-1",
+						"-XX-, 2, 1, 0-1",
+						"-XXX, 2, 1, 0-1",
+						"XXX-, 2, 0, 0",
+						"--XX, 2, 2, 0-2",
+						"XX--, 2, 0, 0",
+
+						"--XXXXXXXXXX--, 10, 2, 0-2",
+					})
+					@DisplayName("Node with a maximum multiplicity [reluctant mode, single hit, limit]")
+					void testReluctant(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostReluctant(count)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-?>[X] in {0}")
+					@CsvSource({
+						"-, 1, 0, -",
+						"Y, 1, 0, -",
+						"-Y, 2, 0-1, -",
+						"-Y-, 2, 0-2, -",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [reluctant mode]")
+					void testReluctantFail(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostReluctant(count)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-?>[X] in {0}")
+					@CsvSource({
+						"XX, 1, {0;1}, 0-1",
+						"XX-, 1, {0;1}, 0-2",
+						"-XX, 1, {1;2}, 0-2",
+						"-XX-, 1, {1;2}, 0-3",
+
+						"XXX, 2, {0;1;2}, 0-2",
+						"-XXX, 2, {1;2;3}, 0-3",
+						"XXX-, 2, {0;1;2}, 0-3",
+						"-XXX-, 2, {1;2;3}, 0-4",
+
+						"-XXXX--XXXX-, 4, {1;2;3;4;7;8;9;10}, 0-11",
+					})
+					@DisplayName("Node with a maximum multiplicity [reluctant mode, multiple hits]")
+					void testReluctantMultiple(String target, int count,
+							@IntervalArrayArg Interval[] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostReluctant(count)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{2}-?>[x|X][x] in {0}, adjacent={1}")
+					@CsvSource({
+						// Expansion of size 1 - ordered
+						"Xx, false, 1, 0, 1, 0, 1, 0",
+						"XXx, false, 1, 0, 2, 0, 1-2, 0",
+						"XXx-, false, 1, 0, 2, 0, 1-2, 0",
+						"-XXx, false, 1, 1, 3, 0-1, 2-3, 1",
+						"-XXx-, false, 1, 1, 3, 0-1, 2-3, 1",
+						"XxX, false, 1, 0, 1, 0, 1, 0",
+						"XxX-, false, 1, 0, 1, 0, 1, 0",
+						"-XxX, false, 1, 1, 2, 0-1, 2, 1",
+						"-XxX-, false, 1, 1, 2, 0-1, 2, 1",
+						// Expansion of size 1 - adjacent
+						"Xx, true, 1, 0, 1, 0, 1, 0",
+						"XXx, true, 1, 1, 2, 0-1, 1-2, 0-1",
+						"XXXx, true, 1, 2, 3, 0-2, 1-3, 0-2",
+						"XXx-, true, 1, 1, 2, 0-1, 1-2, 0-1",
+						"-XXx, true, 1, 2, 3, 0-2, 2-3, 1-2",
+						"-XXx-, true, 1, 2, 3, 0-2, 2-3, 1-2",
+						"XxX, true, 1, 0, 1, 0, 1, 0",
+						"XxX-, true, 1, 0, 1, 0, 1, 0",
+						"-XxX, true, 1, 1, 2, 0-1, 2, 1",
+						"-XxX-, true, 1, 1, 2, 0-1, 2, 1",
+						// Expansion of size 2 - ordered
+						"XXx, false, 2, 0, 2, 0, 1-2, 0",
+						"XXXx, false, 2, 0, 3, 0, 1-3, 0",
+						"XXxX, false, 2, 0, 2, 0, 1-2, 0",
+						"XXxX-, false, 2, 0, 2, 0, 1-2, 0",
+						"-XXxX, false, 2, 1, 3, 0-1, 2-3, 1",
+						"-XXxX-, false, 2, 1, 3, 0-1, 2-3, 1",
+						// Expansion of size 2 - adjacent
+						"XXx, true, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"XXXx, true, 2, 1-2, 3, 0-2, 1-3, 0-2",
+						"XXXXx, true, 2, 2-3, 4, 0-3, 1-4, 0-3",
+						"XXxX, true, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"XXxX-, true, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"-XXxX, true, 2, 1-2, 3, 0-2, 2-3, 1-2",
+						"-XXxX-, true, 2, 1-2, 3, 0-2, 2-3, 1-2",
+						// Reluctance - adjacent
+						"Xxx, true, 1, 0, 1, 0, 1, 0",
+						"Xxxx, true, 1, 0, 1, 0, 1, 0",
+						"Xxxx-, true, 1, 0, 1, 0, 1, 0",
+						"Xxx, true, 2, 0, 1, 0, 1, 0",
+						"Xxxx, true, 2, 0, 1, 0, 1, 0",
+						"Xxxx-, true, 2, 0, 1, 0, 1, 0",
+					})
+					@DisplayName("verify reluctant expansion with multiple nodes [limited]")
+					void testReluctantCompetition(String target,
+							boolean adjacent,
+							int count, // argument for 'AtLeast' marker
+							@IntervalArg Interval hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval visited1,  // all slots visited for first node
+							@IntervalArg Interval visited2, // all slots visited for second node
+							@IntervalArg Interval candidates1) { // slots marked as true for first node
+						/*
+						 * We expect NODE_1 to only proceed with consumption of slots
+						 * while NODE_0 does not already match the next one.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostReluctant(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).limit(1).build(), // we don't need multiple matches for confirmation
+								match(1)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates1))
+									.result(result(0)
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
+						);
+					}
+
+					@Test
+					@DisplayName("verify reluctant expansion with multiple nodes and matches")
+					void testReluctantExpansion() {
+						final String target = "-XXxXXx-";
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostReluctant(2)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								match(4)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(Interval.of(2, 7))
+											.hits(3, 6))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(0, 7))
+											.hits(Interval.of(1, 6)))
+									// First normal-sized match
+									.result(result(0)
+											.map(NODE_1, 1, 2)
+											.map(NODE_0, 3))
+									// Intermediate match that only allows first node to consume 1 slot
+									.result(result(1)
+											.map(NODE_1, 2)
+											.map(NODE_0, 3))
+									// Last normal-sized match
+									.result(result(3)
+											.map(NODE_1, 4, 5)
+											.map(NODE_0, 6))
+									// Final minimum-sized match
+									.result(result(4)
+											.map(NODE_1, 5)
+											.map(NODE_0, 6))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!>[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0, 0",
+						"-XX, 1, 1, 0-1",
+						"-X-, 1, 1, 0-1",
+
+						"XX, 2, 0-1, 0-1",
+						"XX-, 2, 0-1, 0-1",
+						"XXX, 2, 0-1, 0-1",
+						"-XX, 2, 1-2, 0-2",
+						"-XX-, 2, 1-2, 0-2",
+						"-XXX, 2, 1-2, 0-2",
+						"XXX-, 2, 0-1, 0-1",
+						"--XX, 2, 2-3, 0-3",
+						"XX--, 2, 0-1, 0-1",
+
+						"XXX, 3, 0-2, 0-2",
+						"-XXX, 3, 1-3, 0-3",
+						"XXX-, 3, 0-2, 0-2",
+
+						"--XXXXXXXXXX--, 10, 2-11, 0-11",
+						"--XXXXXXXXXXXX--, 10, 2-11, 0-11",
+					})
+					@DisplayName("Node with a maximum multiplicity [possessive mode, single hit, limit]")
+					void testPossessive(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostPossessive(count)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!>[X] in {0}")
+					@CsvSource({
+						"-, 1, 0, -",
+						"Y, 1, 0, -",
+						"-Y, 2, 0-1, -",
+						"-Y-, 2, 0-2, -",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [possessive mode]")
+					void testPossessiveFail(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostPossessive(count)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 2, 0-1, -, 0-1",
+						"XXX-, 2, 0-3, 2-3, 0-2",
+
+						"Xx, 3, 0-1, -, 0-1",
+						"XXx, 3, 0-2, -, 0-2",
+						"XXX-, 3, 0-3, 3, 0-2",
+						"XXx-, 3, 0-3, 3, 0-2",
+
+						"XXX-, 4, 0-3, 3, 0-2",
+						"XXx-, 4, 0-3, 3, 0-2",
+						"XXXx, 4, 0-3, -, 0-3",
+					})
+					@DisplayName("Mismatch due to possessive consumption [ordered]")
+					void testPossessiveFail2(String target, int count,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(ordered(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostPossessive(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 2, 0-1, -, 0-1",
+						"XXx, 3, 0-2, -, 0-2",
+						"XXX-, 3, 0-3, 3, 0-2",
+						"XXx-, 3, 0-3, 3, 0-2",
+						"XXx-x, 3, 0-3, 3, 0-2",
+					})
+					@DisplayName("Mismatch due to possessive consumption [adjacent]")
+					void testPossessiveFail3(String target, int count,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostPossessive(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{3}+!>[x|X][{1}] in {0}, adjacent={2}")
+					@CsvSource({
+						// Expansion of size 1 - ordered
+						"XY, Y, false, 1, {0}, {1}, {0}, {1}, {0}",
+						"XXY, Y, false, 1, {0;1}, {2;2}, {0-1}, {1-2}, {0-1}",
+						"XX-XX, X, false, 1, {0;0;0;1;1;3}, {1;3;4;3;4;4}, {0-3}, {1-4}, {0-1;3}",
+						// Expansion of size 1 - adjacent
+						"XY, Y, true, 1, {0}, {1}, {0}, {1}, {0}",
+						"XXY, Y, true, 1, {1}, {2}, {0-1}, {1-2}, {0-1}",
+						// Expansion of size 2 - ordered
+						"XY, Y, false, 2, {0}, {1}, {0-1}, {1}, {0}",
+						"XXY, Y, false, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
+						"XXX-X, X, false, 2, {0-1;0-1;1-2;2}, {2;4;4;4}, {0-3}, {2-4}, {0-2}",
+						"XX-XX, X, false, 2, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}", // we miss the 5. match due to possessive expansion
+						"XXx-x, x, false, 2, {0-1;0-1;1-2;2}, {2;4;4;4}, {0-3}, {2-4}, {0-2}",
+						// Expansion of size 2 - adjacent
+						"XXY, Y, true, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
+						"XXX-X, X, true, 2, {0-1}, {2}, {0-3}, {2-3}, {0-2}",
+						// Expansion of size 3 - ordered
+						"XXX-X, X, false, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}, {0-2}",
+						"XX-XX, X, false, 3, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}",
+					})
+					@DisplayName("verify possessive expansion with multiple nodes")
+					void testPossessiveCompetition(String target,
+							char c2, // search symbol for second node
+							boolean adjacent,
+							int count, // argument for 'AtMost' marker
+							@IntervalArrayArg Interval[] hits1, // reported hits for first node
+							@IntervalArrayArg Interval[] hit2, // reported hits for second node
+							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
+							@IntervalArrayArg Interval[] visited2, // all slots visited for second node
+							@IntervalArrayArg Interval[] candidates1) {
+
+						// Sanity check since we expect symmetric results here
+						assertThat(hits1).hasSameSizeAs(hit2);
+
+						/*
+						 * We expect NODE_1 to aggressively consume slots with
+						 * no regards for NODE_0, so that in contrast to reluctant mode
+						 * we will miss some multi-match situations.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostPossessive(count)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
+								).build(), // we don't need multiple matches for confirmation
+								match(hits1.length)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates1))
+									.results(hits1.length, (r,i) -> r
+											.map(NODE_1, hits1[i])
+											.map(NODE_0, hit2[i]))
 						);
 					}
 
