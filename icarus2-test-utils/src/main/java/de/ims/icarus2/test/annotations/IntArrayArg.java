@@ -11,8 +11,7 @@ import java.lang.annotation.Target;
 
 import org.junit.jupiter.params.converter.ConvertWith;
 
-import de.ims.icarus2.test.util.convert.ArrayConverter;
-import de.ims.icarus2.test.util.convert.ComponentConverter;
+import de.ims.icarus2.test.util.convert.ArrayConverters;
 
 /**
  * @author Markus Gärtner
@@ -21,16 +20,8 @@ import de.ims.icarus2.test.util.convert.ComponentConverter;
 @Documented
 @Target({ ElementType.ANNOTATION_TYPE, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-@ConvertWith(ArrayConverter.class)
-public @interface ConvertAsArray {
+@ConvertWith(ArrayConverters.IntegerArrayConverter.class)
+public @interface IntArrayArg {
 
-	String delimiter() default ";";
-
-	String open() default "{";
-
-	String close() default "}";
-
-	String empty() default "-";
-
-	Class<? extends ComponentConverter> componentConverter();
+	// marker interface
 }

@@ -30,8 +30,7 @@ import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
-import de.ims.icarus2.test.annotations.ConvertAsArray;
-import de.ims.icarus2.test.util.convert.ArrayConverter;
+import de.ims.icarus2.test.annotations.ArrayArg;
 import de.ims.icarus2.test.util.convert.ComponentConverter;
 import de.ims.icarus2.util.strings.StringPrimitives;
 
@@ -76,8 +75,7 @@ public class IntervalConverter extends SimpleArgumentConverter implements Compon
 
 	@Target({ ElementType.ANNOTATION_TYPE, ElementType.PARAMETER })
 	@Retention(RetentionPolicy.RUNTIME)
-	@ConvertWith(ArrayConverter.class)
-	@ConvertAsArray(componentConverter=IntervalConverter.class)
+	@ArrayArg(componentConverter=IntervalConverter.class)
 	public @interface IntervalArrayArg {
 		// marker interface
 	}

@@ -124,6 +124,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlTestUtils;
+import de.ims.icarus2.test.annotations.IntArrayArg;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
@@ -3171,12 +3172,13 @@ class SequencePatternTest {
 
 				@ParameterizedTest(name="{index}: [isInside({1},{2}),X] in {0}")
 				@CsvSource({
-					"X-X, 1, 3, 0, 2",
-					"-XX, 1, 3, 1, 2",
-					"XX-, 1, 3, 0, 1",
+					"X-X, 1, 3, {0;2}",
+					"-XX, 1, 3, {1;2}",
+					"XX-, 1, 3, {0;1}",
 				})
-				@DisplayName("Node inside specific region [dual node match]")
-				void testIsInsidePartial2(String target, int from, int to, int hit1, int hit2) {
+				@DisplayName("Node inside specific region [multiple matches]")
+				void testIsInsidePartial2(String target, int from, int to,
+						@IntArrayArg int[] hits) {
 					// Remember that markers use 1-based value space
 					assertResult(target,
 							builder(IqlTestUtils.node(NO_LABEL,
@@ -3185,9 +3187,8 @@ class SequencePatternTest {
 							match(2)
 								.cache(cache(CACHE_0, true)
 										.window(target)
-										.hits(hit1, hit2))
-								.result(result(0).map(NODE_0, hit1))
-								.result(result(1).map(NODE_0, hit2))
+										.hits(hits))
+								.results(NODE_0, hits)
 					);
 				}
 
@@ -3292,40 +3293,41 @@ class SequencePatternTest {
 
 				@ParameterizedTest(name="{index}: [isOutside({1},{2}),X] in {0}")
 				@CsvSource({
-					"XX-X, 1, 1, 1, 3",
-					"X-XX, 1, 1, 2, 3",
-					"XXX-, 1, 1, 1, 2",
+					"XX-X, 1, 1, {1;3}",
+					"X-XX, 1, 1, {2;3}",
+					"XXX-, 1, 1, {1;2}",
 
-					"XXX-, 2, 2, 0, 2",
-					"XX-X, 2, 2, 0, 3",
-					"-XXX, 2, 2, 2, 3",
+					"XXX-, 2, 2, {0;2}",
+					"XX-X, 2, 2, {0;3}",
+					"-XXX, 2, 2, {2;3}",
 
-					"XXX-, 3, 3, 0, 1",
-					"X-XX, 3, 3, 0, 3",
-					"-XXX, 3, 3, 1, 3",
+					"XXX-, 3, 3, {0;1}",
+					"X-XX, 3, 3, {0;3}",
+					"-XXX, 3, 3, {1;3}",
 
-					"XX-X, 4, 4, 0, 1",
-					"X-XX, 4, 4, 0, 2",
-					"-XXX, 4, 4, 1, 2",
+					"XX-X, 4, 4, {0;1}",
+					"X-XX, 4, 4, {0;2}",
+					"-XXX, 4, 4, {1;2}",
 
-					"XXXX-, 1, 2, 2, 3",
-					"XXX-X, 1, 2, 2, 4",
-					"XX-XX, 1, 2, 3, 4",
+					"XXXX-, 1, 2, {2;3}",
+					"XXX-X, 1, 2, {2;4}",
+					"XX-XX, 1, 2, {3;4}",
 
-					"XXXX-, 2, 3, 0, 3",
-					"XXX-X, 2, 3, 0, 4",
-					"-XXXX, 2, 3, 3, 4",
+					"XXXX-, 2, 3, {0;3}",
+					"XXX-X, 2, 3, {0;4}",
+					"-XXXX, 2, 3, {3;4}",
 
-					"XXXX-, 3, 4, 0, 1",
-					"X-XXX, 3, 4, 0, 4",
-					"-XXXX, 3, 4, 1, 4",
+					"XXXX-, 3, 4, {0;1}",
+					"X-XXX, 3, 4, {0;4}",
+					"-XXXX, 3, 4, {1;4}",
 
-					"XX-XX, 4, 5, 0, 1",
-					"X-XXX, 4, 5, 0, 2",
-					"-XXXX, 4, 5, 1, 2",
+					"XX-XX, 4, 5, {0;1}",
+					"X-XXX, 4, 5, {0;2}",
+					"-XXXX, 4, 5, {1;2}",
 				})
 				@DisplayName("Node outside specific region [dual node match]")
-				void testIsOutsidePartial2(String target, int from, int to, int hit1, int hit2) {
+				void testIsOutsidePartial2(String target, int from, int to,
+						@IntArrayArg int[] hits) {
 					// Remember that markers use 1-based value space
 					assertResult(target,
 							builder(IqlTestUtils.node(NO_LABEL,
@@ -3336,8 +3338,8 @@ class SequencePatternTest {
 										.window(target)
 										.setForWindow()
 										.unset(Interval.of(from-1, to-1))
-										.hits(hit1, hit2))
-								.results(NODE_0, hit1, hit2)
+										.hits(hits))
+								.results(NODE_0, hits)
 					);
 				}
 
