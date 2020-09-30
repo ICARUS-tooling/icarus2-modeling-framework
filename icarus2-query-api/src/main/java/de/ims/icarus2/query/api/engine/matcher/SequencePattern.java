@@ -2273,7 +2273,13 @@ public class SequencePattern {
 			next.study(info);
 			minSize = info.minSize-minSize0;
 
-			checkState("Minimum size of scan target must be greater than or equal 1", minSize>0);
+//			checkState("Minimum size of scan target must be greater than or equal 1", minSize>0);
+
+			/* For scanning an optional inner atom behaves similar to a single
+			 * node of size 1, as in either case we are going to scan till the last
+			 * position in the current search space.
+			 */
+			minSize = Math.max(minSize, 1);
 
 			info.deterministic = false;
 			info.skip = true;
