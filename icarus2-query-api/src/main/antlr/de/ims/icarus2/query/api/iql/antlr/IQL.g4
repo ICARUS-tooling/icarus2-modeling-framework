@@ -622,6 +622,7 @@ ORDERED : 'ORDERED' | 'ordered';
 RANGE : 'RANGE' | 'range' ;
 STEP : 'STEP' | 'step' ;
 TRUE : 'TRUE' | 'true' ;
+UNORDERED : 'UNORDERED' | 'unordered';
 WITH : 'WITH' | 'with' ;
 
 // END Keywords

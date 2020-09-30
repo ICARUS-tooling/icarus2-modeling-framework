@@ -22,7 +22,7 @@ package de.ims.icarus2.query.api.iql;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum NodeArrangement {
-	UNSPECIFIED("unspecified"),
+	UNORDERED("unordered"),
 	ORDERED("ordered"),
 	ADJACENT("adjacent")
 	;

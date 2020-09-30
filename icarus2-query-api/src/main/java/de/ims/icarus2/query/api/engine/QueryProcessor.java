@@ -708,7 +708,7 @@ public class QueryProcessor {
 			tree.exit();
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(nodeSet.getArrangement()!=NodeArrangement.UNSPECIFIED
+			if(nodeSet.getArrangement()!=NodeArrangement.UNORDERED
 					&& countExistentialElements(nodeSet.getElements())<2) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 						"For node arrangement feature to be effective the query needs at least"

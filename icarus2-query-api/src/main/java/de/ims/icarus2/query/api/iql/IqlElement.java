@@ -222,7 +222,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		@JsonProperty(IqlProperties.ARRANGEMENT)
 		@JsonInclude(Include.NON_DEFAULT)
-		private NodeArrangement nodeArrangement = NodeArrangement.UNSPECIFIED;
+		private NodeArrangement nodeArrangement = NodeArrangement.UNORDERED;
 
 		@Override
 		public IqlType getType() { return IqlType.SET; }

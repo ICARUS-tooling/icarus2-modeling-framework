@@ -902,7 +902,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
 							node(null, null), node(null, null), node(null, null))));
 				}
 
@@ -912,7 +912,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
 							node(null, null, quant(QuantifierType.AT_MOST, 4)),
 							node(null, null, quant(2, 10)),
 							node(null, null, quant(QuantifierType.EXACT, 3), quant(QuantifierType.AT_LEAST, 5)),
@@ -948,7 +948,7 @@ class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("layer1", false, "token1", "token2"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
 							node("token1", null), node("token2", null))));
 				}
  			}
@@ -968,7 +968,7 @@ class QueryProcessorTest {
 					assertBindings(payload,
 							bind("layer1", true, "token1", "token2"),
 							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNSPECIFIED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
 							node("token1", pred("pos!=\"NNP\"")),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
 							node("token2", pred("length()>12")))));
@@ -1010,7 +1010,7 @@ class QueryProcessorTest {
 					assertTree(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
-							tree(null, null, sequence(NodeArrangement.UNSPECIFIED,
+							tree(null, null, sequence(NodeArrangement.UNORDERED,
 									node(), node()))));
 				}
 
@@ -1057,11 +1057,11 @@ class QueryProcessorTest {
 							bind("layer1", true, "token1", "token2"),
 							bind("phrase", false, "p"));
 					assertLanes(payload, lane(LaneType.TREE, sequence(NodeArrangement.ORDERED,
-							tree(null, null, sequence(NodeArrangement.UNSPECIFIED,
+							tree(null, null, sequence(NodeArrangement.UNORDERED,
 									node(null, null, quant(QuantifierType.AT_MOST, 5)),
 									node("token1", pred("pos!=\"NNP\"")))),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
-							tree("token2", pred("length()>12"), sequence(NodeArrangement.UNSPECIFIED,
+							tree("token2", pred("length()>12"), sequence(NodeArrangement.UNORDERED,
 									node(null, pred("pos==\"DET\""), quantNone()),
 									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3)))))));
 					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
