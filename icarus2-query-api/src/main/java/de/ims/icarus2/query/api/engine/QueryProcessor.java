@@ -469,7 +469,7 @@ public class QueryProcessor {
 			if(reportBuilder.getErrorCount()>0)
 				throw new QueryProcessingException("Failed to process payload - encountered errors", reportBuilder.build());
 			if(reportBuilder.getWarningCount()>0 && !ignoreWarnings)
-				throw new QueryProcessingException("Failed to process payload - encountered errors", reportBuilder.build());
+				throw new QueryProcessingException("Failed to process payload - encountered warnings", reportBuilder.build());
 
 			return payload;
 		}
