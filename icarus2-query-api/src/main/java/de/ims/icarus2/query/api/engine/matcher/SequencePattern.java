@@ -190,7 +190,8 @@ public class SequencePattern {
 		return new NonResettingMatcher(setup, id);
 	}
 
-	private static final int INITIAL_SIZE = 1<<10;
+	@VisibleForTesting
+	static final int INITIAL_SIZE = 1<<10;
 
 	/**
 	 * Encapsulates all the information needed to instantiate a matcher for
@@ -840,7 +841,7 @@ public class SequencePattern {
 				}
 				case EXACT: { // n
 					min = max = quantifier.getValue().getAsInt();
-					mode = GREEDY;
+					mode = POSSESSIVE;
 				} break;
 				case AT_LEAST: { // n+
 					min = quantifier.getValue().getAsInt();
@@ -853,6 +854,7 @@ public class SequencePattern {
 				case RANGE: { // n..m
 					min = quantifier.getLowerBound().getAsInt();
 					max = quantifier.getUpperBound().getAsInt();
+					mode = mode(quantifier);
 				} break;
 
 				default:
@@ -2502,6 +2504,10 @@ public class SequencePattern {
 			while (count >= backLimit) {
 				if (next.match(state, pos)) {
 					return true;
+				}
+				// Can't backtrack further
+				if(count==0) {
+					break;
 				}
 				// Need to backtrack one more step
 				count--;
