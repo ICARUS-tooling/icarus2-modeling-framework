@@ -212,7 +212,7 @@
 				</xsd:attribute>
 				<xsd:attribute name="foundationLayer" type="imf:identifierAttr">
 					<xsd:annotation>
-						<xsd:documentation>The layer that defines the basic atomicity of items in or referenced by layer sin this context. </xsd:documentation>
+						<xsd:documentation>The layer that defines the basic atomicity of items in or referenced by layers in this context. </xsd:documentation>
 					</xsd:annotation>
 				</xsd:attribute>
 				<xsd:attribute name="independent" type="xsd:boolean" default="false">
@@ -240,7 +240,7 @@
 		</xsd:attribute>
 		<xsd:attribute name="contextId" type="imf:identifierAttr">
 			<xsd:annotation>
-				<xsd:documentation>Identifier of the context hosting the target layer. Only available if this prerequisite has already been resolved or uses hard-binding</xsd:documentation>
+				<xsd:documentation>Identifier of the context hosting the target layer. Only available if this prerequisite has already been resolved or uses hard-binding.</xsd:documentation>
 			</xsd:annotation>
 		</xsd:attribute>
 		<xsd:attribute name="layerId" type="imf:identifierAttr">
@@ -404,7 +404,7 @@
 				</xsd:sequence>
 				<xsd:attribute name="defaultKey" type="imf:identifierAttr" use="optional">
 					<xsd:annotation>
-						<xsd:documentation>If this layer contains multiple annotations type, one of them has to be designated as default.</xsd:documentation>
+						<xsd:documentation>If this layer contains multiple annotation definitions, one of them has to be designated as default.</xsd:documentation>
 					</xsd:annotation>
 				</xsd:attribute>
 			</xsd:extension>
@@ -761,7 +761,7 @@
 	
 	<xsd:complexType name="basicMemberManifestType">
 		<xsd:annotation>
-			<xsd:documentation>Basic manifest for actual members of a corpus. This includes options, documentation and arbitrary keyy-value properties set for the member.</xsd:documentation>
+			<xsd:documentation>Basic manifest for actual members of a corpus. This includes options, documentation and arbitrary key-value properties set for the member.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:complexContent>
 			<xsd:extension base="imf:basicManifestType">
@@ -770,7 +770,7 @@
 					<xsd:group ref="imf:documentationGroup" />
 					<xsd:element name="categories" minOccurs="0">
 						<xsd:annotation>
-							<xsd:documentation>Collection of category definitions</xsd:documentation>
+							<xsd:documentation>Collection of category definitions.</xsd:documentation>
 						</xsd:annotation>
 						<xsd:complexType>
 							<xsd:sequence>
@@ -891,7 +891,7 @@
 				</xsd:annotation>
 			</xsd:element>
 		</xsd:sequence>
-		<xsd:attribute name="name" type="imf:identifierAttr">
+		<xsd:attribute name="name" type="imf:identifierAttr" use="required">
 			<xsd:annotation>
 				<xsd:documentation>Key of this property.</xsd:documentation>
 			</xsd:annotation>
@@ -932,7 +932,7 @@
 		</xsd:annotation>
 		<xsd:simpleContent>
 			<xsd:extension base="xsd:string">
-				<xsd:attribute name="type" type="imf:pathTypeAttr" use="optional" />
+				<xsd:attribute name="type" type="imf:pathTypeAttr" use="required" />
 			</xsd:extension>
 		</xsd:simpleContent>
 	</xsd:complexType>
@@ -999,7 +999,7 @@
 			</xsd:element>
 			<xsd:element name="stepSize" type="imf:expressionValueType" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>For types that support actual steps this defines the legal size</xsd:documentation>
+					<xsd:documentation>For types that support actual steps this defines the legal size.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 		</xsd:sequence>
@@ -1026,7 +1026,7 @@
 	
 	<xsd:complexType name="genericValueType" mixed="true">
 		<xsd:annotation>
-			<xsd:documentation>Either contains the textual representation of a single value or wraps it and adds identity attributes and optional documentation</xsd:documentation>
+			<xsd:documentation>Either contains the textual representation of a single value or wraps it and adds identity attributes and optional documentation.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:sequence>
 			<xsd:group ref="imf:identityGroup" />
@@ -1043,7 +1043,7 @@
 		<xsd:sequence>
 			<xsd:element name="content" type="xsd:string" minOccurs="0" maxOccurs="1">
 				<xsd:annotation>
-					<xsd:documentation>Textual content of the documentation. May contain any form of text including escaped html or other formattings. </xsd:documentation>
+					<xsd:documentation>Textual content of the documentation. May contain any form of text including escaped html or other formatting.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="resource" minOccurs="0" maxOccurs="unbounded">
@@ -1064,11 +1064,11 @@
 	
 	<xsd:complexType name="valueManifestType">
 		<xsd:annotation>
-			<xsd:documentation>Wraps a single value and adds identity attributes and optional documentation</xsd:documentation>
+			<xsd:documentation>Wraps a single value and adds identity attributes and optional documentation.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:sequence>
 			<xsd:group ref="imf:documentationGroup" />
-			<xsd:element name="content" type="imf:textType" minOccurs="0" maxOccurs="1">
+			<xsd:element name="content" type="imf:textType">
 				<xsd:annotation>
 					<xsd:documentation>Serialized form of the value wrapped by this manifest.</xsd:documentation>
 				</xsd:annotation>
@@ -1300,7 +1300,7 @@
 	
 	<xsd:simpleType name="relationAttr">
 		<xsd:annotation>
-			<xsd:documentation>Models the actual quantitative relation type of a mapping, i.e. the relative number of elements on both sides of the mapping. The possible values are "one"and "many", which leads to 4 different relation types with varying levels of complexity when it comes to implementing them.</xsd:documentation>
+			<xsd:documentation>Models the actual quantitative relation type of a mapping, i.e. the relative number of elements on both sides of the mapping. The possible values are "one" and "many", which leads to 4 different relation types with varying levels of complexity when it comes to implementing them.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:restriction base="xsd:string">
 			<xsd:enumeration value="one-to-one">
@@ -1437,7 +1437,7 @@
 	
 	<xsd:simpleType name="sourceTypeAttr">
 		<xsd:annotation>
-			<xsd:documentation>Specifies how the "soruce" definition of an ImplementationManifest is to be interpreted.</xsd:documentation>
+			<xsd:documentation>Specifies how the "source" definition of an ImplementationManifest is to be interpreted.</xsd:documentation>
 		</xsd:annotation>
 		<xsd:restriction base="xsd:string">
 			<xsd:enumeration value="extension">
@@ -1547,11 +1547,6 @@
 				</xsd:annotation>
 			</xsd:enumeration>
 			<xsd:enumeration value="ordered">
-				<xsd:annotation>
-					<xsd:documentation></xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="virtual">
 				<xsd:annotation>
 					<xsd:documentation></xsd:documentation>
 				</xsd:annotation>
@@ -1667,12 +1662,12 @@
 		<xsd:restriction base="xsd:string">
 			<xsd:enumeration value="deep-highlighting">
 				<xsd:annotation>
-					<xsd:documentation>Flag to indicate whether or not the highlight information is exlusive to the defined base layers or if it can be applied to nexted elements as well</xsd:documentation>
+					<xsd:documentation>Flag to indicate whether or not the highlight information is exclusive to the defined base layers or if it can be applied to nested elements as well.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:enumeration>			
 			<xsd:enumeration value="editable">
 				<xsd:annotation>
-					<xsd:documentation>Flag to indicate whether or not the highlight information can be altered by the suer.</xsd:documentation>
+					<xsd:documentation>Flag to indicate whether or not the highlight information can be altered by the user.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:enumeration>
 		</xsd:restriction>
@@ -1787,7 +1782,7 @@
 		<xsd:sequence>
 			<xsd:element name="documentation" type="imf:documentationManifestType" minOccurs="0" maxOccurs="1">
 				<xsd:annotation>
-					<xsd:documentation>Documentation provided by creator of resource</xsd:documentation>
+					<xsd:documentation>Documentation provided by creator of resource.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 		</xsd:sequence>
@@ -1800,7 +1795,7 @@
 		<xsd:sequence>
 			<xsd:element name="name" type="xsd:string" minOccurs="0">
 				<xsd:annotation>
-					<xsd:documentation>Human readable identifier of the element</xsd:documentation>
+					<xsd:documentation>Human readable identifier of the element.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="description" type="xsd:string" minOccurs="0">

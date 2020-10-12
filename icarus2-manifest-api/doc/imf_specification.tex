@@ -1,0 +1,1076 @@
+%
+% File iql_specification.tex
+%
+
+\documentclass[11pt,a4paper]{report}
+
+\usepackage{../../doc/icarus2}
+
+
+\newcommand{\imfType}[1]{\texttt{\imfns#1}}
+\newcommand{\imfBaseType}[1]{\texttt{\textless#1\textgreater}}
+
+% Environment to wrap XML attributes of IQL elements into tables
+\newenvironment{attributes}[1]{
+	\noindent\textbf{Attributes of #1:}\newline\medskip
+	\begin{tabular}{|p{0.3\textwidth}|p{0.20\textwidth}|p{0.12\textwidth}|p{0.12\textwidth}|p{0.12\textwidth}|}
+		\hline
+		\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} & \textbf{Inherited} \\ 
+		\hline
+		\hline
+	}{
+	\end{tabular}
+}
+% shorthand methods for filling attributes table: name, type, required, default, inherited
+\newcommand{\attribute}[5]{
+	#1 & #2 & #3 & #4 & #5 \\
+	\hline
+}
+
+% Environment to wrap nested XML elements of IQL elements into tables
+\newenvironment{elements}[1]{
+	\noindent\textbf{Nested Elements of #1:}\newline\medskip
+	\begin{tabular}{|p{0.3\textwidth}|p{0.33\textwidth}|p{0.14\textwidth}|p{0.12\textwidth}|}
+		\hline
+		\textbf{Element} & \textbf{Type} & \textbf{Multiplicity} & \textbf{Inherited} \\ 
+		\hline
+		\hline
+	}{
+	\end{tabular}
+}
+% shorthand methods for filling elements table: name, type, multiplicity, inherited
+\newcommand{\element}[4]{
+	#1 & #2 & #3 & #4 \\
+	\hline
+}
+
+\title{ICARUS2 Manifest Framework Specification}
+
+\author{Markus Gärtner}
+
+\date{2020}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+\listoftodos
+
+\newpage
+
+\chapter*{Introduction}
+\label{chap:intro}
+
+The \ac{imf} defines a meta-model, reference implementation and XML-based serialization facility for describing linguistic corpora.
+It is designed to be easily understood by both humans and machines and abstracts away from the physical representation of corpus resources.
+
+\chapter{Manifest Components}
+\label{chap:components}
+
+
+\section{Enum Constants}
+\label{sec:enums}
+
+\subsection{Annotation Flag}
+Constants usable for flags in the context of a AnnotationLayerManifest.
+\label{sec:enum-annotation-flag}
+\begin{description}
+	\item[searchable] Flag to tell the framework if it is possible to efficiently perform search operations on the annotation content.
+	\item[indexable] Defines if it is possible to build an index for the content of a layer. This is of course only of importance if the layer in question actually supports search operations as defined via the ``searchable'' flag.
+	\item[deep-annotation] Defines whether a layer only provides annotations for the members of the respective ItemLayer's direct container. If present indicates that a layer may be queried for annotations of nested containers or structures/edges.
+	\item[element-annotation] A special case of ``deep-annotation'' only applicable when the target layer contains Container or Structure objects as top level targets for this annotation layer. The flag indicates that annotations are only meant for the direct elements of those containers!
+	\item[node-annotation] A special case of ``element-annotation'' that signals that an annotation is only meant for the nodes of a certain structure.
+	\item[edge-annotation] A special case of ``element-annotation'' that signals that an annotation is only meant for the edges of a certain structure.
+	\item[unknown-keys] Defines whether an AnnotationLayer derived from this manifest should be able to handle keys that have not been declared within a nested AnnotationManifest. Note that when a format allows arbitrary properties on the annotation level and therefore decides to allow those unknown keys it loses some of the robustness a finite declaration of supported keys and their values provides!
+\end{description}
+
+\subsection{Container Flag}
+Constants usable for flags in the context of a ContainerManifest.
+\label{sec:enum-container-flag}
+\begin{description}
+	\item[virtual] \todo[inline]{insert description}
+	\item[empty] \todo[inline]{insert description}
+	\item[non-static] \todo[inline]{insert description}
+	\item[duplicates] \todo[inline]{insert description}
+	\item[ordered] \todo[inline]{insert description}
+	\item[label] \todo[inline]{insert description}
+	\item[label] \todo[inline]{insert description}
+\end{description}
+
+\subsection{Container Type}
+Constants usable as types for a ContainerManifest
+\label{sec:enum-container-type}
+\begin{description}
+	\item[singleton] The container holds a single item.
+	\item[span] The container holds an ordered and continuous list of items.
+	\item[list] The container holds a non-continuous but ordered collection of items.
+\end{description}
+
+\subsection{Coverage}
+Constants defining exploitable mathematical properties of the mapping function.
+\label{sec:enum-coverage}
+\begin{description}
+	\item[total] The entire target index space is covered, but the mapped areas might overlap or be in a somewhat "random" fashion (meaning the mapping implementation describes a surjective function).
+	\item[partial] No exploitable patterns available in the way of index mapping.
+	\item[monotonic] Mapped areas in the target space follow the same order as their source indices and do not overlap (i.e. the mapping describes an injective function).
+	\item[total-monotonic] Same as "monotonic", but with the added constraint that the entire target space is covered, following a bijective function.
+\end{description}
+
+\subsection{Highlight Flag}
+Constants usable for flags in the context of a HighlightLayerManifest.
+\label{sec:enum-highlight-flag}
+\begin{description}
+	\item[deep-highlighting] Flag to indicate whether or not the highlight information is exclusive to the defined base layers or if it can be applied to nested elements as well.
+	\item[label] Flag to indicate whether or not the highlight information can be altered by the user.
+\end{description}
+
+\subsection{Location Type}
+Constants to define the type of location a resource should/can be loaded from.
+\label{sec:enum-location-type}
+\begin{description}
+	\item[local] Specifies that a certain location denotes a local file object accessible via a simple path string.
+	\item[remote] Marks a location as remotely accessible via a dedicated URL.
+	\item[service] The location describes a remote or local service which should be used to access data. Typically this type of location requires additional ModuleSpec specifications in a driver manifest to define the interface to the service.
+	\item[database] Locations with this type denote a database of arbitrary implementation. It is up to the ResourcePath or LocationManifest to provide additional information to properly access the database.
+\end{description}
+
+\subsection{Multiplicity}
+Defines the multiplicity of allowed (external) elements in a certain context.
+\label{sec:enum-multiplicity}
+\begin{description}
+	\item[none] Defines an ``empty'' docking point for external entities.
+	\item[none-or-one] Docking point for at most one external entity.
+	\item[one] Requires exactly one external entity to be docked.
+	\item[one-or-more] Requires at least one external entity to be docked but poses no upper limit.
+	\item[any] Unrestricted docking point.
+\end{description}
+
+\subsection{Path Type}
+Constants indicating how location information for a (distributed) is to be interpreted. This mainly concerns local resources.
+\label{sec:enum-path-type}
+\begin{description}
+	\item[file] Describes direct pointers to a data file.
+	\item[folder] Describes a pointer to some data folder from which to pick the actual data files. Usually this is accompanied by a PathResolverManifest declaration in the hosting LocationManifest as a means of filtering files or defining the required file ending, etc\dots
+	\item[resource] Points to a resource that is available via a ClassLoader.
+	\item[pattern] Currently unused type.
+	\item[identifier] Defines an abstract pointer to some arbitrary resource. It is the responsibility of the respective path resolver to manage access to that resource. Format and meaning of this path type is thus resolver implementation dependent.
+	\item[custom] Signals that all information on how to access the location's data is implemented directly by the path resolver used to access it.
+\end{description}
+	
+\subsection{Relation}
+Models the actual quantitative relation type of a mapping, i.e. the relative number of elements on both sides of the mapping. The possible values are ``one'' and ``many'', which leads to four different relation types with varying levels of complexity when it comes to implementing them.
+\label{sec:enum-relation}
+\begin{description}
+	\item[one-to-one] Elements from the source and target layer are mapped one to one. If the corresponding Coverage is "total-monotonic" this equals the identity function.
+	\item[one-to-many] A single element in the source layer may hold an arbitrary number of elements from the target layer. Typical examples are all kinds of aggregating markable layers that feature containers as top level elements. Possible lookup structures include span lists (begin- and end-index for each source element) for source layers that host span elements and complete content lists (a list of exact target indices) for non-monotonic source layer members. While span lists are fairly easy to map to memory chunks or arrays, content lists pose some serious drawbacks, potentially requiring an additional layer of indices to map source elements to their respective sublist in a data block. The corresponding index function is injective.
+	\item[many-to-one] An arbitrary number of (not necessarily monotonic) elements in the source layer map to a common member of the target layer.
+	
+	If the target elements are spans, than an efficient lookup can be created by dividing the source layer into chunks of items and then save for each such chunk the first and last element in the target layer that is truly contained in this chunk (with respect to its begin- and end-offset). To lookup a target the algorithm then first determines the correct chunk according to the source elements index and then performs a binary search on the spans in that chunk to find the target element. Performance can be controlled by adjusting chunk size to a value that provides a good tradeoff between required memory space to store the index information and the speed incurred by the binary search (which serves as a constant cost factor in the performance formula).
+	
+	In the case of non-monotonic elements in the target layer (e.g. clusters of source items) the above technique fails and it might be required to store a dedicated target index value for each source element.
+	\item[many-to-many] As the most complex relation version, this one maps an arbitrary number of source elements to an again arbitrary number of target elements/containers. As an example imagine entities in the source layer being grouped into category containers in the target layer, allowing each entity to be assigned many different categories at once.
+	
+	Depending on the container type of the target elements, this version gets easy or very expensive.
+	
+	If the target elements are spans, than it is possible to use the strategy proposed for the ``many-to-one'' relation with a slight addition: When the first target container is found using binary search within the chunk, then neighbors to both sides are added to the result collection, until containers are encountered for both ends, that do not contain the source element. The complexity in this case is limited by the maximum "nesting depth" of spans in the target layer, which remains to be evaluated as a proper upper bound. Looking in the neighborhood of the first successful match is possible due to the sorted nature of top-level layer elements and the sorting rules for spans (span locality).
+	
+	For non-monotonic target elements the rules for the ``one-to-many'' relation apply.
+\end{description}
+
+\subsection{Source Type}
+Specifies how the ``source'' definition of an ImplementationManifest is to be interpreted.
+\label{sec:enum-source-type}
+\begin{description}
+	\item[extension] Source is a globally unique extension uid in the form: \texttt{<plugin-uid>@<extension-id>}
+	
+	Note that in this case the classname parameter is optional (and in fact it would be redundant, since the extension in question is already required to contain a class parameter!
+	\item[plugin] Source is the globally unique identifier of a plugin, used to fetch the class loader which has access to the implementation. The classname parameter defines the fully qualified name of the implementing class.
+	\item[extern] Since for simple additions creation of an entire plugin could easily be considered overkill, there is the option to provide the class file of an implementation in the external folder. The source would then be the file name. Per convention, if the referenced file is a mere class file, its name must equal the fully qualified name of the class contained. If the file is a jar archive, an additional class name must be specified, otherwise the jar's manifest file will be accessed to check for a main class declaration.
+	\item[default] When the target class is accessible via the class loader that loaded the model plugin, the only thing required is the classname parameter (the source is not needed any more!).
+\end{description}
+	
+\subsection{Structure Flag}
+Constants usable for flags in the context of a StructureManifest
+\label{sec:enum-structure-flag}
+\begin{description}
+	\item[virtual] Specifies whether edges are allowed to be virtual (i.e. they may have virtual items assigned to them as terminals). Note that this restriction only applies to edges that are not attached to the virtual root node of a structure!
+	\item[augmented] Specifies whether or not structures may contain additional nodes (virtual or not) that are not already part of their respective base containers. For example constituency parses contain constituents as nodes besides the terminals defined by the basic tokens in the underlying sentences.
+	\item[empty] Specifies whether or not structures are allowed to have an edge count of 0, i.e. being empty.
+	\item[non-static] Arrangement of edges in a structure can be altered by the user. Note that the default assumption is that edges are immutable, to avoid verbose declaration of this flag (since in most cases it is indeed safe to assume immutable data, which prevents driver implementations from having to deal with complexity of mutable corpus data).
+	\item[loops] Signals that edges in a structure are allowed to have the same item assigned as source and target terminal.
+	\item[parallel] Signals that for a given pair of terminals there may exist more than one edge between them with the same direction.
+	\item[ordered] Specifies whether or not a structure requires its edges to be arranged according to the default item ordering defined by the model.
+	\item[partial] Signals that a structure is not required to use all its nodes. If set a structure is not allowed to host nodes for which the edge count is 0. This property exists to enable optimization for very compact implementations of certain structure types like StructureType.CHAIN where the total number of possible edges is fixed by the number of nodes.
+	\item[multi-root] Specifies whether or not a structure may have more than 1 edge assigned to its virtual root node (effectively meaning that it has in fact several "real" root nodes).
+	\item[projective] \todo[inline]{insert description}
+\end{description}
+
+\subsection{Structure Type}
+Constants usable as types for a StructureManifest.
+\label{sec:enum-structure-type}
+\begin{description}
+	\item[set] An unordered collection of nodes, not connected by any edges. This is by far the most basic type of structure.
+	\item[chain] An ordered sequence of nodes, each with at most one predecessor and successor. Edges in this structure are expected to be directed only!
+	\item[tree] A hierarchically ordered collection of nodes where each node is assigned at most one parent and is allowed to have an arbitrary number of children. All edges are directed from a parent down to the child node itself.
+	\item[directed-graph] A general graph with the only restriction that edges have to be directed.
+	\item[graph] Being the most unbounded and therefore most complex type a graph does not pose any restrictions on nodes or edges.
+\end{description}
+
+\chapter{Manifest XML}
+\label{chap:xml}
+
+This chapter lists all the XML elements available for defining \ac{imf} members.
+\todo[inline]{design decisions}
+
+Some members define a nested element with tag-name \imfType{text}.
+This refers to the basic character payload of XML elements and not to a special Type defined for \ac{imf}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     ANNOTATION
+\section{Annotation}
+\label{sec:xml-annotation}
+\desc{Defines properties for a single annotation type within an annotation layer.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Annotation}}
+	\attribute{key}{String}{false}{-}{true}
+	\attribute{contentType}{String}{false}{-}{true}
+	\attribute{valueType}{String}{false}{string}{true}
+	\attribute{allowUnknownValues}{Boolean}{false}{false}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{key}] The main identifier usable for this annotation type.
+	\item[\imfType{contentType}] If the value type is ``custom'' then this attribute identifies the actual content type.
+	\item[\imfType{valueType}] Identifier of the type that describes the content for this annotation.
+	\item[\imfType{allowUnknownValues}] If set to true this flag allows annotation values outside the predefined domains of "valueSet" and "valueRange".
+\end{description}
+\begin{elements}{\imfType{Annotation}}
+	\element{alias}{Name}{*}{true}
+	\element{valueSet}{ValueSet (\ref{sec:xml-value-set})}{0-1}{true}
+	\element{valueRange}{ValueRange (\ref{sec:xml-value-range})}{0-1}{true}
+	\element{noEntryValue}{GenericValue (\ref{sec:xml-generic-value})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{alias}] Alternate identifier usable for this annotation. Usually this will be used to provide common abbreviations such as ``pos'' for ``part-of-speech''.
+	\item[\imfType{valueSet}] Predefined set of legal values, e.g. a tagset.
+	\item[\imfType{valueRange}] Range of legal values.
+	\item[\imfType{noEntryValue}] Defines the value that represents the absence of any valid value. For complex types this is not needed, but primitive annotations need a defined "null" value.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     CONTAINER
+\section{Container}
+\label{sec:xml-container}
+\desc{Containers are the most basic unit of logical ordering in a corpus.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Container}}
+	\attribute{containerType}{Enum (\ref{sec:enum-container-type})}{false}{list}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{containerType}] Specifies the allowed container type.
+\end{description}
+\begin{elements}{\imfType{Container}}
+	\element{containerFlag}{Enum (\ref{sec:enum-container-flag})}{*}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{containerFlag}] List of flags to define additional properties and/or behavior of this container.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     CONTEXT
+\section{Context}
+\label{sec:xml-context}
+\desc{A context bundles all the corpus data originating from a single source, such a file or database.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Context}}
+	\attribute{primaryLayer}{String}{false}{-}{true}
+	\attribute{foundationLayer}{String}{false}{-}{true}
+	\attribute{independent}{Boolean}{false}{false}{true}
+	\attribute{editable}{Boolean}{false}{false}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{primaryLayer}] The layer that defines the preferred atomicity of items in this context.
+	\item[\imfType{foundationLayer}] The layer that defines the basic atomicity of items in or referenced by layers in this context.
+	\item[\imfType{independent}] Flag to indicate whether or not this context can be used entirely without other contexts, i.e. if it is suitable to act as a root context of a corpus.
+	\item[\imfType{editable}] Flag to indicate whether or not it is possible for the user to modify content of this context.
+\end{description}
+\begin{elements}{\imfType{Context}}
+	\element{location}{Location (\ref{sec:xml-location})}{*}{false}
+	\element{prerequisites}{nested Prerequisite (\ref{sec:xml-prerequisite})}{*}{true}
+	\element{layerGroup}{LayerGroup (\ref{sec:xml-layer-group})}{*}{true}
+	\element{driver}{Driver (\ref{sec:xml-driver})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{location}] Defines the physical location(s) which the data for this context is stored at.
+	\item[\imfType{prerequisites}] Specifies a series of abstract dependencies to external components of the corpus.
+	\item[\imfType{layerGroup}] Groups layers that cannot be physically distinguished from each other efficiently.
+	\item[\imfType{driver}] Specifies the module used to perform transformations between this context's physical form and the model representation.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     CORPUS
+\section{Corpus}
+\label{sec:xml-corpus}
+\desc{Top-level member of the corpus framework. Bundles resources from different contexts and pools them into a single namespace.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Corpus}}
+	\attribute{editable}{Boolean}{false}{false}{false}
+	\attribute{parallel}{Boolean}{false}{false}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{editable}] Flag to indicate whether or not the corpus is meant to be edited by the user.
+	\item[\imfType{parallel}] Flag to indicate whether or not this corpus describes a parallel data set, in which case it is allowed to have multiple root contexts.
+\end{description}
+\begin{elements}{\imfType{Corpus}}
+	\element{note}{Note (\ref{sec:xml-note})}{*}{false}
+	\element{rootContext}{Context (\ref{sec:xml-context})}{1+}{false}
+	\element{context}{Context (\ref{sec:xml-context})}{*}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{note}] User-originating comments attached to the corpus.
+	\item[\imfType{rootContext}] The contexts that have been designated to act as root(s).
+	\item[\imfType{context}] Additional data sources of corpus data in the form of context instances.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     DRIVER
+\section{Driver}
+\label{sec:xml-driver}
+\desc{Contains all the modules and links to implementations for determining how to transform between a context's physical form and its model representation.}
+\extends{\imfBaseType{ForeignImplementation}}{\ref{sec:xml-foreign-implementation}}
+\begin{attributes}{\imfType{Driver}}
+	\attribute{locationType}{Enum (\ref{sec:enum-location-type})}{false}{-}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{locationType}] Hint on which type of resources the driver is depending to access corpus data.
+\end{description}
+\begin{elements}{\imfType{Driver}}
+	\element{moduleSpec}{ModuleSpec (\ref{sec:xml-module-spec})}{*}{true}
+	\element{module}{Module (\ref{sec:xml-module})}{*}{true}
+	\element{mapping}{Mapping (\ref{sec:xml-mapping})}{*}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{moduleSpec}] Extension-point for configurable components the driver is using.
+	\item[\imfType{module}] Actually docked extensions for configurable components the driver is using.
+	\item[\imfType{mapping}] Definitions for available mappings between layers in this context.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     IMPLEMENTATION
+\section{Implementation}
+\label{sec:xml-implementation}
+\desc{Defines the actual Java implementation to be used for a certain corpus member.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Implementation}}
+	\attribute{source}{type}{false}{-}{false}
+	\attribute{classname}{type}{true}{-}{false}
+	\attribute{sourceType}{Enum (\ref{sec:enum-source-type})}{false}{default}{false}
+	\attribute{factory}{Boolean}{false}{false}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{source}] Depending on the ``sourceType'' defines how to interpret the ``classname'' value.
+	\item[\imfType{classname}] Fully qualified name of the Java class implementation referenced by this manifest.
+	\item[\imfType{sourceType}] Specifies how to interpret the ``source'' attribute and how to actually load the class defined by ``classname''.
+	\item[\imfType{factory}] Flag to indicate whether or not the specified class is to be used as a \repoLink{\manifestsUrl ImplementationManifest.java}{factory}.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Layers}
+\label{sec:xml-layers}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     LAYER
+\subsection{Layer}
+\label{sec:xml-layer}
+\desc{Basic definition of a layer in a corpus. Layers are the bottom-most organizational units in a corpus.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Layer}}
+	\attribute{layerType}{type}{false}{-}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{layerType}] Link to abstract layer definition.
+\end{description}
+\begin{elements}{\imfType{Layer}}
+	\element{baseLayer}{TargetLayer (\ref{sec:xml-target-layer})}{*}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{baseLayer}] List of other layers this layer depends on.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     ANNOTATION LAYER
+\subsection{Annotation Layer}
+\label{sec:xml-annotation-layer}
+\desc{Groups tightly related annotations into a layer.}
+\extends{\imfBaseType{Layer}}{\ref{sec:xml-layer}}
+\begin{attributes}{\imfType{AnnotationLayer}}
+	\attribute{defaultKey}{String}{false}{-}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{defaultKey}] If this layer contains multiple annotation definitions, one of them has to be designated as default.
+\end{description}
+\begin{elements}{\imfType{AnnotationLayer}}
+	\element{referenceLayer}{TargetLayer (\ref{sec:xml-target-layer})}{*}{true}
+	\element{annotationFlag}{Enum (\ref{sec:enum-annotation-flag})}{*}{true}
+	\element{annotation}{Annotation (\ref{sec:xml-annotation})}{*}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{referenceLayer}] List of other layers this layer depends on.
+	\item[\imfType{annotationFlag}] Flags indicating certain properties of this layer.
+	\item[\imfType{annotation}] Specifications of the actual annotation types this layer exposes.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     FRAGMENT LAYER
+\subsection{Fragment Layer}
+\label{sec:xml-fragment-layer}
+\desc{A special type of logical management layer that allows it to effectively break existing atomic units into even smaller ones by fragmenting them according to rasterization on annotation values.}
+\extends{\imfBaseType{ItemLayer}}{\ref{sec:xml-item-layer}}
+\begin{attributes}{\imfType{FragmentLayer}}
+	\attribute{annotationKey}{String}{false}{-}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{annotationKey}] Key of the annotation manifest that holds values to be used for fragmentation by this layer.
+\end{description}
+\begin{elements}{\imfType{FragmentLayer}}
+	\element{valueLayer}{TargetLayer (\ref{sec:xml-target-layer})}{0-1}{true}
+	\element{rasterizer}{Rasterizer (\ref{sec:xml-rasterizer})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{valueLayer}] Layer that holds annotation values to be used for fragmentation by this layer.
+	\item[\imfType{tag}] Defines the method used for rastering.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     HIGHLIGHT LAYER
+\subsection{Highlight Layer}
+\label{sec:xml-highlight-layer}
+\desc{A special type of virtual layer. Designed to store programmatically generated meta-annotations attached to (groups of) items.}
+\extends{\imfBaseType{Layer}}{\ref{sec:xml-layer}}
+\begin{elements}{\imfType{HighlightLayer}}
+	\element{highlightFlag}{Enum (\ref{sec:enum-highlight-flag})}{*}{true}
+	\element{primaryLayer}{TargetLayer (\ref{sec:xml-target-layer})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{highlightFlag}] Flags indicating certain properties of this layer.
+	\item[\imfType{primaryLayer}] The layer that defines the granularity of highlight cursors for this layer.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     ITEM LAYER
+\subsection{Item Layer}
+\label{sec:xml-item-layer}
+\desc{Item layer contains at least 1 container definition. Note that item layers are only allowed to host containers in their hierarchy structure!}
+\extends{\imfBaseType{Layer}}{\ref{sec:xml-layer}}
+\begin{elements}{\imfType{ItemLayer}}
+	\element{boundaryLayer}{TargetLayer (\ref{sec:xml-target-layer})}{0-1}{true}
+	\element{foundationLayer}{TargetLayer (\ref{sec:xml-target-layer})}{0-1}{true}
+	\element{hierarchy}{Hierarchy (\ref{sec:xml-hierarchy})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{boundaryLayer}] Defines natural boundaries for containers in this layer.
+	\item[\imfType{foundationLayer}] Defines what layer to use to represent basic atomic units for this layer.
+	\item[\imfType{hierarchy}] Optional locally defined hierarchy.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     HIERARCHY
+\subsection{Hierarchy}
+\label{sec:xml-hierarchy}
+\desc{XXX}
+\begin{elements}{\imfType{Hierarchy}}
+	\element{container}{Container (\ref{sec:xml-container})}{1+}{true}
+	\element{structure}{Structure (\ref{sec:xml-structure})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{container}] Arbitrarily deep nesting of containers.
+	\item[\imfType{structure}] Structure layers (\ref{sec:xml-structure-layer}) can declare up to one sequence of structures in their hierarchy.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     STRUCTURE LAYER
+\subsection{Structure Layer}
+\label{sec:xml-structure-layer}
+\desc{Structure layers contain the mandatory container definition from 'Item Layer' (\ref{sec:xml-item-layer}) and at least one Structure (\ref{sec:xml-structure}) declaration in their hierarchy, after which an arbitrary number of containers and structures may follow}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     LAYER GROUP
+\section{Layer Group}
+\label{sec:xml-layer-group}
+\desc{Groups one or more layers that are logically connected in a way that makes it impossible or impractical to access them separately.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{attributes}{\imfType{LayerGroup}}
+	\attribute{independent}{Boolean}{false}{false}{false}
+	\attribute{primaryLayer}{String}{true}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{independent}] Flag indicating whether or not the layers of this group are completely independent of any foreign corpus content.
+	\item[\imfType{primaryLayer}] The layer defining the granularity of this group.
+\end{description}
+\begin{elements}{\imfType{LayerGroup}}
+	\element{itemLayer}{ItemLayer (\ref{sec:xml-item-layer})}{*}{false}
+	\element{structureLayer}{StructureLayer (\ref{sec:xml-structure-layer})}{*}{false}
+	\element{fragmentLayer}{FragmentLayer (\ref{sec:xml-fragment-layer})}{*}{false}
+	\element{annotationLayer}{AnnotationLayer (\ref{sec:xml-annotation-layer})}{*}{false}
+	\element{highlightLayer}{HighlightLayer (\ref{sec:xml-highlight-layer})}{*}{false}
+\end{elements}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     LOCATION
+\section{Location}
+\label{sec:xml-location}
+\desc{Specifies an abstract location from which to load the actual content of a context.}
+\begin{attributes}{\imfType{Location}}
+	\attribute{inline}{Boolean}{false}{false}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{inline}] Flag to indicate if this location manifest contains inline data, i.e. it doesn't point to a physical resource but already hosts the actual content.
+\end{description}
+\begin{elements}{\imfType{Location}}
+	\element{content}{Text}{0-1}{false}
+	\element{path}{Text}{0-1}{false}
+	\element{pathEntry}{PathEntry (\ref{sec:xml-path-entry})}{*}{false}
+	\element{pathResolver}{PathResolver (\ref{sec:xml-path-resolver})}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{content}] If the ``inline'' flag is true, then this contains the inline form of the data for the surrounding context.
+	\item[\imfType{path}] Path to the root of this location.
+	\item[\imfType{pathEntry}] Optional links to additional resources. Expected to be relative to the main path.
+	\item[\imfType{pathResolver}] Defines the implementation to use for resolving path expressions into actually accessible resources.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MAPPING
+\section{Mapping}
+\label{sec:xml-mapping}
+\desc{Specifies properties of a mapping between 2 item layers.}
+\begin{attributes}{\imfType{Mapping}}
+	\attribute{id}{String}{true}{-}{false}
+	\attribute{sourceLayer}{String}{true}{-}{false}
+	\attribute{targetLayer}{String}{true}{-}{false}
+	\attribute{relation}{Enum (\ref{sec:enum-relation})}{true}{-}{false}
+	\attribute{coverage}{Enum (\ref{sec:enum-coverage})}{true}{-}{false}
+	\attribute{inverseMapping}{String}{false}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{id}] Locally unique identifier for this mapping.
+	\item[\imfType{sourceLayer}] Identifier of the source layer for this mapping.
+	\item[\imfType{targetLayer}] Identifier of the target layer for this mapping.
+	\item[\imfType{relation}] Specifies multiplicity related properties of this mapping.
+	\item[\imfType{coverage}] Specifies mathematical properties of this mapping.
+	\item[\imfType{inverseMapping}] Identifier used for the inverse mapping, if one exists.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MODULE
+\section{Module}
+\label{sec:xml-module}
+\desc{Defines an actual implementation for a ModuleSpec (\ref{sec:xml-module-spec}) declaration.}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{attributes}{\imfType{Module}}
+	\attribute{moduleSpecId}{String}{false}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{moduleSpecId}] Identifier of the module specification this module is docked to.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MODULE SPEC
+\section{Module Spec}
+\label{sec:xml-module-spec}
+\desc{Part of the driver plugin architecture. Specifies the basic properties for a set of modules that can be used to change the default behavior of a driver.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{attributes}{\imfType{ModuleSpec}}
+	\attribute{customizable}{Boolean}{false}{false}{false}
+	\attribute{multiplicity}{Enum (\ref{sec:enum-multiplicity})}{false}{one}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{customizable}] Defines whether or not the behavior of modules for this specification can be configured by the user.
+	\item[\imfType{multiplicity}] Defines how many modules can be registered for this specification.
+\end{description}
+\begin{elements}{\imfType{ModuleSpec}}
+	\element{extensionPoint}{String}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{extensionPoint}] Links to the definition for legal plugins that can be used as modules for this specification.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     NOTE
+\section{Note}
+\label{sec:xml-note}
+\desc{A simple note or comment that can be attached to a corpus.}
+\begin{attributes}{\imfType{Note}}
+	\attribute{name}{String}{false}{-}{false}
+	\attribute{date}{String}{false}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{name}] A kind of ``title'' for the note.
+	\item[\imfType{date}] Automatically recorded date of creation for the note.
+\end{description}
+\begin{elements}{\imfType{Note}}
+	\element{text}{Text}{1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{text}] The actual textual content of the note
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     OPTIONS
+\section{Options}
+\label{sec:xml-options}
+\desc{Specifies a collection of options bundled for a certain host element.}
+\extends{\imfBaseType{Manifest}}{\ref{sec:xml-manifest}}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{elements}{\imfType{XXX}}
+	\element{group}{Identity (\ref{sec:xml-identity})}{*}{true}
+	\element{option}{Option (\ref{sec:xml-option})}{*}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{group}] Predefined groups that options can be associated with. This is to be taken as a hint for graphical interfaces on how to present options to the user.
+	\item[\imfType{option}] Collection of individual options. No specific order is enforced.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     OPTION
+\section{Option}
+\label{sec:xml-option}
+\desc{Specifies properties of an option for which the user can change values.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{attributes}{\imfType{XXX}}
+	\attribute{valueType}{String}{true}{-}{false}
+	\attribute{published}{Boolean}{false}{true}{false}
+	\attribute{allowNull}{Boolean}{false}{true}{false}
+	\attribute{multiValue}{Boolean}{false}{false}{false}
+	\attribute{group}{String}{false}{false}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{valueType}] Type specification for legal values of this option.
+	\item[\imfType{published}] Flag to indicate whether or not this option is actually meant to be presented to the user.
+	\item[\imfType{allowNull}] Flag to indicate whether or not this option allows the user to set "null" value(s).
+	\item[\imfType{multiValue}] Flag to indicate whether or not this option can take multiple values.
+	\item[\imfType{group}] Identifier of a group this option should be associated with.
+\end{description}
+\begin{elements}{\imfType{XXX}}
+	\element{extensionPoint}{String}{0-1}{false}
+	\element{defaultValue}{nested GenericValue (\ref{sec:xml-generic-value})}{0-1}{false}
+	\element{valueSet}{ValueSet (\ref{sec:xml-value-set})}{multiplicity}{false}
+	\element{valueRange}{ValueRange (\ref{sec:xml-value-range})}{multiplicity}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{extensionPoint}] Currently not used.
+	\item[\imfType{defaultValue}] Value (or list of values) to be used when the user doesn't define or select a custom value.
+	\item[\imfType{valueSet}] Limitation of legal values via an enumeration of values.
+	\item[\imfType{valueRange}] Limitation of legal values via a bounded range model.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PATH ENTRY
+\section{Path Entry}
+\label{sec:xml-path-entry}
+\desc{Defines an abstract path usable inside a LocationManifest.}
+\begin{attributes}{\imfType{PathEntry}}
+	\attribute{type}{Enum (\ref{sec:enum-path-type})}{true}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{type}] Specification on how to interpret the path entry.
+\end{description}
+\begin{elements}{\imfType{PathEntry}}
+	\element{text}{Text}{1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{text}] Actual value of the path entry.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PATH RESOLVER
+\section{Path Resolver}
+\label{sec:xml-path-resolver}
+\desc{Link to an implementation for resolving abstract path definitions to actual resources that can be accessed by the framework.}
+\extends{\imfBaseType{ForeignImplementation}}{\ref{sec:xml-foreign-implementation}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PREREQUISITE
+\section{Prerequisite}
+\label{sec:xml-prerequisite}
+\desc{Defines an external dependency to foreign layers.}
+\begin{attributes}{\imfType{Prerequisite}}
+	\attribute{description}{String}{false}{-}{false}
+	\attribute{contextId}{String}{false}{-}{false}
+	\attribute{layerId}{String}{false}{-}{false}
+	\attribute{layerType}{String}{false}{-}{false}
+	\attribute{alias}{String}{false}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{description}] Textual information intended for users. Should describe general purpose of this dependency.
+	\item[\imfType{contextId}] Identifier of the context hosting the target layer. Only available if this prerequisite has already been resolved or uses hard-binding.
+	\item[\imfType{layerId}] Identifier of the target layer. Only available if this prerequisite has already been resolved or uses hard-binding.
+	\item[\imfType{layerType}] For unresolved prerequisites this defines the abstract specification of allowed layers.
+	\item[\imfType{alias}] The identifier to use locally for the target layer.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     PROPERTY
+\section{Property}
+\label{sec:xml-property}
+\desc{Defines a basic key-value property.}
+\begin{attributes}{\imfType{Property}}
+	\attribute{name}{type}{true}{-}{false}
+	\attribute{valueType}{type}{false}{string}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{name}] Key of this property.
+	\item[\imfType{valueType}] Type specification for this property's value.
+\end{description}
+\begin{elements}{\imfType{Property}}
+	\element{text}{Text}{0-1}{false}
+	\element{value}{Text}{*}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{text}] Plain textual representation of a single value.
+	\item[\imfType{value}] Arbitrary number of values associated with this property.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     RASTERIZER
+\section{Rasterizer}
+\label{sec:xml-rasterizer}
+\desc{Defines the implementation to use for rastering values for the process of fragmentation.}
+\extends{\imfBaseType{ForeignImplementation}}{\ref{sec:xml-foreign-implementation}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     STRUCTURE
+\section{Structure}
+\label{sec:xml-structure}
+\desc{As an extension to containers, structures introduce the ability to define relations between items in a corpus.}
+\extends{\imfBaseType{Container}}{\ref{sec:xml-container}}
+\begin{attributes}{\imfType{Structure}}
+	\attribute{structureType}{Enum (\ref{sec:enum-structure-type})}{false}{set}{true}
+\end{attributes}
+\begin{description}
+	\item[\imfType{structureType}] Specifies the allowed structure type.
+\end{description}
+\begin{elements}{\imfType{Value}}
+	\element{structureFlag}{Enum (\ref{sec:enum-structure-flag})}{*}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{structureFlag}] List of flags to define additional properties and/or behavior of this structure.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     VALUE
+\section{Value}
+\label{sec:xml-value}
+\desc{Wraps a single value and adds identity attributes and optional documentation.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{attributes}{\imfType{Value}}
+	\attribute{id}{String}{true}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{id}] Unique identifier of this value.
+\end{description}
+\begin{elements}{\imfType{Value}}
+	\element{content}{Text}{0-1}{false}
+	\element{documentation}{Documentation (\ref{sec:xml-documentation})}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{content}] Serialized form of the value wrapped by this manifest.
+	\item[\imfType{documentation}] Documentation provided by creator of resource.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     VALUE RANGE
+\section{Value Range}
+\label{sec:xml-value-range}
+\desc{Defines legal values by a bounded range model.}
+\begin{attributes}{\imfType{ValueRange}}
+	\attribute{includeMin}{Boolean}{false}{true}{false}
+	\attribute{includeMax}{Boolean}{false}{true}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{includeMin}] Flag to indicate whether or not the "min" value should be considered inclusive.
+	\item[\imfType{includeMax}] Flag to indicate whether or not the "max" value should be considered inclusive.
+\end{description}
+\begin{elements}{\imfType{ValueRange}}
+	\element{min}{Expression (\ref{sec:xml-expression})}{1}{false}
+	\element{max}{Expression (\ref{sec:xml-expression})}{1}{false}
+	\element{stepSize}{Expression (\ref{sec:xml-expression})}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{min}] Smallest legal element.
+	\item[\imfType{max}] Largest legal element.
+	\item[\imfType{stepSize}] For types that support actual steps this defines the legal size.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     VALUE SET
+\section{Value Set}
+\label{sec:xml-value-set}
+\desc{Defines legal values by an enumeration of value statements/manifests.}
+\begin{elements}{\imfType{ValueSet}}
+	\element{value}{GenericValue (\ref{sec:xml-generic-value})}{1+}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{value}] List of the values available in this set.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Utilities}
+\label{sec:xml-utilities}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     DOCUMENTATION
+\subsection{Documentation}
+\label{sec:xml-documentation}
+\desc{Documentation of another element by means of a content text which might contain embedded markups and a collection of external resource references.}
+\begin{elements}{\imfType{Documentation}}
+	\element{content}{Text}{0-1}{false}
+	\element{resource}{Text}{*}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{content}] Textual content of the documentation. May contain any form of text including escaped html or other formatting.
+	\item[\imfType{resource}] Link to an external resource via URI.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     CATEGORY
+\subsection{Category}
+\label{sec:xml-category}
+\desc{Type with category definition and optional identity fields.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{attributes}{\imfType{Category}}
+	\attribute{id}{String}{true}{-}{false}
+	\attribute{namespace}{String}{false}{-}{false}
+\end{attributes}
+\begin{elements}{\imfType{Category}}
+\element{namespace}{Text}{0-1}{false}
+\end{elements}
+\begin{description}
+\item[\imfType{id}] Unique identifier for the category.
+\item[\imfType{namespace}] Namespace (typically a URI) to bind the id to. This is used to link to established categories, such as ISOCat/DatCatInfo.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     EVAL
+\subsection{Eval}
+\label{sec:xml-eval}
+%TODO
+\desc{XXX}
+\begin{attributes}{\imfType{Eval}}
+	\attribute{name}{type}{required}{default}{inherited}
+\end{attributes}
+\begin{description}
+	\item[\imfType{attr}] DESC
+\end{description}
+\begin{elements}{\imfType{Eval}}
+	\element{name}{type (\ref{sec:xml-xxx})}{multiplicity}{inherited}
+\end{elements}
+\begin{description}
+	\item[\imfType{tag}] DESC
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     EXPRESSION
+\subsection{Expression}
+\label{sec:xml-expression}
+\desc{Embedded code that can be evaluated by the framework.}
+\begin{elements}{\imfType{Expression}}
+	\element{eval}{Eval (\ref{sec:xml-eval})}{0-1}{false}
+	\element{text}{Text}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{eval}] Embedded code expression that is to be evaluated to create the value for this expression.
+	\item[\imfType{text}] Serialized form of a static value for this expression.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     FOREIGN IMPLEMENTATION
+\subsection{Foreign Implementation}
+\label{sec:xml-foreign-implementation}
+\desc{Adds to a basic member manifest the ability to directly specify the implementation to be used. Note that this can override many default settings for the framework!}
+\extends{\imfBaseType{Member}}{\ref{sec:xml-member}}
+\begin{elements}{\imfType{ForeignImplementation}}
+	\element{implementation}{type (\ref{sec:xml-implementation})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{implementation}] The actual manifest specifying the implementation details and all associated options and/or settings.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     GENERIC VALUE
+\subsection{Generic Value}
+\label{sec:xml-generic-value}
+\desc{Either contains the textual representation of a single value or wraps it and adds identity attributes and optional documentation.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\begin{elements}{\imfType{GenericValue}}
+	\element{content}{Text}{1}{false}
+	\element{documentation}{\imfType{Documentation} (\ref{sec:xml-documentation})}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{content}] The actual wrapped value in text form.
+	\item[\imfType{documentation}] Documentation provided by creator of resource.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     IDENTITY
+\subsection{Identity}
+\label{sec:xml-identity}
+\desc{Type with all identity related fields being optional.}
+\begin{attributes}{\imfType{Identity}}
+	\attribute{name}{String}{false}{-}{false}
+	\attribute{description}{String}{false}{-}{false}
+	\attribute{icon}{String}{false}{-}{false}
+\end{attributes}
+\begin{elements}{\imfType{Identity}}
+	\element{name}{Text}{0-1}{true}
+	\element{description}{Text}{0-1}{true}
+	\element{icon}{Text}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{name}] Human readable identifier of the element.
+	\item[\imfType{description}] Simple free text documentation of the element.
+	\item[\imfType{icon}] Either a name of registered icon object or embedded base-64 binary text.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MANIFEST
+\subsection{Manifest}
+\label{sec:xml-manifest}
+\desc{Defines basic properties of a full-grown Manifest.}
+\begin{attributes}{\imfType{Manifest}}
+	\attribute{id}{String}{false}{-}{false}
+	\attribute{templateId}{String}{false}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{id}] An identifier that is unique within the surrounding scope.
+	\item[\imfType{templateId}] Reference to the template this manifest should inherit properties from.
+\end{description}
+\begin{elements}{\imfType{Manifest}}
+	\element{version}{\imfType{Version} (\ref{sec:xml-version})}{0-1}{false}
+\end{elements}
+\begin{description}
+	\item[\imfType{version}] Optional version information for a resource.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     MEMBER
+\subsection{Member}
+\label{sec:xml-member}
+\desc{Basic manifest for actual members of a corpus. This includes options, documentation and arbitrary key-value properties set for the member.}
+\extends{\imfBaseType{Identity}}{\ref{sec:xml-identity}}
+\extends{\imfBaseType{Manifest}}{\ref{sec:xml-manifest}}
+\begin{elements}{\imfType{Member}}
+	\element{categories}{List of \imfType{Category} (\ref{sec:xml-category})}{0-1}{true}
+	\element{documentation}{\imfType{Documentation} (\ref{sec:xml-documentation})}{0-1}{true}
+	\element{options}{\imfType{Options} (\ref{sec:xml-options})}{0-1}{true}
+	\element{properties}{List of \imfType{Property} (\ref{sec:xml-property})}{0-1}{true}
+\end{elements}
+\begin{description}
+	\item[\imfType{categories}] Collection of category definitions.
+	\item[\imfType{documentation}] Documentation provided by creator of resource.
+	\item[\imfType{options}] Specification of the configuration endpoints for this member.
+	\item[\imfType{properties}] Settings for this member, either predefined or the result of a user interacting with the Options provided.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     TARGET LAYER
+\subsection{Target Layer}
+\label{sec:xml-target-layer}
+\desc{Represents the target of a layer dependency.}
+\begin{attributes}{\imfType{XXX}}
+	\attribute{layerId}{String}{true}{-}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{layerId}] Identifier of target layer, has to be defined in context-local scope.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     VERSION
+\subsection{Version}
+\label{sec:xml-version}
+\desc{Self-explanatory version definition with version format specification and the actual version string.}
+\begin{attributes}{\imfType{Version}}
+	\attribute{versionFormat}{String}{false}{major-minor-patch}{false}
+\end{attributes}
+\begin{description}
+	\item[\imfType{versionFormat}] Format id that serves as a URI for a certain type of version format.
+\end{description}
+\begin{elements}{\imfType{Version}}
+	\element{text}{Text}{1}{false}
+\end{elements}
+\begin{description}
+	\item[text] The actual version string, following the specifications defined by the \imfType{versionFormat}.
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     XXX
+\section{XXX}
+\label{sec:xml-xxx}
+%\begin{itemize}
+%	\item xxx
+%\end{itemize}
+\desc{XXX}
+\begin{attributes}{\imfType{XXX}}
+	\attribute{name}{type}{required}{default}{inherited}
+\end{attributes}
+\begin{description}
+	\item[\imfType{attr}] DESC
+\end{description}
+\begin{elements}{\imfType{XXX}}
+	\element{name}{type (\ref{sec:xml-xxx})}{multiplicity}{inherited}
+\end{elements}
+\begin{description}
+	\item[\imfType{tag}] DESC
+\end{description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{appendices}
+
+
+\end{appendices}
+\end{document}
