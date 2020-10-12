@@ -426,7 +426,6 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.ContextManifest#getLayerManifests(java.util.function.Predicate)}.
 	 */
-	@SuppressWarnings("unchecked")
 	@Test
 	default void testGetLayerManifestsPredicateOfQsuperLayerManifest() {
 

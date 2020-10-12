@@ -106,6 +106,11 @@ public final class StringUtil {
 	}
 
 	public static String format(String text, Object...params) {
+		requireNonNull(text);
+		if(text.indexOf('{')==-1) {
+			return text;
+		}
+
 		StringBuilder result = new StringBuilder();
 		String index = null;
 
