@@ -7,6 +7,43 @@
 \usepackage{../../doc/icarus2}
 
 
+\newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
+\newcommand{\iqlBaseType}[1]{\texttt{\textless#1\textgreater}}
+
+% Environment to wrap JSON attributes of IQL elements into tables
+\newenvironment{attributes}[1]{
+	\noindent\textbf{Attributes of #1:}\newline\medskip
+	\begin{tabular}{|p{0.3\textwidth}|p{0.20\textwidth}|p{0.20\textwidth}|p{0.17\textwidth}|}
+		\hline
+		\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
+		\hline
+		\hline
+	}{
+	\end{tabular}
+}
+% shorthand methods for filling attributes table: name, type, required, default
+\newcommand{\attribute}[4]{
+	#1 & #2 & #3 & #4 \\
+	\hline
+}
+
+% Environment to wrap nested JSON elements of IQL elements into tables
+\newenvironment{elements}[1]{
+	\noindent\textbf{Nested Elements of #1:}\newline\medskip
+	\begin{tabular}{|p{0.3\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
+		\hline
+		\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
+		\hline
+		\hline
+	}{
+	\end{tabular}
+}
+% shorthand methods for filling elements table: name, type, required
+\newcommand{\element}[3]{
+	#1 & #2 & #3 \\
+	\hline
+}
+
 \title{ICARUS2 Query Language Specification}
 
 \author{Markus Gärtner}
