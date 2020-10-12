@@ -44,7 +44,7 @@ At its very core is a framework for describing corpus composition and content vi
 </imf:manifest>
 ```
 
-The `icarus2-manifest-api` project contains the entire code base related to the creating, handling and (de-)serialization of manifests in ICARUS2. For a detailed introduction to manifests consult the respective [README](icarus2-manifest-api/README.md).
+The `icarus2-manifest-api` project contains the entire code base related to the creating, handling and (de-)serialization of manifests in ICARUS2. For a detailed introduction to manifests consult the respective [README](icarus2-manifest-api/README.md) or the [specification](icarus2-manifest-api/doc/imf_specification.pdf) as PDF.
 
 
 ## Model API

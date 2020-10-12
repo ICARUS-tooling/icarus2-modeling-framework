@@ -932,7 +932,7 @@
 		</xsd:annotation>
 		<xsd:simpleContent>
 			<xsd:extension base="xsd:string">
-				<xsd:attribute name="type" type="imf:pathTypeAttr" use="required" />
+				<xsd:attribute name="type" type="imf:pathTypeAttr" />
 			</xsd:extension>
 		</xsd:simpleContent>
 	</xsd:complexType>
