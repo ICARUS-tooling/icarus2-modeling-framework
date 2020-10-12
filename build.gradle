@@ -238,6 +238,7 @@ subprojects {
 		
 		// Annotation processing (ensuring declared processors are forwarded to eclipse)
 		factorypath {
+			//TODO add task or hook to clear out previous factorypath entries
 			plusConfigurations = [ configurations.annotationProcessor, configurations.testAnnotationProcessor, configurations.jmhAnnotationProcessor ]
 			minusConfigurations = []
 		}
