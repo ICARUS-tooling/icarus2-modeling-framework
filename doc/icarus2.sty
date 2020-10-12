@@ -8,7 +8,9 @@
 \usepackage{acro}
 \usepackage[chapter]{algorithm}
 \usepackage[toc,page]{appendix}
+\usepackage[english]{babel}
 \usepackage{bera}% optional: just to have a nice mono-spaced font
+\usepackage{blindtext}
 \usepackage{comment} % for commenting out the huge draft lists
 \usepackage{cprotect}
 \usepackage{enumitem}
@@ -49,6 +51,7 @@
 \DeclareAcronym{rdbms}{short = RDBMS, long = relational database management system}
 \DeclareAcronym{rdb}{short = RDB, long = relational database}
 \DeclareAcronym{iql}{short = IQL, long = ICARUS2 Query Language}
+\DeclareAcronym{imf}{short = IMF, long = ICARUS2 Manifest Framework}
 \DeclareAcronym{icmf}{short = ICMF, long = ICARUS2 Corpus Modeling Framework}
 \DeclareAcronym{icqp}{short = ICQP, long = ICARUS2 Corpus Query Processor}
 \DeclareAcronym{kwic}{short = KWIC, long = keyword-in-context}
@@ -99,51 +102,16 @@
 
 % constants
 \newcommand{\iqlns}{iql:}
+\newcommand{\imfns}{imf:}
 \newcommand{\repoUrl}{https://github.com/ICARUS-tooling/icarus2-modeling-framework/blob/dev/}
 \newcommand{\manifestsUrl}{\repoUrl icarus2-manifest-api/src/main/java/de/ims/icarus2/model/manifest/api/}
 \newcommand{\modelsUrl}{\repoUrl icarus2-model-api/src/main/java/de/ims/icarus2/model/api/}
 
+% link - text
 \newcommand{\repoLink}[2]{\href{#1}{#2}}
-
-\newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
-\newcommand{\iqlBaseType}[1]{\texttt{\textless#1\textgreater}}
 
 \newcommand{\desc}[1]{\noindent#1\newline\medskip}
 \newcommand{\extends}[2]{\noindent\textbf{Extends #1(#2).}\newline\medskip}
-
-% Environment to wrap JSON attributes of IQL elements into tables
-\newenvironment{attributes}[1]{
-\noindent\textbf{Attributes of #1:}\newline\medskip
-\begin{tabular}{|p{0.3\textwidth}|p{0.20\textwidth}|p{0.20\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Attribute} & \textbf{Type} & \textbf{Required} & \textbf{Default} \\ 
-	\hline
-	\hline
-}{
-\end{tabular}
-}
-% shorthand methods for filling attributes table: name, type, required, default
-\newcommand{\attribute}[4]{
-	#1 & #2 & #3 & #4 \\
-	\hline
-}
-
-% Environment to wrap nested JSON elements of IQL elements into tables
-\newenvironment{elements}[1]{
-\noindent\textbf{Nested Elements of #1:}\newline\medskip
-\begin{tabular}{|p{0.3\textwidth}|p{0.42\textwidth}|p{0.17\textwidth}|}
-	\hline
-	\textbf{Element} & \textbf{Type} & \textbf{Required} \\ 
-	\hline
-	\hline
-}{
-\end{tabular}
-}
-% shorthand methods for filling elements table: name, type, required
-\newcommand{\element}[3]{
-#1 & #2 & #3 \\
-\hline
-}
 
 % make a noticable skip and set a horizontal separator
 \newcommand{\diagsep}{\bigskip\hrule}
