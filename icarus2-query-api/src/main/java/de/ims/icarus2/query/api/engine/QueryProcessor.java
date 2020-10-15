@@ -405,16 +405,22 @@ public class QueryProcessor {
 			// Handle modifiers
 			MatchModifierContext mmctx = ctx.matchModifier();
 			if(mmctx!=null) {
+				boolean canRestrictToOne = false;
 				if(mmctx.FIRST()!=null) {
 					payload.setQueryModifier(QueryModifier.FIRST);
+					canRestrictToOne = true;
 				} else if(mmctx.LAST()!=null) {
 					payload.setQueryModifier(QueryModifier.LAST);
+					canRestrictToOne = true;
 				} else if(mmctx.ANY()!=null) {
 					payload.setQueryModifier(QueryModifier.ANY);
+					canRestrictToOne = true;
 				}
 
 				if(mmctx.PureDigits()!=null) {
 					payload.setLimit(pureDigits(mmctx.PureDigits().getSymbol()));
+				} else if(canRestrictToOne) {
+					payload.setLimit(1L);
 				}
 
 				for (MatchFlagContext mfctx : mmctx.matchFlag()) {

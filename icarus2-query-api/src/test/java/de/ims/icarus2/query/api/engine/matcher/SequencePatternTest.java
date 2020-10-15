@@ -2805,6 +2805,7 @@ class SequencePatternTest {
 
 	}
 
+	//TODO verify that IQLElement instances get processed into the correct node configurations
 	@Nested
 	class ForProcessor {
 

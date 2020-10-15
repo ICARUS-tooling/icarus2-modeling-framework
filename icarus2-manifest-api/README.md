@@ -5,6 +5,10 @@
 The manifest framework provides the foundation for all other members of the ICARUS2 project. Manifests are formal descriptions of the structure, inner composition and outer dependencies of (parts) of a corpus resource. Corpora consist of a hierarchy of different components which all describe different aspects of a corpus.
 TODO  
 
+## Useful Links
+
+* [Full schema file](src/main/resources/de/ims/icarus2/model/manifest/xml/corpus.xsd)
+
 ## Creating Manifests
 
 Any manifest needs to be associated with a registry and location. The registry defines the namespace in which each manifest's identifier has to be unique. It also serves as a means of resolving references, e.g. for templates, and is the place to send or receive manifest-related events. 

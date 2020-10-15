@@ -98,6 +98,7 @@ public class IqlResult extends AbstractIqlQueryElement {
 
 		KWIC("kwic", "Simple 'keyword in context' result info with customizable window size"),
 		CUSTOM("custom", "Only the user defined result scheme is to be used"),
+		ID("id", "Returns only the ids of result entries and discards all deeper matching information"),
 		;
 
 		private final String label, description;

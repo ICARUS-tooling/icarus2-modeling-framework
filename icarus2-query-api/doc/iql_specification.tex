@@ -1605,6 +1605,7 @@ The evaluation behavior for them is subsequently covered in \cref{sec:sequence-c
 All three available modifiers can also take an optional numerical argument that defines the upper bound for the number of hits to be reported, followed by the \keyword{HITS} keyword.
 This \textit{limit} must be a positive non-zero integer that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
 If a modifier is accompanied by a limit value, the \ac{icqp} will report a number of hits per \ac{uoi} no greater than this limit.
+In the absence of any explicitly set limit, the \ac{icqp} will default to 1 if either one of \keyword{FIRST}, \keyword{LAST}, \keyword{ANY} is used.
 
 \subsection{Bindings}
 \label{sec:bindings}

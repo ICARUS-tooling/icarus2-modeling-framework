@@ -514,7 +514,7 @@ variable
 /** 
  * Models the actual member variables for a matching.
  * If no identifier is provided, the sole '$' is equivalent to
- * the 'this' expression in Java, referencing the the nearest
+ * the 'this' expression in Java, referencing the nearest
  * Item instance in the current scope. 
  */
 member
