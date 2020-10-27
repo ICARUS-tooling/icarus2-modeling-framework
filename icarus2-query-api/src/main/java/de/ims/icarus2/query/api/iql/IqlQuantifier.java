@@ -165,6 +165,12 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		return quantifierType==QuantifierType.ALL;
 	}
 
+	/**
+	 * Basic types of quantifiers.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public enum QuantifierType {
 		ALL("all"),
 		EXACT("exact"),
@@ -185,6 +191,14 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		}
 	}
 
+	/**
+	 * Eagerness of quantifiers that allow expansion.
+	 * This includes {@link QuantifierType#AT_LEAST}, {@link QuantifierType#AT_MOST} and
+	 * {@link QuantifierType#RANGE}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public enum QuantifierModifier {
 		/** Match as many as possible while still considering subsequent constraints or nodes */
 		GREEDY("greedy"),
@@ -206,11 +220,23 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		}
 	}
 
+	/**
+	 * Marks components of a query as able to receive quantification.
+	 * This interface exists mainly to provide a convenient unification
+	 * between {@link IqlElement.IqlGrouping} and the structural elements
+	 * derived from {@link IqlElement.IqlNode}, such as {@link IqlElement.IqlTreeNode}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface Quantifiable {
+		/** Get all registered quantifiers or an empty list. */
 		List<IqlQuantifier> getQuantifiers();
 
+		/** Add a new non-null quantifier. */
 		void addQuantifier(IqlQuantifier quantifier);
 
+		/** Traverse quantifiers and apply given action to all of them. */
 		void forEachQuantifier(Consumer<? super IqlQuantifier> action);
 	}
 }
