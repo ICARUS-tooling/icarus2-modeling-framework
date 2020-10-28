@@ -29,6 +29,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_3;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_B;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_NOT_X;
@@ -37,6 +38,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_Y;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
@@ -58,6 +60,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostReluctant;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.constraint;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.exact;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.grouping;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.ic_exp;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.mark;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.negated;
@@ -176,6 +179,7 @@ class SequencePatternTest {
 
 		static final int NODE_0 = 0;
 		static final int NODE_1 = 1;
+		static final int NODE_2 = 2;
 		static final int CACHE_0 = 0;
 		static final int CACHE_1 = 1;
 		static final int CACHE_2 = 2;
@@ -5815,11 +5819,184 @@ class SequencePatternTest {
 		@Nested
 		class ForIqlGrouping {
 
+			@ParameterizedTest(name="{index}: [X][Y] in {0}")
+			@CsvSource({
+				"-",
+				"X",
+				"Y",
+				"--",
+				"X-",
+				"-X",
+				"Y-",
+				"-Y",
+				"-X-",
+				"--Y",
+				"YX",
+				"Y-X",
+
+			})
+			@DisplayName("Node pair with no matches")
+			void testDoubleNodeFail(String target) {
+				assertResult(target,
+						builder(grouping(
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y')))
+								)
+						).build(),
+						mismatch());
+			}
+
+			@ParameterizedTest(name="{index}: [X][Y] in {0}")
+			@CsvSource({
+				"--",
+				"X",
+				"Y",
+				"Z",
+				"--",
+				"X-",
+				"-X",
+				"Y-",
+				"-Y",
+				"Z-",
+				"-Z",
+				"XY-",
+				"X-Z",
+				"Y-X",
+				"ZYX",
+
+			})
+			@DisplayName("Node triplet with no matches")
+			void testTripleNodeFail(String target) {
+				assertResult(target,
+						builder(grouping(
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))),
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Z')))
+								)
+						).build(),
+						mismatch());
+			}
+
+			@ParameterizedTest(name="{index}: [X][Y][Z] in {0}")
+			@CsvSource({
+				"XYZ, {0}, {1}, {2},  0, 1, 2,  {0}, {1}, {2}",
+				"-XYZ, {1}, {2}, {3},  0-1, 2, 3,  {1}, {2}, {3}",
+				"X-YZ, {0}, {2}, {3},  0-1, 1-2, 3,  {0}, {2}, {3}",
+				"XY-Z, {0}, {1}, {3},  0-1, 1-2, 2-3,  {0}, {1}, {3}",
+				"XYZ-, {0}, {1}, {2},  0-1, 1, 2,  {0}, {1}, {2}",
+
+				"-X-Y-Z-, {1}, {3}, {5},  0-4, 2-5, 4-6,  {1}, {3}, {5}",
+				"-X-Y-ZY-, {1}, {3}, {5},  0-5, 2-6, 4-7,  {1}, {3;6}, {5}",
+				"-X-Y-XZY-, {1}, {3}, {6},  0-6, 2-7, 4-8,  {1;5}, {3;7}, {6}",
+
+				"XXYZ, {0;1}, {2;2}, {3;3},  0-1, 2, 3,  {0-1}, {2}, {3}",
+				"XYYZ, {0;0}, {1;2}, {3;3},  0, 1-2, 3,  {0}, {1-2}, {3}",
+				"XYZZ, {0;0}, {1;1}, {2;3},  0, 1, 2-3,  {0}, {1}, {2-3}",
+
+				"-X-Y-Z-X-Y-, {1}, {3}, {5},  0-8, 2-9, 4-10,  {1;7}, {3;9}, {5}",
+				"-X-Y-Z-X-Z-, {1;1}, {3;3}, {5;9},  0-8, 2-9, 4-10,  {1;7}, {3}, {5;9}",
+				"-X-Y-Z-X-Y-Z-, {1;1;1;7}, {3;3;9;9}, {5;11;11;11},  0-10, 2-11, 4-12,  {1;7}, {3;9}, {5;11}",
+			})
+			@DisplayName("Node triplet at various positions")
+			void testTripleNodeHit(String target,
+					@IntervalArrayArg Interval[] hits1, @IntervalArrayArg Interval[] hits2, @IntervalArrayArg Interval[] hits3,
+					@IntervalArg Interval visited1, @IntervalArg Interval visited2, @IntervalArg Interval visited3,
+					@IntervalArrayArg Interval[] candidates1, @IntervalArrayArg Interval[] candidates2, @IntervalArrayArg Interval[] candidates3) {
+				assertThat(hits1).hasSameSizeAs(hits2);
+				assertThat(hits1).hasSameSizeAs(hits3);
+
+				assertResult(target,
+						builder(grouping(
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))),
+								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Z')))
+								)
+						).build(),
+						match(hits1.length)
+							// Cache for 3rd node
+							.cache(cache(CACHE_0, true)
+									.window(visited3)
+									.hits(candidates3))
+							// Cache for 2nd node
+							.cache(cache(CACHE_1, true)
+									.window(visited2)
+									.hits(candidates2))
+							// Cache for 1st node
+							.cache(cache(CACHE_3, true)
+									.window(visited1)
+									.hits(candidates1))
+							.results(hits1.length, (r, i) -> r
+									.map(NODE_2, hits1[i])
+									.map(NODE_1, hits2[i])
+									.map(NODE_0, hits3[i]))
+				);
+			}
+
 			@Nested
 			class WithQuantifier {
 
 				@Nested
 				class Negated {
+
+					@ParameterizedTest(name="{index}: !'{[X]}' in {0}")
+					@CsvSource({
+						"-",
+						"Y",
+						"--",
+						"-Y-",
+					})
+					@DisplayName("Negated node")
+					void testNegatedSingle(String target) {
+						assertResult(target,
+								builder(quantify(grouping(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X')))),
+										negated()
+										)).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, true)
+											.window(target))
+									// Cache of the negated search
+									.cache(cache(CACHE_1, true)
+											.window(target)
+											.hitsForWindow())
+						);
+					}
+
+					@ParameterizedTest(name="{index}: !'{[X][Y]}' in {0}")
+					@CsvSource({
+						"--, 0, -",
+						"-X-, 0-1, 2",
+						"-Y-, 0-1, -",
+						"-YX-, 0-2, 3",
+						"-Y-X, 0-2, -",
+						"-XX-, 0-2, -",
+					})
+					@DisplayName("Negation of 2 nodes")
+					void testNegatedDual(String target,
+							@IntervalArg Interval visited1, @IntervalArg Interval visited2) {
+						assertResult(target,
+								builder(quantify(grouping(
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y')))
+										),
+										negated()
+										)).build(),
+								match(1)
+									// Underlying cache of first atom node
+									.cache(cache(CACHE_1, true)
+											.window(visited1)
+											.hits(target, visited1, EQUALS_X))
+									// Underlying cache of second atom node
+									.cache(cache(CACHE_0, true)
+											.window(visited2)
+											.hits(target, visited2, EQUALS_Y))
+									// Cache of the negated search
+									.cache(cache(CACHE_3, true)
+											.window(target)
+											.hitsForWindow())
+						);
+					}
 
 				}
 

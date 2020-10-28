@@ -141,6 +141,10 @@ public class SequencePattern {
 	static Node accept = new Node() {
 		@Override
 		public String toString() { return "Accept-Dummy"; }
+
+
+		@Override
+		boolean isFinisher() { return true; }
 	};
 
 	private final AtomicInteger matcherIdGen = new AtomicInteger(0);
@@ -467,13 +471,23 @@ public class SequencePattern {
 			if(oldTail != null) replaceTail(oldTail);
 		}
 
-		/** Link node to tail, set tail to new node and return it */
+		/** Link node's sequence to tail, set tail to new node and return it */
 		private <N extends Node> N pushTail(N node) {
 			requireNonNull(node);
-			assert node!=tail : "Node already set as tail: "+node;
-			node.next = tail;
+			// Need to fetch the last ndoe i nthe sequence to properly attach tail
+			Node last = last(node);
+			assert last!=tail : "Node's sequence already set as tail: "+node;
+			last.next = tail;
 			tail = node;
 			return node;
+		}
+
+		/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
+		private Node last(Node n) {
+			while(n.next!=null && n.next!=accept) {
+				n = n.next;
+			}
+			return n;
 		}
 
 		/** Replace tail by node and return old tail */
@@ -486,6 +500,7 @@ public class SequencePattern {
 		private int id() { return id++; }
 
 		private <N extends Node> N store(N node) {
+			//TODO wrap into monitoring node if needed
 			sm.add(node);
 			if(node instanceof ProperNode) {
 				properNodes.add((ProperNode) node);
@@ -774,8 +789,13 @@ public class SequencePattern {
 			return store(new Repetition(id(), atom, cmin, cmax, mode, buffer(), buffer()));
 		}
 
-		private static boolean needsCacheForScan(Node content) {
-			return !(content instanceof Single);
+		private boolean needsCacheForScan(Node node) {
+			if(node instanceof Single) {
+				// If we have a complex structure AFTER the node, ensure caching!
+				return !node.next.isFinisher();
+			}
+			// Lone single nodes never need external caching
+			return false;
 		}
 
 		/** Sequential scanning of ordered elements */
@@ -1203,9 +1223,11 @@ public class SequencePattern {
 		 * Replacement for the original {@link SequenceMatcher#reset()} method so
 		 * that test code can decide to reset matcher state if needed.
 		 */
+		@VisibleForTesting
 		void fullReset() { super.reset(); }
 
 		/** Only resets external references and the temporary result buffer. */
+		@VisibleForTesting
 		void softReset() {
 			Arrays.fill(elements, 0, size, null);
 			Arrays.fill(hits, UNSET_INT);
@@ -1594,7 +1616,11 @@ public class SequencePattern {
 			return ToStringBuilder.create(this).build();
 		}
 
+		/** Returns {@code true} iff this node can scan the search space itself. */
 		boolean isScanCapable() { return false; }
+
+		/** Returns {@code true} iff this node is part of the finishing block of the state machine. */
+		boolean isFinisher() { return false; }
 	}
 
 	static final int GREEDY = QuantifierModifier.GREEDY.ordinal();
@@ -1713,6 +1739,9 @@ public class SequencePattern {
 		public String toString() {
 			return ToStringBuilder.create(this).add("limit", limit).build();
 		}
+
+		@Override
+		boolean isFinisher() { return true; }
 	}
 
 	/** Proxy for evaluating the global constraints. */
@@ -1737,6 +1766,9 @@ public class SequencePattern {
 			//TODO check the expression info from the global constraints
 			return next.study(info);
 		}
+
+		@Override
+		boolean isFinisher() { return true; }
 	}
 
 	static abstract class Clip extends Node {
@@ -1895,6 +1927,10 @@ public class SequencePattern {
 					.add("borderId", borderId)
 					.build();
 		}
+
+		/** Delegates to {@link Node#next} node, since er're only a proxy. */
+		@Override
+		boolean isFinisher() { return next.isFinisher(); }
 	}
 
 	/** Special scan that ensures no instance of atom appears before legal end of sequence/match. */
@@ -2028,6 +2064,7 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
+			assert pos==0 : "Universal quantification must cover the entire search space";
 			//TODO ensure that we actually started at pos==0 ?
 			final int last = state.size-1;
 			for (int i = pos; i <= last; i++) {
