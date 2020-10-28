@@ -1213,7 +1213,7 @@ some().chained().methods()
 \subsection{List Access}
 \label{sec:list-access}
 
-Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to values within 32bit signed integer space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \lit{-1} pointing to the last array element and \lit{-2} to the second to last one. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
+Lists or arrays are accessed by an expression pointing to the list or array object itself and an index expression in square brackets indicating the position(s) of the desired element(s) within the array. Note that the index or indices expression must evaluate to values within 32bit signed integer space. Positive values indicate the position beginning from the start of the 0-based array, whereas negative values allow backwards referencing of elements with \lit{-1} pointing to the last array element and \lit{-2} to the second to last one. For a list of length $N$ any reverse index $-N \le i \le -1$ therefore yields the effective position $N+i$. For multidimensional arrays several index statements can be chained or even combined in a single comma-separated list.
 
 \begin{gram}[\synt{array}]
 	\label{gram:list-access}
@@ -1242,7 +1242,36 @@ complexArray[1, 2, 3]
 \end{Verbatim}
 
 \noindent Note that \ac{iql} provides convenient ways of using array access patterns to access list-like data structures and/or classes of the framework:
-Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{/members/structure/Structure.java}{Structure} that would traditionally access its content via ``myContainer.getItemAt(someIndex)`` can be used the same as any regular array with the expression ``myContainer[someIndex]``.
+Every \repoLink{\modelsUrl /members/item/manager/ItemLookup.java}{ItemLookup} implementation, such as \repoLink{\modelsUrl /members/container/Container.java}{Container} or \repoLink{\modelsUrl /members/structure/Structure.java}{Structure} that would traditionally access its content via \code{myContainer.getItemAt(someIndex)} can be used the same as any regular array with the expression \code{myContainer[someIndex]}.
+
+
+\todo{complete examples and add subsection about list regions}
+\begin{figure}[!htb]\centering
+	{
+	\tikzset{
+		baseline=-1.5mm,
+		item/.style={rectangle, draw=black!60, fill=black!5, thick, minimum size=5mm},
+		region/.style={red!60, draw, line width=0.7pt}
+	}
+	
+	\newcommand{\items}{\foreach \x in {0,1,...,9}  {\node[item] (x\x) at (\x,0) {\x};} }
+	\renewcommand{\arraystretch}{2.0}
+
+	\begin{tabular}{l r}
+		Regular explicit [3,6] & \tikz{\items\node[region, fit=(x3)(x6)]{};} \\
+		Right reverse [3..-6] & \tikz{\items\node[region, fit=(x3)(x4)]{};} \\
+		Left reverse [-8..5] & \tikz{\items\node[region, fit=(x2)(x5)]{};} \\
+		Both reverse [-8..-5] & \tikz{\items\node[region, fit=(x2)(x5)]{};} \\
+		Regular wrap [5..2] & \tikz{\items\node[region, fit=(x0)(x2)]{};\node[region, fit=(x5)(x9)]{};} \\
+		Right reverse wrap [5..-8] & \tikz{\items\node[region, fit=(x0)(x2)]{};\node[region, fit=(x5)(x9)]{};} \\
+		Left reverse wrap [-5..2] & \tikz{\items\node[region, fit=(x0)(x2)]{};\node[region, fit=(x5)(x9)]{};} \\
+		Reverse wrap [-5,-8] & \tikz{\items\node[region, fit=(x0)(x2)]{};\node[region, fit=(x5)(x9)]{};} \\
+	\end{tabular}
+	}
+	
+	\caption[Illustration of ranged list access]{Graphical illustration of the different ways to address regions in list objects in \ac{iql}.}
+	\label{fig:list-access-examples}
+\end{figure}
 
 \subsection{Annotation Access}
 \label{sec:annotation-access}
