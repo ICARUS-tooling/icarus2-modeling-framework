@@ -36,6 +36,9 @@ import it.unimi.dsi.fastutil.Hash.Strategy;
  */
 public interface Identity {
 
+	public static final String NO_NAME = null;
+	public static final String NO_DESCRIPTION = null;
+
 	/**
 	 * Returns the raw identifier used for this identity.
 	 * This value does not necessarily have to be human

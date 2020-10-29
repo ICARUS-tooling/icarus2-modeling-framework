@@ -147,6 +147,12 @@ public class ReportBuilder<R extends ReportItem> extends AbstractBuilder<ReportB
 		return new ReportImpl<>(this);
 	}
 
+	public void discard() {
+		items.clear();
+		errorCount = 0;
+		warningCount = 0;
+	}
+
 	static class ReportImpl<R extends ReportItem> implements Report<R> {
 
 		private final List<R> items;
