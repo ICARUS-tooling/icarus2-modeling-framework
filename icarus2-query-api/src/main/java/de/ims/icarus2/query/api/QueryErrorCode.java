@@ -41,7 +41,8 @@ public enum QueryErrorCode implements ErrorCode {
 
 	/**
 	 * Signals that an instance of {@link IqlQueryElement} failed its
-	 * {@link IqlQueryElement#checkIntegrity() integrity check}.
+	 * {@link IqlQueryElement#checkIntegrity() integrity check} or an
+	 * issue was detected during validating it.
 	 */
 	CORRUPTED_QUERY(101),
 
