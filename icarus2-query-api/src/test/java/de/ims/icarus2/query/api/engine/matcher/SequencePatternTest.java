@@ -58,6 +58,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostPossessive;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atMostReluctant;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.constraint;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.disjunction;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.exact;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.grouping;
@@ -116,6 +117,7 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NonResettingMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Scan;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceQueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
@@ -358,6 +360,10 @@ class SequencePatternTest {
 		return new MatchConfig(true, expectedCount);
 	}
 
+	static MatchConfig match(boolean expectedResult, int expectedCount) {
+		return new MatchConfig(expectedResult, expectedCount);
+	}
+
 	static MatchConfig mismatch() {
 		return new MatchConfig(false, 0);
 	}
@@ -509,7 +515,7 @@ class SequencePatternTest {
 		private final int cacheId;
 		private final boolean expectWindowSet;
 		/** The range of target elements we expect to be visited. If null, only startPos should be used. */
-		private Interval window;
+		private Interval[] window;
 		private final IntSet hits = new IntOpenHashSet();
 		private final IntSet set = new IntOpenHashSet();
 
@@ -518,13 +524,13 @@ class SequencePatternTest {
 			this.expectWindowSet = expectWindowSet;
 		}
 
-		CacheConfig window(Interval window) { this.window = window; return this; }
+		CacheConfig window(Interval...window) { this.window = window; return this; }
 
-		CacheConfig window(int from, int to) { window = Interval.of(from, to); return this; }
+		CacheConfig window(int from, int to) { window = new Interval[] {Interval.of(from, to)}; return this; }
 
-		CacheConfig window(String target) { window = Interval.of(0, target.length()-1); return this; }
+		CacheConfig window(String target) { window = new Interval[] {Interval.of(0, target.length()-1)}; return this; }
 
-		CacheConfig window(int spot) { window = Interval.of(spot); return this; }
+		CacheConfig window(int spot) { window = new Interval[] {Interval.of(spot)}; return this; }
 
 		CacheConfig hits(int...indices) { for(int i=0; i< indices.length; i++) hits.add(indices[i]); return this; }
 
@@ -571,27 +577,36 @@ class SequencePatternTest {
 		}
 
 		void assertResult(int startPos, State state) {
-			Interval window = this.window;
+			Interval[] window = this.window;
 			if(window==null) {
-				window = Interval.of(startPos);
+				window = new Interval[] {Interval.of(startPos)};
 			}
-			if(window.isEmpty()) {
+			if(window.length==0) {
 				return;
 			}
+			IntSet checked = new IntOpenHashSet();
 			Cache cache = state.caches[cacheId];
-			for (int i = window.from; i <= window.to; i++) {
-				if(expectWindowSet) {
-					assertThat(cache.isSet(i))
-						.as("Cache %d slot not set for index %d", _int(cacheId), _int(i))
-						.isTrue();
-				} else {
-					assertThat(cache.isSet(i))
-						.as("Cache %d set mismatch for index %d", _int(cacheId), _int(i))
-						.isEqualTo(set.contains(i));
+			for(Interval iv : window) {
+				if(iv.isEmpty()) {
+					continue;
 				}
-				assertThat(cache.getValue(i))
-					.as("Cache %d mismatch at index %d", _int(cacheId), _int(i))
-					.isEqualTo(hits.contains(i));
+				for (int i = iv.from; i <= iv.to; i++) {
+					if(!checked.add(i)) {
+						continue;
+					}
+					if(expectWindowSet) {
+						assertThat(cache.isSet(i))
+							.as("Cache %d slot not set for index %d", _int(cacheId), _int(i))
+							.isTrue();
+					} else {
+						assertThat(cache.isSet(i))
+							.as("Cache %d set mismatch for index %d", _int(cacheId), _int(i))
+							.isEqualTo(set.contains(i));
+					}
+					assertThat(cache.getValue(i))
+						.as("Cache %d mismatch at index %d", _int(cacheId), _int(i))
+						.isEqualTo(hits.contains(i));
+				}
 			}
 		}
 	}
@@ -802,8 +817,11 @@ class SequencePatternTest {
 		assertThat(SequencePattern.builder()).isNotNull();
 	}
 
+	/**
+	 * Test family for raw {@link Node} implementations.
+	 */
 	@Nested
-	class ForIndividualNodes {
+	class ForRawNodes {
 
 		@Nested
 		class ForCache {
@@ -2810,11 +2828,17 @@ class SequencePatternTest {
 	}
 
 	//TODO verify that IQLElement instances get processed into the correct node configurations
+	/**
+	 * Test family for the {@link SequenceQueryProcessor}'s creation methods.
+	 */
 	@Nested
 	class ForProcessor {
 
 	}
 
+	/**
+	 * Test family for processing and evaluation of full {@link IqlElement} constructs.
+	 */
 	@Nested
 	class ForFullPattern {
 
@@ -3384,105 +3408,113 @@ class SequencePatternTest {
 			@Nested
 			class WithQuantifier {
 
-				@ParameterizedTest(name="{index}: ![X] in {0}")
-				@CsvSource({
-					"-",
-					"Y",
-					"--",
-					"-Y-",
-				})
-				@DisplayName("Negated node")
-				void testNegated(String target) {
-					assertResult(target,
-							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-									constraint(eq_exp('X'))),
-									negated()
-									)).build(),
-							match(1)
-								// Underlying cache of atom node
-								.cache(cache(CACHE_0, true)
-										.window(target))
-								// Cache of the negated search
-								.cache(cache(CACHE_1, true)
-										.window(target)
-										.hitsForWindow())
-					);
+				@Nested
+				class Negated {
+
+					@ParameterizedTest(name="{index}: ![X] in {0}")
+					@CsvSource({
+						"-",
+						"Y",
+						"--",
+						"-Y-",
+					})
+					@DisplayName("Negated node")
+					void testNegated(String target) {
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										negated()
+										)).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, true)
+											.window(target))
+									// Cache of the negated search
+									.cache(cache(CACHE_1, true)
+											.window(target)
+											.hitsForWindow())
+						);
+					}
+
+					@ParameterizedTest(name="{index}: ![X] in {0}")
+					@CsvSource({
+						"X, 0",
+						"-X, 1",
+						"X-, 0",
+						"-X-, 1",
+						"--X, 2",
+					})
+					@DisplayName("Mismatch of negated node")
+					void testNegatedFail(String target, int hit) {
+						final Interval visited = Interval.of(0, hit);
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										negated()
+										)).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hit))
+									// Cache of the negated search
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited)
+											.hits(Interval.of(0, hit-1)))
+						);
+					}
 				}
 
-				@ParameterizedTest(name="{index}: ![X] in {0}")
-				@CsvSource({
-					"X, 0",
-					"-X, 1",
-					"X-, 0",
-					"-X-, 1",
-					"--X, 2",
-				})
-				@DisplayName("Mismatch of negated node")
-				void testNegatedFail(String target, int hit) {
-					final Interval visited = Interval.of(0, hit);
-					assertResult(target,
-							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-									constraint(eq_exp('X'))),
-									negated()
-									)).build(),
-							mismatch()
-								// Underlying cache of atom node
-								.cache(cache(CACHE_0, false)
-										.window(target)
-										.set(visited)
-										.hits(hit))
-								// Cache of the negated search
-								.cache(cache(CACHE_1, false)
-										.window(target)
-										.set(visited)
-										.hits(Interval.of(0, hit-1)))
-					);
-				}
+				@Nested
+				class All {
 
-				@ParameterizedTest(name="{index}: *[X] in {0}")
-				@CsvSource({
-					"X",
-					"XX",
-					"XXX",
-					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-				})
-				@DisplayName("Universally quantified node")
-				void testUniversallyQuantified(String target) {
-					assertResult(target,
-							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-									constraint(eq_exp('X'))),
-									all()
-									)).build(),
-							match(1)
-								// Underlying cache of atom node
-								.cache(cache(CACHE_0, true)
-										.window(target)
-										.hitsForWindow())
-								//TODO once we added flag to disable mapping for universal quantification, add check here against mapping
-					);
-				}
+					@ParameterizedTest(name="{index}: *[X] in {0}")
+					@CsvSource({
+						"X",
+						"XX",
+						"XXX",
+						"XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					})
+					@DisplayName("Universally quantified node")
+					void testUniversallyQuantified(String target) {
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										all()
+										)).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, true)
+											.window(target)
+											.hitsForWindow())
+									//TODO once we added flag to disable mapping for universal quantification, add check here against mapping
+						);
+					}
 
-				@ParameterizedTest(name="{index}: *[X] in {0}")
-				@CsvSource({
-					"Y, 0",
-					"YX, 0",
-					"XY, 1",
-					"XYX, 1",
-					"XXXXXXXXXXXXXX-XXXXXXXXXXXXXX, 14",
-				})
-				@DisplayName("Mismatch of universally quantified node")
-				void testUniversallyQuantifiedFail(String target, int gap) {
-					assertResult(target,
-							builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-									constraint(eq_exp('X'))),
-									all()
-									)).build(),
-							mismatch()
-								// Underlying cache of atom node
-								.cache(cache(CACHE_0, true)
-										.window(Interval.of(0, gap))
-										.hits(Interval.of(0, gap-1)))
-					);
+					@ParameterizedTest(name="{index}: *[X] in {0}")
+					@CsvSource({
+						"Y, 0",
+						"YX, 0",
+						"XY, 1",
+						"XYX, 1",
+						"XXXXXXXXXXXXXX-XXXXXXXXXXXXXX, 14",
+					})
+					@DisplayName("Mismatch of universally quantified node")
+					void testUniversallyQuantifiedFail(String target, int gap) {
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										all()
+										)).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, true)
+											.window(Interval.of(0, gap))
+											.hits(Interval.of(0, gap-1)))
+						);
+					}
 				}
 
 				@Nested
@@ -5833,7 +5865,6 @@ class SequencePatternTest {
 				"--Y",
 				"YX",
 				"Y-X",
-
 			})
 			@DisplayName("Node pair with no matches")
 			void testDoubleNodeFail(String target) {
@@ -5863,7 +5894,6 @@ class SequencePatternTest {
 				"X-Z",
 				"Y-X",
 				"ZYX",
-
 			})
 			@DisplayName("Node triplet with no matches")
 			void testTripleNodeFail(String target) {
@@ -5937,6 +5967,30 @@ class SequencePatternTest {
 
 				@Nested
 				class Negated {
+
+					@ParameterizedTest(name="{index}: !'{[X]}' in {0}")
+					@CsvSource({
+						"X, {0}, 0",
+						"-X, {1}, 0-1",
+						"X-, {0}, 0",
+						"-X-, {1}, 0-1",
+						"X-X, {0;2}, 0",
+					})
+					@DisplayName("Mismatch for negated node")
+					void testNegatedFail(String target, @IntArrayArg int[] hits,
+							@IntervalArg Interval visitedAtom) {
+						assertResult(target,
+								builder(quantify(grouping(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X')))),
+										negated()
+										)).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, true)
+											.window(visitedAtom)
+											.hits(hits))
+						);
+					}
 
 					@ParameterizedTest(name="{index}: !'{[X]}' in {0}")
 					@CsvSource({
@@ -6030,6 +6084,51 @@ class SequencePatternTest {
 
 		@Nested
 		class ForIqlElementDisjunction {
+
+			@Nested
+			class Simple {
+
+				@ParameterizedTest(name="{index}: [X] or [Y] in {0}")
+				@CsvSource({
+					"-, -, -, {0}, {0}",
+					"Z, -, -, {0}, {0}",
+					"---, -, -, {0-2}, {0-2}",
+
+					"X, {0}, {-}, {0}, -",
+					"Y, {-}, {0}, {0}, {0}",
+
+					"-X-, {1}, {-}, {0-2}, -",
+					"-Y-, {-}, {1}, {0}, {0}",
+
+					"XX, {0;1}, {-;-}, {0-1}, -",
+					"YY, {-;-}, {0;1}, {0-1}, {0-1}",
+					"XY, {0;-}, {-;1}, {0-1}, {1}",
+					"YX, {-;1}, {0;-}, {0-1}, {0}",
+				})
+				@DisplayName("Binary node disjunction")
+				void testBinaryOption(String target,
+						@IntervalArrayArg Interval[] hits1, @IntervalArrayArg Interval[] hits2,
+						@IntervalArrayArg Interval[] visited1, @IntervalArrayArg Interval[] visited2) {
+					assertResult(target,
+							builder(disjunction(
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y')))
+									)
+							).build(),
+							match(hits1.length>0, hits1.length)
+								.cache(cache(CACHE_0, true)
+										.window(visited1)
+										.hits(target, EQUALS_X))
+								.cache(cache(CACHE_1, true)
+										.window(visited2)
+										.hits(target, EQUALS_Y))
+								.results(hits1.length, (r, i) -> r
+										.map(NODE_0, hits1[i])
+										.map(NODE_1, hits2[i]))
+							);
+				}
+
+			}
 
 		}
 	}

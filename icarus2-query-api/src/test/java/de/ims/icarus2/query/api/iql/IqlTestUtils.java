@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
@@ -59,6 +60,13 @@ public class IqlTestUtils {
 	public static <Q extends IqlQuantifier.Quantifiable> Q quantify(Q target, IqlQuantifier...quantifiers) {
 		Stream.of(quantifiers).forEach(target::addQuantifier);
 		return target;
+	}
+
+	public static IqlElementDisjunction disjunction(IqlElement...elements) {
+		IqlElementDisjunction disjunction = new IqlElementDisjunction();
+		setId(disjunction);
+		Stream.of(elements).forEach(disjunction::addAlternative);
+		return disjunction;
 	}
 
 	public static IqlGrouping grouping(IqlElement...elements) {
