@@ -479,7 +479,7 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 %\item name
 %\item alias %stores the member name used to reference the entire structure/sentence
 %\item laneType
-%\item elements
+%\item element
 %\end{itemize}
 \desc{Lanes serve as a means of splitting queries for a single corpus stream into multiple logical subqueries that target different structural and/or logical layers, e.g. multiple syntactic analyses for the same source text.}
 \begin{attributes}{\iqlType{Lane}}
@@ -495,10 +495,10 @@ For complex graph declarations multiple nodes can be defined having the same \iq
 	\item[\iqlType{laneType}] The type of structure this lane is meant to match, effectively defining the basic complexity class for evaluation. legal values are \texttt{sequence}, \texttt{tree} and \texttt{graph}. Note that the initial evaluation engine for \ac{iql} does not support the \texttt{graph} type! %TODO adjust once we extend the engine
 \end{description}
 \begin{elements}{\iqlType{Lane}}
-	\element{elements}{\iqlBaseType{Element} (\ref{sec:json-ld-element})}{yes}
+	\element{element}{\iqlBaseType{Element} (\ref{sec:json-ld-element})}{yes}
 \end{elements}
 \begin{description}
-	\item[\iqlType{elements}] The structural constraints to be used for evaluation of this lane.
+	\item[\iqlType{element}] The structural constraints to be used for evaluation of this lane.
 \end{description}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2066,6 +2066,8 @@ ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
 \noindent This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
 Note that the adjacency modifier does not apply to the inner sequences a+b and c+d, which are only subject to the implicit order of the sequence declaration.\footnote{An additional \keyword{ORDERED} in each of the groups would make that explicit, but is redundant.}
 The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
+Also note that evaluation of node groupings will not be performed exhaustively if the group has quantifiers assigned to it that allow repetition of the group's content.
+In such a case the ``internal'' elements will be evaluated in a one-shot evaluation attempt where only the first possible match is counted and then control is returned to the repetition element.
 
 \subsubsection{Node Sequence}
 \label{sec:node-sequences}
