@@ -144,7 +144,7 @@ public class QueryProcessor {
 
 	private final boolean ignoreWarnings;
 
-	QueryProcessor(boolean ignoreWarnings) {
+	public QueryProcessor(boolean ignoreWarnings) {
 		this.ignoreWarnings = ignoreWarnings;
 	}
 
@@ -508,7 +508,7 @@ public class QueryProcessor {
 		private void processLaneContent(IqlLane lane, StructuralConstraintContext ctx) {
 
 			try {
-				lane.setElements(processStructuralConstraint(ctx, new TreeInfo()));
+				lane.setElement(processStructuralConstraint(ctx, new TreeInfo()));
 
 				LaneType laneType = LaneType.SEQUENCE;
 				if(treeFeaturesUsed) {

@@ -40,6 +40,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.Report.Severity;
@@ -76,7 +78,13 @@ import de.ims.icarus2.test.util.Pair;
  * @author Markus Gärtner
  *
  */
-class QueryProcessorTest {
+@VisibleForTesting
+public class QueryProcessorTest {
+
+	@VisibleForTesting
+	public static IqlPayload parsePayload(String rawPayload) {
+		return new QueryProcessor(false).processPayload(rawPayload);
+	}
 
 	private void assertExpression(IqlExpression expression, String content) {
 		assertThat(expression.getContent()).isEqualTo(content);
@@ -505,7 +513,7 @@ class QueryProcessorTest {
 		private final Consumer<IqlLane> lane(LaneType type, Consumer<IqlElement> asserter) {
 			return lane -> {
 				assertThat(lane.getLaneType()).isSameAs(type);
-				asserter.accept(lane.getElements());
+				asserter.accept(lane.getElement());
 			};
 		}
 
