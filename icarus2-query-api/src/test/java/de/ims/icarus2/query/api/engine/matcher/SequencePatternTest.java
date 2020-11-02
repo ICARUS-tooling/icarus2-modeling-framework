@@ -86,6 +86,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -106,17 +107,18 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.query.api.engine.QueryProcessorTest;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArg;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArrayArg;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Branch;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.BranchConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.DynamicClip;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Exhaust;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NonResettingMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Scan;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceQueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
@@ -132,9 +134,13 @@ import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
 import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
+import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlTestUtils;
 import de.ims.icarus2.test.annotations.IntArrayArg;
+import de.ims.icarus2.test.annotations.IntMatrixArg;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
@@ -142,6 +148,7 @@ import de.ims.icarus2.util.collections.set.ArraySet;
 import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * @author Markus Gärtner
@@ -319,6 +326,64 @@ class SequencePatternTest {
 				.lane(Utils.lane())
 				.build();
 		builder.context(context);
+
+		return builder;
+	}
+
+	private static final Pattern NODE = Pattern.compile("\\[([A-Z])\\]");
+
+	private static String payload(String rawQuery) {
+		int lastAppend = 0;
+		java.util.regex.Matcher m = NODE.matcher(rawQuery);
+		StringBuilder sb = new StringBuilder();
+		if(!rawQuery.startsWith("FIND ")) {
+			sb.append("FIND ");
+		}
+		while(m.find()) {
+			String content = m.group(1);
+			assertThat(content).as("node content not a single character").hasSize(1);
+			char c = content.charAt(0);
+			// Can't use Matcher.appendReplacement, as we use $ in the expression
+			sb.append(rawQuery, lastAppend, m.start())
+				.append('[')
+				.append(eq_exp(c))
+				.append(']');
+			lastAppend = m.end();
+		}
+		sb.append(rawQuery, lastAppend, rawQuery.length());
+		return sb.toString();
+	}
+
+	static SequencePattern.Builder builder(String rawPayload, int limit) {
+
+		rawPayload = payload(rawPayload);
+
+		IqlPayload payload = QueryProcessorTest.parsePayload(rawPayload);
+		assertThat(payload).as("No payload").isNotNull();
+		assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
+		assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
+		IqlLane lane = payload.getLanes().get(0);
+		assertThat(lane.getLaneType()).isEqualTo(LaneType.SEQUENCE);
+		IqlElement root = lane.getElement();
+
+		Scope scope = Utils.scope();
+
+		SequencePattern.Builder builder = SequencePattern.builder();
+		builder.root(root);
+		builder.id(1);
+		RootContext rootContext = EvaluationContext.rootBuilder()
+				.corpus(scope.getCorpus())
+				.scope(scope)
+				.environment(SharedUtilityEnvironments.all())
+				.build();
+		LaneContext context = rootContext.derive()
+				.lane(lane)
+				.build();
+		builder.context(context);
+
+		if(limit!=NO_LIMIT) {
+			builder.limit(limit);
+		}
 
 		return builder;
 	}
@@ -666,8 +731,12 @@ class SequencePatternTest {
 				.as("Incorrect number of mappings in result #%d", _int(index))
 				.isEqualTo(size);
 
+			// Process mappings in their natural occurance order
+			List<Pair<Integer, Integer>> entries = new ObjectArrayList<>(mapping);
+			entries.sort((p1, p2) -> p1.second.compareTo(p2.second));
+
 			for (int i = 0; i < size; i++) {
-				Pair<Integer, Integer> m = mapping.get(i);
+				Pair<Integer, Integer> m = entries.get(i);
 				assertThat(state.m_node[i])
 					.as("Node id mismatch in mapping at index %d in result #%d",
 							_int(i), _int(index))
@@ -966,7 +1035,7 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Scan(0, NO_CACHE, true),
+								new Exhaust(0, NO_CACHE, true),
 								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -1071,7 +1140,7 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.limit = limit;
 						sms.root = seq(
-								new Scan(0, CACHE_0, true),
+								new Exhaust(0, CACHE_0, true),
 								new Single(1, NODE_0, CACHE_1, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -1182,7 +1251,7 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Scan(0, NO_CACHE, false),
+								new Exhaust(0, NO_CACHE, false),
 								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -1294,7 +1363,7 @@ class SequencePatternTest {
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(REGION_0),
-								new Scan(0, NO_CACHE, true),
+								new Exhaust(0, NO_CACHE, true),
 								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -1428,7 +1497,7 @@ class SequencePatternTest {
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(REGION_0),
-								new Scan(0, CACHE_0, true),
+								new Exhaust(0, CACHE_0, true),
 								new Single(1, NODE_0, CACHE_1, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -1573,7 +1642,7 @@ class SequencePatternTest {
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(REGION_0),
-								new Scan(0, NO_CACHE, false),
+								new Exhaust(0, NO_CACHE, false),
 								new Single(1, NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2641,7 +2710,7 @@ class SequencePatternTest {
 					int id = 0;
 					List<Node> nodes = new ArrayList<>();
 					for (int i = 0; i < predicates.length; i++) {
-						nodes.add(new Scan(id++, NO_CACHE, true));
+						nodes.add(new Exhaust(id++, NO_CACHE, true));
 						nodes.add(new Single(id++, i, i, NO_MEMBER));
 					}
 					nodes.add(new Finish(limit, false));
@@ -2840,7 +2909,7 @@ class SequencePatternTest {
 	 * Test family for processing and evaluation of full {@link IqlElement} constructs.
 	 */
 	@Nested
-	class ForFullPattern {
+	class ForFullQueryElements {
 
 		@Nested
 		class ForIqlNode {
@@ -6104,6 +6173,11 @@ class SequencePatternTest {
 					"YY, {-;-}, {0;1}, {0-1}, {0-1}",
 					"XY, {0;-}, {-;1}, {0-1}, {1}",
 					"YX, {-;1}, {0;-}, {0-1}, {0}",
+
+					"X-X, {0;2}, {-;-}, {0-2}, {1}",
+					"Y-Y, {-;-}, {0;2}, {0-2}, {0-2}",
+					"X-Y, {0;-}, {-;2}, {0-2}, {1-2}",
+					"Y-X, {-;2}, {0;-}, {0-2}, {0-1}",
 				})
 				@DisplayName("Binary node disjunction")
 				void testBinaryOption(String target,
@@ -6130,6 +6204,38 @@ class SequencePatternTest {
 
 			}
 
+		}
+	}
+
+	/**
+	 * Test family for raw textual queries against full sequences.
+	 */
+	@Nested
+	class ForRawQueries {
+
+		@ParameterizedTest(name="{index}: {0} in {1}")
+		@CsvSource({
+			"<1+>{ADJACENT [X][Y]}, -, -1, -, -",
+			"<1+>{ADJACENT [X][Y]}, --, -1, -, -",
+			"<1+>{ADJACENT [X][Y]}, X-Y, -1, -, -",
+			"<1+>{ADJACENT [X][Y]}, XY, -1, {{0}}, {{1}}",
+			"<2+>{ADJACENT [X][Y]}, XY, -1, -, -",
+			"<2+>{ADJACENT [X][Y]}, XYX-Y, -1, -, -",
+			"<2+>{ADJACENT [X][Y]}, X-YXY, -1, -, -",
+			"<2+>{ADJACENT [X][Y]}, XYXY, -1, {{0;2}}, {{1;3}}",
+			"<2+>{ADJACENT [X][Y]}, XY-XY, -1, {{0;3}}, {{1;4}}",
+			"<2+>{ADJACENT [X][Y]}, XY---XY, -1, {{0;5}}, {{1;6}}",
+		})
+		@DisplayName("Repetition of adjacent sequences")
+		void testRepetitionAdjacent(String query, String target, int limit,
+				@IntMatrixArg int[][] hits1, @IntMatrixArg int[][] hits2) {
+			assertResult(target,
+					builder(query, limit).build(),
+					match(hits1.length>0, hits1.length)
+						.results(hits1.length, (r, i) -> r
+								.map(NODE_1, hits1[i])
+								.map(NODE_0, hits2[i]))
+					);
 		}
 	}
 }

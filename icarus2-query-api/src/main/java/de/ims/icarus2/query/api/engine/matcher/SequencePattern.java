@@ -303,6 +303,7 @@ public class SequencePattern {
 		int pendingBorder = UNSET_INT;
 //		/** Keeps track of stacked single nodes between scans */
 //		int offset = 0;
+		boolean findOnly = false;
 
 		int id;
 
@@ -371,7 +372,7 @@ public class SequencePattern {
 			/*
 			 * We don't handle markers immediately at the node position they
 			 * appear, but on the first enclosing  explorative node, which
-			 * currently is only the Scan node. This way the state machine
+			 * currently is only the Exhaust node. This way the state machine
 			 * can properly and early reduce the search space for exploration.
 			 * This also allows us to treat markers on multiple (nested) nodes
 			 * in an ADJACENT sequence as erroneous.
@@ -419,10 +420,17 @@ public class SequencePattern {
 		private Node grouping(IqlGrouping source) {
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 
+			boolean oldFindOnly = findOnly;
+			if(!findOnly && !allowExhaustive(quantifiers)) {
+				findOnly = true;
+			}
+
 			// Make sure to process the group content as a detached atom
 			final Node oldTail = detachTail();
 			final Node head = looseGroup(source.getElements());
 			attachTail(oldTail);
+
+			findOnly = oldFindOnly;
 
 			// Finally apply quantification
 			return quantify(head, quantifiers);
@@ -444,6 +452,40 @@ public class SequencePattern {
 		}
 
 		// INTERNAL HELPERS
+
+		private boolean allowExhaustive(List<IqlQuantifier> quantifiers) {
+			if(quantifiers.isEmpty()) {
+				return true;
+			}
+
+			loop : for (IqlQuantifier quantifier : quantifiers) {
+				switch (quantifier.getQuantifierType()) {
+				case ALL:
+					continue loop;
+
+				case AT_LEAST: return false;
+
+				case AT_MOST:
+				case EXACT:
+					if(quantifier.getValue().getAsInt()>1) {
+						return false;
+					}
+					break;
+
+				case RANGE:
+					if(quantifier.getLowerBound().getAsInt()>1
+							|| quantifier.getUpperBound().getAsInt()>1) {
+						return false;
+					}
+					break;
+
+				default:
+					break;
+				}
+			}
+
+			return true;
+		}
 
 		private void maybeCloseMarker() {
 			if(pendingMarker!=null) {
@@ -588,24 +630,18 @@ public class SequencePattern {
 			 * content-wise). Therefore we can use a shared cache and scan node
 			 * for all the branches and save evaluation time.
 			 */
-			pushTail(scan(forward, cached ? cache() : UNSET_INT));
+			Node scan;
+			if(findOnly) {
+				if(!forward)
+					throw new QueryException(QueryErrorCode.INCORRECT_USE,
+							"Cannot do backwards scan inside 'find-only' environment");
+				scan = find();
+			} else {
+				scan = exhaust(forward, cached ? cache() : UNSET_INT);
+			}
+			pushTail(scan);
 
 			maybeCloseMarker();
-
-//			if(pendingMarker!=null) {
-//				final int shift = offset-1;
-//				assert shift>=0 : "no content nodes to explore";
-//				// Add marker construct
-//				marker(pendingMarker, shift);
-//				assert pendingBorder!=UNSET_INT : "no border id set";
-//				// Add savepoint
-//				pushTail(border(true, pendingBorder));
-//
-//				pendingBorder = UNSET_INT;
-//				pendingMarker = null;
-//			}
-//			// Scans effectively consume any offsets
-//			offset = 0;
 
 			return tail();
 		}
@@ -750,8 +786,12 @@ public class SequencePattern {
 			return store(new Single(id(), matcher(constraint), cache(), member(label)));
 		}
 
-		private Scan scan(boolean forward, int cacheId) {
-			return store(new Scan(id(), cacheId, forward));
+		private Find find() {
+			return store(new Find(id()));
+		}
+
+		private Exhaust exhaust(boolean forward, int cacheId) {
+			return store(new Exhaust(id(), cacheId, forward));
 		}
 
 		private Negation negate(Node atom) {
@@ -2171,17 +2211,80 @@ public class SequencePattern {
 	}
 
 	/**
+	 * Implements a forward-only one-shot exploration of the remaining
+	 * search space. In contrast to {@link Exhaust} this type of scan will
+	 * not reset the current mapping after a matching attempt, but rather
+	 * finish the search after the first successful full match.
+	 */
+	static final class Find extends ProperNode {
+		int minSize = 1;
+
+		Find(int id) { super(id); }
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.build();
+		}
+
+		@Override
+		boolean isScanCapable() { return true; }
+
+		@Override
+		boolean match(State state, int pos) {
+    		final int from = state.from;
+    		final int to = state.to;
+			final int fence = state.to - minSize + 1;
+
+			boolean result = false;
+
+			for (int i = pos; i <= fence && !state.stop; i++) {
+				int scope = state.scope();
+				result |= next.match(state, i);
+				state.reset(from, to);
+
+				// We are only interested in the first successful match
+				if(result) {
+					break;
+				}
+
+				// Only reset if we failed to find a match (space boundaries are reset above)
+				state.reset(scope);
+			}
+
+			return result;
+		}
+
+		/** @see Exhaust#study(TreeInfo) */
+		@Override
+		boolean study(TreeInfo info) {
+			int minSize0 = info.minSize;
+			int offset0 = info.offset;
+			next.study(info);
+			minSize = info.minSize-minSize0;
+			minSize = Math.max(minSize, 1);
+
+			info.deterministic = false;
+			info.skip = true;
+			info.offset = offset0;
+
+			return false;
+		}
+	}
+
+	/**
 	 * Implements the exhaustive exploration of remaining search space
 	 * by iteratively scanning for matches of the current tail.
 	 * This implementation honors marker intervals.
 	 */
-	static final class Scan extends ProperNode {
-		int minSize = 1; // can't be less than 1 since at some point inside we need a proper node
+	static final class Exhaust extends ProperNode {
+		int minSize = 1;
 
 		final int cacheId;
 		final boolean forward;
 
-		Scan(int id, int cacheId, boolean forward) {
+		Exhaust(int id, int cacheId, boolean forward) {
 			super(id);
 			this.cacheId = cacheId;
 			this.forward = forward;
