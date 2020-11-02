@@ -35,7 +35,7 @@ public class IqlLane extends IqlAliasedReference {
 	/**
 	 * Special name reserved for signaling that a lane is introduced as a proxy,
 	 * i.e. the original query did not contain a lane statement, but only the
-	 * elements and/or constraints.
+	 * element and/or constraints.
 	 */
 	//TODO need a better mechanism for indicating proxy state
 	public static final String PROXY_NAME = "lane_proxy";
@@ -43,14 +43,14 @@ public class IqlLane extends IqlAliasedReference {
 	@JsonProperty(value=IqlProperties.LANE_TYPE, required=true)
 	private LaneType laneType;
 
-	@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
-	private IqlElement elements;
+	@JsonProperty(value=IqlProperties.ELEMENT, required=true)
+	private IqlElement element;
 
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(laneType, IqlProperties.LANE_TYPE);
-		checkNestedNotNull(elements, IqlProperties.ELEMENTS);
+		checkNestedNotNull(element, IqlProperties.ELEMENT);
 	}
 
 	@Override
@@ -58,12 +58,12 @@ public class IqlLane extends IqlAliasedReference {
 
 	public LaneType getLaneType() { return laneType; }
 
-	public IqlElement getElements() { return elements; }
+	public IqlElement getElement() { return element; }
 
 
 	public void setLaneType(LaneType laneType) { this.laneType = requireNonNull(laneType); }
 
-	public void setElements(IqlElement elements) { this.elements = requireNonNull(elements); }
+	public void setElement(IqlElement element) { this.element = requireNonNull(element); }
 
 	/** Returns {@code true} iff this lane has been assigned the {@link #PROXY_NAME proxy name} */
 	public boolean isProxy() {

@@ -481,7 +481,7 @@ public class IqlQueryGenerator {
 
 		// mandatory data
 		lane.setLaneType(LaneType.SEQUENCE);
-		lane.setElements(generateFull(IqlType.SET, config));
+		lane.setElement(generateFull(IqlType.SET, config));
 
 		for(LaneType laneType : LaneType.values()) {
 			build.addEnumFieldChange(lane::setLaneType, IqlProperties.LANE_TYPE, laneType);

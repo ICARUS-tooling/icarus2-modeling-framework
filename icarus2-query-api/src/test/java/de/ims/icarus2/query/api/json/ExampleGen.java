@@ -150,7 +150,7 @@ public class ExampleGen {
 			gen.assignId(node2);
 			node2.setConstraint(pred("[form==\"test\"]", gen));
 			nodeSet.addElement(node2);
-			lane.setElements(nodeSet);
+			lane.setElement(nodeSet);
 			payload.addLane(lane);
 
 			stream.setPayload(payload);

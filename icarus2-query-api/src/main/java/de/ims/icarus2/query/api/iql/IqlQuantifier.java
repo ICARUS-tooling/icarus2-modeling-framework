@@ -153,8 +153,10 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	// Utility
 
 	public boolean isExistentiallyQuantified() {
+		//TODO rework
 		return (value.isPresent() && value.getAsInt()>0)
-				|| (upperBound.isPresent() && upperBound.getAsInt()>0);
+				|| (upperBound.isPresent() && upperBound.getAsInt()>0)
+				|| (lowerBound.isPresent() && lowerBound.getAsInt()>0);
 	}
 
 	public boolean isExistentiallyNegated() {

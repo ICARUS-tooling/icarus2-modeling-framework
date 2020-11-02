@@ -119,9 +119,9 @@ public final class IqlProperties {
 
 	public static final String UPPER_BOUND = IQL_NS_PREFIX+"upperBound";
 
-	public static final String ELEMENTS = IQL_NS_PREFIX+"elements";
-
 	public static final String ELEMENT = IQL_NS_PREFIX+"element";
+
+	public static final String ELEMENTS = IQL_NS_PREFIX+"elements";
 
 	public static final String ARRANGEMENT = IQL_NS_PREFIX+"arrangement";
 
