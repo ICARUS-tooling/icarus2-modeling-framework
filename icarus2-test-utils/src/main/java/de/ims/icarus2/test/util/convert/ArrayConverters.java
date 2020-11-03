@@ -178,6 +178,7 @@ public class ArrayConverters {
 						for (int j = 0; j < list.size(); j++) {
 							Array.set(array, j, list.get(j));
 						}
+						list.clear();
 						if(--depth<0) {
 							result = array;
 						} else {
