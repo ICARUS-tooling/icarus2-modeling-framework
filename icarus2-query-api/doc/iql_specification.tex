@@ -1852,6 +1852,37 @@ If a \synt{node} is used within a tree environment, it can also contain a \textb
 The target item a node is matched against during query evaluation defines the structural context that is then in turn being used for matching the nested \synt{node} instances.
 Note that this opens up the entire spectrum of node grouping, disjunctions and arrangement modifiers to define constraints on (sub-)trees.
 
+\subsubsection{Dummy Nodes}
+\label{sec:dummy-nodes}
+\noindent Sometimes complex queries require that nodes be added to the structural constraints in order to serve as placeholders for (optional) gaps in the target sequence.
+Consider for instance a situation where one wants to find multiple pairs of nodes \query{X}\query{Y} in a sequence that might look like ``XY---XY''.
+A simple query \query{<1+>\{ADJACENT [X][Y]\}} (see below sections for detailed explanations of the query features used here) will find the two \query{XY} pairs, but not within the same match, as it is not able to expand across the ``empty'' space between them within the same matching pass.
+Introducing optional ``dummy'' nodes will help accomplish the desired result and yield \query{<1+>\{ADJACENT <0+?>[] [X][Y]\}} as query.
+Note that the \query{<0+?>[]} consumes arbitrary elements in the target sequence as long as the following \query{XY} nodes haven't been matched (cf. explanation on ``reluctant'' quantification in \cref{sec:quantification}).
+For simplicity the \ac{iql} specification allows a total of 3 short forms for declaring dummy nodes, listed in \cref{tab:dummy-nodes}.
+The query above can then be shortened to \query{<1+>\{ADJACENT [*] [X][Y]\}} to make it more readable.
+Dummy node syntax is supported everywhere regular nodes can be declared, except when the node serves as terminal of an edge (\ref{sec:edges}) definition.
+
+\begin{table}[!htb]\centering
+	\begin{tabular}{|p{0.15\textwidth}|p{0.15\textwidth}|p{0.60\textwidth}|}
+		\hline 
+		\textbf{Short Form} & \textbf{Original Form} & \textbf{Description} \\ 
+		\hline 
+		\hline  
+		[?] & <0..1>[] & Optional reluctant node: find up to 1 node if needed. \\ 
+		\hline  
+		[*] & <0+?>[] & Optional reluctant expansion: find 0 or more nodes if needed. \\ 
+		\hline  
+		[+] & <1+?>[] & Required reluctant expansion: find 1 or more nodes, expand only if needed. \\ 
+		\hline 
+	\end{tabular}
+	\caption[Dummy node short forms]{Supported short forms for declaring dummy nodes (\cref{sec:dummy-nodes}) in a compact way. Note that all these short forms expand to reluctant quantifier expressions. If another behavior is desired, the respective full form of the quantifier must be used!}
+	\label{tab:dummy-nodes}
+\end{table}
+
+A technical peculiarity to keep in mind when using dummy nodes is that they effectively influence what counts as ``begin'' of a successful match for the surrounding structural constraint.
+\todo{either explain here or add a section in ICQP specification document and link here}
+
 \subsubsection{Quantification}
 \label{sec:quantification}
 \ac{iql} knows a total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
