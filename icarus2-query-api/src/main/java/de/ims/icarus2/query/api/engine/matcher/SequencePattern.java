@@ -838,12 +838,18 @@ public class SequencePattern {
 			return false;
 		}
 
-		/** Sequential scanning of ordered elements */
+		/**
+		 * Sequential scanning of ordered elements.
+		 * Note that any node but the first in the original
+		 * sequence may receive a scan attached to it.
+		 */
 		private Node looseGroup(List<IqlElement> elements) {
 			Node head = null;
+			// Stack nodes back to front
 			for(int i=elements.size()-1; i>=0; i--) {
 				head = process(elements.get(i));
-				if(!head.isScanCapable()) {
+				// Any node but the first can receive a scan attached to it
+				if(!head.isScanCapable() && i>0) {
 					boolean cached = needsCacheForScan(head);
 					head = explore(true, cached);
 				}
@@ -854,6 +860,7 @@ public class SequencePattern {
 		/** Sequential check without scanning */
 		private Node adjacentGroup(List<IqlElement> elements) {
 			Node head = null;
+			// Stack nodes back to front
 			for(int i=elements.size()-1; i>=0; i--) {
 				head = process(elements.get(i));
 			}

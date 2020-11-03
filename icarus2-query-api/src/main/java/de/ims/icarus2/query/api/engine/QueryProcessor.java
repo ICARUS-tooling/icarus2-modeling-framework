@@ -89,6 +89,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.BindingsListContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ConstraintContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.DisjunctionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.DummyNodeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementDisjunctionContext;
@@ -111,6 +112,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.OrderExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PayloadStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ProperNodeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.RightEdgePartContext;
@@ -661,7 +663,7 @@ public class QueryProcessor {
 			} else if(ctx instanceof ElementSetContext) {
 				return processElementSet((ElementSetContext) ctx, tree);
 			} else if (ctx instanceof SingleNodeContext) {
-				return processNode(((SingleNodeContext)ctx).node(), tree);
+				return processNode(((SingleNodeContext)ctx).node(), true, tree);
 			} else if (ctx instanceof GraphFragmentContext) {
 				return processGraphFragment((GraphFragmentContext) ctx, tree);
 			} else if(ctx instanceof ElementDisjunctionContext) {
@@ -748,7 +750,44 @@ public class QueryProcessor {
 			}
 		}
 
-		private IqlNode processNode(NodeContext ctx, TreeInfo tree) {
+		private IqlNode processNode(NodeContext ctx, boolean allowDummy, TreeInfo tree) {
+			if(ctx instanceof ProperNodeContext) {
+				return processProperNode((ProperNodeContext) ctx, tree);
+			} else if(ctx instanceof DummyNodeContext) {
+				if(!allowDummy) {
+					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
+							"Usage of dummy node syntax not supported at this positions: '{1}'", textOf(ctx));
+				}
+				return processDummyNode((DummyNodeContext) ctx, tree);
+			}
+
+			return failForUnhandledAlternative(ctx);
+		}
+
+		private IqlNode processDummyNode(DummyNodeContext ctx, TreeInfo tree) {
+			IqlNode node = new IqlNode();
+			IqlQuantifier quantifier = new IqlQuantifier();
+			quantifier.setQuantifierModifier(QuantifierModifier.RELUCTANT);
+			node.addQuantifier(quantifier);
+
+			if(ctx.STAR()!=null) {
+				quantifier.setValue(0);
+				quantifier.setQuantifierType(QuantifierType.AT_LEAST);
+			} else if(ctx.QMARK()!=null) {
+				quantifier.setQuantifierType(QuantifierType.RANGE);
+				quantifier.setLowerBound(0);
+				quantifier.setUpperBound(1);
+			} else if(ctx.PLUS()!=null) {
+				quantifier.setValue(1);
+				quantifier.setQuantifierType(QuantifierType.AT_LEAST);
+			} else {
+				failForUnhandledAlternative(ctx);
+			}
+
+			return node;
+		}
+
+		private IqlNode processProperNode(ProperNodeContext ctx, TreeInfo tree) {
 			IqlNode node;
 			// Decide on type of node
 			if(ctx.structuralConstraint()!=null) {
@@ -850,8 +889,8 @@ public class QueryProcessor {
 			if(ctx.edge()!=null) {
 				reportGraphFeaturesUsed(ctx);
 
-				IqlNode source = processNode(ctx.source, tree);
-				IqlNode target = processNode(ctx.target, tree);
+				IqlNode source = processNode(ctx.source, false, tree);
+				IqlNode target = processNode(ctx.target, false, tree);
 
 				if(source.hasQuantifiers() && target.hasQuantifiers()) {
 					reportBuilder.addError(QueryErrorCode.UNSUPPORTED_FEATURE,
@@ -862,7 +901,7 @@ public class QueryProcessor {
 				return edge;
 			}
 
-			return processNode(ctx.content, tree);
+			return processNode(ctx.content, true, tree);
 		}
 
 		private IqlEdge processEdge(EdgeContext ctx, IqlNode source, IqlNode target) {

@@ -215,7 +215,8 @@ nodeArrangement
  */
  // The grammar overgenerates here due to 'nodeStatement' allowing graph structures, but we handle that later 
 node
-	: quantifier? LBRACK memberLabel? (positionMarker COMMA)? constraint? structuralConstraint? RBRACK
+	: LBRACK (PLUS | QMARK | STAR) RBRACK #dummyNode
+	| quantifier? LBRACK memberLabel? (positionMarker COMMA)? constraint? structuralConstraint? RBRACK #properNode
 	;
 	
 memberLabel
