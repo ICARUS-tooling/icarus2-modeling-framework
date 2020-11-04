@@ -343,6 +343,7 @@ public class SequencePattern {
 			case GROUPING: node = grouping((IqlGrouping) source); break;
 			case SET: node = sequence((IqlSet) source); break;
 			case NODE: node = node((IqlNode) source); break;
+			// Only disjunction inherits the 'adjacency' property from surrounding context
 			case DISJUNCTION: node = disjunction((IqlElementDisjunction) source); break;
 
 			default:
@@ -825,8 +826,9 @@ public class SequencePattern {
 			return branch;
 		}
 
-		private Repetition repetition(Node atom, int cmin, int cmax, int mode) {
-			return store(new Repetition(id(), atom, cmin, cmax, mode, buffer(), buffer()));
+		private Repetition repetition(Node atom, int cmin, int cmax, int mode, boolean discontinuous) {
+			return store(new Repetition(id(), atom, cmin, cmax, mode,
+					buffer(), buffer(), discontinuous ? id() : UNSET_INT));
 		}
 
 		private boolean needsCacheForScan(Node node) {
@@ -928,7 +930,7 @@ public class SequencePattern {
 					throw EvaluationUtils.forUnsupportedQueryFragment("quantifier", quantifier.getQuantifierType());
 				}
 
-				node = repetition(atom, min, max, mode);
+				node = repetition(atom, min, max, mode, quantifier.isDiscontinuous());
 			}
 			return pushTail(node);
 		}
@@ -2270,7 +2272,7 @@ public class SequencePattern {
 			int offset0 = info.offset;
 			next.study(info);
 			minSize = info.minSize-minSize0;
-			minSize = Math.max(minSize, 1);
+			minSize = Math.max(minSize, 1); // Always assume we search for at least 1 node!
 
 			info.deterministic = false;
 			info.skip = true;
@@ -2548,12 +2550,13 @@ public class SequencePattern {
     	final int cmin;
     	final int cmax;
     	final Node atom;
+    	final Find findAtom;
     	final int type;
     	final int scopeBuf;
     	final int posBuf;
 
 		Repetition(int id, Node atom, int cmin, int cmax, int type,
-				int scopeBuf, int posBuf) {
+				int scopeBuf, int posBuf, int findAtomId) {
 			super(id);
 			this.atom = atom;
 			this.cmin = cmin;
@@ -2561,6 +2564,12 @@ public class SequencePattern {
 			this.type = type;
 			this.scopeBuf = scopeBuf;
 			this.posBuf = posBuf;
+			if(findAtomId==UNSET_INT) {
+				findAtom = null;
+			} else {
+				findAtom = new Find(findAtomId);
+				findAtom.next = atom;
+			}
 		}
 
 		@Override
@@ -2586,7 +2595,7 @@ public class SequencePattern {
         	// Try to match minimum number of repetitions
             int count;
             for (count = 0; count < cmin; count++) {
-                if (!atom.match(state, pos)) {
+                if (!matchAtom(state, pos, count)) {
     				matched = false;
     				break;
                 }
@@ -2631,7 +2640,7 @@ public class SequencePattern {
 				b_pos[count] = pos;
 				b_scope[count] = scope;
 				// Try advancing
-				if(!atom.match(state, pos)) {
+				if(!matchAtom(state, pos, count)) {
 					state.reset(scope);
 					break;
 				}
@@ -2685,7 +2694,7 @@ public class SequencePattern {
 				}
                 // Okay, must try one more atom
 				scope = state.scope();
-				if (!atom.match(state, pos)) {
+				if (!matchAtom(state, pos, count)) {
 					state.reset(scope);
 					return false;
 				}
@@ -2710,7 +2719,7 @@ public class SequencePattern {
 			for (; count < cmax;) {
 				// Try as many elements as possible
 				int scope = state.scope();
-				if (!atom.match(state, pos)) {
+				if (!matchAtom(state, pos, count)) {
 					state.reset(scope);
 					break;
 				}
@@ -2725,6 +2734,14 @@ public class SequencePattern {
 			}
 			return next.match(state, pos);
         }
+
+        private boolean matchAtom(State state, int pos, int count) {
+        	if(count==0 || findAtom==null) {
+        		return atom.match(state, pos);
+        	}
+        	return findAtom.match(state, pos);
+        }
+
         @Override
 		boolean study(TreeInfo info) {
             // Save original info
@@ -2735,7 +2752,11 @@ public class SequencePattern {
             int offset = info.offset;
             info.reset();
 
-            atom.study(info);
+            if(findAtom==null) {
+            	atom.study(info);
+            } else {
+            	findAtom.study(info);
+            }
 
             info.offset = info.offset * cmin + offset;
 
