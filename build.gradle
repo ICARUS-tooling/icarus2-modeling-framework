@@ -197,11 +197,13 @@ subprojects {
 			file {
 				beforeMerged { classpath -> 
 					def aptFolder = new org.gradle.plugins.ide.eclipse.model.SourceFolder('.apt_generated', null)
+					aptFolder.entryAttributes['optional'] = 'true'
 					aptFolder.entryAttributes['ignore_optional_problems'] = 'true'
 					entries.add(aptFolder)
 					
 					//TODO need to figure out a good output folder for this source folder
 					def aptTestFolder = new org.gradle.plugins.ide.eclipse.model.SourceFolder('.apt_generated_tests', 'bin/apt-gen-test')
+					aptTestFolder.entryAttributes['optional'] = 'true'
 					aptTestFolder.entryAttributes['ignore_optional_problems'] = 'true'
 					aptTestFolder.entryAttributes['test'] = 'true'
 					entries.add(aptTestFolder)
@@ -211,6 +213,13 @@ subprojects {
 						it.kind == 'src' &&  it.path.startsWith('src/test/')
 					}.each {
 						it.entryAttributes['test'] = 'true'
+					}
+					entries.findAll {
+						it.kind == 'src' &&  it.path.startsWith('build/generated-src/')
+					}.each {
+						echo it
+						it.entryAttributes['optional'] = 'true'
+						it.entryAttributes['ignore_optional_problems'] = 'true'
 					}
 				}
 			}
