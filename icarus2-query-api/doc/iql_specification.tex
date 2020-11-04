@@ -1856,6 +1856,7 @@ Note that this opens up the entire spectrum of node grouping, disjunctions and a
 \label{sec:dummy-nodes}
 \noindent Sometimes complex queries require that nodes be added to the structural constraints in order to serve as placeholders for (optional) gaps in the target sequence.
 Consider for instance a situation where one wants to find multiple pairs of nodes \query{X}\query{Y} in a sequence that might look like ``XY---XY''.
+\todo{Rework example, as discontinuous quantifiers already solve that in a more elegant way}
 A simple query \query{<1+>\{ADJACENT [X][Y]\}} (see below sections for detailed explanations of the query features used here) will find the two \query{XY} pairs, but not within the same match, as it is not able to expand across the ``empty'' space between them within the same matching pass.
 Introducing optional ``dummy'' nodes will help accomplish the desired result and yield \query{<1+>\{ADJACENT <0+?>[] [X][Y]\}} as query.
 Note that the \query{<0+?>[]} consumes arbitrary elements in the target sequence as long as the following \query{XY} nodes haven't been matched (cf. explanation on ``reluctant'' quantification in \cref{sec:quantification}).
@@ -1885,7 +1886,7 @@ A technical peculiarity to keep in mind when using dummy nodes is that they effe
 
 \subsubsection{Quantification}
 \label{sec:quantification}
-\ac{iql} knows a total of 12 quantifier types, which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
+\ac{iql} knows a total of 12 quantifier types (22 when also taking discontinuous counterparts into account), which are grouped into six sets of basic quantification types as shown in \cref{tab:quantifiers}.
 Those basic sets are \textit{existential negation}, \textit{universal quantification}, \textit{exact}, \textit{at-least}, \textit{at-most} and \textit{range}.
 Note that the \textit{at-most} quantifier implies existential quantification, so it cannot quantify to less than one element. 
 For modeling optional existence the \textit{range} quantifier should be used with a lower bound of 0, as in \query{0..4}.
@@ -2004,6 +2005,11 @@ If in the example however the node \lit{8} was square instead of round, the enti
 	\caption[Illustration of quantification]{Graphical illustration of the different quantifier modes. The example query used is \query{red+ box}, looking for first a sequence of red nodes and then a single square formed one.}
 	\label{fig:quantifier-examples}
 \end{figure}
+
+The evaluation of quantified elements per default looks for continuous repetitions of the quantified element.
+To accept discontinuous target instances, all quantifiers except \textit{existential negation} and \textit{universal quantification} can be used with a special flag \texttt{\textasciicircum} (the circumflex symbol) appended to it.
+If this flag is present, repetitions of the underlying quantified element will be found by scanning and may contains gaps between successful hits.
+This allows for very powerful expressions that can match multiple occurrences of a node in a target structure at different locations.
 
 \subsubsection{Marker}
 \label{sec:marker}
