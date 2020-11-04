@@ -69,6 +69,7 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 			}
 			return Objects.equals(q1.quantifierType, q2.quantifierType)
 					&& q1.quantifierModifier==q2.quantifierModifier
+					&& q1.discontinuous==q2.discontinuous
 					&& q1.value.equals(q2.value)
 					&& q1.lowerBound.equals(q2.lowerBound)
 					&& q1.upperBound.equals(q2.upperBound);
@@ -94,6 +95,10 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt upperBound = OptionalInt.empty();
 
+	@JsonProperty(IqlProperties.UPPER_BOUND)
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean discontinuous = false;
+
 	@Override
 	public IqlType getType() { return IqlType.QUANTIFIER; }
 
@@ -103,6 +108,8 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		checkNotNull(quantifierType, IqlProperties.QUANTIFIER_TYPE);
 		switch (quantifierType) {
 		case ALL:
+			checkCondition(!discontinuous, IqlProperties.DISCONTINUOUS,
+					"Cannot set 'discontinuous' flag for universal quantification");
 //			checkNotPresent(value, IqlProperties.VALUE);
 //			checkNotPresent(lowerBound, IqlProperties.LOWER_BOUND);
 //			checkNotPresent(upperBound, IqlProperties.UPPER_BOUND);
@@ -140,6 +147,8 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 	public OptionalInt getUpperBound() { return upperBound; }
 
+	public boolean isDiscontinuous() { return discontinuous; }
+
 	public void setQuantifierType(QuantifierType quantifierType) { this.quantifierType = requireNonNull(quantifierType); }
 
 	public void setQuantifierModifier(QuantifierModifier quantifierModifier) { this.quantifierModifier = requireNonNull(quantifierModifier); }
@@ -149,6 +158,8 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	public void setLowerBound(int lowerBound) { this.lowerBound = _set(lowerBound); }
 
 	public void setUpperBound(int upperBound) { this.upperBound = _set(upperBound); }
+
+	public void setDiscontinuous(boolean discontinuous) { this.discontinuous = discontinuous; }
 
 	// Utility
 

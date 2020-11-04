@@ -57,7 +57,8 @@ public class IqlTestUtils {
 		return node;
 	}
 
-	public static <Q extends IqlQuantifier.Quantifiable> Q quantify(Q target, IqlQuantifier...quantifiers) {
+	public static <Q extends IqlQuantifier.Quantifiable> Q quantify(
+			Q target, IqlQuantifier...quantifiers) {
 		Stream.of(quantifiers).forEach(target::addQuantifier);
 		return target;
 	}
@@ -146,61 +147,65 @@ public class IqlTestUtils {
 
 	public static IqlQuantifier negated() { return IqlQuantifier.none(); }
 
-	private static IqlQuantifier of(QuantifierType type, int value, QuantifierModifier mode) {
+	private static IqlQuantifier of(QuantifierType type, int value,
+			QuantifierModifier mode, boolean discontinuous) {
 		IqlQuantifier quantifier = new IqlQuantifier();
 		quantifier.setQuantifierType(type);
 		quantifier.setValue(value);
 		quantifier.setQuantifierModifier(mode);
+		quantifier.setDiscontinuous(discontinuous);
 		return quantifier;
 	}
 
-	private static IqlQuantifier of(int min, int max, QuantifierModifier mode) {
+	private static IqlQuantifier of(int min, int max,
+			QuantifierModifier mode, boolean discontinuous) {
 		IqlQuantifier quantifier = new IqlQuantifier();
 		quantifier.setQuantifierType(QuantifierType.RANGE);
 		quantifier.setLowerBound(min);
 		quantifier.setUpperBound(max);
 		quantifier.setQuantifierModifier(mode);
+		quantifier.setDiscontinuous(discontinuous);
 		return quantifier;
 	}
 
-	public static IqlQuantifier exact(int value) {
-		return of(QuantifierType.EXACT, value, QuantifierModifier.GREEDY);
+	public static IqlQuantifier exact(int value, boolean discontinuous) {
+		return of(QuantifierType.EXACT, value, QuantifierModifier.GREEDY, discontinuous);
 	}
 
-	public static IqlQuantifier atMostGreedy(int max) {
-		return of(QuantifierType.AT_MOST, max, QuantifierModifier.GREEDY);
+	public static IqlQuantifier atMostGreedy(int max, boolean discontinuous) {
+		return of(QuantifierType.AT_MOST, max, QuantifierModifier.GREEDY, discontinuous);
 	}
 
-	public static IqlQuantifier atMostReluctant(int max) {
-		return of(QuantifierType.AT_MOST, max, QuantifierModifier.RELUCTANT);
+	public static IqlQuantifier atMostReluctant(int max, boolean discontinuous) {
+		return of(QuantifierType.AT_MOST, max, QuantifierModifier.RELUCTANT, discontinuous);
 	}
 
-	public static IqlQuantifier atMostPossessive(int max) {
-		return of(QuantifierType.AT_MOST, max, QuantifierModifier.POSSESSIVE);
+	public static IqlQuantifier atMostPossessive(int max, boolean discontinuous) {
+		return of(QuantifierType.AT_MOST, max, QuantifierModifier.POSSESSIVE, discontinuous);
 	}
 
-	public static IqlQuantifier atLeastGreedy(int min) {
-		return of(QuantifierType.AT_LEAST, min, QuantifierModifier.GREEDY);
+	public static IqlQuantifier atLeastGreedy(int min, boolean discontinuous) {
+		return of(QuantifierType.AT_LEAST, min, QuantifierModifier.GREEDY, discontinuous);
 	}
 
-	public static IqlQuantifier atLeastReluctant(int min) {
-		return of(QuantifierType.AT_LEAST, min, QuantifierModifier.RELUCTANT);
+	public static IqlQuantifier atLeastReluctant(int min, boolean discontinuous) {
+		return of(QuantifierType.AT_LEAST, min, QuantifierModifier.RELUCTANT, discontinuous);
 	}
 
-	public static IqlQuantifier atLeastPossessive(int min) {
-		return of(QuantifierType.AT_LEAST, min, QuantifierModifier.POSSESSIVE);
+	public static IqlQuantifier atLeastPossessive(int min, boolean discontinuous) {
+		return of(QuantifierType.AT_LEAST, min, QuantifierModifier.POSSESSIVE, discontinuous);
 	}
 
-	public static IqlQuantifier rangeGreedy(int min, int max) {
-		return of(min, max, QuantifierModifier.GREEDY);
+	public static IqlQuantifier rangeGreedy(int min, int max, boolean discontinuous) {
+		return of(min, max, QuantifierModifier.GREEDY, discontinuous);
 	}
 
-	public static IqlQuantifier rangeReluctant(int min, int max) {
-		return of(min, max, QuantifierModifier.RELUCTANT);
+	public static IqlQuantifier rangeReluctant(int min, int max, boolean discontinuous) {
+		return of(min, max, QuantifierModifier.RELUCTANT, discontinuous);
 	}
 
-	public static IqlQuantifier rangePossessive(int min, int max) {
-		return of(min, max, QuantifierModifier.POSSESSIVE);
+	public static IqlQuantifier rangePossessive(int min, int max, boolean discontinuous) {
+		return of(min, max, QuantifierModifier.POSSESSIVE, discontinuous);
 	}
 
 }

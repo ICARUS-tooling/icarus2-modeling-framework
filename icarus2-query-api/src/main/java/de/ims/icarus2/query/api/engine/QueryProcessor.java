@@ -72,6 +72,7 @@ import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
+import de.ims.icarus2.query.api.iql.IqlQuantifier.Quantifiable;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
@@ -526,6 +527,7 @@ public class QueryProcessor {
 			}
 		}
 
+		/** Counts explicitly existentially quantified elements in the given list. */
 		private int countExistentialElements(List<IqlElement> elements) {
 			int count = 0;
 			for (IqlElement element : elements) {
@@ -549,6 +551,28 @@ public class QueryProcessor {
 				}
 			}
 			return count;
+		}
+
+		/** Checks whether any element in given list can be expanded to 1 or more instances. */
+		private boolean canExpandToOneOrMore(List<IqlElement> elements) {
+			for (IqlElement element : elements) {
+				if(element instanceof Quantifiable) {
+					Quantifiable q = (Quantifiable) element;
+					for(IqlQuantifier quant : q.getQuantifiers()) {
+						switch (quant.getQuantifierType()) {
+						case AT_LEAST: return true;
+
+						case EXACT:
+						case AT_MOST: if(quant.getValue().getAsInt()>1) return true; break;
+
+						case RANGE: if(quant.getUpperBound().getAsInt()>1) return true; break;
+
+						default: continue;
+						}
+					}
+				}
+			}
+			return false;
 		}
 
 		private IqlBinding processBinding(BindingContext ctx) {
@@ -717,10 +741,12 @@ public class QueryProcessor {
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
 			if(nodeSet.getArrangement()!=NodeArrangement.UNORDERED
-					&& countExistentialElements(nodeSet.getElements())<2) {
+					&& countExistentialElements(nodeSet.getElements())<2
+					&& !canExpandToOneOrMore(nodeSet.getElements())) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 						"For node arrangement feature to be effective the query needs at least"
-						+ " two distinct nodes that are existentially quantified.");
+						+ " two distinct nodes that are existentially quantified, or quantification"
+						+ " that can expand to two or more node instances.");
 			}
 
 			return nodeSet;
@@ -766,6 +792,7 @@ public class QueryProcessor {
 
 		private IqlNode processDummyNode(DummyNodeContext ctx, TreeInfo tree) {
 			IqlNode node = new IqlNode();
+			genId(node);
 			IqlQuantifier quantifier = new IqlQuantifier();
 			quantifier.setQuantifierModifier(QuantifierModifier.RELUCTANT);
 			node.addQuantifier(quantifier);
@@ -880,6 +907,15 @@ public class QueryProcessor {
 				quantifier.setQuantifierModifier(QuantifierModifier.RELUCTANT);
 			} else if(ctx.EXMARK()!=null) {
 				quantifier.setQuantifierModifier(QuantifierModifier.POSSESSIVE);
+			}
+
+			// Discontinuous flag
+			if(ctx.CARET()!=null) {
+				if(quantifier.isExistentiallyNegated() || quantifier.isUniversallyQuantified()) {
+					reportBuilder.addError(QueryErrorCode.INCORRECT_USE,
+							"Cannot apply 'discontinuous' flag for negation or universal quantifiers: '{1}'", textOf(ctx));
+				}
+				quantifier.setDiscontinuous(true);
 			}
 
 			return quantifier;

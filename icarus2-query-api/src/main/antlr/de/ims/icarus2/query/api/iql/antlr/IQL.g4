@@ -455,7 +455,7 @@ type
 	| FLOAT // all kinds of floating point types (up to 64bit double precision)
 	;
 	
-/*
+/**
  * Quantification rules (N is assumed to be the collection of subsequent nodes):
  * 
  * not   - existential negation
@@ -475,6 +475,8 @@ type
  * X..Y  - greedily match X to Y instances, leaving room for N
  * X..Y? - reluctantly match X to Y instances, leaving room for N
  * X..Y! - possessively match X to Y instances, extending without consideration for N
+ * 
+ * XX#   - allow discontinuous repetitions, i.e. add a scan in between to handle "gaps" 
  */
 quantifier
 	: simpleQuantifier ( PIPE simpleQuantifier )*  
@@ -484,8 +486,8 @@ quantifier
 simpleQuantifier
 	: not
 	| all (QMARK | PLUS)?
-	| value=PureDigits (PLUS | MINUS)? (QMARK | EXMARK)?
-	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits (QMARK | EXMARK)?
+	| value=PureDigits (PLUS | MINUS)? (QMARK | EXMARK)? CARET?
+	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits (QMARK | EXMARK)? HASH?
 	;
 	
 not
