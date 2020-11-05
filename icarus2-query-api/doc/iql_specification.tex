@@ -1892,7 +1892,7 @@ Note that the \textit{at-most} quantifier implies existential quantification, so
 For modeling optional existence the \textit{range} quantifier should be used with a lower bound of 0, as in \query{0..4}.
 
 Some quantifiers differentiate between \textit{greedy} (the default), \textit{reluctant} and \textit{possessive} mode.
-The differences of those three modes are explained below, assuming that the quantifier in question occurred on a node constraint $n_i$ that is followed by an optional sequence of additional node constraints $n_{i+1}..n_N$.
+The differences of those three modes are explained below, assuming that the quantifier in question occurred on a node constraint $n_i$ that is followed by a sequence of additional node constraints $n_{i+1}..n_N$.
 Note that the complete query will only succeed if $n_i$ \textbf{and} all its successors successfully match!
 The primary effect caused by different modes is the size and number of matches reported by the evaluation engine.
 \begin{description}
