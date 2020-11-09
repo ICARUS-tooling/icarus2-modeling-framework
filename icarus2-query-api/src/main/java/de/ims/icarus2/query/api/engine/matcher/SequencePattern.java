@@ -30,6 +30,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -142,6 +143,8 @@ public class SequencePattern {
 		@Override
 		public String toString() { return "Accept-Dummy"; }
 
+		@Override
+		void setNext(Node next) { throw new UnsupportedOperationException("Generic accept node is immutable"); }
 
 		@Override
 		boolean isFinisher() { return true; }
@@ -323,6 +326,8 @@ public class SequencePattern {
 		final IqlConstraint globalConstraint;
 		final Set<MatchFlag> flags;
 
+		final Monitor monitor;
+
 		SequenceQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
 			modifier = builder.getModifier();
@@ -331,6 +336,8 @@ public class SequencePattern {
 			rootElement = builder.getRoot();
 			filterConstraint = builder.getFilterConstraint();
 			globalConstraint = builder.getGlobalConstraint();
+
+			monitor = builder.getMonitor();
 		}
 
 		private boolean flagSet(MatchFlag flag) { return flags.contains(flag); }
@@ -517,10 +524,11 @@ public class SequencePattern {
 		/** Link node's sequence to tail, set tail to new node and return it */
 		private <N extends Node> N pushTail(N node) {
 			requireNonNull(node);
-			// Need to fetch the last ndoe i nthe sequence to properly attach tail
+			// Need to fetch the last node in the sequence to properly attach tail
 			Node last = last(node);
 			assert last!=tail : "Node's sequence already set as tail: "+node;
-			last.next = tail;
+			// Changed to an actual method so that node implementations can perform housekeeping
+			last.setNext(tail);
 			tail = node;
 			return node;
 		}
@@ -547,6 +555,14 @@ public class SequencePattern {
 			sm.add(node);
 			if(node instanceof ProperNode) {
 				properNodes.add((ProperNode) node);
+			}
+			return node;
+		}
+
+		private Node storeReplaceable(Node node) {
+			store(node);
+			if(node instanceof ProperNode && monitor!=null) {
+				node = new Track(node, monitor);
 			}
 			return node;
 		}
@@ -623,8 +639,6 @@ public class SequencePattern {
 
 		/** Attaches a scan to current tail that honors (multiple) intervals */
 		private Node explore(boolean forward, boolean cached) {
-
-
 			/*
 			 * No matter how complex the potentially pending marker construct is,
 			 * the attached scan will always work with the same tail (at least
@@ -690,12 +704,12 @@ public class SequencePattern {
 		}
 
 		/** Attach single fixed clip to tail */
-		private Node fixed(int from, int to) {
+		private Fixed fixed(int from, int to) {
 			return pushTail(store(new Fixed(from, to)));
 		}
 
 		/** Attach single dynamic clip to tail */
-		private Node clip(int intervalIndex) {
+		private DynamicClip clip(int intervalIndex) {
 //			if(shift!=0) {
 //				return new ShiftedClip(intervalIndex);
 //			}
@@ -768,8 +782,8 @@ public class SequencePattern {
 			return intervalIndex;
 		}
 
-		private Empty empty(@Nullable String label) {
-			return store(new Empty(member(label)));
+		private Node empty(@Nullable String label) {
+			return storeReplaceable(new Empty(member(label)));
 		}
 
 		private Begin begin() { return store(new Begin()); }
@@ -778,38 +792,40 @@ public class SequencePattern {
 		private Border border(boolean save, int borderId) { return store(new Border(save, borderId)); }
 
 		private Finish finish(long limit, boolean stopAfterMatch) {
-			return store(new Finish(limit, stopAfterMatch));
+			return store(new Finish(limit, stopAfterMatch, monitor));
 		}
 
 		private Reset reset() { return store(new Reset()); }
 
-		private Single single(@Nullable String label, IqlConstraint constraint) {
-			return store(new Single(id(), matcher(constraint), cache(), member(label)));
+		private Node single(@Nullable String label, IqlConstraint constraint) {
+			return storeReplaceable(new Single(id(), matcher(constraint), cache(), member(label)));
 		}
 
-		private Find find() {
-			return store(new Find(id()));
+		private Node find() {
+			return storeReplaceable(new Find(id()));
 		}
 
-		private Exhaust exhaust(boolean forward, int cacheId) {
-			return store(new Exhaust(id(), cacheId, forward));
+		private Node exhaust(boolean forward, int cacheId) {
+			return storeReplaceable(new Exhaust(id(), cacheId, forward));
 		}
 
-		private Negation negate(Node atom) {
-			return store(new Negation(id(), cache(), atom));
+		private Node negate(Node atom) {
+			return storeReplaceable(new Negation(id(), cache(), atom));
 		}
 
-		private All all(Node atom) {
-			return store(new All(id(), atom));
+		private Node all(Node atom) {
+			return storeReplaceable(new All(id(), atom));
 		}
 
 		private Node branch(int count, IntFunction<Node> atomGen) {
 			List<Node> atoms = new ArrayList<>();
 			BranchConn conn = branchStart();
-			for (int i = 0; i < count; i++) {
+			// For consistency we collect branches in reverse order
+			for (int i = count-1; i >=0; i--) {
 				atoms.add(atomGen.apply(i));
 				branchRestart(conn);
 			}
+			Collections.reverse(atoms);
 			return branchEnd(conn, atoms.toArray(new Node[atoms.size()]));
 		}
 
@@ -820,14 +836,14 @@ public class SequencePattern {
 		private void branchRestart(Node conn) { replaceTail(conn); }
 
 		/** Wrap up branch by replacing tail with new {@link Branch} instance */
-		private Branch branchEnd(BranchConn conn, Node...atoms) {
-			final Branch branch = store(new Branch(id(), conn, atoms));
+		private Node branchEnd(BranchConn conn, Node...atoms) {
+			final Node branch = storeReplaceable(new Branch(id(), conn, atoms));
 			replaceTail(branch);
 			return branch;
 		}
 
-		private Repetition repetition(Node atom, int cmin, int cmax, int mode, boolean discontinuous) {
-			return store(new Repetition(id(), atom, cmin, cmax, mode,
+		private Node repetition(Node atom, int cmin, int cmax, int mode, boolean discontinuous) {
+			return storeReplaceable(new Repetition(id(), atom, cmin, cmax, mode,
 					buffer(), buffer(), discontinuous ? id() : UNSET_INT));
 		}
 
@@ -1299,11 +1315,22 @@ public class SequencePattern {
 		private LaneContext context;
 		private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 
+		private Monitor monitor;
+
 		//TODO add fields for configuring the result buffer
 
 		private Builder() { /* no-op */ }
 
 		//TODO add all the setter methods
+
+		public Monitor getMonitor() { return monitor; }
+
+		public Builder monitor(Monitor monitor) {
+			requireNonNull(monitor);
+			checkState("monitor already set", this.monitor==null);
+			this.monitor = monitor;
+			return this;
+		}
 
 		public int getId() { return id; }
 
@@ -1442,6 +1469,11 @@ public class SequencePattern {
 			//TODO create immutable and serializable object from current state and send it to subscriber
 			//TODO increment reported counter upon dispatching
 		}
+	}
+
+	public interface Monitor {
+		//TODO add callbacks for result dispatch and other events
+		void enterNode(Node node, State state, int pos);
 	}
 
 	/**
@@ -1647,6 +1679,9 @@ public class SequencePattern {
 	static class Node {
 		Node next = accept;
 
+		/** Only modifier method. Allows subclasses to customize how conenctions should be attached.  */
+		void setNext(Node next) { this.next = requireNonNull(next); }
+
 		boolean match(State state, int pos) {
 			state.last = pos;
 			return true;
@@ -1675,6 +1710,27 @@ public class SequencePattern {
 	static final int GREEDY = QuantifierModifier.GREEDY.ordinal();
 	static final int RELUCTANT = QuantifierModifier.RELUCTANT.ordinal();
 	static final int POSSESSIVE = QuantifierModifier.POSSESSIVE.ordinal();
+
+	static final class Track extends Node {
+		final Monitor monitor;
+
+		Track(Node next, Monitor monitor) {
+			checkArgument("Cannot monitor generic accept node", next!=accept);
+			this.monitor = monitor;
+			setNext(next);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			monitor.enterNode(next, state, pos);
+			return next.match(state, pos);
+		}
+
+		@Override
+		public String toString() {
+			return next.toString();
+		}
+	}
 
 	/** Helper for "empty" nodes that are only existentially quantified. */
 	static final class Empty extends Node {
@@ -1766,13 +1822,25 @@ public class SequencePattern {
 		final long limit;
 		final boolean stopAfterMatch;
 
+		final Monitor monitor;
+
+		@VisibleForTesting
 		Finish(long limit, boolean stopAfterMatch) {
+			this(limit, stopAfterMatch, null);
+		}
+
+		Finish(long limit, boolean stopAfterMatch, Monitor monitor) {
 			this.limit = limit;
 			this.stopAfterMatch = stopAfterMatch;
+			this.monitor = monitor;
 		}
 
 		@Override
 		boolean match(State state, int pos) {
+			if(monitor!=null) {
+				monitor.enterNode(this, state, pos);
+			}
+
 			state.dispatchMatch();
 
 			state.reported++;
@@ -2225,8 +2293,9 @@ public class SequencePattern {
 	 * not reset the current mapping after a matching attempt, but rather
 	 * finish the search after the first successful full match.
 	 */
-	static final class Find extends ProperNode {
+	static class Find extends ProperNode {
 		int minSize = 1;
+		boolean optional;
 
 		Find(int id) { super(id); }
 
@@ -2272,7 +2341,13 @@ public class SequencePattern {
 			int offset0 = info.offset;
 			next.study(info);
 			minSize = info.minSize-minSize0;
-			minSize = Math.max(minSize, 1); // Always assume we search for at least 1 node!
+			optional = minSize0==0;
+
+			/* For scanning an optional inner atom behaves similar to a single
+			 * node of size 1, as in either case we are going to scan till the last
+			 * position in the current search space.
+			 */
+			minSize = Math.max(minSize, 1);
 
 			info.deterministic = false;
 			info.skip = true;
@@ -2285,11 +2360,8 @@ public class SequencePattern {
 	/**
 	 * Implements the exhaustive exploration of remaining search space
 	 * by iteratively scanning for matches of the current tail.
-	 * This implementation honors marker intervals.
 	 */
-	static final class Exhaust extends ProperNode {
-		int minSize = 1;
-
+	static final class Exhaust extends Find {
 		final int cacheId;
 		final boolean forward;
 
@@ -2298,9 +2370,6 @@ public class SequencePattern {
 			this.cacheId = cacheId;
 			this.forward = forward;
 		}
-
-		@Override
-		boolean isScanCapable() { return true; }
 
 		@Override
 		public String toString() {
@@ -2314,6 +2383,12 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
+
+			// Short-cut for zero-width assertion
+			if(optional && pos==state.to+1) {
+				return next.match(state, pos);
+			}
+
 			if(cacheId!=UNSET_INT) {
 				return matchForwardCached(state, pos);
 			} else if(forward) {
@@ -2416,28 +2491,6 @@ public class SequencePattern {
 
 			return result;
 		}
-
-		@Override
-		boolean study(TreeInfo info) {
-			int minSize0 = info.minSize;
-			int offset0 = info.offset;
-			next.study(info);
-			minSize = info.minSize-minSize0;
-
-//			checkState("Minimum size of scan target must be greater than or equal 1", minSize>0);
-
-			/* For scanning an optional inner atom behaves similar to a single
-			 * node of size 1, as in either case we are going to scan till the last
-			 * position in the current search space.
-			 */
-			minSize = Math.max(minSize, 1);
-
-			info.deterministic = false;
-			info.skip = true;
-			info.offset = offset0;
-
-			return false;
-		}
 	}
 
 	/**
@@ -2484,6 +2537,18 @@ public class SequencePattern {
 			this.conn = conn;
 		}
 
+		/**
+		 * We need to both re-route this node AND the branch-conn to the give
+		 * 'next' connector. Otherwise nested branching would result in disconnected
+		 * branch-conn nodes, making it impossible for inner branching constructs
+		 * to ever produce matches.
+		 */
+		@Override
+		void setNext(Node next) {
+			super.setNext(next);
+			conn.setNext(next);
+		}
+
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this)
@@ -2491,6 +2556,8 @@ public class SequencePattern {
 					.add("atoms", Arrays.toString(atoms))
 					.build();
 		}
+
+		//TODO make and override 'setNext' method?
 
 		@Override
 		boolean match(State state, int pos) {
@@ -2568,7 +2635,7 @@ public class SequencePattern {
 				findAtom = null;
 			} else {
 				findAtom = new Find(findAtomId);
-				findAtom.next = atom;
+				findAtom.setNext(atom);
 			}
 		}
 
@@ -2785,6 +2852,8 @@ public class SequencePattern {
         }
     }
 
+	/** Enforces disjoint match results */
+	//TODO rethink this approach when we move to trees
 	static final class Reset extends Node {
 		@Override
 		boolean match(State state, int pos) {
