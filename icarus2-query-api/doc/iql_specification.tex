@@ -1624,7 +1624,7 @@ Note that filter constraints are \textbf{not} compatible with flat constraints (
 \subsection{Match Modifiers}
 \label{sec:match-modifiers}
 Per default, the search in \ac{iql} is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
-For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as tree entries in the result if the query was only meant to find instances of the lemma ``the''.
+For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as three entries in the result if the query was only meant to find instances of the lemma ``the''.
 This default behavior can be adjusted to only return each \ac{uoi} no more than once by using one of the modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) listed in \cref{gram:payload}.
 The semantics of the \keyword{ANY} modifier are such that the engine may freely pick any one match within a \ac{uoi}.
 Note however, that to support reproducible search results, repeated evaluations of the same query on a corpus are still required to yield the same instances here.
@@ -2010,6 +2010,11 @@ The evaluation of quantified elements per default looks for continuous repetitio
 To accept discontinuous target instances, all quantifiers except \textit{existential negation} and \textit{universal quantification} can be used with a special flag \texttt{\textasciicircum} (the circumflex symbol) appended to it.
 If this flag is present, repetitions of the underlying quantified element will be found by scanning and may contains gaps between successful hits.
 This allows for very powerful expressions that can match multiple occurrences of a node in a target structure at different locations.
+
+\textbf{A note on optional (reluctant) expansion:}
+Even if a node is optionally quantified (i.e. it has a quantifier that allows for a zero-width assertion), it will still be subject to a matching attempt at any legal position in the search space when doing an exhaustive (scan) exploration.
+This means that the simple query \query{[][?]} will yield a total of four matches in a target sequence the likes of \texttt{XYZ}, as the optional node will be tested for any of the remaining slots when the first node is matched against \texttt{X}.
+If this kind of behavior is undesirable, consider using \keyword{ADJACENT} as modifier for this situation, reducing the number of matches for optional sequences to at most one.
 
 \subsubsection{Marker}
 \label{sec:marker}
