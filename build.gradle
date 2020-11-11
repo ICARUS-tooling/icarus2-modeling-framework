@@ -217,7 +217,6 @@ subprojects {
 					entries.findAll {
 						it.kind == 'src' &&  it.path.startsWith('build/generated-src/')
 					}.each {
-						echo it
 						it.entryAttributes['optional'] = 'true'
 						it.entryAttributes['ignore_optional_problems'] = 'true'
 					}
