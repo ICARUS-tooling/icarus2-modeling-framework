@@ -348,18 +348,24 @@ public class SequencePattern {
 
 			Frame(boolean atom) { this.atom = atom; }
 
-			private Node checkNotDefault(Node n) {
-				checkState("Frame empty", n!=accept);
-				return n;
+			private void checkNotEmpty() {
+				checkState("Frame empty", !isEmpty());
 			}
 
 			Node appendix() { return appendix; }
-			Node start() { return checkNotDefault(start); }
-			Node end() { return checkNotDefault(end); }
+			Node start() { checkNotEmpty(); return start; }
+			Node end() { checkNotEmpty(); return end; }
 
 			int nodes() { return nodes; }
+			boolean isEmpty() { return start==accept; }
 			boolean isSingleton() { return nodes==1; }
+			boolean hasAppendix() { return appendix!=accept; }
 
+			private void checkNotDefault(Node n) {
+				checkState("Generic accept node not supported here", n!=requireNonNull(accept));
+			}
+
+			/** Add given node as head of inner sequence. */
 			<N extends Node> N push(N node) {
 				requireNonNull(node);
 				if(end==accept) {
@@ -370,6 +376,35 @@ public class SequencePattern {
 				}
 				nodes++;
 				return node;
+			}
+
+			/** Add given node as tail of inner sequence. */
+			<N extends Node> N pushLast(N node) {
+				requireNonNull(node);
+				if(end==accept) {
+					end = start = node;
+				} else {
+					end.setNext(node);
+					end = node;
+				}
+				nodes++;
+				return node;
+			}
+
+			/** Add given node as head of appendix. */
+			<N extends Node> N append(N node) {
+				requireNonNull(node);
+				node.setNext(appendix);
+				appendix = node;
+				return node;
+			}
+
+			/** Add other frame as tail to this one. */
+			void merge(Frame tail) {
+				requireNonNull(tail);
+				if(tail.hasAppendix()) {
+
+				}
 			}
 		}
 
@@ -436,6 +471,8 @@ public class SequencePattern {
 			final IqlMarker marker = source.getMarker().orElse(null);
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
+
+			final Frame frame = frame();
 
 			/*
 			 * We don't handle markers immediately at the node position they
