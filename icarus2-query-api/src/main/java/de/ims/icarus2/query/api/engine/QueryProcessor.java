@@ -66,6 +66,10 @@ import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlMarker;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
+import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
@@ -104,6 +108,10 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LaneStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerCallContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerConjunctionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerDisjunctionContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerWrappingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchFlagContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchModifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
@@ -113,6 +121,8 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.OrderExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.PayloadStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.PositionArgumentContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.PositionMarkerContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ProperNodeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.QuantifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ResultStatementContext;
@@ -824,10 +834,16 @@ public class QueryProcessor {
 				node = new IqlNode();
 			}
 
+			// Handle label and regular constraints
 			processProperElement0(node, ctx.memberLabel(), ctx.constraint());
 
-			boolean negated = false;
+			// Handle markers
+			if(ctx.positionMarker()!=null) {
+				node.setMarker(processMarker(ctx.positionMarker()));
+			}
 
+			// Handle quantification
+			boolean negated = false;
 			if(ctx.quantifier()!=null) {
 				List<IqlQuantifier> quantifiers = processQuantifier(ctx.quantifier());
 				quantifiers.forEach(node::addQuantifier);
@@ -859,6 +875,92 @@ public class QueryProcessor {
 					//TODO should we collect all of them first and then emit warnings for redundant ones?
 					.filter(new ObjectOpenCustomHashSet<>(IqlQuantifier.EQUALITY)::add)
 					.collect(Collectors.toList());
+		}
+
+		/** Unwraps arbitrarily nested marker wrapping to the deepest nested one */
+		private PositionMarkerContext unwrap(PositionMarkerContext ctx) {
+			PositionMarkerContext original = ctx;
+
+			// Unwrap arbitrarily deep
+			int depth = 0;
+			while(ctx instanceof MarkerWrappingContext) {
+				ctx = ((MarkerWrappingContext)ctx).positionMarker();
+				depth++;
+			}
+
+			if(depth>1) {
+				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+						"Superfluous wrapping of marker '{1}'", textOf(original));
+			}
+			return ctx;
+		}
+
+		private IqlMarker processMarker(PositionMarkerContext ctx) {
+			ctx = unwrap(ctx);
+
+			if(ctx instanceof MarkerCallContext) {
+				return processMarkerCall((MarkerCallContext) ctx);
+			} else if(ctx instanceof MarkerConjunctionContext) {
+				return processMarkerConjunction((MarkerConjunctionContext) ctx);
+			} else if(ctx instanceof MarkerDisjunctionContext) {
+				return processMarkerDisjunction((MarkerDisjunctionContext) ctx);
+			}
+
+			return failForUnhandledAlternative(ctx);
+		}
+
+		private IqlMarkerCall processMarkerCall(MarkerCallContext ctx) {
+			IqlMarkerCall call = new IqlMarkerCall();
+			call.setName(textOf(ctx.name));
+			List<PositionArgumentContext> args = ctx.positionArgument();
+			if(!args.isEmpty()) {
+				call.setArguments(args.stream()
+						.map(this::processPositionArgument)
+						.toArray(Number[]::new));
+			}
+			return call;
+		}
+
+		private Number processPositionArgument(PositionArgumentContext ctx) {
+			if(ctx.signedIntegerLiteral()!=null) {
+				return Integer.valueOf(textOf(ctx.signedIntegerLiteral()));
+			} else if(ctx.signedFloatingPointLiteral()!=null) {
+				return Double.valueOf(textOf(ctx.signedFloatingPointLiteral()));
+			}
+
+			return failForUnhandledAlternative(ctx);
+		}
+
+		private IqlMarkerExpression processMarkerConjunction(MarkerConjunctionContext ctx) {
+			IqlMarkerExpression exp = new IqlMarkerExpression();
+			exp.setExpressionType(MarkerExpressionType.CONJUNCTION);
+
+			// Try to collapse any conjunctive sequence into a single term
+			PositionMarkerContext tail = ctx;
+			while(tail instanceof MarkerConjunctionContext) {
+				MarkerConjunctionContext cctx = (MarkerConjunctionContext) tail;
+				exp.addItem(processMarker(cctx.left));
+				tail = unwrap(cctx.right);
+			}
+			// Now add the final dangling expression
+			exp.addItem(processMarker(tail));
+			return exp;
+		}
+
+		private IqlMarkerExpression processMarkerDisjunction(MarkerDisjunctionContext ctx) {
+			IqlMarkerExpression exp = new IqlMarkerExpression();
+			exp.setExpressionType(MarkerExpressionType.DISJUNCTION);
+
+			// Try to collapse any conjunctive sequence into a single term
+			PositionMarkerContext tail = ctx;
+			while(tail instanceof MarkerDisjunctionContext) {
+				MarkerDisjunctionContext dctx = (MarkerDisjunctionContext) tail;
+				exp.addItem(processMarker(dctx.left));
+				tail = unwrap(dctx.right);
+			}
+			// Now add the final dangling expression
+			exp.addItem(processMarker(tail));
+			return exp;
 		}
 
 		private IqlQuantifier processSimpleQuantifier(SimpleQuantifierContext ctx) {

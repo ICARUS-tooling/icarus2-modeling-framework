@@ -224,10 +224,10 @@ memberLabel
 	;
 	
 positionMarker
-	: Identifier (LPAREN positionArgument (COMMA positionArgument)* RPAREN)?	#markerCall
+	: name=Identifier (LPAREN positionArgument (COMMA positionArgument)* RPAREN)?	#markerCall
 	| LPAREN positionMarker RPAREN 												#markerWrapping
-	| positionMarker AND positionMarker											#markerConjunction
-	| positionMarker OR positionMarker											#markerDisjunction
+	| <assoc=right> left=positionMarker and right=positionMarker				#markerConjunction
+	| <assoc=right> left=positionMarker or right=positionMarker					#markerDisjunction
 	;
 	
 positionArgument
@@ -487,7 +487,7 @@ simpleQuantifier
 	: not
 	| all (QMARK | PLUS)?
 	| value=PureDigits (PLUS | MINUS)? (QMARK | EXMARK)? CARET?
-	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits (QMARK | EXMARK)? HASH?
+	| lowerBound=PureDigits DOUBLE_DOT upperBound=PureDigits (QMARK | EXMARK)? CARET?
 	;
 	
 not
