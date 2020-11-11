@@ -164,11 +164,15 @@ public class ArrayConverters {
 					continue;
 				} else if(c==open) {
 					// Begin new array
+					//TODO should we do a sanity check against unfinished content here?
 					depth++;
 				} else if(c==close || c==del) {
 					// Finish element
 					if(sb.length()>0) {
-						buffer[depth].add(convert(sb.toString().trim()));
+						String content = sb.toString().trim();
+						if(!content.isEmpty() && !content.equals(format.empty())) {
+							buffer[depth].add(convert(content));
+						}
 						sb.setLength(0);
 					}
 					if(c==close) {
@@ -191,7 +195,7 @@ public class ArrayConverters {
 			}
 
 			if(result==null)
-				throw new ArgumentConversionException("");
+				throw new ArgumentConversionException("No valid array/matrix");
 
 			return result;
 		}
