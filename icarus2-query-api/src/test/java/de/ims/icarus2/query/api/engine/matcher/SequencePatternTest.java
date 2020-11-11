@@ -14,9 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- */
 package de.ims.icarus2.query.api.engine.matcher;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
@@ -88,6 +85,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -96,6 +94,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -120,6 +119,7 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.DynamicClip;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Exhaust;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NonResettingMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
@@ -135,10 +135,16 @@ import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
 import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
@@ -155,6 +161,29 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
+ * IMPORTANT NOTE:
+ * <p>
+ * Many test methods in this class state it explicitly, some omit it, but here the
+ * information is once again:
+ * <br>
+ * The state machine behind {@link SequencePattern} is built <b>BACK TO FRONT</b>!
+ * This means that all cache ids, node ids and other identifying properties of nodes
+ * inside the state machine that "count incrementally" also start with the node
+ * farthest from the query begin as {@code 0}. To simplify test code and make it more
+ * intuitive, a collection of utility methods exists, taking care of automatically
+ * reversing manually defined expected mappings for result assertions. Unless a test
+ * method explicitly states otherwise, it should always be assumed that the arguments
+ * for testing can be given in the "natural" order of elements in the query and proper
+ * conversion will happen under the hood.
+ *
+ * <p>
+ * This test class is one big unification of test suites for various aspects of the
+ * {@link SequencePattern} state machine for IQL. Strictly speaking we should divide
+ * this instantiation of anti-patterns into a small selection of test suites (in also
+ * separate files) for distinct aspects of the state machine. But currently it is just
+ * simpler to keep it in one place as both the state machine processor, evaluation
+ * and test suite are still in a rather volatile state.
+ *
  * @author Markus Gärtner
  *
  */
@@ -175,20 +204,71 @@ class SequencePatternTest {
 		};
 	}
 
+	private static final IqlObjectIdGenerator idGen = new IqlObjectIdGenerator();
+
+	/**
+	 * Upgrades a {@link IqlNode} from an "empty" one to a node with a "true" constraint.
+	 * This utility methods exists to force the recognition of nodes as mappable entries
+	 * in the query so we can test the occurrence of dummy nodes.
+	 */
+	private static final  Function<IqlNode, IqlNode> PROMOTE_NODE =  node -> {
+		if(!node.getConstraint().isPresent()) {
+			IqlExpression exp = new IqlExpression();
+			exp.setContent("true");
+			IqlPredicate pred = new IqlPredicate();
+			idGen.assignId(pred);
+			pred.setExpression(exp);
+			node.setConstraint(pred);
+		}
+		return node;
+	};
+
 	private interface CharPredicate {
 		boolean test(char c);
 	}
 
+	/** Print string representation of node and some state info to {@code System.out}. */
+	private static final Monitor MONITOR = new Monitor() {
+		@Override
+		public void enterNode(Node node, State state, int pos) {
+			System.out.printf("[pos:%d - matches:%d] %s%n", _int(pos), _long(state.reported), node);
+		}
+
+		@Override
+		public void dispatchResult(State state) {
+			if(state.entry==0) {
+				System.out.println("[empty result]");
+			} else {
+				System.out.printf("[%d entries: ", _int(state.entry));
+				for (int i = 0; i < state.entry; i++) {
+					if(i>0) {
+						System.out.print(", ");
+					}
+					System.out.printf("%d->%d",_int(state.m_node[i]), _int(state.m_pos[i]));
+				}
+				System.out.println("]");
+			}
+		}
+	};
+
 	static class Utils {
 
-		static final CharPredicate EQUALS_X = eq('X');
-		static final CharPredicate EQUALS_NOT_X = neq('X');
-		static final CharPredicate EQUALS_X_IC = ic('x');
-		static final CharPredicate EQUALS_Y = eq('Y');
+		static final char X = 'X';
+		static final char Y = 'Y';
+		static final char Z = 'Z';
+		static final char x = 'x';
+		static final char A = 'A';
+		static final char B = 'B';
+		static final char C = 'C';
 
-		static final CharPredicate EQUALS_A = eq('A');
-		static final CharPredicate EQUALS_B = eq('B');
-		static final CharPredicate EQUALS_C = eq('C');
+		static final CharPredicate EQUALS_X = eq(X);
+		static final CharPredicate EQUALS_NOT_X = neq(X);
+		static final CharPredicate EQUALS_X_IC = ic(x);
+		static final CharPredicate EQUALS_Y = eq(Y);
+
+		static final CharPredicate EQUALS_A = eq(A);
+		static final CharPredicate EQUALS_B = eq(B);
+		static final CharPredicate EQUALS_C = eq(C);
 
 		static final int NODE_0 = 0;
 		static final int NODE_1 = 1;
@@ -210,6 +290,8 @@ class SequencePatternTest {
 
 		static final boolean CONTINUOUS = false;
 		static final boolean DISCONTINUOUS = true;
+
+		static final boolean NO_STOP_ON_SUCCESS = false;
 
 		/** Match given character exactly */
 		static SequencePatternTest.CharPredicate eq(char sentinel) {
@@ -252,7 +334,7 @@ class SequencePatternTest {
 					atom.next = conn;
 				}
 			}
-			return new Branch(id, conn, atoms);
+			return new Branch(id, NO_STOP_ON_SUCCESS, conn, atoms);
 		}
 
 		static final String LANE_NAME = "test_lane";
@@ -340,9 +422,9 @@ class SequencePatternTest {
 		return builder;
 	}
 
-	private static final Pattern NODE = Pattern.compile("\\[([A-Z])\\]");
+	private static final Pattern NODE = Pattern.compile("\\$([A-Z])");
 
-	private static String payload(String rawQuery) {
+	private static String expand(String rawQuery) {
 		int lastAppend = 0;
 		java.util.regex.Matcher m = NODE.matcher(rawQuery);
 		StringBuilder sb = new StringBuilder();
@@ -355,18 +437,14 @@ class SequencePatternTest {
 			char c = content.charAt(0);
 			// Can't use Matcher.appendReplacement, as we use $ in the expression
 			sb.append(rawQuery, lastAppend, m.start())
-				.append('[')
-				.append(eq_exp(c))
-				.append(']');
+				.append(eq_exp(c));
 			lastAppend = m.end();
 		}
 		sb.append(rawQuery, lastAppend, rawQuery.length());
 		return sb.toString();
 	}
 
-	static SequencePattern.Builder builder(String rawPayload, int limit) {
-
-		rawPayload = payload(rawPayload);
+	static SequencePattern.Builder builder(String rawPayload) {
 
 		IqlPayload payload = QueryProcessorTest.parsePayload(rawPayload);
 		assertThat(payload).as("No payload").isNotNull();
@@ -390,10 +468,7 @@ class SequencePatternTest {
 				.lane(lane)
 				.build();
 		builder.context(context);
-
-		if(limit!=NO_LIMIT) {
-			builder.limit(limit);
-		}
+		payload.getLimit().ifPresent(builder::limit);
 
 		return builder;
 	}
@@ -529,7 +604,7 @@ class SequencePatternTest {
 		@Override
 		public void accept(State state) {
 			assertThat(nextResult)
-				.as("No more resutls buffered - only expected %d", _int(results.size()))
+				.as("No more results buffered - only expected %d", _int(results.size()))
 				.isLessThan(results.size());
 
 			results.get(nextResult++).assertMapping(state);
@@ -647,6 +722,15 @@ class SequencePatternTest {
 			return this;
 		}
 
+		CacheConfig hitsForSet(String s, CharPredicate pred) {
+			for (int i = 0; i < s.length(); i++) {
+				if(set.contains(i) && pred.test(s.charAt(i))) {
+					hits.add(i);
+				}
+			}
+			return this;
+		}
+
 		CacheConfig hits(String s, Interval clip, CharPredicate pred) {
 			for (int i = 0; i < s.length(); i++) {
 				if(clip.contains(i) && pred.test(s.charAt(i))) {
@@ -746,7 +830,7 @@ class SequencePatternTest {
 				.as("Incorrect number of mappings in result #%d", _int(index))
 				.isEqualTo(size);
 
-			// Process mappings in their natural occurance order
+			// Process mappings in their natural occurrence order
 			List<Pair<Integer, Integer>> entries = new ObjectArrayList<>(mapping);
 			entries.sort((p1, p2) -> p1.second.compareTo(p2.second));
 
@@ -809,7 +893,7 @@ class SequencePatternTest {
 			}
 
 			@CsvSource({
-				"XX, 0, 0-1, 1",
+				"XX, 0, 0, 1",
 				"-XX, 1, 1-2, 2",
 				"YXX, 1, 1-2, 2",
 				"-XX-, 1, 1-3, 2",
@@ -3610,20 +3694,20 @@ class SequencePatternTest {
 
 					@ParameterizedTest(name="{index}: <{1}>[X] in {0}")
 					@CsvSource({
-						"X, 1, false, 0, 0",
-						"X-, 1, false, 0, 0-1",
-						"-X, 1, false, 1, 0-1",
-						"-X-, 1, false, 1, 0-2",
-						"--X, 1, false, 2, 0-2",
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0-1",
+						"-X, 1, 1, 0-1",
+						"-X-, 1, 1, 0-2",
+						"--X, 1, 2, 0-2",
 
-						"XX, 2, false, 0-1, 0-1",
-						"XX-, 2, false, 0-1, 0-2",
-						"-XX, 2, false, 1-2, 0-2",
-						"-XX-, 2, false, 1-2, 0-3",
-						"--XX, 2, false, 2-3, 0-3",
-						"XX--, 2, false, 0-1, 0-2",
+						"XX, 2, 0-1, 0-1",
+						"XX-, 2, 0-1, 0-2",
+						"-XX, 2, 1-2, 0-2",
+						"-XX-, 2, 1-2, 0-3",
+						"--XX, 2, 2-3, 0-3",
+						"XX--, 2, 0-1, 0-2",
 
-						"--XXXXXXXXXX--, 10, false, 2-11, 0-12",
+						"--XXXXXXXXXX--, 10, 2-11, 0-12",
 					})
 					@DisplayName("Node with exact multiplicity [single hit]")
 					void testExact(String target, int count,
@@ -5233,7 +5317,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostGreedy(count)
+										atMostGreedy(count, CONTINUOUS)
 										)
 								).limit(1).build(),
 								match(1)
@@ -5247,7 +5331,53 @@ class SequencePatternTest {
 						);
 					}
 
-					@ParameterizedTest(name="{index}: <{1}+>[X] in {0}")
+					@ParameterizedTest(name="{index}: <{1}-^>[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0, 0",
+						"-XX, 1, 1, 0-1",
+
+						"XX, 2, 0-1, 0-1",
+						"X-, 2, 0, 0-1",
+						"XX-, 2, 0-1, 0-1",
+						"XXX, 2, 0-1, 0-1",
+						"-X-, 2, 1, 0-2",
+						"-XX, 2, 1-2, 0-2",
+						"-XX-, 2, 1-2, 0-2",
+						"-XXX, 2, 1-2, 0-2",
+						"XXX-, 2, 0-1, 0-1",
+						"--XX, 2, 2-3, 0-3",
+						"XX--, 2, 0-1, 0-1",
+
+						"--XXXXXXXXXX--, 10, 2-11, 0-11",
+						"--XXXXXXXXXXX--, 10, 2-11, 0-11",
+						// complete
+					})
+					@DisplayName("Node with a maximum multiplicity [greedy mode, single hit, limit, discontinuous]")
+					void testGreedyDiscontinuous(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostGreedy(count, DISCONTINUOUS)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}->[X] in {0}")
 					@CsvSource({
 						"-, 1, 0, -",
 						"Y, 1, 0, -",
@@ -5262,7 +5392,34 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostGreedy(count)
+										atMostGreedy(count, CONTINUOUS)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-^>[X] in {0}")
+					@CsvSource({
+						"-, 1, 0, -",
+						"Y, 1, 0, -",
+						"-Y, 2, 0-1, -",
+						"-Y-, 2, 0-2, -",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [greedy mode, discontinuous]")
+					void testGreedyFailDiscontinuous(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostGreedy(count, DISCONTINUOUS)
 										)
 								).build(),
 								mismatch()
@@ -5296,7 +5453,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostGreedy(count)
+										atMostGreedy(count, CONTINUOUS)
 										)
 								).build(),
 								match(hits.length)
@@ -5306,6 +5463,46 @@ class SequencePatternTest {
 											.set(visited)
 											.hits(hits))
 									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-^>[X] in {0}")
+					@CsvSource({
+						"XX, 1, {{0}{1}}, 0-1",
+						"XX-, 1, {{0}{1}}, 0-2",
+						"-XX, 1, {{1}{2}}, 0-2",
+						"X-X, 1, {{0}{2}}, 0-2",
+						"-XX-, 1, {{1}{2}}, 0-3",
+						"X--X, 1, {{0}{3}}, 0-3",
+
+						"XXX, 2, {{0;1}{1;2}{2}}, 0-2",
+						"X-X, 2, {{0;2}{2}}, 0-2",
+						"-XXX, 2, {{1;2}{2;3}{3}}, 0-3",
+						"X-XX, 2, {{0;2}{2;3}{3}}, 0-3",
+						"XX-X, 2, {{0;1}{1;3}{3}}, 0-3",
+						"XXX-, 2, {{0;1}{1;2}{2}}, 0-3",
+						"-XXX-, 2, {{1;2}{2;3}{3}}, 0-4",
+
+						"-XXX--XXX-, 3, {{1;2;3}{2;3;6}{3;6;7}{6;7;8}{7;8}{8}}, 0-9",
+					})
+					@DisplayName("Node with a maximum multiplicity [greedy mode, discontinuous]")
+					void testGreedyMultipleDiscontinuous(String target, int count,
+							@IntMatrixArg int[][] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostGreedy(count, DISCONTINUOUS)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.results(hits.length, (r, i) -> r.map(NODE_0, hits[i]))
 						);
 					}
 
@@ -5359,7 +5556,78 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(unordered(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), atMostGreedy(count)),
+												constraint(ic_exp('X'))), atMostGreedy(count, CONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).limit(1).build(), // we don't need multiple matches for confirmation
+								match(1)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates))
+									.result(result(0)
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-^>[x|X][x] in {0}")
+					@CsvSource({
+						// Expansion of size 2
+						"Xx, 2, 0, 1, 0-1, 0-1, 1",
+						"XXx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"XXxx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"XXx-, 2, 0-1, 2, 0-1, 0-1, 2",
+						"-XXx, 2, 1-2, 3, 1-2, 0-2, 3",
+						"-XXx-, 2, 1-2, 3, 1-2, 0-2, 3",
+						"XxX, 2, 0, 1, 0-1, 0-1, 1-2",
+						"XxX-, 2, 0, 1, 0-1, 0-1, 1-3",
+						"-XxX, 2, 1, 2, 1-2, 0-2, 2-3",
+						"-XxX-, 2, 1, 2, 1-2, 0-2, 2-4",
+						// Expansion of size 3
+						"XXx, 3, 0-1, 2, 0-2, 0-2, 2",
+						"XXXx, 3, 0-2, 3, 0-2, 0-2, 3",
+						"XXxX, 3, 0-1, 2, 0-2, 0-2, 2-3",
+						"XXxX-, 3, 0-1, 2, 0-2, 0-2, 2-4",
+						"-XXxX, 3, 1-2, 3, 1-3, 0-3, 3-4",
+						"-XXxX-, 3, 1-2, 3, 1-3, 0-3, 3-5",
+						// Consume first target for second node
+						"XxXxX, 10, 0-2, 3, 0-4, 0-4, 3-4",
+						"XxXxX-, 10, 0-2, 3, 0-4, 0-5, 3-5",
+						"-XxXxX, 10, 1-3, 4, 1-5, 0-5, 4-5",
+						"-XxXxX-, 10, 1-3, 4, 1-5, 0-6, 4-6",
+						// Greediness
+						"Xxx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"Xxxx, 2, 0-1, 2, 0-1, 0-1, 2",
+						"Xxxx-, 2, 0-1, 2, 0-1, 0-1, 2",
+						"Xxx, 3, 0-1, 2, 0-2, 0-2, 2",
+						"Xxxx, 3, 0-2, 3, 0-2, 0-2, 3",
+						"Xxxx-, 3, 0-2, 3, 0-2, 0-2, 3",
+						//TODO complete
+					})
+					@DisplayName("verify greedy expansion with multiple nodes [limited, discontinuous]")
+					void testGreedyCompetitionDiscontinuous(String target,
+							int count, // argument for 'AtLeast' marker
+							@IntervalArg Interval hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval candidates, // cached hits for first node
+							@IntervalArg Interval visited1, // all slots visited for first node
+							@IntervalArg Interval visited2) { // all slots visited for second node
+						/*
+						 * We expect NODE_1 to visit and greedily consume all the
+						 * X and x slots and then back off until the first x is
+						 * reached for NODE_0.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(unordered(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostGreedy(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
@@ -5410,7 +5678,53 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostReluctant(count)
+										atMostReluctant(count, CONTINUOUS)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-?^>[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0",
+						"XX, 1, 0, 0",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0, 0",
+						"-XX, 1, 1, 0-1",
+
+						"XX, 2, 0, 0",
+						"X-, 2, 0, 0",
+						"XX-, 2, 0, 0",
+						"XXX, 2, 0, 0",
+						"-XX, 2, 1, 0-1",
+						"-X-, 2, 1, 0-1",
+						"-XX-, 2, 1, 0-1",
+						"-XXX, 2, 1, 0-1",
+						"XXX-, 2, 0, 0",
+						"--XX, 2, 2, 0-2",
+						"XX--, 2, 0, 0",
+
+						"--XXXXXXXXXX--, 10, 2, 0-2",
+						//TODO complete
+					})
+					@DisplayName("Node with a maximum multiplicity [reluctant mode, single hit, limit, discontinuous]")
+					void testReluctantDiscontinuous(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostReluctant(count, DISCONTINUOUS)
 										)
 								).limit(1).build(),
 								match(1)
@@ -5439,7 +5753,34 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostReluctant(count)
+										atMostReluctant(count, CONTINUOUS)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-?^>[X] in {0}")
+					@CsvSource({
+						"-, 1, 0, -",
+						"Y, 1, 0, -",
+						"-Y, 2, 0-1, -",
+						"-Y-, 2, 0-2, -",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [reluctant mode, discontinuous]")
+					void testReluctantFailDiscontinuous(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostReluctant(count, DISCONTINUOUS)
 										)
 								).build(),
 								mismatch()
@@ -5473,7 +5814,43 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostReluctant(count)
+										atMostReluctant(count, CONTINUOUS)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-?^>[X] in {0}")
+					@CsvSource({
+						"XX, 1, {0;1}, 0-1",
+						"XX-, 1, {0;1}, 0-2",
+						"-XX, 1, {1;2}, 0-2",
+						"-XX-, 1, {1;2}, 0-3",
+
+						"XXX, 2, {0;1;2}, 0-2",
+						"-XXX, 2, {1;2;3}, 0-3",
+						"XXX-, 2, {0;1;2}, 0-3",
+						"-XXX-, 2, {1;2;3}, 0-4",
+
+						"-XXXX--XXXX-, 4, {1;2;3;4;7;8;9;10}, 0-11",
+						//TODO complete
+					})
+					@DisplayName("Node with a maximum multiplicity [reluctant mode, multiple hits, discontinuous]")
+					void testReluctantMultipleDiscontinuous(String target, int count,
+							@IntervalArrayArg Interval[] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostReluctant(count, DISCONTINUOUS)
 										)
 								).build(),
 								match(hits.length)
@@ -5549,7 +5926,91 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(set(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), atMostReluctant(count)),
+												constraint(ic_exp('X'))), atMostReluctant(count, CONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).limit(1).build(), // we don't need multiple matches for confirmation
+								match(1)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates1))
+									.result(result(0)
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{2}-?^>[x|X][x] in {0}, adjacent={1}")
+					@CsvSource({
+						// Expansion of size 1 - ordered
+						"Xx, false, 1, 0, 1, 0, 1, 0",
+						"XXx, false, 1, 0, 2, 0, 1-2, 0",
+						"XXx-, false, 1, 0, 2, 0, 1-2, 0",
+						"-XXx, false, 1, 1, 3, 0-1, 2-3, 1",
+						"-XXx-, false, 1, 1, 3, 0-1, 2-3, 1",
+						"XxX, false, 1, 0, 1, 0, 1, 0",
+						"XxX-, false, 1, 0, 1, 0, 1, 0",
+						"-XxX, false, 1, 1, 2, 0-1, 2, 1",
+						"-XxX-, false, 1, 1, 2, 0-1, 2, 1",
+						// Expansion of size 1 - adjacent
+						"Xx, true, 1, 0, 1, 0, 1, 0",
+						"XXx, true, 1, 1, 2, 0-1, 1-2, 0-1",
+						"XXXx, true, 1, 2, 3, 0-2, 1-3, 0-2",
+						"XXx-, true, 1, 1, 2, 0-1, 1-2, 0-1",
+						"-XXx, true, 1, 2, 3, 0-2, 2-3, 1-2",
+						"-XXx-, true, 1, 2, 3, 0-2, 2-3, 1-2",
+						"XxX, true, 1, 0, 1, 0, 1, 0",
+						"XxX-, true, 1, 0, 1, 0, 1, 0",
+						"-XxX, true, 1, 1, 2, 0-1, 2, 1",
+						"-XxX-, true, 1, 1, 2, 0-1, 2, 1",
+						// Expansion of size 2 - ordered
+						"XXx, false, 2, 0, 2, 0, 1-2, 0",
+						"XXXx, false, 2, 0, 3, 0, 1-3, 0",
+						"XXxX, false, 2, 0, 2, 0, 1-2, 0",
+						"XXxX-, false, 2, 0, 2, 0, 1-2, 0",
+						"-XXxX, false, 2, 1, 3, 0-1, 2-3, 1",
+						"-XXxX-, false, 2, 1, 3, 0-1, 2-3, 1",
+						// Expansion of size 2 - adjacent
+						"XXx, true, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"XXXx, true, 2, 1-2, 3, 0-2, 1-3, 0-2",
+						"XXXXx, true, 2, 2-3, 4, 0-3, 1-4, 0-3",
+						"XXxX, true, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"XXxX-, true, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"-XXxX, true, 2, 1-2, 3, 0-2, 2-3, 1-2",
+						"-XXxX-, true, 2, 1-2, 3, 0-2, 2-3, 1-2",
+						// Reluctance - adjacent
+						"Xxx, true, 1, 0, 1, 0, 1, 0",
+						"Xxxx, true, 1, 0, 1, 0, 1, 0",
+						"Xxxx-, true, 1, 0, 1, 0, 1, 0",
+						"Xxx, true, 2, 0, 1, 0, 1, 0",
+						"Xxxx, true, 2, 0, 1, 0, 1, 0",
+						"Xxxx-, true, 2, 0, 1, 0, 1, 0",
+						//TODO complete
+					})
+					@DisplayName("verify reluctant expansion with multiple nodes [limited, discontinuous]")
+					void testReluctantCompetitionDiscontinuous(String target,
+							boolean adjacent,
+							int count, // argument for 'AtLeast' marker
+							@IntervalArg Interval hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval visited1,  // all slots visited for first node
+							@IntervalArg Interval visited2, // all slots visited for second node
+							@IntervalArg Interval candidates1) { // slots marked as true for first node
+						/*
+						 * We expect NODE_1 to only proceed with consumption of slots
+						 * while NODE_0 does not already match the next one.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostReluctant(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
@@ -5576,7 +6037,48 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(adjacent(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), atMostReluctant(2)),
+												constraint(ic_exp('X'))), atMostReluctant(2, CONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								match(4)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(Interval.of(2, 7))
+											.hits(3, 6))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(0, 7))
+											.hits(Interval.of(1, 6)))
+									// First normal-sized match
+									.result(result(0)
+											.map(NODE_1, 1, 2)
+											.map(NODE_0, 3))
+									// Intermediate match that only allows first node to consume 1 slot
+									.result(result(1)
+											.map(NODE_1, 2)
+											.map(NODE_0, 3))
+									// Last normal-sized match
+									.result(result(3)
+											.map(NODE_1, 4, 5)
+											.map(NODE_0, 6))
+									// Final minimum-sized match
+									.result(result(4)
+											.map(NODE_1, 5)
+											.map(NODE_0, 6))
+						);
+					}
+
+					@Test
+					@DisplayName("verify reluctant expansion with multiple nodes and matches [discontinuous]")
+					void testReluctantExpansionDiscontinuous() {
+						//TODO complete
+						final String target = "-XXxXXx-";
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostReluctant(2, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								match(4)
@@ -5643,7 +6145,56 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostPossessive(count)
+										atMostPossessive(count, CONTINUOUS)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!^>[X] in {0}")
+					@CsvSource({
+						"X, 1, 0, 0",
+						"X-, 1, 0, 0",
+						"-X, 1, 1, 0-1",
+						"XX-, 1, 0, 0",
+						"-XX, 1, 1, 0-1",
+						"-X-, 1, 1, 0-1",
+
+						"XX, 2, 0-1, 0-1",
+						"XX-, 2, 0-1, 0-1",
+						"XXX, 2, 0-1, 0-1",
+						"-XX, 2, 1-2, 0-2",
+						"-XX-, 2, 1-2, 0-2",
+						"-XXX, 2, 1-2, 0-2",
+						"XXX-, 2, 0-1, 0-1",
+						"--XX, 2, 2-3, 0-3",
+						"XX--, 2, 0-1, 0-1",
+
+						"XXX, 3, 0-2, 0-2",
+						"-XXX, 3, 1-3, 0-3",
+						"XXX-, 3, 0-2, 0-2",
+
+						"--XXXXXXXXXX--, 10, 2-11, 0-11",
+						"--XXXXXXXXXXXX--, 10, 2-11, 0-11",
+						//TODO complete
+					})
+					@DisplayName("Node with a maximum multiplicity [possessive mode, single hit, limit, discontinuous]")
+					void testPossessiveDiscontinuous(String target, int count,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostPossessive(count, DISCONTINUOUS)
 										)
 								).limit(1).build(),
 								match(1)
@@ -5672,7 +6223,34 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										atMostPossessive(count)
+										atMostPossessive(count, CONTINUOUS)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!^>[X] in {0}")
+					@CsvSource({
+						"-, 1, 0, -",
+						"Y, 1, 0, -",
+						"-Y, 2, 0-1, -",
+						"-Y-, 2, 0-2, -",
+					})
+					@DisplayName("Mismatch with a maximum multiplicity [possessive mode, discontinuous]")
+					void testPossessiveFailDiscontinuous(String target, int count,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										atMostPossessive(count, DISCONTINUOUS)
 										)
 								).build(),
 								mismatch()
@@ -5707,7 +6285,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(ordered(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), atMostPossessive(count)),
+												constraint(ic_exp('X'))), atMostPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
@@ -5720,6 +6298,46 @@ class SequencePatternTest {
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}-!^>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 2, 0-1, -",
+						"XXX-, 2, 0-3, 2-3",
+
+						"Xx, 3, 0-1, -",
+						"XXx, 3, 0-2, -",
+						"XXX-, 3, 0-3, 3",
+						"XXx-, 3, 0-3, 3",
+
+						"XXX-, 4, 0-3, 3",
+						"XXx-, 4, 0-3, 3",
+						"XXXx, 4, 0-3, -",
+						"XXX-x, 4, 0-4, -",
+						"XXx-x, 4, 0-4, -",
+					})
+					@DisplayName("Mismatch due to possessive consumption [ordered, discontinuous]")
+					void testPossessiveFail2Discontinuous(String target, int count,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(ordered(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostPossessive(count, DISCONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(target, visited1, EQUALS_X_IC))
 						);
 					}
 
@@ -5740,7 +6358,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(adjacent(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), atMostPossessive(count)),
+												constraint(ic_exp('X'))), atMostPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
@@ -5756,27 +6374,61 @@ class SequencePatternTest {
 						);
 					}
 
+					@ParameterizedTest(name="{index}: <{1}-!^>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 2, 0-1, -",
+						"XXx, 3, 0-2, -",
+						"XXX-, 3, 0-3, 3",
+						"XXx-, 3, 0-3, 3",
+						"XXX-x, 3, 0-4, 3",
+						"X-x-x, 3, 0-4, -",
+						"X-x-x-x, 3, 0-6, 5",
+					})
+					@DisplayName("Mismatch due to possessive consumption [adjacent, discontinuous]")
+					void testPossessiveFail3Discontinuous(String target, int count,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostPossessive(count, DISCONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(target, visited1, EQUALS_X_IC))
+						);
+					}
+
 					@ParameterizedTest(name="{index}: <{3}+!>[x|X][{1}] in {0}, adjacent={2}")
 					@CsvSource({
 						// Expansion of size 1 - ordered
-						"XY, Y, false, 1, {0}, {1}, {0}, {1}, {0}",
-						"XXY, Y, false, 1, {0;1}, {2;2}, {0-1}, {1-2}, {0-1}",
-						"XX-XX, X, false, 1, {0;0;0;1;1;3}, {1;3;4;3;4;4}, {0-3}, {1-4}, {0-1;3}",
+						"XY, Y, false, 1, {0}, {1}, {0}, {1}",
+						"XXY, Y, false, 1, {0;1}, {2;2}, {0-1}, {1-2}",
+						"XX-XX, X, false, 1, {0;0;0;1;1;3}, {1;3;4;3;4;4}, {0-3}, {1-4}",
 						// Expansion of size 1 - adjacent
-						"XY, Y, true, 1, {0}, {1}, {0}, {1}, {0}",
-						"XXY, Y, true, 1, {1}, {2}, {0-1}, {1-2}, {0-1}",
+						"XY, Y, true, 1, {0}, {1}, {0}, {1}",
+						"XXY, Y, true, 1, {1}, {2}, {0-1}, {1-2}",
 						// Expansion of size 2 - ordered
-						"XY, Y, false, 2, {0}, {1}, {0-1}, {1}, {0}",
-						"XXY, Y, false, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
-						"XXX-X, X, false, 2, {0-1;0-1;1-2;2}, {2;4;4;4}, {0-3}, {2-4}, {0-2}",
-						"XX-XX, X, false, 2, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}", // we miss the 5. match due to possessive expansion
-						"XXx-x, x, false, 2, {0-1;0-1;1-2;2}, {2;4;4;4}, {0-3}, {2-4}, {0-2}",
+						"XY, Y, false, 2, {0}, {1}, {0-1}, {1}",
+						"XXY, Y, false, 2, {0-1;1}, {2;2}, {0-2}, {2}",
+						"XXX-X, X, false, 2, {0-1;0-1;1-2;2}, {2;4;4;4}, {0-3}, {2-4}",
+						"XX-XX, X, false, 2, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}", // we miss the 5. match due to possessive expansion
+						"XXx-x, x, false, 2, {0-1;0-1;1-2;2}, {2;4;4;4}, {0-3}, {2-4}",
 						// Expansion of size 2 - adjacent
-						"XXY, Y, true, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
-						"XXX-X, X, true, 2, {0-1}, {2}, {0-3}, {2-3}, {0-2}",
+						"XXY, Y, true, 2, {0-1;1}, {2;2}, {0-2}, {2}",
+						"XXX-X, X, true, 2, {0-1}, {2}, {0-3}, {2-3}",
 						// Expansion of size 3 - ordered
-						"XXX-X, X, false, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}, {0-2}",
-						"XX-XX, X, false, 3, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}",
+						"XXX-X, X, false, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}",
+						"XX-XX, X, false, 3, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}",
 					})
 					@DisplayName("verify possessive expansion with multiple nodes")
 					void testPossessiveCompetition(String target,
@@ -5786,8 +6438,7 @@ class SequencePatternTest {
 							@IntervalArrayArg Interval[] hits1, // reported hits for first node
 							@IntervalArrayArg Interval[] hit2, // reported hits for second node
 							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
-							@IntervalArrayArg Interval[] visited2, // all slots visited for second node
-							@IntervalArrayArg Interval[] candidates1) {
+							@IntervalArrayArg Interval[] visited2) { // all slots visited for second node
 
 						// Sanity check since we expect symmetric results here
 						assertThat(hits1).hasSameSizeAs(hit2);
@@ -5801,7 +6452,75 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(set(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), atMostPossessive(count)),
+												constraint(ic_exp('X'))), atMostPossessive(count, CONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
+								).build(),
+								match(hits1.length)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hitsForSet(target, EQUALS_X_IC))
+									.results(hits1.length, (r,i) -> r
+											.map(NODE_1, hits1[i])
+											.map(NODE_0, hit2[i]))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{3}+!^>[x|X][{1}] in {0}, adjacent={2}")
+					@CsvSource({
+						// Expansion of size 1 - ordered
+						"XY, Y, false, 1, {{0}}, {1}, {0}, {1}",
+						"XXY, Y, false, 1, {{0}{1}}, {2;2}, {0-1}, {1-2}",
+						"XX-XX, X, false, 1, {{0}{0}{0}{1}{1}{3}}, {1;3;4;3;4;4}, {0-3}, {1-4}",
+						// Expansion of size 1 - adjacent
+						"XY, Y, true, 1, {{0}}, {1}, {0}, {1}",
+						"XXY, Y, true, 1, {{1}}, {2}, {0-1}, {1-2}",
+						// Expansion of size 2 - ordered
+						"XY, Y, false, 2, {{0}}, {1}, {0-1}, {1}",
+						"XXY, Y, false, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						"XXX-X, X, false, 2, {{0;1}{0;1}{1;2}}, {2;4;4}, {0-4}, {2-4}",
+						"XX-XX, X, false, 2, {{0;1}{0;1}{1;3}}, {3;4;4}, {0-4}, {2-4}", // we miss the 5. match due to possessive expansion
+						"XXx-x, x, false, 2, {{0;1}{0;1}{1;2}}, {2;4;4}, {0-4}, {2-4}",
+						// Expansion of size 2 - adjacent
+						"XXY, Y, true, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						"XXX-X, X, true, 2, {{0;1}}, {2}, {0-4}, {2-3}",
+						"XX-XX, X, true, 2, {{1;3}}, {4}, {0-4}, {2;4}",
+						// Expansion of size 3 - ordered
+						"XXX-X, X, false, 3, {{0;1;2}}, {4}, {0-4}, {3-4}",
+						"XX-XX, X, false, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+						// Expansion of size 3 - adjacent
+						"XXXXX, X, true, 3, {{0;1;2}{1;2;3}}, {3;4}, {0-4}, {3-4}",
+						"XX-XX, X, true, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+					})
+					@DisplayName("verify possessive expansion with multiple nodes")
+					void testPossessiveCompetitionDiscontinuous(String target,
+							char c2, // search symbol for second node
+							boolean adjacent,
+							int count, // argument for 'AtMost' marker
+							@IntMatrixArg int[][] hits1, // reported hits for first node
+							@IntArrayArg int[] hit2, // reported hits for second node
+							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
+							@IntervalArrayArg Interval[] visited2) {// all slots visited for second node
+
+						// Sanity check since we expect symmetric results here
+						assertThat(hits1).as("Different match counters").hasSameSizeAs(hit2);
+
+						/*
+						 * We expect NODE_1 to aggressively consume slots with
+						 * no regards for NODE_0, so that in contrast to reluctant mode
+						 * we will miss some multi-match situations.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), atMostPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
@@ -5814,7 +6533,7 @@ class SequencePatternTest {
 									.cache(cache(CACHE_1, false)
 											.window(target)
 											.set(visited1)
-											.hits(candidates1))
+											.hitsForSet(target, EQUALS_X_IC))
 									.results(hits1.length, (r,i) -> r
 											.map(NODE_1, hits1[i])
 											.map(NODE_0, hit2[i]))
@@ -5829,43 +6548,46 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: <{1}..{2}>[X] in {0}")
 					@CsvSource({
 						// Optional
-						"Y, 0, 1, {-}, 0, -",
-						"Y-, 0, 1, {-;-}, 0-1, -",
-						"X, 0, 1, {0}, 0, {0}",
-						"-X, 0, 1, {-;1}, 0-1, {1}",
-						"X-, 0, 1, {0;-}, 0-1, {0}",
+						"Y, 0, 1, {-}, 0",
+						"Y-, 0, 1, {-;-}, 0-1",
+						"X, 0, 1, {0}, 0",
+						"-X, 0, 1, {-;1}, 0-1",
+						"X-, 0, 1, {0;-}, 0-1",
 						// Singular
-						"X, 1, 1, {0}, 0, {0}",
-						"X-, 1, 1, {0}, 0-1, {0}",
-						"-X, 1, 1, {1}, 0-1, {1}",
-						"XX-, 1, 1, {0;1}, 0-2, {0-1}",
-						"-XX, 1, 1, {1;2}, 0-2, {1-2}",
+						"X, 1, 1, {0}, 0",
+						"X-, 1, 1, {0}, 0-1",
+						"-X, 1, 1, {1}, 0-1",
+						"XX-, 1, 1, {0;1}, 0-2",
+						"-XX, 1, 1, {1;2}, 0-2",
+						"X-X, 1, 1, {0;2}, 0-2",
 						// Sequence of 1 to 2
-						"XX, 1, 2, {0-1;1}, 0-1, {0-1}",
-						"X-, 1, 2, {0}, 0-1, {0}",
-						"XX-, 1, 2, {0-1;1}, 0-2, {0-1}",
-						"XXX, 1, 2, {0-1;1-2;2}, 0-2, {0-2}",
-						"-X-, 1, 2, {1}, 0-2, {1}",
-						"-XX, 1, 2, {1-2;2}, 0-2, {1-2}",
-						"-XX-, 1, 2, {1-2;2}, 0-3, {1-2}",
-						"-XXX, 1, 2, {1-2;2-3;3}, 0-3, {1-3}",
-						"XXX-, 1, 2, {0-1;1-2;2}, 0-3, {0-2}",
-						"--XX, 1, 2, {2-3;3}, 0-3, {2-3}",
-						"XX--, 1, 2, {0-1;1}, 0-3, {0-1}",
+						"XX, 1, 2, {0-1;1}, 0-1",
+						"X-, 1, 2, {0}, 0-1",
+						"XX-, 1, 2, {0-1;1}, 0-2",
+						"XXX, 1, 2, {0-1;1-2;2}, 0-2",
+						"-X-, 1, 2, {1}, 0-2",
+						"-XX, 1, 2, {1-2;2}, 0-2",
+						"-XX-, 1, 2, {1-2;2}, 0-3",
+						"-XXX, 1, 2, {1-2;2-3;3}, 0-3",
+						"XXX-, 1, 2, {0-1;1-2;2}, 0-3",
+						"--XX, 1, 2, {2-3;3}, 0-3",
+						"XX--, 1, 2, {0-1;1}, 0-3",
+						"X-XX, 1, 2, {0;2-3;3}, 0-3",
+						// Sequence of 2 to 3
+						"X-XX, 2, 3, {2-3}, 0-3",
 
-						"--XXXXXXXXXX--, 8, 10, {2-11;3-11;4-11}, 0-12, {2-11}",
-						"--XXXXXXXXXXX--, 8, 10, {2-11;3-12;4-12;5-12}, 0-13, {2-12}",
+						"--XXXXXXXXXX--, 8, 10, {2-11;3-11;4-11}, 0-12",
+						"--XXXXXXXXXXX--, 8, 10, {2-11;3-12;4-12;5-12}, 0-13",
 					})
 					@DisplayName("Node with a bounded multiplicity [greedy mode, multiple hits]")
 					void testGreedy(String target, int min, int max,
 							@IntervalArrayArg Interval[] hits,
-							@IntervalArg Interval visited,
-							@IntervalArrayArg Interval[] candidates) {
+							@IntervalArg Interval visited) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangeGreedy(min, max)
+										rangeGreedy(min, max, CONTINUOUS)
 										)
 								).build(),
 								match(hits.length)
@@ -5873,30 +6595,89 @@ class SequencePatternTest {
 									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
-											.hits(candidates))
+											.hitsForSet(target, EQUALS_X))
 									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}^>[X] in {0}")
+					@CsvSource({
+						// Optional
+						"Y, 0, 1, {{}}, 0",
+						"Y-, 0, 1, {{}{}}, 0-1",
+						"X, 0, 1, {{0}}, 0",
+						"-X, 0, 1, {{}{1}}, 0-1",
+						"X-, 0, 1, {{0}{}}, 0-1",
+						// Singular
+						"X, 1, 1, {{0}}, 0",
+						"X-, 1, 1, {{0}}, 0-1",
+						"-X, 1, 1, {{1}}, 0-1",
+						"XX-, 1, 1, {{0}{1}}, 0-2",
+						"-XX, 1, 1, {{1}{2}}, 0-2",
+						"X-X, 1, 1, {{0}{2}}, 0-2",
+						// Sequence of 1 to 2
+						"XX, 1, 2, {{0;1}{1}}, 0-1",
+						"X-, 1, 2, {{0}}, 0-1",
+						"XX-, 1, 2, {{0;1}{1}}, 0-2",
+						"X-X, 1, 2, {{0;2}{2}}, 0-2",
+						"XXX, 1, 2, {{0;1}{1;2}{2}}, 0-2",
+						"-X-, 1, 2, {{1}}, 0-2",
+						"-XX, 1, 2, {{1;2}{2}}, 0-2",
+						"-XX-, 1, 2, {{1;2}{2}}, 0-3",
+						"-XXX, 1, 2, {{1;2}{2;3}{3}}, 0-3",
+						"XXX-, 1, 2, {{0;1}{1;2}{2}}, 0-3",
+						"--XX, 1, 2, {{2;3}{3}}, 0-3",
+						"XX--, 1, 2, {{0;1}{1}}, 0-3",
+						// Sequence of 2 to 3
+						"X-XX, 2, 3, {{0;2;3}{2;3}}, 0-3",
+						// Sequence of 2 to 4
+						"X-XX, 2, 4, {{0;2;3}{2;3}}, 0-3",
+						"X-XX-X, 2, 4, {{0;2;3;5}{2;3;5}{3;5}}, 0-5",
+
+						"--XXX--XXX--, 4, 5, {{2;3;4;7;8}{3;4;7;8;9}{4;7;8;9}}, 0-11",
+
+						"--XXXXXXXX--, 4, 6, {{2;3;4;5;6;7}{3;4;5;6;7;8}{4;5;6;7;8;9}{5;6;7;8;9}{6;7;8;9}}, 0-11",
+						"--XXXXXXXXX--, 4, 6, {{2;3;4;5;6;7}{3;4;5;6;7;8}{4;5;6;7;8;9}{5;6;7;8;9;10}{6;7;8;9;10}{7;8;9;10}}, 0-12",
+					})
+					@DisplayName("Node with a bounded multiplicity [greedy mode, multiple hits, discontinuous]")
+					void testGreedyDiscontinuous(String target, int min, int max,
+							@IntMatrixArg int[][] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeGreedy(min, max, DISCONTINUOUS)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hitsForSet(target, EQUALS_X))
+									.results(hits.length, (r, i) -> r.map(NODE_0, hits[i]))
 						);
 					}
 
 					@ParameterizedTest(name="{index}: <{1}..{2}>[X] in {0}")
 					@CsvSource({
-						"-, 1, 1, 0, {-}",
-						"Y, 1, 1, 0, {-}",
-						"-Y, 2, 3, 0, {-}",
-						"-Y-, 2, 3, 0-1, {-}",
-						"X-X, 2, 3, 0-1, {0}",
-						"X-X-, 2, 3, 0-3, {0;2}",
-						"XX-XX-X, 3, 5, 0-5, {0-1;3-4}",
+						"-, 1, 1, 0",
+						"Y, 1, 1, 0",
+						"-X, 2, 3, 0",
+						"-X-, 2, 3, 0-2",
+						"X-X, 2, 3, 0-1",
+						"X-X-, 2, 3, 0-3",
+						"XX-XX-X, 3, 5, 0-5",
 					})
 					@DisplayName("Mismatch with a bounded multiplicity [greedy mode]")
 					void testGreedyFail(String target, int min, int max,
-							@IntervalArg Interval visited,
-							@IntervalArrayArg Interval[] candidates) {
+							@IntervalArg Interval visited) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangeGreedy(min, max)
+										rangeGreedy(min, max, CONTINUOUS)
 										)
 								).build(),
 								mismatch()
@@ -5904,101 +6685,130 @@ class SequencePatternTest {
 									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited)
-											.hits(candidates))
+											.hits(target, visited, EQUALS_X))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}^>[X] in {0}")
+					@CsvSource({
+						"-, 1, 1, 0",
+						"Y, 1, 1, 0",
+						"-X, 2, 3, 0",
+						"-X-, 2, 3, 0-2",
+						"X-X, 3, 4, 0-2",
+						"X-X-, 3, 3, 0-3",
+					})
+					@DisplayName("Mismatch with a bounded multiplicity [greedy mode, discontinuous]")
+					void testGreedyFailDiscontinuous(String target, int min, int max,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeGreedy(min, max, DISCONTINUOUS)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(target, visited, EQUALS_X))
 						);
 					}
 
 					@ParameterizedTest(name="{index}: <{3}..{4}>[x|X][{1}] in {0}, adjacent={2}")
 					@CsvSource({
 						// Optional, ordered
-						"x, x, false, 0, 1, -, 0, 0, 0, 0",
-						"y, y, false, 0, 1, -, 0, -, 0, 0",
-						"-x, x, false, 0, 1, -, 1, -, 0, 0-1",
-						"--x, x, false, 0, 2, -, 2, -, 0, 0-2",
-						"-y, y, false, 0, 1, -, 1, -, 0, 0-1",
-						"Xx, x, false, 0, 1, 0, 1, 0, 0, 1",
-						"xy, y, false, 0, 1, 0, 1, 0, 0, 1",
-						"xy, y, false, 0, 2, 0, 1, 0, 0-1, 1",
+						"x, x, false, 0, 1, -, 0, 0, 0",
+						"y, y, false, 0, 1, -, 0, 0, 0",
+						"-x, x, false, 0, 1, -, 1, 0, 0-1",
+						"--x, x, false, 0, 2, -, 2, 0, 0-2",
+						"-y, y, false, 0, 1, -, 1, 0, 0-1",
+						"Xx, x, false, 0, 1, {0}, 1, 0, 1",
+						"xy, y, false, 0, 1, {0}, 1, 0, 1",
+						"xy, y, false, 0, 2, {0}, 1, 0-1, 1",
 						// Optional, adjacent
-						"x, x, true, 0, 1, -, 0, 0, 0, 0",
-						"y, y, true, 0, 1, -, 0, -, 0, 0",
-						"-x, x, true, 0, 1, -, 1, 1, 0-1, 0-1",
-						"-y, y, true, 0, 1, -, 1, -, 0-1, 0-1",
-						"xy, y, true, 0, 1, 0, 1, 0, 0, 1",
-						"xy, y, true, 0, 2, 0, 1, 0, 0-1, 1",
+						"x, x, true, 0, 1, -, 0, 0, 0",
+						"y, y, true, 0, 1, -, 0, 0, 0",
+						"-x, x, true, 0, 1, -, 1, 0-1, 0-1",
+						"-y, y, true, 0, 1, -, 1, 0-1, 0-1",
+						"xy, y, true, 0, 1, {0}, 1, 0, 1",
+						"xy, y, true, 0, 2, {0}, 1, 0-1, 1",
 						// Expansion of size 1 to 2, ordered
-						"Xx, x, false, 1, 2, 0, 1, 0-1, 0-1, 1",
-						"XXx, x, false, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"XXxx, x, false, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"XXx-, x, false, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"-XXx, x, false, 1, 2, 1-2, 3, 1-2, 0-2, 3",
-						"-XXx-, x, false, 1, 2, 1-2, 3, 1-2, 0-2, 3",
-						"XxX, x, false, 1, 2, 0, 1, 0-1, 0-1, 1-2",
-						"XxX-, x, false, 1, 2, 0, 1, 0-1, 0-1, 1-3",
-						"XxXx-, x, false, 1, 2, 0-1, 3, 0-1, 0-1, 2-3",
-						"-XxX, x, false, 1, 2, 1, 2, 1-2, 0-2, 2-3",
-						"-XxX-, x, false, 1, 2, 1, 2, 1-2, 0-2, 2-4",
+						"Xx, x, false, 1, 2, {0}, 1, 0-1, 1",
+						"XXx, x, false, 1, 2, {0;1}, 2, 0-1, 2",
+						"XXxx, x, false, 1, 2, {0;1}, 2, 0-1, 2",
+						"XXx-, x, false, 1, 2, {0;1}, 2, 0-1, 2",
+						"-XXx, x, false, 1, 2, {1;2}, 3, 0-2, 3",
+						"-XXx-, x, false, 1, 2, {1;2}, 3, 0-2, 3",
+						"XxX, x, false, 1, 2, {0}, 1, 0-1, 1-2",
+						"XxX-, x, false, 1, 2, {0}, 1, 0-1, 1-3",
+						"XxXx-, x, false, 1, 2, {0;1}, 3, 0-1, 2-3",
+						"-XxX, x, false, 1, 2, {1}, 2, 0-2, 2-3",
+						"-XxX-, x, false, 1, 2, {1}, 2, 0-2, 2-4",
 						// Expansion of size 1 to 2, adjacent
-						"Xx, x, true, 1, 2, 0, 1, 0-1, 0-1, 1",
-						"XXx, x, true, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"XXxx, x, true, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"XxX, x, true, 1, 2, 0, 1, 0-1, 0-1, 1-2",
-						"XxXx-, x, true, 1, 2, 0, 1, 0-1, 0-1, 1-2",
+						"Xx, x, true, 1, 2, {0}, 1, 0-1, 1",
+						"XXx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"XXxx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"XxX, x, true, 1, 2, {0}, 1, 0-1, 1-2",
+						"XxXx-, x, true, 1, 2, {0}, 1, 0-1, 1-2",
 						// Expansion of size 1 to 3, ordered
-						"XXx, x, false, 1, 3, 0-1, 2, 0-2, 0-2, 2",
-						"XXXx, x, false, 1, 3, 0-2, 3, 0-2, 0-2, 3",
-						"XXXxx, x, false, 1, 3, 0-2, 3, 0-2, 0-2, 3",
-						"XXX-x, x, false, 1, 3, 0-2, 4, 0-2, 0-2, 3-4",
-						"XXxX, x, false, 1, 3, 0-1, 2, 0-2, 0-2, 2-3",
-						"XXxX-, x, false, 1, 3, 0-1, 2, 0-2, 0-2, 2-4",
-						"-XXxX, x, false, 1, 3, 1-2, 3, 1-3, 0-3, 3-4",
-						"-XXxX-, x, false, 1, 3, 1-2, 3, 1-3, 0-3, 3-5",
+						"XXx, x, false, 1, 3, {0;1}, 2, 0-2, 2",
+						"XXXx, x, false, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"XXXxx, x, false, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"XXX-x, x, false, 1, 3, {0;1;2}, 4, 0-2, 3-4",
+						"XXxX, x, false, 1, 3, {0;1}, 2, 0-2, 2-3",
+						"XXxX-, x, false, 1, 3, {0;1}, 2, 0-2, 2-4",
+						"-XXxX, x, false, 1, 3, {1;2}, 3, 0-3, 3-4",
+						"-XXxX-, x, false, 1, 3, {1;2}, 3, 0-3, 3-5",
 						// Expansion of size 1 to 3, adjacent
-						"XXx, x, true, 1, 3, 0-1, 2, 0-2, 0-2, 2",
-						"XXXx, x, true, 1, 3, 0-2, 3, 0-2, 0-2, 3",
-						"XXxX, x, true, 1, 3, 0-1, 2, 0-2, 0-2, 2-3",
-						"XXxX-, x, true, 1, 3, 0-1, 2, 0-2, 0-2, 2-3",
-						"-XXxX, x, true, 1, 3, 1-2, 3, 1-3, 0-3, 3-4",
-						"-XXxX-, x, true, 1, 3, 1-2, 3, 1-3, 0-3, 3-4",
+						"XXx, x, true, 1, 3, {0;1}, 2, 0-2, 2",
+						"XXXx, x, true, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"XXxX, x, true, 1, 3, {0;1}, 2, 0-2, 2-3",
+						"XXxX-, x, true, 1, 3, {0;1}, 2, 0-2, 2-3",
+						"-XXxX, x, true, 1, 3, {1;2}, 3, 0-3, 3-4",
+						"-XXxX-, x, true, 1, 3, {1;2}, 3, 0-3, 3-4",
 						// Consume first target for second node, ordered
-						"XxXxX, x, false, 2, 10, 0-2, 3, 0-4, 0-4, 3-4",
-						"XxXxX-, x, false, 2, 10, 0-2, 3, 0-4, 0-5, 3-5",
-						"XxXxX-x, x, false, 2, 10, 0-4, 6, 0-4, 0-5, 5-6",
-						"-XxXxX, x, false, 2, 10, 1-3, 4, 1-5, 0-5, 4-5",
-						"-XxXxX-, x, false, 2, 10, 1-3, 4, 1-5, 0-6, 4-6",
-						"-XxXxX-x, x, false, 2, 10, 1-5, 7, 1-5, 0-6, 6-7",
+						"XxXxX, x, false, 1, 10, {0;1;2}, 3, 0-4, 3-4",
+						"XxXxX, x, false, 2, 10, {0;1;2}, 3, 0-4, 3-4",
+						"XxXxX-, x, false, 2, 10, {0;1;2}, 3, 0-5, 3-5",
+						"XxXxX-x, x, false, 2, 10, {0;1;2;3;4}, 6, 0-5, 5-6",
+						"-XxXxX, x, false, 2, 10, {1;2;3}, 4, 0-5, 4-5",
+						"-XxXxX-, x, false, 2, 10, {1;2;3}, 4, 0-6, 4-6",
+						"-XxXxX-x, x, false, 2, 10, {1;2;3;4;5}, 7, 0-6, 6-7",
 						// Consume first target for second node, adjacent
-						"XxXxX, x, true, 2, 10, 0-2, 3, 0-4, 0-4, 3-4",
-						"XxXxX-, x, true, 2, 10, 0-2, 3, 0-4, 0-5, 3-5",
-						"XxXxX-x, x, true, 2, 10, 0-2, 3, 0-4, 0-5, 3-5",
-						"-XxXxX, x, true, 2, 10, 1-3, 4, 1-5, 0-5, 4-5",
-						"-XxXxX-, x, true, 2, 10, 1-3, 4, 1-5, 0-6, 4-6",
-						"-XxXxX-x, x, true, 2, 10, 1-3, 4, 1-5, 0-6, 4-6",
+						"XxXxX, x, true, 1, 10, {0;1;2}, 3, 0-4, 3-4",
+						"XxXxX, x, true, 2, 10, {0;1;2}, 3, 0-4, 3-4",
+						"XxXxX-, x, true, 2, 10, {0;1;2}, 3, 0-5, 3-5",
+						"XxXxX-x, x, true, 2, 10, {0;1;2}, 3, 0-5, 3-5",
+						"-XxXxX, x, true, 2, 10, {1;2;3}, 4, 0-5, 4-5",
+						"-XxXxX-, x, true, 2, 10, {1;2;3}, 4,  0-6, 4-6",
+						"-XxXxX-x, x, true, 2, 10, {1;2;3}, 4, 0-6, 4-6",
 						// Greediness, adjacent
-						"xx, x, true, 1, 2, 0, 1, 0-1, 0-1, 1",
-						"Xxx, x, true, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"Xxx, x, true, 1, 3, 0-1, 2, 0-2, 0-2, 2",
-						"Xxxx, x, true, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"Xxxx, x, true, 1, 3, 0-2, 3, 0-2, 0-2, 3",
-						"Xxxx, x, true, 1, 4, 0-2, 3, 0-3, 0-3, 3",
-						"Xxxx-, x, true, 1, 2, 0-1, 2, 0-1, 0-1, 2",
-						"Xxxx-, x, true, 1, 3, 0-2, 3, 0-2, 0-2, 3",
-						"Xxxx-, x, true, 1, 4, 0-2, 3, 0-3, 0-3, 3-4",
-						"Xxxx-, x, true, 1, 5, 0-2, 3, 0-3, 0-4, 3-4",
-						"Xxx, x, true, 2, 3, 0-1, 2, 0-2, 0-2, 2",
-						"Xxxx, x, true, 2, 3, 0-2, 3, 0-2, 0-2, 3",
-						"Xxxx, x, true, 2, 4, 0-2, 3, 0-3, 0-3, 3",
-						"Xxxx-, x, true, 2, 3, 0-2, 3, 0-2, 0-2, 3",
-						"Xxxx-, x, true, 2, 4, 0-2, 3, 0-3, 0-3, 3-4",
+						"xx, x, true, 1, 2, {0}, 1, 0-1, 1",
+						"Xxx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"Xxx, x, true, 1, 3, {0;1}, 2, 0-2, 2",
+						"Xxxx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"Xxxx, x, true, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx, x, true, 1, 4, {0;1;2}, 3, 0-3, 3",
+						"Xxxx-, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"Xxxx-, x, true, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx-, x, true, 1, 4, {0;1;2}, 3, 0-3, 3-4",
+						"Xxxx-, x, true, 1, 5, {0;1;2}, 3, 0-4, 3-4",
+						"Xxx, x, true, 2, 3, {0;1}, 2, 0-2, 2",
+						"Xxxx, x, true, 2, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx, x, true, 2, 4, {0;1;2}, 3, 0-3, 3",
+						"Xxxx-, x, true, 2, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx-, x, true, 2, 4, {0;1;2}, 3, 0-3, 3-4",
 					})
 					@DisplayName("verify greedy expansion with multiple nodes [limited]")
 					void testGreedyCompetition(String target,
 							char c2,
 							boolean adjacent,
 							int min, int max, // arguments for 'Range' marker
-							@IntervalArg Interval hits1, // reported hits for first node
+							@IntArrayArg int[] hits1, // reported hits for first node
 							int hit2, // reported hit for second node
-							@IntervalArg Interval candidates, // cached hits for first node
 							@IntervalArg Interval visited1, // all slots visited for first node
 							@IntervalArg Interval visited2) { // all slots visited for second node
 						/*
@@ -6010,7 +6820,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(set(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), rangeGreedy(min, max)),
+												constraint(ic_exp('X'))), rangeGreedy(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
@@ -6023,7 +6833,157 @@ class SequencePatternTest {
 									.cache(cache(CACHE_1, false)
 											.window(target)
 											.set(visited1)
-											.hits(candidates))
+											.hits(target, visited1, EQUALS_X_IC))
+									.result(result(0)
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{3}..{4}^>[x|X][{1}] in {0}, adjacent={2}")
+					@CsvSource({
+						// Optional, ordered
+						"x, x, false, 0, 1, -, 0, 0, 0",
+						"y, y, false, 0, 1, -, 0, 0, 0",
+						"-x, x, false, 0, 1, -, 1, 0, 0-1",
+						"--x, x, false, 0, 2, -, 2, 0, 0-2",
+						"-y, y, false, 0, 1, -, 1, 0, 0-1",
+						"x-y, y, false, 0, 1, {0}, 2, 0, 1-2",
+						"Xx, x, false, 0, 1, {0}, 1, 0, 1",
+						"xy, y, false, 0, 1, {0}, 1, 0, 1",
+						"xy, y, false, 0, 2, {0}, 1, 0-1, 1",
+						// Optional, adjacent
+						"x, x, true, 0, 1, -, 0, 0, 0",
+						"y, y, true, 0, 1, -, 0, 0, 0",
+						"-x, x, true, 0, 1, -, 1, 0-1, 0-1",
+						"-y, y, true, 0, 1, -, 1, 0-1, 0-1",
+						"xy, y, true, 0, 1, {0}, 1, 0, 1",
+						"xy, y, true, 0, 2, {0}, 1, 0-1, 1",
+						// Expansion of size 1 to 2, ordered
+						"Xx, x, false, 1, 2, {0}, 1, 0-1, 1",
+						"XXx, x, false, 1, 2, {0;1}, 2, 0-1, 2",
+						"X-x, x, false, 1, 2, {0}, 2, 0-2, 1-2",
+						"X-xx, x, false, 1, 2, {0;2}, 3, 0-2, 3",
+						"X-xxx, x, false, 1, 2, {0;2}, 3, 0-2, 3",
+						"X-x-x, x, false, 1, 2, {0;2}, 4, 0-2, 3-4",
+						"XXxx, x, false, 1, 2, {0;1}, 2, 0-1, 2",
+						"XXx-, x, false, 1, 2, {0;1}, 2, 0-1, 2",
+						"-XXx, x, false, 1, 2, {1;2}, 3, 0-2, 3",
+						"-XXx-, x, false, 1, 2, {1;2}, 3, 0-2, 3",
+						"XxX, x, false, 1, 2, {0}, 1, 0-1, 1-2",
+						"XxX-, x, false, 1, 2, {0}, 1, 0-1, 1-3",
+						"XxXx-, x, false, 1, 2, {0;1}, 3, 0-1, 2-3",
+						"-XxX, x, false, 1, 2, {1}, 2, 0-2, 2-3",
+						"-XxX-, x, false, 1, 2, {1}, 2, 0-2, 2-4",
+						// Expansion of size 1 to 2, adjacent
+						"Xx, x, true, 1, 2, {0}, 1, 0-1, 1",
+						"XXx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"X-xx, x, true, 1, 2, {0;2}, 3, 0-2, 3",
+						"X-xxx, x, true, 1, 2, {0;2}, 3, 0-2, 3",
+						"XXxx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"XxX, x, true, 1, 2, {0}, 1, 0-1, 1-2",
+						"XxXx-, x, true, 1, 2, {0}, 1, 0-1, 1-2",
+						// Expansion of size 1 to 3, ordered
+						"XXx, x, false, 1, 3, {0;1}, 2, 0-2, 2",
+						"XXXx, x, false, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"XXXxx, x, false, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"XXX-x, x, false, 1, 3, {0;1;2}, 4, 0-2, 3-4",
+						"XXxX, x, false, 1, 3, {0;1}, 2, 0-2, 2-3",
+						"XXxX-, x, false, 1, 3, {0;1}, 2, 0-2, 2-4",
+						"-XXxX, x, false, 1, 3, {1;2}, 3, 0-3, 3-4",
+						"-XXxX-, x, false, 1, 3, {1;2}, 3, 0-3, 3-5",
+						"X-x, x, false, 1, 3, {0}, 2, 0-2, 1-2",
+						"X-xx, x, false, 1, 3, {0;2}, 3, 0-3, 3",
+						"X-xx-, x, false, 1, 3, {0;2}, 3, 0-3, 3-4",
+						"X-xxx, x, false, 1, 3, {0;2;3}, 4, 0-3, 4",
+						"X-xxx-, x, false, 1, 3, {0;2;3}, 4, 0-3, 4",
+						"X-x-x, x, false, 1, 3, {0;2}, 4, 0-4, 3-4",
+						"X-x-x-x, x, false, 1, 3, {0;2;4}, 6, 0-4, 5-6",
+						// Expansion of size 1 to 3, adjacent
+						"XXx, x, true, 1, 3, {0;1}, 2, 0-2, 2",
+						"XXXx, x, true, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"XXxX, x, true, 1, 3, {0;1}, 2, 0-2, 2-3",
+						"XXxX-, x, true, 1, 3, {0;1}, 2, 0-2, 2-3",
+						"-XXxX, x, true, 1, 3, {1;2}, 3, 0-3, 3-4",
+						"-XXxX-, x, true, 1, 3, {1;2}, 3, 0-3, 3-4",
+						"X-xx, x, true, 1, 3, {0;2}, 3, 0-3, 3",
+						"X-xx-, x, true, 1, 3, {0;2}, 3, 0-3, 3-4",
+						"X-xxx, x, true, 1, 3, {0;2;3}, 4, 0-3, 4",
+						"X-xxx-, x, true, 1, 3, {0;2;3}, 4, 0-3, 4",
+						"X-x-xx, x, true, 1, 3, {0;2;4}, 5, 0-4, 5",
+						// Consume first target for second node, ordered
+						"XxXxX, x, false, 1, 10, {0;1;2}, 3, 0-4, 3-4",
+						"X-xXxX, x, false, 1, 10, {0;2;3}, 4, 0-5, 4-5",
+						"X-xX-xX, x, false, 1, 10, {0;2;3}, 5, 0-6, 4-6",
+						"XxXxX, x, false, 2, 10, {0;1;2}, 3, 0-4, 3-4",
+						"X-xXxX, x, false, 2, 10, {0;2;3}, 4, 0-5, 4-5",
+						"X-xX-xX, x, false, 2, 10, {0;2;3}, 5, 0-6, 4-6",
+						"XxXxX-, x, false, 2, 10, {0;1;2}, 3, 0-5, 3-5",
+						"XxXxX-x, x, false, 2, 10, {0;1;2;3;4}, 6, 0-6, 5-6",
+						"-XxXxX, x, false, 2, 10, {1;2;3}, 4, 0-5, 4-5",
+						"-XxXxX-, x, false, 2, 10, {1;2;3}, 4, 0-6, 4-6",
+						"-XxXxX-x, x, false, 2, 10, {1;2;3;4;5}, 7, 0-7, 6-7",
+						// Consume first target for second node, adjacent
+						"XxXxX, x, true, 1, 10, {0;1;2}, 3, 0-4, 3-4",
+						"Xx-XxX, x, true, 1, 10, {0;1;3}, 4, 0-5, 4-5",
+						"Xx-Xx-X, x, true, 1, 10, {0;1;3}, 4, 0-6, 4-5",
+						"XxXxX, x, true, 2, 10, {0;1;2}, 3, 0-4, 3-4",
+						"Xx-XxX, x, true, 2, 10, {0;1;3}, 4, 0-5, 4-5",
+						"Xx-Xx-X, x, true, 2, 10, {0;1;3}, 4, 0-6, 4-5",
+						"XxXxX-, x, true, 2, 10, {0;1;2}, 3, 0-5, 3-5",
+						"XxXxX-x, x, true, 2, 10, {0;1;2}, 3, 0-6, 3-5",
+						"-XxXxX, x, true, 2, 10, {1;2;3}, 4, 0-5, 4-5",
+						"-XxXxX-, x, true, 2, 10, {1;2;3}, 4,  0-6, 4-6",
+						"-XxXxX-x, x, true, 2, 10, {1;2;3}, 4, 0-7, 4-6",
+						// Greediness, adjacent
+						"xx, x, true, 1, 2, {0}, 1, 0-1, 1",
+						"Xxx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"Xxx, x, true, 1, 3, {0;1}, 2, 0-2, 2",
+						"Xxxx, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"Xxxx, x, true, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx, x, true, 1, 4, {0;1;2}, 3, 0-3, 3",
+						"Xxxx-, x, true, 1, 2, {0;1}, 2, 0-1, 2",
+						"Xxxx-, x, true, 1, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx-, x, true, 1, 4, {0;1;2}, 3, 0-3, 3-4",
+						"Xxxx-, x, true, 1, 5, {0;1;2}, 3, 0-4, 3-4",
+						"Xxx, x, true, 2, 3, {0;1}, 2, 0-2, 2",
+						"Xxxx, x, true, 2, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx, x, true, 2, 4, {0;1;2}, 3, 0-3, 3",
+						"Xxxx-, x, true, 2, 3, {0;1;2}, 3, 0-2, 3",
+						"Xxxx-, x, true, 2, 4, {0;1;2}, 3, 0-3, 3-4",
+					})
+					@DisplayName("verify greedy expansion with multiple nodes [limited, discontinuous]")
+					void testGreedyCompetitionDiscontinuous(String target,
+							char c2,
+							boolean adjacent,
+							int min, int max, // arguments for 'Range' marker
+							@IntArrayArg int[] hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval visited1, // all slots visited for first node
+							@IntervalArg Interval visited2) { // all slots visited for second node
+						/*
+						 * We expect NODE_1 to visit and greedily consume all the
+						 * X and x slots and then back off until the first x is
+						 * reached for NODE_0.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), rangeGreedy(min, max, DISCONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
+								).limit(1).build(), // we don't need multiple matches for confirmation
+								match(1)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(target, visited1, EQUALS_X_IC))
 									.result(result(0)
 											.map(NODE_1, hits1)
 											.map(NODE_0, hit2))
@@ -6069,7 +7029,61 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangeReluctant(min, max)
+										rangeReluctant(min, max, CONTINUOUS)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}^>[X] in {0}")
+					@CsvSource({
+						// Optional
+						"X, 0, 1, -, -",
+						"XX, 0, 2, -, -",
+
+						"X, 1, 2, 0, 0",
+						"X-, 1, 2, 0, 0",
+						"XX, 1, 2, 0, 0",
+						"-X, 1, 2, 1, 0-1",
+						"XX-, 1, 2, 0, 0",
+						"-XX, 1, 2, 1, 0-1",
+						"-X-, 1, 2, 1, 0-1",
+
+						"XX, 2, 4, 0-1, 0-1",
+						"XX-, 2, 4, 0-1, 0-1",
+						"XXX, 2, 4, 0-1, 0-1",
+						"-XX, 2, 4, 1-2, 0-2",
+						"-XX-, 2, 4, 1-2, 0-2",
+						"-XXX, 2, 4, 1-2, 0-2",
+						"XXX-, 2, 4, 0-1, 0-1",
+						"--XX, 2, 4, 2-3, 0-3",
+						"XX--, 2, 4, 0-1, 0-1",
+
+						"XXX, 3, 4, 0-2, 0-2",
+						"-XXX, 3, 4, 1-3, 0-3",
+						"XXX-, 3, 4, 0-2, 0-2",
+
+						"--XXXXXXXXXX--, 10, 12, 2-11, 0-11",
+						"--XXXXXXXXXXX--, 10, 12, 2-11, 0-11",
+						//TODO complete
+					})
+					@DisplayName("Node with a bounded multiplicity [reluctant mode, single hit, limit, discontinuous]")
+					void testReluctantDiscontinuous(String target, int min, int max,
+							@IntervalArg Interval hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeReluctant(min, max, DISCONTINUOUS)
 										)
 								).limit(1).build(),
 								match(1)
@@ -6103,7 +7117,40 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangeReluctant(min, max)
+										rangeReluctant(min, max, CONTINUOUS)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}?^>[X] in {0}")
+					@CsvSource({
+						// can't test fail on zero-width assertion here
+						"-, 1, 2, 0, -",
+						"Y, 1, 2, 0, -",
+						"-Y, 2, 3, 0, -",
+						"-Y-, 2, 3, 0-1, -",
+						"X, 2, 3, -, -", // early abort of scan
+						"XY, 2, 3, 0-1, 0",
+						"-X, 2, 3, 0, -",
+						"-X-, 2, 3, 0-2, 1",
+						//TODO complete
+					})
+					@DisplayName("Mismatch with a bounded multiplicity [reluctant mode, discontinuous]")
+					void testReluctantFailDiscontinuous(String target, int min, int max,
+							@IntervalArg Interval visited,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeReluctant(min, max, DISCONTINUOUS)
 										)
 								).build(),
 								mismatch()
@@ -6137,7 +7184,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangeReluctant(min, max)
+										rangeReluctant(min, max, CONTINUOUS)
 										)
 								).build(),
 								match(hits.length)
@@ -6147,6 +7194,44 @@ class SequencePatternTest {
 											.set(visited)
 											.hits(hits))
 									.results(NODE_0, hits)
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}?^>[X] in {0}")
+					@CsvSource({
+						"XX, 1, 2, {{0}{1}}, 0-1",
+						"XX-, 1, 2, {{0}{1}}, 0-2",
+						"-XX, 1, 2, {{1}{2}}, 0-2",
+						"-XX-, 1, 2, {{1}{2}}, 0-3",
+						"X-X-, 1, 2, {{0}{2}}, 0-3",
+
+						"XXX, 2, 3, {{0;1}{1;2}}, 0-2",
+						"-XXX, 2, 3, {{1;2}{2;3}}, 0-3",
+						"X-XX, 2, 3, {{0;2}{2;3}}, 0-3",
+						"XX-X, 2, 3, {{0;1}{1;3}}, 0-3",
+						"XXX-, 2, 3, {{0;1}{1;2}}, 0-3",
+						"-XXX-, 2, 3, {{1;2}{2;3}}, 0-4",
+
+						"-XXXX--XXXX-, 2, 4, {{1;2}{2;3}{3;4}{4;7}{7;8}{8;9}{9;10}}, 0-11",
+					})
+					@DisplayName("Node with a bounded multiplicity [reluctant mode, multiple hits, discontinuous]")
+					void testReluctantMultipleDiscontinuous(String target, int min, int max,
+							@IntMatrixArg int[][] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangeReluctant(min, max, DISCONTINUOUS)
+										)
+								).build(),
+								match(hits.length)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.results(hits.length, (r, i) -> r.map(NODE_0, hits[i]))
 						);
 					}
 
@@ -6221,7 +7306,99 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(set(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), rangeReluctant(min, max)),
+												constraint(ic_exp('X'))), rangeReluctant(min, max, CONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).limit(1).build(), // we don't need multiple matches for confirmation
+								match(1)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates1))
+									.result(result(0)
+											.map(NODE_1, hits1)
+											.map(NODE_0, hit2))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{2}-{3}?^>[x|X][x] in {0}, adjacent={1}")
+					@CsvSource({
+						// Optional - ordered
+						"x, false, 0, 1, -, 0, -, 0, -",
+						"-x, false, 0, 1, -, 1, -, 0-1, -",
+						"--x, false, 0, 1, -, 2, -, 0-2, -",
+						// Optional - adjacent
+						"x, true, 0, 1, -, 0, -, 0, -",
+						"-x, true, 0, 1, -, 1, 0, 0-1, -",
+						"--x, true, 0, 1, -, 2, 0-1, 0-2, -",
+						// Expansion of size 1 to 2 - ordered
+						"Xx, false, 1, 2, 0, 1, 0, 1, 0",
+						"XXx, false, 1, 2, 0, 2, 0, 1-2, 0",
+						"XXx-, false, 1, 2, 0, 2, 0, 1-2, 0",
+						"-XXx, false, 1, 2, 1, 3, 0-1, 2-3, 1",
+						"-XXx-, false, 1, 2, 1, 3, 0-1, 2-3, 1",
+						"XxX, false, 1, 2, 0, 1, 0, 1, 0",
+						"XxX-, false, 1, 2, 0, 1, 0, 1, 0",
+						"-XxX, false, 1, 2, 1, 2, 0-1, 2, 1",
+						"-XxX-, false, 1, 2, 1, 2, 0-1, 2, 1",
+						// Expansion of size 1 to 2 - adjacent
+						"Xx, true, 1, 2, 0, 1, 0, 1, 0",
+						"XXx, true, 1, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"XXXx, true, 1, 2, 1-2, 3, 0-2, 1-3, 0-2",
+						"XXx-, true, 1, 2, 0-1, 2, 0-1, 1-2, 0-1",
+						"-XXx, true, 1, 2, 1-2, 3, 0-2, 2-3, 1-2",
+						"-XXx-, true, 1, 2, 1-2, 3, 0-2, 2-3, 1-2",
+						"XxX, true, 1, 2, 0, 1, 0, 1, 0",
+						"XxX-, true, 1, 2, 0, 1, 0, 1, 0",
+						"-XxX, true, 1, 2, 1, 2, 0-1, 2, 1",
+						"-XxX-, true, 1, 2, 1, 2, 0-1, 2, 1",
+						// Expansion of size 2 to 3 - ordered
+						"XXx, false, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"XXXx, false, 2, 3, 0-1, 3, 0-1, 2-3, 0-1",
+						"XXxX, false, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"XXxX-, false, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"-XXxX, false, 2, 3, 1-2, 3, 0-2, 3, 1-2",
+						"-XXxX-, false, 2, 3, 1-2, 3, 0-2, 3, 1-2",
+						// Expansion of size 2 to 3 - adjacent
+						"XXx, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"XXXx, true, 2, 3, 0-2, 3, 0-2, 2-3, 0-2",
+						"XXXXx, true, 2, 3, 1-3, 4, 0-3, 2-4, 0-3",
+						"XXxX, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"XXxX-, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"-XXxX, true, 2, 3, 1-2, 3, 0-2, 3, 1-2",
+						"-XXxX-, true, 2, 3, 1-2, 3, 0-2, 3, 1-2",
+						// Reluctance - adjacent
+						"Xxx, true, 1, 3, 0, 1, 0, 1, 0",
+						"Xxxx, true, 1, 3, 0, 1, 0, 1, 0",
+						"Xxxx-, true, 1, 3, 0, 1, 0, 1, 0",
+						"Xxx, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"Xxxx, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						"Xxxx-, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
+						//TODO complete
+					})
+					@DisplayName("verify reluctant expansion with multiple nodes [limited, discontinuous]")
+					void testReluctantCompetitionDiscontinuous(String target,
+							boolean adjacent,
+							int min, int max, // arguments for 'Range' marker
+							@IntervalArg Interval hits1, // reported hits for first node
+							int hit2, // reported hit for second node
+							@IntervalArg Interval visited1,  // all slots visited for first node
+							@IntervalArg Interval visited2, // all slots visited for second node
+							@IntervalArg Interval candidates1) { // slots marked as true for first node
+						/*
+						 * We expect NODE_1 to only proceed with consumption of slots
+						 * while NODE_0 does not already match the next one.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), rangeReluctant(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
@@ -6244,11 +7421,12 @@ class SequencePatternTest {
 					@Test
 					@DisplayName("verify reluctant expansion with multiple nodes and matches")
 					void testReluctantExpansion() {
+						//TODO add discontinuous counterpart?
 						final String target = "-XXxXXx-";
 						assertResult(target,
 								builder(adjacent(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), rangeReluctant(1, 2)),
+												constraint(ic_exp('X'))), rangeReluctant(1, 2, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								match(4)
@@ -6337,7 +7515,82 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangePossessive(min, max)
+										rangePossessive(min, max, CONTINUOUS)
+										)
+								).limit(1).build(),
+								match(1)
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(hits))
+									.result(result(0)
+											.map(NODE_0, hits))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}!^>[X] in {0}")
+					@CsvSource({
+						"X, 0, 1, {0}, 0",
+						"X-, 0, 1, {0}, 0",
+						"-X, 0, 1, -, 0",
+						"-X-, 0, 1, -, 0",
+
+						"X-, 0, 2, {0}, 0-1",
+						"-X-, 0, 2, -, 0",
+						"XX, 0, 2, {0;1}, 0-1",
+						"XXX, 0, 2, {0;1}, 0-1",
+						"XX-, 0, 2, {0;1}, 0-1",
+						"X-X, 0, 2, {0;2}, 0-2",
+						"-XX-, 0, 2, -, 0",
+						"-XXX, 0, 2, -, 0",
+
+						"XXX, 0, 3, {0;1;2}, 0-2",
+						"XXXX, 0, 3, {0;1;2}, 0-2",
+						"XX-, 0, 3, {0;1}, 0-2",
+						"-XX-, 0, 3, -, 0",
+
+						"X, 1, 2, {0}, 0",
+						"X-, 1, 2, {0}, 0-1",
+						"-X, 1, 2, {1}, 0-1",
+						"XX-, 1, 2, {0;1}, 0-1",
+						"X-X, 1, 2, {0;2}, 0-2",
+						"-XX, 1, 2, {1;2}, 0-2",
+						"-X-, 1, 2, {1}, 0-2",
+
+						"XX, 2, 3, {0;1}, 0-1",
+						"XX-, 2, 3, {0;1}, 0-2",
+						"XXX, 2, 3, {0;1;2}, 0-2",
+						"-XX, 2, 3, {1;2}, 0-2",
+						"-XX-, 2, 3, {1;2}, 0-3",
+						"-XXX, 2, 3, {1;2;3}, 0-3",
+						"XXX-, 2, 3, {0;1;2}, 0-2",
+						"XXXX, 2, 3, {0;1;2}, 0-2",
+						"XX-X, 2, 3, {0;1;3}, 0-3",
+						"X-XX, 2, 3, {0;2;3}, 0-3",
+						"--XX, 2, 3, {2;3}, 0-3",
+						"XX--, 2, 3, {0;1}, 0-3",
+
+						"XXX, 3, 4, {0;1;2}, 0-2",
+						"XXXX, 3, 4, {0;1;2;3}, 0-3",
+						"XXXX-, 3, 4, {0;1;2;3}, 0-3",
+						"-XXX, 3, 4, {1;2;3}, 0-3",
+						"XXX-, 3, 4, {0;1;2}, 0-3",
+
+						"--XXXXX--, 2, 10, {2;3;4;5;6}, 0-8",
+						"--XXXXXXXXXX--, 2, 10, {2;3;4;5;6;7;8;9;10;11}, 0-11",
+						"--XXXXXXXXXXXX--, 2, 10, {2;3;4;5;6;7;8;9;10;11}, 0-11",
+						//TODO complete
+					})
+					@DisplayName("Node with a bounded multiplicity [possessive mode, single hit, limited, discontinuous]")
+					void testPossessiveDiscontinnuous(String target, int min, int max,
+							@IntArrayArg int[] hits,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangePossessive(min, max, DISCONTINUOUS)
 										)
 								).limit(1).build(),
 								match(1)
@@ -6368,7 +7621,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 										constraint(eq_exp('X'))),
-										rangePossessive(min, max)
+										rangePossessive(min, max, CONTINUOUS)
 										)
 								).build(),
 								mismatch()
@@ -6377,6 +7630,35 @@ class SequencePatternTest {
 											.window(target)
 											.set(visited)
 											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}!^>[X] in {0}")
+					@CsvSource({
+						"-, 1, 2, 0, -",
+						"Y, 1, 2, 0, -",
+						"-Y, 2, 3, 0, -",  // early abort by scan
+						"-Y-, 2, 3, 0-1, -",
+						"X-x-, 2, 3, 0-3, 0",
+						"-X-, 2, 3, 0-2, 1",
+						//TODO complete
+					})
+					@DisplayName("Mismatch with a bounded multiplicity [possessive mode, discontinuous]")
+					void testPossessiveFailDiscontinuous(String target, int min, int max,
+							@IntervalArg Interval visited) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+										constraint(eq_exp('X'))),
+										rangePossessive(min, max, DISCONTINUOUS)
+										)
+								).build(),
+								mismatch()
+									// Underlying cache of atom node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited)
+											.hits(target, visited, EQUALS_X))
 						);
 					}
 
@@ -6403,7 +7685,47 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(ordered(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), rangePossessive(min, max)),
+												constraint(ic_exp('X'))), rangePossessive(min, max, CONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}!^>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 1, 2, 0-1, -, 0-1",
+						"XXX-, 1, 2, 0-3, 2-3, 0-2",
+
+						"Xx, 1, 3, 0-1, -, 0-1",
+						"XXx, 1, 3, 0-2, -, 0-2",
+						"XXX-, 1, 3, 0-3, 3, 0-2",
+						"XXx-, 1, 3, 0-3, 3, 0-2",
+
+						"XXX-, 1, 4, 0-3, 3, 0-2",
+						"XXx-, 1, 4, 0-3, 3, 0-2",
+						"XXXx, 1, 4, 0-3, -, 0-3",
+						//TODO complete
+					})
+					@DisplayName("Mismatch due to possessive consumption [ordered, discontinuous]")
+					void testPossessiveFail2Discontinuous(String target, int min, int max,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2,
+							@IntervalArg Interval candidates) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(ordered(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), rangePossessive(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
@@ -6436,7 +7758,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(adjacent(
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), rangePossessive(min, max)),
+												constraint(ic_exp('X'))), rangePossessive(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
@@ -6449,6 +7771,43 @@ class SequencePatternTest {
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+						);
+					}
+
+					@ParameterizedTest(name="{index}: <{1}..{2}!^>[X|x][x] in {0}")
+					@CsvSource({
+						"Xx, 1, 2, 0-1, -",
+						"XXx, 1, 3, 0-2, -",
+						"XXX-, 1, 3, 0-3, 3",
+						"XXx-, 1, 3, 0-3, 3",
+						"X-Xx-, 1, 3, 0-4, 4",
+						"XX-x-, 1, 3, 0-4, 4",
+						"XXx-x, 1, 3, 0-4, 3",
+						"X-Xx-, 2, 3, 0-4, 4",
+						"XX-x-, 2, 3, 0-4, 4",
+						"XXx-x, 2, 3, 0-4, 3",
+					})
+					@DisplayName("Mismatch due to possessive consumption [adjacent, discontinuous]")
+					void testPossessiveFail3Discontinuous(String target, int min, int max,
+							@IntervalArg Interval visited1,
+							@IntervalArg Interval visited2) {
+						// 'Repetition' node sets minSize so that scan can abort early
+						assertResult(target,
+								builder(adjacent(
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), rangePossessive(min, max, DISCONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
+								).build(),
+								mismatch()
+									// Underlying cache of second node
+									.cache(cache(CACHE_0, false)
+											.set(visited2)
+											.window(target))
+									// Underlying cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hits(target, visited1, EQUALS_X_IC))
 						);
 					}
 
@@ -6508,7 +7867,7 @@ class SequencePatternTest {
 						assertResult(target,
 								builder(set(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
-												constraint(ic_exp('X'))), rangePossessive(min, max)),
+												constraint(ic_exp('X'))), rangePossessive(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
@@ -6528,12 +7887,90 @@ class SequencePatternTest {
 						);
 					}
 
+					@ParameterizedTest(name="{index}: <{3}..{4}!^>[x|X][{1}] in {0}, adjacent={2}")
+					@CsvSource({
+						// Optional - ordered
+						"Y, Y, false, 0, 1, {{}}, {0}, {0}, {0}",
+						"-Y, Y, false, 0, 1, {{}{}}, {1;1}, {0-1}, {0-1}",
+						"XY, Y, false, 0, 1, {{0}{}}, {1;1}, {0-1}, {1}",
+						"XXY, Y, false, 0, 1, {{0}{1}{}}, {2;2;2}, {0-2}, {1-2}",
+						"XXY, Y, false, 0, 2, {{0;1}{1}{}}, {2;2;2}, {0-2}, {2}",
+						// Optional - adjacent
+						"Y, Y, true, 0, 1, {{}}, {0}, {0}, {0}",
+						"-Y, Y, true, 0, 1, {{}}, {1}, {0-1}, {0-1}",
+						"XY, Y, true, 0, 1, {{0}{}}, {1;1}, {0-1}, {1}",
+						"XXY, Y, true, 0, 1, {{1}{}}, {2;2}, {0-2}, {1-2}",
+						// Expansion of size 1 to 2 - ordered
+						"XY, Y, false, 1, 2, {{0}}, {1}, {0-1}, {1}",
+						"XXY, Y, false, 1, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						"XX-XX, X, false, 1, 2, {{0;1}{0;1}{1;3}}, {3;4;4}, {0-4}, {2-4}",
+						// Expansion of size 1 to 2 - adjacent
+						"XY, Y, true, 1, 2, {{0}}, {1}, {0-1}, {1}",
+						"XXY, Y, true, 1, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						// Expansion of size 1 to 3 - ordered
+						"XY, Y, false, 1, 3, {{0}}, {1}, {0-1}, {1}",
+						"XXY, Y, false, 1, 3, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						"XXX-X, X, false, 1, 3, {{0;1;2}}, {4}, {0-4}, {3-4}",
+						"XX-XX, X, false, 1, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+						"XX-XX-X, X, false, 1, 3, {{0;1;3}{0;1;3}{1;3;4}}, {4;6;6}, {0-6}, {4-6}",
+						"XXx-x, x, false, 1, 3, {{0;1;2}}, {4}, {0-4}, {3-4}",
+						// Expansion of size 1 to 3 - adjacent
+						"XXY, Y, true, 1, 3, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						"XXXX, X, true, 1, 3, {{0;1;2}}, {3}, {0-3}, {3}",
+						"XX-XX, X, true, 1, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+						// Expansion of size 2 to 3 - ordered
+						"XXX-X, X, false, 2, 3, {{0;1;2}}, {4;}, {0-4}, {3-4}",
+						"XX-XX, X, false, 2, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+						//TODO complete
+					})
+					@DisplayName("verify possessive expansion with multiple nodes")
+					void testPossessiveCompetitionDiscontinuous(String target,
+							char c2, // search symbol for second node
+							boolean adjacent,
+							int min, int max, // arguments for 'Range' marker
+							@IntMatrixArg int[][] hits1, // reported hits for first node
+							@IntervalArrayArg Interval[] hit2, // reported hits for second node
+							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
+							@IntervalArrayArg Interval[] visited2) { // all slots visited for second node
+
+						// Sanity check since we expect symmetric results here
+						assertThat(hits1).as("Different match counts").hasSameSizeAs(hit2);
+
+						/*
+						 * We expect NODE_1 to aggressively consume slots with
+						 * no regards for NODE_0, so that in contrast to reluctant mode
+						 * we will miss some multi-match situations.
+						 * (remember: state machine gets built back to front)
+						 */
+						assertResult(target,
+								builder(set(adjacent,
+										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
+												constraint(ic_exp('X'))), rangePossessive(min, max, DISCONTINUOUS)),
+										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
+								).build(), // we don't need multiple matches for confirmation
+								match(hits1.length)
+									// Cache of second node
+									.cache(cache(CACHE_0, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
+									// Cache of first node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited1)
+											.hitsForSet(target, EQUALS_X_IC))
+									.results(hits1.length, (r,i) -> r
+											.map(NODE_1, hits1[i])
+											.map(NODE_0, hit2[i]))
+						);
+					}
+
 				}
 			}
 		}
 
 		@Nested
-		class ForIqlSequence {
+		class ForIqlSet {
 
 			@DisplayName("no specified node arrangement")
 			@Nested
@@ -7005,15 +8442,15 @@ class SequencePatternTest {
 									)
 							).build(),
 							match(hits1.length>0, hits1.length)
-								.cache(cache(CACHE_0, true)
+								.cache(cache(CACHE_1, true)
 										.window(visited1)
 										.hits(target, EQUALS_X))
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(visited2)
 										.hits(target, EQUALS_Y))
 								.results(hits1.length, (r, i) -> r
-										.map(NODE_0, hits1[i])
-										.map(NODE_1, hits2[i]))
+										.map(NODE_1, hits1[i])
+										.map(NODE_0, hits2[i]))
 							);
 				}
 
@@ -7024,92 +8461,376 @@ class SequencePatternTest {
 
 	/**
 	 * Test family for raw textual queries against full sequences.
+	 *
+	 * <table border="1">
+	 * <tr><th>&nbsp;</th><th>{@link IqlNode node}</th><th>{@link IqlGrouping grouping}</th>
+	 * 		<th>{@link IqlSet set}</th><th>{@link IqlElementDisjunction branch}</th></tr>
+	 * <tr><th>{@link IqlNode node}</th><td>-</td><td>{@link NodeInGrouping X}</td>
+	 * 		<td>{@link NodeInSet X}</td><td>{@link NodeInBranch X}</td></tr>
+	 * <tr><th>{@link IqlGrouping grouping}</th><td>-</td><td></td><td></td><td></td></tr>
+	 * <tr><th>{@link IqlSet set}</th><td>-</td><td></td><td></td><td></td></tr>
+	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td></td><td></td><td></td></tr>
+	 * </table>
+	 *
+	 * Row nested in column.
 	 */
 	@Nested
 	class ForRawQueries {
 
-		@ParameterizedTest(name="{index}: {0} in {1} - limit: {2}")
-		@CsvSource({
-			// Mismatches - ordered
-			"<1+>{[X][Y]}, -, -1, -, -",
-			"<1+>{[X][Y]}, --, -1, -, -",
-
-			// Simple matches - ordered
-			"<1+>{[X][Y]}, XY, -1, {{0}}, {{1}}",
-			"<1+>{[X][Y]}, X-Y, -1, {{0}}, {{2}}",
-
-			// Multiple matches - ordered
-			"<1+>{[X][Y]}, XYXY, 1, {{0;2}}, {{1;3}}",
-			"<1+>{[X][Y]}, XYXY, -1, {{0;2}{2}}, {{1;3}{3}}",
-
-			// Mismatches - adjacent
-			"<1+>{ADJACENT [X][Y]}, -, -1, -, -",
-			"<1+>{ADJACENT [X][Y]}, --, -1, -, -",
-			"<1+>{ADJACENT [X][Y]}, X-Y, -1, -, -",
-
-			// Simple match - adjacent
-			"<1+>{ADJACENT [X][Y]}, XY, -1, {{0}}, {{1}}",
-
-			// Multiple matches - adjacent
-			"<1+>{ADJACENT [X][Y]}, XYXY, 1, {{0}}, {{1}}",
-			// separate matches
-			"<1+>{ADJACENT [X][Y]}, XYXY, -1, {{0;2}{2}}, {{1;3}{3}}",
-			"<1+>{ADJACENT [X][Y]}, XY-XY, -1, {{0;3}{3}}, {{1;4}{4}}",
-			"ADJACENT <1+>{ADJACENT [X][Y]}, XY-XY, -1, {{0}{3}}, {{1}{4}}",
-
-			// Mismatches
-			"<2+>{ADJACENT [X][Y]}, XY, -1, -, -",
-			"<2+>{ADJACENT [X][Y]}, XYX-Y, -1, -, -",
-			"<2+>{ADJACENT [X][Y]}, X-YXY, -1, -, -",
-
-			// Simple (and multiple continuous) matches - adjacent
-			"<2+>{ADJACENT [X][Y]}, XY-XY, -1, -, -",
-			"<2+>{ADJACENT [X][Y]}, XY---XY, -1, -, -",
-			"<2+>{ADJACENT [X][Y]}, XYXY, -1, {{0;2}}, {{1;3}}",
-			"<2+>{ADJACENT [X][Y]}, XYXYXY, -1, {{0;2;4}{2;4}}, {{1;3;5}{3;5}}",
-			"<2+>{ADJACENT [X][Y]}, XYXYXYXY, -1, {{0;2;4;6}{2;4;6}{4;6}}, {{1;3;5;7}{3;5;7}{5;7}}",
-
-			// Multiple discontinuous matches - adjacent
-			"<2+^>{ADJACENT [X][Y]}, XY-XY, -1, {{0;3}}, {{1;4}}",
-			"<2+^>{ADJACENT [X][Y]}, XY---XY, -1, {{0;5}}, {{1;6}}",
-
-			// Nested quantification
-			"<2+>{<2+>[X][Y]}, XYY, -1, -, -",
-			"<2+>{<2+>[X][Y]}, XXY, -1, -, -",
-			"<2+>{<2+>[X][Y]}, XXYXXY, -1, {{0;1;3;4}}, {{2;5}}",
-			"<2+>{<2+>[X][Y]}, XXXXYXXY, -1, {{0;1;2;3;5;6}{1;2;3;5;6}{2;3;5;6}}, {{4;7}{4;7}{4;7}}",
-			"<2+>{<2+>[X][Y]}, XXYXXXXY, -1, {{0;1;3;4;5;6}}, {{2;7}}",
-		})
-		@DisplayName("Repetition of adjacent sequences")
-		void testRepetitionAdjacent(String query, String target, int limit,
-				@IntMatrixArg int[][] hits1, @IntMatrixArg int[][] hits2) {
-			assertResult(target,
-					builder(query, limit).build(),
-					match(hits1.length>0, hits1.length)
-						.results(hits1.length, (r, i) -> r
-								.map(NODE_1, hits1[i])
-								.map(NODE_0, hits2[i]))
-					);
-		}
-
-
-		@ParameterizedTest(name="{index}: {0} in {1} - limit: {2}")
-		@CsvSource({
-			"ADJACENT <3+>{ADJACENT [X][Y]} [Z], "
-		})
-		@DisplayName("Repetition of adjacent sequences")
-		void testComplex(String query, String target, int limit, int matches,
+		private void assertComplex(SequencePattern.Builder builder, String target, int matches,
 				// [node_id][match_id][hits]
 				@IntMatrixArg int[][][] hits) {
+
 			assertResult(target,
-					builder(query, limit).build(),
+					builder.build(),
 					match(matches>0, matches)
+						// Format of 'hits' matrix: [node_id][match_id][hits]
 						.results(matches, (r, i) -> {
-							for(int[][] hit_n: hits ) {
-								r.map(i, hit_n[i]);
+							for(int j = 0; j<hits.length; j++) {
+								int nodeId = hits.length-j-1;
+								r.map(nodeId, hits[j][i]);
 							}
 						})
 					);
+		}
+
+		/**
+		 * {@link IqlNode} nested inside {@link IqlGrouping}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>marker on node</li>
+		 * <li>dummy nodes</li>
+		 * <li>quantifier on node</li>
+		 * <li>multiple nodes</li>
+		 * <li>quantifier on grouping</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
+		@Nested
+		class NodeInGrouping {
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"{[]}, XYZ, 3, { {{0}{1}{2}} } ",
+				"{[][]}, XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }", // not adjacent, so can expand multiple  times
+				"{[][][]}, XYZ, 1, { {{0}} {{1}} {{2}} }",
+			})
+			@DisplayName("grouping of blank node(s)")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				/* Note that "optional reluctant" nodes don't get added to a mapping
+				 * unless the context forces an expansion.
+				 */
+
+				// Pure singular reluctance
+				"{[?]}, X, 1, { {{}} }",
+				"{[?][?]}, X, 1, { {{}} }",
+				"{[?][?]}, XY, 3, { {{}{}{}} {{}{}{}} }",
+
+				// Pure expanded reluctance
+				"{[*]}, X, 1, { {{}} }",
+				"{[*]}, XY, 2, { {{}{}} }",
+				"{[*]}, XYZ, 3, { {{}{}{}} }",
+
+				// Mandatory dummy node with reluctant expansion
+				"{[+]}, X, 1, { {{0}} }",
+				"{[+]}, XY, 2, { {{0}{1}} }",
+				"{[+]}, XYZ, 3, { {{0}{1}{2}} }",
+
+				// Mandatory node with following optional
+				"{[][?]}, XY, 2, { {{0}{1}} {{}{}} }",
+				"{[][?]}, XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+
+				// Mandatory node with following optional expansion
+				"{[][*]}, XY, 2, { {{0}{1}} {{}{}} }",
+				"{[][*]}, XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+
+				// Mandatory node with following dummy node with reluctant expansion
+				"{[][+]}, XY, 1, { {{0}} {{1}} }",
+				"{[][+]}, XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+
+				// Mandatory node after optional
+				"{[?][]}, XY, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"{[?][]}, XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+
+				// Mandatory node after optional expansion
+				"{[*][]}, XY, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"{[*][]}, XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+
+				// Mandatory node after dummy node with reluctant expansion
+				"{[+][]}, XY, 1, { {{0}} {{1}} }",
+				"{[+][]}, XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+
+				// Mandatory nodes surrounding intermediate optional
+				"{[][?][]}, XY, 1, { {{0}} {{}} {{1}} }",
+				"{[][?][]}, XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+
+				// Mandatory nodes surrounding intermediate optional expansion
+				"{[][*][]}, XY, 1, { {{0}} {{}} {{1}} }",
+				"{[][*][]}, XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+
+				// Mandatory nodes surrounding intermediate dummy node with reluctant expansion
+				"{[][+][]}, XY, 0, -",
+				"{[][+][]}, XYZ, 1, { {{0}} {{1}} {{2}} }",
+
+				// Cannot force expansion with non-adjacent sequence, we leave that to the NodeInSet group
+
+				//TODO we assume the "reluctance" property is sufficiently tested in $ForIqlNode$WithQuantifier$AtLeast
+			})
+			@DisplayName("grouping of dummy node(s)")
+			void testDummyNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				//TODO complete
+				"'{[isFirst && isLast, $X]}', X, 1, { {{0}} }",
+				"'{[isFirst && isLast, $X]}', Y, 0, -",
+				"'{[isFirst && isLast, $X]}', XX, 0, -",
+				"'{[isFirst || isLast, $X]}', X, 2, { {{0}{0}} }",
+				"'{[isFirst || isLast, $X]}', XX, 2, { {{0}{1}} }",
+				"'{[isFirst || isLast, $X]}', XXX, 2, { {{0}{2}} }",
+
+				"'{[isAt(2), $X]}', XXX, 1, { {{1}} }",
+				"'{[isAt(2) || isLast, $X]}', XXX, 2, { {{1}{2}} }",
+
+				"'{[isNotAt(2) && isLast, $X]}', XX, 0, -",
+
+				//TODO add some of the other markers for completeness?
+			})
+			@DisplayName("grouping of node(s) with markers")
+			void testMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"{<3+>[$X]}, XX, 0, -",
+				"{<3+>[$X]}, XXX, 1, { {{0;1;2}} }",
+				"{<2+>[$X] <2+>[$Y][$Z]}, XXY, 0, -",
+				"{<2+>[$X] <2+>[$Y][$Z]}, XXYYZ, 1, { {{0;1}} {{2;3}} {{4}} }",
+				"{<2+>[$X] <2+>[$Y][$Z]}, XXXYY-Z, 2, { {{0;1;2}{1;2}} {{3;4}{3;4}} {{6}{6}} }",
+				//TODO complete
+			})
+			@DisplayName("grouping of quantified node(s)")
+			void testQuantifiedNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				//TODO complete
+				"QUERY, TARGET, 5, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("grouping of quantified node(s) with markers")
+			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"<1..3>{[$X][$Y]}, XX, 0, -",
+				"<1..3>{[$X][$Y]}, X-Z, 0, -",
+				"<1..3>{[$X][$Y]}, XY, 1, { {{0}} {{1}} }",
+				"<1..3>{[$X][$Y]}, XYXY, 2, { {{0;2}{2}} {{1;3}{3}} }",
+				"<1..3>{[$X][$Y]}, XY-XY, 2, { {{0}{3}} {{1}{4}} }",
+				"<1..3>{[$X][$Y]}, XY-XY--XY, 3, { {{0}{3}{7}} {{1}{4}{8}} }",
+				"<1..3^>{[$X][$Y]}, XY-XY--XY, 3, { {{0;3;7}{3;7}{7}} {{1;4;8}{4;8}{8}} }",
+				//TODO complete
+			})
+			@DisplayName("quantified grouping of blank nodes")
+			void testQuantifiedGrouping(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				//TODO complete
+				"'<1+>{[isFirst,]}', X, 1, { {{0}} }",
+				"'<1+>{[isFirst,]}', XX, 1, { {{0}} }",
+			})
+			@DisplayName("quantified grouping of nodes with markers")
+			void testQuantifiedGroupingWithMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE).monitor(MONITOR), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				//TODO complete
+				"QUERY, TARGET, 5, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("quantified grouping of quantified nodes with markers")
+			void testQuantifiedGroupingWithQuantifiedNodesWithMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+		}
+
+		/**
+		 * {@link IqlNode} nested inside {@link IqlSet}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>marker on node</li>
+		 * <li>dummy nodes</li>
+		 * <li>quantifier on node</li>
+		 * <li>multiple nodes</li>
+		 * <li>arrangement on set</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
+		@Nested
+		class NodeInSet {
+
+		}
+
+		/**
+		 * {@link IqlNode} nested inside {@link IqlElementDisjunction}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>marker on node</li>
+		 * <li>dummy nodes</li>
+		 * <li>quantifier on node</li>
+		 * <li>multiple nodes</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
+		@Nested
+		class NodeInBranch {
+
+		}
+
+		@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+		@CsvSource({
+			// Mismatches - ordered
+			"<1+>{[$X][$Y]}, -, 0, -",
+			"<1+>{[$X][$Y]}, --, 0, -",
+
+			// Simple matches - ordered
+			"<1+>{[$X][$Y]}, XY, 1, {{{0}}{{1}}}",
+			"<1+>{[$X][$Y]}, X-Y, 1, {{{0}}{{2}}}",
+
+			// Multiple matches - ordered
+			"FIRST <1+>{[$X][$Y]}, XYXY, 1, {{{0;2}}{{1;3}}}",
+			"<1+>{[$X][$Y]}, XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
+
+			// Mismatches - adjacent
+			"<1+>{ADJACENT [$X][$Y]}, -, 0, -",
+			"<1+>{ADJACENT [$X][$Y]}, --, 0, -",
+			"<1+>{ADJACENT [$X][$Y]}, X-Y, 0, -",
+
+			// Simple match - adjacent
+			"<1+>{ADJACENT [$X][$Y]}, XY, 1, {{{0}}{{1}}}",
+
+			// Multiple matches - adjacent
+			"FIRST <1+>{ADJACENT [$X][$Y]}, XYXY, 1, {{{0;2}}{{1;3}}}",
+			// separate matches
+			"<1+>{ADJACENT [$X][$Y]}, XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
+			"<1+>{ADJACENT [$X][$Y]}, XY-XY, 2, {{{0}{3}}{{1}{4}}}",
+			"<1+^>{ADJACENT [$X][$Y]}, XY-XY, 2, {{{0;3}{3}}{{1;4}{4}}}",
+			"ADJACENT <1+>{ADJACENT [$X][$Y]}, XY-XY, 2, {{{0}{3}}{{1}{4}}}",
+
+			// Mismatches
+			"<2+>{ADJACENT [$X][$Y]}, XY, 0, -",
+			"<2+>{ADJACENT [$X][$Y]}, XYX-Y, 0, -",
+			"<2+>{ADJACENT [$X][$Y]}, X-YXY, 0, -",
+
+			// Simple (and multiple continuous) matches - adjacent
+			"<2+>{ADJACENT [$X][$Y]}, XY-XY, 0, -",
+			"<2+>{ADJACENT [$X][$Y]}, XY---XY, 0, -",
+			"<2+>{ADJACENT [$X][$Y]}, XYXY, 1, {{{0;2}}{{1;3}}}",
+			"<2+>{ADJACENT [$X][$Y]}, XYXYXY, 2, {{{0;2;4}{2;4}}{{1;3;5}{3;5}}}",
+			"<2+>{ADJACENT [$X][$Y]}, XYXYXYXY, 3, {{{0;2;4;6}{2;4;6}{4;6}}{{1;3;5;7}{3;5;7}{5;7}}}",
+
+			// Multiple discontinuous matches - adjacent
+			"<2+^>{ADJACENT [$X][$Y]}, XY-XY, 1, {{{0;3}}{{1;4}}}",
+			"<2+^>{ADJACENT [$X][$Y]}, XY---XY, 1, {{{0;5}}{{1;6}}}",
+
+			// Nested quantification
+			"<2+>{<2+>[$X][$Y]}, XYY, 0, -",
+			"<2+>{<2+>[$X][$Y]}, XXY, 0, -",
+			"<2+>{<2+>[$X][$Y]}, XXYXXY, 1, {{{0;1;3;4}}{{2;5}}}",
+			"<2+>{<2+>[$X][$Y]}, XXXXYXXY, 3, {{{0;1;2;3;5;6}{1;2;3;5;6}{2;3;5;6}}{{4;7}{4;7}{4;7}}}",
+			"<2+>{<2+>[$X][$Y]}, XXYXXXXY, 1, {{{0;1;3;4;5;6}}{{2;7}}}",
+
+			// Repetition with follow-up node
+			"ADJACENT <3+>{ADJACENT [$X][$Y]} [$Z], XYXYXYZ, 1, {{{0;2;4}}{{1;3;5}}{{6}}}",
+			// Full adjacency on nested group
+			"<3+>{ADJACENT [$X][$Y]} [$Z], XYXYXYZ, 1, {{{0;2;4}}{{1;3;5}}{{6}}}",
+			// Inner adjacency on nested group
+			"<3+>{ADJACENT [$X][$Y]} [$Z], XYXYXY-Z, 1, {{{0;2;4}}{{1;3;5}}{{7}}}",
+			// Inner adjacency of discontinuous repetition
+			"<3+^>{ADJACENT [$X][$Y]} [$Z], XY-XYXYZ, 1, {{{0;3;5}}{{1;4;6}}{{7}}}",
+			"<3+^>{ADJACENT [$X][$Y]} [$Z], XYXY-XYZ, 1, {{{0;2;5}}{{1;3;6}}{{7}}}",
+			"<3+^>{ADJACENT [$X][$Y]} [$Z], XYXYXY-Z, 1, {{{0;2;4}}{{1;3;5}}{{7}}}",
+			"<3+^>{ADJACENT [$X][$Y]} [$Z], XY-XY-XY-Z, 1, {{{0;3;6}}{{1;4;7}}{{9}}}",
+		})
+		@DisplayName("Repetition of adjacent sequences")
+		void testRepetitionAdjacent(String query, String target, int matches,
+				// [node_id][match_id][hits]
+				@IntMatrixArg int[][][] hits) {
+			assertComplex(builder(expand(query)), target, matches, hits);
+		}
+
+
+		@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+		@CsvSource({
+			"<1+>[$X] or {[$Y] or [$Z]}, XYXXXZY, 7, { {{0}{}{2;3;4}{3;4}{4}{}{}} {{}{1}{}{}{}{}{6}} {{}{}{}{}{}{5}{}} }",
+			"<2+>[$X] or {[$Y] or [$Z]}, XYXXXZY, 5, { {{}{2;3;4}{3;4}{}{}} {{1}{}{}{}{6}} {{}{}{}{5}{}} }",
+		})
+		@DisplayName("Nesting of disjunctions")
+		void testNestedBranches(String query, String target, int matches,
+				// [node_id][match_id][hits]
+				@IntMatrixArg int[][][] hits) {
+			assertComplex(builder(expand(query)), target, matches, hits);
+		}
+
+
+		@Disabled
+		//TODO copy and enable to add further complex tests
+		@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+		@CsvSource({
+			"QUERY, TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+		})
+		@DisplayName("NAME")
+		void test__Template(String query, String target, int matches,
+				// [node_id][match_id][hits]
+				@IntMatrixArg int[][][] hits) {
+			assertComplex(builder(expand(query)), target, matches, hits);
 		}
 	}
 }

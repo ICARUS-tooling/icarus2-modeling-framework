@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -89,10 +90,12 @@ import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
+import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
@@ -327,6 +330,48 @@ public class SequencePattern {
 		final Set<MatchFlag> flags;
 
 		final Monitor monitor;
+		final Function<IqlNode, IqlNode> nodeTransform;
+
+		final Stack<Frame> stack = new ObjectArrayList<>();
+
+		private static class Frame {
+			/** Designates the context as being an atom for inclusion in an outer frame. */
+			private final boolean atom;
+			/** Suffix tail to be hoisted into surrounding frame. {@link SequencePattern#accept} by default. */
+			private Node appendix = accept;
+			/** Begin of the state machine section for this frame. {@link SequencePattern#accept} by default. */
+			private Node start = accept;
+			/** End  of the state machine section for this frame. {@link SequencePattern#accept} by default. */
+			private Node end = accept;
+			/** Number of non-virtual nodes that directly match elements in the target structure. */
+			private int nodes = 0;
+
+			Frame(boolean atom) { this.atom = atom; }
+
+			private Node checkNotDefault(Node n) {
+				checkState("Frame empty", n!=accept);
+				return n;
+			}
+
+			Node appendix() { return appendix; }
+			Node start() { return checkNotDefault(start); }
+			Node end() { return checkNotDefault(end); }
+
+			int nodes() { return nodes; }
+			boolean isSingleton() { return nodes==1; }
+
+			<N extends Node> N push(N node) {
+				requireNonNull(node);
+				if(end==accept) {
+					end = start = node;
+				} else {
+					node.setNext(start);
+					start = node;
+				}
+				nodes++;
+				return node;
+			}
+		}
 
 		SequenceQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
@@ -338,6 +383,17 @@ public class SequencePattern {
 			globalConstraint = builder.getGlobalConstraint();
 
 			monitor = builder.getMonitor();
+			nodeTransform = builder.getNodeTransform();
+		}
+
+		private Frame frame() { return stack.top(); }
+		private Frame startFrame(boolean atom) {
+			Frame frame = new Frame(atom);
+			stack.push(frame);
+			return frame;
+		}
+		private void endFrame(Frame frame) {
+			checkState("Frame stack corrupted", frame==stack.top());
 		}
 
 		private boolean flagSet(MatchFlag flag) { return flags.contains(flag); }
@@ -372,6 +428,10 @@ public class SequencePattern {
 		/** Process single node and link to active sequence */
 		private Node node(IqlNode source) {
 
+			if(nodeTransform!=null) {
+				source = requireNonNull(nodeTransform.apply(source), "Node transformation fail");
+			}
+
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 			final IqlMarker marker = source.getMarker().orElse(null);
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
@@ -380,7 +440,7 @@ public class SequencePattern {
 			/*
 			 * We don't handle markers immediately at the node position they
 			 * appear, but on the first enclosing  explorative node, which
-			 * currently is only the Exhaust node. This way the state machine
+			 * currently are only the Exhaust or Find nodes. This way the state machine
 			 * can properly and early reduce the search space for exploration.
 			 * This also allows us to treat markers on multiple (nested) nodes
 			 * in an ADJACENT sequence as erroneous.
@@ -429,6 +489,7 @@ public class SequencePattern {
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 
 			boolean oldFindOnly = findOnly;
+			//FIXME we need to either adjust the specification or branch here for collections of mixed continuous and discontinuous quantifiers!
 			if(!findOnly && !allowExhaustive(quantifiers)) {
 				findOnly = true;
 			}
@@ -456,7 +517,7 @@ public class SequencePattern {
 		/** Process alternatives and link to active sequence */
 		private Node disjunction(IqlElementDisjunction source) {
 			final List<IqlElement> elements = source.getAlternatives();
-			return branch(elements.size(), i -> process(elements.get(i)));
+			return branch(elements.size(), false, i -> process(elements.get(i)));
 		}
 
 		// INTERNAL HELPERS
@@ -642,8 +703,8 @@ public class SequencePattern {
 			/*
 			 * No matter how complex the potentially pending marker construct is,
 			 * the attached scan will always work with the same tail (at least
-			 * content-wise). Therefore we can use a shared cache and scan node
-			 * for all the branches and save evaluation time.
+			 * content-wise). Therefore we can use a shared scan node
+			 * for all the branches and save graph size.
 			 */
 			Node scan;
 			if(findOnly) {
@@ -652,6 +713,7 @@ public class SequencePattern {
 							"Cannot do backwards scan inside 'find-only' environment");
 				scan = find();
 			} else {
+				//TODO re-evaluate if we can actually use caching when marker is present
 				scan = exhaust(forward, cached ? cache() : UNSET_INT);
 			}
 			pushTail(scan);
@@ -690,7 +752,7 @@ public class SequencePattern {
 				final int intervalIndex = interval(marker);
 				final int count = marker.intervalCount();
 				if(count>1) {
-					return branch(count, i -> clip(intervalIndex+i));
+					return branch(count, false, i -> clip(intervalIndex+i));
 				}
 
 				return clip(intervalIndex);
@@ -727,7 +789,7 @@ public class SequencePattern {
 
 		/** Create branches for disjunctive markers and attach to tail */
 		private Node union(List<IqlMarker> markers) {
-			return branch(markers.size(), i -> marker(markers.get(i)));
+			return branch(markers.size(), false, i -> marker(markers.get(i)));
 		}
 
 		private int cache() { return cacheCount++; }
@@ -817,7 +879,7 @@ public class SequencePattern {
 			return storeReplaceable(new All(id(), atom));
 		}
 
-		private Node branch(int count, IntFunction<Node> atomGen) {
+		private Node branch(int count, boolean stopOnSuccess, IntFunction<Node> atomGen) {
 			List<Node> atoms = new ArrayList<>();
 			BranchConn conn = branchStart();
 			// For consistency we collect branches in reverse order
@@ -826,7 +888,7 @@ public class SequencePattern {
 				branchRestart(conn);
 			}
 			Collections.reverse(atoms);
-			return branchEnd(conn, atoms.toArray(new Node[atoms.size()]));
+			return branchEnd(conn, stopOnSuccess, atoms.toArray(new Node[atoms.size()]));
 		}
 
 		/** Start a branch by placing a fresh {@link BranchConn} as tail */
@@ -836,8 +898,8 @@ public class SequencePattern {
 		private void branchRestart(Node conn) { replaceTail(conn); }
 
 		/** Wrap up branch by replacing tail with new {@link Branch} instance */
-		private Node branchEnd(BranchConn conn, Node...atoms) {
-			final Node branch = storeReplaceable(new Branch(id(), conn, atoms));
+		private Node branchEnd(BranchConn conn, boolean stopOnSuccess, Node...atoms) {
+			final Node branch = storeReplaceable(new Branch(id(), stopOnSuccess, conn, atoms));
 			replaceTail(branch);
 			return branch;
 		}
@@ -905,7 +967,7 @@ public class SequencePattern {
 				return quantify(atom, quantifiers.get(0));
 			} else {
 				// Combine all quantifiers into a branch structure
-				return branch(quantifiers.size(), i -> quantify(atom, quantifiers.get(i)));
+				return branch(quantifiers.size(), false, i -> quantify(atom, quantifiers.get(i)));
 			}
 		}
 
@@ -1307,14 +1369,14 @@ public class SequencePattern {
 	public static class Builder extends AbstractBuilder<Builder, SequencePattern> {
 
 		private IqlElement root;
-		private int id = UNSET_INT;
+		private Integer id;
 		private QueryModifier modifier = QueryModifier.ANY;
-		private long limit = UNSET_LONG;
+		private Long limit;
 		private IqlConstraint filterConstraint;
 		private IqlConstraint globalConstraint;
 		private LaneContext context;
 		private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
-
+		private Function<IqlNode, IqlNode> nodeTransform;
 		private Monitor monitor;
 
 		//TODO add fields for configuring the result buffer
@@ -1322,6 +1384,17 @@ public class SequencePattern {
 		private Builder() { /* no-op */ }
 
 		//TODO add all the setter methods
+
+		@VisibleForTesting
+		Function<IqlNode, IqlNode> getNodeTransform() { return nodeTransform; }
+
+		@VisibleForTesting
+		Builder nodeTransform(Function<IqlNode, IqlNode> nodeTransform) {
+			requireNonNull(nodeTransform);
+			checkState("node transformation already set", this.nodeTransform==null);
+			this.nodeTransform = nodeTransform;
+			return this;
+		}
 
 		public Monitor getMonitor() { return monitor; }
 
@@ -1332,12 +1405,12 @@ public class SequencePattern {
 			return this;
 		}
 
-		public int getId() { return id; }
+		public int getId() { return id==null ? UNSET_INT : id.intValue(); }
 
 		public Builder id(int id) {
 			checkArgument("ID must be positive", id>=0);
-			checkState("ID already set", this.id==UNSET_INT);
-			this.id = id;
+			checkState("ID already set", this.id==null);
+			this.id = Integer.valueOf(id);
 			return this;
 		}
 
@@ -1350,12 +1423,12 @@ public class SequencePattern {
 			return this;
 		}
 
-		public long getLimit() { return limit; }
+		public long getLimit() { return limit==null ? UNSET_LONG : limit.longValue(); }
 
 		public Builder limit(long limit) {
 			checkArgument("limit must be positive", limit>=0);
-			checkState("limit already set", this.limit==UNSET_LONG);
-			this.limit = limit;
+			checkState("limit already set", this.limit==null);
+			this.limit = Long.valueOf(limit);
 			return this;
 		}
 
@@ -1416,7 +1489,7 @@ public class SequencePattern {
 			super.validate();
 
 			checkState("No root element defined", root!=null);
-			checkState("Id not defined", id>=0);
+			checkState("Id not defined", id!=null);
 			checkState("Context not defined", context!=null);
 			checkState("Context is not a lane context", context.isLane());
 		}
@@ -1471,9 +1544,29 @@ public class SequencePattern {
 		}
 	}
 
+	/**
+	 * Utility interface to track actions during an active evaluation process of the
+	 * state machine. Currently this interface relies heavily on exposure of internal
+	 * state information of {@link State} to provide the information needed to properly
+	 * monitor the state machine. In the future we wanna switch that to wrapper interfaces
+	 * that provide a similar level of access without really exposing internal fields/classes.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public interface Monitor {
 		//TODO add callbacks for result dispatch and other events
-		void enterNode(Node node, State state, int pos);
+
+		/** Called when a proper node is entered */
+		default void enterNode(Node node, State state, int pos) {
+			// no-op;
+		}
+
+		/** Called when a successful match is about to be dispatched */
+		//TODO change to an actual wrapper interface that allows deferred access to the internals of State without full exposure
+		default void dispatchResult(State state) {
+			// no-op
+		}
 	}
 
 	/**
@@ -1838,7 +1931,7 @@ public class SequencePattern {
 		@Override
 		boolean match(State state, int pos) {
 			if(monitor!=null) {
-				monitor.enterNode(this, state, pos);
+				monitor.dispatchResult(state);
 			}
 
 			state.dispatchMatch();
@@ -1891,12 +1984,14 @@ public class SequencePattern {
 	static abstract class Clip extends Node {
 		boolean skip = false;
 
-		abstract void intersect(State state);
+		abstract boolean intersect(State state);
 
 		@Override
 		boolean match(State state, int pos) {
 			// Update search interval
-			intersect(state);
+			if(!intersect(state)) {
+				return false;
+			}
 			// Skip ahead if allowed
 			if(skip && pos<state.from) {
 				pos = state.from;
@@ -1914,13 +2009,17 @@ public class SequencePattern {
 		final int from, to;
 
 		Fixed(int from, int to) {
+			checkArgument("Invalid interval begin", from>=0);
+			checkArgument("Invalid interval end", to>=0);
+			checkArgument("Empty interval", from<=to);
 			this.from = from;
 			this.to = to;
 		}
 
 		@Override
-		void intersect(State state) {
+		boolean intersect(State state) {
 			state.reset(from, to);
+			return true;
 		}
 
 		@Override
@@ -1956,8 +2055,8 @@ public class SequencePattern {
 		}
 
 		@Override
-		void intersect(State state) {
-			state.intersect(state.intervals[intervalIndex]);
+		boolean intersect(State state) {
+			return state.intersect(state.intervals[intervalIndex]);
 		}
 
 		@Override
@@ -1992,9 +2091,9 @@ public class SequencePattern {
 		}
 
 		@Override
-		void intersect(State state) {
+		boolean intersect(State state) {
 			Interval ref = state.intervals[intervalIndex];
-			state.intersect(ref.from-shift, ref.to);
+			return state.intersect(ref.from-shift, ref.to);
 		}
 
 		@Override
@@ -2311,6 +2410,12 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
+
+			// Short-cut for zero-width assertion
+			if(optional && pos==state.to+1) {
+				return next.match(state, pos);
+			}
+
     		final int from = state.from;
     		final int to = state.to;
 			final int fence = state.to - minSize + 1;
@@ -2529,10 +2634,12 @@ public class SequencePattern {
 	static final class Branch extends ProperNode {
 		final BranchConn conn;
 		final Node[] atoms;
+		final boolean stopOnSuccess;
 
-		Branch(int id, BranchConn conn, Node...atoms) {
+		Branch(int id, boolean stopOnSuccess, BranchConn conn, Node...atoms) {
 			super(id);
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
+			this.stopOnSuccess = stopOnSuccess;
 			this.atoms = atoms;
 			this.conn = conn;
 		}
@@ -2573,6 +2680,10 @@ public class SequencePattern {
 	                result |= atom.match(state, pos);
 	            }
                 state.reset(from, to);
+
+                if(stopOnSuccess && result) {
+                	break;
+                }
 	        }
 	        return result;
 		}

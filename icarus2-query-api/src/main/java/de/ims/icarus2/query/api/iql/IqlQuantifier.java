@@ -34,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
+import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.Hash.Strategy;
 
 /**
@@ -130,6 +131,44 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,
 					"Unknown quantifier type: "+quantifierType);
 		}
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		ToStringBuilder b = ToStringBuilder.create(this);
+
+		if(quantifierType==null) {
+			b.add("??");
+		} else {
+			b.add(quantifierType.getLabel());
+
+			switch (quantifierType) {
+			case ALL: break;
+
+			case AT_LEAST:
+			case AT_MOST:
+			case EXACT:
+				b.add("value", value.getAsInt());
+				break;
+
+			case RANGE:
+				b.add("min", lowerBound.getAsInt());
+				b.add("max", upperBound.getAsInt());
+				break;
+
+			default:
+				break;
+			}
+		}
+
+		if(quantifierModifier!=null) {
+			b.add(quantifierModifier.getLabel());
+		}
+
+		return b.toString();
 	}
 
 	private OptionalInt _set(int val) {
