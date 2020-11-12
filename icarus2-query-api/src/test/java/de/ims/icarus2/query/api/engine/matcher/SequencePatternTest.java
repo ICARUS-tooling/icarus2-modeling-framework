@@ -8600,8 +8600,8 @@ class SequencePatternTest {
 				//TODO complete
 				"'{[isFirst && isLast, $X]}', X, 1, { {{0}} }",
 				"'{[isFirst && isLast, $X]}', Y, 0, -",
-				"'{[isFirst && isLast, $X]}', XX, 0, -",
-				"'{[isFirst || isLast, $X]}', X, 2, { {{0}{0}} }",
+				"'{[isFirst && isLast, $X]}', XX, 0, -", //TODO intersection of markers fails here
+				"'{[isFirst || isLast, $X]}', X, 2, { {{0}{0}} }", //TODO we need to implement a proper duplicate detection
 				"'{[isFirst || isLast, $X]}', XX, 2, { {{0}{1}} }",
 				"'{[isFirst || isLast, $X]}', XXX, 2, { {{0}{2}} }",
 

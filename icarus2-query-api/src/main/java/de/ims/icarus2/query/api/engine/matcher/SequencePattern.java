@@ -153,6 +153,8 @@ public class SequencePattern {
 		boolean isFinisher() { return true; }
 	};
 
+	static final Supplier<Node> none = () -> accept;
+
 	private final AtomicInteger matcherIdGen = new AtomicInteger(0);
 
 	/** The IQL source of structural constraints for this matcher. */
@@ -296,8 +298,6 @@ public class SequencePattern {
 			}
 		}
 
-		Node head;
-		Node tail = accept;
 		int cacheCount;
 		int bufferCount;
 		int borderCount;
@@ -305,8 +305,8 @@ public class SequencePattern {
 		Supplier<Expression<?>> global;
 		ElementContext context;
 		ExpressionFactory expressionFactory;
-		IqlMarker pendingMarker;
-		int pendingBorder = UNSET_INT;
+//		IqlMarker pendingMarker;
+//		int pendingBorder = UNSET_INT;
 //		/** Keeps track of stacked single nodes between scans */
 //		int offset = 0;
 		boolean findOnly = false;
@@ -335,76 +335,149 @@ public class SequencePattern {
 		final Stack<Frame> stack = new ObjectArrayList<>();
 
 		private static class Frame {
-			/** Designates the context as being an atom for inclusion in an outer frame. */
-			private final boolean atom;
-			/** Suffix tail to be hoisted into surrounding frame. {@link SequencePattern#accept} by default. */
-			private Node appendix = accept;
 			/** Begin of the state machine section for this frame. {@link SequencePattern#accept} by default. */
 			private Node start = accept;
 			/** End  of the state machine section for this frame. {@link SequencePattern#accept} by default. */
 			private Node end = accept;
 			/** Number of non-virtual nodes that directly match elements in the target structure. */
 			private int nodes = 0;
+			/** Designates the context as being an atom for inclusion in an outer frame. */
+//			private final boolean atom;
+			/** Suffix structure to be hoisted into surrounding frame. {@link SequencePattern#accept} by default. */
+			private Node prefix = accept;
+			/** Prefix structure to be hoisted into surrounding frame. {@link SequencePattern#accept} by default. */
+			private Node suffix = accept;
 
-			Frame(boolean atom) { this.atom = atom; }
+//			Frame(boolean atom) { this.atom = atom; }
 
 			private void checkNotEmpty() {
 				checkState("Frame empty", !isEmpty());
 			}
 
-			Node appendix() { return appendix; }
+			Node suffix() { return suffix; }
+			Node prefix() { return prefix; }
 			Node start() { checkNotEmpty(); return start; }
 			Node end() { checkNotEmpty(); return end; }
 
 			int nodes() { return nodes; }
 			boolean isEmpty() { return start==accept; }
 			boolean isSingleton() { return nodes==1; }
-			boolean hasAppendix() { return appendix!=accept; }
+			boolean hasSuffix() { return suffix!=accept; }
+			boolean hasPrefix() { return prefix!=accept; }
 
 			private void checkNotDefault(Node n) {
-				checkState("Generic accept node not supported here", n!=requireNonNull(accept));
+				checkArgument("Generic accept node not supported here", n!=requireNonNull(accept));
+			}
+
+			private void maybeIncNodes(Node n) {
+				if(n instanceof Single || n instanceof Empty) {
+					nodes++;
+				}
+			}
+
+			/** Replaces the inner sequence with the given one */
+			<N extends Node> N replace(N node) {
+				requireNonNull(node);
+				start = node;
+				end = last(node);
+				start = node;
+				maybeIncNodes(node);
+				return node;
 			}
 
 			/** Add given node as head of inner sequence. */
 			<N extends Node> N push(N node) {
 				requireNonNull(node);
 				if(end==accept) {
-					end = start = node;
+					start = node;
+					end = last(node);
 				} else {
-					node.setNext(start);
+					last(node).setNext(start);
 					start = node;
 				}
-				nodes++;
+				maybeIncNodes(node);
 				return node;
 			}
 
 			/** Add given node as tail of inner sequence. */
-			<N extends Node> N pushLast(N node) {
-				requireNonNull(node);
-				if(end==accept) {
-					end = start = node;
-				} else {
-					end.setNext(node);
-					end = node;
-				}
-				nodes++;
-				return node;
-			}
-
-			/** Add given node as head of appendix. */
 			<N extends Node> N append(N node) {
 				requireNonNull(node);
-				node.setNext(appendix);
-				appendix = node;
+				if(end==accept) {
+					start = node;
+					end = last(node);
+				} else {
+					end.setNext(node);
+					end = last(node);
+				}
+				maybeIncNodes(node);
 				return node;
 			}
 
-			/** Add other frame as tail to this one. */
-			void merge(Frame tail) {
-				requireNonNull(tail);
-				if(tail.hasAppendix()) {
-
+			/** Add given node as tail of suffix. */
+			<N extends Node> N suffix(N node) {
+				requireNonNull(node);
+				if(suffix==accept) {
+					suffix = node;
+				} else {
+					last(suffix).setNext(node);
 				}
+				return node;
+			}
+
+			/** Add given node as head of prefix. */
+			<N extends Node> N prefix(N node) {
+				requireNonNull(node);
+				node.setNext(prefix);
+				prefix = node;
+				return node;
+			}
+
+			/** Prepends the prefix if present and appends the suffix if present. */
+			void collapse() {
+				checkNotEmpty();
+				if(hasPrefix()) {
+					last(prefix).setNext(start);
+					start = prefix;
+					prefix = accept;
+				}
+				if(hasSuffix()) {
+					end.setNext(suffix);
+					end = last(suffix);
+					suffix = accept;
+				}
+			}
+
+			private void replace(Frame other) {
+				prefix = other.prefix;
+				suffix = other.suffix;
+				start = other.start;
+				end = other.end;
+				nodes = other.nodes;
+			}
+
+			/**
+			 * Add other frame as head to this one (if this is empty, replace all content instead):
+			 * <p>
+			 * Append other's prefix if present.
+			 * Push other's suffix if present and this is empty.
+			 * Push other's content.
+			 */
+			void push(Frame other) {
+				requireNonNull(other);
+				if(isEmpty()) {
+					replace(other);
+					return;
+				}
+
+				if(other.hasPrefix()) {
+					checkState("Prefix already set - no clear merge rule available", !hasPrefix());
+					prefix(other.prefix());
+				}
+				if(other.hasSuffix()) {
+					push(other.suffix());
+				}
+				push(other.start());
+				nodes += other.nodes();
 			}
 		}
 
@@ -421,47 +494,47 @@ public class SequencePattern {
 			nodeTransform = builder.getNodeTransform();
 		}
 
-		private Frame frame() { return stack.top(); }
-		private Frame startFrame(boolean atom) {
-			Frame frame = new Frame(atom);
-			stack.push(frame);
-			return frame;
-		}
-		private void endFrame(Frame frame) {
-			checkState("Frame stack corrupted", frame==stack.top());
+//		private Frame frame() { return stack.top(); }
+//		private Frame startFrame(boolean atom) {
+//			Frame frame = new Frame(atom);
+//			stack.push(frame);
+//			return frame;
+//		}
+//		private void endFrame(Frame frame) {
+//			checkState("Frame stack corrupted", frame==stack.top());
+//		}
+
+		/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
+		private static Node last(Node n) {
+			while(n.next!=null && n.next!=accept) {
+				n = n.next;
+			}
+			return n;
 		}
 
 		private boolean flagSet(MatchFlag flag) { return flags.contains(flag); }
 
-		/** Process element and link to active sequence */
-		private Node process(IqlElement source) {
-			Node node;
-
+		/** Process element as independent frame */
+		private Frame process(IqlElement source) {
 			switch (source.getType()) {
-			case GROUPING: node = grouping((IqlGrouping) source); break;
-			case SET: node = sequence((IqlSet) source); break;
-			case NODE: node = node((IqlNode) source); break;
+			case GROUPING: return grouping((IqlGrouping) source);
+			case SET: return sequence((IqlSet) source);
+			case NODE: return node((IqlNode) source);
 			// Only disjunction inherits the 'adjacency' property from surrounding context
-			case DISJUNCTION: node = disjunction((IqlElementDisjunction) source); break;
+			case DISJUNCTION: return disjunction((IqlElementDisjunction) source);
 
 			default:
 				// We do not support IqlTreeNode and IqlEdge here!!
 				throw EvaluationUtils.forUnsupportedQueryFragment("element", source.getType());
 			}
-
-			//pushTail(node);
-
-			//TODO post-process node?
-
-			return node;
 		}
 
 		// RAW ELEMENT PROCESSING
 
 		//FIXME currently we might distort the legal intervals when shifting them to the left
 
-		/** Process single node and link to active sequence */
-		private Node node(IqlNode source) {
+		/** Process single node */
+		private Frame node(IqlNode source) {
 
 			if(nodeTransform!=null) {
 				source = requireNonNull(nodeTransform.apply(source), "Node transformation fail");
@@ -472,7 +545,7 @@ public class SequencePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 
-			final Frame frame = frame();
+			final Frame frame = new Frame();
 
 			/*
 			 * We don't handle markers immediately at the node position they
@@ -483,20 +556,24 @@ public class SequencePattern {
 			 * in an ADJACENT sequence as erroneous.
 			 */
 			if(marker!=null) {
-				if(pendingMarker!=null)
-					throw new QueryException(QueryErrorCode.INCORRECT_USE,
-							"Unresolved pending marker, this usually happens when using the "
-							+ "'ADJACENT' modifier with multiple marker-bearing nodes. Affected node:\n"
-							+ serialize(source));
+//				if(pendingMarker!=null)
+//					throw new QueryException(QueryErrorCode.INCORRECT_USE,
+//							"Unresolved pending marker, this usually happens when using the "
+//							+ "'ADJACENT' modifier with multiple marker-bearing nodes. Affected node:\n"
+//							+ serialize(source));
 
-				pendingBorder = border();
-				pushTail(border(false, pendingBorder));
-				pendingMarker = marker;
+				int border = border();
+				// Creates the marker window
+				frame.prefix(marker(marker));
+				// Saves the previous window
+				frame.prefix(border(true, border));
+				// Restores previous window
+				frame.suffix(border(false, border));
 			}
 
-			// Process actual node content as detached atom
-			final Node oldTail = detachTail();
 			Node atom;
+
+			// Process actual node content
 			if(constraint==null) {
 				// Dummy nodes don't get added to the "proper nodes" list
 				atom = empty(label);
@@ -514,15 +591,19 @@ public class SequencePattern {
 				expressionFactory = null;
 				context = null;
 			}
-			// Restore old tail after atom
-			attachTail(oldTail);
 
 			// Handle quantifiers
-			return quantify(atom, quantifiers);
+			if(!quantifiers.isEmpty()) {
+				atom = quantify(atom, quantifiers);
+			}
+
+			frame.push(atom);
+
+			return frame;
 		}
 
-		/** Process (quantified) node group and link to active sequence */
-		private Node grouping(IqlGrouping source) {
+		/** Process (quantified) node group */
+		private Frame grouping(IqlGrouping source) {
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 
 			boolean oldFindOnly = findOnly;
@@ -532,18 +613,23 @@ public class SequencePattern {
 			}
 
 			// Make sure to process the group content as a detached atom
-			final Node oldTail = detachTail();
-			final Node head = looseGroup(source.getElements());
-			attachTail(oldTail);
+			final Frame frame = looseGroup(source.getElements());
 
 			findOnly = oldFindOnly;
 
+			// Ensure we don't have any border nodes dangling around
+			if(!frame.isSingleton()) {
+				frame.collapse();
+			}
+
 			// Finally apply quantification
-			return quantify(head, quantifiers);
+			frame.replace(quantify(frame.start(), quantifiers));
+
+			return frame;
 		}
 
 		/** Process (ordered or adjacent) node sequence and link to active sequence */
-		private Node sequence(IqlSet source) {
+		private Frame sequence(IqlSet source) {
 			final List<IqlElement> elements = source.getElements();
 			if(source.getArrangement()==NodeArrangement.ADJACENT) {
 				return adjacentGroup(elements);
@@ -552,9 +638,9 @@ public class SequencePattern {
 		}
 
 		/** Process alternatives and link to active sequence */
-		private Node disjunction(IqlElementDisjunction source) {
+		private Frame disjunction(IqlElementDisjunction source) {
 			final List<IqlElement> elements = source.getAlternatives();
-			return branch(elements.size(), false, i -> process(elements.get(i)));
+			return frame(branch(elements.size(), false, i -> process(elements.get(i))));
 		}
 
 		// INTERNAL HELPERS
@@ -593,59 +679,6 @@ public class SequencePattern {
 			return true;
 		}
 
-		private void maybeCloseMarker() {
-			if(pendingMarker!=null) {
-				marker(pendingMarker);
-				pushTail(border(true, pendingBorder));
-
-				pendingMarker = null;
-				pendingBorder = UNSET_INT;
-			}
-		}
-
-		/** Fetch current tail */
-		private Node tail() { return tail; }
-
-		/** Detach tail if condition is met */
-		private Node detachTail() {
-			return replaceTail(accept);
-		}
-
-		/** Returns true if tail is the {@link SequencePattern#accept} node */
-		private boolean tailDetached() { return tail==accept; }
-
-		/** Re-attaches the given old tail if it is not null */
-		private void attachTail(@Nullable Node oldTail) {
-			if(oldTail != null) replaceTail(oldTail);
-		}
-
-		/** Link node's sequence to tail, set tail to new node and return it */
-		private <N extends Node> N pushTail(N node) {
-			requireNonNull(node);
-			// Need to fetch the last node in the sequence to properly attach tail
-			Node last = last(node);
-			assert last!=tail : "Node's sequence already set as tail: "+node;
-			// Changed to an actual method so that node implementations can perform housekeeping
-			last.setNext(tail);
-			tail = node;
-			return node;
-		}
-
-		/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
-		private Node last(Node n) {
-			while(n.next!=null && n.next!=accept) {
-				n = n.next;
-			}
-			return n;
-		}
-
-		/** Replace tail by node and return old tail */
-		private Node replaceTail(Node node) {
-			final Node oldTail = tail;
-			tail = requireNonNull(node);
-			return oldTail;
-		}
-
 		private int id() { return id++; }
 
 		private <N extends Node> N store(N node) {
@@ -663,6 +696,12 @@ public class SequencePattern {
 				node = new Track(node, monitor);
 			}
 			return node;
+		}
+
+		private Frame frame(Node node) {
+			 Frame frame = new Frame();
+			 frame.push(node);
+			 return frame;
 		}
 
 		private int member(@Nullable String label) {
@@ -735,7 +774,7 @@ public class SequencePattern {
 			return nodeId;
 		}
 
-		/** Attaches a scan to current tail that honors (multiple) intervals */
+		/** Free scan exploration. Depending on context it'll be exhaustive or 'findOnly'. */
 		private Node explore(boolean forward, boolean cached) {
 			/*
 			 * No matter how complex the potentially pending marker construct is,
@@ -753,11 +792,8 @@ public class SequencePattern {
 				//TODO re-evaluate if we can actually use caching when marker is present
 				scan = exhaust(forward, cached ? cache() : UNSET_INT);
 			}
-			pushTail(scan);
 
-			maybeCloseMarker();
-
-			return tail();
+			return scan;
 		}
 
 		/** Create graph for the marker construct and attach to tail. */
@@ -783,13 +819,12 @@ public class SequencePattern {
 
 		}
 
-
 		private Node range(RangeMarker marker) {
 			if(marker.isDynamic()) {
 				final int intervalIndex = interval(marker);
 				final int count = marker.intervalCount();
 				if(count>1) {
-					return branch(count, false, i -> clip(intervalIndex+i));
+					return branch(count, false, i -> frame(clip(intervalIndex+i)));
 				}
 
 				return clip(intervalIndex);
@@ -802,31 +837,31 @@ public class SequencePattern {
 			return fixed(interval.from, interval.to);
 		}
 
-		/** Attach single fixed clip to tail */
+		/** Create single fixed clip */
 		private Fixed fixed(int from, int to) {
-			return pushTail(store(new Fixed(from, to)));
+			return store(new Fixed(from, to));
 		}
 
-		/** Attach single dynamic clip to tail */
+		/** Create single dynamic clip */
 		private DynamicClip clip(int intervalIndex) {
 //			if(shift!=0) {
 //				return new ShiftedClip(intervalIndex);
 //			}
-			return pushTail(store(new DynamicClip(intervalIndex)));
+			return store(new DynamicClip(intervalIndex));
 		}
 
-		/** Attach sequence of intersecting markers to tail */
+		/** Combine sequence of intersecting markers */
 		private Node intersection(List<IqlMarker> markers) {
-			Node node = null;
+			Frame frame = new Frame();
 			for(IqlMarker marker : markers) {
-				node = marker(marker);
+				frame.append(marker(marker));
 			}
-			return node;
+			return frame.start();
 		}
 
-		/** Create branches for disjunctive markers and attach to tail */
+		/** Create branches for disjunctive markers */
 		private Node union(List<IqlMarker> markers) {
-			return branch(markers.size(), false, i -> marker(markers.get(i)));
+			return branch(markers.size(), false, i -> frame(marker(markers.get(i))));
 		}
 
 		private int cache() { return cacheCount++; }
@@ -916,29 +951,23 @@ public class SequencePattern {
 			return storeReplaceable(new All(id(), atom));
 		}
 
-		private Node branch(int count, boolean stopOnSuccess, IntFunction<Node> atomGen) {
+		private Node branch(int count, boolean stopOnSuccess, IntFunction<Frame> atomGen) {
 			List<Node> atoms = new ArrayList<>();
-			BranchConn conn = branchStart();
+			BranchConn conn = store(new BranchConn());
 			// For consistency we collect branches in reverse order
 			for (int i = count-1; i >=0; i--) {
-				atoms.add(atomGen.apply(i));
-				branchRestart(conn);
+				// Might be a complex sub-structure
+				Frame atom = atomGen.apply(i);
+				// Link atom to connection node
+				atom.suffix(conn);
+				// Ensure entire atom is one sequence
+				atom.collapse();
+				atoms.add(atom.start());
 			}
+			// Need to revert order so that priority is preserved
 			Collections.reverse(atoms);
-			return branchEnd(conn, stopOnSuccess, atoms.toArray(new Node[atoms.size()]));
-		}
-
-		/** Start a branch by placing a fresh {@link BranchConn} as tail */
-		private BranchConn branchStart() { return pushTail(store(new BranchConn())); }
-
-		/** Replace tail by given {@link BranchConn} instance */
-		private void branchRestart(Node conn) { replaceTail(conn); }
-
-		/** Wrap up branch by replacing tail with new {@link Branch} instance */
-		private Node branchEnd(BranchConn conn, boolean stopOnSuccess, Node...atoms) {
-			final Node branch = storeReplaceable(new Branch(id(), stopOnSuccess, conn, atoms));
-			replaceTail(branch);
-			return branch;
+			return storeReplaceable(new Branch(id(), stopOnSuccess, conn,
+					atoms.toArray(new Node[atoms.size()])));
 		}
 
 		private Node repetition(Node atom, int cmin, int cmax, int mode, boolean discontinuous) {
@@ -959,29 +988,44 @@ public class SequencePattern {
 		 * Sequential scanning of ordered elements.
 		 * Note that any node but the first in the original
 		 * sequence may receive a scan attached to it.
+		 * The first node in the sequence might have its prefix hoisted.
 		 */
-		private Node looseGroup(List<IqlElement> elements) {
-			Node head = null;
+		private Frame looseGroup(List<IqlElement> elements) {
+			Frame frame = new Frame();
 			// Stack nodes back to front
-			for(int i=elements.size()-1; i>=0; i--) {
-				head = process(elements.get(i));
-				// Any node but the first can receive a scan attached to it
-				if(!head.isScanCapable() && i>0) {
-					boolean cached = needsCacheForScan(head);
-					head = explore(true, cached);
+			int last = elements.size()-1;
+			for(int i=last; i>=0; i--) {
+				Frame step = process(elements.get(i));
+				// Special handling only for subsequent steps
+				if(i>0) {
+					Node head = step.start();
+					// Any node but the first can receive a scan attached to it
+					if(!head.isScanCapable()) {
+						// Cashing will be used either for complex inner structure or intermediate nodes
+						boolean cached = needsCacheForScan(head) || i<last;
+						step.push(explore(true, cached));
+					}
+					// Ensure we don't mix up hoistable content and proactively collapse
+					step.collapse();
 				}
+				// Accumulate steps into single sequence
+				frame.push(step);
 			}
-			return head;
+			return frame;
 		}
 
 		/** Sequential check without scanning */
-		private Node adjacentGroup(List<IqlElement> elements) {
-			Node head = null;
+		private Frame adjacentGroup(List<IqlElement> elements) {
+			Frame frame = new Frame();
 			// Stack nodes back to front
 			for(int i=elements.size()-1; i>=0; i--) {
-				head = process(elements.get(i));
+				Frame step = process(elements.get(i));
+				if(i>0) {
+					step.collapse();
+				}
+				frame.push(step);
 			}
-			return head;
+			return frame;
 		}
 
 		private int mode(IqlQuantifier quantifier) {
@@ -997,18 +1041,18 @@ public class SequencePattern {
 		/** Creates nodes to handle quantification and attaches to sequence */
 		private Node quantify(Node atom, List<IqlQuantifier> quantifiers) {
 			if(quantifiers.isEmpty()) {
-				// No quantification -> use atom as is
-				return pushTail(atom);
+				// No quantification -> nothing to do
+				return atom;
 			} else if(quantifiers.size()==1) {
 				// Singular quantifier -> simple wrapping
 				return quantify(atom, quantifiers.get(0));
 			} else {
 				// Combine all quantifiers into a branch structure
-				return branch(quantifiers.size(), false, i -> quantify(atom, quantifiers.get(i)));
+				return branch(quantifiers.size(), false, i -> frame(quantify(atom, quantifiers.get(i))));
 			}
 		}
 
-		/** Wraps a quantification node around atom and attaches to sequence */
+		/** Wraps a quantification around atoms */
 		private Node quantify(Node atom, IqlQuantifier quantifier) {
 			Node node;
 			if(quantifier.isExistentiallyNegated()) {
@@ -1045,9 +1089,13 @@ public class SequencePattern {
 					throw EvaluationUtils.forUnsupportedQueryFragment("quantifier", quantifier.getQuantifierType());
 				}
 
-				node = repetition(atom, min, max, mode, quantifier.isDiscontinuous());
+				if(min==1 && max==1) {
+					node = atom;
+				} else {
+					node = repetition(atom, min, max, mode, quantifier.isDiscontinuous());
+				}
 			}
-			return pushTail(node);
+			return node;
 		}
 
 		StateMachineSetup createStateMachine() {
@@ -1064,33 +1112,39 @@ public class SequencePattern {
 
 			final boolean disjoint = flagSet(MatchFlag.DISJOINT);
 
-			// Start at the end of the state machine
-			replaceTail(finish(limit, disjoint));
+			//TODO for now we don't honor the 'consumed' flag on IqlElement instances
+			final Frame frame = process(rootElement);
+			// Collapse all actual content before we add special nodes
+			frame.collapse();
 
+			// Global constraints get evaluated after all normal content but before dispatch phase
 			if(globalConstraint != null) {
 				expressionFactory = new ExpressionFactory(rootContext);
 				global = new ExpressionDef(constraint(globalConstraint), rootContext);
 				expressionFactory = null;
-				pushTail(new GlobalConstraint(id()));
+				frame.append(new GlobalConstraint(id()));
 			}
 
-			//TODO for now we don't honor the 'consumed' flag on IqlElement instances
-			Node root = process(rootElement);
-
-			replaceTail(root);
-
 			// Prepare top-level scan if needed
-			if(!root.isScanCapable()) {
-				explore(modifier!=QueryModifier.LAST, false);
+			if(!frame.start().isScanCapable()) {
+				frame.push(explore(modifier!=QueryModifier.LAST, false));
 			}
 
 			// If we need to reset search space after each match, add special Reset node
 			if(disjoint) {
-				pushTail(reset());
+				frame.push(reset());
 			}
 
 			// Add size-based filter
-			root = pushTail(begin());
+			frame.prefix(begin());
+
+			// Add final dispatch bridge
+			frame.suffix(finish(limit, disjoint));
+
+			// Now collapse everything again
+			frame.collapse();
+
+			final Node root = frame.start();
 
 			// Force optimization
 			root.study(new TreeInfo());
@@ -1978,6 +2032,7 @@ public class SequencePattern {
 				state.finished = true;
 			}
 			state.stop = stopAfterMatch || state.finished;
+			state.last = pos;
 
 			return true;
 		}
@@ -2056,7 +2111,7 @@ public class SequencePattern {
 		@Override
 		boolean intersect(State state) {
 			state.reset(from, to);
-			return true;
+			return !state.isEmpty();
 		}
 
 		@Override
@@ -2483,7 +2538,7 @@ public class SequencePattern {
 			int offset0 = info.offset;
 			next.study(info);
 			minSize = info.minSize-minSize0;
-			optional = minSize0==0;
+			optional = minSize==0;
 
 			/* For scanning an optional inner atom behaves similar to a single
 			 * node of size 1, as in either case we are going to scan till the last
