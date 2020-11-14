@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -345,16 +346,32 @@ public class SequencePattern {
 
 		/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
 		private static Node last(Node n) {
+			assert n!=accept : "cannot start with generic accept node";
 			while(n.next!=null && n.next!=accept) {
 				n = n.next;
 			}
 			return n;
 		}
 
+		/** Traverse and return the size of the node's sequence via {@link Node#next}
+		 * till its own actual tail. */
+		private static int length(Node n) {
+			assert n!=accept : "cannot start with generic accept node";
+			int size = 1;
+			while(n.next!=null && n.next!=accept) {
+				n = n.next;
+				size++;
+			}
+			return size;
+		}
+
 		private static enum Flag {
 			/** Signals that the segment is accompanied by a disjunctive marker,
 			 * requiring scans to be moved outside the prefix section. */
 			COMPLEX_MARKER,
+
+			@Deprecated
+			SIMPLE_MARKER,
 			;
 		}
 
@@ -366,6 +383,8 @@ public class SequencePattern {
 			private Node end = accept;
 			/** Number of non-virtual nodes that directly match elements in the target structure. */
 			private int nodes = 0;
+			/** Total number of _any_ kind of nodes in this segment */
+			private int size = 0;
 			/** Optional flags to control state machine construction */
 			private Set<Flag> flags;
 
@@ -379,7 +398,9 @@ public class SequencePattern {
 			boolean isEmpty() { return start==accept; }
 			boolean isSingleton() { return nodes==1; }
 
-			boolean flagSet(Flag flag) { return flags!=null && flags.contains(flag); }
+			int size() { return size; }
+
+			boolean isFlagSet(Flag flag) { return flags!=null && flags.contains(flag); }
 			void setFlag(Flag flag) {
 				if(flags==null) {
 					flags = EnumSet.of(flag);
@@ -414,6 +435,7 @@ public class SequencePattern {
 				end = last(node);
 				start = node;
 				maybeIncNodes(node);
+				size = length(node);
 				return node;
 			}
 
@@ -428,6 +450,7 @@ public class SequencePattern {
 					start = node;
 				}
 				maybeIncNodes(node);
+				size += length(node);
 				return node;
 			}
 
@@ -442,6 +465,7 @@ public class SequencePattern {
 					end = last(node);
 				}
 				maybeIncNodes(node);
+				size += length(node);
 				return node;
 			}
 
@@ -451,6 +475,7 @@ public class SequencePattern {
 				nodes = other.nodes;
 				flags = null;
 				mergeFlags(other);
+				size = other.size;
 			}
 
 			/**
@@ -464,6 +489,7 @@ public class SequencePattern {
 					other.end().setNext(start);
 					start = other.start();
 					nodes += other.nodes();
+					size += other.size;
 					mergeFlags(other);
 				}
 			}
@@ -479,6 +505,7 @@ public class SequencePattern {
 					end.setNext(other.start());
 					end = other.end();
 					nodes += other.nodes();
+					size += other.size;
 					mergeFlags(other);
 				}
 			}
@@ -919,14 +946,27 @@ public class SequencePattern {
 			return store(new DynamicClip(intervalIndex));
 		}
 
+		private static final Comparator<Segment> SEGMENT_COMPLEXITY_ORDER = (s1, s2) -> {
+			if(s1.isFlagSet(Flag.COMPLEX_MARKER)) {
+				if(s2.isFlagSet(Flag.COMPLEX_MARKER)) {
+					// Both complex marker disjunctions -> order by total size
+					return s1.size()-s2.size();
+				}
+				// Complex segments go after simpler ones
+				return 1;
+			}
+			// Per default, we only go by the total size of segments
+			return s1.size()-s2.size();
+		};
+
 		/** Combine sequence of intersecting markers */
 		private Segment intersection(List<IqlMarker> markers) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
-			//TODO collect marker segments into a list and sort so that we do branches later
 			Segment seg = new Segment();
-			for(IqlMarker marker : markers) {
-				seg.append(marker(marker));
-			}
+			markers.stream()
+					.map(this::marker)
+					.sorted(SEGMENT_COMPLEXITY_ORDER)
+					.forEach(seg::append);
 			return seg;
 		}
 
@@ -1205,10 +1245,10 @@ public class SequencePattern {
 				/*
 				 *  If we have complex disjunctive markers, we need to take the
 				 *  expensive route and move them inside the scan. Otherwise we'd
-				 *  create a situation where the marker nodes  "hide" legal search
+				 *  create a situation where the marker nodes "hide" legal search
 				 *  space from the scan and we are missing out on positive matches.
 				 */
-				if(frame.hasPrefix() && frame.prefix().flagSet(Flag.COMPLEX_MARKER)) {
+				if(frame.hasPrefix() && frame.prefix().isFlagSet(Flag.COMPLEX_MARKER)) {
 					frame.collapse();
 				}
 
