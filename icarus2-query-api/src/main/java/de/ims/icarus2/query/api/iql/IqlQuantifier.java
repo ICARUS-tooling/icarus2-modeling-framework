@@ -165,7 +165,7 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		}
 
 		if(quantifierModifier!=null) {
-			b.add(quantifierModifier.getLabel());
+			b.requireSpace().add(quantifierModifier.getLabel());
 		}
 
 		return b.toString();

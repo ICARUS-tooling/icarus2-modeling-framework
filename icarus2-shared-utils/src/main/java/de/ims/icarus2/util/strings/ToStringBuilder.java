@@ -79,7 +79,7 @@ public class ToStringBuilder {
 		buffer = new StringBuilder(50);
 	}
 
-	private ToStringBuilder requireSpace() {
+	public ToStringBuilder requireSpace() {
 		needsSpace = true;
 		return this;
 	}
