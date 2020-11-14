@@ -230,6 +230,8 @@ public class SequencePattern {
 		int bufferCount = 0;
 		/** Total number of border savepoints */
 		int borderCount = 0;
+		/** Total number of gates that prevent duplicate position matching */
+		int gateCount = 0;
 		/** Original referential intervals */
 		Interval[] intervals = {};
 		/** Keeps track of all the proper nodes. Used for monitoring */
@@ -284,6 +286,11 @@ public class SequencePattern {
 				.mapToObj(i -> new int[INITIAL_SIZE])
 				.toArray(int[][]::new);
 		}
+		Gate[] makeGates() {
+			return IntStream.range(0, gateCount)
+				.mapToObj(i -> new Gate())
+				.toArray(Gate[]::new);
+		}
 	}
 
 	/** Utility class for generating the state machine */
@@ -301,6 +308,7 @@ public class SequencePattern {
 		int cacheCount;
 		int bufferCount;
 		int borderCount;
+		int gateCount;
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
 		ElementContext context;
@@ -331,39 +339,63 @@ public class SequencePattern {
 
 		final Monitor monitor;
 		final Function<IqlNode, IqlNode> nodeTransform;
+		final boolean cacheAll;
 
 		final Stack<Frame> stack = new ObjectArrayList<>();
 
-		private static class Frame {
+		/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
+		private static Node last(Node n) {
+			while(n.next!=null && n.next!=accept) {
+				n = n.next;
+			}
+			return n;
+		}
+
+		private static enum Flag {
+			/** Signals that the segment is accompanied by a disjunctive marker,
+			 * requiring scans to be moved outside the prefix section. */
+			COMPLEX_MARKER,
+			;
+		}
+
+		private static class Segment {
+
 			/** Begin of the state machine section for this frame. {@link SequencePattern#accept} by default. */
 			private Node start = accept;
 			/** End  of the state machine section for this frame. {@link SequencePattern#accept} by default. */
 			private Node end = accept;
 			/** Number of non-virtual nodes that directly match elements in the target structure. */
 			private int nodes = 0;
-			/** Designates the context as being an atom for inclusion in an outer frame. */
-//			private final boolean atom;
-			/** Suffix structure to be hoisted into surrounding frame. {@link SequencePattern#accept} by default. */
-			private Node prefix = accept;
-			/** Prefix structure to be hoisted into surrounding frame. {@link SequencePattern#accept} by default. */
-			private Node suffix = accept;
+			/** Optional flags to control state machine construction */
+			private Set<Flag> flags;
 
-//			Frame(boolean atom) { this.atom = atom; }
-
-			private void checkNotEmpty() {
+			void checkNotEmpty() {
 				checkState("Frame empty", !isEmpty());
 			}
 
-			Node suffix() { return suffix; }
-			Node prefix() { return prefix; }
 			Node start() { checkNotEmpty(); return start; }
 			Node end() { checkNotEmpty(); return end; }
-
 			int nodes() { return nodes; }
 			boolean isEmpty() { return start==accept; }
 			boolean isSingleton() { return nodes==1; }
-			boolean hasSuffix() { return suffix!=accept; }
-			boolean hasPrefix() { return prefix!=accept; }
+
+			boolean flagSet(Flag flag) { return flags!=null && flags.contains(flag); }
+			void setFlag(Flag flag) {
+				if(flags==null) {
+					flags = EnumSet.of(flag);
+				} else {
+					flags.add(flag);
+				}
+			}
+
+			private void mergeFlags(Segment other) {
+				if(other.flags!=null) {
+					if(flags==null) {
+						flags = EnumSet.noneOf(Flag.class);
+					}
+					flags.addAll(other.flags);
+				}
+			}
 
 			private void checkNotDefault(Node n) {
 				checkArgument("Generic accept node not supported here", n!=requireNonNull(accept));
@@ -413,46 +445,81 @@ public class SequencePattern {
 				return node;
 			}
 
-			/** Add given node as tail of suffix. */
-			<N extends Node> N suffix(N node) {
-				requireNonNull(node);
-				if(suffix==accept) {
-					suffix = node;
-				} else {
-					last(suffix).setNext(node);
-				}
-				return node;
+			void replace(Segment other) {
+				start = other.start;
+				end = other.end;
+				nodes = other.nodes;
+				flags = null;
+				mergeFlags(other);
 			}
 
-			/** Add given node as head of prefix. */
-			<N extends Node> N prefix(N node) {
-				requireNonNull(node);
-				node.setNext(prefix);
-				prefix = node;
-				return node;
+			/**
+			 * Add other segment as head to this one (if this is empty, replace all content instead).
+			 */
+			void push(Segment other) {
+				requireNonNull(other);
+				if(isEmpty()) {
+					replace(other);
+				} else {
+					other.end().setNext(start);
+					start = other.start();
+					nodes += other.nodes();
+					mergeFlags(other);
+				}
 			}
+
+			/**
+			 * Add other segment as tail to this one (if this is empty, replace all content instead).
+			 */
+			void append(Segment other) {
+				requireNonNull(other);
+				if(isEmpty()) {
+					replace(other);
+				} else {
+					end.setNext(other.start());
+					end = other.end();
+					nodes += other.nodes();
+					mergeFlags(other);
+				}
+			}
+
+			Frame toFrame() {
+				Frame frame = new Frame();
+				frame.replace(this);
+				return frame;
+			}
+		}
+
+		private static class Frame extends Segment {
+			/** Designates the context as being an atom for inclusion in an outer frame. */
+//			private final boolean atom;
+			/** Suffix structure to be hoisted into surrounding frame. */
+			private Segment prefix = null;
+			/** Prefix structure to be hoisted into surrounding frame. */
+			private Segment suffix = null;
+
+			Segment suffix() { if(suffix==null) suffix = new Segment(); return suffix; }
+			Segment prefix() { if(prefix==null) prefix = new Segment(); return prefix; }
+			boolean hasSuffix() { return suffix!=null; }
+			boolean hasPrefix() { return prefix!=null; }
 
 			/** Prepends the prefix if present and appends the suffix if present. */
 			void collapse() {
 				checkNotEmpty();
-				if(hasPrefix()) {
-					last(prefix).setNext(start);
-					start = prefix;
-					prefix = accept;
+				if(prefix!=null) {
+					push(prefix);
+					prefix = null;
 				}
-				if(hasSuffix()) {
-					end.setNext(suffix);
-					end = last(suffix);
-					suffix = accept;
+				if(suffix!=null) {
+					append(suffix);
+					suffix = null;
 				}
 			}
 
 			private void replace(Frame other) {
+				super.replace(other);
 				prefix = other.prefix;
 				suffix = other.suffix;
-				start = other.start;
-				end = other.end;
-				nodes = other.nodes;
 			}
 
 			/**
@@ -471,13 +538,13 @@ public class SequencePattern {
 
 				if(other.hasPrefix()) {
 					checkState("Prefix already set - no clear merge rule available", !hasPrefix());
-					prefix(other.prefix());
+					prefix().push(other.prefix());
 				}
 				if(other.hasSuffix()) {
 					push(other.suffix());
 				}
-				push(other.start());
-				nodes += other.nodes();
+
+				super.push(other);
 			}
 		}
 
@@ -492,6 +559,7 @@ public class SequencePattern {
 
 			monitor = builder.getMonitor();
 			nodeTransform = builder.getNodeTransform();
+			cacheAll = builder.isCacheAll();
 		}
 
 //		private Frame frame() { return stack.top(); }
@@ -503,14 +571,6 @@ public class SequencePattern {
 //		private void endFrame(Frame frame) {
 //			checkState("Frame stack corrupted", frame==stack.top());
 //		}
-
-		/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
-		private static Node last(Node n) {
-			while(n.next!=null && n.next!=accept) {
-				n = n.next;
-			}
-			return n;
-		}
 
 		private boolean flagSet(MatchFlag flag) { return flags.contains(flag); }
 
@@ -564,19 +624,19 @@ public class SequencePattern {
 
 				int border = border();
 				// Creates the marker window
-				frame.prefix(marker(marker));
+				frame.prefix().push(marker(marker));
 				// Saves the previous window
-				frame.prefix(border(true, border));
+				frame.prefix().push(border(true, border)); //TODO implement a way of adding conditional parts of the frame
 				// Restores previous window
-				frame.suffix(border(false, border));
+				frame.suffix().append(border(false, border));
 			}
 
-			Node atom;
+			Segment atom;
 
 			// Process actual node content
 			if(constraint==null) {
 				// Dummy nodes don't get added to the "proper nodes" list
-				atom = empty(label);
+				atom = segment(empty(label));
 			} else {
 				// Full fledged node with local constraints and potentially a member label
 
@@ -586,7 +646,7 @@ public class SequencePattern {
 						.element(source)
 						.build();
 				expressionFactory = new ExpressionFactory(context);
-				atom = single(label, constraint);
+				atom = segment(single(label, constraint));
 				// Reset context
 				expressionFactory = null;
 				context = null;
@@ -623,7 +683,7 @@ public class SequencePattern {
 			}
 
 			// Finally apply quantification
-			frame.replace(quantify(frame.start(), quantifiers));
+			frame.replace(quantify(frame, quantifiers));
 
 			return frame;
 		}
@@ -640,7 +700,7 @@ public class SequencePattern {
 		/** Process alternatives and link to active sequence */
 		private Frame disjunction(IqlElementDisjunction source) {
 			final List<IqlElement> elements = source.getAlternatives();
-			return frame(branch(elements.size(), false, i -> process(elements.get(i))));
+			return branch(elements.size(), false, i -> process(elements.get(i))).toFrame();
 		}
 
 		// INTERNAL HELPERS
@@ -702,6 +762,12 @@ public class SequencePattern {
 			 Frame frame = new Frame();
 			 frame.push(node);
 			 return frame;
+		}
+
+		private Segment segment(Node node) {
+			Segment segment = new Segment();
+			segment.push(node);
+			return segment;
 		}
 
 		private int member(@Nullable String label) {
@@ -776,6 +842,9 @@ public class SequencePattern {
 
 		/** Free scan exploration. Depending on context it'll be exhaustive or 'findOnly'. */
 		private Node explore(boolean forward, boolean cached) {
+
+			cached |= cacheAll;
+
 			/*
 			 * No matter how complex the potentially pending marker construct is,
 			 * the attached scan will always work with the same tail (at least
@@ -797,7 +866,7 @@ public class SequencePattern {
 		}
 
 		/** Create graph for the marker construct and attach to tail. */
-		private Node marker(IqlMarker marker) {
+		private Segment marker(IqlMarker marker) {
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
@@ -819,7 +888,7 @@ public class SequencePattern {
 
 		}
 
-		private Node range(RangeMarker marker) {
+		private Segment range(RangeMarker marker) {
 			if(marker.isDynamic()) {
 				final int intervalIndex = interval(marker);
 				final int count = marker.intervalCount();
@@ -827,14 +896,14 @@ public class SequencePattern {
 					return branch(count, false, i -> frame(clip(intervalIndex+i)));
 				}
 
-				return clip(intervalIndex);
+				return segment(clip(intervalIndex));
 			}
 
 			assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
 
 			final Interval interval = Interval.blank();
 			marker.adjust(new Interval[] {interval}, 0, 1);
-			return fixed(interval.from, interval.to);
+			return segment(fixed(interval.from, interval.to));
 		}
 
 		/** Create single fixed clip */
@@ -851,17 +920,25 @@ public class SequencePattern {
 		}
 
 		/** Combine sequence of intersecting markers */
-		private Node intersection(List<IqlMarker> markers) {
-			Frame frame = new Frame();
+		private Segment intersection(List<IqlMarker> markers) {
+			assert markers.size()>1 : "Need 2+ markers for intersection";
+			//TODO collect marker segments into a list and sort so that we do branches later
+			Segment seg = new Segment();
 			for(IqlMarker marker : markers) {
-				frame.append(marker(marker));
+				seg.append(marker(marker));
 			}
-			return frame.start();
+			return seg;
 		}
 
 		/** Create branches for disjunctive markers */
-		private Node union(List<IqlMarker> markers) {
-			return branch(markers.size(), false, i -> frame(marker(markers.get(i))));
+		private Segment union(List<IqlMarker> markers) {
+			assert markers.size()>1 : "Need 2+ markers for union";
+			final Segment seg = branch(markers.size(), false, i -> marker(markers.get(i)).toFrame());
+			seg.setFlag(Flag.COMPLEX_MARKER);
+			final int gateId = gate();
+			seg.push(filter(true, gateId));
+			seg.append(filter(false, gateId));
+			return seg;
 		}
 
 		private int cache() { return cacheCount++; }
@@ -869,6 +946,8 @@ public class SequencePattern {
 		private int buffer() { return bufferCount++; }
 
 		private int border() { return borderCount++; }
+
+		private int gate() { return gateCount++; }
 
 		private RangeMarker marker(IqlMarkerCall call) {
 			Number[] arguments = IntStream.range(0, call.getArgumentCount())
@@ -925,6 +1004,8 @@ public class SequencePattern {
 		/** Make a utility node that either saves or restores a border point  */
 		private Border border(boolean save, int borderId) { return store(new Border(save, borderId)); }
 
+		private Filter filter(boolean reset, int gateId) { return store(new Filter(reset, gateId)); }
+
 		private Finish finish(long limit, boolean stopAfterMatch) {
 			return store(new Finish(limit, stopAfterMatch, monitor));
 		}
@@ -951,7 +1032,7 @@ public class SequencePattern {
 			return storeReplaceable(new All(id(), atom));
 		}
 
-		private Node branch(int count, boolean stopOnSuccess, IntFunction<Frame> atomGen) {
+		private Segment branch(int count, boolean stopOnSuccess, IntFunction<Frame> atomGen) {
 			List<Node> atoms = new ArrayList<>();
 			BranchConn conn = store(new BranchConn());
 			// For consistency we collect branches in reverse order
@@ -959,15 +1040,15 @@ public class SequencePattern {
 				// Might be a complex sub-structure
 				Frame atom = atomGen.apply(i);
 				// Link atom to connection node
-				atom.suffix(conn);
+				atom.suffix().append(conn);
 				// Ensure entire atom is one sequence
 				atom.collapse();
 				atoms.add(atom.start());
 			}
 			// Need to revert order so that priority is preserved
 			Collections.reverse(atoms);
-			return storeReplaceable(new Branch(id(), stopOnSuccess, conn,
-					atoms.toArray(new Node[atoms.size()])));
+			return segment(storeReplaceable(new Branch(id(), stopOnSuccess, conn,
+					atoms.toArray(new Node[atoms.size()]))));
 		}
 
 		private Node repetition(Node atom, int cmin, int cmax, int mode, boolean discontinuous) {
@@ -991,6 +1072,10 @@ public class SequencePattern {
 		 * The first node in the sequence might have its prefix hoisted.
 		 */
 		private Frame looseGroup(List<IqlElement> elements) {
+			if(elements.size()==1) {
+				return process(elements.get(0));
+			}
+
 			Frame frame = new Frame();
 			// Stack nodes back to front
 			int last = elements.size()-1;
@@ -1002,8 +1087,7 @@ public class SequencePattern {
 					// Any node but the first can receive a scan attached to it
 					if(!head.isScanCapable()) {
 						// Cashing will be used either for complex inner structure or intermediate nodes
-						boolean cached = needsCacheForScan(head) || i<last;
-						step.push(explore(true, cached));
+						step.push(explore(true, needsCacheForScan(head) || i<last));
 					}
 					// Ensure we don't mix up hoistable content and proactively collapse
 					step.collapse();
@@ -1039,16 +1123,16 @@ public class SequencePattern {
 		}
 
 		/** Creates nodes to handle quantification and attaches to sequence */
-		private Node quantify(Node atom, List<IqlQuantifier> quantifiers) {
+		private Segment quantify(Segment atom, List<IqlQuantifier> quantifiers) {
 			if(quantifiers.isEmpty()) {
 				// No quantification -> nothing to do
 				return atom;
 			} else if(quantifiers.size()==1) {
 				// Singular quantifier -> simple wrapping
-				return quantify(atom, quantifiers.get(0));
+				return segment(quantify(atom.start(), quantifiers.get(0)));
 			} else {
 				// Combine all quantifiers into a branch structure
-				return branch(quantifiers.size(), false, i -> frame(quantify(atom, quantifiers.get(i))));
+				return branch(quantifiers.size(), false, i -> frame(quantify(atom.start(), quantifiers.get(i))));
 			}
 		}
 
@@ -1114,6 +1198,23 @@ public class SequencePattern {
 
 			//TODO for now we don't honor the 'consumed' flag on IqlElement instances
 			final Frame frame = process(rootElement);
+
+			// Prepare top-level scan if needed
+			if(!frame.start().isScanCapable()) {
+
+				/*
+				 *  If we have complex disjunctive markers, we need to take the
+				 *  expensive route and move them inside the scan. Otherwise we'd
+				 *  create a situation where the marker nodes  "hide" legal search
+				 *  space from the scan and we are missing out on positive matches.
+				 */
+				if(frame.hasPrefix() && frame.prefix().flagSet(Flag.COMPLEX_MARKER)) {
+					frame.collapse();
+				}
+
+				frame.push(explore(modifier!=QueryModifier.LAST, false));
+			}
+
 			// Collapse all actual content before we add special nodes
 			frame.collapse();
 
@@ -1125,21 +1226,16 @@ public class SequencePattern {
 				frame.append(new GlobalConstraint(id()));
 			}
 
-			// Prepare top-level scan if needed
-			if(!frame.start().isScanCapable()) {
-				frame.push(explore(modifier!=QueryModifier.LAST, false));
-			}
-
 			// If we need to reset search space after each match, add special Reset node
 			if(disjoint) {
 				frame.push(reset());
 			}
 
 			// Add size-based filter
-			frame.prefix(begin());
+			frame.prefix().push(begin());
 
 			// Add final dispatch bridge
-			frame.suffix(finish(limit, disjoint));
+			frame.suffix().append(finish(limit, disjoint));
 
 			// Now collapse everything again
 			frame.collapse();
@@ -1161,6 +1257,7 @@ public class SequencePattern {
 			sm.cacheCount = cacheCount;
 			sm.borderCount = borderCount;
 			sm.bufferCount = bufferCount;
+			sm.gateCount = gateCount;
 			sm.markerPos = markerPos.toIntArray();
 			sm.intervals = intervals.toArray(new Interval[0]);
 			sm.markers = markers.toArray(new RangeMarker[0]);
@@ -1197,6 +1294,8 @@ public class SequencePattern {
 		final Interval[] intervals;
 		/** All the raw markers that produce restrictions on node positions */
 		final RangeMarker[] markers;
+		/** All the gate caches for keeping trck of duplicate matcher positions */
+		final Gate[] gates;
 		/** Positions into 'intervals' to signal what intervals to update for what marker */
 		final int[] markerPos;
 		/** Positions of referential intervals */
@@ -1259,6 +1358,7 @@ public class SequencePattern {
 			caches = setup.makeCaches();
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
+			gates = setup.makeGates();
 
 			intervalRefs = refs(intervals);
 
@@ -1389,6 +1489,9 @@ public class SequencePattern {
 				for (int i = 0; i < caches.length; i++) {
 					caches[i].reset(newSize);
 				}
+				for (int i = 0; i < gates.length; i++) {
+					gates[i].reset(newSize);
+				}
 			}
 			// Now copy container content into our buffer for faster access during matching
 			for (int i = 0; i < size; i++) {
@@ -1469,12 +1572,23 @@ public class SequencePattern {
 		private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 		private Function<IqlNode, IqlNode> nodeTransform;
 		private Monitor monitor;
+		private Boolean cacheAll;
 
 		//TODO add fields for configuring the result buffer
 
 		private Builder() { /* no-op */ }
 
 		//TODO add all the setter methods
+
+		@VisibleForTesting
+		boolean isCacheAll() { return cacheAll==null ? false : cacheAll.booleanValue(); }
+
+		@VisibleForTesting
+		Builder cacheAll(boolean cacheAll) {
+			checkState("'cacheAll' flag already set", this.cacheAll==null);
+			this.cacheAll = Boolean.valueOf(cacheAll);
+			return this;
+		}
 
 		@VisibleForTesting
 		Function<IqlNode, IqlNode> getNodeTransform() { return nodeTransform; }
@@ -1822,6 +1936,56 @@ public class SequencePattern {
 		}
 	}
 
+	static class Gate {
+		/**
+		 * For each slot indicates if it has been visited already.
+		 */
+		boolean[] data = new boolean[INITIAL_SIZE];
+		int min = Integer.MAX_VALUE;
+		int max = Integer.MIN_VALUE;
+
+		Gate() { resetBounds(); }
+
+		void reset(int size) {
+			if(size>=data.length) {
+				data = new boolean[CollectionUtils.growSize(data.length, size)];
+			} else {
+				Arrays.fill(data, 0, size, false);
+			}
+			resetBounds();
+		}
+
+		private void resetBounds() {
+			min = Integer.MAX_VALUE;
+			max = Integer.MIN_VALUE;
+		}
+
+		/** Marks the provided {@code pos} and returns {@code true} iff it was still available. */
+		boolean visit(int pos) {
+			if(data[pos]) {
+				return false;
+			}
+
+			data[pos] = true;
+			if(pos<min) min = pos;
+			if(pos>max) max= pos;
+
+			return true;
+		}
+
+		/** Check if given {@code pos} is still unvisited. */
+		boolean canVisit(int pos) {
+			return !data[pos];
+		}
+
+		void clear() {
+			if(max>=0) {
+				Arrays.fill(data, min, max+1, false);
+			}
+			resetBounds();
+		}
+	}
+
 	static class TreeInfo implements Cloneable {
 		/** Minimum number of elements to be matched by a subtree. */
 		int minSize = 0;
@@ -2095,36 +2259,43 @@ public class SequencePattern {
 			// Continue with actual search
 			return next.match(state, pos);
 		}
-	}
 
-	static final class Fixed extends Clip {
-		final int from, to;
-
-		Fixed(int from, int to) {
-			checkArgument("Invalid interval begin", from>=0);
-			checkArgument("Invalid interval end", to>=0);
-			checkArgument("Empty interval", from<=to);
-			this.from = from;
-			this.to = to;
-		}
-
-		@Override
-		boolean intersect(State state) {
-			state.reset(from, to);
-			return !state.isEmpty();
-		}
-
-		@Override
-		boolean study(TreeInfo info) {
+		void study0(TreeInfo info) {
 			boolean skip0 = info.skip;
 			info.skip = false;
 			next.study(info);
 			skip = info.skip;
 			info.skip = skip0;
 
+			// Cascade skip flag through intersecting markers
+			if(next instanceof Clip) {
+				skip = ((Clip)next).skip;
+			}
+		}
+	}
+
+	static final class Fixed extends Clip {
+		final Interval region;
+
+		Fixed(int from, int to) {
+			checkArgument("Invalid interval begin", from>=0);
+			checkArgument("Invalid interval end", to>=0);
+			checkArgument("Empty interval", from<=to);
+			region = Interval.of(from, to);
+		}
+
+		@Override
+		boolean intersect(State state) {
+			return state.intersect(region);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			study0(info);
+
 			//TODO verify that we don't have impossible interval requirements.
-			info.from = from;
-			info.to = to;
+			info.from = region.from;
+			info.to = region.to;
 
 			return info.deterministic;
 		}
@@ -2132,8 +2303,8 @@ public class SequencePattern {
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this)
-					.add("from", from)
-					.add("to", to)
+					.add("from", region.from)
+					.add("to", region.to)
 					.add("skip", skip)
 					.build();
 		}
@@ -2153,11 +2324,7 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
-			boolean skip0 = info.skip;
-			info.skip = false;
-			next.study(info);
-			skip = info.skip;
-			info.skip = skip0;
+			study0(info);
 
 			return info.deterministic;
 		}
@@ -2233,6 +2400,46 @@ public class SequencePattern {
 			return ToStringBuilder.create(this)
 					.add("save", save)
 					.add("borderId", borderId)
+					.build();
+		}
+
+		/** Delegates to {@link Node#next} node, since er're only a proxy. */
+		@Override
+		boolean isFinisher() { return next.isFinisher(); }
+	}
+
+	/** Either resets a {@link Gate} buffer or checks if a match position is still allowed. */
+	static final class Filter extends Node {
+		final boolean reset;
+		final int gateId;
+		/**
+		 * @param reset
+		 * @param gateId
+		 */
+		public Filter(boolean reset, int gateId) {
+			this.reset = reset;
+			this.gateId = gateId;
+		}
+
+		/** Tries  */
+		@Override
+		boolean match(State state, int pos) {
+			final Gate gate = state.gates[gateId];
+			if(reset) {
+				// Make all slots available again
+				gate.clear();
+			} else if(!gate.visit(pos)) {
+				return false;
+			}
+
+			return next.match(state, pos);
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("reset", reset)
+					.add("gateId", gateId)
 					.build();
 		}
 
@@ -2372,9 +2579,9 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			assert pos==0 : "Universal quantification must cover the entire search space";
+//			assert pos==0 : "Universal quantification must cover the entire search space";
 			//TODO ensure that we actually started at pos==0 ?
-			final int last = state.size-1;
+			final int last = state.to;
 			for (int i = pos; i <= last; i++) {
 				if(!atom.match(state, i)) {
 					return false;
@@ -2387,8 +2594,10 @@ public class SequencePattern {
 		boolean study(TreeInfo info) {
 			//TODO implement a flag in TreeInfo to pass down info to atom nodes that no result mapping is desired
 			info.deterministic = false;
+			info.skip = true;
 			atom.study(info);
-			return false;
+
+			return next.study(info);
 		}
 
 		@Override
