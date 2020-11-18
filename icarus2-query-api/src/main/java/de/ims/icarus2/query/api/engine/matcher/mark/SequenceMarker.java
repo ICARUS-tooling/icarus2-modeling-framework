@@ -63,6 +63,15 @@ public abstract class SequenceMarker {
 		return pos;
 	}
 
+	private static boolean isRelativeOrReverse(Position...positions) {
+		for(Position position : positions) {
+			if(position.isRelative() || position.isReverse()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static enum Name implements StringResource {
 		FIRST("IsFirst", 0) {
 			@Override
@@ -206,7 +215,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsAt(Position position) {
-			super(Name.AT, false, 1);
+			super(Name.AT, position.isReverse(), 1);
 			requireNonNull(position);
 			this.pos = checkNotRelative(position);
 		}
@@ -262,7 +271,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsBefore(Position position) {
-			super(Name.BEFORE, position.isRelative(), 1);
+			super(Name.BEFORE, isRelativeOrReverse(position), 1);
 			this.pos = requireNonNull(position);
 		}
 
@@ -279,7 +288,7 @@ public abstract class SequenceMarker {
 		private final Position start, end;
 
 		IsInside(Position start, Position end) {
-			super(Name.INSIDE, start.isRelative() || end.isRelative(), 1);
+			super(Name.INSIDE, isRelativeOrReverse(start, end), 1);
 			this.start = requireNonNull(start);
 			this.end = requireNonNull(end);
 		}
