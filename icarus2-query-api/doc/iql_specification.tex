@@ -2108,8 +2108,13 @@ ADJACENT [$x:] {[$a:][$b:]} {[$c:][$d:]} [$y:]
 \noindent This would read as ``Find x immediately followed by a, later followed by b+c, later followed by d+y''.
 Note that the adjacency modifier does not apply to the inner sequences a+b and c+d, which are only subject to the implicit order of the sequence declaration.\footnote{An additional \keyword{ORDERED} in each of the groups would make that explicit, but is redundant.}
 The concept of node grouping is especially important for the tree (\ref{sec:tree-constraints}) and graph (\ref{sec:graph-constraints}) constraints introduced below, as by default those do not impose an a priori order of nodes.
-Also note that evaluation of node groupings will not be performed exhaustively if the group has quantifiers assigned to it that allow repetition of the group's content.
+
+Also note that evaluation of node groupings will not be performed exhaustively if the group has quantifiers assigned to it that allow repetition of the group's content or that negate it.\footnote{This means that for instance \query{<1>\{<2+>[\$a:][\$b:]\}} \textbf{will} result in an exhaustive search, since the outer quantifier is merely reinforcing the existential quantification and not resulting in any repetition or optional statements.}
 In such a case the ``internal'' elements will be evaluated in a one-shot evaluation attempt where only the first possible match is counted and then control is returned to the repetition element.
+As a result the following query will only yield a single match for 'aabb', as the second 'b' will not be visited when evaluating the inner elements of the grouping:
+\begin{Verbatim}
+<1+>{<2+>[$a:][$b:]}
+\end{Verbatim}
 
 \subsubsection{Node Sequence}
 \label{sec:node-sequences}
@@ -2404,7 +2409,6 @@ Markers can be freely combined with quantifiers on the same node, with the follo
 \begin{itemize}
 	\item Markers apply to \textbf{all} instances of a node, so they effectively take priority over quantifiers that allow multiple instances of a node to match.
 	\item A node that bears at least one marker is effectively existentially quantified and so it is \textbf{not} possible to combine markers and the \textit{existential negation} quantifier.
-	\item In similar fashion, universal quantification is not compatible with markers of any kind, even if they would allow the entire target sequence as legal index interval.
 \end{itemize}
 
 To illustrate the interaction of quantifiers and markers, consider the example of a node \query{<3..5>[\$x: isInside(1,0.25),]}.
@@ -2412,6 +2416,10 @@ This query requires at least three, but no more than five instances of \member{x
 Evaluated against a sequence of size 10, this query will automatically fail, as the legal interval produced by the marker only provides access to the first two elements of the sequence\footnote{Markers round down to the nearest integer size for relative indices, see \cref{sec:marker-relative}.}.
 A sequence of size 12 is the smallest target that even has a chance of being matched.
 Note however that until the target size for this example reaches 20, the total number of hits for \member{x} will never satisfy the upper bound for the range quantifier, as the marker's index interval won't support enough elements.
+
+\paragraph{Markers and the Universal Quantifier}
+
+\noindent Universal quantification and markers together form a very powerful tool. When applied to the same node, the marker expression specifies the legal range(s) for nodes to appear in and subsequently the universal quantifier will check \textbf{all} those candidates to match against the inner node constraint(s). This allows for structural constrains such as \query{*[\$x: isBefore(5),]} that will check that the first four nodes in the target sequence match \member{x}.
 
 \subsection{Markers in Global Constraints}
 \label{sec:marker-global}
