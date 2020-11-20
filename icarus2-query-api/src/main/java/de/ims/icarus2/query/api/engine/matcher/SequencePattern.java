@@ -746,14 +746,14 @@ public class SequencePattern {
 
 				case AT_MOST:
 				case EXACT:
-					if(quantifier.getValue().getAsInt()>1) {
+					if(quantifier.getValue().getAsInt()!=1) {
 						return false;
 					}
 					break;
 
 				case RANGE:
-					if(quantifier.getLowerBound().getAsInt()>1
-							|| quantifier.getUpperBound().getAsInt()>1) {
+					if(quantifier.getLowerBound().getAsInt()!=1
+							|| quantifier.getUpperBound().getAsInt()!=1) {
 						return false;
 					}
 					break;
@@ -2037,21 +2037,24 @@ public class SequencePattern {
 		boolean deterministic = true;
 		/** Indicates that parts of the input can be skipped. */
 		boolean skip = false;
+		/**
+		 * Size of the current segment between matching 'save' and 'restore' border nodes.
+		 * If no markers are used, this is equal to {@link #minSize}.
+		 */
+		int segmentSize = 0;
 
 		/** Used to track fixed positions or areas. */
 		int from, to;
-		/** Used to track the shift of intervals for preceding nodes */
-		int offset = 0;
 
 		void reset() {
 			minSize = 0;
 			maxSize = 0;
+			segmentSize = 0;
             maxValid = true;
             deterministic = true;
             skip = false;
             from = UNSET_INT;
             to = UNSET_INT;
-            offset = 0;
 		}
 
 		@Override
@@ -2153,7 +2156,7 @@ public class SequencePattern {
 			next.study(info);
 			info.minSize++;
 			info.maxSize++;
-			info.offset++;
+			info.segmentSize++;
 			return info.deterministic;
 		}
 
@@ -2378,42 +2381,6 @@ public class SequencePattern {
 		}
 	}
 
-	/** Interval filter based on shifted intervals in the matcher */
-	@Deprecated
-	static final class ShiftedClip extends Clip {
-		final int intervalIndex;
-		final int shift;
-		ShiftedClip(int intervalIndex, int shift) {
-			this.intervalIndex = intervalIndex;
-			this.shift = Math.abs(shift);
-			checkState("Shift must be positive", this.shift>0);
-		}
-
-		@Override
-		boolean intersect(State state) {
-			Interval ref = state.intervals[intervalIndex];
-			return state.intersect(ref.from-shift, ref.to);
-		}
-
-		@Override
-		boolean study(TreeInfo info) {
-			int offset = info.offset;
-			next.study(info);
-			info.offset = offset;
-			//TODO check if we can skip ahead for the next scan
-			return info.deterministic;
-		}
-
-		@Override
-		public String toString() {
-			return ToStringBuilder.create(this)
-					.add("intervalIndex", intervalIndex)
-					.add("shift", shift)
-					.add("skip", skip)
-					.build();
-		}
-	}
-
 	/** Save- or restore-point for the right interval boundary during marker constructs */
 	static final class Border extends Node {
 		final boolean save;
@@ -2446,6 +2413,21 @@ public class SequencePattern {
 		/** Delegates to {@link Node#next} node, since er're only a proxy. */
 		@Override
 		boolean isFinisher() { return next.isFinisher(); }
+
+		/**
+		 * Adjust the {@link TreeInfo#segmentSize} so that it cuts off at
+		 * segment boundaries dictated by border nodes.
+		 */
+		@Override
+		boolean study(TreeInfo info) {
+			int segL = info.segmentSize;
+			info.segmentSize = 0;
+			next.study(info);
+			if(!save) {
+				info.segmentSize = segL;
+			}
+			return info.deterministic;
+		}
 	}
 
 	/** Either resets a {@link Gate} buffer or checks if a match position is still allowed. */
@@ -2712,7 +2694,7 @@ public class SequencePattern {
 			next.study(info);
 			info.minSize++;
 			info.maxSize++;
-			info.offset++;
+			info.segmentSize++;
 			return info.deterministic;
 		}
 
@@ -2783,10 +2765,9 @@ public class SequencePattern {
 		/** @see Exhaust#study(TreeInfo) */
 		@Override
 		boolean study(TreeInfo info) {
-			int minSize0 = info.minSize;
-			int offset0 = info.offset;
+			int minSize0 = info.segmentSize;
 			next.study(info);
-			minSize = info.minSize-minSize0;
+			minSize = info.segmentSize-minSize0;
 			optional = minSize==0;
 
 			/* For scanning an optional inner atom behaves similar to a single
@@ -2797,7 +2778,6 @@ public class SequencePattern {
 
 			info.deterministic = false;
 			info.skip = true;
-			info.offset = offset0;
 
 			return false;
 		}
@@ -2854,7 +2834,7 @@ public class SequencePattern {
 		private boolean matchForwardUncached(State state, int pos) {
     		final int from = state.from;
     		final int to = state.to;
-			final int fence = state.to - minSize + 1;
+			final int fence = to - minSize + 1;
 
 			boolean result = false;
 
@@ -2880,7 +2860,7 @@ public class SequencePattern {
     		final int from = state.from;
     		final int to = state.to;
 			final Cache cache = state.caches[cacheId];
-			final int fence = state.to - minSize + 1;
+			final int fence = to - minSize + 1;
 
 			boolean result = false;
 
@@ -2928,7 +2908,7 @@ public class SequencePattern {
     		final int to = state.to;
 			boolean result = false;
 
-			for (int i = state.to - minSize + 1; i >= pos && !state.stop; i--) {
+			for (int i = to - minSize + 1; i >= pos && !state.stop; i--) {
 				int scope = state.scope();
 				result |= next.match(state, i);
 				state.reset(scope);
@@ -3011,15 +2991,18 @@ public class SequencePattern {
 		boolean match(State state, int pos) {
     		final int from = state.from;
     		final int to = state.to;
+        	final int scope = state.scope();
     		boolean result = false;
 	        for (int n = 0; n < atoms.length && !state.stop; n++) {
-	        	Node atom = atoms[n];
+	        	final Node atom = atoms[n];
 	        	if (atom==null) {
 	            	// zero-width path
 	                result |= conn.next.match(state, pos);
 	            } else {
 	                result |= atom.match(state, pos);
 	            }
+	        	// Need to reset fully to allow clean restart for each branch
+	        	state.reset(scope);
                 state.reset(from, to);
 
                 if(stopOnSuccess && result) {
@@ -3036,29 +3019,31 @@ public class SequencePattern {
 			info.reset();
 			int minL2 = Integer.MAX_VALUE; // we only operate in int space here anyway
 			int maxL2 = -1;
-			int offset2 = -1;
+			int segL = Integer.MAX_VALUE;
 
 			for (int n = 0; n < atoms.length; n++) {
-				if (atoms[n] != null) {
-					atoms[n].study(info);
+				Node atom = atoms[n];
+				if (atom == null) {
+					continue;
 				}
+				atom.study(info);
 				minL2 = Math.min(minL2, info.minSize);
 				maxL2 = Math.max(maxL2, info.maxSize);
-				offset2 = Math.max(offset2, info.offset);
+				segL = Math.min(segL, info.segmentSize);
 				tmp.maxValid &= info.maxValid;
 				info.reset();
 			}
 
-			tmp.maxSize += minL2;
+			tmp.minSize += minL2;
 			tmp.maxSize += maxL2;
-			tmp.offset += offset2;
+			tmp.segmentSize += segL;
 
 			conn.next.study(info);
 
 			info.minSize += tmp.minSize;
 			info.maxSize += tmp.maxSize;
+			info.segmentSize += tmp.segmentSize;
 			info.maxValid &= tmp.maxValid;
-			info.offset += tmp.offset;
 			info.deterministic = false;
 
 			return false;
@@ -3266,9 +3251,9 @@ public class SequencePattern {
             // Save original info
             int minL = info.minSize;
             int maxL = info.maxSize;
+            int segL = info.segmentSize;
             boolean maxV = info.maxValid;
             boolean detm = info.deterministic;
-            int offset = info.offset;
             info.reset();
 
             if(findAtom==null) {
@@ -3277,13 +3262,17 @@ public class SequencePattern {
             	findAtom.study(info);
             }
 
-            info.offset = info.offset * cmin + offset;
-
             int temp = info.minSize * cmin + minL;
             if (temp < minL) {
                 temp = Integer.MAX_VALUE; // we only operate in int space here anyway
             }
             info.minSize = temp;
+
+            temp = info.segmentSize * cmin + segL;
+            if (temp < minL) {
+                temp = Integer.MAX_VALUE; // we only operate in int space here anyway
+            }
+            info.segmentSize = temp;
 
             if (maxV & info.maxValid) {
                 temp = info.maxSize * cmax + maxL;
