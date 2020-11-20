@@ -96,7 +96,7 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt upperBound = OptionalInt.empty();
 
-	@JsonProperty(IqlProperties.UPPER_BOUND)
+	@JsonProperty(IqlProperties.DISCONTINUOUS)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean discontinuous = false;
 
