@@ -366,7 +366,8 @@ public class SequencePattern {
 		}
 
 		private static enum Flag {
-			/** Signals that the segment is accompanied by a disjunctive marker,
+			/** Signals that the segment is accompanied by a disjunctive marker
+			 * or a marker that produces more than a single interval,
 			 * requiring scans to be moved outside the prefix section. */
 			COMPLEX_MARKER,
 
@@ -375,6 +376,16 @@ public class SequencePattern {
 			;
 		}
 
+		/**
+		 * Utility class for building the state machine.
+		 * Essentially wraps around a sequence of {@link Node} instances
+		 * and keeps track of the number of virtual and non-virtual nodes
+		 * as well as holding special flags to inform processing of
+		 * higher elements in the query.
+		 *
+		 * @author Markus Gärtner
+		 *
+		 */
 		private static class Segment {
 
 			/** Begin of the state machine section for this frame. {@link SequencePattern#accept} by default. */
@@ -470,6 +481,9 @@ public class SequencePattern {
 			}
 
 			void replace(Segment other) {
+				if(other==this) {
+					return;
+				}
 				start = other.start;
 				end = other.end;
 				nodes = other.nodes;
@@ -517,6 +531,14 @@ public class SequencePattern {
 			}
 		}
 
+		/**
+		 * Advanced utility class for constructing the state machine.
+		 * Adds affix support to the basic {@link Segment} class.
+		 * Affixes
+		 *
+		 * @author Markus Gärtner
+		 *
+		 */
 		private static class Frame extends Segment {
 			/** Designates the context as being an atom for inclusion in an outer frame. */
 //			private final boolean atom;
@@ -544,6 +566,9 @@ public class SequencePattern {
 			}
 
 			private void replace(Frame other) {
+				if(other==this) {
+					return;
+				}
 				super.replace(other);
 				prefix = other.prefix;
 				suffix = other.suffix;
@@ -703,11 +728,6 @@ public class SequencePattern {
 			final Frame frame = looseGroup(source.getElements());
 
 			findOnly = oldFindOnly;
-
-			// Ensure we don't have any border nodes dangling around
-			if(!frame.isSingleton()) {
-				frame.collapse();
-			}
 
 			// Finally apply quantification
 			frame.replace(quantify(frame, quantifiers));
@@ -894,25 +914,28 @@ public class SequencePattern {
 
 		/** Create graph for the marker construct and attach to tail. */
 		private Segment marker(IqlMarker marker) {
+			Segment seg;
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				return range(marker(call));
-			}
+				seg = range(marker(call));
+			} break;
 
 			case MARKER_EXPRESSION: {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					return intersection(items);
+					seg = intersection(items);
+				} else {
+					seg = union(items);
 				}
-				return union(items);
-			}
+			} break;
 
 			default:
 				throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
 			}
 
+			return seg;
 		}
 
 		private Segment range(RangeMarker marker) {
@@ -1169,7 +1192,12 @@ public class SequencePattern {
 				return atom;
 			} else if(quantifiers.size()==1) {
 				// Singular quantifier -> simple wrapping
-				return segment(quantify(atom.start(), quantifiers.get(0)));
+				final Node head = atom.start();
+				final Node quant = quantify(head, quantifiers.get(0));
+				if(head==quant) {
+					return atom;
+				}
+				return segment(quant);
 			} else {
 				// Combine all quantifiers into a branch structure
 				return branch(quantifiers.size(), false, i -> frame(quantify(atom.start(), quantifiers.get(i))));
