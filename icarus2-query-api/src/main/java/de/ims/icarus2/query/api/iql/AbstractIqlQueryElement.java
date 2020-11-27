@@ -30,7 +30,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
  * @author Markus Gärtner
  *
  */
-abstract class AbstractIqlQueryElement implements IqlQueryElement {
+public abstract class AbstractIqlQueryElement implements IqlQueryElement {
 
 	// Helper methods for integrity checking
 

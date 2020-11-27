@@ -63,6 +63,8 @@ public enum IqlType {
 	RESULT_INSTRUCTION("ResultInstruction", "res", IqlResultInstruction.class),
 	MARKER_EXPRESSION("MarkerExpression", null, IqlMarker.IqlMarkerExpression.class),
 	MARKER_CALL("MarkerCall", null, IqlMarker.IqlMarkerCall.class),
+
+	DUMMY("Dummy", "dummy", IqlQueryElement.class),
 	;
 
 	private IqlType(String id, String uidPrefix, Class<?> type) {

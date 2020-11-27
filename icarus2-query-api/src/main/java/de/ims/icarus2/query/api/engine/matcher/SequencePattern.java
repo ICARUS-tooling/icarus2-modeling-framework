@@ -68,6 +68,7 @@ import de.ims.icarus2.query.api.exp.Expression;
 import de.ims.icarus2.query.api.exp.ExpressionFactory;
 import de.ims.icarus2.query.api.exp.Literals;
 import de.ims.icarus2.query.api.exp.LogicalOperators;
+import de.ims.icarus2.query.api.iql.AbstractIqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
@@ -86,6 +87,8 @@ import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
+import de.ims.icarus2.query.api.iql.IqlQueryElement;
+import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
@@ -94,9 +97,8 @@ import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectLists;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
@@ -294,6 +296,27 @@ public class SequencePattern {
 		}
 	}
 
+	static final class IqlListProxy extends AbstractIqlQueryElement {
+
+		private final List<? extends IqlQueryElement> items;
+
+		public IqlListProxy(List<? extends IqlQueryElement> items) {
+			this.items = ObjectLists.unmodifiable(new ObjectArrayList<>(items));
+		}
+
+		public List<? extends IqlQueryElement> getItems() { return items; }
+
+		@Override
+		public IqlType getType() { return IqlType.DUMMY; }
+
+		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+			checkCollection(items);
+		}
+
+	}
+
 	/** Utility class for generating the state machine */
 	static class SequenceQueryProcessor {
 		private static final ObjectMapper mapper = IqlUtils.createMapper();
@@ -338,7 +361,7 @@ public class SequencePattern {
 		final IqlConstraint globalConstraint;
 		final Set<MatchFlag> flags;
 
-		final Monitor monitor;
+		final boolean monitor;
 		final Function<IqlNode, IqlNode> nodeTransform;
 		final boolean cacheAll;
 
@@ -429,25 +452,10 @@ public class SequencePattern {
 				}
 			}
 
-			private void checkNotDefault(Node n) {
-				checkArgument("Generic accept node not supported here", n!=requireNonNull(accept));
-			}
-
 			private void maybeIncNodes(Node n) {
 				if(n instanceof Single || n instanceof Empty) {
 					nodes++;
 				}
-			}
-
-			/** Replaces the inner sequence with the given one */
-			<N extends Node> N replace(N node) {
-				requireNonNull(node);
-				start = node;
-				end = last(node);
-				start = node;
-				maybeIncNodes(node);
-				size = length(node);
-				return node;
 			}
 
 			/** Add given node as head of inner sequence. */
@@ -609,7 +617,7 @@ public class SequencePattern {
 			filterConstraint = builder.getFilterConstraint();
 			globalConstraint = builder.getGlobalConstraint();
 
-			monitor = builder.getMonitor();
+			monitor = builder.isAllowMonitor();
 			nodeTransform = builder.getNodeTransform();
 			cacheAll = builder.isCacheAll();
 		}
@@ -678,7 +686,7 @@ public class SequencePattern {
 				// Creates the marker window
 				frame.prefix().push(marker(marker));
 				// Saves the previous window
-				frame.prefix().push(border(true, border)); //TODO implement a way of adding conditional parts of the frame
+				frame.prefix().push(border(true, border));
 				// Restores previous window
 				frame.suffix().append(border(false, border));
 			}
@@ -698,7 +706,7 @@ public class SequencePattern {
 						.element(source)
 						.build();
 				expressionFactory = new ExpressionFactory(context);
-				atom = segment(single(label, constraint));
+				atom = segment(single(source, label, constraint));
 				// Reset context
 				expressionFactory = null;
 				context = null;
@@ -747,7 +755,8 @@ public class SequencePattern {
 		/** Process alternatives and link to active sequence */
 		private Frame disjunction(IqlElementDisjunction source) {
 			final List<IqlElement> elements = source.getAlternatives();
-			return branch(elements.size(), false, i -> process(elements.get(i))).toFrame();
+			return branch(new IqlListProxy(elements), elements.size(),
+					false, i -> process(elements.get(i))).toFrame();
 		}
 
 		// INTERNAL HELPERS
@@ -799,8 +808,8 @@ public class SequencePattern {
 
 		private Node storeReplaceable(Node node) {
 			store(node);
-			if(node instanceof ProperNode && monitor!=null) {
-				node = new Track(node, monitor);
+			if(monitor) {
+				node = new Track(node);
 			}
 			return node;
 		}
@@ -918,7 +927,7 @@ public class SequencePattern {
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				seg = range(marker(call));
+				seg = range(call);
 			} break;
 
 			case MARKER_EXPRESSION: {
@@ -938,35 +947,37 @@ public class SequencePattern {
 			return seg;
 		}
 
-		private Segment range(RangeMarker marker) {
+		private Segment range(IqlMarkerCall markerCall) {
+			final RangeMarker marker = marker(markerCall);
+
 			if(marker.isDynamic()) {
 				final int intervalIndex = interval(marker);
 				final int count = marker.intervalCount();
 				if(count>1) {
-					return branch(count, false, i -> frame(clip(intervalIndex+i)));
+					return branch(markerCall, count, false, i -> frame(clip(markerCall, intervalIndex+i)));
 				}
 
-				return segment(clip(intervalIndex));
+				return segment(clip(markerCall, intervalIndex));
 			}
 
 			assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
 
 			final Interval interval = Interval.blank();
 			marker.adjust(new Interval[] {interval}, 0, 1);
-			return segment(fixed(interval.from, interval.to));
+			return segment(fixed(markerCall, interval.from, interval.to));
 		}
 
 		/** Create single fixed clip */
-		private Fixed fixed(int from, int to) {
-			return store(new Fixed(from, to));
+		private Fixed fixed(IqlMarkerCall source, int from, int to) {
+			return store(new Fixed(id(), source, from, to));
 		}
 
 		/** Create single dynamic clip */
-		private DynamicClip clip(int intervalIndex) {
+		private DynamicClip clip(IqlMarkerCall source, int intervalIndex) {
 //			if(shift!=0) {
 //				return new ShiftedClip(intervalIndex);
 //			}
-			return store(new DynamicClip(intervalIndex));
+			return store(new DynamicClip(id(), source, intervalIndex));
 		}
 
 		private static final Comparator<Segment> SEGMENT_COMPLEXITY_ORDER = (s1, s2) -> {
@@ -996,7 +1007,8 @@ public class SequencePattern {
 		/** Create branches for disjunctive markers */
 		private Segment union(List<IqlMarker> markers) {
 			assert markers.size()>1 : "Need 2+ markers for union";
-			final Segment seg = branch(markers.size(), false, i -> marker(markers.get(i)).toFrame());
+			final Segment seg = branch(new IqlListProxy(markers), markers.size(),
+					false, i -> marker(markers.get(i)).toFrame());
 			seg.setFlag(Flag.COMPLEX_MARKER);
 			final int gateId = gate();
 			seg.push(filter(true, gateId));
@@ -1036,28 +1048,6 @@ public class SequencePattern {
 			return intervalIndex;
 		}
 
-		/** Create referential intervals for a group of source intervals, using a specific shift. */
-		@Deprecated
-		private int shiftLeft(int sourceIndex, int count, int shift) {
-			final int intervalIndex = intervals.size();
-			for (int i = 0; i < count; i++) {
-				intervalRef(sourceIndex+i, shift);
-			}
-			return intervalIndex;
-		}
-
-		@Deprecated
-		private int intervalRef(int targetIndex, int shift) {
-			final int intervalIndex = intervals.size();
-			final Interval source = intervals.get(targetIndex);
-			if(source instanceof IntervalRef) {
-				intervals.add(new IntervalRef((IntervalRef)source, shift));
-			} else {
-				intervals.add(new IntervalRef(targetIndex, shift));
-			}
-			return intervalIndex;
-		}
-
 		private Node empty(@Nullable String label) {
 			return storeReplaceable(new Empty(member(label)));
 		}
@@ -1070,32 +1060,33 @@ public class SequencePattern {
 		private Filter filter(boolean reset, int gateId) { return store(new Filter(reset, gateId)); }
 
 		private Finish finish(long limit, boolean stopAfterMatch) {
-			return store(new Finish(limit, stopAfterMatch, monitor));
+			return store(new Finish(limit, stopAfterMatch));
 		}
 
 		private Reset reset() { return store(new Reset()); }
 
-		private Node single(@Nullable String label, IqlConstraint constraint) {
-			return storeReplaceable(new Single(id(), matcher(constraint), cache(), member(label)));
+		private Node single(IqlNode source, @Nullable String label, IqlConstraint constraint) {
+			return storeReplaceable(new Single(id(), source, matcher(constraint), cache(), member(label)));
 		}
 
 		private Node find() {
-			return storeReplaceable(new Find(id()));
+			return storeReplaceable(new Find());
 		}
 
 		private Node exhaust(boolean forward, int cacheId) {
-			return storeReplaceable(new Exhaust(id(), cacheId, forward));
+			return storeReplaceable(new Exhaust(cacheId, forward));
 		}
 
-		private Node negate(Node atom) {
-			return storeReplaceable(new Negation(id(), cache(), atom));
+		private Node negate(IqlQuantifier source, Node atom) {
+			return storeReplaceable(new Negation(id(), source, cache(), atom));
 		}
 
-		private Node all(Node atom) {
-			return storeReplaceable(new All(id(), atom));
+		private Node all(IqlQuantifier source, Node atom) {
+			return storeReplaceable(new All(id(), source, atom));
 		}
 
-		private Segment branch(int count, boolean stopOnSuccess, IntFunction<Frame> atomGen) {
+		private Segment branch(IqlQueryElement source, int count,
+				boolean stopOnSuccess, IntFunction<Frame> atomGen) {
 			List<Node> atoms = new ArrayList<>();
 			BranchConn conn = store(new BranchConn());
 			// For consistency we collect branches in reverse order
@@ -1110,13 +1101,14 @@ public class SequencePattern {
 			}
 			// Need to revert order so that priority is preserved
 			Collections.reverse(atoms);
-			return segment(storeReplaceable(new Branch(id(), stopOnSuccess, conn,
+			return segment(storeReplaceable(new Branch(id(), source, stopOnSuccess, conn,
 					atoms.toArray(new Node[atoms.size()]))));
 		}
 
-		private Node repetition(Node atom, int cmin, int cmax, int mode, boolean discontinuous) {
-			return storeReplaceable(new Repetition(id(), atom, cmin, cmax, mode,
-					buffer(), buffer(), discontinuous ? id() : UNSET_INT));
+		private Node repetition(IqlQuantifier source, Node atom, int cmin, int cmax,
+				int mode, boolean discontinuous) {
+			return storeReplaceable(new Repetition(id(), source, atom, cmin, cmax, mode,
+					buffer(), buffer(), discontinuous));
 		}
 
 		private boolean needsCacheForScan(Node node) {
@@ -1200,7 +1192,8 @@ public class SequencePattern {
 				return segment(quant);
 			} else {
 				// Combine all quantifiers into a branch structure
-				return branch(quantifiers.size(), false, i -> frame(quantify(atom.start(), quantifiers.get(i))));
+				return branch(new IqlListProxy(quantifiers), quantifiers.size(),
+						false, i -> frame(quantify(atom.start(), quantifiers.get(i))));
 			}
 		}
 
@@ -1208,9 +1201,9 @@ public class SequencePattern {
 		private Node quantify(Node atom, IqlQuantifier quantifier) {
 			Node node;
 			if(quantifier.isExistentiallyNegated()) {
-				node = negate(atom);
+				node = negate(quantifier, atom);
 			} else if(quantifier.isUniversallyQuantified()) {
-				node = all(atom);
+				node = all(quantifier, atom);
 			} else {
 				int min = 1;
 				int max = Integer.MAX_VALUE;
@@ -1244,7 +1237,7 @@ public class SequencePattern {
 				if(min==1 && max==1) {
 					node = atom;
 				} else {
-					node = repetition(atom, min, max, mode, quantifier.isDiscontinuous());
+					node = repetition(quantifier, atom, min, max, mode, quantifier.isDiscontinuous());
 				}
 			}
 			return node;
@@ -1264,7 +1257,7 @@ public class SequencePattern {
 
 			final boolean disjoint = flagSet(MatchFlag.DISJOINT);
 
-			//TODO for now we don't honor the 'consumed' flag on IqlElement instances
+			// For now we don't honor the 'consumed' flag on IqlElement instances
 			final Frame frame = process(rootElement);
 
 			// Prepare top-level scan if needed
@@ -1291,7 +1284,7 @@ public class SequencePattern {
 				expressionFactory = new ExpressionFactory(rootContext);
 				global = new ExpressionDef(constraint(globalConstraint), rootContext);
 				expressionFactory = null;
-				frame.append(new GlobalConstraint(id()));
+				frame.append(new GlobalConstraint(id(), globalConstraint));
 			}
 
 			// If we need to reset search space after each match, add special Reset node
@@ -1366,8 +1359,6 @@ public class SequencePattern {
 		final Gate[] gates;
 		/** Positions into 'intervals' to signal what intervals to update for what marker */
 		final int[] markerPos;
-		/** Positions of referential intervals */
-		final int[] intervalRefs;
 		/** Keeps track of the last hit index for every raw node */
 		final int[] hits;
 		/** The available int[] buffers used by various node implementations */
@@ -1377,6 +1368,8 @@ public class SequencePattern {
 
 		final Matcher<Container> filterConstraint;
 		final Expression<?> globalConstraint;
+
+		Monitor monitor;
 
 		/** Total number of reported full matches so far */
 		long reported = 0;
@@ -1428,40 +1421,8 @@ public class SequencePattern {
 			buffers = setup.makeBuffer();
 			gates = setup.makeGates();
 
-			intervalRefs = refs(intervals);
-
 			from = 0;
 			to = 0;
-		}
-
-		private static int[] refs(Interval[] intervals) {
-			IntList indices = new IntArrayList();
-			for (int i = 0; i < intervals.length; i++) {
-				if(intervals[i] instanceof IntervalRef) {
-					indices.add(i);
-				}
-			}
-			return indices.toIntArray();
-		}
-
-		private static int[] complement(int[] markerPos, int size) {
-			if(size==0) {
-				return new int[0];
-			}
-
-			IntSet markers = new IntOpenHashSet();
-			for (int pos : markerPos) {
-				markers.add(pos);
-			}
-
-			IntList comp = new IntArrayList();
-			for (int i = 0; i < size; i++) {
-				if(!markers.contains(i)) {
-					comp.add(i);
-				}
-			}
-
-			return comp.toIntArray();
 		}
 
 		int scope() {
@@ -1498,6 +1459,11 @@ public class SequencePattern {
 			if(resultHandler!=null) {
 				resultHandler.accept(this);
 			}
+		}
+
+		void monitor(Monitor monitor) {
+			checkState("Monitor already set", this.monitor==null);
+			this.monitor = monitor;
 		}
 	}
 
@@ -1574,13 +1540,6 @@ public class SequencePattern {
 				marker.adjust(intervals, markerPos[i], size);
 			}
 
-			// Update interval refs
-			for (int i = 0; i < intervalRefs.length; i++) {
-				IntervalRef ref = (IntervalRef) intervals[intervalRefs[i]];
-				ref.update(this);
-				assert false; // fail for any ref
-			}
-
 			// Let the state machine do its work
 			boolean matched = root.match(this, 0);
 			/*
@@ -1639,14 +1598,12 @@ public class SequencePattern {
 		private LaneContext context;
 		private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 		private Function<IqlNode, IqlNode> nodeTransform;
-		private Monitor monitor;
+		private Boolean allowMonitor;
 		private Boolean cacheAll;
 
 		//TODO add fields for configuring the result buffer
 
 		private Builder() { /* no-op */ }
-
-		//TODO add all the setter methods
 
 		@VisibleForTesting
 		boolean isCacheAll() { return cacheAll==null ? false : cacheAll.booleanValue(); }
@@ -1669,12 +1626,11 @@ public class SequencePattern {
 			return this;
 		}
 
-		public Monitor getMonitor() { return monitor; }
+		public boolean isAllowMonitor() { return allowMonitor==null ? false : allowMonitor.booleanValue(); }
 
-		public Builder monitor(Monitor monitor) {
-			requireNonNull(monitor);
-			checkState("monitor already set", this.monitor==null);
-			this.monitor = monitor;
+		public Builder allowMonitor(boolean allowMonitor) {
+			checkState("'allowMonitor' flag already set", this.allowMonitor==null);
+			this.allowMonitor = Boolean.valueOf(allowMonitor);
 			return this;
 		}
 
@@ -2131,17 +2087,18 @@ public class SequencePattern {
 	static final int POSSESSIVE = QuantifierModifier.POSSESSIVE.ordinal();
 
 	static final class Track extends Node {
-		final Monitor monitor;
 
-		Track(Node next, Monitor monitor) {
+		Track(Node next) {
 			checkArgument("Cannot monitor generic accept node", next!=accept);
-			this.monitor = monitor;
 			setNext(next);
 		}
 
 		@Override
 		boolean match(State state, int pos) {
-			monitor.enterNode(next, state, pos);
+			Monitor monitor = state.monitor;
+			if(monitor!=null) {
+				monitor.enterNode(next, state, pos);
+			}
 			return next.match(state, pos);
 		}
 
@@ -2196,9 +2153,16 @@ public class SequencePattern {
 
 	static abstract class ProperNode extends Node implements Comparable<ProperNode> {
 		final int id;
-		ProperNode(int id) { this.id = id; }
+		final IqlQueryElement source;
+		ProperNode(int id, IqlQueryElement source) {
+			this.id = id;
+			this.source = requireNonNull(source);
+		}
 		@Override
 		public int compareTo(ProperNode o) { return Integer.compare(id, o.id); }
+
+		public IqlQueryElement getSource() { return source; }
+
 		//TODO once the state machine is implemented, add monitoring methods
 //		abstract void append(StringBuilder sb);
 	}
@@ -2241,25 +2205,13 @@ public class SequencePattern {
 		final long limit;
 		final boolean stopAfterMatch;
 
-		final Monitor monitor;
-
-		@VisibleForTesting
 		Finish(long limit, boolean stopAfterMatch) {
-			this(limit, stopAfterMatch, null);
-		}
-
-		Finish(long limit, boolean stopAfterMatch, Monitor monitor) {
 			this.limit = limit;
 			this.stopAfterMatch = stopAfterMatch;
-			this.monitor = monitor;
 		}
 
 		@Override
 		boolean match(State state, int pos) {
-			if(monitor!=null) {
-				monitor.dispatchResult(state);
-			}
-
 			state.dispatchMatch();
 
 			state.reported++;
@@ -2284,8 +2236,8 @@ public class SequencePattern {
 	/** Proxy for evaluating the global constraints. */
 	static final class GlobalConstraint extends ProperNode {
 
-		GlobalConstraint(int id) {
-			super(id);
+		GlobalConstraint(int id, IqlConstraint source) {
+			super(id, source);
 		}
 
 		@Override
@@ -2308,8 +2260,10 @@ public class SequencePattern {
 		boolean isFinisher() { return true; }
 	}
 
-	static abstract class Clip extends Node {
+	static abstract class Clip extends ProperNode {
 		boolean skip = false;
+
+		Clip(int id, IqlMarkerCall source) { super(id, source); }
 
 		abstract boolean intersect(State state);
 
@@ -2348,7 +2302,8 @@ public class SequencePattern {
 	static final class Fixed extends Clip {
 		final Interval region;
 
-		Fixed(int from, int to) {
+		Fixed(int id, IqlMarkerCall source, int from, int to) {
+			super(id, source);
 			checkArgument("Invalid interval begin", from>=0);
 			checkArgument("Invalid interval end", to>=0);
 			checkArgument("Empty interval", from<=to);
@@ -2364,7 +2319,6 @@ public class SequencePattern {
 		boolean study(TreeInfo info) {
 			study0(info);
 
-			//TODO verify that we don't have impossible interval requirements.
 			info.from = region.from;
 			info.to = region.to;
 
@@ -2384,7 +2338,8 @@ public class SequencePattern {
 	/** Interval filter based on raw intervals in the matcher */
 	static final class DynamicClip extends Clip {
 		final int intervalIndex;
-		DynamicClip(int intervalIndex) {
+		DynamicClip(int id, IqlMarkerCall source, int intervalIndex) {
+			super(id, source);
 			this.intervalIndex = intervalIndex;
 		}
 
@@ -2505,8 +2460,8 @@ public class SequencePattern {
 		final Node atom;
 		final int cacheId;
 
-		public Negation(int id, int cacheId, Node atom) {
-			super(id);
+		public Negation(int id, IqlQuantifier source, int cacheId, Node atom) {
+			super(id, source);
 			this.cacheId = cacheId;
 			this.atom = requireNonNull(atom);
 		}
@@ -2619,8 +2574,8 @@ public class SequencePattern {
 	static final class All extends ProperNode {
 		final Node atom;
 
-		public All(int id, Node atom) {
-			super(id);
+		public All(int id, IqlQuantifier source, Node atom) {
+			super(id, source);
 			this.atom = requireNonNull(atom);
 		}
 
@@ -2629,9 +2584,8 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-//			assert pos==0 : "Universal quantification must cover the entire search space";
-			//TODO ensure that we actually started at pos==0 ?
 			final int last = state.to;
+			// Visit all elements of initial search window!
 			for (int i = pos; i <= last; i++) {
 				if(!atom.match(state, i)) {
 					return false;
@@ -2665,8 +2619,8 @@ public class SequencePattern {
 		final int cacheId;
 		final int memberId;
 
-		Single(int id, int nodeId, int cacheId, int memberId) {
-			super(id);
+		Single(int id, IqlNode source, int nodeId, int cacheId, int memberId) {
+			super(id, source);
 			this.nodeId = nodeId;
 			this.cacheId = cacheId;
 			this.memberId = memberId;
@@ -2743,18 +2697,9 @@ public class SequencePattern {
 	 * not reset the current mapping after a matching attempt, but rather
 	 * finish the search after the first successful full match.
 	 */
-	static class Find extends ProperNode {
+	static class Find extends Node {
 		int minSize = 1;
 		boolean optional;
-
-		Find(int id) { super(id); }
-
-		@Override
-		public String toString() {
-			return ToStringBuilder.create(this)
-					.add("id", id)
-					.build();
-		}
 
 		@Override
 		boolean isScanCapable() { return true; }
@@ -2819,8 +2764,7 @@ public class SequencePattern {
 		final int cacheId;
 		final boolean forward;
 
-		Exhaust(int id, int cacheId, boolean forward) {
-			super(id);
+		Exhaust(int cacheId, boolean forward) {
 			this.cacheId = cacheId;
 			this.forward = forward;
 		}
@@ -2828,7 +2772,6 @@ public class SequencePattern {
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this)
-					.add("id", id)
 					.add("forward", forward)
 					.add("cacheId", cacheId)
 					.add("minSize", minSize)
@@ -2985,8 +2928,9 @@ public class SequencePattern {
 		final Node[] atoms;
 		final boolean stopOnSuccess;
 
-		Branch(int id, boolean stopOnSuccess, BranchConn conn, Node...atoms) {
-			super(id);
+		Branch(int id, IqlQueryElement source, boolean stopOnSuccess, BranchConn conn, Node...atoms) {
+			// 'source' can be either IqlMarkerExpression or IqlElementDisjunction
+			super(id, source);
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
 			this.stopOnSuccess = stopOnSuccess;
 			this.atoms = atoms;
@@ -3012,8 +2956,6 @@ public class SequencePattern {
 					.add("atoms", Arrays.toString(atoms))
 					.build();
 		}
-
-		//TODO make and override 'setNext' method?
 
 		@Override
 		boolean match(State state, int pos) {
@@ -3087,20 +3029,20 @@ public class SequencePattern {
     	final int scopeBuf;
     	final int posBuf;
 
-		Repetition(int id, Node atom, int cmin, int cmax, int type,
-				int scopeBuf, int posBuf, int findAtomId) {
-			super(id);
+		Repetition(int id, IqlQuantifier source, Node atom, int cmin, int cmax, int type,
+				int scopeBuf, int posBuf, boolean discontinuous) {
+			super(id, source);
 			this.atom = atom;
 			this.cmin = cmin;
 			this.cmax = cmax;
 			this.type = type;
 			this.scopeBuf = scopeBuf;
 			this.posBuf = posBuf;
-			if(findAtomId==UNSET_INT) {
-				findAtom = null;
-			} else {
-				findAtom = new Find(findAtomId);
+			if(discontinuous) {
+				findAtom = new Find();
 				findAtom.setNext(atom);
+			} else {
+				findAtom = null;
 			}
 		}
 

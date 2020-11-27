@@ -40,7 +40,6 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_FIND;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_0;
@@ -79,6 +78,7 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -144,10 +144,13 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
+import de.ims.icarus2.query.api.iql.IqlQuantifier;
+import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlTestUtils;
 import de.ims.icarus2.test.annotations.IntArrayArg;
 import de.ims.icarus2.test.annotations.IntMatrixArg;
@@ -335,7 +338,7 @@ class SequencePatternTest {
 					atom.setNext(conn);
 				}
 			}
-			return new Branch(id, NO_STOP_ON_SUCCESS, conn, atoms);
+			return new Branch(id, mock(IqlQueryElement.class), NO_STOP_ON_SUCCESS, conn, atoms);
 		}
 
 		static final String LANE_NAME = "test_lane";
@@ -476,6 +479,10 @@ class SequencePatternTest {
 	}
 
 	static void assertResult(String s, StateMachineSetup setup, MatchConfig config) {
+		assertResult(s, setup, null, config);
+	}
+
+	static void assertResult(String s, StateMachineSetup setup, Monitor monitor, MatchConfig config) {
 		assertThat(s).isNotEmpty();
 
 		State state = new State(setup);
@@ -484,11 +491,16 @@ class SequencePatternTest {
 		state.elements = IntStream.range(0, s.length())
 				.mapToObj(i -> item(i, s.charAt(i)))
 				.toArray(Item[]::new);
+		state.monitor(monitor);
 
 		config.assertResult(setup.root, state);
 	}
 
 	static void assertResult(String s, SequencePattern pattern, MatchConfig config) {
+		assertResult(s, pattern, null, config);
+	}
+
+	static void assertResult(String s, SequencePattern pattern, Monitor monitor, MatchConfig config) {
 		assertThat(s).isNotEmpty();
 
 		Container target = mockContainer(IntStream.range(0, s.length())
@@ -496,6 +508,7 @@ class SequencePatternTest {
 				.toArray(Item[]::new));
 
 		NonResettingMatcher matcher = pattern.matcherForTesting();
+		matcher.monitor(monitor);
 
 		config.assertResult(matcher, target);
 	}
@@ -602,11 +615,27 @@ class SequencePatternTest {
 			return this;
 		}
 
+		private static String state2Mapping(State state) {
+			StringBuilder sb = new StringBuilder();
+			sb.append('{');
+			for(int i=0; i<state.entry; i++) {
+				if(i>0) {
+					sb.append(',');
+				}
+				sb.append(state.m_node[i])
+					.append("->")
+					.append(state.m_pos[i]);
+			}
+			sb.append('}');
+			return sb.toString();
+		}
+
 		/** Asserts the dispatched state based on the list of expected results */
 		@Override
 		public void accept(State state) {
 			assertThat(nextResult)
-				.as("No more results buffered - only expected %d", _int(results.size()))
+				.as("No more results buffered - only expected %d: %s",
+						_int(results.size()), state2Mapping(state)) //FIXME very inefficient, as we create the error message ALWAYS
 				.isLessThan(results.size());
 
 			results.get(nextResult++).assertMapping(state);
@@ -1053,7 +1082,7 @@ class SequencePatternTest {
 					sms.nodes = new IqlNode[1];
 					sms.cacheCount = 1;
 					sms.root = seq(
-							new Single(id(), NODE_0, CACHE_0, NO_MEMBER),
+							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X));
 					return sms;
@@ -1086,8 +1115,8 @@ class SequencePatternTest {
 					sms.nodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
-							new Single(id(), NODE_0, CACHE_0, NO_MEMBER),
-							new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X), matcher(1, EQUALS_Y));
 					return sms;
@@ -1140,8 +1169,8 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(id(), NO_CACHE, true),
-								new Single(id(), NODE_0, CACHE_0, NO_MEMBER),
+								new Exhaust(NO_CACHE, true),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1245,8 +1274,8 @@ class SequencePatternTest {
 						sms.cacheCount = 2;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(0, CACHE_0, true),
-								new Single(1, NODE_0, CACHE_1, NO_MEMBER),
+								new Exhaust(CACHE_0, true),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1356,8 +1385,8 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(id(), NO_CACHE, false),
-								new Single(id(), NODE_0, CACHE_0, NO_MEMBER),
+								new Exhaust(NO_CACHE, false),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1467,9 +1496,9 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(REGION_0),
-								new Exhaust(id(), NO_CACHE, true),
-								new Single(id(), NODE_0, CACHE_0, NO_MEMBER),
+								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
+								new Exhaust(NO_CACHE, true),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1601,9 +1630,9 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(REGION_0),
-								new Exhaust(id(), CACHE_0, true),
-								new Single(id(), NODE_0, CACHE_1, NO_MEMBER),
+								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
+								new Exhaust(CACHE_0, true),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1746,9 +1775,9 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(REGION_0),
-								new Exhaust(id(), NO_CACHE, false),
-								new Single(id(), NODE_0, CACHE_0, NO_MEMBER),
+								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
+								new Exhaust(NO_CACHE, false),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 								new Finish(limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1890,8 +1919,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -1911,9 +1941,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(id(), NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -1963,8 +1994,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -1982,9 +2014,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(1, NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2050,8 +2083,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
@@ -2120,8 +2154,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2178,9 +2213,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(2, NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2253,8 +2289,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -2272,9 +2309,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(id(), NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2324,8 +2362,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -2343,9 +2382,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(id(), NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2384,9 +2424,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(id(), NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
@@ -2432,8 +2473,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
@@ -2502,8 +2544,9 @@ class SequencePatternTest {
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, NO_FIND),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2561,9 +2604,10 @@ class SequencePatternTest {
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
-									new Repetition(id(), new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, NO_FIND),
-									new Single(id(), NODE_1, CACHE_1, NO_MEMBER),
+									new Repetition(id(), mock(IqlQuantifier.class),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2632,8 +2676,8 @@ class SequencePatternTest {
 					sms.cacheCount = 2;
 					sms.root = seq(
 							branch(0,
-									new Single(1, NODE_0, CACHE_0, NO_MEMBER),
-									new Single(2, NODE_1, CACHE_1, NO_MEMBER)),
+									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER)),
 							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
@@ -2703,7 +2747,7 @@ class SequencePatternTest {
 					sms.limit = 1;
 					sms.root = seq(
 							branch(0,
-									new Single(1, NODE_0, CACHE_0, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 									null),
 							new Finish(1, false));
 					sms.matchers = matchers(
@@ -2753,8 +2797,8 @@ class SequencePatternTest {
 					sms.root = seq(
 							branch(0,
 									null,
-									new Single(1, NODE_0, CACHE_0, NO_MEMBER)),
-							new Single(2, NODE_1, CACHE_1, NO_MEMBER), // needed to force reluctant expansion
+									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER)),
+							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER), // needed to force reluctant expansion
 							new Finish(UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
@@ -2809,8 +2853,8 @@ class SequencePatternTest {
 					int id = 0;
 					List<Node> nodes = new ArrayList<>();
 					for (int i = 0; i < predicates.length; i++) {
-						nodes.add(new Exhaust(id++, NO_CACHE, true));
-						nodes.add(new Single(id++, i, i, NO_MEMBER));
+						nodes.add(new Exhaust(NO_CACHE, true));
+						nodes.add(new Single(id++, mock(IqlNode.class), i, i, NO_MEMBER));
 					}
 					nodes.add(new Finish(limit, false));
 					return nodes.toArray(new Node[0]);
@@ -8502,9 +8546,16 @@ class SequencePatternTest {
 		private void assertComplex(SequencePattern.Builder builder, String target, int matches,
 				// [node_id][match_id][hits]
 				@IntMatrixArg int[][][] hits) {
+			assertComplex(null, builder, target, matches, hits);
+		}
+
+		private void assertComplex(Monitor monitor, SequencePattern.Builder builder, String target, int matches,
+				// [node_id][match_id][hits]
+				@IntMatrixArg int[][][] hits) {
 
 			assertResult(target,
 					builder.build(),
+					monitor,
 					match(matches>0, matches)
 						// Format of 'hits' matrix: [node_id][match_id][hits]
 						.results(matches, (r, i) -> {
@@ -9085,7 +9136,7 @@ class SequencePatternTest {
 			@CsvSource({
 				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
 			})
-			@DisplayName("NAME")
+			@DisplayName("disjunction of quantified nodes with markers")
 			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
@@ -9093,9 +9144,161 @@ class SequencePatternTest {
 			}
 		}
 
+		/**
+		 * {@link IqlGrouping} nested inside {@link IqlGrouping}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>quantifier on inner grouping</li>
+		 * <li>quantifier on outer grouping</li>
+		 * <li>multiple groupings</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class GroupingInGrouping {
 
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{{[][]}}', XX, 1, { {{0}} {{1}} }",
+				"'{[] {[][]}}', XX, 0, -",
+				"'{[] {[][]}}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{[] {[] {[]}}}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{{[][]} []}', XX, 0, -",
+				"'{{[][]} []}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{{{[]} []} []}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{{[][]} [] {[][]}}', XXXXX, 1, { {{0}} {{1}} {{2}} {{3}} {{4}} }",
+			})
+			@DisplayName("nested groups of blank nodes")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{{[?]}}', X, 1, { {{}} }",
+
+				"'{{[?]}[]}', X, 1, { {{}} {{0}} }",
+				"'{[]{[?]}}', X, 1, { {{0}} {{}} }",
+
+				"'{{[*]}}', X, 1, { {{}} }",
+				"'{{[*]}[]}', X, 1, { {{}} {{0}} }",
+				"'{[]{[*]}}', X, 1, { {{0}} {{}} }",
+
+				"'{{[+]}}', X, 1, { {{0}} }",
+				"'{{[+]}[]}', X, 0, -",
+				"'{{[+]}[]}', XX, 1, { {{0}} {{1}} }",
+				"'{[]{[+]}}', X, 0, -",
+				"'{[]{[+]}}', XX, 1, { {{0}} {{1}} }",
+				"'{{[+]}[*]}', X, 1, { {{0}} {{}} }",
+				"'{{[+]}[*]}', XX, 2, { {{0}{1}} {{}{}} }",
+				"'{[*]{[+]}}', X, 1, { {{}} {{0}} }",
+				"'{[*]{[+]}}', XX, 3, { {{}{}{}} {{0}{1}{1}} }",
+			})
+			@DisplayName("nested groups of dummy nodes")
+			void testDummyNodesWithGrouping(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				// Double wrapping
+
+				// Singleton markers
+				"'{{[isAt(2), $X]}}', XXX, 1, { {{1}} }",
+				"'{{[isNotAt(2), $X]}}', XXX, 2, { {{0}{2}} }",
+				"'{{[isAfter(2), $X]}}', XXX, 1, { {{2}} }",
+				"'{{[isBefore(2), $X]}}', XXX, 1, { {{0}} }",
+				"'{{[isInside(2,4), $X]}}', XXXXX, 3, { {{1}{2}{3}} }",
+				"'{{[isOutside(2,4), $X]}}', XXXXX, 2, { {{0}{4}} }",
+				// Marker intersection
+				"'{{[isFirst && isLast, $X]}}', X, 1, { {{0}} }",
+				"'{{[isFirst && isLast, $X]}}', Y, 0, -",
+				"'{{[isFirst && isLast, $X]}}', XX, 0, -",
+				"'{{[isNotAt(2) && isLast, $X]}}', XX, 0, -",
+				// Marker union
+				"'{{[isFirst || isLast, $X]}}', X, 1, { {{0}} }",
+				"'{{[isFirst || isLast, $X]}}', XX, 2, { {{0}{1}} }",
+				"'{{[isFirst || isLast, $X]}}', XXX, 2, { {{0}{2}} }",
+				"'{{[isAt(2) || isLast, $X]}}', XXX, 2, { {{1}{2}} }",
+				// Complex marker nesting
+				"'{{[isFirst || (isNotAt(3) && isBefore(4)), $X]}}', XXXX, 2, { {{0}{1}} }",
+
+				// Proper nesting
+				"'{{[isAt(2), $X][]}[isNotAt(3),$X]}', XXX, 0, -",
+				"'{{[isAt(2), $X][]}[isNotAt(3),$X]}', XXXX, 1, { {{1}} {{2}} {{3}} }",
+				//TODO
+				"'{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}', XXXX, 4, { {{1}{0}{0}{1}} {{2}{1}{2}{2}} {{3}{3}{3}{3}} }",
+				"'{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}', XXXX, 1, { {{1}} {{2}} {{3}} }",
+			})
+			@DisplayName("nested groups with markers on nodes")
+			void testMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+			}
+
+			@Disabled
+			//TODO copy and enable to add further complex tests
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("quantified nodes in nested groups")
+			void testQuantifiedNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@Disabled
+			//TODO copy and enable to add further complex tests
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("nested quantified group")
+			void testInnerQuantification(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@Disabled
+			//TODO copy and enable to add further complex tests
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("group nested in quantified group")
+			void testOuterQuantification(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
+
+			@Disabled
+			//TODO copy and enable to add further complex tests
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("quantified group nested in quantified group")
+			void testFullQuantification(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertComplex(builder(expand(query)), target, matches, hits);
+			}
 		}
 
 		@Nested
