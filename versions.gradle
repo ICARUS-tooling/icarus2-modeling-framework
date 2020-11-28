@@ -23,4 +23,5 @@ ext {
 	versions.assertj = '3.11.1'
 	versions.antlr = '4.7.2'
 	versions.json = '2.10.1'
+	versions.graphstream = '2.0'
 }

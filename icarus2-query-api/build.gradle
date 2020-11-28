@@ -18,6 +18,7 @@ dependencies {
 configurations {
 	// external dependencies managed by root build.gradle
 	implementation.extendsFrom(antlrRuntime, json)
+	testImplementation.extendsFrom(graphstream)
 }
 
 sourceSets {

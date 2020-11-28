@@ -84,6 +84,7 @@ subprojects {
 		antlrRuntime
 		json
 		apiguardian
+		graphstream
 		// default logging functionality
 			
 		// TEST ENVIRONMENT
@@ -147,6 +148,11 @@ subprojects {
 		// https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jsonSchema
 		json "com.fasterxml.jackson.module:jackson-module-jsonSchema:${versions.json}"
 		json "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${versions.json}"
+		
+		// https://mvnrepository.com/artifact/org.graphstream/gs-core
+		graphstream "org.graphstream:gs-core:${versions.graphstream}"
+		// https://mvnrepository.com/artifact/org.graphstream/gs-ui-swing
+		graphstream "org.graphstream:gs-ui-swing:${versions.graphstream}"
 		
 			
 		// TEST ENVIRONMENT
