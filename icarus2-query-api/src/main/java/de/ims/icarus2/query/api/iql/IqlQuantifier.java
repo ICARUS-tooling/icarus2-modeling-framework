@@ -266,10 +266,16 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 			this.label = label;
 		}
 
+		public int id() { return ordinal(); }
+
 		@JsonValue
 		public String getLabel() {
 			return label;
 		}
+
+		private static final QuantifierModifier[] _values = values();
+
+		public static QuantifierModifier forId(int id) { return _values[id]; }
 	}
 
 	/**

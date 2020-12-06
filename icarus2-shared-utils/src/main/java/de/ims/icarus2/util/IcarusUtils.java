@@ -52,6 +52,10 @@ public final class IcarusUtils {
 		return x -> { /* no-op */};
 	}
 
+	public static final <T> Predicate<T> NOT_NULL() {
+		return x -> x!=null;
+	}
+
 	/**
 	 * Returns {@code true} if the JVM currently in use is reportedly
 	 * using a 64 bit architecture model.

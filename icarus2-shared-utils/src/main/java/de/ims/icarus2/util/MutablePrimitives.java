@@ -381,6 +381,13 @@ public class MutablePrimitives {
 			return result;
 		}
 
+		public int max(int other) {
+			if(other>value) {
+				value = other;
+			}
+			return value;
+		}
+
 		/**
 		 * @see de.ims.icarus2.util.MutablePrimitives.Primitive#longValue()
 		 */
