@@ -74,6 +74,7 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.set;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.unordered;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
@@ -121,6 +122,7 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Exhaust;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NonResettingMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceQueryProcessor;
@@ -234,11 +236,17 @@ class SequencePatternTest {
 	private static final Monitor MONITOR = new Monitor() {
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			System.out.printf("[pos:%d - matches:%d] %s%n", _int(pos), _long(state.reported), node);
+			System.out.printf("enter [pos:%d - matches:%d] %s%n", _int(pos), _long(state.reported), node);
+		}
+		@Override
+		public void exitNode(Node node, State state, int pos, boolean result) {
+			System.out.printf("exit [pos:%d - matches:%d] %s -> %b%n", _int(pos), _long(state.reported), node, _boolean(result));
+			if(node.isFinisher()) {
+				dispatchResult(state);
+			}
 		}
 
-		@Override
-		public void dispatchResult(State state) {
+		private void dispatchResult(State state) {
 			if(state.entry==0) {
 				System.out.println("[empty result]");
 			} else {
@@ -332,7 +340,7 @@ class SequencePatternTest {
 			return nodes[0];
 		}
 		static Branch branch(int id, Node...atoms) {
-			BranchConn conn = new BranchConn();
+			BranchConn conn = new BranchConn(-1);
 			for (Node atom : atoms) {
 				if(atom!=null) {
 					atom.setNext(conn);
@@ -379,6 +387,7 @@ class SequencePatternTest {
 		final int nodeId;
 
 		Proxy(int nodeId) {
+			super(-1);
 			this.nodeId = nodeId;
 		}
 
@@ -405,6 +414,12 @@ class SequencePatternTest {
 			info.segmentSize++;
 			return next.study(info);
 		}
+
+		@Override
+		public NodeInfo info() { return null; }
+
+		@Override
+		boolean isProxy() { return true; }
 	}
 
 	static SequencePattern.Builder builder(IqlElement root) {
@@ -429,7 +444,7 @@ class SequencePatternTest {
 	private static final Pattern NODE = Pattern.compile("\\$([A-Z])");
 
 	/** Expand {@code $X} expressions to proper constraints */
-	private static String expand(String rawQuery) {
+	static String expand(String rawQuery) {
 		int lastAppend = 0;
 		java.util.regex.Matcher m = NODE.matcher(rawQuery);
 		StringBuilder sb = new StringBuilder();
@@ -478,11 +493,8 @@ class SequencePatternTest {
 		return builder;
 	}
 
-	static void assertResult(String s, StateMachineSetup setup, MatchConfig config) {
-		assertResult(s, setup, null, config);
-	}
 
-	static void assertResult(String s, StateMachineSetup setup, Monitor monitor, MatchConfig config) {
+	static void assertResult(String s, StateMachineSetup setup, MatchConfig config) {
 		assertThat(s).isNotEmpty();
 
 		State state = new State(setup);
@@ -491,16 +503,11 @@ class SequencePatternTest {
 		state.elements = IntStream.range(0, s.length())
 				.mapToObj(i -> item(i, s.charAt(i)))
 				.toArray(Item[]::new);
-		state.monitor(monitor);
 
 		config.assertResult(setup.root, state);
 	}
 
 	static void assertResult(String s, SequencePattern pattern, MatchConfig config) {
-		assertResult(s, pattern, null, config);
-	}
-
-	static void assertResult(String s, SequencePattern pattern, Monitor monitor, MatchConfig config) {
 		assertThat(s).isNotEmpty();
 
 		Container target = mockContainer(IntStream.range(0, s.length())
@@ -508,7 +515,6 @@ class SequencePatternTest {
 				.toArray(Item[]::new));
 
 		NonResettingMatcher matcher = pattern.matcherForTesting();
-		matcher.monitor(monitor);
 
 		config.assertResult(matcher, target);
 	}
@@ -548,6 +554,8 @@ class SequencePatternTest {
 		private final List<ResultConfig> results = new ArrayList<>();
 		/** Pointer to the next expected result entry */
 		private int nextResult = 0;
+		/** Monitor to be used to track the state machine */
+		private Monitor monitor;
 
 		/** Intermediate mappings expected to exist during result assertion */
 		private final ResultConfig mapping = new ResultConfig(-1);
@@ -566,6 +574,8 @@ class SequencePatternTest {
 			this.expectedResult = expectedResult;
 			this.expectedCount = expectedCount;
 		}
+
+		MatchConfig monitor(Monitor monitor) { this.monitor = monitor; return this; }
 
 		MatchConfig node(NodeConfig node) { nodes.add(requireNonNull(node)); return this; }
 
@@ -657,12 +667,20 @@ class SequencePatternTest {
 			}
 		}
 
-		void assertResult(Node root, State state) {
-			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
+		private void prepareState(State state) {
 
 			if(!results.isEmpty()) {
 				state.resultHandler = this;
 			}
+
+			if(monitor!=null) {
+				state.monitor(monitor);
+			}
+		}
+
+		void assertResult(Node root, State state) {
+			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
+			prepareState(state);
 
 			// Verify correct result
 			assertThat(root.match(state, startPos))
@@ -673,9 +691,7 @@ class SequencePatternTest {
 		}
 
 		void assertResult(NonResettingMatcher matcher, Container target) {
-			if(!results.isEmpty()) {
-				matcher.resultHandler = this;
-			}
+			prepareState(matcher);
 
 			// Verify correct result
 			assertThat(matcher.matches(0, target))
@@ -1079,11 +1095,11 @@ class SequencePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[1];
+					sms.rawNodes = new IqlNode[1];
 					sms.cacheCount = 1;
 					sms.root = seq(
 							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-							new Finish(UNSET_LONG, false));
+							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X));
 					return sms;
 				}
@@ -1112,12 +1128,12 @@ class SequencePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[2];
+					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
 							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-							new Finish(UNSET_LONG, false));
+							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X), matcher(1, EQUALS_Y));
 					return sms;
 				}
@@ -1165,13 +1181,13 @@ class SequencePatternTest {
 
 					StateMachineSetup setup(int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.nodes = new IqlNode[1];
+						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(NO_CACHE, true),
+								new Exhaust(id(), NO_CACHE, true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-								new Finish(limit, false));
+								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1270,13 +1286,13 @@ class SequencePatternTest {
 
 					StateMachineSetup setup(int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.nodes = new IqlNode[1];
+						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 2;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(CACHE_0, true),
+								new Exhaust(id(), CACHE_0, true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER),
-								new Finish(limit, false));
+								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1381,13 +1397,13 @@ class SequencePatternTest {
 
 					StateMachineSetup setup(int  limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.nodes = new IqlNode[1];
+						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(NO_CACHE, false),
+								new Exhaust(id(), NO_CACHE, false),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-								new Finish(limit, false));
+								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1491,15 +1507,15 @@ class SequencePatternTest {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.nodes = new IqlNode[1];
+						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
-								new Exhaust(NO_CACHE, true),
+								new Exhaust(id(), NO_CACHE, true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-								new Finish(limit, false));
+								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1625,15 +1641,15 @@ class SequencePatternTest {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.nodes = new IqlNode[1];
+						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 2;
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
-								new Exhaust(CACHE_0, true),
+								new Exhaust(id(), CACHE_0, true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER),
-								new Finish(limit, false));
+								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1770,15 +1786,15 @@ class SequencePatternTest {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.nodes = new IqlNode[1];
+						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
-								new Exhaust(NO_CACHE, false),
+								new Exhaust(id(), NO_CACHE, false),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-								new Finish(limit, false));
+								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
 					}
@@ -1915,14 +1931,14 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
-									new Finish(UNSET_LONG, false));
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -1937,15 +1953,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -1990,14 +2006,14 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
-									new Finish(UNSET_LONG, false));
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -2010,15 +2026,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2079,14 +2095,14 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
-									new Finish(UNSET_LONG, false));
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
 							return sms;
@@ -2150,15 +2166,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
 									matcher(1, EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
@@ -2209,15 +2225,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2285,14 +2301,14 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
-									new Finish(UNSET_LONG, false));
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -2305,15 +2321,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2358,14 +2374,14 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
-									new Finish(UNSET_LONG, false));
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
 						}
@@ -2378,15 +2394,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2420,15 +2436,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
 									matcher(1, EQUALS_Y));
@@ -2469,14 +2485,14 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
-									new Finish(UNSET_LONG, false));
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
 							return sms;
@@ -2540,15 +2556,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[1];
+							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
 									matcher(1, EQUALS_NOT_X)); // this one enables the reluctant repetition to expand to the max
@@ -2600,15 +2616,15 @@ class SequencePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.nodes = new IqlNode[2];
+							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 2;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, CONTINUOUS),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -2672,13 +2688,13 @@ class SequencePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[2];
+					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
 							branch(0,
 									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER)),
-							new Finish(UNSET_LONG, false));
+							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
 							matcher(1, EQUALS_B));
@@ -2742,14 +2758,14 @@ class SequencePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[1];
+					sms.rawNodes = new IqlNode[1];
 					sms.cacheCount = 1;
 					sms.limit = 1;
 					sms.root = seq(
 							branch(0,
 									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 									null),
-							new Finish(1, false));
+							new Finish(id(), 1, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A));
 					return sms;
@@ -2792,14 +2808,14 @@ class SequencePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[2];
+					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
 							branch(0,
 									null,
 									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER)),
 							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER), // needed to force reluctant expansion
-							new Finish(UNSET_LONG, false));
+							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
 							matcher(1, EQUALS_B));
@@ -2853,10 +2869,10 @@ class SequencePatternTest {
 					int id = 0;
 					List<Node> nodes = new ArrayList<>();
 					for (int i = 0; i < predicates.length; i++) {
-						nodes.add(new Exhaust(NO_CACHE, true));
+						nodes.add(new Exhaust(id(), NO_CACHE, true));
 						nodes.add(new Single(id++, mock(IqlNode.class), i, i, NO_MEMBER));
 					}
-					nodes.add(new Finish(limit, false));
+					nodes.add(new Finish(id(), limit, false));
 					return nodes.toArray(new Node[0]);
 				}
 
@@ -2864,7 +2880,7 @@ class SequencePatternTest {
 				private StateMachineSetup setup(int limit, CharPredicate...predicates) {
 					int nodeCount = predicates.length;
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[nodeCount];
+					sms.rawNodes = new IqlNode[nodeCount];
 					sms.cacheCount = nodeCount;
 					sms.limit = limit;
 					sms.root = seq(nodes(limit, predicates));
@@ -3019,11 +3035,11 @@ class SequencePatternTest {
 			class BranchAndRepetition {
 				private StateMachineSetup setup(Node...options) {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.nodes = new IqlNode[2];
+					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
 							branch(0, options),
-							new Finish(UNSET_LONG, false));
+							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
 							matcher(1, EQUALS_B));
@@ -8543,28 +8559,18 @@ class SequencePatternTest {
 	@Nested
 	class ForRawQueries {
 
-		private void assertComplex(SequencePattern.Builder builder, String target, int matches,
+		/** Turns a 3-level hit matrix into a basic match config for testing */
+		private MatchConfig config(int matches,
 				// [node_id][match_id][hits]
-				@IntMatrixArg int[][][] hits) {
-			assertComplex(null, builder, target, matches, hits);
-		}
-
-		private void assertComplex(Monitor monitor, SequencePattern.Builder builder, String target, int matches,
-				// [node_id][match_id][hits]
-				@IntMatrixArg int[][][] hits) {
-
-			assertResult(target,
-					builder.build(),
-					monitor,
-					match(matches>0, matches)
-						// Format of 'hits' matrix: [node_id][match_id][hits]
-						.results(matches, (r, i) -> {
-							for(int j = 0; j<hits.length; j++) {
-								int nodeId = hits.length-j-1;
-								r.map(nodeId, hits[j][i]);
-							}
-						})
-					);
+				int[][][] hits) {
+			return match(matches>0, matches)
+					// Format of 'hits' matrix: [node_id][match_id][hits]
+					.results(matches, (r, i) -> {
+						for(int j = 0; j<hits.length; j++) {
+							int nodeId = hits.length-j-1;
+							r.map(nodeId, hits[j][i]);
+						}
+					});
 		}
 
 		/**
@@ -8598,7 +8604,8 @@ class SequencePatternTest {
 			void testBlank(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8666,7 +8673,7 @@ class SequencePatternTest {
 			void testDummyNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8696,7 +8703,7 @@ class SequencePatternTest {
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8712,7 +8719,7 @@ class SequencePatternTest {
 			void testQuantifiedNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8725,7 +8732,7 @@ class SequencePatternTest {
 			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8743,7 +8750,7 @@ class SequencePatternTest {
 			void testQuantifiedGrouping(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8789,7 +8796,7 @@ class SequencePatternTest {
 			void testQuantifiedGroupingWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8811,7 +8818,7 @@ class SequencePatternTest {
 			void testQuantifiedGroupingWithQuantifiedNodesWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 		}
 
@@ -8850,7 +8857,7 @@ class SequencePatternTest {
 			void testBlank(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8903,7 +8910,7 @@ class SequencePatternTest {
 			void testDummyNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8919,7 +8926,7 @@ class SequencePatternTest {
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8936,7 +8943,7 @@ class SequencePatternTest {
 			void testQuantifiedNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -8951,7 +8958,7 @@ class SequencePatternTest {
 			void testQuantifiedNodesWithmarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9009,7 +9016,7 @@ class SequencePatternTest {
 			void testArrangement(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9026,7 +9033,7 @@ class SequencePatternTest {
 			void testArrangementWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9043,7 +9050,7 @@ class SequencePatternTest {
 			void testArrangementWithQuantifiedNodesWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 		}
@@ -9078,7 +9085,7 @@ class SequencePatternTest {
 			void testBlank(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9095,7 +9102,7 @@ class SequencePatternTest {
 			void testDummyNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9111,7 +9118,7 @@ class SequencePatternTest {
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9127,7 +9134,7 @@ class SequencePatternTest {
 			void testQuantifiedNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@Disabled
@@ -9140,7 +9147,7 @@ class SequencePatternTest {
 			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 		}
 
@@ -9179,7 +9186,7 @@ class SequencePatternTest {
 			void testBlank(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9207,7 +9214,7 @@ class SequencePatternTest {
 			void testDummyNodesWithGrouping(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9245,7 +9252,8 @@ class SequencePatternTest {
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)).nodeTransform(PROMOTE_NODE), target, matches, hits);
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).allowMonitor(true).build(),
+						config(matches, hits));
 			}
 
 			@Disabled
@@ -9258,7 +9266,7 @@ class SequencePatternTest {
 			void testQuantifiedNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@Disabled
@@ -9271,7 +9279,7 @@ class SequencePatternTest {
 			void testInnerQuantification(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@Disabled
@@ -9284,7 +9292,7 @@ class SequencePatternTest {
 			void testOuterQuantification(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
 			@Disabled
@@ -9297,7 +9305,7 @@ class SequencePatternTest {
 			void testFullQuantification(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertComplex(builder(expand(query)), target, matches, hits);
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 		}
 
@@ -9410,7 +9418,7 @@ class SequencePatternTest {
 		void testRepetitionAdjacent(String query, String target, int matches,
 				// [node_id][match_id][hits]
 				@IntMatrixArg int[][][] hits) {
-			assertComplex(builder(expand(query)), target, matches, hits);
+			assertResult(target, builder(expand(query)).build(), config(matches, hits));
 		}
 
 
@@ -9423,7 +9431,7 @@ class SequencePatternTest {
 		void testNestedBranches(String query, String target, int matches,
 				// [node_id][match_id][hits]
 				@IntMatrixArg int[][][] hits) {
-			assertComplex(builder(expand(query)), target, matches, hits);
+			assertResult(target, builder(expand(query)).build(), config(matches, hits));
 		}
 
 
@@ -9437,7 +9445,7 @@ class SequencePatternTest {
 		void test__Template(String query, String target, int matches,
 				// [node_id][match_id][hits]
 				@IntMatrixArg int[][][] hits) {
-			assertComplex(builder(expand(query)), target, matches, hits);
+			assertResult(target, builder(expand(query)).build(), config(matches, hits));
 		}
 	}
 }
