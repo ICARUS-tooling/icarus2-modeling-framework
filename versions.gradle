@@ -23,5 +23,6 @@ ext {
 	versions.assertj = '3.11.1'
 	versions.antlr = '4.7.2'
 	versions.json = '2.10.1'
-	versions.graphstream = '2.0'
+	versions.jgoodies = '1.9.0'
+	versions.jgraph = '4.1.0'
 }

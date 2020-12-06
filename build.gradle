@@ -84,8 +84,10 @@ subprojects {
 		antlrRuntime
 		json
 		apiguardian
-		graphstream
-		// default logging functionality
+		
+		// GUI related stuff
+		jgoodies
+		jgraph
 			
 		// TEST ENVIRONMENT
 		junit
@@ -149,11 +151,11 @@ subprojects {
 		json "com.fasterxml.jackson.module:jackson-module-jsonSchema:${versions.json}"
 		json "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${versions.json}"
 		
-		// https://mvnrepository.com/artifact/org.graphstream/gs-core
-		graphstream "org.graphstream:gs-core:${versions.graphstream}"
-		// https://mvnrepository.com/artifact/org.graphstream/gs-ui-swing
-		graphstream "org.graphstream:gs-ui-swing:${versions.graphstream}"
+		// https://mvnrepository.com/artifact/com.jgoodies/jgoodies-forms
+		jgoodies "com.jgoodies:jgoodies-forms:${versions.jgoodies}"
 		
+		// https://mvnrepository.com/artifact/com.github.vlsi.mxgraph/jgraphx
+		jgraph "com.github.vlsi.mxgraph:jgraphx:${versions.jgraph}"
 			
 		// TEST ENVIRONMENT
 		
