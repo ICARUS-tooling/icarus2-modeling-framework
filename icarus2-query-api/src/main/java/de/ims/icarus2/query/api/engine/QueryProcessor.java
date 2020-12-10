@@ -41,8 +41,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -191,8 +189,7 @@ public class QueryProcessor {
 		stream.markProcessed();
 	}
 
-	@VisibleForTesting
-	List<IqlGroup> processGrouping(String rawGrouping) {
+	public List<IqlGroup> processGrouping(String rawGrouping) {
 		checkNotEmpty(rawGrouping);
 
 		IQLParser parser = createParser(rawGrouping, "rawGrouping");
@@ -203,8 +200,7 @@ public class QueryProcessor {
 		}
 	}
 
-	@VisibleForTesting
-	void processResult(String rawResult, IqlResult result, boolean primary) {
+	public void processResult(String rawResult, IqlResult result, boolean primary) {
 		checkNotEmpty(rawResult);
 
 		IQLParser parser = createParser(rawResult, "rawResult");
@@ -215,8 +211,7 @@ public class QueryProcessor {
 		}
 	}
 
-	@VisibleForTesting
-	IqlPayload processPayload(String rawPayload) {
+	public IqlPayload processPayload(String rawPayload) {
 		checkNotEmpty(rawPayload);
 
 		IQLParser parser = createParser(rawPayload, "rawPayload");

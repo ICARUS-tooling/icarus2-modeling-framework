@@ -111,7 +111,7 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
-import de.ims.icarus2.query.api.engine.QueryProcessorTest;
+import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArg;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArrayArg;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Branch;
@@ -216,7 +216,7 @@ class SequencePatternTest {
 	 * This utility methods exists to force the recognition of nodes as mappable entries
 	 * in the query so we can test the occurrence of dummy nodes.
 	 */
-	private static final  Function<IqlNode, IqlNode> PROMOTE_NODE =  node -> {
+	static final  Function<IqlNode, IqlNode> PROMOTE_NODE =  node -> {
 		if(!node.getConstraint().isPresent()) {
 			IqlExpression exp = new IqlExpression();
 			exp.setContent("true");
@@ -466,7 +466,7 @@ class SequencePatternTest {
 
 	static SequencePattern.Builder builder(String rawPayload) {
 
-		IqlPayload payload = QueryProcessorTest.parsePayload(rawPayload);
+		IqlPayload payload = new QueryProcessor(false).processPayload(rawPayload);
 		assertThat(payload).as("No payload").isNotNull();
 		assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
 		assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
@@ -670,7 +670,7 @@ class SequencePatternTest {
 		private void prepareState(State state) {
 
 			if(!results.isEmpty()) {
-				state.resultHandler = this;
+				state.resultHandler(this);
 			}
 
 			if(monitor!=null) {

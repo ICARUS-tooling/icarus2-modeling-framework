@@ -19,9 +19,13 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -122,5 +126,37 @@ public abstract class AbstractIqlQueryElement implements IqlQueryElement {
 
 	protected Boolean setOrFallback(boolean value, boolean fallback) {
 		return value==fallback ? null : Boolean.valueOf(value);
+	}
+
+	/**
+	 * Helper class to collect nested elements and turn them into a single array.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	@Deprecated
+	protected static class Buffer {
+		private List<IqlQueryElement> elements = new ArrayList<>();
+
+		public Buffer add(@Nullable IqlQueryElement element) {
+			if(element!=null) {
+				elements.add(element);
+			}
+			return this;
+		}
+
+		public Buffer add(Optional<? extends IqlQueryElement> element) {
+			element.ifPresent(this::add);
+			return this;
+		}
+
+		public Buffer add(Collection<? extends IqlQueryElement> list) {
+			list.forEach(this::add);
+			return this;
+		}
+
+		public IqlQueryElement[] asArray() {
+			return elements.toArray(new IqlQueryElement[0]);
+		}
 	}
 }

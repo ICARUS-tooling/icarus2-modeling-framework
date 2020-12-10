@@ -267,6 +267,12 @@ public abstract class IqlElement extends IqlUnique {
 		private Optional<IqlElement> children = Optional.empty();
 
 		@Override
+		public void checkIntegrity() {
+			super.checkIntegrity();
+			checkOptionalNested(children);
+		}
+
+		@Override
 		public IqlType getType() { return IqlType.TREE_NODE; }
 
 		public Optional<IqlElement> getChildren() { return children; }

@@ -66,4 +66,7 @@ public interface IqlQueryElement extends DataObject {
 	 * the requirements of the element.
 	 */
 	void checkIntegrity();
+
+	/** Returns all the nested elements together as one array. */
+//	IqlQueryElement[] children();
 }

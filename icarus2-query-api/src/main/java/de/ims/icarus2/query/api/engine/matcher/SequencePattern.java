@@ -193,6 +193,8 @@ public class SequencePattern {
 		//TODO
 	}
 
+	public IqlQueryElement getSource() { return source; }
+
 	/**
 	 * Crates a new matcher that uses this state machine and that can be safely used from
 	 * within a single thread.
@@ -676,12 +678,6 @@ public class SequencePattern {
 			 * in an ADJACENT sequence as erroneous.
 			 */
 			if(marker!=null) {
-//				if(pendingMarker!=null)
-//					throw new QueryException(QueryErrorCode.INCORRECT_USE,
-//							"Unresolved pending marker, this usually happens when using the "
-//							+ "'ADJACENT' modifier with multiple marker-bearing nodes. Affected node:\n"
-//							+ serialize(source));
-
 				int border = border();
 				// Creates the marker window
 				frame.prefix().push(marker(marker));
@@ -1162,7 +1158,7 @@ public class SequencePattern {
 				if(i>0) {
 					Node head = step.start();
 					// Any node but the first can receive a scan attached to it
-					if(!head.isScanCapable()) {
+					if(!head.isScanCapable() && !head.isFixed()) {
 						// Cashing will be used either for complex inner structure or intermediate nodes
 						step.push(explore(true, needsCacheForScan(head) || i<last));
 					}
@@ -1283,7 +1279,8 @@ public class SequencePattern {
 			final Frame frame = process(rootElement);
 
 			// Prepare top-level scan if needed
-			if(!frame.start().isScanCapable()) {
+			if(!frame.start().isScanCapable() && !frame.start().isFixed()
+					&& (!frame.hasPrefix() || !frame.prefix().start().isFixed())) {
 
 				/*
 				 *  If we have complex disjunctive markers, we need to take the
@@ -1486,6 +1483,11 @@ public class SequencePattern {
 		void monitor(Monitor monitor) {
 			checkState("Monitor already set", this.monitor==null);
 			this.monitor = monitor;
+		}
+
+		void resultHandler(Consumer<State> resultHandler) {
+			checkState("Result handler already set", this.resultHandler==null);
+			this.resultHandler = resultHandler;
 		}
 	}
 
@@ -1815,7 +1817,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public interface Monitor {
+	interface Monitor {
 		//TODO add callbacks for result dispatch and other events
 
 		/** Called when a proper node is entered */
@@ -2346,6 +2348,8 @@ public class SequencePattern {
 
 		boolean isProxy() { return false; }
 
+		boolean isFixed() { return isProxy() ? getNext().isFixed() : false; }
+
 		Node getNext() { return next; }
 
 		void detach() { setNext(accept); }
@@ -2637,6 +2641,9 @@ public class SequencePattern {
 		}
 
 		@Override
+		boolean isFixed() { return true; }
+
+		@Override
 		boolean intersect(State state) {
 			return state.intersect(region);
 		}
@@ -2674,6 +2681,9 @@ public class SequencePattern {
 			return new NodeInfo(this, Type.CLIP_DYNAMIC)
 					.property(Field.CLIP, intervalIndex);
 		}
+
+		@Override
+		boolean isFixed() { return false; }
 
 		@Override
 		boolean intersect(State state) {
@@ -2715,6 +2725,9 @@ public class SequencePattern {
 		}
 
 		@Override
+		boolean isFixed() { return next.isFixed(); }
+
+		@Override
 		boolean match(State state, int pos) {
 			if(save) {
 				state.borders[borderId] = state.to;
@@ -2733,7 +2746,7 @@ public class SequencePattern {
 					.build();
 		}
 
-		/** Delegates to {@link Node#next} node, since er're only a proxy. */
+		/** Delegates to {@link Node#next} node, since we're only a proxy. */
 		@Override
 		boolean isFinisher() { return next.isFinisher(); }
 
@@ -2774,6 +2787,9 @@ public class SequencePattern {
 					.property(Field.RESET, reset);
 		}
 
+		@Override
+		boolean isFixed() { return next.isFixed(); }
+
 		/** Tries  */
 		@Override
 		boolean match(State state, int pos) {
@@ -2796,7 +2812,7 @@ public class SequencePattern {
 					.build();
 		}
 
-		/** Delegates to {@link Node#next} node, since er're only a proxy. */
+		/** Delegates to {@link Node#next} node, since we're only a proxy. */
 		@Override
 		boolean isFinisher() { return next.isFinisher(); }
 	}
@@ -2820,6 +2836,9 @@ public class SequencePattern {
 					.property(Field.MIN_SIZE, minSize)
 					.atoms(false, atom);
 		}
+
+		@Override
+		boolean isFixed() { return atom.isFixed(); }
 
 		@Override
 		boolean isScanCapable() { return true; }
@@ -2942,6 +2961,9 @@ public class SequencePattern {
 			return new NodeInfo(this, Type.ALL)
 					.atoms(false, atom);
 		}
+
+		@Override
+		boolean isFixed() { return atom.isFixed(); }
 
 		@Override
 		boolean isScanCapable() { return true; }
@@ -3347,6 +3369,16 @@ public class SequencePattern {
 					.atoms(true, atoms);
 		}
 
+		@Override
+		boolean isFixed() {
+			for(Node atom : atoms) {
+				if(!atom.isFixed()) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		/**
 		 * We need to both re-route this node AND the branch-conn to the give
 		 * 'next' connector. Otherwise nested branching would result in disconnected
@@ -3472,6 +3504,9 @@ public class SequencePattern {
 					.property(Field.POSITION_BUFFER, posBuf)
 					.atoms(false, getAtoms());
 		}
+
+		@Override
+		boolean isFixed() { return atom.isFixed(); }
 
 		@Override
 		Node[] getAtoms() { return new Node[] {findAtom==null ? atom : findAtom}; }

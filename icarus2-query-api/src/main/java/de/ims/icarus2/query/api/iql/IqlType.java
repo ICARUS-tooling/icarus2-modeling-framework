@@ -41,7 +41,7 @@ public enum IqlType {
 	CORPUS("Corpus", "corpus", IqlCorpus.class),
 	LAYER("Layer", "layer", IqlLayer.class),
 	SCOPE("Scope", "scope", IqlScope.class),
-	PAYLOAD("Payload", "stream", IqlPayload.class),
+	PAYLOAD("Payload", "payload", IqlPayload.class),
 	LANE("Lane", "lane", IqlLane.class),
 	GROUP("Group", "group", IqlGroup.class),
 	DATA("Data", "data", IqlData.class),
