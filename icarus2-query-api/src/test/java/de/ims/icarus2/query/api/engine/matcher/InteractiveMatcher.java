@@ -3,6 +3,7 @@
  */
 package de.ims.icarus2.query.api.engine.matcher;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._float;
@@ -10,40 +11,90 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Vector;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.event.ListSelectionEvent;
 
 import com.jgoodies.forms.builder.FormBuilder;
-import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import com.jgoodies.forms.factories.Forms;
+import com.jgoodies.forms.factories.Paddings;
+import com.mxgraph.layout.mxCompactTreeLayout;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxGraphModel;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
+import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.view.mxStylesheet;
 
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.standard.members.item.DefaultItem;
+import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
+import de.ims.icarus2.query.api.iql.IqlBinding;
+import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
+import de.ims.icarus2.query.api.iql.IqlElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
+import de.ims.icarus2.query.api.iql.IqlGroup;
+import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
+import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
+import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
+import de.ims.icarus2.query.api.iql.IqlPayload;
+import de.ims.icarus2.query.api.iql.IqlQuery;
+import de.ims.icarus2.query.api.iql.IqlQueryElement;
+import de.ims.icarus2.query.api.iql.IqlResult;
+import de.ims.icarus2.query.api.iql.IqlScope;
+import de.ims.icarus2.query.api.iql.IqlSorting;
+import de.ims.icarus2.query.api.iql.IqlStream;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -53,7 +104,7 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class InteractiveMatcher extends JPanel {
+public class InteractiveMatcher {
 
 	public static void main(String[] args) {
 
@@ -65,9 +116,7 @@ public class InteractiveMatcher extends JPanel {
 
 		SwingUtilities.invokeLater(() -> {
 			InteractiveMatcher im = new InteractiveMatcher();
-			im.reset(pattern);
-
-			im.display();
+			im.showFrame("{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}", "XXXX");
 		});
 	}
 
@@ -81,8 +130,6 @@ public class InteractiveMatcher extends JPanel {
 //			throw new InternalError(e);
 //		}
 //	}
-
-	private static final long serialVersionUID = 4007774984974640067L;
 
 	private static final String TITLE = "ICARUS2 - IQL Interactive Matcher";
 
@@ -113,20 +160,25 @@ public class InteractiveMatcher extends JPanel {
 
 	private volatile JFrame frame;
 
+	/** Maps general node ids to info objects */
+	private final Int2ObjectMap<NodeInfo> id2info = new Int2ObjectOpenHashMap<>();
+	/** Maps "proper" node ids to info obejcts */
+	private final Int2ObjectMap<NodeInfo> node2info = new Int2ObjectOpenHashMap<>();
 	private final Map<NodeInfo, mxCell> sm2graph = new Reference2ObjectOpenHashMap<>();
+	private final Map<IqlQueryElement, mxCell> iql2graph = new Reference2ObjectOpenHashMap<>();
+	private final List<mxCell> targets = new ArrayList<>();
+
+	private mxCell dummyTarget;
 
 	InteractiveMatcher() {
 		stylesheet = createStylesheet();
 		mxCell root = createRoot();
 		model = createModel(root);
 		graph = createGraph(model, stylesheet);
-		lanes = null/*createLanes(graph, root)*/; //TODO
+		lanes = new Lanes();
 		graphComponent = createGraphComponent(graph);
 
 		initGraphStructure();
-
-		setLayout(new BorderLayout());
-		add(graphComponent, BorderLayout.CENTER);
 	}
 
 	private interface Styles {
@@ -139,18 +191,24 @@ public class InteractiveMatcher extends JPanel {
 		static final String SM_BRANCH_START = "sm_branch_start";
 		static final String SM_BRANCH_END = "sm_branch_end";
 		static final String SM_NODE = "sm_node";
+		static final String SM_EDGE = "sm_edge";
+		static final String SM_EDGE_ATOM = "sm_edge_atom";
+		static final String SM_EDGE_BRANCH = "sm_edge_branch";
 
 		static final String IQL_BASIC = "iql_basic";
+		static final String IQL_EDGE = "iql_edge";
+
+		static final String TARGET_BASIC = "target_basic";
+		static final String TARGET_DUMMY = "target_dummy";
+
+		static final String LINK_RESULT = "link_result";
+		static final String LINK_STEP = "link_step";
 	}
 
 	private mxStylesheet createStylesheet() {
 		mxStylesheet stylesheet = new mxStylesheet();
 
 		StyleBuilder builder = StyleBuilder.forStylesheet(stylesheet);
-
-		builder.modifyDefaultEdgeStyle()
-			.newEntry(mxConstants.STYLE_EDGE, mxConstants.EDGESTYLE_SIDETOSIDE)
-			.done();
 
 		builder.newStyle(Styles.LANE)
 			.newEntry(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_SWIMLANE)
@@ -163,13 +221,25 @@ public class InteractiveMatcher extends JPanel {
 			.newEntry(mxConstants.STYLE_FOLDABLE, "1")
 			.commit();
 
+		builder.newStyle(Styles.SM_EDGE)
+			.newEntry(mxConstants.STYLE_ENDARROW, mxConstants.ARROW_CLASSIC)
+			.commit();
+
+		builder.newStyle(Styles.SM_EDGE_ATOM, Styles.SM_EDGE)
+			.newEntry(mxConstants.STYLE_ENDARROW, mxConstants.ARROW_DIAMOND)
+			.commit();
+
+		builder.newStyle(Styles.SM_EDGE_BRANCH, Styles.SM_EDGE)
+			.newEntry(mxConstants.STYLE_DASHED, _boolean(true))
+			.commit();
+
 		builder.newStyle(Styles.SM_BASIC)
 			.newEntry(mxConstants.STYLE_FILLCOLOR, mxConstants.NONE)
 			.newEntry(mxConstants.STYLE_STROKECOLOR, "black")
 			.newEntry(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE)
 			.newEntry(mxConstants.STYLE_STROKEWIDTH, _float(1.5F))
-			.newEntry(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_CENTER)
-			.newEntry(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_CENTER)
+//			.newEntry(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE)
+//			.newEntry(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_MIDDLE)
 			.newEntry(mxConstants.STYLE_FOLDABLE, "0")
 			.newEntry(mxConstants.STYLE_AUTOSIZE, "1")
 			.commit();
@@ -204,6 +274,20 @@ public class InteractiveMatcher extends JPanel {
 			.newEntry(mxConstants.STYLE_STROKEWIDTH, _float(1.0F))
 			.commit();
 
+		builder.newStyle(Styles.TARGET_BASIC)
+			.newEntry(mxConstants.STYLE_FILLCOLOR, "FFD455")
+			.newEntry(mxConstants.STYLE_STROKECOLOR, "black")
+			.newEntry(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE)
+			.newEntry(mxConstants.STYLE_FOLDABLE, "0")
+			.commit();
+
+		builder.newStyle(Styles.TARGET_DUMMY)
+			.newEntry(mxConstants.STYLE_FILLCOLOR, "#FF2A55")
+			.newEntry(mxConstants.STYLE_STROKECOLOR, "#FF0000")
+			.newEntry(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE)
+			.newEntry(mxConstants.STYLE_STROKEWIDTH, _float(1.0F))
+			.commit();
+
 		//TODO setup additional styles
 		return stylesheet;
 	}
@@ -223,10 +307,6 @@ public class InteractiveMatcher extends JPanel {
 		return model;
 	}
 
-	private Lanes createLanes(mxGraph graph, mxCell parent) {
-		return new Lanes(graph, parent);
-	}
-
 	private mxGraph createGraph(mxGraphModel model, mxStylesheet stylesheet) {
 		mxGraph graph = new mxGraph(model, stylesheet)/*{
 			@Override
@@ -242,20 +322,20 @@ public class InteractiveMatcher extends JPanel {
 			}
 		}*/; //TODO
 
-		graph.setAutoSizeCells(true);
-		graph.setBorder(30);
+//		graph.setAutoSizeCells(true);
+//		graph.setBorder(30);
 		graph.setHtmlLabels(false);
 //		graph.setGridSize(10);
 //		graph.setAllowDanglingEdges(false);
-		graph.setAutoOrigin(true);
+//		graph.setAutoOrigin(true);
 //		graph.setCellsCloneable(false);
-		graph.setCellsEditable(false);
-		graph.setCellsMovable(false);
-		graph.setCellsResizable(false);
-		graph.setCellsSelectable(true);
+//		graph.setCellsEditable(false);
+//		graph.setCellsMovable(false);
+//		graph.setCellsResizable(false);
+//		graph.setCellsSelectable(true);
 //		graph.setCellsDisconnectable(false);
 //		graph.setConnectableEdges(false);
-		graph.setDropEnabled(false);
+//		graph.setDropEnabled(false);
 //		graph.setEdgeLabelsMovable(false);
 //		graph.setGridEnabled(true);
 //		graph.setKeepEdgesInBackground(true);
@@ -263,8 +343,8 @@ public class InteractiveMatcher extends JPanel {
 //		graph.setLabelsClipped(false);
 //		graph.setSwimlaneNesting(true);
 		graph.setExtendParents(true);
-		graph.setExtendParentsOnAdd(true);
-		graph.setDefaultOverlap(0);
+//		graph.setExtendParentsOnAdd(true);
+//		graph.setDefaultOverlap(0);
 
 		//TODO setup
 		return graph;
@@ -278,8 +358,8 @@ public class InteractiveMatcher extends JPanel {
 //		component.setToolTips(true);
 //		component.setImportEnabled(false);
 		component.setFoldingEnabled(true);
-//		component.setConnectable(true);
-//		component.setDragEnabled(false);
+		component.setConnectable(false);
+		component.setDragEnabled(false);
 //		component.setKeepSelectionVisibleOnZoom(true);
 
 //		component.getViewport().setBackground(Color.white);
@@ -288,13 +368,21 @@ public class InteractiveMatcher extends JPanel {
 	}
 
 	private void initGraphStructure() {
-		Object root = model.getRoot();
+//		mxSwimlaneManager swimlaneManager = new mxSwimlaneManager(graph);
+//		swimlaneManager.setEnabled(true);
+//		swimlaneManager.setAddEnabled(true);
+//		swimlaneManager.setResizeEnabled(true);
+//		swimlaneManager.setHorizontal(false);
+
+		model.beginUpdate();
+		lanes.init(graph, graph.getDefaultParent());
+		model.endUpdate();
 	}
 
 	private String createLabel(Object cell) {
 		Object value = model.getValue(cell);
 		if(value instanceof Payload) {
-			return ((Payload)value).label;
+			return ((Payload<?>)value).label;
 		}
 		return null;
 	}
@@ -303,13 +391,37 @@ public class InteractiveMatcher extends JPanel {
 		return null;
 	}
 
-	void reset(SequencePattern pattern) {
+	void displayStateMachine(SequencePattern pattern) {
 		model.beginUpdate();
-		try {
-			layoutStateMachine(pattern.info());
-		} finally {
-			model.endUpdate();
-		}
+
+		layoutStateMachine(pattern.info());
+
+		// Pretty mode for lanes
+		lanes.sync(graph);
+
+		model.endUpdate();
+	}
+
+	void displayQuery(IqlQueryElement element) {
+		model.beginUpdate();
+
+		layoutQuery(element);
+
+		// Pretty mode for lanes
+		lanes.sync(graph);
+
+		model.endUpdate();
+	}
+
+	void displayTarget(Item[] items) {
+		model.beginUpdate();
+
+		layoutTarget(items);
+
+		// Pretty mode for lanes
+		lanes.sync(graph);
+
+		model.endUpdate();
 	}
 
 	private mxCell lookup(NodeInfo node) {
@@ -317,12 +429,6 @@ public class InteractiveMatcher extends JPanel {
 		if(cell==null)
 			throw new IllegalArgumentException("Unknown node: "+node);
 		return cell;
-	}
-
-	private void resize(mxCell cell, int width, int height) {
-		mxGeometry geo = cell.getGeometry();
-		geo.setWidth(width);
-		geo.setHeight(height);
 	}
 
 	private mxCell makeSMNode(NodeInfo info, Object parent) {
@@ -368,8 +474,13 @@ public class InteractiveMatcher extends JPanel {
 			label = info.getClassLabel();
 		}
 
-		mxCell cell = (mxCell) graph.insertVertex(parent, "sm"+info.getId(),
-				new Payload(info, label), 0, 0, w, h, style);
+		if(!label.isEmpty()) {
+			label += "\n"+String.valueOf(info.getId());
+		}
+
+		String id = "sm"+info.getId();
+		Object value = new Payload<>(info, label);
+		mxCell cell = (mxCell) graph.insertVertex(parent, id, value, 0, 0, w, h, style);
 
 		if(!label.isEmpty()) {
 			graph.cellSizeUpdated(cell, true);
@@ -377,31 +488,55 @@ public class InteractiveMatcher extends JPanel {
 		return cell;
 	}
 
-	private mxCell makeSMEdge(mxCell source, mxCell target, Object parent, LinkType linkType) {
-		String style = null;
-		//TODO customize edge style based on link type
+	private mxCell makeSMEdge(mxCell source, mxCell target, Object parent, SMLinkType sMLinkType) {
+		String style = Styles.SM_EDGE;
 
-		mxCell edge = (mxCell) graph.insertEdge(parent, source.getId()+"-"+target.getId(),
-				null, source, target, style);
+		//TODO customize edge style based on link type
+		switch (sMLinkType) {
+		case STANDARD: {
+			// no-op
+		} break;
+
+		case BRANCH: {
+			style = Styles.SM_EDGE_BRANCH;
+		} break;
+
+		case ATOM: {
+			style = Styles.SM_EDGE_ATOM;
+		} break;
+
+		default:
+			break;
+		}
+
+		String id = source.getId()+"-"+target.getId();
+		mxCell edge = (mxCell) graph.insertEdge(parent, id, null, source, target, style);
 
 		return edge;
 	}
 
-	private mxCell makeSMEdge(NodeInfo source, @Nullable NodeInfo target, Object parent, LinkType linkType) {
+	private mxCell makeSMEdge(NodeInfo source, @Nullable NodeInfo target, Object parent, boolean atom) {
 		requireNonNull(source);
 		if(target==null) {
 			return null;
 		}
-		return makeSMEdge(lookup(source), lookup(target), parent, linkType);
+		SMLinkType sMLinkType = (isBranch(source) || isBranch(target)) ? SMLinkType.BRANCH :
+			atom ? SMLinkType.ATOM : SMLinkType.STANDARD;
+		return makeSMEdge(lookup(source), lookup(target), parent, sMLinkType);
 	}
 
 	private void layoutStateMachine(NodeInfo[] nodes) {
-		Object parent = graph.getDefaultParent();
+		Object parent = lanes.smLane();
 
 		// clear parent
 		graph.removeCells(mxGraphModel.getChildren(model, parent));
+		sm2graph.clear();
+		id2info.clear();
+		node2info.clear();
 
-		Int2ObjectMap<NodeInfo> infoLut = new Int2ObjectOpenHashMap<>();
+		if(nodes.length==0) {
+			return;
+		}
 
 		mxCell root = null;
 
@@ -409,51 +544,380 @@ public class InteractiveMatcher extends JPanel {
 		for(NodeInfo info : nodes) {
 			mxCell cell = makeSMNode(info, parent);
 			sm2graph.put(info, cell);
-			infoLut.put(info.getId(), info);
+			id2info.put(info.getId(), info);
 			if(info.getType()==Type.BEGIN) {
 				root = cell;
+			}
+			if(info.getType()==Type.SINGLE) {
+				int nodeId = ((Number)info.getProperty(Field.NODE)).intValue();
+				node2info.put(nodeId, info);
 			}
 		}
 
 		// Second pass: now do the linking
 		for(NodeInfo info : nodes) {
-			makeSMEdge(info, infoLut.get(info.getLogicalNext()), parent, LinkType.STANDARD);
+			makeSMEdge(info, id2info.get(info.getLogicalNext()), parent, false);
 
-			LinkType atomLink = info.getType()==Type.BRANCH ? LinkType.BRANCH : LinkType.ATOM;
 			IntList atoms = info.getAtoms();
 			for (int i = 0; i < atoms.size(); i++) {
-				makeSMEdge(info, infoLut.get(atoms.getInt(i)), parent, atomLink);
+				makeSMEdge(info, id2info.get(atoms.getInt(i)), parent, true);
 			}
 		}
 
-		mxHierarchicalLayout layout = new mxHierarchicalLayout(graph, SwingConstants.WEST);
-		layout.setResizeParent(true);
-		layout.setInterRankCellSpacing(25); // default is 50
-		layout.setIntraCellSpacing(15); // default is 30
-		layout.setInterHierarchySpacing(20); // default is 60
-		layout.execute(parent, Arrays.asList(root));
+//		mxHierarchicalLayout layout = new mxHierarchicalLayout(graph, SwingConstants.WEST);
+////		layout.setResizeParent(true);
+////		layout.setFineTuning(true);
+//		layout.setParentBorder(20);
+//		layout.setDisableEdgeStyle(false);
+//		layout.setInterRankCellSpacing(35); // default is 50
+//		layout.setIntraCellSpacing(25); // default is 30
+//		layout.setInterHierarchySpacing(35); // default is 60
+//		layout.execute(parent, null/*Arrays.asList(root)*/);
 
-//		mxCompactTreeLayout layout = new mxCompactTreeLayout(graph, true);
-//		layout.execute(proxy, root);
+		mxCompactTreeLayout layout = new mxCompactTreeLayout(graph, true);
+		layout.setGroupPadding(20); // default is 10
+		layout.setNodeDistance(10); // default is 20
+		layout.setLevelDistance(10); // default is 10
+		layout.execute(parent, root);
 	}
 
-	private enum LinkType {
+	private boolean isBranch(NodeInfo info) {
+		return info.getType()==Type.BRANCH || info.getType()==Type.BRANCH_CONN;
+	}
+
+	private enum SMLinkType {
 		STANDARD,
 		ATOM,
 		BRANCH,
 		;
 	}
 
-	void display() {
+	private mxCell makeIqlNode(IqlQueryElement element, Object parent) {
+		String style = Styles.IQL_BASIC;
+		String id = "iql"+model.getChildCount(parent);
+		String label = element.getClass().getSimpleName();
+		int w = 0;
+		int h = 0;
+
+		//TODO switch on element type to customize style
+
+		Object value = new Payload<>(element, label);
+		mxCell cell = (mxCell) graph.insertVertex(parent, id, value, 0, 0, w, h, style);
+
+		if(!label.isEmpty()) {
+			graph.cellSizeUpdated(cell, true);
+		}
+		return cell;
+	}
+
+	private mxCell makeIqlEdge(mxCell source, mxCell target, Object parent, String relation) {
+		String style = Styles.IQL_EDGE;
+
+		//TODO customize style
+
+		String id = source.getId()+"-"+target.getId();
+		mxCell edge = (mxCell) graph.insertEdge(parent, id, relation, source, target, style);
+
+		return edge;
+	}
+
+	private mxCell layoutQueryElement(IqlQueryElement element, @Nullable String relation,
+			Object parent, @Nullable mxCell owner) {
+
+		mxCell cell = makeIqlNode(element, parent);
+		iql2graph.put(element, cell);
+
+		if(owner!=null) {
+			makeIqlEdge(owner, cell, parent, relation);
+		}
+
+		String label = null;
+
+		switch (element.getType()) {
+		case BINDING: {
+			layoutQueryElements(((IqlBinding)element).getMembers(), "member", parent, cell);
+		} break;
+		case DISJUNCTION: {
+			layoutQueryElements(((IqlElementDisjunction)element).getAlternatives(), "alt", parent, cell);
+		} break;
+		case EDGE: {
+			layoutQueryElement(((IqlEdge)element).getSource(), "source", parent, cell);
+			layoutQueryElement(((IqlEdge)element).getTarget(), "target", parent, cell);
+			layoutQueryElement(((IqlEdge)element).getConstraint(), "constraint", parent, cell);
+		} break;
+		case GROUP: {
+			layoutQueryElement(((IqlGroup)element).getGroupBy(), "groupBy", parent, cell);
+			layoutQueryElement(((IqlGroup)element).getFilterOn(), "filterOn", parent, cell);
+			layoutQueryElement(((IqlGroup)element).getDefaultValue(), "default", parent, cell);
+		} break;
+		case GROUPING: {
+			layoutQueryElements(((IqlGrouping)element).getQuantifiers(), "quant", parent, cell);
+			layoutQueryElements(((IqlGrouping)element).getElements(), "element", parent, cell);
+		} break;
+		case LANE: {
+			layoutQueryElement(((IqlLane)element).getElement(), "element", parent, cell);
+		} break;
+		case MARKER_CALL: {
+			IqlMarkerCall call = (IqlMarkerCall)element;
+			label = call.getName(); //TODO add arguments to label
+		} break;
+		case MARKER_EXPRESSION: {
+			IqlMarkerExpression exp = (IqlMarkerExpression)element;
+			layoutQueryElements(exp.getItems(), exp.getExpressionType()==MarkerExpressionType.CONJUNCTION ? "and" : "or", parent, cell);
+		} break;
+		case NODE: {
+			layoutQueryElements(((IqlNode)element).getQuantifiers(), "quant", parent, cell);
+			layoutQueryElement(((IqlNode)element).getMarker(), "marker", parent, cell);
+			layoutQueryElement(((IqlNode)element).getConstraint(), "constraint", parent, cell);
+		} break;
+		case PAYLOAD: {
+			layoutQueryElements(((IqlPayload)element).getBindings(), "binding", parent, cell);
+			layoutQueryElements(((IqlPayload)element).getLanes(), "lane", parent, cell);
+			layoutQueryElement(((IqlPayload)element).getConstraint(), "constraint", parent, cell);
+			layoutQueryElement(((IqlPayload)element).getFilter(), "filter", parent, cell);
+		} break;
+		case PREDICATE: {
+			layoutQueryElement(((IqlPredicate)element).getExpression(), "expression", parent, cell);
+		} break;
+		case QUANTIFIER: {
+			label = element.toString();
+		} break;
+		case QUERY: {
+			layoutQueryElements(((IqlQuery)element).getImports(), "import", parent, cell);
+			layoutQueryElements(((IqlQuery)element).getSetup(), "setup", parent, cell);
+			layoutQueryElements(((IqlQuery)element).getEmbeddedData(), "data", parent, cell);
+			layoutQueryElements(((IqlQuery)element).getStreams(), "stream", parent, cell);
+		} break;
+		case RESULT: {
+			layoutQueryElements(((IqlResult)element).getResultInstructions(), "rule", parent, cell);
+			layoutQueryElements(((IqlResult)element).getSortings(), "sort", parent, cell);
+		} break;
+		case RESULT_INSTRUCTION: {
+			//TODO add handling once the class gets fleshed out
+		} break;
+		case SCOPE: {
+			layoutQueryElements(((IqlScope)element).getLayers(), "layer", parent, cell);
+		} break;
+		case SET: {
+			layoutQueryElements(((IqlSet)element).getElements(), "element", parent, cell);
+		} break;
+		case SORTING: {
+			layoutQueryElement(((IqlSorting)element).getExpression(), "expression", parent, cell);
+		} break;
+		case STREAM: {
+			layoutQueryElements(((IqlStream)element).getLayers(), "layer", parent, cell);
+			layoutQueryElements(((IqlStream)element).getGrouping(), "group", parent, cell);
+			layoutQueryElement(((IqlStream)element).getCorpus(), "corpus", parent, cell);
+			layoutQueryElement(((IqlStream)element).getScope(), "scope", parent, cell);
+			layoutQueryElement(((IqlStream)element).getPayload(), "payload", parent, cell);
+			layoutQueryElement(((IqlStream)element).getResult(), "result", parent, cell);
+
+		} break;
+		case TERM: {
+			IqlTerm term = (IqlTerm) element;
+			layoutQueryElements(term.getItems(), term.getOperation()==BooleanOperation.CONJUNCTION ? "and" : "or", parent, cell);
+		} break;
+		case TREE_NODE: {
+			layoutQueryElements(((IqlTreeNode)element).getQuantifiers(), "quant", parent, cell);
+			layoutQueryElement(((IqlTreeNode)element).getMarker(), "marker", parent, cell);
+			layoutQueryElement(((IqlTreeNode)element).getConstraint(), "constraint", parent, cell);
+			layoutQueryElement(((IqlTreeNode)element).getChildren(), "children", parent, cell);
+		} break;
+
+		default:
+			break;
+		}
+
+		if(label!=null) {
+			Payload<?> value = (Payload<?>) cell.getValue();
+			value.setLabel(label);
+			graph.cellSizeUpdated(cell, true);
+		}
+
+		return cell;
+	}
+
+	private mxCell layoutQueryElement(Optional<? extends IqlQueryElement> element, String relation, Object parent, @Nullable mxCell owner) {
+		if(element.isPresent()) {
+			return layoutQueryElement(element.get(), relation, parent, owner);
+		}
+		return null;
+	}
+
+	private void layoutQueryElements(List<? extends IqlQueryElement> elements, String relation, Object parent, @Nullable mxCell owner) {
+		elements.forEach(element -> layoutQueryElement(element, relation, parent, owner));
+	}
+
+	private void layoutQuery(@Nullable IqlQueryElement element) {
+		Object parent = lanes.iqlLane();
+
+		// clear parent
+		graph.removeCells(mxGraphModel.getChildren(model, parent));
+		iql2graph.clear();
+
+		if(element==null) {
+			return;
+		}
+
+		mxCell root = layoutQueryElement(element, null, parent, null);
+
+		mxCompactTreeLayout layout = new mxCompactTreeLayout(graph, false);
+		layout.setGroupPadding(20); // default is 10
+		layout.setNodeDistance(15); // default is 20
+		layout.setLevelDistance(10); // default is 10
+		layout.execute(parent, root);
+	}
+
+	private void layoutTarget(Item[] items) {
+		Object parent = lanes.targetLane();
+
+		// clear parent
+		graph.removeCells(mxGraphModel.getChildren(model, parent));
+		targets.clear();
+		dummyTarget = null;
+
+		if(items.length==0) {
+			return;
+		}
+
+		int x = 150;
+		int y = 90;
+
+		final int w = 35, h = 20, sep = 100;
+
+		for (int i = 0; i < items.length; i++) {
+			Item item = items[i];
+			String label = item.toString();
+			Object value = new Payload<>(item, label);
+			mxCell cell = (mxCell) graph.insertVertex(parent, "t"+i, value, x, y, w, h, Styles.TARGET_BASIC);
+			targets.add(cell);
+
+			if(i>0) {
+				mxCell prev = targets.get(i-1);
+				String id = prev.getId()+"-"+cell.getId();
+				graph.insertEdge(parent, id, null, prev, cell, null);
+			}
+
+			x += w + sep;
+		}
+
+		x += 20;
+		dummyTarget = (mxCell) graph.insertVertex(parent, "t_dummy", null, x, y, 18, 18, Styles.TARGET_DUMMY);
+	}
+
+	Object[] linkResult(Result result) {
+		Object[] edges = new Object[result.nodes.length];
+		Object parent = graph.getDefaultParent();
+		for (int i = 0; i < result.nodes.length; i++) {
+			NodeInfo info = node2info.get(result.nodes[i]);
+			mxCell source = sm2graph.get(info);
+			mxCell target = targets.get(result.spots[i]);
+			String id = source.getId()+"-"+target.getId();
+			Object value = String.valueOf(result.id+1);
+			edges[i] = graph.insertEdge(parent, id, value, source, target, Styles.LINK_RESULT);
+		}
+		return edges;
+	}
+
+	Object[] linkStepsFull(List<Step> steps) {
+		List<Object> edges = new ArrayList<>();
+		Object parent = graph.getDefaultParent();
+		for (int i = 0; i < steps.size(); i++) {
+			Step step = steps.get(i);
+			NodeInfo info = id2info.get(step.nodeId);
+			mxCell source = sm2graph.get(info);
+			mxCell target;
+			if(info.getType()==Type.FINISH || step.pos>=targets.size()) {
+				target = dummyTarget;
+			} else {
+				target = targets.get(step.pos);
+			}
+			String id = source.getId()+"-"+target.getId();
+			String value = String.valueOf(i+1);
+			Object edge = model.getCell(id);
+			if(edge!=null) {
+				String oldValue = (String) model.getValue(edge);
+				value = oldValue+", "+value;
+				model.setValue(edge, value);
+			} else {
+				edge = graph.insertEdge(parent, id, value, source, target, Styles.LINK_STEP);
+			}
+			edges.add(edge);
+		}
+		return edges.toArray();
+	}
+
+	Object[] linkSteps(List<Step> steps, boolean onlyCurrentTrace) {
+		List<Object> edges = new ArrayList<>();
+		Object parent = graph.getDefaultParent();
+		if(onlyCurrentTrace) {
+			Set<Link> trace = new LinkedHashSet<>();
+			for(Step step : steps) {
+				Link link = new Link(step);
+				if(step.enter) {
+					trace.add(link);
+				} else {
+					trace.remove(link);
+				}
+			}
+			steps = trace.stream().map(l -> l.step).collect(Collectors.toList());
+		}
+		for (int i = 0; i < steps.size(); i++) {
+			Step step = steps.get(i);
+			NodeInfo info = id2info.get(step.nodeId);
+			mxCell source = sm2graph.get(info);
+			mxCell target;
+			if(info.getType()==Type.FINISH || step.pos>=targets.size()) {
+				target = dummyTarget;
+			} else {
+				target = targets.get(step.pos);
+			}
+			String id = source.getId()+"-"+target.getId();
+			String value = String.valueOf(i+1);
+			Object edge = model.getCell(id);
+			if(edge!=null) {
+				String oldValue = (String) model.getValue(edge);
+				value = oldValue+", "+value;
+				model.setValue(edge, value);
+			} else {
+				edge = graph.insertEdge(parent, id, value, source, target, Styles.LINK_STEP);
+			}
+			edges.add(edge);
+		}
+		return edges.toArray();
+	}
+
+	static class Link {
+		final Step step;
+		Link(Step step) { this.step = step; }
+		@Override
+		public boolean equals(Object obj) {
+			if(obj==this) {
+				return true;
+			} else if(obj instanceof Link) {
+				Link other = (Link) obj;
+				return step.nodeId==other.step.nodeId
+						&& step.pos==other.step.pos;
+			}
+			return false;
+		}
+		@Override
+		public int hashCode() { return (step.nodeId+1) * (step.pos+1); }
+	}
+
+	void showFrame(String query, String target) {
 		if(frame!=null) {
 			return;
 		}
 		SwingUtilities.invokeLater(() -> {
 			synchronized (InteractiveMatcher.this) {
 				if(frame==null) {
+					Control control = new Control();
+					control.tfQuery.setText(query);
+					control.tfTarget.setText(target);
 					frame = new JFrame(TITLE);
 					frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-					frame.add(this);
+					frame.add(control);
 					frame.setSize(1400, 700);
 					frame.setLocationRelativeTo(null);
 					frame.setVisible(true);
@@ -463,38 +927,59 @@ public class InteractiveMatcher extends JPanel {
 	}
 
 	private static class Lanes {
-		final mxCell iqlLane;
-		final mxCell smLane;
-		final mxCell targetLane;
 
-		Lanes(mxGraph graph, mxCell parent) {
-			iqlLane = (mxCell) graph.insertVertex(parent, "lane_iql",
-					"IQL Query", 0, 0, 1000, 200, Styles.LANE);
-			smLane = (mxCell) graph.insertVertex(parent, "lane_sm",
-					"State Machine", 0, 200, 1000, 200, Styles.LANE);
-			targetLane = (mxCell) graph.insertVertex(parent, "lane_ts",
-					"Target Sequence", 0, 400, 1000, 200, Styles.LANE);
+		private final mxCell[] cells = new mxCell[3];
+
+		private static final int MIN_HEIGHT = 150;
+
+		void init(mxGraph graph, Object parent) {
+			cells[0] = (mxCell) graph.insertVertex(parent, "lane_iql",
+					"IQL Query", 0, 0, 1000, MIN_HEIGHT, Styles.LANE);
+			cells[1] = (mxCell) graph.insertVertex(parent, "lane_sm",
+					"State Machine", 0, MIN_HEIGHT, 1000, MIN_HEIGHT, Styles.LANE);
+			cells[2] = (mxCell) graph.insertVertex(parent, "lane_ts",
+					"Target Sequence", 0, MIN_HEIGHT*2, 1000, MIN_HEIGHT, Styles.LANE);
 		}
 
-		private mxCell makeLane(String id, String title) {
-			mxCell lane = new mxCell(title, new mxGeometry(), Styles.LANE);
-			lane.setVertex(true);
-			lane.setConnectable(false);
-			lane.setId(id);
-			return lane;
+		void sync(mxGraph graph) {
+			mxRectangle[] bounds = new mxRectangle[cells.length];
+			double maxWidth = 0.0;
+			double y = 0.0;
+
+			// Squeeze all lanes together
+			for (int i = 0; i < cells.length; i++) {
+				mxGeometry geo = cells[i].getGeometry();
+				maxWidth = Math.max(maxWidth, geo.getWidth());
+				double height = Math.max(MIN_HEIGHT, geo.getHeight());
+				bounds[i] = new mxRectangle(0, y, 0, height);
+				y += height;
+			}
+
+			// Now enforce same width
+			for (int i = 0; i < bounds.length; i++) {
+				bounds[i].setWidth(maxWidth);
+			}
+
+			graph.resizeCells(cells, bounds);
 		}
+
+		mxCell iqlLane() { return cells[0]; }
+		mxCell smLane() { return cells[1]; }
+		mxCell targetLane() { return cells[2]; }
 	}
 
-	private static class Payload implements Serializable {
+	private static class Payload<T> implements Serializable {
 		private static final long serialVersionUID = 2639239524995613372L;
 
-		final NodeInfo info;
-		final String label;
+		final T data;
+		String label;
 
-		public Payload(NodeInfo info, String label) {
-			this.info = requireNonNull(info);
+		public Payload(T data, String label) {
+			this.data = requireNonNull(data);
 			this.label = requireNonNull(label);
 		}
+
+		void setLabel(String label) { this.label = requireNonNull(label); }
 
 		@Override
 		public String toString() { return label; }
@@ -506,30 +991,410 @@ public class InteractiveMatcher extends JPanel {
 
 	private static class Step {
 		final boolean enter;
-		final Node node;
+		final int nodeId;
 		final int pos;
 		final boolean result;
 
-		Step(boolean enter, Node node, int pos, boolean result) {
+		Step(boolean enter, int nodeId, int pos, boolean result) {
 			this.enter = enter;
-			this.node = requireNonNull(node);
+			this.nodeId = nodeId;
 			this.pos = pos;
 			this.result = result;
 		}
 	}
 
-	private class MonitorDelegate implements Monitor {
+	private static class Result {
+		final long id;
+		final int[] nodes;
+		final int[] spots;
+		final int[] displayNodes;
+		Result(State state) {
+			id = state.reported;
+			int count = state.entry;
+			nodes = new int[count];
+			spots = new int[count];
+			displayNodes = new int[count];
+			int offset = state.hits.length;
+			for (int i = 0; i < count; i++) {
+				nodes[i] = state.m_node[i];
+				displayNodes[i] = offset-state.m_node[i]-1;
+				spots[i] = state.m_pos[i];
+			}
+		}
+	}
+
+	private static class MonitorDelegate implements Monitor {
+
+		private final Consumer<Step> sink;
+
+		public MonitorDelegate(Consumer<Step> sink) { this.sink = requireNonNull(sink); }
 
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			addStep(new Step(true, node, pos, false));
+			sink.accept(new Step(true, node.id, pos, false));
 		}
 
 		@Override
 		public void exitNode(Node node, State state, int pos, boolean result) {
-			addStep(new Step(false, node, pos, result));
+			sink.accept(new Step(false, node.id, pos, result));
 		}
 
+	}
+
+	class Control extends JPanel {
+		private static final long serialVersionUID = 4417635081664995598L;
+
+		private final JTextField tfQuery;
+		private final JTextField tfTarget;
+		private final JCheckBox cbExpand, cbPromote;
+		private final JButton bParse, bMakeSM, bMatch;
+		private final JList<Step> lSteps;
+		private final JList<Result> lResults;
+		private final JButton bNextStep, bPrevStep;
+		private JLabel lStep;
+
+		private transient IqlPayload payload;
+		private transient SequencePattern pattern;
+		private transient Container target;
+		private final Vector<Step> steps = new Vector<>();
+
+		/** Temporary edges for state machine <-> target */
+		private Object[] tempEdges;
+
+		Control() {
+			tfQuery = makeTextField(100);
+			tfTarget = makeTextField(100);
+
+			cbExpand = new JCheckBox("Expand", true);
+			cbExpand.setToolTipText("Expand $X into $.toString()==\"X\" inside nodes");
+
+			cbPromote = new JCheckBox("Promote", true);
+			cbPromote.setToolTipText("Promote empty nodes so that they force mapping entries in the result");
+
+			bParse = new JButton("Parse");
+			bParse.addActionListener(this::onParse);
+
+			bMakeSM = new JButton("Build");
+			bMakeSM.addActionListener(this::onMakeSM);
+
+			bMatch = new JButton("Match");
+			bMatch.addActionListener(this::onMatch);
+
+			lSteps = new JList<>();
+			lSteps.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			lSteps.setCellRenderer(new StepRenderer());
+			lSteps.addListSelectionListener(this::onStepSelected);
+
+			lResults = new JList<>();
+			lResults.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			lResults.setCellRenderer(new ResultRenderer());
+			lResults.addListSelectionListener(this::onResultSelected);
+
+			lStep = new JLabel("?");
+
+			bNextStep = new JButton("->");
+			bNextStep.addActionListener(this::onNextStep);
+
+			bPrevStep = new JButton("<-");
+			bPrevStep.addActionListener(this::onPrevStep);
+
+			JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true,
+					new JScrollPane(lSteps), new JScrollPane(lResults));
+			splitPane.setOneTouchExpandable(true);
+			splitPane.setDividerLocation(400);
+
+			setLayout(new BorderLayout());
+
+			JPanel topInput = FormBuilder.create()
+					.padding(Paddings.DLU4)
+					.columns("pref, 5dlu, pref, 6dlu, pref")
+					.rows("pref, $lg, pref")
+					.addLabel("Query:").rc(1, 1)
+					.add(tfQuery).rc(1, 3)
+					.addLabel("Target:").rc(3, 1)
+					.add(tfTarget).rc(3, 3)
+
+					.add(Forms.horizontal("4dlu", cbExpand, cbPromote)).rc(1, 5)
+					.build();
+			add(topInput, BorderLayout.NORTH);
+
+			JPanel rightControl = FormBuilder.create()
+					.padding("10dlu, 4dlu, 1dlu, 4dlu")
+					.columns("right:pref:grow, 3dlu, center:pref, 3dlu, left:pref:grow")
+					.rows("pref, 3dlu, pref, 5dlu, fill:pref:grow")
+					.add(bParse).rc(1, 1)
+					.add(bMakeSM).rc(1, 3)
+					.add(bMatch).rc(1, 5)
+					.add(bPrevStep).rc(3, 1)
+					.add(lStep).rc(3, 3)
+					.add(bNextStep).rc(3, 5)
+					.add(splitPane).rcw(5, 1, 5)
+					.build();
+			add(rightControl, BorderLayout.EAST);
+
+			add(graphComponent, BorderLayout.CENTER);
+
+			refreshButtons();
+		}
+
+		private JTextField makeTextField(int columns) {
+			JTextField tf = new JTextField(columns);
+		    final Font currFont = tf.getFont();
+		    tf.setFont(new Font("Courier New", currFont.getStyle(), currFont.getSize()));
+		    return tf;
+		}
+
+		private Item item(int index, char c) {
+			return new DefaultItem() {
+				@Override
+				public long getIndex() { return index; }
+				@Override
+				public String toString() { return String.valueOf(c); }
+			};
+		}
+
+		private void clearTempEdges() {
+			if(tempEdges!=null) {
+				graph.removeCells(tempEdges);
+				tempEdges = null;
+			}
+		}
+
+		private void onParse(ActionEvent e) {
+
+			String input = tfTarget.getText();
+			if(input.isEmpty()) {
+				target = null;
+			} else {
+				Item[] items = IntStream.range(0, input.length())
+						.mapToObj(i -> item(i, input.charAt(i)))
+						.toArray(Item[]::new);
+				target = mockContainer(items);
+
+				displayTarget(items);
+			}
+
+			String rawPayload = tfQuery.getText();
+			if(rawPayload.isEmpty()) {
+				payload = null;
+			} else {
+				if(cbExpand.isSelected()) {
+					rawPayload = SequencePatternTest.expand(rawPayload);
+				}
+
+				payload = new QueryProcessor(false).processPayload(rawPayload);
+
+				displayQuery(payload);
+			}
+
+			refreshButtons();
+		}
+
+		private void onMakeSM(ActionEvent e) {
+			if(payload==null) {
+				return;
+			}
+
+			pattern = null;
+
+			IqlElement root = payload.getLanes().get(0).getElement();
+			SequencePattern.Builder builder = SequencePatternTest.builder(root)
+					.allowMonitor(true);
+
+			if(cbPromote.isSelected()) {
+				builder.nodeTransform(SequencePatternTest.PROMOTE_NODE);
+			}
+
+			pattern = builder.build();
+
+			displayStateMachine(pattern);
+			refreshButtons();
+		}
+
+		private void onMatch(ActionEvent e) {
+			if(pattern==null || target==null) {
+				return;
+			}
+
+			steps.clear();
+
+			new SwingWorker<Boolean, Step>() {
+
+				final Monitor monitor = new MonitorDelegate(steps::add);
+				final Vector<Result> results = new Vector<>();
+
+				@Override
+				protected Boolean doInBackground() throws Exception {
+					SequenceMatcher matcher = pattern.matcher();
+					matcher.monitor(monitor);
+					matcher.resultHandler(state -> results.add(new Result(state)));
+					return _boolean(matcher.matches(0, target));
+				}
+
+				@Override
+				protected void done() {
+					lSteps.setListData(steps);
+					lResults.setListData(results);
+					refreshButtons();
+				};
+			}.execute();
+
+			refreshButtons();
+		}
+
+		private void onNextStep(ActionEvent e) {
+			int idx = lSteps.getSelectedIndex();
+			int max = lSteps.getModel().getSize();
+			if(idx==-1) {
+				idx = 0;
+			} else {
+				idx++;
+			}
+			idx = Math.max(idx, max-1);
+			lSteps.setSelectedIndex(idx);
+		}
+
+		private void onPrevStep(ActionEvent e) {
+			int idx = lSteps.getSelectedIndex();
+			idx--;
+			idx = Math.max(idx, -1);
+			lSteps.setSelectedIndex(idx);
+		}
+
+		private void onStepSelected(ListSelectionEvent e) {
+			model.beginUpdate();
+			clearTempEdges();
+			if(!e.getValueIsAdjusting()) {
+				int idx = lSteps.getSelectedIndex();
+				if(idx!=-1) {
+					tempEdges = linkSteps(steps.subList(0, idx+1), true);
+					lStep.setText(String.valueOf(idx+1));
+				} else {
+					lStep.setText("?");
+				}
+			}
+			model.endUpdate();
+		}
+
+		private void onResultSelected(ListSelectionEvent e) {
+			model.beginUpdate();
+			clearTempEdges();
+			if(!e.getValueIsAdjusting()) {
+				Result result = lResults.getSelectedValue();
+				if(result!=null) {
+					tempEdges = linkResult(result);
+				}
+			}
+			model.endUpdate();
+		}
+
+		private void refreshButtons() {
+			bMakeSM.setEnabled(payload!=null);
+			bMatch.setEnabled(pattern!=null && target!=null);
+
+			int stepCount = lSteps.getModel().getSize();
+			int step = lSteps.getSelectedIndex();
+			bNextStep.setEnabled(stepCount > 0 && step < stepCount-1);
+			bPrevStep.setEnabled(stepCount > 0 && step > 0);
+		}
+	}
+
+	class StepRenderer extends DefaultListCellRenderer {
+		private static final long serialVersionUID = 7466797464454660084L;
+
+		private final StepIcon icon = new StepIcon();
+
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+
+			if(value instanceof Step) {
+				Step step = (Step) value;
+				icon.setup(step.enter, step.result);
+				NodeInfo info = id2info.get(step.nodeId);
+				value = String.format("%2d: %s[%d] at %d", _int(index+1),
+						info.getClassLabel(), _int(info.getId()), _int(step.pos));
+			}
+
+			super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+			setIcon(icon);
+
+			return this;
+		}
+	}
+
+	class ResultRenderer extends DefaultListCellRenderer {
+		private static final long serialVersionUID = 4296826121562843768L;
+		private StringBuilder buffer = new StringBuilder(100);
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+
+			if(value instanceof Result) {
+				Result result = (Result) value;
+				buffer.setLength(0);
+
+				int count = result.displayNodes.length;
+				buffer.append(result.id+1).append(": [").append(count).append("] ");
+
+				for (int i = 0; i < count; i++) {
+					if(i>0) {
+						buffer.append(", ");
+					}
+					buffer.append(result.displayNodes[i]).append("->").append(result.spots[i]);
+				}
+
+				value = buffer.toString();
+			}
+
+			super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+			return this;
+		}
+	}
+
+	private static class StepIcon implements Icon {
+
+		private boolean enter;
+		private boolean success;
+
+		private static final int W = 17;
+		private static final int H = 17;
+
+		void setup(boolean enter, boolean success) {
+			this.enter = enter;
+			this.success = success;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+			Graphics2D g2d = (Graphics2D)g;
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			int[] px = new int[3];
+			int[] py = new int[3];
+			Color color;
+
+			if(enter) {
+				px[0] =  0; px[1] = 8; px[2] =  0;
+				py[0] =  0; py[1] = 8; py[2] = 16;
+				color = Color.BLUE;
+			} else {
+				px[0] = 16; px[1] = 8; px[2] = 16;
+				py[0] =  0; py[1] = 8; py[2] = 16;
+				color = success ? Color.GREEN : Color.RED;
+			}
+
+			g2d.setColor(color);
+			g2d.fillPolygon(px, py, 3);
+		}
+
+		@Override
+		public int getIconWidth() { return W; }
+
+		@Override
+		public int getIconHeight() { return H; }
 	}
 
 	static class StyleBuilder {
@@ -712,118 +1577,5 @@ public class InteractiveMatcher extends JPanel {
 		public void done() {
 			clear();
 		}
-	}
-
-	@Deprecated
-	private class CameraControl extends JPanel {
-
-		private final JButton up, down, left, right, center;
-
-		CameraControl() {
-
-			up = makeNavButton(Direction.TOP);
-			down = makeNavButton(Direction.BOTTOM);
-			left = makeNavButton(Direction.LEFT);
-			right = makeNavButton(Direction.RIGHT);
-			center = makeNavButton(Direction.CENTER);
-
-			FormBuilder builder = FormBuilder.create()
-					.panel(this)
-					.columns("right:pref:grow, 4dlu, pref, 4dlu, left:pref:grow")
-					.rows("pref, 4dlu, pref, 4dlu, top:pref:grow")
-					.padding("4dlu, 4dlu, 4dlu, 4dlu")
-					.add(up).rc(1, 3);
-			//TODO
-		}
-
-		private JButton makeNavButton(Direction dir) {
-			JButton b = new JButton(new DirectionIcon(dir));
-			b.addActionListener(this::onNavAction);
-			b.putClientProperty("direction", dir);
-			return b;
-		}
-
-		private void onNavAction(ActionEvent ae) {
-
-		}
-
-		private void onZoomAction(ActionEvent ae) {
-
-		}
-	}
-
-	@Deprecated
-	private enum Direction {
-		TOP(true, false),
-		BOTTOM(true, false),
-		LEFT(false, true),
-		RIGHT(false, true),
-		CENTER(false, false),
-		;
-
-		final boolean vertical, horizontal;
-
-		private Direction(boolean vertical, boolean horizontal) {
-			this.vertical = vertical;
-			this.horizontal = horizontal;
-		}
-	}
-
-	@Deprecated
-	private enum Zoom {
-		ZOOM_IN,
-		ZOOM_OUT,
-		RESET,
-		;
-	}
-
-	@Deprecated
-	private static class DirectionIcon implements Icon {
-
-		private final Direction dir;
-
-		private static final int W = 21;
-		private static final int H = 11;
-
-		DirectionIcon(Direction dir) { this.dir = requireNonNull(dir); }
-
-		@Override
-		public void paintIcon(Component c, Graphics g, int x, int y) {
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.setColor(c.getForeground());
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-			int[] px = new int[3];
-			int[] py = new int[3];
-
-			switch (dir) {
-			case TOP:
-				px[0] =  0; px[1] = 10; px[2] = 20;
-				py[0] = 10; py[1] =  0; py[2] = 10;
-				break;
-			case BOTTOM:
-				px[0] =  0; px[1] = 10; px[2] = 20;
-				py[0] =  0; py[1] = 10; py[2] =  0;
-				break;
-			case LEFT:
-				px[0] = 10; px[1] =  0; px[2] = 10;
-				py[0] =  0; py[1] = 10; py[2] = 20;
-				break;
-			case RIGHT:
-				px[0] =  0; px[1] = 10; px[2] = 0;
-				py[0] =  0; py[1] = 10; py[2] = 20;
-				break;
-			default:
-				break;
-			}
-
-			g2d.fillPolygon(px, py, 3);
-		}
-
-		@Override
-		public int getIconWidth() { return dir.horizontal ? H : W; }
-
-		@Override
-		public int getIconHeight() { return dir.vertical ? H : W; }
 	}
 }
