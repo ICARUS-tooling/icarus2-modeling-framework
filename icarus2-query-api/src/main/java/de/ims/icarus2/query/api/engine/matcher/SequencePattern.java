@@ -1175,7 +1175,10 @@ public class SequencePattern {
 				Node start = unwrap(atom.start());
 				Node end = atom.end();
 
-				// Try to unfold nested branches that have no complex decorations
+				/* Try to unfold nested branches that have no complex decorations
+				 * We need to make sure we only unfold branch singularstructures that
+				 * do not have an additional tail set to them.
+				 */
 				if(start instanceof Branch && !atom.hasAffix()
 						&& end instanceof BranchConn
 						&& ((Branch)start).conn==end) {
