@@ -52,6 +52,7 @@ public class IqlJsonTest {
 	@DisplayName("test one-way serialization")
 	Stream<Object> testJsonSerialization(RandomGenerator rng) {
 		return Stream.of(IqlType.values())
+				.filter(IqlType::isActual)
 				.map(type -> dynamicTest(type.name(), () -> {
 			IqlQueryGenerator generator = new IqlQueryGenerator(rng);
 
@@ -91,6 +92,7 @@ public class IqlJsonTest {
 	@DisplayName("test two-way serialization")
 	Stream<Object> testFullJsonSerializationCycle(RandomGenerator rng) {
 		return Stream.of(IqlType.values())
+				.filter(IqlType::isActual)
 				.map(type -> dynamicTest(type.name(), () -> {
 			IqlQueryGenerator generator = new IqlQueryGenerator(rng);
 

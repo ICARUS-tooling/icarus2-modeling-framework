@@ -77,6 +77,8 @@ public enum IqlType {
 	private final String uidPrefix;
 	private final Class<?> type;
 
+	public boolean isActual() { return this!=DUMMY; }
+
 	public String getId() {
 		return id;
 	}
