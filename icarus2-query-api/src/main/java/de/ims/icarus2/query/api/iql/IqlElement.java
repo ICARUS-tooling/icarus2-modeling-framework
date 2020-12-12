@@ -130,7 +130,7 @@ public abstract class IqlElement extends IqlUnique {
 			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
 		}
 
-		public List<IqlElement> getElements() { return elements; }
+		public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
 		@Override
 		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }

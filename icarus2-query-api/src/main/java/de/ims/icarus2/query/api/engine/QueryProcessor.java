@@ -702,7 +702,7 @@ public class QueryProcessor {
 			return failForUnhandledAlternative(ctx);
 		}
 
-		private IqlGrouping processElementGrouping(ElementGroupingContext ctx,
+		private IqlElement processElementGrouping(ElementGroupingContext ctx,
 				TreeInfo tree) {
 			IqlGrouping grouping = new IqlGrouping();
 			genId(grouping);
@@ -726,6 +726,11 @@ public class QueryProcessor {
 				grouping.addElement(processNodeStatement(nctx, tree));
 			}
 			tree.exit();
+
+			List<IqlElement> elements = grouping.getElements();
+			if(!grouping.hasQuantifiers() && elements.size()==1) {
+				return elements.get(0);
+			}
 
 			return grouping;
 		}

@@ -101,6 +101,7 @@ import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.Stack;
@@ -359,11 +360,6 @@ public class SequencePattern {
 		Supplier<Expression<?>> global;
 		ElementContext context;
 		ExpressionFactory expressionFactory;
-//		IqlMarker pendingMarker;
-//		int pendingBorder = UNSET_INT;
-//		/** Keeps track of stacked single nodes between scans */
-//		int offset = 0;
-		boolean findOnly = false;
 
 		int id;
 
@@ -563,16 +559,27 @@ public class SequencePattern {
 			boolean hasAffix() { return hasPrefix() || hasSuffix(); }
 
 			/** Prepends the prefix if present and appends the suffix if present. */
-			void collapse() {
+			Frame collapse() {
 				checkNotEmpty();
-				if(prefix!=null) {
+				collapsePrefix();
+				collapseSuffix();
+				return this;
+			}
+
+			Frame collapsePrefix() {
+				if(prefix!=null && !prefix.isEmpty()) {
 					push(prefix);
-					prefix = null;
 				}
-				if(suffix!=null) {
+				prefix = null;
+				return this;
+			}
+
+			Frame collapseSuffix() {
+				if(suffix!=null && !suffix.isEmpty()) {
 					append(suffix);
-					suffix = null;
 				}
+				suffix = null;
+				return this;
 			}
 
 			private void replace(Frame other) {
@@ -584,6 +591,9 @@ public class SequencePattern {
 				suffix = other.suffix;
 			}
 
+			private Segment clearPrefix() { Segment s = prefix; prefix = null; return s; }
+			private Segment clearSuffix() { Segment s = suffix; suffix = null; return s; }
+
 			/**
 			 * Add other frame as head to this one (if this is empty, replace all content instead):
 			 * <p>
@@ -591,6 +601,7 @@ public class SequencePattern {
 			 * Push other's suffix if present and this is empty.
 			 * Push other's content.
 			 */
+			@Deprecated
 			void push(Frame other) {
 				requireNonNull(other);
 				if(isEmpty()) {
@@ -607,6 +618,27 @@ public class SequencePattern {
 				}
 
 				super.push(other);
+			}
+
+			/**
+			 * Add other frame as tail to this one (if this is empty, replace all content instead):
+			 * <p>
+			 * Collapse suffix if present.
+			 * Collapse other's prefix.
+			 * Push other's content.
+			 * Replace suffix with other's suffix if present.
+			 */
+			void append(Frame other) {
+				requireNonNull(other);
+				if(isEmpty()) {
+					replace(other);
+					return;
+				}
+
+				collapseSuffix();
+				other.collapsePrefix();
+				super.append(other);
+				suffix = other.suffix();
 			}
 		}
 
@@ -637,13 +669,13 @@ public class SequencePattern {
 		private boolean flagSet(MatchFlag flag) { return flags.contains(flag); }
 
 		/** Process element as independent frame */
-		private Frame process(IqlElement source) {
+		private Frame process(IqlElement source, @Nullable Node scan) {
 			switch (source.getType()) {
-			case GROUPING: return grouping((IqlGrouping) source);
-			case SET: return sequence((IqlSet) source);
-			case NODE: return node((IqlNode) source);
+			case GROUPING: return grouping((IqlGrouping) source, scan);
+			case SET: return sequence((IqlSet) source, scan);
+			case NODE: return node((IqlNode) source, scan);
 			// Only disjunction inherits the 'adjacency' property from surrounding context
-			case DISJUNCTION: return disjunction((IqlElementDisjunction) source);
+			case DISJUNCTION: return disjunction((IqlElementDisjunction) source, scan);
 
 			default:
 				// We do not support IqlTreeNode and IqlEdge here!!
@@ -656,7 +688,7 @@ public class SequencePattern {
 		//FIXME currently we might distort the legal intervals when shifting them to the left
 
 		/** Process single node */
-		private Frame node(IqlNode source) {
+		private Frame node(IqlNode source, @Nullable Node scan) {
 
 			if(nodeTransform!=null) {
 				source = requireNonNull(nodeTransform.apply(source), "Node transformation fail");
@@ -679,12 +711,14 @@ public class SequencePattern {
 			 */
 			if(marker!=null) {
 				int border = border();
-				// Creates the marker window
-				frame.prefix().push(marker(marker));
 				// Saves the previous window
 				frame.prefix().push(border(true, border));
+				// Creates the marker window
+				frame.prefix().append(marker(marker, scan, IcarusUtils.DO_NOTHING()));
 				// Restores previous window
 				frame.suffix().append(border(false, border));
+				// Consume scan
+				scan = null;
 			}
 
 			Segment atom;
@@ -715,44 +749,56 @@ public class SequencePattern {
 
 			frame.push(atom);
 
+			// Only apply external scan if our content cannot scan for itself
+			if(scan!=null && !unwrap(frame.start()).isScanCapable()) {
+				frame.push(scan);
+			}
+
 			return frame;
 		}
 
 		/** Process (quantified) node group */
-		private Frame grouping(IqlGrouping source) {
+		private Frame grouping(IqlGrouping source, @Nullable Node scan) {
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 
-			boolean oldFindOnly = findOnly;
+			// If we have quantifiers we cannot move the scan inside the group sequence
+			boolean hoistScan = !quantifiers.isEmpty();
+			boolean findOnly = !allowExhaustive(quantifiers);
 			//FIXME we need to either adjust the specification or branch here for collections of mixed continuous and discontinuous quantifiers!
-			if(!findOnly && !allowExhaustive(quantifiers)) {
-				findOnly = true;
-			}
 
 			// Make sure to process the group content as a detached atom
-			final Frame frame = looseGroup(source.getElements());
+			final Frame group = looseGroup(source.getElements(), hoistScan ? null : scan, findOnly);
 
-			findOnly = oldFindOnly;
+			// Apply quantification
+			group.replace(quantify(group, quantifiers));
 
-			// Finally apply quantification
-			frame.replace(quantify(frame, quantifiers));
+			// Finally add external scan if provided
+			if(scan!=null && hoistScan && !unwrap(group.start()).isScanCapable()) {
+				group.push(scan);
+			}
 
-			return frame;
+			return group;
 		}
 
 		/** Process (ordered or adjacent) node sequence and link to active sequence */
-		private Frame sequence(IqlSet source) {
+		private Frame sequence(IqlSet source, @Nullable Node scan) {
 			final List<IqlElement> elements = source.getElements();
 			if(source.getArrangement()==NodeArrangement.ADJACENT) {
-				return adjacentGroup(elements);
+				return adjacentGroup(elements, scan);
 			}
-			return looseGroup(elements);
+			return looseGroup(elements, scan, false);
 		}
 
 		/** Process alternatives and link to active sequence */
-		private Frame disjunction(IqlElementDisjunction source) {
+		private Frame disjunction(IqlElementDisjunction source, @Nullable Node scan) {
 			final List<IqlElement> elements = source.getAlternatives();
-			return branch(new IqlListProxy(elements), elements.size(),
-					false, i -> process(elements.get(i))).toFrame();
+			Segment branch = branch(new IqlListProxy(elements), elements.size(),
+					i -> process(elements.get(i), null));
+			if(scan!=null) {
+				branch.push(scan);
+			}
+
+			return branch.toFrame();
 		}
 
 		// INTERNAL HELPERS
@@ -899,7 +945,7 @@ public class SequencePattern {
 		}
 
 		/** Free scan exploration. Depending on context it'll be exhaustive or 'findOnly'. */
-		private Node explore(boolean forward, boolean cached) {
+		private Node explore(boolean forward, boolean cached, boolean findOnly) {
 
 			cached |= cacheAll;
 
@@ -924,21 +970,24 @@ public class SequencePattern {
 		}
 
 		/** Create graph for the marker construct and attach to tail. */
-		private Segment marker(IqlMarker marker) {
+		private Segment marker(IqlMarker marker, Node scan, Consumer<? super Node> action) {
 			Segment seg;
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				seg = range(call);
+				seg = range(call, action);
+				if(scan!=null) {
+					seg.append(scan);
+				}
 			} break;
 
 			case MARKER_EXPRESSION: {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					seg = intersection(items);
+					seg = intersection(items, action);
 				} else {
-					seg = union(items);
+					seg = union(items, scan, action);
 				}
 			} break;
 
@@ -949,24 +998,32 @@ public class SequencePattern {
 			return seg;
 		}
 
-		private Segment range(IqlMarkerCall markerCall) {
+		private Segment range(IqlMarkerCall markerCall, Consumer<? super Node> action) {
 			final RangeMarker marker = marker(markerCall);
 
 			if(marker.isDynamic()) {
 				final int intervalIndex = interval(marker);
 				final int count = marker.intervalCount();
 				if(count>1) {
-					return branch(markerCall, count, false, i -> frame(clip(markerCall, intervalIndex+i)));
+					return branch(markerCall, count, i -> {
+						final DynamicClip clip = clip(markerCall, intervalIndex+i);
+						action.accept(clip);
+						return frame(clip);
+					});
 				}
 
-				return segment(clip(markerCall, intervalIndex));
+				final DynamicClip clip = clip(markerCall, intervalIndex);
+				action.accept(clip);
+				return segment(clip);
 			}
 
 			assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
 
 			final Interval interval = Interval.blank();
 			marker.adjust(new Interval[] {interval}, 0, 1);
-			return segment(fixed(markerCall, interval.from, interval.to));
+			final Fixed fixed = fixed(markerCall, interval.from, interval.to);
+			action.accept(fixed);
+			return segment(fixed);
 		}
 
 		/** Create single fixed clip */
@@ -976,12 +1033,15 @@ public class SequencePattern {
 
 		/** Create single dynamic clip */
 		private DynamicClip clip(IqlMarkerCall source, int intervalIndex) {
-//			if(shift!=0) {
-//				return new ShiftedClip(intervalIndex);
-//			}
 			return store(new DynamicClip(id(), source, intervalIndex));
 		}
 
+		/**
+		 * Sorts segments based on them having the {@link Flag#COMPLEX_MARKER} flag
+		 * set or not. Segments without the flag will be first. In case of a draw
+		 * the order is determined by segment length.
+		 */
+		@SuppressWarnings("unused")
 		private static final Comparator<Segment> SEGMENT_COMPLEXITY_ORDER = (s1, s2) -> {
 			if(s1.isFlagSet(Flag.COMPLEX_MARKER)) {
 				if(s2.isFlagSet(Flag.COMPLEX_MARKER)) {
@@ -996,23 +1056,41 @@ public class SequencePattern {
 		};
 
 		/** Combine sequence of intersecting markers */
-		private Segment intersection(List<IqlMarker> markers) {
+		private Segment intersection(List<IqlMarker> markers, Consumer<? super Node> action) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
 			markers.stream()
-					.map(this::marker)
-					.sorted(SEGMENT_COMPLEXITY_ORDER)
+					.map(m -> marker(m, null, action))
+					// For optimization reasons we 'should' sort markers, but that would violate the specification
+					//.sorted(SEGMENT_COMPLEXITY_ORDER)
 					.forEach(seg::append);
 			return seg;
 		}
 
 		/** Create branches for disjunctive markers */
-		private Segment union(List<IqlMarker> markers) {
+		private Segment union(List<IqlMarker> markers, Node scan, Consumer<? super Node> action) {
 			assert markers.size()>1 : "Need 2+ markers for union";
+
+			MutableBoolean hasDynamicInterval = new MutableBoolean(false);
+			List<Fixed> fixedIntervals = new ArrayList<>();
+
+			Consumer<? super Node> action2 = action.andThen(node -> {
+				if(node instanceof Fixed) {
+					fixedIntervals.add((Fixed) node);
+				} else {
+					hasDynamicInterval.setBoolean(true);
+				}
+			});
+
 			final Segment seg = branch(new IqlListProxy(markers), markers.size(),
-					false, i -> marker(markers.get(i)).toFrame());
+					i -> marker(markers.get(i), null, action2).toFrame());
 			seg.setFlag(Flag.COMPLEX_MARKER);
+
+			//TODO use the info from hasDynamicInterval and fixedIntervals to decide on whether we need gates here!
 			final int gateId = gate();
+			if(scan!=null) {
+				seg.append(scan);
+			}
 			seg.push(filter(true, gateId));
 			seg.append(filter(false, gateId));
 			return seg;
@@ -1087,25 +1165,28 @@ public class SequencePattern {
 			return storeTrackable(new All(id(), source, atom));
 		}
 
-		private Segment branch(IqlQueryElement source, int count,
-				boolean stopOnSuccess, IntFunction<Frame> atomGen) {
+		private Segment branch(IqlQueryElement source, int count, IntFunction<Frame> atomGen) {
 			List<Node> atoms = new ArrayList<>();
 			BranchConn conn = store(new BranchConn(id()));
 			// For consistency we collect branches in reverse order
-			for (int i = count-1; i >=0; i--) {
+			for (int i = 0; i < count; i++) {
 				// Might be a complex sub-structure
 				Frame atom = atomGen.apply(i);
-				Node rawStart = unwrap(atom.start());
+				Node start = unwrap(atom.start());
+				Node end = atom.end();
 
 				// Try to unfold nested branches that have no complex decorations
-				if(rawStart instanceof Branch && !atom.hasAffix()) {
-					Branch branch = (Branch) rawStart;
+				if(start instanceof Branch && !atom.hasAffix()
+						&& end instanceof BranchConn
+						&& ((Branch)start).conn==end) {
+					Branch branch = (Branch) start;
 					Node[] nestedAtoms = branch.getAtoms();
 					Node nestedConn = branch.conn;
 					for(Node n : nestedAtoms) {
 						atoms.add(n);
 						lastBefore(n, nestedConn).setNext(conn);
 					}
+					//TODO merge the 'source' proxy lists!
 					discard(branch);
 					discard(nestedConn);
 					continue;
@@ -1117,9 +1198,7 @@ public class SequencePattern {
 				atom.collapse();
 				atoms.add(atom.start());
 			}
-			// Need to revert order so that priority is preserved
-			Collections.reverse(atoms);
-			return segment(storeTrackable(new Branch(id(), source, stopOnSuccess, conn,
+			return segment(storeTrackable(new Branch(id(), source, conn,
 					atoms.toArray(new Node[atoms.size()]))));
 		}
 
@@ -1144,43 +1223,41 @@ public class SequencePattern {
 		 * sequence may receive a scan attached to it.
 		 * The first node in the sequence might have its prefix hoisted.
 		 */
-		private Frame looseGroup(List<IqlElement> elements) {
+		private Frame looseGroup(List<IqlElement> elements, @Nullable Node scan, boolean findOnly) {
 			if(elements.size()==1) {
-				return process(elements.get(0));
+				return process(elements.get(0), scan);
 			}
 
-			Frame frame = new Frame();
+			Frame group = new Frame();
 			// Stack nodes back to front
 			int last = elements.size()-1;
-			for(int i=last; i>=0; i--) {
-				Frame step = process(elements.get(i));
+			for(int i=0; i<=last; i++) {
+				Frame step = process(elements.get(i), i==0 ? scan : null);
 				// Special handling only for subsequent steps
 				if(i>0) {
-					Node head = step.start();
-					// Any node but the first can receive a scan attached to it
+					Node head = unwrap(step.start());
+					// Any node but the first can receive an automatic scan attached to it
 					if(!head.isScanCapable() && !head.isFixed()) {
 						// Cashing will be used either for complex inner structure or intermediate nodes
-						step.push(explore(true, needsCacheForScan(head) || i<last));
+						step.push(explore(true, needsCacheForScan(head) || i<last, findOnly));
 					}
 					// Ensure we don't mix up hoistable content and proactively collapse
 					step.collapse();
 				}
 				// Accumulate steps into single sequence
-				frame.push(step);
+				group.append(step);
 			}
-			return frame;
+			return group;
 		}
 
 		/** Sequential check without scanning */
-		private Frame adjacentGroup(List<IqlElement> elements) {
+		private Frame adjacentGroup(List<IqlElement> elements, @Nullable Node scan) {
 			Frame frame = new Frame();
 			// Stack nodes back to front
-			for(int i=elements.size()-1; i>=0; i--) {
-				Frame step = process(elements.get(i));
-				if(i>0) {
-					step.collapse();
-				}
-				frame.push(step);
+			for(int i=0; i<elements.size(); i++) {
+				Frame step = process(elements.get(i), i==0 ? scan : null);
+				step.collapse();
+				frame.append(step);
 			}
 			return frame;
 		}
@@ -1211,7 +1288,7 @@ public class SequencePattern {
 			} else {
 				// Combine all quantifiers into a branch structure
 				return branch(new IqlListProxy(quantifiers), quantifiers.size(),
-						false, i -> frame(quantify(atom.start(), quantifiers.get(i))));
+						i -> frame(quantify(atom.start(), quantifiers.get(i))));
 			}
 		}
 
@@ -1275,25 +1352,10 @@ public class SequencePattern {
 
 			final boolean disjoint = flagSet(MatchFlag.DISJOINT);
 
+			Node rootScan = explore(modifier!=QueryModifier.LAST, false, false);
+
 			// For now we don't honor the 'consumed' flag on IqlElement instances
-			final Frame frame = process(rootElement);
-
-			// Prepare top-level scan if needed
-			if(!frame.start().isScanCapable() && !frame.start().isFixed()
-					&& (!frame.hasPrefix() || !frame.prefix().start().isFixed())) {
-
-				/*
-				 *  If we have complex disjunctive markers, we need to take the
-				 *  expensive route and move them inside the scan. Otherwise we'd
-				 *  create a situation where the marker nodes "hide" legal search
-				 *  space from the scan and we are missing out on positive matches.
-				 */
-				if(frame.hasPrefix() && frame.prefix().isFlagSet(Flag.COMPLEX_MARKER)) {
-					frame.collapse();
-				}
-
-				frame.push(explore(modifier!=QueryModifier.LAST, false));
-			}
+			final Frame frame = process(rootElement, rootScan);
 
 			// Collapse all actual content before we add special nodes
 			frame.collapse();
@@ -2054,6 +2116,8 @@ public class SequencePattern {
 		boolean deterministic = true;
 		/** Indicates that parts of the input can be skipped. */
 		boolean skip = false;
+		/** Indicates that a part of the state machine should stop after a successful match */
+		boolean stopOnSuccess = false;
 		/**
 		 * Size of the current segment between matching 'save' and 'restore' border nodes.
 		 * If no markers are used, this is equal to {@link #minSize}.
@@ -2070,6 +2134,7 @@ public class SequencePattern {
             maxValid = true;
             deterministic = true;
             skip = false;
+            stopOnSuccess = false;
             from = UNSET_INT;
             to = UNSET_INT;
 		}
@@ -2637,7 +2702,8 @@ public class SequencePattern {
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.CLIP_FIXED)
 					.property(Field.CLIP_FROM, region.from)
-					.property(Field.CLIP_TO, region.to);
+					.property(Field.CLIP_TO, region.to)
+					.property(Field.SKIP, skip);
 		}
 
 		@Override
@@ -2679,7 +2745,8 @@ public class SequencePattern {
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.CLIP_DYNAMIC)
-					.property(Field.CLIP, intervalIndex);
+					.property(Field.CLIP, intervalIndex)
+					.property(Field.SKIP, skip);
 		}
 
 		@Override
@@ -2820,7 +2887,6 @@ public class SequencePattern {
 	/** Special scan that ensures no instance of atom appears before legal end of sequence/match. */
 	static final class Negation extends ProperNode {
 		int minSize = 0; // 0 means we have to check till end of sequence
-		int atomMinSize = 1; // cannot negate zero-width assertions
 		final Node atom;
 		final int cacheId;
 
@@ -2834,6 +2900,7 @@ public class SequencePattern {
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.NEGATION)
 					.property(Field.MIN_SIZE, minSize)
+					.property(Field.CACHE, cacheId)
 					.atoms(false, atom);
 		}
 
@@ -2929,8 +2996,7 @@ public class SequencePattern {
 
 			info = new TreeInfo();
 			atom.study(info);
-			atomMinSize = info.minSize;
-			checkState("Nested atom must not contain zero-width assertion!", atomMinSize>0);
+			checkState("Nested atom must not contain zero-width assertion!", info.minSize>0);
 
 			return false;
 		}
@@ -2940,7 +3006,6 @@ public class SequencePattern {
 			return ToStringBuilder.create(this)
 					.add("id", id)
 					.add("minSize", minSize)
-					.add("atomMinSize", atomMinSize)
 					.add("cacheId", cacheId)
 					.add("atom", atom)
 					.build();
@@ -2950,6 +3015,7 @@ public class SequencePattern {
 	/** Special scan that implements universal quantification. */
 	static final class All extends ProperNode {
 		final Node atom;
+		int minSize;
 
 		public All(int id, IqlQuantifier source, Node atom) {
 			super(id, source);
@@ -2973,22 +3039,31 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			final int last = state.to;
+			final int last = state.to-minSize+1;
 			// Visit all elements of initial search window!
-			for (int i = pos; i <= last; i++) {
-				if(!atom.match(state, i)) {
+			while (pos <=last) {
+				if(!atom.match(state, pos)) {
 					return false;
 				}
+				// zero-width assertion
+				if(pos==state.last) {
+					return false;
+				}
+				pos = state.last;
 			}
 			return next.match(state, last+1);
 		}
 
 		@Override
 		boolean study(TreeInfo info) {
+
+			TreeInfo tmp = new TreeInfo();
+			atom.study(tmp);
+			minSize = Math.max(1, tmp.minSize);
+
 			//TODO implement a flag in TreeInfo to pass down info to atom nodes that no result mapping is desired
 			info.deterministic = false;
 			info.skip = true;
-			atom.study(info);
 
 			return next.study(info);
 		}
@@ -3109,6 +3184,12 @@ public class SequencePattern {
 
 		@Override
 		boolean isScanCapable() { return true; }
+
+		@Override
+		void setNext(Node next) {
+			assert !unwrap(next).isScanCapable() : "Cannot chain scan nodes";
+			super.setNext(next);
+		}
 
 		@Override
 		boolean match(State state, int pos) {
@@ -3350,13 +3431,12 @@ public class SequencePattern {
 	static final class Branch extends ProperNode {
 		final BranchConn conn;
 		final Node[] atoms;
-		final boolean stopOnSuccess;
+		boolean stopOnSuccess;
 
-		Branch(int id, IqlQueryElement source, boolean stopOnSuccess, BranchConn conn, Node...atoms) {
+		Branch(int id, IqlQueryElement source, BranchConn conn, Node...atoms) {
 			// 'source' can be either IqlMarkerExpression or IqlElementDisjunction
 			super(id, source);
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
-			this.stopOnSuccess = stopOnSuccess;
 			this.atoms = atoms;
 			this.conn = conn;
 		}
@@ -3365,7 +3445,6 @@ public class SequencePattern {
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.BRANCH)
 					.property(Field.STOP, stopOnSuccess)
-//					.conn(conn)
 					.atoms(true, atoms);
 		}
 
@@ -3419,19 +3498,24 @@ public class SequencePattern {
 	            } else {
 	                result |= atom.match(state, pos);
 	            }
-	        	// Need to reset fully to allow clean restart for each branch
-	        	state.reset(scope);
+	        	// Only reset range here
                 state.reset(from, to);
 
                 if(stopOnSuccess && result) {
                 	break;
                 }
+
+	        	// Only reset if we failed or are not meant to keep the first match
+	        	state.reset(scope);
 	        }
 	        return result;
 		}
 
 		@Override
 		boolean study(TreeInfo info) {
+
+			stopOnSuccess = info.stopOnSuccess;
+
 			TreeInfo tmp = info.clone();
 
 			info.reset();
@@ -3496,13 +3580,13 @@ public class SequencePattern {
 
 		@Override
 		public NodeInfo info() {
-			return new NodeInfo(this, Type.BRANCH)
+			return new NodeInfo(this, Type.REPETITION)
 					.property(Field.MAX_REPETITION, cmax)
 					.property(Field.MIN_REPETITION, cmin)
 					.property(Field.GREEDINESS, QuantifierModifier.forId(type))
 					.property(Field.SCOPE_BUFFER, scopeBuf)
 					.property(Field.POSITION_BUFFER, posBuf)
-					.atoms(false, getAtoms());
+					.atoms(false, atom);
 		}
 
 		@Override
@@ -3689,8 +3773,11 @@ public class SequencePattern {
             int segL = info.segmentSize;
             boolean maxV = info.maxValid;
             boolean detm = info.deterministic;
+            boolean stopOnSuccess = info.stopOnSuccess;
             info.reset();
 
+            // Ensure we don't get any full explorative nodes as atoms
+            info.stopOnSuccess = true;
             if(findAtom==null) {
             	atom.study(info);
             } else {
@@ -3724,7 +3811,14 @@ public class SequencePattern {
             else
                 info.deterministic = false;
 
-            return next.study(info);
+            // Study remaining part
+            info.stopOnSuccess = stopOnSuccess;
+            next.study(info);
+
+            // Nodes with static scanning act as barriers against skipping
+            info.skip = false;
+
+            return info.deterministic;
         }
     }
 

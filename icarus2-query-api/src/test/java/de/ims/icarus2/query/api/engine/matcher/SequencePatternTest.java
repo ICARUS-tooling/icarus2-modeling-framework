@@ -302,8 +302,6 @@ class SequencePatternTest {
 		static final boolean CONTINUOUS = false;
 		static final boolean DISCONTINUOUS = true;
 
-		static final boolean NO_STOP_ON_SUCCESS = false;
-
 		/** Match given character exactly */
 		static SequencePatternTest.CharPredicate eq(char sentinel) {
 			return c -> c==sentinel;
@@ -346,7 +344,7 @@ class SequencePatternTest {
 					atom.setNext(conn);
 				}
 			}
-			return new Branch(id, mock(IqlQueryElement.class), NO_STOP_ON_SUCCESS, conn, atoms);
+			return new Branch(id, mock(IqlQueryElement.class), conn, atoms);
 		}
 
 		static final String LANE_NAME = "test_lane";
@@ -441,7 +439,7 @@ class SequencePatternTest {
 		return builder;
 	}
 
-	private static final Pattern NODE = Pattern.compile("\\$([A-Z])");
+	private static final Pattern NODE = Pattern.compile("\\$([A-Za-z])");
 
 	/** Expand {@code $X} expressions to proper constraints */
 	static String expand(String rawQuery) {
@@ -4454,19 +4452,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -4536,19 +4534,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -4838,19 +4836,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(hits1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -4922,19 +4920,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(hits1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -4950,32 +4948,32 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								match(4)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(Interval.of(3, 7))
-											.hits(3, 6))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(Interval.of(0, 7))
 											.hits(Interval.of(1, 6)))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(3, 7))
+											.hits(3, 6))
 									// First normal-sized match
 									.result(result(0)
-											.map(NODE_1, 1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 1, 2)
+											.map(NODE_1, 3))
 									// Intermediate match that forces NODE2 to consume a small'x'
 									.result(result(1)
-											.map(NODE_1, Interval.of(2, 5))
-											.map(NODE_0, 6))
+											.map(NODE_0, Interval.of(2, 5))
+											.map(NODE_1, 6))
 									// Intermediate match that forces NODE2 to start with small'x'
 									.result(result(2)
-											.map(NODE_1, Interval.of(3, 5))
-											.map(NODE_0, 6))
+											.map(NODE_0, Interval.of(3, 5))
+											.map(NODE_1, 6))
 									// Last normal-sized match
 									.result(result(3)
-											.map(NODE_1, 4, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 4, 5)
+											.map(NODE_1, 6))
 						);
 					}
 
@@ -5138,15 +5136,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -5174,15 +5172,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -5207,15 +5205,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -5239,15 +5237,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -5290,19 +5288,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(hits1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.results(hits1.length, (r,i) -> r
-											.map(NODE_1, hits1[i])
-											.map(NODE_0, hit2[i]))
+											.map(NODE_0, hits1[i])
+											.map(NODE_1, hit2[i]))
 						);
 					}
 
@@ -5345,19 +5343,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(hits1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.results(hits1.length, (r,i) -> r
-											.map(NODE_1, hits1[i])
-											.map(NODE_0, hit2[i]))
+											.map(NODE_0, hits1[i])
+											.map(NODE_1, hit2[i]))
 						);
 					}
 
@@ -5640,19 +5638,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -5711,19 +5709,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -6010,19 +6008,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -6094,19 +6092,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -6121,32 +6119,32 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								match(4)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(Interval.of(2, 7))
-											.hits(3, 6))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(Interval.of(0, 7))
 											.hits(Interval.of(1, 6)))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(2, 7))
+											.hits(3, 6))
 									// First normal-sized match
 									.result(result(0)
-											.map(NODE_1, 1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 1, 2)
+											.map(NODE_1, 3))
 									// Intermediate match that only allows first node to consume 1 slot
 									.result(result(1)
-											.map(NODE_1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 2)
+											.map(NODE_1, 3))
 									// Last normal-sized match
 									.result(result(3)
-											.map(NODE_1, 4, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 4, 5)
+											.map(NODE_1, 6))
 									// Final minimum-sized match
 									.result(result(4)
-											.map(NODE_1, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 5)
+											.map(NODE_1, 6))
 						);
 					}
 
@@ -6162,32 +6160,32 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								match(4)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(Interval.of(2, 7))
-											.hits(3, 6))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(Interval.of(0, 7))
 											.hits(Interval.of(1, 6)))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(2, 7))
+											.hits(3, 6))
 									// First normal-sized match
 									.result(result(0)
-											.map(NODE_1, 1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 1, 2)
+											.map(NODE_1, 3))
 									// Intermediate match that only allows first node to consume 1 slot
 									.result(result(1)
-											.map(NODE_1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 2)
+											.map(NODE_1, 3))
 									// Last normal-sized match
 									.result(result(3)
-											.map(NODE_1, 4, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 4, 5)
+											.map(NODE_1, 6))
 									// Final minimum-sized match
 									.result(result(4)
-											.map(NODE_1, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 5)
+											.map(NODE_1, 6))
 						);
 					}
 
@@ -6369,15 +6367,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -6409,15 +6407,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -6442,15 +6440,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -6476,15 +6474,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -6536,19 +6534,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(),
 								match(hits1.length)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hitsForSet(target, EQUALS_X_IC))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.results(hits1.length, (r,i) -> r
-											.map(NODE_1, hits1[i])
-											.map(NODE_0, hit2[i]))
+											.map(NODE_0, hits1[i])
+											.map(NODE_1, hit2[i]))
 						);
 					}
 
@@ -6604,19 +6602,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hitsForSet(target, EQUALS_X_IC))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.results(hits1.length, (r,i) -> r
-											.map(NODE_1, hits1[i])
-											.map(NODE_0, hit2[i]))
+											.map(NODE_0, hits1[i])
+											.map(NODE_1, hit2[i]))
 						);
 					}
 
@@ -6904,19 +6902,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -7054,19 +7052,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -7390,19 +7388,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -7482,19 +7480,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).limit(1).build(), // we don't need multiple matches for confirmation
 								match(1)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.result(result(0)
-											.map(NODE_1, hits1)
-											.map(NODE_0, hit2))
+											.map(NODE_0, hits1)
+											.map(NODE_1, hit2))
 						);
 					}
 
@@ -7510,32 +7508,32 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								match(4)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(Interval.of(2, 7))
-											.hits(3, 6))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(Interval.of(0, 7))
 											.hits(Interval.of(1, 6)))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(Interval.of(2, 7))
+											.hits(3, 6))
 									// First normal-sized match
 									.result(result(0)
-											.map(NODE_1, 1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 1, 2)
+											.map(NODE_1, 3))
 									// Intermediate match that only allows first node to consume 1 slot
 									.result(result(1)
-											.map(NODE_1, 2)
-											.map(NODE_0, 3))
+											.map(NODE_0, 2)
+											.map(NODE_1, 3))
 									// Last normal-sized match
 									.result(result(3)
-											.map(NODE_1, 4, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 4, 5)
+											.map(NODE_1, 6))
 									// Final minimum-sized match
 									.result(result(4)
-											.map(NODE_1, 5)
-											.map(NODE_0, 6))
+											.map(NODE_0, 5)
+											.map(NODE_1, 6))
 						);
 					}
 
@@ -7768,15 +7766,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -7808,15 +7806,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -7841,15 +7839,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -7878,15 +7876,15 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
 								).build(),
 								mismatch()
-									// Underlying cache of second node
-									.cache(cache(CACHE_0, false)
-											.set(visited2)
-											.window(target))
 									// Underlying cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(target, visited1, EQUALS_X_IC))
+									// Underlying cache of second node
+									.cache(cache(CACHE_1, false)
+											.set(visited2)
+											.window(target))
 						);
 					}
 
@@ -7950,19 +7948,19 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hits(candidates1))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.results(hits1.length, (r,i) -> r
-											.map(NODE_1, hits1[i])
-											.map(NODE_0, hit2[i]))
+											.map(NODE_0, hits1[i])
+											.map(NODE_1, hit2[i]))
 						);
 					}
 
@@ -8028,22 +8026,50 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
-									// Cache of second node
-									.cache(cache(CACHE_0, false)
-											.window(target)
-											.set(visited2)
-											.hits(hit2))
 									// Cache of first node
-									.cache(cache(CACHE_1, false)
+									.cache(cache(CACHE_0, false)
 											.window(target)
 											.set(visited1)
 											.hitsForSet(target, EQUALS_X_IC))
+									// Cache of second node
+									.cache(cache(CACHE_1, false)
+											.window(target)
+											.set(visited2)
+											.hits(hit2))
 									.results(hits1.length, (r,i) -> r
-											.map(NODE_1, hits1[i])
-											.map(NODE_0, hit2[i]))
+											.map(NODE_0, hits1[i])
+											.map(NODE_1, hit2[i]))
 						);
 					}
 
+				}
+			}
+
+			@Nested
+			class WithQantifierAndMarker {
+
+				@ParameterizedTest(name="{index}: {0} in {1} - {2} matches")
+				@CsvSource({
+					"'*[isAfter(2) && isBefore(5), $X]', XXX, 1, 2, 2",
+					"'*[isAfter(2) && isBefore(5), $X]', XXXX, 1, 2-3, 2-3",
+					"'*[isAfter(2) && isBefore(5), $X]', XXXXX, 1, 2-3, 2-3",
+				})
+				@DisplayName("all-quantifier and markers")
+				void testUniversalQuantifierWithMarker(String query, String target, int matches,
+						@IntervalArg Interval hits,
+						@IntervalArg Interval visited) {
+					// 'Repetition' node sets minSize so that scan can abort early
+					assertResult(target,
+							builder(expand(query)).build(),
+							match(matches)
+								// Underlying cache of atom node
+								.cache(cache(CACHE_0, false)
+										.window(target)
+										.set(visited)
+										.hits(hits))
+								.result(result(0)
+										.map(NODE_0, hits))
+					);
 				}
 			}
 		}
@@ -8101,17 +8127,16 @@ class SequencePatternTest {
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
 							match(1)
-								//  remember that our state machine is built back to front
-								.cache(cache(CACHE_0, true)
-										.window(hitX+1, target.length()-1)
-										.hits(hitY))
 								// scan won't use cache if content is only a simple node
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(0, target.length()-2)
 										.hits(hitX))
+								.cache(cache(CACHE_1, true)
+										.window(hitX+1, target.length()-1)
+										.hits(hitY))
 								.result(result(0)
-										.map(NODE_1, hitX)
-										.map(NODE_0, hitY))
+										.map(NODE_0, hitX)
+										.map(NODE_1, hitY))
 					);
 				}
 
@@ -8167,17 +8192,16 @@ class SequencePatternTest {
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
 							match(1)
-								// remember that our state machine is built back to front
-								.cache(cache(CACHE_0, true)
-										.window(hitX+1, target.length()-1)
-										.hits(hitY))
 								// scan won't use cache if content is only a simple node
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(0, target.length()-2)
 										.hits(hitX))
+								.cache(cache(CACHE_1, true)
+										.window(hitX+1, target.length()-1)
+										.hits(hitY))
 								.result(result(0)
-										.map(NODE_1, hitX)
-										.map(NODE_0, hitY))
+										.map(NODE_0, hitX)
+										.map(NODE_1, hitY))
 					);
 				}
 
@@ -8233,16 +8257,15 @@ class SequencePatternTest {
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
 							match(1)
-								//  remember that our state machine is built back to front
 								.cache(cache(CACHE_0, true)
-										.window(hitX+1)
-										.hits(hitY))
-								.cache(cache(CACHE_1, true)
 										.window(0, target.length()-2)
 										.hits(hitX))
+								.cache(cache(CACHE_1, true)
+										.window(hitX+1)
+										.hits(hitY))
 								.result(result(0)
-										.map(NODE_1, hitX)
-										.map(NODE_0, hitY))
+										.map(NODE_0, hitX)
+										.map(NODE_1, hitY))
 					);
 				}
 			}
@@ -8344,7 +8367,7 @@ class SequencePatternTest {
 						).build(),
 						match(hits1.length)
 							// Cache for 3rd node
-							.cache(cache(CACHE_0, true)
+							.cache(cache(CACHE_3, true)
 									.window(visited3)
 									.hits(candidates3))
 							// Cache for 2nd node
@@ -8352,13 +8375,13 @@ class SequencePatternTest {
 									.window(visited2)
 									.hits(candidates2))
 							// Cache for 1st node
-							.cache(cache(CACHE_3, true)
+							.cache(cache(CACHE_0, true)
 									.window(visited1)
 									.hits(candidates1))
 							.results(hits1.length, (r, i) -> r
-									.map(NODE_2, hits1[i])
+									.map(NODE_0, hits1[i])
 									.map(NODE_1, hits2[i])
-									.map(NODE_0, hits3[i]))
+									.map(NODE_2, hits3[i]))
 				);
 			}
 
@@ -8438,11 +8461,11 @@ class SequencePatternTest {
 										)).build(),
 								match(1)
 									// Underlying cache of first atom node
-									.cache(cache(CACHE_1, true)
+									.cache(cache(CACHE_0, true)
 											.window(visited1)
 											.hits(target, visited1, EQUALS_X))
 									// Underlying cache of second atom node
-									.cache(cache(CACHE_0, true)
+									.cache(cache(CACHE_1, true)
 											.window(visited2)
 											.hits(target, visited2, EQUALS_Y))
 									// Cache of the negated search
@@ -8521,15 +8544,15 @@ class SequencePatternTest {
 									)
 							).build(),
 							match(hits1.length>0, hits1.length)
-								.cache(cache(CACHE_1, true)
+								.cache(cache(CACHE_0, true)
 										.window(visited1)
 										.hits(target, EQUALS_X))
-								.cache(cache(CACHE_0, true)
+								.cache(cache(CACHE_1, true)
 										.window(visited2)
 										.hits(target, EQUALS_Y))
 								.results(hits1.length, (r, i) -> r
-										.map(NODE_1, hits1[i])
-										.map(NODE_0, hits2[i]))
+										.map(NODE_0, hits1[i])
+										.map(NODE_1, hits2[i]))
 							);
 				}
 
@@ -8567,8 +8590,7 @@ class SequencePatternTest {
 					// Format of 'hits' matrix: [node_id][match_id][hits]
 					.results(matches, (r, i) -> {
 						for(int j = 0; j<hits.length; j++) {
-							int nodeId = hits.length-j-1;
-							r.map(nodeId, hits[j][i]);
+							r.map(j, hits[j][i]);
 						}
 					});
 		}
@@ -8756,7 +8778,7 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'<1+>{[isFirst, $X]}', X, 1, { {{0}} }",
-				"'<1+>{[isFirst, $X]}', XX, 1, { {{0}} }",
+				"'<1+>{[isFirst, $X]}', XX, 1, { {{0}} }", //FIXME SM ignores  marker here, maybe hoisting issue?
 				"'<1+>{[isBefore(3), $X]}', X, 1, { {{0}} }",
 				"'<1+>{[isBefore(3), $X]}', XX, 2, { {{0;1}{1}} }",
 				"'<1+>{[isBefore(3), $X]}', XXX, 2, { {{0;1}{1}} }",
@@ -8784,11 +8806,8 @@ class SequencePatternTest {
 				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', X, 1, { {{0}} }",
 				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', XXXX, 2, { {{0}{3}} }",
 				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', XXXXXX, 2, { {{0}{3}} }",
-				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', XXXXXXX, 3, { {{0}{3}{6}} }",
+				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', XXXXXXX, 3, { {{0}{6}{3}} }",
 				"'<1..2>{[isAfter(2) && isBefore(5), $X]}', X, 0, -",
-				"'*{[isAfter(2) && isBefore(5), $X]}', XXX, 1, { {{2}} }",
-				"'*{[isAfter(2) && isBefore(5), $X]}', XXXX, 1, { {{2;3}} }",
-				"'*{[isAfter(2) && isBefore(5), $X]}', XXXXX, 1, { {{2;3}} }",
 				"'<1..2>{[isAfter(2) && isBefore(5), $X]}', X, 0, -",
 				//TODO complete
 			})
@@ -9244,9 +9263,8 @@ class SequencePatternTest {
 				// Proper nesting
 				"'{{[isAt(2), $X][]}[isNotAt(3),$X]}', XXX, 0, -",
 				"'{{[isAt(2), $X][]}[isNotAt(3),$X]}', XXXX, 1, { {{1}} {{2}} {{3}} }",
-				//TODO
-				"'{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}', XXXX, 4, { {{1}{0}{0}{1}} {{2}{1}{2}{2}} {{3}{3}{3}{3}} }",
-				"'{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}', XXXX, 1, { {{1}} {{2}} {{3}} }",
+				"'{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}', XXXX, 3, { {{1}{0}{0}} {{2}{1}{2}} {{3}{3}{3}} }",
+				//TODO complete
 			})
 			@DisplayName("nested groups with markers on nodes")
 			void testMarkers(String query, String target, int matches,
@@ -9424,8 +9442,8 @@ class SequencePatternTest {
 
 		@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 		@CsvSource({
-			"<1+>[$X] or {[$Y] or [$Z]}, XYXXXZY, 7, { {{0}{}{2;3;4}{3;4}{4}{}{}} {{}{1}{}{}{}{}{6}} {{}{}{}{}{}{5}{}} }",
-			"<2+>[$X] or {[$Y] or [$Z]}, XYXXXZY, 5, { {{}{2;3;4}{3;4}{}{}} {{1}{}{}{}{6}} {{}{}{}{5}{}} }",
+			"'<1+>[$X] or {[$Y] or [$Z]}', XYXXXZY, 7, { {{0}{}{2;3;4}{3;4}{4}{}{}} {{}{1}{}{}{}{}{6}} {{}{}{}{}{}{5}{}} }",
+			"'<2+>[$X] or {[$Y] or [$Z]}', XYXXXZY, 5, { {{}{2;3;4}{3;4}{}{}} {{1}{}{}{}{6}} {{}{}{}{5}{}} }",
 		})
 		@DisplayName("Nesting of disjunctions")
 		void testNestedBranches(String query, String target, int matches,
