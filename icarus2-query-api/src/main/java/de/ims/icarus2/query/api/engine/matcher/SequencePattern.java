@@ -1114,17 +1114,13 @@ public class SequencePattern {
 
 		/** Push intervals for given marker on the stack and return index of first interval */
 		private int interval(RangeMarker marker) {
-			final int markerIndex = markers.size();
 			markers.add(marker);
 			final int intervalIndex = intervals.size();
-			markerPos.add(markerIndex);
+			markerPos.add(intervalIndex);
 			final int count = marker.intervalCount();
 			for (int i = 0; i < count; i++) {
 				intervals.add(Interval.blank());
 			}
-//			if(shift>0) {
-//				return shiftLeft(intervalIndex, count, shift);
-//			}
 			return intervalIndex;
 		}
 
@@ -1176,7 +1172,7 @@ public class SequencePattern {
 				Node end = atom.end();
 
 				/* Try to unfold nested branches that have no complex decorations
-				 * We need to make sure we only unfold branch singularstructures that
+				 * We need to make sure we only unfold branch singular structures that
 				 * do not have an additional tail set to them.
 				 */
 				if(start instanceof Branch && !atom.hasAffix()
@@ -1652,6 +1648,21 @@ public class SequencePattern {
 		}
 	}
 
+	/**
+	 * A special helper class for testing.
+	 * <p>
+	 * This implementation overrides the default {@link SequenceMatcher#reset()} method
+	 * to do nothing. This is so that test code can actually do proper assertions on the
+	 * internal matcher state <b>after</b> a matching attempt (be it a fail or success).
+	 * In addition a dedicated {@link NonResettingMatcher#fullReset()} method is provided
+	 * that does the job of the former {@link SequenceMatcher#reset()} method and the
+	 * added {@link NonResettingMatcher#softReset()} to only reset state information
+	 * not used by testing code. To not pollute publicly the public API, this class and
+	 * all the dedicated methods are kept package-private.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	@VisibleForTesting
 	static class NonResettingMatcher extends SequenceMatcher {
 
@@ -3248,7 +3259,9 @@ public class SequencePattern {
 
 	/**
 	 * Implements the exhaustive exploration of remaining search space
-	 * by iteratively scanning for matches of the current tail.
+	 * by iteratively scanning for matches of the current tail. In addition
+	 * to the basic forward-only search of {@link Find} this implementation
+	 * also offers the ability to scan backwards and also uses (optional) caching.
 	 */
 	static final class Exhaust extends Find {
 		final int cacheId;
@@ -3422,7 +3435,7 @@ public class SequencePattern {
         		skipSet = true;
         	}
         	info.skip = skip;
-            return info.deterministic;
+            return false;
         }
     }
 
@@ -3462,7 +3475,7 @@ public class SequencePattern {
 		}
 
 		/**
-		 * We need to both re-route this node AND the branch-conn to the give
+		 * We need to both re-route this node AND the branch-conn to the given
 		 * 'next' connector. Otherwise nested branching would result in disconnected
 		 * branch-conn nodes, making it impossible for inner branching constructs
 		 * to ever produce matches.
@@ -3531,6 +3544,7 @@ public class SequencePattern {
 				if (atom == null) {
 					continue;
 				}
+				// This will cause "conn" node to forward study call at most once!
 				atom.study(info);
 				minL2 = Math.min(minL2, info.minSize);
 				maxL2 = Math.max(maxL2, info.maxSize);
@@ -3682,7 +3696,7 @@ public class SequencePattern {
 
 			// Options for 'atom' exhausted, now try matching our tail
 
-			// Handle backing off if match fails
+			// Handle backing off if tail match fails
 			while (count >= backLimit) {
 				if (next.match(state, pos)) {
 					return true;

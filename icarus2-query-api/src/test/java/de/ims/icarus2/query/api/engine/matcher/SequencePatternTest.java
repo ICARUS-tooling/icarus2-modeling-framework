@@ -680,11 +680,15 @@ class SequencePatternTest {
 			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
 			prepareState(state);
 
-			// Verify correct result
+			/*
+			 *  Verify correct result (this does not use the full matcher API,
+			 *  so we don't need to worry about a state reset messing up our expectations)
+			 */
 			assertThat(root.match(state, startPos))
 				.as("Result for start position %d", _int(startPos))
 				.isEqualTo(expectedResult);
 
+			// Now perform deep validation of the final (internal) matcher state
 			assertState(state);
 		}
 
@@ -702,6 +706,7 @@ class SequencePatternTest {
 			 */
 			matcher.softReset();
 
+			// Now perform deep validation of the final (internal) matcher state
 			assertState(matcher);
 		}
 	}
@@ -9156,11 +9161,14 @@ class SequencePatternTest {
 				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
-			@Disabled
-			//TODO copy and enable to add further complex tests
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, 0, -",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', Z, 1, { {{}} {{}} {{0}} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', Y, 1, { {{}} {{0}} {{}} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
 			})
 			@DisplayName("disjunction of quantified nodes with markers")
 			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -9270,21 +9278,24 @@ class SequencePatternTest {
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).allowMonitor(true).build(),
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(),
 						config(matches, hits));
 			}
 
-			@Disabled
-			//TODO copy and enable to add further complex tests
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'{{2+[$X][$Y]}[$Z]}', XYZ, 0, -",
+				"'{{2+[$X][$Y]}[$Z]}', XXYZ, 1, { {{0;1}} {{2}} {{3}} }",
+				"'{{2+[$X][$Y]}[$Z]}', XXXYZZ, 4, { {{0;1;2}{0;1;2}{1;2}{1;2}} {{3}{3}{3}{3}} {{4}{5}{4}{5}} }",
+				"'{{2+[$X][$Y]}2+[$Z]}', XXYZ, 0, -",
+				"'{{2+[$X][$Y]}2+[$Z]}', XXYZZ, 1, { {{0;1}} {{2}} {{3;4}} }",
 			})
 			@DisplayName("quantified nodes in nested groups")
 			void testQuantifiedNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, builder(expand(query)).build(), config(matches, hits));
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(),
+						config(matches, hits));
 			}
 
 			@Disabled
