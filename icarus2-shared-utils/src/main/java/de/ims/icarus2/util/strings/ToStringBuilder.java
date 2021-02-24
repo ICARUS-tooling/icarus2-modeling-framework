@@ -109,6 +109,7 @@ public class ToStringBuilder {
 		requireNonNull(s);
 		maybeAddSpace();
 		buffer.append(s);
+		requireSpace();
 		return this;
 	}
 

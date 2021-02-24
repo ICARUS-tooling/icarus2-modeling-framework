@@ -1,0 +1,60 @@
+graph {
+	fill-color: white;
+	padding: 20px, 20px;
+}
+
+node {
+	shape: box;
+	size-mode: fit;
+	padding: 3px;
+	fill-color: #D4D4FF;
+	stroke-mode: plain;
+	stroke-color: #2A55FF;
+	text-color: black;
+	text-size: 12;
+}
+
+node.iql {
+	shape: rounded-box;
+	stroke-color: blue;
+}
+
+node.state {
+	text-background-color: #ff80ff;
+}
+
+node.proper {
+	text-background-color: #ff8000;
+}
+
+node.full {
+	text-background-color: #80ff00;
+}
+
+node.branch {
+	shape: diamond;
+	text-visibility-mode: hidden;
+}
+
+node.visited {
+	stroke-color: green;
+}
+
+edge {
+	shape: line;
+	
+}
+
+edge.atom {
+	arrow-shape: diamond;
+}
+
+edge.branch {
+	stroke-mode: dots;
+	fill-mode: none;
+	size: 0;
+}
+
+node:clicked {
+	fill-color: red;
+}
