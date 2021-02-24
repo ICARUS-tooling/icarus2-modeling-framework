@@ -303,7 +303,7 @@ subprojects {
 	/**
 	 * Specialized test tasks for integration, concurrency
 	 * and very costly tests. 
-	 * Association to a group is defined via the respective tag(s). Perdefault
+	 * Association to a group is defined via the respective tag(s). Per default
 	 * the 'test' task runs without any of those test types and none of them
 	 * are performed on the CI environment.
 	 * The 'check' task on the other hand includes ALL of them and therefore 
@@ -329,7 +329,7 @@ subprojects {
 	}
 	
 	task exhaustiveTest(type: Test) {
-		description = 'Run al lthe exhaustuve tests based on the slow tag'
+		description = 'Run all the exhaustuve tests based on the slow tag'
 		useJUnitPlatform {
 			includeTags 'slow'
 		}

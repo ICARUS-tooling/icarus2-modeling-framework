@@ -31,7 +31,7 @@ public class Conditions {
 	 * Pragmatic decision:
 	 *
 	 * Instead of changing some of these checkXXX methods to use IcarusRuntimeException
-	 * we keep the "native" exception types so as too overly complicate the usage
+	 * we keep the "native" exception types so as not to overly complicate the usage
 	 * and implementation chaos between the core utilities project and the shared-tests
 	 * helper project (the latter can't access IcarusRuntimeException, which would be
 	 * needed for most of the exception-based assertions there!
