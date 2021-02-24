@@ -4,9 +4,7 @@ plugins {
 	id 'jacoco'
 	id 'com.github.kt3k.coveralls' version '2.8.4'
 	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
-	//id 'com.github.jk1.dependency-license-report' version '1.2'
     id 'com.github.hierynomus.license' version '0.15.0' apply false
-//	id 'com.github.spotbugs' version '2.0.1' apply false
 	id 'net.ltgt.apt-eclipse' version '0.21'
 	id 'nebula.lint' version '16.17.0'
 }
@@ -51,8 +49,7 @@ gradleLint {
 subprojects {
   	apply plugin: 'java-library'
   	apply plugin: 'maven-publish'
-  	apply plugin: 'checkstyle'
-//  	apply plugin: 'com.github.spotbugs'  		
+  	apply plugin: 'checkstyle'		
 	apply plugin: 'com.github.hierynomus.license'
 	apply plugin: 'com.github.johnrengelman.shadow'
 	apply plugin: 'net.ltgt.apt-eclipse'
@@ -112,11 +109,7 @@ subprojects {
 	dependencies {
 	
 		// COMPILE ENVIRONMENT
-		
-//		spotbugs "net.jcip:jcip-annotations:${versions.jcip}"
-//  		spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
-//		spotbugs "com.github.spotbugs:spotbugs-annotations:${versions.spotbugs}"
-		
+
 		// RUNTIME ENVIRONMENT
 	
 	    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
@@ -399,25 +392,7 @@ subprojects {
     tasks.withType(Javadoc) {
 	    classpath = sourceSets.main.compileClasspath
 		options.addBooleanOption('Xdoclint:none', true)
-//		options.addStringOption('Xdoclint:none', '-quiet')
 	}
-	
-//	spotbugs {
-//	    toolVersion = "4.0.0-beta4"
-//	    ignoreFailures = true
-//	    effort = "min"
-//	    showProgress = false
-//	    reportLevel = "medium"
-//		sourceSets = [sourceSets.main]
-//	}
-	
-	// Switch spotbugs reporting to be html only
-//	tasks.withType(com.github.spotbugs.SpotBugsTask) {
-//	    reports {
-//	        xml.enabled false
-//	        html.enabled true
-//	    }
-//	}
 	
 	// For when we need new subprojects
     task createProjectStructure {
