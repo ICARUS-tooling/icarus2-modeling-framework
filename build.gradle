@@ -8,7 +8,7 @@ plugins {
     id 'com.github.hierynomus.license' version '0.15.0' apply false
 //	id 'com.github.spotbugs' version '2.0.1' apply false
 	id 'net.ltgt.apt-eclipse' version '0.21'
-	id 'nebula.lint' version '16.0.2'
+	id 'nebula.lint' version '16.17.0'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
