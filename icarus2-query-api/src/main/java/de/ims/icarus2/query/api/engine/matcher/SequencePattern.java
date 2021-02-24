@@ -361,6 +361,8 @@ public class SequencePattern {
 		ElementContext context;
 		ExpressionFactory expressionFactory;
 
+		boolean findOnly = false;
+
 		int id;
 
 		final List<Node> nodes = new ArrayList<>();
@@ -763,11 +765,11 @@ public class SequencePattern {
 
 			// If we have quantifiers we cannot move the scan inside the group sequence
 			boolean hoistScan = !quantifiers.isEmpty();
-			boolean findOnly = !allowExhaustive(quantifiers);
+			boolean oldFindOnly = setFindOnly(!allowExhaustive(quantifiers));
 			//FIXME we need to either adjust the specification or branch here for collections of mixed continuous and discontinuous quantifiers!
 
 			// Make sure to process the group content as a detached atom
-			final Frame group = looseGroup(source.getElements(), hoistScan ? null : scan, findOnly);
+			final Frame group = looseGroup(source.getElements(), hoistScan ? null : scan);
 
 			// Apply quantification
 			group.replace(quantify(group, quantifiers));
@@ -776,6 +778,8 @@ public class SequencePattern {
 			if(scan!=null && hoistScan && !unwrap(group.start()).isScanCapable()) {
 				group.push(scan);
 			}
+
+			resetFindOnly(oldFindOnly);
 
 			return group;
 		}
@@ -786,7 +790,7 @@ public class SequencePattern {
 			if(source.getArrangement()==NodeArrangement.ADJACENT) {
 				return adjacentGroup(elements, scan);
 			}
-			return looseGroup(elements, scan, false);
+			return looseGroup(elements, scan);
 		}
 
 		/** Process alternatives and link to active sequence */
@@ -838,6 +842,16 @@ public class SequencePattern {
 		}
 
 		private int id() { return id++; }
+
+		private boolean setFindOnly(boolean findOnly) {
+			boolean res = this.findOnly;
+			this.findOnly |= findOnly;
+			return res;
+		}
+
+		private void resetFindOnly(boolean findOnly) {
+			this.findOnly = findOnly;
+		}
 
 		private void discard(Node node) {
 			if(!nodes.remove(node))
@@ -945,7 +959,7 @@ public class SequencePattern {
 		}
 
 		/** Free scan exploration. Depending on context it'll be exhaustive or 'findOnly'. */
-		private Node explore(boolean forward, boolean cached, boolean findOnly) {
+		private Node explore(boolean forward, boolean cached) {
 
 			cached |= cacheAll;
 
@@ -962,7 +976,6 @@ public class SequencePattern {
 							"Cannot do backwards scan inside 'find-only' environment");
 				scan = find();
 			} else {
-				//TODO re-evaluate if we can actually use caching when marker is present
 				scan = exhaust(forward, cached ? cache() : UNSET_INT);
 			}
 
@@ -1222,7 +1235,7 @@ public class SequencePattern {
 		 * sequence may receive a scan attached to it.
 		 * The first node in the sequence might have its prefix hoisted.
 		 */
-		private Frame looseGroup(List<IqlElement> elements, @Nullable Node scan, boolean findOnly) {
+		private Frame looseGroup(List<IqlElement> elements, @Nullable Node scan) {
 			if(elements.size()==1) {
 				return process(elements.get(0), scan);
 			}
@@ -1238,7 +1251,7 @@ public class SequencePattern {
 					// Any node but the first can receive an automatic scan attached to it
 					if(!head.isScanCapable() && !head.isFixed()) {
 						// Cashing will be used either for complex inner structure or intermediate nodes
-						step.push(explore(true, needsCacheForScan(head) || i<last, findOnly));
+						step.push(explore(true, needsCacheForScan(head) || i<last));
 					}
 					// Ensure we don't mix up hoistable content and proactively collapse
 					step.collapse();
@@ -1351,7 +1364,8 @@ public class SequencePattern {
 
 			final boolean disjoint = flagSet(MatchFlag.DISJOINT);
 
-			Node rootScan = explore(modifier!=QueryModifier.LAST, false, false);
+			resetFindOnly(false);
+			Node rootScan = explore(modifier!=QueryModifier.LAST, false);
 
 			// For now we don't honor the 'consumed' flag on IqlElement instances
 			final Frame frame = process(rootElement, rootScan);

@@ -8577,9 +8577,9 @@ class SequencePatternTest {
 	 * 		<th>{@link IqlSet set}</th><th>{@link IqlElementDisjunction branch}</th></tr>
 	 * <tr><th>{@link IqlNode node}</th><td>-</td><td>{@link NodeInGrouping X}</td>
 	 * 		<td>{@link NodeInSet X}</td><td>{@link NodeInBranch X}</td></tr>
-	 * <tr><th>{@link IqlGrouping grouping}</th><td>-</td><td></td><td></td><td></td></tr>
-	 * <tr><th>{@link IqlSet set}</th><td>-</td><td></td><td></td><td></td></tr>
-	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td></td><td></td><td></td></tr>
+	 * <tr><th>{@link IqlGrouping grouping}</th><td>-</td><td>{@link GroupingInGrouping X}</td><td>{@link GroupingInSet X}</td><td>{@link GroupingInBranch X}</td></tr>
+	 * <tr><th>{@link IqlSet set}</th><td>-</td><td>{@link SetInGrouping X}</td><td>{@link SetInSet X}</td><td>{@link SetInBranch X}</td></tr>
+	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td>{@link BranchInGrouping X}</td><td>{@link BranchInSet X}</td><td>{@link BranchInBranch X}</td></tr>
 	 * </table>
 	 *
 	 * Row nested in column.
@@ -9166,9 +9166,14 @@ class SequencePatternTest {
 				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, 0, -",
 				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', Z, 1, { {{}} {{}} {{0}} }",
 				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', Y, 1, { {{}} {{0}} {{}} }",
-				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
-				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
-				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', X, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', -XX, 1, { {{1;2}} {{}} {{}} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', -XXX, 2, { {{1;2;3}{2;3}} {{}{}} {{}{}} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', ZXX, 2, { {{}{1;2}} {{}{}} {{0}{}} }",
+				"'<2+>[isNotAt(1), $X] or [isLast,$Y] or [isFirst,$Z]', ZY, 2, { {{}{}} {{}{1}} {{0}{}} }",
+				"'<2+>[isNotAt(1), $X] or <2..3>[isBefore(5),$Y]', X, 0, -",
+				"'<2+>[isNotAt(1), $X] or <2..3>[isBefore(5),$Y]', XY, 0, -",
+				"'<2+>[isNotAt(1), $X] or <2..3>[isBefore(5),$Y]', X---YY, 0, -",
+				"'<2+>[isNotAt(1), $X] or <2..3>[isBefore(5),$Y]', YY, 1, { {{}} {{0;1}} }",
 			})
 			@DisplayName("disjunction of quantified nodes with markers")
 			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -9298,11 +9303,14 @@ class SequencePatternTest {
 						config(matches, hits));
 			}
 
-			@Disabled
-			//TODO copy and enable to add further complex tests
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'{<2+>{[$X][$Y]}{[$Z][+]}}', XYZ, 0, -",
+				"'{<2+>{[$X][$Y]}{[$Z][+]}}', XYZZ, 0, -",
+				"'{<2+>{[$X][$Y]}{[$Z][+]}}', XYXYZ-, 1, { {{0;2}} {{1;3}} {{4}} }",
+				"'{<2+>{[$X][$Y]}{[$Z][+]}}', XYXYXYZ-, 2, { {{0;2;4}{2;4}} {{1;3;5}{3;5}} {{6}{6}} }",
+				"'{<2+>{[$X][$Y]}<2->{[$Z][+]}}', XYXYZ-, 1, { {{0;2}} {{1;3}} {{4}} }",
+				"'{<2+>{[$X][$Y]}<2->{[$Z][+]}}', XYXYZ-Z-, 2, { {{0;2}{0;2}} {{1;3}{1;3}} {{4;6}{6}} }",
 			})
 			@DisplayName("nested quantified group")
 			void testInnerQuantification(String query, String target, int matches,
@@ -9311,11 +9319,12 @@ class SequencePatternTest {
 				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
-			@Disabled
-			//TODO copy and enable to add further complex tests
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'<2+>{{[$X][+]}[$Y]}', XY, 0, -",
+				"'<2+>{{[$X][+]}[$Y]}', X-Y, 0, -",
+				"'<2+>{{[$X][+]}[$Y]}', X-YX-Y, 1, { {{0;3}} {{2;5}} }",
+				"'<2+>{[$X]{[+][$Y]}}', X-YX-Y, 1, { {{0;3}} {{2;5}} }",
 			})
 			@DisplayName("group nested in quantified group")
 			void testOuterQuantification(String query, String target, int matches,
@@ -9324,11 +9333,12 @@ class SequencePatternTest {
 				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
-			@Disabled
-			//TODO copy and enable to add further complex tests
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'<2+>{<1+>{[$X][$Y]}[]}', XY, 0, -",
+				"'<2+>{<1+>{[$X][$Y]}[]}', XY-XY-, 1, { {{0;3}} {{1;4}} }",
+				"'<2+>{<1+>{[$X][$Y]}[]}', XYXY-XY-, 2, { {{0;2;5}{2;5}} {{1;3;6}{3;6}} }",
+				"'<2+>{<1+>{[$X][$Y]}2+[$Z]}', XYZZXYZZZ, 1, { {{0;4}} {{1;5}} {{2;3;6;7;8}} }",
 			})
 			@DisplayName("quantified group nested in quantified group")
 			void testFullQuantification(String query, String target, int matches,
@@ -9338,9 +9348,141 @@ class SequencePatternTest {
 			}
 		}
 
+		/**
+		 * {@link IqlGrouping} nested inside {@link IqlSet}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>arrangement on set</li>
+		 * <li>quantifier on grouping</li>
+		 * <li>multiple groupings</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class GroupingInSet {
 
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'[] {[][]}', XX, 0, -",
+				"'[] {[][]}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'[] {[] {[]}}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{[][]} []', XX, 0, -",
+				"'{[][]} []', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{{[]} []} []', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{[][]} [] {[][]}', XXXXX, 1, { {{0}} {{1}} {{2}} {{3}} {{4}} }",
+			})
+			@DisplayName("nested groups of blank nodes")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[?]}[]', X, 1, { {{}} {{0}} }",
+				"'[]{[?]}', X, 1, { {{0}} {{}} }",
+
+				"'{[*]}[]', X, 1, { {{}} {{0}} }",
+				"'[]{[*]}', X, 1, { {{0}} {{}} }",
+
+				"'{[+]}[]', X, 0, -",
+				"'{[+]}[]', XX, 1, { {{0}} {{1}} }",
+				"'[]{[+]}', X, 0, -",
+				"'[]{[+]}', XX, 1, { {{0}} {{1}} }",
+				"'{[+]}[*]', X, 1, { {{0}} {{}} }",
+				"'{[+]}[*]', XX, 2, { {{0}{1}} {{}{}} }",
+				"'[*]{[+]}', X, 1, { {{}} {{0}} }",
+				"'[*]{[+]}', XX, 3, { {{}{}{}} {{0}{1}{1}} }",
+			})
+			@DisplayName("nested groups of dummy nodes")
+			void testDummyNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				// Singleton markers
+				"'{[isAt(2), $X][]}[]', XXX, 0, -",
+				"'{[isAt(2), $X][]}[]', XXXX, 1, { {{1}} }",
+				"'{[isNotAt(2), $X][]}[]', XXX, 1, { {{0}} }",
+				"'{[isAfter(2), $X][]}[]', XXXXX, 1, { {{2}} }",
+				"'{[isBefore(2), $X][]}[]', XXX, 1, { {{0}} }",
+				"'{[isInside(2,4), $X][]}[]', XXXXX, 4, { {{1}{1}{1}{2}} }",
+				"'[]{[isOutside(3,4), $X][$Y]}', XXYXXY, 6, { {{1}{1}{4}{4}{4}{4}} {{2}{5}{5}{5}{5}{5}} }",
+				// Marker intersection
+				"'[]{[][isNotAt(2) && isLast, $X]}', XX, 0, -",
+				"'[]{[][isNotAt(2) && isLast, $X]}', XXX, 1, { {{2}} }",
+				// Marker union
+				"'{[isFirst || isLast, $X][]}[]', XXX, 1, { {{0}} }",
+				"'[]{[][isFirst || isLast, $X]}', XXX, 1, { {{2}} }",
+				// Complex marker nesting
+				"'{[isFirst || (isNotAt(3) && isBefore(4)), $X]}', XXXX, 2, { {{0}{1}} }",
+
+				// Proper nesting
+				"'{[isAt(2), $X][]}[isNotAt(3),$X]', XXX, 0, -",
+				"'{[isAt(2), $X][]}[isNotAt(3),$X]', XXXX, 1, { {{1}} {{3}} }",
+				"'{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]', XXXX, 3, { {{1}{0}{0}} {{3}{3}{3}} }",
+				//TODO complete
+			})
+			@DisplayName("nested groups of nodes with markers")
+			void testMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{2+[$X][$Y]}[$Z]', XYZ, 0, -",
+				"'{2+[$X][$Y]}[$Z]', XXYZ, 1, { {{0;1}} {{2}} {{3}} }",
+				"'{2+[$X][$Y]}[$Z]', XXXYZZ, 4, { {{0;1;2}{0;1;2}{1;2}{1;2}} {{3}{3}{3}{3}} {{4}{5}{4}{5}} }",
+				"'{2+[$X][$Y]}2+[$Z]', XXYZ, 0, -",
+				"'{2+[$X][$Y]}2+[$Z]', XXYZZ, 1, { {{0;1}} {{2}} {{3;4}} }",
+			})
+			@DisplayName("nested groups of quantified nodes")
+			void testQuantifiedNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'<1+>{[$X]<2+>[$Y]}[]', XY, 0, -",
+				"'<1+>{[$X]<2+>[$Y]}[]', XYYX, 1, { {{0}} {{1;2}} }",
+				"'<1+>{[$X]<2+>[$Y]}[]', XYY-XYYY-, 1, { {{0;4}} {{1;2;5;6;7}} }",
+				"'<1+>{[$X]<2+>[$Y]}[]', XYXY-XY-, 2, { {{0;2;5}{2;5}} {{1;3;6}{3;6}} }",
+				"'<1+>{[$X]<2+>[$Y]}2+[$Z]', XYZZXYZZZ, 1, { {{0;4}} {{1;5}} {{2;3;6;7;8}} }",
+			})
+			@DisplayName("quantified groups of quantified nodes")
+			void testFullQuantification(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
+			}
+
+			@Disabled
+			//TODO copy and enable to add further complex tests
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+			})
+			@DisplayName("explicit arangement on set")
+			void testArrangement(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
 		}
 
 		@Nested
