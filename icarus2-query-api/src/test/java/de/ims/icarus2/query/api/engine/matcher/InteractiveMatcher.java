@@ -36,9 +36,7 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -620,20 +618,12 @@ public class InteractiveMatcher {
 		}
 
 		NodeInfo root = null;
-
-		Set<NodeInfo> nonAtoms = new HashSet<>();
-		Collections.addAll(nonAtoms, nodes);
 		// First pass: store mappings and filter nodes
 		for(NodeInfo info : nodes) {
 			id2info.put(info.getId(), info);
 			if(info.getType()==Type.SINGLE) {
 				int nodeId = ((Number)info.getProperty(Field.NODE)).intValue();
 				node2info.put(nodeId, info);
-			}
-			if(isOwner(info)) {
-				for(int id : info.getAtoms()) {
-					nonAtoms.remove(id2info.get(id));
-				}
 			}
 			if(info.getType()==Type.BEGIN) {
 				root = info;
@@ -645,7 +635,7 @@ public class InteractiveMatcher {
 		// Second pass: make nodes
 		layoutSMNode(root, null, parent, false);
 
-		for(NodeInfo info : nonAtoms) {
+		for(NodeInfo info : nodes) {
 			// Apply tree layout to nested cells
 			if(isOwner(info)) {
 				mxCell cell = sm2graph.get(info);
@@ -1095,11 +1085,13 @@ public class InteractiveMatcher {
 		final int nodeId;
 		final int pos;
 		final boolean result;
+		final int last;
 
-		Step(boolean enter, int nodeId, int pos, boolean result) {
+		Step(boolean enter, int nodeId, int pos, int last, boolean result) {
 			this.enter = enter;
 			this.nodeId = nodeId;
 			this.pos = pos;
+			this.last = last;
 			this.result = result;
 		}
 	}
@@ -1129,12 +1121,12 @@ public class InteractiveMatcher {
 
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			sink.accept(new Step(true, node.id, pos, false));
+			sink.accept(new Step(true, node.id, pos, state.last, false));
 		}
 
 		@Override
 		public void exitNode(Node node, State state, int pos, boolean result) {
-			sink.accept(new Step(false, node.id, pos, result));
+			sink.accept(new Step(false, node.id, pos, -1, result));
 		}
 
 	}
@@ -1410,8 +1402,12 @@ public class InteractiveMatcher {
 				Step step = (Step) value;
 				icon.setup(step.enter, step.result);
 				NodeInfo info = id2info.get(step.nodeId);
-				value = String.format("%2d: %s[%d] at %d", _int(index+1),
+				String text = String.format("%2d: %s[%d] at %d", _int(index+1),
 						info.getClassLabel(), _int(info.getId()), _int(step.pos));
+				if(step.enter) {
+					text += String.format(" (last=%d)",  _int(step.last));
+				}
+				value = text;
 			}
 
 			super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
