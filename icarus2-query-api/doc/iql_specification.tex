@@ -1883,6 +1883,9 @@ Dummy node syntax is supported everywhere regular nodes can be declared, except 
 
 A technical peculiarity to keep in mind when using dummy nodes is that they effectively influence what counts as ``begin'' of a successful match for the surrounding structural constraint.
 \todo{either explain here or add a section in ICQP specification document and link here}
+Note that dummy nodes always use reluctant expansion and as such will prefer a zero-width assertion versus blind expansion when used as the last inner node of a repetition (the state machine's internal construct for quantified nodes). 
+As a direct result the matcher will \textbf{not} be able to force an expansion there to produce valid results and intuitively correct target sequences might fail to match!
+It is therefore discouraged to use dummy nodes as terminal nodes in quantified groups (\ref{sec:node-grouping}). 
 
 \subsubsection{Quantification}
 \label{sec:quantification}
@@ -2007,7 +2010,7 @@ If in the example however the node \lit{8} was square instead of round, the enti
 \end{figure}
 
 The evaluation of quantified elements per default looks for continuous repetitions of the quantified element.
-To accept discontinuous target instances, all quantifiers except \textit{existential negation} and \textit{universal quantification} can be used with a special flag \texttt{\textasciicircum} (the circumflex symbol) appended to it.
+To accept \textbf{discontinuous} target instances, all quantifiers except \textit{existential negation} and \textit{universal quantification} can be used with a special flag \texttt{\textasciicircum} (the circumflex symbol) appended to it (e.g. \query{2+\textasciicircum}).
 If this flag is present, repetitions of the underlying quantified element will be found by scanning and may contains gaps between successful hits.
 This allows for very powerful expressions that can match multiple occurrences of a node in a target structure at different locations.
 
