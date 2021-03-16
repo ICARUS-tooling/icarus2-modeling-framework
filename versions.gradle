@@ -9,7 +9,7 @@ ext {
 	versions.spotbugs = '3.1.5'
 	versions.slf4j = '1.7.25'
 	versions.guava = '25.1-jre'
-	versions.fastutil = '8.3.1'
+	versions.fastutil = '8.5.2'
 	versions.javapoet = '1.11.1'
 	versions.xerces = '2.12.0'
 	versions.junit = '5.4.0'
