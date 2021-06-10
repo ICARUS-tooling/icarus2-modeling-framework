@@ -8595,7 +8595,10 @@ class SequencePatternTest {
 					// Format of 'hits' matrix: [node_id][match_id][hits]
 					.results(matches, (r, i) -> {
 						for(int j = 0; j<hits.length; j++) {
-							r.map(j, hits[j][i]);
+							// Make sure we handle "empty" assignments
+							if(hits[j].length>0) {
+								r.map(j, hits[j][i]);
+							}
 						}
 					});
 		}
@@ -9473,25 +9476,78 @@ class SequencePatternTest {
 				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 
-			@Disabled
-			//TODO copy and enable to add further complex tests
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+				"'ADJACENT {[$X][$Y]}[$Z]', XY-Z, 0, -",
+				"'ADJACENT {[$X][$Y]}[$Z]', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'ADJACENT {[$X][$Y]}{[$Y][$Z]}', XY-YZ, 0, -",
+				"'ADJACENT {[$X][$Y]}{[$Y][$Z]}', XYYZ, 1, { {{0}} {{1}} {{2}} {{3}} }",
+				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', XYYZ, 1, { {{0}} {{1}} {{2}} {{3}} }",
+				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', X-YYZ, 1, { {{0}} {{2}} {{3}} {{4}} }",
+				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', X-YY--Z, 1, { {{0}} {{2}} {{3}} {{6}} }",
+				"'ADJACENT {[$X]<1+>[$Y]}{<2..3>[$Y][$Z]}', X-YYY--Z, 1, { {{0}} {{2}} {{3;4}} {{7}} }",
+				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', XYYYZ, 2, { {{0}{0}} {{1;2}{2}} {{3}{3}} {{4}{4}} }",
+				//TODO complete
 			})
 			@DisplayName("explicit arangement on set")
 			void testArrangement(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+				assertResult(target, builder(expand(query)).build(), config(matches, hits));
 			}
 		}
 
+		/**
+		 * {@link IqlGrouping} nested inside {@link IqlElementDisjunction}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>quantifier on grouping</li>
+		 * <li>more than 2 groupings</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class GroupingInBranch {
 
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[][]} or {[][][]}', X, 0, -",
+				"'{[][]} or {[][][]}', XX, 1, { {{0}} {{1}} }",
+				"'{[][][]} or {[][]}', XX, 1, { {-} {-} {-} {{0}} {{1}} }",
+			})
+			@DisplayName("nested groups of blank nodes")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query)).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
 		}
 
+		/**
+		 * {@link IqlSet} nested inside {@link IqlGrouping}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>quantifier on grouping</li>
+		 * <li>more than 2 groupings</li>
+		 * <li>arrangement on set(s)</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class SetInGrouping {
 
