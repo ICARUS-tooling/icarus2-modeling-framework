@@ -85,7 +85,7 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
@@ -674,7 +674,7 @@ public class SequencePattern {
 		private Frame process(IqlElement source, @Nullable Node scan) {
 			switch (source.getType()) {
 			case GROUPING: return grouping((IqlGrouping) source, scan);
-			case SET: return sequence((IqlSet) source, scan);
+			case SEQUENCE: return sequence((IqlSequence) source, scan);
 			case NODE: return node((IqlNode) source, scan);
 			// Only disjunction inherits the 'adjacency' property from surrounding context
 			case DISJUNCTION: return disjunction((IqlElementDisjunction) source, scan);
@@ -764,12 +764,12 @@ public class SequencePattern {
 			final List<IqlQuantifier> quantifiers = source.getQuantifiers();
 
 			// If we have quantifiers we cannot move the scan inside the group sequence
-			boolean hoistScan = !quantifiers.isEmpty();
-			boolean oldFindOnly = setFindOnly(!allowExhaustive(quantifiers));
+			final boolean hoistScan = !quantifiers.isEmpty();
+			final boolean oldFindOnly = setFindOnly(!allowExhaustive(quantifiers));
 			//FIXME we need to either adjust the specification or branch here for collections of mixed continuous and discontinuous quantifiers!
 
 			// Make sure to process the group content as a detached atom
-			final Frame group = looseGroup(source.getElements(), hoistScan ? null : scan);
+			final Frame group = process(source.getElement(), hoistScan ? null : scan);
 
 			// Apply quantification
 			group.replace(quantify(group, quantifiers));
@@ -785,7 +785,7 @@ public class SequencePattern {
 		}
 
 		/** Process (ordered or adjacent) node sequence and link to active sequence */
-		private Frame sequence(IqlSet source, @Nullable Node scan) {
+		private Frame sequence(IqlSequence source, @Nullable Node scan) {
 			final List<IqlElement> elements = source.getElements();
 			if(source.getArrangement()==NodeArrangement.ADJACENT) {
 				return adjacentGroup(elements, scan);
@@ -1198,7 +1198,6 @@ public class SequencePattern {
 						atoms.add(n);
 						lastBefore(n, nestedConn).setNext(conn);
 					}
-					//TODO merge the 'source' proxy lists!
 					discard(branch);
 					discard(nestedConn);
 					continue;
@@ -1582,8 +1581,6 @@ public class SequencePattern {
 
 		/** The node of the state machine to start matching with. */
 		final Node root;
-
-		//TODO add
 
 		SequenceMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup);

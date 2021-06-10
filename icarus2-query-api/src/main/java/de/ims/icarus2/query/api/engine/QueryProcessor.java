@@ -60,7 +60,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
@@ -100,7 +100,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.EdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementDisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementGroupingContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementSetContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.ElementSequenceContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.EmptyEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.ExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.FilledEdgeContext;
@@ -496,15 +496,12 @@ public class QueryProcessor {
 					break;
 
 				case GROUPING:
-					((IqlGrouping)element).getElements()
-						.stream()
-						.map(this::getExpansionInfo)
-						.forEach(info::add);
+					info.add(getExpansionInfo(((IqlGrouping)element).getElement()));
 					info.quantify((IqlGrouping)element);
 					break;
 
-				case SET:
-					((IqlSet)element).getElements()
+				case SEQUENCE:
+					((IqlSequence)element).getElements()
 						.stream()
 						.map(this::getExpansionInfo)
 						.forEach(info::add);
@@ -717,10 +714,12 @@ public class QueryProcessor {
 			return count;
 		}
 
-		/** Checks whether any element in given list can be expanded to 1 or more instances. */
-		private boolean canExpandToOneOrMore(List<IqlElement> elements) {
+		/** Checks whether collection of nodes can be expanded to at least the given number of instances. */
+		private boolean canExpandToAtLeast(int required, List<IqlElement> elements) {
+			int accumulatedExpansion = 0;
 			for (IqlElement element : elements) {
-				if(getExpansionInfo(element).expansionLimit>0) {
+				accumulatedExpansion += getExpansionInfo(element).expansionLimit;
+				if(accumulatedExpansion>=required) {
 					return true;
 				}
 			}
@@ -819,7 +818,7 @@ public class QueryProcessor {
 			}
 
 			// More than one node -> wrap into a proper sequence
-			IqlSet structure = new IqlSet();
+			IqlSequence structure = new IqlSequence();
 			genId(structure);
 
 			tree.enter(structure, false);
@@ -836,8 +835,8 @@ public class QueryProcessor {
 
 			if(ctx instanceof ElementGroupingContext) {
 				return processElementGrouping((ElementGroupingContext) ctx, tree);
-			} else if(ctx instanceof ElementSetContext) {
-				return processElementSet((ElementSetContext) ctx, tree);
+			} else if(ctx instanceof ElementSequenceContext) {
+				return processElementSequence((ElementSequenceContext) ctx, tree);
 			} else if (ctx instanceof SingleNodeContext) {
 				return processNode(((SingleNodeContext)ctx).node(), true, tree);
 			} else if (ctx instanceof GraphFragmentContext) {
@@ -869,48 +868,52 @@ public class QueryProcessor {
 			}
 
 			tree.enter(grouping, negated);
-			for(NodeStatementContext nctx : ctx.nodeStatement()) {
-				grouping.addElement(processNodeStatement(nctx, tree));
+			List<NodeStatementContext> elements = ctx.nodeStatement();
+			if(elements.size()==1) {
+				grouping.setElement(processNodeStatement(elements.get(0), tree));
+			} else {
+				grouping.setElement(processElements(elements, null, tree));
 			}
+
 			tree.exit();
 
-			List<IqlElement> elements = grouping.getElements();
-			if(!grouping.hasQuantifiers() && elements.size()==1) {
-				return elements.get(0);
-			}
-
-			return grouping;
+			return grouping.hasQuantifiers() ? grouping : grouping.getElement();
 		}
 
-		private IqlSet processElementSet(ElementSetContext ctx, TreeInfo tree) {
-			IqlSet nodeSet = new IqlSet();
-			genId(nodeSet);
+		private IqlSequence processElements(List<NodeStatementContext> elements,
+				NodeArrangementContext arrangement, TreeInfo tree) {
+			IqlSequence sequence = new IqlSequence();
+			genId(sequence);
 
-			if(ctx.nodeArrangement()!=null) {
-				nodeSet.setArrangement(processNodeArrangement(ctx.nodeArrangement()));
+			if(arrangement!=null) {
+				sequence.setArrangement(processNodeArrangement(arrangement));
 			}
 
-			tree.enter(nodeSet, false);
-			for(NodeStatementContext nctx : ctx.nodeStatement()) {
-				nodeSet.addElement(processNodeStatement(nctx, tree));
+			tree.enter(sequence, false);
+			for(NodeStatementContext nctx : elements) {
+				sequence.addElement(processNodeStatement(nctx, tree));
 			}
 			tree.exit();
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(nodeSet.getArrangement()!=NodeArrangement.UNORDERED
-					&& countExistentialElements(nodeSet.getElements())<2
-					&& !canExpandToOneOrMore(nodeSet.getElements())) {
+			if(sequence.getArrangement()!=NodeArrangement.UNORDERED
+					&& countExistentialElements(sequence.getElements())<2
+					&& !canExpandToAtLeast(2, sequence.getElements())) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 						"For node arrangement feature to be effective the query needs at least"
 						+ " two distinct nodes that are existentially quantified, or quantification"
 						+ " that can expand to two or more node instances.");
 			}
 
-			return nodeSet;
+			return sequence;
 		}
 
-		private IqlSet processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
-			IqlSet elements = new IqlSet();
+		private IqlSequence processElementSequence(ElementSequenceContext ctx, TreeInfo tree) {
+			return processElements(ctx.nodeStatement(), ctx.nodeArrangement(), tree);
+		}
+
+		private IqlSequence processGraphFragment(GraphFragmentContext ctx, TreeInfo tree) {
+			IqlSequence elements = new IqlSequence();
 			genId(elements);
 
 			tree.enter(elements, false);

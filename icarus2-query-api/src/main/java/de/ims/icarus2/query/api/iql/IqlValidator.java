@@ -39,7 +39,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
@@ -206,7 +206,7 @@ public class IqlValidator {
 		case RESULT: validateResult((IqlResult) element); break;
 		case RESULT_INSTRUCTION: validateResultInstruction((IqlResultInstruction) element); break;
 		case SCOPE: validateScope((IqlScope) element); break;
-		case SET: validateSet((IqlSet) element); break;
+		case SEQUENCE: validateSequence((IqlSequence) element); break;
 		case SORTING: validateSorting((IqlSorting) element); break;
 		case STREAM: validateStream((IqlStream) element); break;
 		case TERM: validateTerm((IqlTerm) element); break;
@@ -340,7 +340,7 @@ public class IqlValidator {
 
 	}
 
-	private void validateSet(IqlSet element) {
+	private void validateSequence(IqlSequence element) {
 		// TODO Auto-generated method stub
 
 	}

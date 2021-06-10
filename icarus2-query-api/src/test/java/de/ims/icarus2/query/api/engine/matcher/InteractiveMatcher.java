@@ -97,7 +97,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
@@ -743,7 +743,7 @@ public class InteractiveMatcher {
 		} break;
 		case GROUPING: {
 			layoutQueryElements(((IqlGrouping)element).getQuantifiers(), "quant", parent, cell);
-			layoutQueryElements(((IqlGrouping)element).getElements(), "element", parent, cell);
+			layoutQueryElement(((IqlGrouping)element).getElement(), "element", parent, cell);
 		} break;
 		case LANE: {
 			layoutQueryElement(((IqlLane)element).getElement(), "element", parent, cell);
@@ -789,8 +789,8 @@ public class InteractiveMatcher {
 		case SCOPE: {
 			layoutQueryElements(((IqlScope)element).getLayers(), "layer", parent, cell);
 		} break;
-		case SET: {
-			layoutQueryElements(((IqlSet)element).getElements(), "element", parent, cell);
+		case SEQUENCE: {
+			layoutQueryElements(((IqlSequence)element).getElements(), "element", parent, cell);
 		} break;
 		case SORTING: {
 			layoutQueryElement(((IqlSorting)element).getExpression(), "expression", parent, cell);

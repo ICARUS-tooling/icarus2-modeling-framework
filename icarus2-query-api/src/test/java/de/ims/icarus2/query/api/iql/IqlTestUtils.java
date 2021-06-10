@@ -25,7 +25,7 @@ import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
@@ -73,29 +73,33 @@ public class IqlTestUtils {
 	public static IqlGrouping grouping(IqlElement...elements) {
 		IqlGrouping grouping = new IqlGrouping();
 		setId(grouping);
-		Stream.of(elements).forEach(grouping::addElement);
+		if(elements.length==1) {
+			grouping.setElement(elements[0]);
+		} else {
+			grouping.setElement(set(false, elements));
+		}
 		return grouping;
 	}
 
-	public static IqlSet set(boolean adjacent, IqlElement...elements) {
+	public static IqlSequence set(boolean adjacent, IqlElement...elements) {
 		return adjacent ? adjacent(elements) : ordered(elements);
 	}
 
-	public static IqlSet unordered(IqlElement...elements) {
-		IqlSet sequence = new IqlSet();
+	public static IqlSequence unordered(IqlElement...elements) {
+		IqlSequence sequence = new IqlSequence();
 		setId(sequence);
 		Stream.of(elements).forEach(sequence::addElement);
 		return sequence;
 	}
 
-	public static IqlSet adjacent(IqlElement...elements) {
-		IqlSet sequence = unordered(elements);
+	public static IqlSequence adjacent(IqlElement...elements) {
+		IqlSequence sequence = unordered(elements);
 		sequence.setArrangement(NodeArrangement.ADJACENT);
 		return sequence;
 	}
 
-	public static IqlSet ordered(IqlElement...elements) {
-		IqlSet sequence = unordered(elements);
+	public static IqlSequence ordered(IqlElement...elements) {
+		IqlSequence sequence = unordered(elements);
 		sequence.setArrangement(NodeArrangement.ORDERED);
 		return sequence;
 	}

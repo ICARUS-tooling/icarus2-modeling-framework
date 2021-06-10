@@ -142,7 +142,7 @@ import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSet;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
@@ -171,6 +171,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  * Many test methods in this class state it explicitly, some omit it, but here the
  * information is once again:
  * <br>
+ * <b>OUTDATED INFO</b> TODO fix
  * The state machine behind {@link SequencePattern} is built <b>BACK TO FRONT</b>!
  * This means that all cache ids, node ids and other identifying properties of nodes
  * inside the state machine that "count incrementally" also start with the node
@@ -8574,11 +8575,11 @@ class SequencePatternTest {
 	 *
 	 * <table border="1">
 	 * <tr><th>&nbsp;</th><th>{@link IqlNode node}</th><th>{@link IqlGrouping grouping}</th>
-	 * 		<th>{@link IqlSet set}</th><th>{@link IqlElementDisjunction branch}</th></tr>
+	 * 		<th>{@link IqlSequence set}</th><th>{@link IqlElementDisjunction branch}</th></tr>
 	 * <tr><th>{@link IqlNode node}</th><td>-</td><td>{@link NodeInGrouping X}</td>
 	 * 		<td>{@link NodeInSet X}</td><td>{@link NodeInBranch X}</td></tr>
 	 * <tr><th>{@link IqlGrouping grouping}</th><td>-</td><td>{@link GroupingInGrouping X}</td><td>{@link GroupingInSet X}</td><td>{@link GroupingInBranch X}</td></tr>
-	 * <tr><th>{@link IqlSet set}</th><td>-</td><td>{@link SetInGrouping X}</td><td>{@link SetInSet X}</td><td>{@link SetInBranch X}</td></tr>
+	 * <tr><th>{@link IqlSequence set}</th><td>-</td><td>{@link SetInGrouping X}</td><td>{@link SetInSet X}</td><td>{@link SetInBranch X}</td></tr>
 	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td>{@link BranchInGrouping X}</td><td>{@link BranchInSet X}</td><td>{@link BranchInBranch X}</td></tr>
 	 * </table>
 	 *
@@ -8850,7 +8851,7 @@ class SequencePatternTest {
 		}
 
 		/**
-		 * {@link IqlNode} nested inside {@link IqlSet}
+		 * {@link IqlNode} nested inside {@link IqlSequence}
 		 * <p>
 		 * Aspects to cover:
 		 * <ul>
@@ -8868,7 +8869,7 @@ class SequencePatternTest {
 		 * causing the final matcher to actually create mappings we can verify.
 		 * <p>
 		 * Note further that we always need at least {@code 2} nodes in a sequence
-		 * to force the creation of a {@link IqlSet} wrapper!
+		 * to force the creation of a {@link IqlSequence} wrapper!
 		 */
 		@Nested
 		class NodeInSet {
@@ -9352,7 +9353,7 @@ class SequencePatternTest {
 		}
 
 		/**
-		 * {@link IqlGrouping} nested inside {@link IqlSet}
+		 * {@link IqlGrouping} nested inside {@link IqlSequence}
 		 * <p>
 		 * Aspects to cover:
 		 * <ul>
@@ -9532,7 +9533,7 @@ class SequencePatternTest {
 		}
 
 		/**
-		 * {@link IqlSet} nested inside {@link IqlGrouping}
+		 * {@link IqlSequence} nested inside {@link IqlGrouping}
 		 * <p>
 		 * Aspects to cover:
 		 * <ul>

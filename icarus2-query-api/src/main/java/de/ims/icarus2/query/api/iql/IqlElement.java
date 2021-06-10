@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.iql;
 
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -46,9 +47,13 @@ public abstract class IqlElement extends IqlUnique {
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean consumed = false;
 
+	/** SIgnals whether or not the element has been consumed during a matching process. */
 	public boolean isConsumed() { return consumed; }
 
 	public void setConsumed(boolean consumed) { this.consumed = consumed; }
+
+	/** Indicates the minimal size in nodes that the element can cover, not including quantification. */
+	public abstract int length();
 
 	public static abstract class IqlProperElement extends IqlElement {
 
@@ -79,7 +84,7 @@ public abstract class IqlElement extends IqlUnique {
 	}
 
 	/**
-	 * Acts as a scope around a collection of {@link IqlElement elements} to
+	 * Acts as a scope around a {@link IqlElement element} to
 	 * provide quantification or simply grouping them together for surrounding
 	 * query features.
 	 *
@@ -92,9 +97,8 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
 
-		@JsonProperty(value=IqlProperties.ELEMENTS, required=true)
-		@JsonInclude(Include.NON_EMPTY)
-		private final List<IqlElement> elements = new ArrayList<>();
+		@JsonProperty(value=IqlProperties.ELEMENT, required=true)
+		private IqlElement element;
 
 		@Override
 		public IqlType getType() { return IqlType.GROUPING; }
@@ -104,10 +108,13 @@ public abstract class IqlElement extends IqlUnique {
 			super.checkIntegrity();
 
 			checkCollection(quantifiers);
-			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
+			checkNotNull(element, IqlProperties.ELEMENT);
 		}
 
-		public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
+		@Override
+		public int length() { return element.length(); }
+
+		public IqlElement getElement() { return element; }
 
 		@Override
 		public List<IqlQuantifier> getQuantifiers() { return CollectionUtils.unmodifiableListProxy(quantifiers); }
@@ -118,10 +125,7 @@ public abstract class IqlElement extends IqlUnique {
 		@Override
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers.forEach(requireNonNull(action)); }
 
-		public void addElement(IqlElement element) { elements.add(requireNonNull(element)); }
-
-		public void forEachElement(Consumer<? super IqlElement> action) { elements.forEach(requireNonNull(action)); }
-
+		public void setElement(IqlElement element) { this.element = requireNonNull(element); }
 
 		// utility
 
@@ -156,6 +160,9 @@ public abstract class IqlElement extends IqlUnique {
 			checkCollection(quantifiers);
 		}
 
+		@Override
+		public int length() { return 1; }
+
 		public Optional<IqlMarker> getMarker() { return marker; }
 
 		@Override
@@ -181,7 +188,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class IqlSet extends IqlElement {
+	public static class IqlSequence extends IqlElement {
 
 		@JsonProperty(IqlProperties.ELEMENTS)
 		@JsonInclude(Include.NON_EMPTY)
@@ -192,7 +199,7 @@ public abstract class IqlElement extends IqlUnique {
 		private NodeArrangement nodeArrangement = NodeArrangement.UNORDERED;
 
 		@Override
-		public IqlType getType() { return IqlType.SET; }
+		public IqlType getType() { return IqlType.SEQUENCE; }
 
 		@Override
 		public void checkIntegrity() {
@@ -200,6 +207,9 @@ public abstract class IqlElement extends IqlUnique {
 
 			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
 		}
+
+		@Override
+		public int length() { return elements.size(); }
 
 		public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
@@ -218,7 +228,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * Adds the ability of nesting to {@link IqlNode}.
 	 *
 	 * Implementation note: we use {@link IqlElement} as child type so that
-	 * {@link IqlElementDisjunction} and {@link IqlSet} are also allowed.
+	 * {@link IqlElementDisjunction} and {@link IqlSequence} are also allowed.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -227,7 +237,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		/**
 		 * Children of this tree node, can either be a single (tree)node,
-		 * an IqlSet or an IqlElementDisjunction.
+		 * an IqlSequence or an IqlElementDisjunction.
 		 */
 		@JsonProperty(IqlProperties.CHILDREN)
 		@JsonInclude(Include.NON_ABSENT)
@@ -279,6 +289,9 @@ public abstract class IqlElement extends IqlUnique {
 			//TODO having the quantifier check here causes test issues. is it ok to do that check only in the QueryProcessor
 		}
 
+		@Override
+		public int length() { return 2; }
+
 		public IqlNode getSource() { return source; }
 
 		public IqlNode getTarget() { return target; }
@@ -321,7 +334,7 @@ public abstract class IqlElement extends IqlUnique {
 	}
 
 	/**
-	 * Logical connective to disjunctively group a collection of {@link IqlElement elements}.
+	 * Logical connective to disjunctively group a collection of {@link IqlElement element}.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -330,6 +343,8 @@ public abstract class IqlElement extends IqlUnique {
 
 		@JsonProperty(value=IqlProperties.ALTERNATIVES, required=true)
 		private final List<IqlElement> alternatives = new ArrayList<>();
+
+		private transient int size = UNSET_INT;
 
 		@Override
 		public IqlType getType() { return IqlType.DISJUNCTION; }
@@ -344,17 +359,30 @@ public abstract class IqlElement extends IqlUnique {
 			}
 		}
 
+		@Override
+		public int length() {
+			if(size==UNSET_INT && !alternatives.isEmpty()) {
+				int tmp = Integer.MAX_VALUE;
+				for(IqlElement element : alternatives) {
+					tmp = Math.min(tmp, element.length());
+				}
+				size = tmp;
+			}
+			return size==UNSET_INT ? 0 : size;
+		}
+
 		public List<IqlElement> getAlternatives() { return CollectionUtils.unmodifiableListProxy(alternatives); }
 
 		public void addAlternative(IqlElement alternative) {
 			alternatives.add(requireNonNull(alternative));
+			size = UNSET_INT;
 		}
 	}
 
 //	public enum IqlElementType {
 //		GROUPING,
 //		NODE,
-//		SET,
+//		SEQUENCE,
 //		TREE_NODE,
 //		EDGE,
 //		DISJUNCTION,
