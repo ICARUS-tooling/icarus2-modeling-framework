@@ -416,6 +416,7 @@ public abstract class AbstractMemberManifest<M extends MemberManifest<M>, H exte
 	 */
 	@Override
 	public void forEachCategory(Consumer<? super Category> action) {
+		requireNonNull(action);
 		categories.forEach(action);
 	}
 
