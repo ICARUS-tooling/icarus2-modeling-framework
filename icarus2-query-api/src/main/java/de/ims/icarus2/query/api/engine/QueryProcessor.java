@@ -31,7 +31,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -84,6 +86,7 @@ import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
+import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUnique;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
@@ -136,6 +139,7 @@ import de.ims.icarus2.util.id.StaticIdentity;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 /**
  * Helper for processing the actual content of a query.
@@ -327,10 +331,126 @@ public class QueryProcessor {
 		}
 	}
 
+	private static class ExpansionInfo {
+		static final int UNDEFINED = -1;
+		static final int UNLIMITED = Integer.MAX_VALUE;
+
+		int minSize = UNDEFINED;
+		int expansionLimit = UNDEFINED;
+
+		void add(int minSize, int expansionLimit) {
+			if(this.minSize==UNDEFINED) {
+				this.minSize = minSize;
+			} else if(minSize!=UNDEFINED) {
+				this.minSize += minSize;
+			}
+
+			if(this.expansionLimit==UNDEFINED) {
+				this.expansionLimit = expansionLimit;
+			} else if(this.expansionLimit!=UNLIMITED) {
+				if(expansionLimit==UNLIMITED) {
+					this.expansionLimit = UNLIMITED;
+				} else if(expansionLimit!=UNDEFINED) {
+					this.expansionLimit += expansionLimit;
+				}
+			}
+		}
+
+		void add(ExpansionInfo other) {
+			add(other.minSize, other.expansionLimit);
+		}
+
+		private void alternative(int minSize, int expansionLimit) {
+			if(this.minSize==UNDEFINED) {
+				this.minSize = minSize;
+			} else if(minSize!=UNDEFINED) {
+				this.minSize = Math.min(this.minSize, minSize);
+			}
+
+			if(this.expansionLimit==UNDEFINED) {
+				this.expansionLimit = expansionLimit;
+			} else if(this.expansionLimit!=UNLIMITED) {
+				if(expansionLimit==UNLIMITED) {
+					this.expansionLimit = UNLIMITED;
+				} else if(expansionLimit!=UNDEFINED) {
+					this.expansionLimit = Math.max(this.expansionLimit, expansionLimit);
+				}
+			}
+		}
+
+		private void alternative(OptionalInt minSize, OptionalInt expansionLimit) {
+			alternative(minSize.orElse(UNDEFINED), expansionLimit.orElse(UNDEFINED));
+		}
+
+		void alternative(ExpansionInfo other) {
+			alternative(other.minSize, other.expansionLimit);
+		}
+
+		private int scaleOverflowSensitive(int value, int factor) {
+			if(value==UNDEFINED || value==UNLIMITED) {
+				return value;
+			}
+			value *= factor;
+			if(value<0) {
+				value = Integer.MAX_VALUE;
+			}
+			return value;
+		}
+
+		private void scale(int minSizeMultiplier, int expansionLimitMultiplier) {
+			minSize = scaleOverflowSensitive(minSize, minSizeMultiplier);
+			expansionLimit = scaleOverflowSensitive(expansionLimit, expansionLimitMultiplier);
+		}
+
+		void quantify(Quantifiable element) {
+			int minSizeMultiplier = 1;
+			int expansionLimitMultiplier = 1;
+			if(element.hasQuantifiers()) {
+				final ExpansionInfo tmp = new ExpansionInfo();
+
+				for(IqlQuantifier quantifier : element.getQuantifiers()) {
+					if(quantifier.isUniversallyQuantified()) {
+						tmp.alternative(1, UNLIMITED);
+					} else {
+						switch (quantifier.getQuantifierType()) {
+						case RANGE:
+							tmp.alternative(quantifier.getLowerBound(), quantifier.getUpperBound());
+							break;
+						case EXACT:
+							tmp.alternative(quantifier.getValue(), quantifier.getValue());
+							break;
+						case AT_LEAST:
+							tmp.alternative(quantifier.getValue(), OptionalInt.of(UNLIMITED));
+							break;
+						case AT_MOST:
+							tmp.alternative(OptionalInt.of(1), quantifier.getValue());
+							break;
+
+						default:
+							break;
+						}
+					}
+				}
+
+				minSizeMultiplier = tmp.minSize;
+				expansionLimitMultiplier = tmp.expansionLimit;
+			}
+
+			if(element instanceof IqlElement && ((IqlElement)element).getType()==IqlType.EDGE) {
+				minSizeMultiplier = scaleOverflowSensitive(minSizeMultiplier, 2);
+				expansionLimitMultiplier = scaleOverflowSensitive(expansionLimitMultiplier, 2);
+			}
+
+			scale(minSizeMultiplier, expansionLimitMultiplier);
+		}
+	}
+
 	private class PayloadProcessor {
 
 		private boolean treeFeaturesUsed = false;
 		private boolean graphFeaturesUsed = false;
+
+		private Map<IqlElement, ExpansionInfo> expansionInfos = new Reference2ObjectOpenHashMap<>();
 
 		private void reportTreeFeaturesUsed(ParserRuleContext ctx) {
 			if(graphFeaturesUsed) {
@@ -348,6 +468,62 @@ public class QueryProcessor {
 			} else {
 				graphFeaturesUsed = true;
 			}
+		}
+
+		//TODO
+		private ExpansionInfo getExpansionInfo(IqlElement element) {
+			ExpansionInfo info = expansionInfos.get(element);
+			if(info == null) {
+				info = new ExpansionInfo();
+
+				switch (element.getType()) {
+				case NODE:
+					info.add(1, 1);
+					info.quantify((IqlNode)element);
+					break;
+
+				case EDGE:
+					info.add(2, 2);
+					info.quantify((IqlEdge)element);
+					break;
+
+				case TREE_NODE:
+					info.add(1, 1);
+					((IqlTreeNode)element).getChildren()
+						.map(this::getExpansionInfo)
+						.ifPresent(info::add);
+					info.quantify((IqlTreeNode)element);
+					break;
+
+				case GROUPING:
+					((IqlGrouping)element).getElements()
+						.stream()
+						.map(this::getExpansionInfo)
+						.forEach(info::add);
+					info.quantify((IqlGrouping)element);
+					break;
+
+				case SET:
+					((IqlSet)element).getElements()
+						.stream()
+						.map(this::getExpansionInfo)
+						.forEach(info::add);
+					break;
+
+				case DISJUNCTION:
+					((IqlElementDisjunction)element).getAlternatives()
+						.stream()
+						.map(this::getExpansionInfo)
+						.forEach(info::alternative);
+					break;
+
+				default:
+					break;
+				}
+
+				expansionInfos.put(element, info);
+			}
+			return info;
 		}
 
 		private int pureDigits(Token token) {
@@ -536,24 +712,7 @@ public class QueryProcessor {
 		private int countExistentialElements(List<IqlElement> elements) {
 			int count = 0;
 			for (IqlElement element : elements) {
-				boolean existential = false;
-				switch (element.getType()) {
-				case EDGE:
-					existential = ((IqlEdge)element).isExistentiallyQuantified();
-					break;
-
-				case NODE:
-				case TREE_NODE:
-					existential = ((IqlNode)element).isExistentiallyQuantified();
-					break;
-
-				default:
-					break;
-				}
-
-				if(existential) {
-					count++;
-				}
+				count += getExpansionInfo(element).minSize;
 			}
 			return count;
 		}
@@ -561,20 +720,8 @@ public class QueryProcessor {
 		/** Checks whether any element in given list can be expanded to 1 or more instances. */
 		private boolean canExpandToOneOrMore(List<IqlElement> elements) {
 			for (IqlElement element : elements) {
-				if(element instanceof Quantifiable) {
-					Quantifiable q = (Quantifiable) element;
-					for(IqlQuantifier quant : q.getQuantifiers()) {
-						switch (quant.getQuantifierType()) {
-						case AT_LEAST: return true;
-
-						case EXACT:
-						case AT_MOST: if(quant.getValue().getAsInt()>1) return true; break;
-
-						case RANGE: if(quant.getUpperBound().getAsInt()>1) return true; break;
-
-						default: continue;
-						}
-					}
+				if(getExpansionInfo(element).expansionLimit>0) {
+					return true;
 				}
 			}
 			return false;
