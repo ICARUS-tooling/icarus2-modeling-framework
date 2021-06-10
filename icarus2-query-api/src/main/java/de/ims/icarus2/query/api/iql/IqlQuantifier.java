@@ -224,10 +224,15 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	 *
 	 */
 	public enum QuantifierType {
+		/** Universal quantification: * */
 		ALL("all"),
+		/** Explicit quantification: n */
 		EXACT("exact"),
+		/** Upper bound quantification: 1..n */
 		AT_MOST("atMost"),
+		/** Lower bound quantification: n+ */
 		AT_LEAST("atLeast"),
+		/** Ranged quantification: n..m */
 		RANGE("range"),
 		;
 
@@ -288,6 +293,9 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	 *
 	 */
 	public interface Quantifiable {
+
+		boolean hasQuantifiers();
+
 		/** Get all registered quantifiers or an empty list. */
 		List<IqlQuantifier> getQuantifiers();
 
@@ -296,5 +304,30 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 
 		/** Traverse quantifiers and apply given action to all of them. */
 		void forEachQuantifier(Consumer<? super IqlQuantifier> action);
+
+
+		default boolean isExistentiallyQuantified() {
+			return !hasQuantifiers() || getQuantifiers()
+					.stream()
+					.filter(IqlQuantifier::isExistentiallyQuantified)
+					.findAny()
+					.isPresent();
+		}
+
+		default boolean isUniversallyQuantified() {
+			return getQuantifiers()
+					.stream()
+					.filter(IqlQuantifier::isUniversallyQuantified)
+					.findAny()
+					.isPresent();
+		}
+
+		default boolean isExistentiallyNegated() {
+			return getQuantifiers()
+					.stream()
+					.filter(IqlQuantifier::isExistentiallyNegated)
+					.findAny()
+					.isPresent();
+		}
 	}
 }

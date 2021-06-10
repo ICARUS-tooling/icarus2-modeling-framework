@@ -32,7 +32,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.util.collections.CollectionUtils;
 
 /**
@@ -75,30 +76,6 @@ public abstract class IqlElement extends IqlUnique {
 			checkOptionalNested(constraint);
 		}
 
-	}
-
-	private static boolean isExistentiallyQuantified0(List<IqlQuantifier> quantifiers) {
-		return quantifiers.isEmpty() || quantifiers
-				.stream()
-				.filter(IqlQuantifier::isExistentiallyQuantified)
-				.findAny()
-				.isPresent();
-	}
-
-	private static boolean isUniversallyQuantified0(List<IqlQuantifier> quantifiers) {
-		return quantifiers
-				.stream()
-				.filter(IqlQuantifier::isUniversallyQuantified)
-				.findAny()
-				.isPresent();
-	}
-
-	private static boolean isExistentiallyNegated0(List<IqlQuantifier> quantifiers) {
-		return quantifiers
-				.stream()
-				.filter(IqlQuantifier::isExistentiallyNegated)
-				.findAny()
-				.isPresent();
 	}
 
 	/**
@@ -148,13 +125,8 @@ public abstract class IqlElement extends IqlUnique {
 
 		// utility
 
+		@Override
 		public boolean hasQuantifiers() { return !quantifiers.isEmpty(); }
-
-		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified0(quantifiers); }
-
-		public boolean isUniversallyQuantified() { return isUniversallyQuantified0(quantifiers); }
-
-		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
 	/**
@@ -199,13 +171,8 @@ public abstract class IqlElement extends IqlUnique {
 
 		// utility
 
+		@Override
 		public boolean hasQuantifiers() { return !quantifiers.isEmpty(); }
-
-		public boolean isExistentiallyQuantified() { return isExistentiallyQuantified0(quantifiers); }
-
-		public boolean isUniversallyQuantified() { return isUniversallyQuantified0(quantifiers); }
-
-		public boolean isExistentiallyNegated() { return isExistentiallyNegated0(quantifiers); }
 	}
 
 	/**
@@ -287,7 +254,7 @@ public abstract class IqlElement extends IqlUnique {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class IqlEdge extends IqlProperElement {
+	public static class IqlEdge extends IqlProperElement implements IqlQuantifier.Quantifiable {
 
 		@JsonProperty(value=IqlProperties.SOURCE, required=true)
 		private IqlNode source;
@@ -334,36 +301,22 @@ public abstract class IqlElement extends IqlUnique {
 			return target.getQuantifiers();
 		}
 
+		@Override
 		public List<IqlQuantifier> getQuantifiers() { return quantifiers(); }
 
+		@Override
 		public void forEachQuantifier(Consumer<? super IqlQuantifier> action) { quantifiers().forEach(requireNonNull(action)); }
 
+		@Override
 		public boolean hasQuantifiers() {
 			return source.hasQuantifiers() || target.hasQuantifiers();
 		}
 
-		public boolean isExistentiallyQuantified() {
-			if(!hasQuantifiers()) {
-				return true;
-			}
-			for(IqlQuantifier quantifier : quantifiers()) {
-				if(quantifier.isExistentiallyQuantified()) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public boolean isUniversallyQuantified() {
-			List<IqlQuantifier> quantifiers = quantifiers();
-			return quantifiers.size()==1
-					&& quantifiers.get(0).getQuantifierType()==QuantifierType.ALL;
-		}
-
-		public boolean isNegated() {
-			List<IqlQuantifier> quantifiers = quantifiers();
-			return quantifiers.size()==1
-					&& quantifiers.get(0).isExistentiallyNegated();
+		@Override
+		public void addQuantifier(IqlQuantifier quantifier) {
+			throw new QueryException(QueryErrorCode.INCORRECT_USE,
+					"Cannot directly add quantifier to "+getClass().getSimpleName()
+					+" - use one of source or target to attach quantifiers!");
 		}
 	}
 
