@@ -1640,7 +1640,7 @@ In the absence of any explicitly set limit, the \ac{icqp} will default to 1 if e
 \label{sec:bindings}
 A binding is a collection of member references (\ref{sec:variables-references}) that get declared to belong to a certain member type or part of the corpus. 
 The \keyword{DISTINCT} keyword enforces that multiple bound member references in this binding do \textbf{not} match the same target. 
-Depending on the local constraints used in the query, this might be redundant (e.g. when using the member references as identifiers for tree nodes who already are structurally distinct), but can still be used to make that fact explicit. 
+Depending on the local constraints used in the query, this might be redundant (e.g. when using the member references as identifiers for different nodes in the same tree which per definition are already structurally distinct), but can still be used to make that fact explicit. 
 Additionally the \keyword{EDGES} keyword signals that the bound members of a structure are actually edges.
 In this case using \keyword{DISTINCT} is redundant, as bound edges are implicitly assumed to be distinct when matching.
 
@@ -1899,9 +1899,9 @@ The differences of those three modes are explained below, assuming that the quan
 Note that the complete query will only succeed if $n_i$ \textbf{and} all its successors successfully match!
 The primary effect caused by different modes is the size and number of matches reported by the evaluation engine.
 \begin{description}
-	\item[greedy] Match as many instances for $n$ as possible, while still allowing $n_{i+1}..n_N$ to find appropriate candidates. This will find at least as many instances of $n$ as the \textit{reluctant} mode and at most as many as the \textit{possessive} mode, but is guaranteed to leave room for $n_{i+1}..n_N$ when collecting hits.
-	\item[reluctant] Match as few instances for $n$ as possible, considering the need of $n_{i+1}..n_N$ to also produce candidates. This will produce the shortest possible sequence of hits for $n$ and is guaranteed to leave room for $n_{i+1}..n_N$ when collecting hits.
-	\item[possessive] Match as many instances for $n$ as possible, completely ignoring $n_{i+1}..n_N$. This is guaranteed to find the longest sequence of hits for $n$ but might cause the query to fail when subsequently there is no more room to match $n_{i+1}..n_N$.
+	\item[greedy] Match as many instances for $n_i$ as possible, while still allowing $n_{i+1}..n_N$ to find appropriate candidates. This will find at least as many instances of $n_i$ as the \textit{reluctant} mode and at most as many as the \textit{possessive} mode, but is guaranteed to leave room for $n_{i+1}..n_N$ when collecting hits.
+	\item[reluctant] Match as few instances for $n_i$ as possible, considering the need of $n_{i+1}..n_N$ to also produce candidates. This will produce the shortest possible sequence of hits for $n_i$ and is guaranteed to leave room for $n_{i+1}..n_N$ when collecting hits.
+	\item[possessive] Match as many instances for $n_i$ as possible, completely ignoring $n_{i+1}..n_N$. This is guaranteed to find the longest sequence of hits for $n_i$ but might cause the query to fail when subsequently there is no more room to match $n_{i+1}..n_N$.
 \end{description}
 
 \begin{table}[!htb]\centering
