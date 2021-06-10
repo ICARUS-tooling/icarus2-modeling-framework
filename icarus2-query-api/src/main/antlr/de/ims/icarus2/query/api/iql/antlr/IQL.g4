@@ -238,7 +238,7 @@ positionArgument
  * Possible graph element scenarios:
  * [$a]					singleton node
  * [$a]-->[$b]			right-directed edge (a to b)
- * [$a]<--[$b]			right-directed edge (a to b)
+ * [$a]<--[$b]			right-directed edge (b to a)
  * [$a]---[$b]			undirected edge
  * [$a]<->[$b]			bidirectional edge
  * [$a]--[$e]--[$b]		undirected edge $e with internal constraints between $a and $b

@@ -125,10 +125,11 @@ public class ArrayConverters {
 				throw new ArgumentConversionException("Not an array type parameter: "+targetType);
 
 			final Class<?> componentType = targetType.getComponentType();
+			final String empty = format.empty();
 
 			String payload = (String)source;
 
-			if(payload==null || payload.isEmpty() || payload.equals(format.empty())) {
+			if(payload==null || payload.isEmpty() || payload.equals(empty)) {
 				return Array.newInstance(componentType, 0);
 			}
 			payload = payload.trim();
@@ -189,6 +190,11 @@ public class ArrayConverters {
 							buffer[depth].add(array);
 						}
 					}
+//				} else if(empty.length()==1 && empty.charAt(0)==c) {
+//					// Empty sub-array
+//					//TODO creates element of wrong dimension?
+//					Object array = Array.newInstance(types.get(depth).getComponentType(), 0);
+//					buffer[depth].add(array);
 				} else {
 					sb.append(c);
 				}
