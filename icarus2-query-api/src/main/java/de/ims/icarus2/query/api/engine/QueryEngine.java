@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +46,7 @@ import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QuerySwitch;
+import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.ext.EngineExtension;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContextBuilder;
@@ -192,8 +194,12 @@ public class QueryEngine {
 		}
 
 		QueryJob process() throws InterruptedException {
+			Set<Option> options = new HashSet<>();
+			if(ignoreWarnings) {
+				options.add(Option.IGNORE_WARNINGS);
+			}
 			// Now process the single stream content into full IQL elements
-			new QueryProcessor(ignoreWarnings).parseStream(stream);
+			new QueryProcessor(options).parseStream(stream);
 			// Intermediate sanity check against missed settings
 			stream.checkIntegrity();
 

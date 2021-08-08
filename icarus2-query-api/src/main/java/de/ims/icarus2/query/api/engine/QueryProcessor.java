@@ -26,6 +26,7 @@ import static de.ims.icarus2.query.api.iql.AntlrUtils.isContinuous;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.textOf;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.collections.ArrayUtils.asSet;
 import static de.ims.icarus2.util.strings.StringUtil.isNullOrEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -158,9 +160,24 @@ public class QueryProcessor {
 	private final ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(REPORT_IDENTITY);
 
 	private final boolean ignoreWarnings;
+	private final boolean keepRedundantGrouping;
 
-	public QueryProcessor(boolean ignoreWarnings) {
-		this.ignoreWarnings = ignoreWarnings;
+	public QueryProcessor(Set<Option> options) {
+		requireNonNull(options);
+		ignoreWarnings = options.contains(Option.IGNORE_WARNINGS);
+		keepRedundantGrouping = options.contains(Option.KEEP_REDUNDANT_GROUPING);
+	}
+
+	public QueryProcessor(Option...options) {
+		this(asSet(options));
+	}
+
+	public enum Option {
+		/** Warnings will not cause the query parsing to fail */
+		IGNORE_WARNINGS,
+		/** {@link IqlGrouping} instances without quantifiers will not be unwrapped. */
+		KEEP_REDUNDANT_GROUPING,
+		;
 	}
 
 	/**
@@ -877,7 +894,7 @@ public class QueryProcessor {
 
 			tree.exit();
 
-			return grouping.hasQuantifiers() ? grouping : grouping.getElement();
+			return (grouping.hasQuantifiers() || keepRedundantGrouping) ? grouping : grouping.getElement();
 		}
 
 		private IqlSequence processElements(List<NodeStatementContext> elements,

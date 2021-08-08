@@ -1272,7 +1272,7 @@ public class InteractiveMatcher {
 					rawPayload = SequencePatternTest.expand(rawPayload);
 				}
 
-				payload = new QueryProcessor(false).processPayload(rawPayload);
+				payload = new QueryProcessor().processPayload(rawPayload);
 
 				displayQuery(payload);
 			}

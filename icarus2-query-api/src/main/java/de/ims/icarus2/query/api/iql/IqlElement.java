@@ -249,6 +249,8 @@ public abstract class IqlElement extends IqlUnique {
 			checkOptionalNested(children);
 		}
 
+		//TODO add cached size information and override length() method
+
 		@Override
 		public IqlType getType() { return IqlType.TREE_NODE; }
 
@@ -290,7 +292,7 @@ public abstract class IqlElement extends IqlUnique {
 		}
 
 		@Override
-		public int length() { return 2; }
+		public int length() { return source.length() + target.length(); }
 
 		public IqlNode getSource() { return source; }
 
