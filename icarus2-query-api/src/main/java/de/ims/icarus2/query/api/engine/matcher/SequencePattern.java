@@ -2368,6 +2368,26 @@ public class SequencePattern {
 			properties.put(field, value);
 			return this;
 		}
+
+		@Override
+		public String toString() {
+			ToStringBuilder builder = ToStringBuilder.create(this);
+
+			builder.add(type.toString());
+			builder.add("id", id);
+			builder.add("next", next);
+			builder.add("logicalNext", logicalNext);
+			builder.add("classLabel", classLabel);
+			builder.add("atoms", atoms==null ? "<none>" : atoms.toString());
+
+			if(properties!=null) {
+				for(Map.Entry<Field, Object> entry : properties.entrySet()) {
+					builder.add(entry.getKey().toString(), String.valueOf(entry.getValue()));
+				}
+			}
+
+			return builder.build();
+		}
 	}
 
 	/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
