@@ -188,7 +188,7 @@ subprojects {
  	}
 
 	 // Only relevant when developing with Eclipse IDE
-	eclipse {
+	eclipse {		
 		classpath {
 			// Ensure the JMH configuration is on the eclipse classpath
 			plusConfigurations += [ configurations.jmhCompileClasspath ]
@@ -294,8 +294,7 @@ subprojects {
 	}
 	
 	/**
-	 * Specialized test tasks for integration, concurrency
-	 * and very costly tests. 
+	 * Specialized test tasks for integration, concurrency and very costly tests. 
 	 * Association to a group is defined via the respective tag(s). Per default
 	 * the 'test' task runs without any of those test types and none of them
 	 * are performed on the CI environment.
@@ -304,7 +303,7 @@ subprojects {
 	 */
 	
 	task integrationTest(type: Test) {
-		description = 'Run integration tests based on the integration tag'
+		description = "Run integration tests based on the 'integration' tag"
 		useJUnitPlatform {
 			includeTags 'integration'
 		}
@@ -313,7 +312,7 @@ subprojects {
 	}
 	
 	task concurrentTest(type: Test) {
-		description = 'Run concurrency tests based on the concurrent tag'
+		description = "Run concurrency tests based on the 'concurrent' tag"
 		useJUnitPlatform {
 			includeTags 'concurrent'
 		}
@@ -322,7 +321,7 @@ subprojects {
 	}
 	
 	task exhaustiveTest(type: Test) {
-		description = 'Run all the exhaustuve tests based on the slow tag'
+		description = "Run all the exhaustive tests based on the 'slow' tag"
 		useJUnitPlatform {
 			includeTags 'slow'
 		}
