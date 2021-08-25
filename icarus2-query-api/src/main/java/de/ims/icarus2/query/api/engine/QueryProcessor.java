@@ -172,6 +172,12 @@ public class QueryProcessor {
 		this(asSet(options));
 	}
 
+	/**
+	 * Options to customize the query parsing process.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public enum Option {
 		/** Warnings will not cause the query parsing to fail */
 		IGNORE_WARNINGS,
@@ -708,11 +714,13 @@ public class QueryProcessor {
 			try {
 				lane.setElement(processStructuralConstraint(ctx, new TreeInfo()));
 
-				LaneType laneType = LaneType.SEQUENCE;
+				LaneType laneType;
 				if(treeFeaturesUsed) {
 					laneType = LaneType.TREE;
 				} else if(graphFeaturesUsed) {
 					laneType = LaneType.GRAPH;
+				} else {
+					laneType = LaneType.SEQUENCE;
 				}
 
 				lane.setLaneType(laneType);
@@ -827,6 +835,16 @@ public class QueryProcessor {
 			return term;
 		}
 
+		/** Instantiate {@link IqlSequence} and set arrangement to ORDERED unless inside a tree node */
+		private IqlSequence sequence(TreeInfo tree) {
+			IqlSequence structure = new IqlSequence();
+			if(!tree.hasParent()) {
+				structure.setArrangement(NodeArrangement.ORDERED);
+			}
+			genId(structure);
+			return structure;
+		}
+
 		private IqlElement processStructuralConstraint(StructuralConstraintContext ctx, TreeInfo tree) {
 			// If we only have a single node, don't wrap it needlessly
 			List<NodeStatementContext> nodes = ctx.nodeStatement();
@@ -835,8 +853,7 @@ public class QueryProcessor {
 			}
 
 			// More than one node -> wrap into a proper sequence
-			IqlSequence structure = new IqlSequence();
-			genId(structure);
+			IqlSequence structure = sequence(tree);
 
 			tree.enter(structure, false);
 			for(NodeStatementContext nctx : ctx.nodeStatement()) {
@@ -899,8 +916,7 @@ public class QueryProcessor {
 
 		private IqlSequence processElements(List<NodeStatementContext> elements,
 				NodeArrangementContext arrangement, TreeInfo tree) {
-			IqlSequence sequence = new IqlSequence();
-			genId(sequence);
+			IqlSequence sequence = sequence(tree);
 
 			if(arrangement!=null) {
 				sequence.setArrangement(processNodeArrangement(arrangement));
