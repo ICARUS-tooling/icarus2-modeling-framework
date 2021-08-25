@@ -80,7 +80,7 @@ public interface Marker {
 		 * @return {@code true} iff at least one of intervals managed by this
 		 * marker is not {@code Interval#isEmpty() empty}.
 		 * @param intervals buffer of intervals to adjust. This marker is
-		 * only responsible for the sub-array {@code [index .. index+intervalCount()]}.
+		 * only responsible for the sub-array {@code [index .. index+intervalCount()-1]}.
 		 * @param index the starting index within the {@code intervals} array
 		 * that holds the first interval managed by this marker.
 		 * @param size the total number of elements available in the target sequence,

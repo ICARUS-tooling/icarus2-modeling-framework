@@ -153,6 +153,7 @@ public class ArrayUtils {
 		array[index1] = item0;
 	}
 
+	/** Fills {@code a} so that {@code a[i] = i}*/
 	public static int[] fillAscending(int[] a) {
 		for(int i=0; i<a.length; i++)
 			a[i] = i;
