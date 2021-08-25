@@ -102,6 +102,7 @@ import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
+import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.Stack;
@@ -255,6 +256,8 @@ public class SequencePattern {
 		int borderCount = 0;
 		/** Total number of gates that prevent duplicate position matching */
 		int gateCount = 0;
+		/** Size info of all the permutators */
+		int[] permutators = {};
 		/** Original referential intervals */
 		Interval[] intervals = {};
 		/** Keeps track of all the tracked nodes. Used for monitoring */
@@ -317,6 +320,11 @@ public class SequencePattern {
 				.mapToObj(i -> new Gate())
 				.toArray(Gate[]::new);
 		}
+		Permutator[] makePermutators() {
+			return IntStream.range(0, permutators.length)
+				.mapToObj(i -> Permutator.forSize(permutators[i]))
+				.toArray(Permutator[]::new);
+		}
 	}
 
 	static final class IqlListProxy extends AbstractIqlQueryElement {
@@ -356,6 +364,7 @@ public class SequencePattern {
 		int bufferCount;
 		int borderCount;
 		int gateCount;
+		IntList permutators = new IntArrayList();
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
 		ElementContext context;
@@ -784,7 +793,7 @@ public class SequencePattern {
 			return group;
 		}
 
-		/** Process (ordered or adjacent) node sequence and link to active sequence */
+		/** Process (ordered or adjacent) node sequence */
 		private Frame sequence(IqlSequence source, @Nullable Node scan) {
 			final List<IqlElement> elements = source.getElements();
 			if(source.getArrangement()==NodeArrangement.ADJACENT) {
@@ -793,7 +802,7 @@ public class SequencePattern {
 			return looseGroup(elements, scan);
 		}
 
-		/** Process alternatives and link to active sequence */
+		/** Process alternatives for branching */
 		private Frame disjunction(IqlElementDisjunction source, @Nullable Node scan) {
 			final List<IqlElement> elements = source.getAlternatives();
 			Segment branch = branch(new IqlListProxy(elements), elements.size(),
@@ -1117,6 +1126,12 @@ public class SequencePattern {
 
 		private int gate() { return gateCount++; }
 
+		private int permutator(int size) {
+			int index = permutators.size();
+			permutators.add(size);
+			return index;
+		}
+
 		private RangeMarker marker(IqlMarkerCall call) {
 			Number[] arguments = IntStream.range(0, call.getArgumentCount())
 					.mapToObj(call::getArgument)
@@ -1150,6 +1165,10 @@ public class SequencePattern {
 
 		private Node finish(long limit, boolean stopAfterMatch) {
 			return storeTrackable(new Finish(id(), limit, stopAfterMatch));
+		}
+
+		private Permutate permutate(IqlQueryElement source, Node...elements) {
+			return new Permutate(id(), source, permutator(elements.length), elements);
 		}
 
 		private Reset reset() { return store(new Reset(id())); }
@@ -1228,6 +1247,18 @@ public class SequencePattern {
 			return false;
 		}
 
+		private Frame unorderedGroup(List<IqlElement> elements, @Nullable Node scan) {
+			if(elements.size()==1) {
+				return process(elements.get(0), scan);
+			}
+
+			Frame group = new Frame();
+
+			//TODO process elements and instantiate a permutation node
+
+			return group;
+		}
+
 		/**
 		 * Sequential scanning of ordered elements.
 		 * Note that any node but the first in the original
@@ -1240,7 +1271,6 @@ public class SequencePattern {
 			}
 
 			Frame group = new Frame();
-			// Stack nodes back to front
 			int last = elements.size()-1;
 			for(int i=0; i<=last; i++) {
 				Frame step = process(elements.get(i), i==0 ? scan : null);
@@ -1264,7 +1294,6 @@ public class SequencePattern {
 		/** Sequential check without scanning */
 		private Frame adjacentGroup(List<IqlElement> elements, @Nullable Node scan) {
 			Frame frame = new Frame();
-			// Stack nodes back to front
 			for(int i=0; i<elements.size(); i++) {
 				Frame step = process(elements.get(i), i==0 ? scan : null);
 				step.collapse();
@@ -1412,6 +1441,7 @@ public class SequencePattern {
 			sm.borderCount = borderCount;
 			sm.bufferCount = bufferCount;
 			sm.gateCount = gateCount;
+			sm.permutators = permutators.toIntArray();
 			sm.markerPos = markerPos.toIntArray();
 			sm.intervals = intervals.toArray(new Interval[0]);
 			sm.markers = markers.toArray(new RangeMarker[0]);
@@ -1433,8 +1463,10 @@ public class SequencePattern {
 	 *
 	 */
 	static class State extends Interval {
+		/** Raw target container or structure */
+		Container target;
 		/** Items in target container, copied for faster access */
-		Item[] elements;
+		Item[] elements = new Item[INITIAL_SIZE];
 
 		/** Raw nodes from the query, order matches the items in 'matchers' */
 		final IqlNode[] nodes;
@@ -1448,8 +1480,10 @@ public class SequencePattern {
 		final Interval[] intervals;
 		/** All the raw markers that produce restrictions on node positions */
 		final RangeMarker[] markers;
-		/** All the gate caches for keeping trck of duplicate matcher positions */
+		/** All the gate caches for keeping track of duplicate matcher positions */
 		final Gate[] gates;
+		/** In-place permutation generators to be used for unordered groups */
+		final Permutator[] permutators;
 		/** Positions into 'intervals' to signal what intervals to update for what marker */
 		final int[] markerPos;
 		/** Keeps track of the last hit index for every raw node */
@@ -1475,6 +1509,17 @@ public class SequencePattern {
 		/** Values for the node mapping, i.e. the associated indices */
 		int[] m_pos = new int[INITIAL_SIZE];
 
+		/** The node indices for the current tree section */
+		int[] indices;
+		/** Default indices array to represent the global order of all nodes in the target */
+		int[] i_global = new int[INITIAL_SIZE];
+		/** View on the target tree as adjacency lists */
+		int[][] tree;
+		/** Indices of root nodes in the tree. {@code -1} indicates end of list */
+		int[] roots = new int[INITIAL_SIZE];
+		/** Path from a root node to current node */
+		int[] trace = new int[INITIAL_SIZE];
+
 		/** Total number of elements in the target sequence. */
 		int size = UNSET_INT;
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
@@ -1497,7 +1542,6 @@ public class SequencePattern {
 		Consumer<State> resultHandler;
 
 		State(StateMachineSetup setup) {
-			elements = new Item[INITIAL_SIZE];
 			markers = setup.getMarkers();
 			markerPos = setup.getMarkerPos();
 			nodes = setup.getRawNodes();
@@ -1513,16 +1557,21 @@ public class SequencePattern {
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
 			gates = setup.makeGates();
+			permutators = setup.makePermutators();
 
 			from = 0;
 			to = 0;
+
+			ArrayUtils.fillAscending(i_global);
+			Arrays.fill(roots, UNSET_INT);
 		}
 
+		/** Fetch current scope id, i.e. a marker for resetting  */
 		int scope() {
 			return entry;
 		}
 
-		void reset(int scope) {
+		void resetScope(int scope) {
 			entry = scope;
 		}
 
@@ -1536,6 +1585,7 @@ public class SequencePattern {
 		@Override
 		public void reset() {
 			// Cleanup duty -> we must erase all references to target and its elements
+			target = null;
 			Arrays.fill(elements, 0, size, null);
 			Arrays.fill(hits, UNSET_INT);
 			for (int i = 0; i < caches.length; i++) {
@@ -1546,6 +1596,7 @@ public class SequencePattern {
 			from = 0;
 			to = 0;
 			size = 0;
+			Arrays.fill(roots, UNSET_INT);
 		}
 
 		void dispatchMatch() {
@@ -1612,6 +1663,7 @@ public class SequencePattern {
 				growBuffers(size);
 			}
 			// Now copy container content into our buffer for faster access during matching
+			this.target = target;
 			for (int i = 0; i < size; i++) {
 				elements[i] = target.getItemAt(i);
 			}
@@ -1625,8 +1677,8 @@ public class SequencePattern {
 				 * here, as markers can be used in complex disjunctive query
 				 * constructs and we have no way of knowing here which marker
 				 * can be used as quick-check for an early abort.
-				 * TODO maybe add flag array to mark intervals that can be used as early exit check?
 				 */
+				//TODO maybe add flag array to mark intervals that can be used as early exit check?
 				markers[i].adjust(intervals, markerPos[i], size);
 			}
 
@@ -1647,6 +1699,9 @@ public class SequencePattern {
 			elements = new Item[newSize];
 			m_node = new int[newSize];
 			m_pos = new int[newSize];
+			i_global = new int[newSize];
+			trace = new int[newSize];
+			roots = new int[newSize];
 			for (int i = 0; i < buffers.length; i++) {
 				buffers[i] = new int[newSize];
 			}
@@ -1656,6 +1711,9 @@ public class SequencePattern {
 			for (int i = 0; i < gates.length; i++) {
 				gates[i].reset(newSize);
 			}
+
+			ArrayUtils.fillAscending(i_global);
+			Arrays.fill(roots, UNSET_INT);
 		}
 	}
 
@@ -1668,7 +1726,7 @@ public class SequencePattern {
 	 * In addition a dedicated {@link NonResettingMatcher#fullReset()} method is provided
 	 * that does the job of the former {@link SequenceMatcher#reset()} method and the
 	 * added {@link NonResettingMatcher#softReset()} to only reset state information
-	 * not used by testing code. To not pollute publicly the public API, this class and
+	 * not used by testing code. To not pollute the public API, this class and
 	 * all the dedicated methods are kept package-private.
 	 *
 	 * @author Markus Gärtner
@@ -1722,6 +1780,7 @@ public class SequencePattern {
 		private Boolean allowMonitor;
 		private Boolean cacheAll;
 
+		//TODO add field for adjusting initial buffer sizes
 		//TODO add fields for configuring the result buffer
 
 		private Builder() { /* no-op */ }
@@ -2041,7 +2100,7 @@ public class SequencePattern {
 		}
 	}
 
-	static class Cache {
+	static final class Cache {
 		/**
 		 * Paired booleans for each entry, leaving capacity for 512 entries by default.
 		 * First value of each entry indicates whether it is actually set, second one
@@ -2080,7 +2139,7 @@ public class SequencePattern {
 		}
 	}
 
-	static class Gate {
+	static final class Gate {
 		/**
 		 * For each slot indicates if it has been visited already.
 		 */
@@ -2176,6 +2235,9 @@ public class SequencePattern {
 	 * Utility class to carry information about a single node in the state machine.
 	 * This class mainly exists to expose internal details of the state machine
 	 * without making the actual nodes visible to the outside.
+	 * <p>
+	 * Instances of this class can be freely shared as they are effectively immutable
+	 * and not attached to the state machine anymore.
 	 *
 	 * @author Markus Gärtner
 	 *
@@ -2434,11 +2496,13 @@ public class SequencePattern {
 		/** Only modifier method. Allows subclasses to customize how connections should be attached.  */
 		void setNext(Node next) { this.next = requireNonNull(next); }
 
+		/** The default implementation just accepts the check and marks the position as {@link State#last}. */
 		boolean match(State state, int pos) {
 			state.last = pos;
 			return true;
 		}
 
+		/** Analyze the underlying node graph and return {@code true} iff the matching will be deterministic. */
 		boolean study(TreeInfo info) {
 			if(next!=null) {
 				return next.study(info);
@@ -2984,7 +3048,7 @@ public class SequencePattern {
 					cache.setValue(i, matched);
 				}
 
-				state.reset(scope);
+				state.resetScope(scope);
 				state.reset(from, to);
 				if(!matched) {
 					return false;
@@ -3013,7 +3077,7 @@ public class SequencePattern {
 						next.match(state, i);
 					} else {
 						// We know this is a dead-end, so skip
-						state.reset(scope);
+						state.resetScope(scope);
 						continue;
 					}
 				} else {
@@ -3024,7 +3088,7 @@ public class SequencePattern {
 
 				result |= matched;
 
-				state.reset(scope);
+				state.resetScope(scope);
 				state.reset(from, to);
 			}
 
@@ -3261,7 +3325,7 @@ public class SequencePattern {
 				}
 
 				// Only reset if we failed to find a match (space boundaries are reset above)
-				state.reset(scope);
+				state.resetScope(scope);
 			}
 
 			return result;
@@ -3356,7 +3420,7 @@ public class SequencePattern {
 			for (int i = pos; i <= fence && !state.stop; i++) {
 				int scope = state.scope();
 				result |= next.match(state, i);
-				state.reset(scope);
+				state.resetScope(scope);
 				state.reset(from, to);
 			}
 
@@ -3390,7 +3454,7 @@ public class SequencePattern {
 						next.match(state, i);
 					} else {
 						// We know this is a dead-end, so skip
-						state.reset(scope);
+						state.resetScope(scope);
 						continue;
 					}
 				} else {
@@ -3401,7 +3465,7 @@ public class SequencePattern {
 
 				result |= matched;
 
-				state.reset(scope);
+				state.resetScope(scope);
 				state.reset(from, to);
 			}
 
@@ -3426,12 +3490,66 @@ public class SequencePattern {
 			for (int i = to - minSize + 1; i >= pos && !state.stop; i--) {
 				int scope = state.scope();
 				result |= next.match(state, i);
-				state.reset(scope);
+				state.resetScope(scope);
 				state.reset(from, to);
 			}
 
 			return result;
 		}
+	}
+
+	/** Try out different permutations of a set of nodes inthe current search space */
+	static final class Permutate extends ProperNode {
+		final Node[] elements;
+		final int permIndex;
+
+		int[] minSizes;
+		int minSize;
+
+		Permutate(int id, IqlQueryElement source, int permIndex, Node...elements) {
+			super(id, source);
+			this.permIndex = permIndex;
+			checkArgument("Need at least 2 elements", elements.length>1);
+			this.elements = elements;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node#info()
+		 */
+		@Override
+		public NodeInfo info() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			final Permutator perm = state.permutators[permIndex];
+    		final int from = state.from;
+    		final int to = state.to;
+
+    		boolean result = false;
+
+			while(!state.stop) {
+				//TODO match current permutation
+
+				// Bail as soon as permutations are exhausted
+				if(!perm.next()) {
+					break;
+				}
+			}
+
+			return result;
+		}
+
+		@Override
+		boolean isScanCapable() {
+			// TODO Auto-generated method stub
+			return super.isScanCapable();
+		}
+
+		@Override
+		Node[] getAtoms() { return elements.clone(); }
 	}
 
 	/**
@@ -3553,7 +3671,7 @@ public class SequencePattern {
                 }
 
 	        	// Only reset if we failed or are not meant to keep the first match
-	        	state.reset(scope);
+	        	state.resetScope(scope);
 	        }
 	        return result;
 		}
@@ -3685,7 +3803,7 @@ public class SequencePattern {
 
             // Roll back all our mappings if we failed
             if(!matched) {
-            	state.reset(scope);
+            	state.resetScope(scope);
             }
 
             return matched;
@@ -3712,12 +3830,12 @@ public class SequencePattern {
 				b_scope[count] = scope;
 				// Try advancing
 				if(!matchAtom(state, pos, count)) {
-					state.reset(scope);
+					state.resetScope(scope);
 					break;
 				}
 				 // Zero length match
 				if (pos == state.last) {
-					state.reset(scope);
+					state.resetScope(scope);
 					break;
 				}
 				// Move up index and number matched
@@ -3739,7 +3857,7 @@ public class SequencePattern {
 				// Need to backtrack one more step
 				count--;
 				pos = b_pos[count];
-				state.reset(b_scope[count]);
+				state.resetScope(b_scope[count]);
 			}
 			// Could not find a match for next, so fail
 			return false;
@@ -3758,7 +3876,7 @@ public class SequencePattern {
 				if (next.match(state, pos)) {
 					return true;
 				}
-				state.reset(scope);
+				state.resetScope(scope);
                 // At the maximum, no match found
 				if (count >= cmax) {
 					return false;
@@ -3766,13 +3884,13 @@ public class SequencePattern {
                 // Okay, must try one more atom
 				scope = state.scope();
 				if (!matchAtom(state, pos, count)) {
-					state.reset(scope);
+					state.resetScope(scope);
 					return false;
 				}
                 // If we haven't moved forward then must break out
 				// zero-width atom match
 				if (pos == state.last) {
-					state.reset(scope);
+					state.resetScope(scope);
 					return false;
 				}
                 // Move up index and number matched
@@ -3791,12 +3909,12 @@ public class SequencePattern {
 				// Try as many elements as possible
 				int scope = state.scope();
 				if (!matchAtom(state, pos, count)) {
-					state.reset(scope);
+					state.resetScope(scope);
 					break;
 				}
 				// zero-width atom match
 				if (pos == state.last) {
-					state.reset(scope);
+					state.resetScope(scope);
 					break;
 				}
                 // Move up index and number matched
@@ -3901,5 +4019,23 @@ public class SequencePattern {
 
 			return result;
 		}
+	}
+
+	static final class Descend extends ProperNode {
+
+		final Node[] children;
+
+		Descend(int id, IqlQueryElement source, Node...children) {
+			super(id, source);
+			checkArgument("Need at least 1 child", children.length>0);
+			this.children = children;
+		}
+
+		@Override
+		public NodeInfo info() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
 	}
 }

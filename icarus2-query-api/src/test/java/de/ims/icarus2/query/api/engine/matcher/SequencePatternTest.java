@@ -42,6 +42,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_STOP;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.branch;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.item;
@@ -99,6 +100,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -326,6 +329,8 @@ class SequencePatternTest {
 
 		static final boolean CONTINUOUS = false;
 		static final boolean DISCONTINUOUS = true;
+
+		static final boolean NO_STOP = false;
 
 		/** Match given character exactly */
 		static SequencePatternTest.CharPredicate eq(char sentinel) {
@@ -917,7 +922,7 @@ class SequencePatternTest {
 		}
 	}
 
-	static SequencePattern.Builder builder(String rawPayload, QueryConfig config,
+	static SequencePattern.Builder builder(String rawPayload, @Nullable QueryConfig config,
 			Option...additionalOptions) {
 		IqlPayload payload = new QueryProcessor(asSet(additionalOptions)).processPayload(rawPayload);
 		assertThat(payload).as("No payload").isNotNull();
@@ -927,7 +932,9 @@ class SequencePatternTest {
 		assertThat(lane.getLaneType()).isEqualTo(LaneType.SEQUENCE);
 		IqlElement root = lane.getElement();
 
-		config.assertQuery(root);
+		if(config!=null) {
+			config.assertQuery(root);
+		}
 
 		Scope scope = Utils.scope();
 
@@ -2421,7 +2428,7 @@ class SequencePatternTest {
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
 											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
-									new Finish(id(), UNSET_LONG, false));
+									new Finish(id(), UNSET_LONG, NO_STOP));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
 									matcher(1, EQUALS_X));
@@ -3513,13 +3520,12 @@ class SequencePatternTest {
 
 	}
 
-	//TODO verify that IQLElement instances get processed into the correct node configurations
 	/**
 	 * Test family for the {@link SequenceQueryProcessor}'s creation methods.
 	 */
 	@Nested
 	class ForProcessor {
-
+		//TODO verify that IQLElement instances get processed into the correct node configurations
 	}
 
 	/**
@@ -5502,7 +5508,6 @@ class SequencePatternTest {
 
 						"--XXXXXXXXXX--, 10, 2-11, 0-13",
 						"--XXXXXXXXXXXX--, 10, 2-13, 0-15",
-						//TODO complete
 					})
 					@DisplayName("Node with a minimum multiplicity [possessive mode, single hit, limit, discontinuous]")
 					void testPossessiveDiscontinuous(String target, int count,
@@ -5620,7 +5625,6 @@ class SequencePatternTest {
 						"X-XX-, 1, 0-4, 4",
 						"XX-X-, 1, 0-4, 4",
 						"XXx-, 1, 0-3, 3",
-						//TODO complete
 					})
 					@DisplayName("Mismatch due to possessive consumption [ordered, discontinuous]")
 					void testPossessiveFail2Discontinuous(String target, int count,
@@ -6148,7 +6152,6 @@ class SequencePatternTest {
 						"Xxx, 3, 0-1, 2, 0-2, 0-2, 2",
 						"Xxxx, 3, 0-2, 3, 0-2, 0-2, 3",
 						"Xxxx-, 3, 0-2, 3, 0-2, 0-2, 3",
-						//TODO complete
 					})
 					@DisplayName("verify greedy expansion with multiple nodes [limited, discontinuous]")
 					void testGreedyCompetitionDiscontinuous(String target,
@@ -6254,7 +6257,6 @@ class SequencePatternTest {
 						"XX--, 2, 0, 0",
 
 						"--XXXXXXXXXX--, 10, 2, 0-2",
-						//TODO complete
 					})
 					@DisplayName("Node with a maximum multiplicity [reluctant mode, single hit, limit, discontinuous]")
 					void testReluctantDiscontinuous(String target, int count,
@@ -6380,7 +6382,6 @@ class SequencePatternTest {
 						"-XXX-, 2, {1;2;3}, 0-4",
 
 						"-XXXX--XXXX-, 4, {1;2;3;4;7;8;9;10}, 0-11",
-						//TODO complete
 					})
 					@DisplayName("Node with a maximum multiplicity [reluctant mode, multiple hits, discontinuous]")
 					void testReluctantMultipleDiscontinuous(String target, int count,
@@ -6531,7 +6532,6 @@ class SequencePatternTest {
 						"Xxx, true, 2, 0, 1, 0, 1, 0",
 						"Xxxx, true, 2, 0, 1, 0, 1, 0",
 						"Xxxx-, true, 2, 0, 1, 0, 1, 0",
-						//TODO complete
 					})
 					@DisplayName("verify reluctant expansion with multiple nodes [limited, discontinuous]")
 					void testReluctantCompetitionDiscontinuous(String target,
@@ -6613,7 +6613,6 @@ class SequencePatternTest {
 					@Test
 					@DisplayName("verify reluctant expansion with multiple nodes and matches [discontinuous]")
 					void testReluctantExpansionDiscontinuous() {
-						//TODO complete
 						final String target = "-XXxXXx-";
 						assertResult(target,
 								builder(adjacent(
@@ -6724,7 +6723,6 @@ class SequencePatternTest {
 
 						"--XXXXXXXXXX--, 10, 2-11, 0-11",
 						"--XXXXXXXXXXXX--, 10, 2-11, 0-11",
-						//TODO complete
 					})
 					@DisplayName("Node with a maximum multiplicity [possessive mode, single hit, limit, discontinuous]")
 					void testPossessiveDiscontinuous(String target, int count,
@@ -7613,7 +7611,6 @@ class SequencePatternTest {
 
 						"--XXXXXXXXXX--, 10, 12, 2-11, 0-11",
 						"--XXXXXXXXXXX--, 10, 12, 2-11, 0-11",
-						//TODO complete
 					})
 					@DisplayName("Node with a bounded multiplicity [reluctant mode, single hit, limit, discontinuous]")
 					void testReluctantDiscontinuous(String target, int min, int max,
@@ -7680,7 +7677,6 @@ class SequencePatternTest {
 						"XY, 2, 3, 0-1, 0",
 						"-X, 2, 3, 0, -",
 						"-X-, 2, 3, 0-2, 1",
-						//TODO complete
 					})
 					@DisplayName("Mismatch with a bounded multiplicity [reluctant mode, discontinuous]")
 					void testReluctantFailDiscontinuous(String target, int min, int max,
@@ -7919,7 +7915,6 @@ class SequencePatternTest {
 						"Xxx, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
 						"Xxxx, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
 						"Xxxx-, true, 2, 3, 0-1, 2, 0-1, 2, 0-1",
-						//TODO complete
 					})
 					@DisplayName("verify reluctant expansion with multiple nodes [limited, discontinuous]")
 					void testReluctantCompetitionDiscontinuous(String target,
@@ -8180,7 +8175,6 @@ class SequencePatternTest {
 						"-Y-, 2, 3, 0-1, -",
 						"X-x-, 2, 3, 0-3, 0",
 						"-X-, 2, 3, 0-2, 1",
-						//TODO complete
 					})
 					@DisplayName("Mismatch with a bounded multiplicity [possessive mode, discontinuous]")
 					void testPossessiveFailDiscontinuous(String target, int min, int max,
@@ -8253,7 +8247,6 @@ class SequencePatternTest {
 						"XXX-, 1, 4, 0-3, 3, 0-2",
 						"XXx-, 1, 4, 0-3, 3, 0-2",
 						"XXXx, 1, 4, 0-3, -, 0-3",
-						//TODO complete
 					})
 					@DisplayName("Mismatch due to possessive consumption [ordered, discontinuous]")
 					void testPossessiveFail2Discontinuous(String target, int min, int max,
@@ -8460,7 +8453,6 @@ class SequencePatternTest {
 						// Expansion of size 2 to 3 - ordered
 						"XXX-X, X, false, 2, 3, {{0;1;2}}, {4;}, {0-4}, {3-4}",
 						"XX-XX, X, false, 2, 3, {{0;1;3}}, {4}, {0-4}, {4}",
-						//TODO complete
 					})
 					@DisplayName("verify possessive expansion with multiple nodes")
 					void testPossessiveCompetitionDiscontinuous(String target,
@@ -9162,7 +9154,6 @@ class SequencePatternTest {
 			@CsvSource({
 				"'{<3+>[$X]}', XX, 0, -",
 				"'{<3+>[$X]}', XXX, 1, { {{0;1;2}} }",
-				//TODO complete
 			})
 			@DisplayName("grouping of quantified node(s)")
 			void testQuantifiedNodes(String query, String target, int matches,
@@ -9173,7 +9164,6 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				//TODO complete
 				"'{<2>[isAfter(1),]}', XX, 0, -",
 				"'{<2>[isAfter(1), $X]}', XXX, 1, { {{1;2}} }",
 			})
@@ -9193,7 +9183,6 @@ class SequencePatternTest {
 				"'<1..3>{[$X]}', XY-XY, 2, { {{0}{3}} }",
 				"'<1..3>{[$X]}', XY-XY--XY, 3, { {{0}{3}{7}} }",
 				"'<1..3^>{[$X]}', XY-XY--XY, 3, { {{0;3;7}{3;7}{7}} }",
-				//TODO complete
 			})
 			@DisplayName("quantified grouping of blank nodes")
 			void testQuantifiedGrouping(String query, String target, int matches,
@@ -9236,7 +9225,6 @@ class SequencePatternTest {
 				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', XXXXXXX, 3, { {{0}{6}{3}} }",
 				"'<1..2>{[isAfter(2) && isBefore(5), $X]}', X, 0, -",
 				"'<1..2>{[isAfter(2) && isBefore(5), $X]}', X, 0, -",
-				//TODO complete
 			})
 			@DisplayName("quantified grouping of nodes with markers")
 			void testQuantifiedGroupingWithMarkers(String query, String target, int matches,
@@ -9258,7 +9246,6 @@ class SequencePatternTest {
 
 				"'<2+>{<2+>[isAfter(1), $X]}', XXXY, 0, -",
 				"'<2+>{<2..3>[isAfter(1), $X]}', XXXXXXY, 1, { {{1;2;3;4;5}} }",
-				//TODO complete
 			})
 			@DisplayName("quantified grouping of quantified nodes with markers")
 			void testQuantifiedGroupingWithQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -9725,7 +9712,6 @@ class SequencePatternTest {
 				"'{{[isAt(2), $X][]}[isNotAt(3),$X]}', XXX, 0, -",
 				"'{{[isAt(2), $X][]}[isNotAt(3),$X]}', XXXX, 1, { {{1}} {{2}} {{3}} }",
 				"'{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}', XXXX, 3, { {{1}{0}{0}} {{2}{1}{2}} {{3}{3}{3}} }",
-				//TODO complete
 			})
 			@DisplayName("nested groups with markers on nodes")
 			void testMarkers(String query, String target, int matches,
@@ -9888,7 +9874,6 @@ class SequencePatternTest {
 				"'{[isAt(2), $X][]}[isNotAt(3),$X]', XXX, 0, -",
 				"'{[isAt(2), $X][]}[isNotAt(3),$X]', XXXX, 1, { {{1}} {{3}} }",
 				"'{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]', XXXX, 3, { {{1}{0}{0}} {{3}{3}{3}} }",
-				//TODO complete
 			})
 			@DisplayName("nested groups of nodes with markers")
 			void testMarkers(String query, String target, int matches,
@@ -9940,7 +9925,6 @@ class SequencePatternTest {
 				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', X-YY--Z, 1, { {{0}} {{2}} {{3}} {{6}} }",
 				"'ADJACENT {[$X]<1+>[$Y]}{<2..3>[$Y][$Z]}', X-YYY--Z, 1, { {{0}} {{2}} {{3;4}} {{7}} }",
 				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', XYYYZ, 2, { {{0}{0}} {{1;2}{2}} {{3}{3}} {{4}{4}} }",
-				//TODO complete
 			})
 			@DisplayName("explicit arangement on set")
 			void testArrangement(String query, String target, int matches,
@@ -9971,7 +9955,12 @@ class SequencePatternTest {
 		@Nested
 		class GroupingInBranch {
 
-			private final QueryConfig QUERY = QueryConfig.disjunction(
+			private final QueryConfig QUERY_2 = QueryConfig.disjunction(
+					QueryConfig.of(IqlGrouping.class),
+					QueryConfig.of(IqlGrouping.class));
+
+			private final QueryConfig QUERY_3 = QueryConfig.disjunction(
+					QueryConfig.of(IqlGrouping.class),
 					QueryConfig.of(IqlGrouping.class),
 					QueryConfig.of(IqlGrouping.class));
 
@@ -9981,14 +9970,64 @@ class SequencePatternTest {
 				"'{[][]} or {[][][]}', XX, 1, { {{0}} {{1}} }",
 				"'{[][][]} or {[][]}', XX, 1, { {-} {-} {-} {{0}} {{1}} }",
 			})
-			@DisplayName("nested groups of blank nodes")
+			@DisplayName("disjunction of blank nodes")
 			void testBlank(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, builder(expand(query), QUERY, Option.KEEP_REDUNDANT_GROUPING)
+				assertResult(target, builder(expand(query), QUERY_2, Option.KEEP_REDUNDANT_GROUPING)
 						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', X, 0, -",
+				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', XY, 0, -",
+				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', XYXY, 1, { {{0;2}} {{1;3}} }",
+				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', XXXZY, 2, { {-} {-} {{0;1}{1;2}} {{3}{3}} }",
+			})
+			@DisplayName("quantified groupings and nodes")
+			void testQuantified(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_2, Option.KEEP_REDUNDANT_GROUPING)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', XY, 0, -",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XZ, 0, -",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-Y, 1, { {{0}} {{2}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XY, 1, { {{1}} {{2}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', XZ, 1, { {-} {-} {{0}} {{1}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X--Z, 1, { {-} {-} {{0}} {{3}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-ZY, 2, { {{0}{}} {{3}{}} {{}{0}} {{}{2}} }",
+			})
+			@DisplayName("nodes with markers")
+			void testMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_2, Option.KEEP_REDUNDANT_GROUPING)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', X, 0, -",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XY-, 1, { {{1}} {{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YZ-, 1, { {-} {-} {{1}} {{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XYZ-, 2, { {{1}{}} {{2}{}} {{}{2}} {{}{3}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -ZY-, 1, { {-} {-} {-} {-} {{1}} {{2}} }",
+			})
+			@DisplayName("multiple disjunctions")
+			void testMultipleBranches(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_3, Option.KEEP_REDUNDANT_GROUPING)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			//TODO cover remaining aspects
 		}
 
 		/**
@@ -10127,7 +10166,6 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				//TODO complete
 				"'{<2>[isAfter(1),]}', XX, 0, -",
 				"'{<2>[isAfter(1), $X]}', XXX, 1, { {{1;2}} }",
 			})
@@ -10147,7 +10185,6 @@ class SequencePatternTest {
 				"'<1..3>{[$X][$Y]}', XY-XY, 2, { {{0}{3}} {{1}{4}} }",
 				"'<1..3>{[$X][$Y]}', XY-XY--XY, 3, { {{0}{3}{7}} {{1}{4}{8}} }",
 				"'<1..3^>{[$X][$Y]}', XY-XY--XY, 3, { {{0;3;7}{3;7}{7}} {{1;4;8}{4;8}{8}} }",
-				//TODO complete
 			})
 			@DisplayName("quantified grouping of blank nodes")
 			void testQuantifiedGrouping(String query, String target, int matches,
@@ -10190,7 +10227,6 @@ class SequencePatternTest {
 				"'<1..2>{[isOutside(2,6) || isAt(4), $X]}', XXXXXXX, 3, { {{0}{6}{3}} }",
 				"'<1..2>{[isAfter(2) && isBefore(5), $X]}', X, 0, -",
 				"'<1..2>{[isAfter(2) && isBefore(5), $X]}', X, 0, -",
-				//TODO complete
 			})
 			@DisplayName("quantified grouping of nodes with markers")
 			void testQuantifiedGroupingWithMarkers(String query, String target, int matches,
@@ -10212,7 +10248,6 @@ class SequencePatternTest {
 
 				"'<2+>{<2+>[isAfter(1), $X][$Y]}', XXXY, 0, -",
 				"'<2+>{<2+>[isAfter(1), $X][$Y]}', XXXYXXY, 1, { {{1;2;4;5}} {{3;6}} }",
-				//TODO complete
 			})
 			@DisplayName("quantified grouping of quantified nodes with markers")
 			void testQuantifiedGroupingWithQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -10248,19 +10283,281 @@ class SequencePatternTest {
 		 * the grouping does not contain explicit quantification and the
 		 * {@link Option#KEEP_REDUNDANT_GROUPING} is not set, those wrapper
 		 * groupings will be dropped during parsing.
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>blank nodes</li>
+		 * <li>dummy nodes</li>
+		 * <li>arrangement on sequence(s)</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
 		 */
 		@Nested
 		class SequenceInBranch {
-			//TODO
+
+			private final QueryConfig QUERY_2 = QueryConfig.disjunction(
+				QueryConfig.of(IqlSequence.class),
+				QueryConfig.of(IqlSequence.class));
+			private final QueryConfig QUERY_3 = QueryConfig.disjunction(
+				QueryConfig.of(IqlSequence.class),
+				QueryConfig.of(IqlSequence.class),
+				QueryConfig.of(IqlSequence.class));
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[][]} or {[][][]}', X, 0, -",
+				"'{[][]} or {[][][]}', XX, 1, { {{0}} {{1}} }",
+				"'{[][][]} or {[][]}', XX, 1, { {-} {-} {-} {{0}} {{1}} }",
+			})
+			@DisplayName("disjunction of blank nodes")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_2)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[$X]<2+>[$Y]} or {<2>[$X][$Z]}', X, 0, -",
+				"'{[$X]<2+>[$Y]} or {<2>[$X][$Z]}', XY, 0, -",
+				"'{[$X]<2+>[$Y]} or {<2>[$X][$Z]}', XYY, 1, { {{0}} {{1;2}} }",
+				"'{[$X]<2+>[$Y]} or {<2>[$X][$Z]}', XXXZY, 2, { {-} {-} {{0;1}{1;2}} {{3}{3}} }",
+			})
+			@DisplayName("quantified groupings and nodes")
+			void testQuantified(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_2)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', XY, 0, -",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XZ, 0, -",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-Y, 1, { {{0}} {{2}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XY, 1, { {{1}} {{2}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', XZ, 1, { {-} {-} {{0}} {{1}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X--Z, 1, { {-} {-} {{0}} {{3}} }",
+				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-ZY, 2, { {{0}{}} {{3}{}} {{}{0}} {{}{2}} }",
+			})
+			@DisplayName("nodes with markers")
+			void testMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_2)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', X, 0, -",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XY-, 1, { {{1}} {{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YZ-, 1, { {-} {-} {{1}} {{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XYZ-, 2, { {{1}{}} {{2}{}} {{}{2}} {{}{3}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -ZY-, 1, { {-} {-} {-} {-} {{1}} {{2}} }",
+			})
+			@DisplayName("multiple disjunctions")
+			void testMultipleBranches(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				assertResult(target, builder(expand(query), QUERY_3)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			//TODO add marker tests
 		}
 
+		/**
+		 * {@link IqlElementDisjunction} nested inside {@link IqlGrouping}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>quantifier on grouping</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class BranchInGrouping {
 
+			/** Make a {@link QueryConfig} with {@code size} elements
+			 * and a branch at {@code branchPos}. Branch index is 1-based. */
+			private QueryConfig makeConfig(int size, int branchPos) {
+				QueryConfig[] elements = new QueryConfig[size];
+				for (int i = 0; i < elements.length; i++) {
+					if(i==branchPos-1) {
+						elements[i] = QueryConfig.of(IqlElementDisjunction.class);
+					} else {
+						elements[i] = QueryConfig.of(IqlNode.class);
+					}
+				}
+				QueryConfig element = size==1 ? elements[0] : QueryConfig.sequence(elements);
+				return QueryConfig.grouping(element);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[][][] or [][]}', X, 0, -, 4, 3",
+				"'{[] or [][][][]}', XXXX, 2, { {{0}{-}} {{-}{0}} {{1}{1}} {{2}{2}} {{3}{3}} }, 4, 1",
+				"'{[][] or [][][]}', XXXX, 2, { {{0}{0}} {{1}{-}} {{-}{1}} {{2}{2}} {{3}{3}} }, 4, 2",
+				"'{[][][] or [][]}', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{}} {{}{2}} {{3}{3}} }, 4, 3",
+				"'{[][][][] or []}', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{2}} {{3}{-}} {{-}{3}} }, 4, 4",
+			})
+			@DisplayName("blank nodes")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos),
+						Option.KEEP_REDUNDANT_GROUPING)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{[$X][$Y][$A] or [$B][$Z]}', X, 0, -, 4, 3",
+				"'{[$X][$Y][$A] or [$B][$Z]}', XYCZ, 0, -, 4, 3",
+				"'{[$X][$Y][$A] or [$B][$Z]}', XYAZ, 1, { {{0}} {{1}} {{2}} {-} {{3}} }, 4, 3",
+				"'{[$X][$Y][$A] or [$B][$Z]}', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+
+				"'{[$X][$Y][$A] or [$B][$Z]}', X-YAAZ, 2, { {{0}{0}} {{2}{2}} {{3}{4}} {-} {{5}{5}} }, 4, 3",
+				"'{[$X][$Y][$A] or [$B][$Z]}', X-YBAZ, 2, { {{0}{0}} {{2}{2}} {{}{4}} {{3}{}} {{5}{5}} }, 4, 3",
+			})
+			@DisplayName("nodes with constraints")
+			void testContent(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos),
+						Option.KEEP_REDUNDANT_GROUPING)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAZ, 0, -, 4, 3",
+				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBBBZ, 1, { {{0}} {{1}} {-} {{2;3;4}} {{5}} }, 4, 3",
+				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZ, 1, { {{0}} {{1}} {{2;3}} {-} {{4}} }, 4, 3",
+				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYYYAAAAZ, 1, { {{0}} {{1;2;3}} {{4;5;6;7}} {-} {{8}} }, 4, 3",
+			})
+			@DisplayName("nodes with quantification")
+			void testQuantifiedNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos),
+						Option.KEEP_REDUNDANT_GROUPING)
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZ, 0, -, 4, 3",
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZ, 0, -, 4, 3",
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZXYAAZ, 1, { {{0;5}} {{1;6}} {{2;3;7;8}} {-} {{4;9}} }, 4, 3",
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZXYBZ, 1, { {{0;5}} {{1;6}} {{2;3}} {{7}} {{4;8}} }, 4, 3",
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYBZ, 1, { {{0;4}} {{1;5}} {-} {{2;6}} {{3;7}} }, 4, 3",
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYAAZ, 1, { {{0;4}} {{1;5}} {{6;7}} {{2}} {{3;8}} }, 4, 3",
+				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYAAZXYBBBZ, 2, { {{0;4;9}{4;9}} {{1;5;10}{5;10}} {{6;7}{6;7}} {{2;11;12;13}{11;12;13}} {{3;8;14}{8;14}} }, 4, 3",
+			})
+			@DisplayName("quantified group")
+			void testQuantified(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos))
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			//TODO add marker tests
 		}
 
+		/**
+		 * {@link IqlElementDisjunction} nested inside {@link IqlSequence}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>arrangement on sequence(s)</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class BranchInSequence {
+
+			/** Make a {@link QueryConfig} with {@code size} elements
+			 * and a branch at {@code branchPos}. Branch index is 1-based. */
+			private QueryConfig makeConfig(int size, int branchPos) {
+				QueryConfig[] elements = new QueryConfig[size];
+				for (int i = 0; i < elements.length; i++) {
+					if(i==branchPos-1) {
+						elements[i] = QueryConfig.of(IqlElementDisjunction.class);
+					} else {
+						elements[i] = QueryConfig.of(IqlNode.class);
+					}
+				}
+				return QueryConfig.sequence(elements);
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'[][][] or [][]', X, 0, -, 4, 3",
+				"'[] or [][][][]', XXXX, 2, { {{0}{-}} {{-}{0}} {{1}{1}} {{2}{2}} {{3}{3}} }, 4, 1",
+				"'[][] or [][][]', XXXX, 2, { {{0}{0}} {{1}{-}} {{-}{1}} {{2}{2}} {{3}{3}} }, 4, 2",
+				"'[][][] or [][]', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{}} {{}{2}} {{3}{3}} }, 4, 3",
+				"'[][][][] or []', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{2}} {{3}{-}} {{-}{3}} }, 4, 4",
+			})
+			@DisplayName("blank nodes")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos))
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'[$X][$Y][$A] or [$B][$Z]', X, 0, -, 4, 3",
+				"'[$X][$Y][$A] or [$B][$Z]', XYCZ, 0, -, 4, 3",
+				"'[$X][$Y][$A] or [$B][$Z]', XYAZ, 1, { {{0}} {{1}} {{2}} {-} {{3}} }, 4, 3",
+				"'[$X][$Y][$A] or [$B][$Z]', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+
+				"'[$X][$Y][$A] or [$B][$Z]', X-YAAZ, 2, { {{0}{0}} {{2}{2}} {{3}{4}} {-} {{5}{5}} }, 4, 3",
+				"'[$X][$Y][$A] or [$B][$Z]', X-YBAZ, 2, { {{0}{0}} {{2}{2}} {{}{4}} {{3}{}} {{5}{5}} }, 4, 3",
+			})
+			@DisplayName("nodes with constraints")
+			void testContent(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos))
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYAZ, 0, -, 4, 3",
+				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYBBBZ, 1, { {{0}} {{1}} {-} {{2;3;4}} {{5}} }, 4, 3",
+				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYAAZ, 1, { {{0}} {{1}} {{2;3}} {-} {{4}} }, 4, 3",
+				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYYYAAAAZ, 1, { {{0}} {{1;2;3}} {{4;5;6;7}} {-} {{8}} }, 4, 3",
+			})
+			@DisplayName("nodes with quantification")
+			void testQuantified(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits, int nodeCount, int branchPos) {
+				assertResult(target, builder(expand(query), makeConfig(nodeCount, branchPos))
+						.nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+			}
 
 		}
 
@@ -10369,7 +10666,7 @@ class SequencePatternTest {
 		//TODO copy and enable to add further complex tests
 		@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 		@CsvSource({
-			"'QUERY', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
+			"'QUERY_2', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
 		})
 		@DisplayName("NAME")
 		void test__Template(String query, String target, int matches,
