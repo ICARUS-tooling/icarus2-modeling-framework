@@ -272,7 +272,7 @@ The query also features an import statement for the STTS part-of-speech tagset, 
 	\attribute{arrangement}{enum}{no}{unspecified}
 \end{attributes}
 \begin{description}
-	\item[\iqlType{arrangement}] Defines what kind of order or arrangement should be assumed between the elements in this sequence. Legal values are \texttt{unspecified}, \texttt{ordered} (matched elements must occur in exactly the order specified in this set but need not form a continuous span) or \texttt{adjacent} (matched elements must form a continuous span).
+	\item[\iqlType{arrangement}] Defines what kind of order or arrangement should be assumed between the elements in this sequence. Legal values are \texttt{unordered}, \texttt{ordered} (matched elements must occur in exactly the order specified in this set but need not form a continuous span) or \texttt{adjacent} (matched elements must form a continuous span).
 \end{description}
 \begin{elements}{\iqlType{NodeSet}}
 	\element{nodes}{array of \iqlBaseType{Element} (\ref{sec:json-ld-element})}{no}
@@ -2414,7 +2414,7 @@ Markers can be freely combined with quantifiers on the same node, with the follo
 	\item A node that bears at least one marker is effectively existentially quantified and so it is \textbf{not} possible to combine markers and the \textit{existential negation} quantifier.
 \end{itemize}
 
-To illustrate the interaction of quantifiers and markers, consider the example of a node \query{<3..5>[\$x: isInside(1,0.25),]}.
+To illustrate the interaction of quantifiers and markers, consider the example of a node \query{<3..5>[\$x: isInside(0,0.25),]}.
 This query requires at least three, but no more than five instances of \member{x} to be matched in the first 25\% of a target sequence.
 Evaluated against a sequence of size 10, this query will automatically fail, as the legal interval produced by the marker only provides access to the first two elements of the sequence\footnote{Markers round down to the nearest integer size for relative indices, see \cref{sec:marker-relative}.}.
 A sequence of size 12 is the smallest target that even has a chance of being matched.
@@ -2430,7 +2430,7 @@ Global constraints (\ref{sec:global-constraints}) have access to an extended ver
 So for example \query{isLast(\$x)} is the method-equivalent to the local marker \query{[\$x: isLast,]}.
 Note that there is no performance benefit by using those methods in global constraints, as actual position markers are only recognized within structural constraints.
 The version for global constraints merely serves as syntactic sugar.
-However, since those methods are not subject to the same limitations as mentioned int the section about stacking above, they can be used freely inside local constraints.
+However, since those methods are not subject to the same limitations as mentioned in the section about stacking above, they can be used freely inside local constraints.
 
 \section{Tree Markers}
 \label{sec:tree-markers}
@@ -2504,10 +2504,6 @@ These markers inherit all the rules of general tree markers, except that they ca
 	\hline 
 	isAnyGeneration & - & Node is nested arbitrarily deep in its parent. This is the equivalent of a full transitive closure over the tree dominance relation between parent and child nodes. \\  
 	\hline 
-	isLeftmostt & - & Node is located along the path of leftmost descendants (according to the actual position on the underlying foundation layer, \textbf{not} necessarily the order of child nodes along each step). This marker is generally combined with one of the generation-based markers to provide an indicator on the vertical location of the desired descendant. \\  
-	\hline 
-	isRightmost & - & Represents the symmetric opposite of above \query{isLeftmost}, marker, following the path of rightmost descendants. \\  
-	\hline 
 \end{tabular}
 \caption[Hierarchical markers]{Additional markers for hierarchical properties in tree structures. Note that ``parent'' in the matching conditions refers to the node in a target tree that has been matched by the original node's parent.}
 \label{tab:tree-hierarchy-markers}
@@ -2554,7 +2550,7 @@ As such they describe a path starting from a particular node downwards rather th
 \noindent The two \textbf{fringe} markers \query{isLeftmost} and \query{isRightmost} signal that node candidates must be located at the left (or right) fringe of a target tree as illustrated by \cref{fig:tree-fringe}.
 Note that the \textit{leftmost} and \textit{rightmost} properties do \textbf{not} refer to the position of children within their parent's list of child nodes.
 Instead the actual position on the underlying foundation layer is taken as basis for determining which nodes belong to the respective fringes.
-More specifically, an item's begin index is responsible for its position in the lift of \textit{leftmost} candidates, and the end index is taken as the decisive property when it comes to the \textit{rightmost} fringe.
+More specifically, an item's begin index is responsible for its position in the list of \textit{leftmost} candidates, and the end index is taken as the decisive property when it comes to the \textit{rightmost} fringe.
 Since the \ac{icmf} does not require structures to order outgoing edges for a parent node according to the positional indices of its children, using those fringe markers can incur a certain computational overhead.
 
 \begin{figure}
