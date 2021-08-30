@@ -704,6 +704,8 @@ public class QueryProcessor {
 				return NodeArrangement.ORDERED;
 			} else if(ctx.ADJACENT()!=null) {
 				return NodeArrangement.ADJACENT;
+			} else if(ctx.UNORDERED()!=null) {
+				return NodeArrangement.UNORDERED;
 			}
 
 			return failForUnhandledAlternative(ctx);
@@ -839,7 +841,7 @@ public class QueryProcessor {
 		private IqlSequence sequence(TreeInfo tree) {
 			IqlSequence structure = new IqlSequence();
 			if(!tree.hasParent()) {
-				structure.setArrangement(NodeArrangement.ORDERED);
+				structure.addArrangement(NodeArrangement.ORDERED);
 			}
 			genId(structure);
 			return structure;
@@ -853,8 +855,10 @@ public class QueryProcessor {
 			}
 
 			// More than one node -> wrap into a proper sequence
-			IqlSequence structure = sequence(tree);
+			IqlSequence structure = new IqlSequence();
+			genId(structure);
 
+			//TODO rethink the tree entry call here, as it might throw of arrangement assignment in downstream parse calls
 			tree.enter(structure, false);
 			for(NodeStatementContext nctx : ctx.nodeStatement()) {
 				structure.addElement(processNodeStatement(nctx, tree));
@@ -915,11 +919,19 @@ public class QueryProcessor {
 		}
 
 		private IqlSequence processElements(List<NodeStatementContext> elements,
-				NodeArrangementContext arrangement, TreeInfo tree) {
-			IqlSequence sequence = sequence(tree);
+				List<NodeArrangementContext> arrangements, TreeInfo tree) {
+			IqlSequence sequence = new IqlSequence();
+			genId(sequence);
 
-			if(arrangement!=null) {
-				sequence.setArrangement(processNodeArrangement(arrangement));
+			if(arrangements!=null) {
+				for(NodeArrangementContext nactx : arrangements) {
+					sequence.addArrangement(processNodeArrangement(nactx));
+				}
+			}
+
+			// Make sure top-level structures get assigned ORDDERED
+			if((arrangements==null || arrangements.isEmpty()) && !tree.hasParent()) {
+				sequence.addArrangement(NodeArrangement.ORDERED);
 			}
 
 			tree.enter(sequence, false);
@@ -929,11 +941,11 @@ public class QueryProcessor {
 			tree.exit();
 
 			//TODO needs a more sophisticated detection: multiple nodes can be in fact the same on (e.g. in graph)
-			if(sequence.getArrangement()!=NodeArrangement.UNORDERED
+			if(sequence.hasArrangement(NodeArrangement.ADJACENT)
 					&& countExistentialElements(sequence.getElements())<2
 					&& !canExpandToAtLeast(2, sequence.getElements())) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
-						"For node arrangement feature to be effective the query needs at least"
+						"For adjacency feature to be effective the query needs at least"
 						+ " two distinct nodes that are existentially quantified, or quantification"
 						+ " that can expand to two or more node instances.");
 			}

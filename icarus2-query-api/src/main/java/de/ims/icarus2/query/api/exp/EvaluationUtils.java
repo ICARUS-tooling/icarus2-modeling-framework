@@ -338,6 +338,11 @@ public class EvaluationUtils {
 				String.format("Type not supported as '%s': %s", context, type));
 	}
 
+	public static QueryException forUnsupportedValue(String field, Object value) {
+		return new QueryException(QueryErrorCode.UNSUPPORTED_QUERY_FRAGMENT,
+				String.format("Value not supported for field '%s': %s", field, value));
+	}
+
 	public static QueryException forUnsupportedTextComp(String op) {
 		return new QueryException(QueryErrorCode.TYPE_MISMATCH,
 				"Operation does not support textual comparison: "+op);

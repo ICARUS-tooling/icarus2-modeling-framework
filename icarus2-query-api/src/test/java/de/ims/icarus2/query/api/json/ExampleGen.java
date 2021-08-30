@@ -141,7 +141,7 @@ public class ExampleGen {
 			lane.setLaneType(LaneType.SEQUENCE);
 			IqlSequence nodeSet = new IqlSequence();
 			gen.assignId(nodeSet);
-			nodeSet.setArrangement(NodeArrangement.ADJACENT);
+			nodeSet.addArrangement(NodeArrangement.ADJACENT);
 			IqlNode node1 = new IqlNode();
 			gen.assignId(node1);
 			node1.setConstraint(pred("pos==stts.ADJ", gen));

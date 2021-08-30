@@ -164,6 +164,9 @@ public enum QueryErrorCode implements ErrorCode {
 	/**
 	 * Converting a {@link Query} instance into a matcher state machine failed due
 	 * to some fragments not being supported or being used incorrectly.
+	 * <p>
+	 * This error can also hint at discrepancies between the IQL evolution and the
+	 * query processor not yet supporting all features.
 	 */
 	UNSUPPORTED_QUERY_FRAGMENT(305),
 	;

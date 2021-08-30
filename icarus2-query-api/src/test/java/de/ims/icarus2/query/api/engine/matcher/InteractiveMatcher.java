@@ -644,7 +644,10 @@ public class InteractiveMatcher {
 				layout.setNodeDistance(10); // default is 20
 				layout.setLevelDistance(5); // default is 10
 				layout.setResizeParent(true);
-				layout.execute(cell, sm2graph.get(id2info.get(info.getAtoms().getInt(0))));
+				layout.setMoveTree(true);
+				for(int atomId : info.getAtoms()) {
+					layout.execute(cell, sm2graph.get(id2info.get(atomId)));
+				}
 				mxGeometry geo = model.getGeometry(cell);
 				geo.setHeight(geo.getHeight()+15);
 				graph.moveCells(graph.getChildCells(cell), 0, 15);

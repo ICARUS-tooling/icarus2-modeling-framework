@@ -256,8 +256,8 @@ public class SequencePattern {
 		int borderCount = 0;
 		/** Total number of gates that prevent duplicate position matching */
 		int gateCount = 0;
-		/** Size info of all the permutators */
-		int[] permutators = {};
+		/** Size info of all the permutations */
+		int[] permutations = {};
 		/** Original referential intervals */
 		Interval[] intervals = {};
 		/** Keeps track of all the tracked nodes. Used for monitoring */
@@ -320,10 +320,10 @@ public class SequencePattern {
 				.mapToObj(i -> new Gate())
 				.toArray(Gate[]::new);
 		}
-		Permutator[] makePermutators() {
-			return IntStream.range(0, permutators.length)
-				.mapToObj(i -> Permutator.forSize(permutators[i]))
-				.toArray(Permutator[]::new);
+		PermutationContext[] makePermutations() {
+			return IntStream.range(0, permutations.length)
+				.mapToObj(i -> new PermutationContext(permutations[i]))
+				.toArray(PermutationContext[]::new);
 		}
 	}
 
@@ -461,10 +461,13 @@ public class SequencePattern {
 			}
 
 			private void maybeIncNodes(Node n) {
+				n = unwrap(n);
 				if(n instanceof Single || n instanceof Empty) {
 					nodes++;
 				}
 			}
+
+			void incNodes(int n) { nodes += n; }
 
 			/** Add given node as head of inner sequence. */
 			<N extends Node> N push(N node) {
@@ -519,7 +522,7 @@ public class SequencePattern {
 					other.end().setNext(start);
 					start = other.start();
 					nodes += other.nodes();
-					size += other.size;
+					size += other.size();
 					mergeFlags(other);
 				}
 			}
@@ -535,7 +538,7 @@ public class SequencePattern {
 					end.setNext(other.start());
 					end = other.end();
 					nodes += other.nodes();
-					size += other.size;
+					size += other.size();
 					mergeFlags(other);
 				}
 			}
@@ -796,10 +799,15 @@ public class SequencePattern {
 		/** Process (ordered or adjacent) node sequence */
 		private Frame sequence(IqlSequence source, @Nullable Node scan) {
 			final List<IqlElement> elements = source.getElements();
-			if(source.getArrangement()==NodeArrangement.ADJACENT) {
-				return adjacentGroup(elements, scan);
+			final boolean adjacent = source.hasArrangement(NodeArrangement.ADJACENT);
+			//TODO throw error on illegal arrangement combinations!
+			if(source.hasArrangement(NodeArrangement.ORDERED)) {
+				return orderedGroup(elements, adjacent, scan);
 			}
-			return looseGroup(elements, scan);
+
+			return unorderedGroup(elements, adjacent, scan);
+
+//			throw EvaluationUtils.forUnsupportedValue("arrangement", source.getArrangements());
 		}
 
 		/** Process alternatives for branching */
@@ -1167,8 +1175,12 @@ public class SequencePattern {
 			return storeTrackable(new Finish(id(), limit, stopAfterMatch));
 		}
 
-		private Permutate permutate(IqlQueryElement source, Node...elements) {
-			return new Permutate(id(), source, permutator(elements.length), elements);
+		private Node permutate(IqlQueryElement source, int permId, Node...elements) {
+			return storeTrackable(new PermInit(id(), source, permId, elements));
+		}
+
+		private Node permutationElement(int permId, int slot, boolean scan) {
+			return storeTrackable(new PermSlot(id(), permId, slot, scan));
 		}
 
 		private Reset reset() { return store(new Reset(id())); }
@@ -1247,14 +1259,34 @@ public class SequencePattern {
 			return false;
 		}
 
-		private Frame unorderedGroup(List<IqlElement> elements, @Nullable Node scan) {
-			if(elements.size()==1) {
+		private Frame unorderedGroup(List<IqlElement> elements, boolean adjacent, @Nullable Node scan) {
+			final int size = elements.size();
+			if(size==1) {
 				return process(elements.get(0), scan);
 			}
 
 			Frame group = new Frame();
 
-			//TODO process elements and instantiate a permutation node
+			final int permId = permutator(size);
+			final Node[] atoms = new Node[size];
+
+			// We fill atoms array later
+			group.push(permutate(new IqlListProxy(elements), permId, atoms));
+
+			for (int i = 0; i < size; i++) {
+				// Process each atom as distinct element
+				Frame step = process(elements.get(i), null);
+				step.collapse();
+
+				// Store raw atoms and create "outer" proxies
+				atoms[i] = step.start();
+				group.append(permutationElement(permId, i, i>0 && !adjacent));
+				group.incNodes(step.nodes());
+			}
+
+			if(scan!=null) {
+				group.push(scan);
+			}
 
 			return group;
 		}
@@ -1262,10 +1294,10 @@ public class SequencePattern {
 		/**
 		 * Sequential scanning of ordered elements.
 		 * Note that any node but the first in the original
-		 * sequence may receive a scan attached to it.
+		 * sequence may receive a scan attached to it depending on the 'adjacent' flag.
 		 * The first node in the sequence might have its prefix hoisted.
 		 */
-		private Frame looseGroup(List<IqlElement> elements, @Nullable Node scan) {
+		private Frame orderedGroup(List<IqlElement> elements, boolean adjacent, @Nullable Node scan) {
 			if(elements.size()==1) {
 				return process(elements.get(0), scan);
 			}
@@ -1275,12 +1307,14 @@ public class SequencePattern {
 			for(int i=0; i<=last; i++) {
 				Frame step = process(elements.get(i), i==0 ? scan : null);
 				// Special handling only for subsequent steps
-				if(i>0) {
-					Node head = unwrap(step.start());
-					// Any node but the first can receive an automatic scan attached to it
-					if(!head.isScanCapable() && !head.isFixed()) {
-						// Cashing will be used either for complex inner structure or intermediate nodes
-						step.push(explore(true, needsCacheForScan(head) || i<last));
+				if(i>0 || adjacent) {
+					if(!adjacent) {
+						Node head = unwrap(step.start());
+						// Any node but the first can receive an automatic scan attached to it
+						if(!head.isScanCapable() && !head.isFixed()) {
+							// Cashing will be used either for complex inner structure or intermediate nodes
+							step.push(explore(true, needsCacheForScan(head) || i<last));
+						}
 					}
 					// Ensure we don't mix up hoistable content and proactively collapse
 					step.collapse();
@@ -1289,17 +1323,6 @@ public class SequencePattern {
 				group.append(step);
 			}
 			return group;
-		}
-
-		/** Sequential check without scanning */
-		private Frame adjacentGroup(List<IqlElement> elements, @Nullable Node scan) {
-			Frame frame = new Frame();
-			for(int i=0; i<elements.size(); i++) {
-				Frame step = process(elements.get(i), i==0 ? scan : null);
-				step.collapse();
-				frame.append(step);
-			}
-			return frame;
 		}
 
 		private int mode(IqlQuantifier quantifier) {
@@ -1393,6 +1416,7 @@ public class SequencePattern {
 			final boolean disjoint = flagSet(MatchFlag.DISJOINT);
 
 			resetFindOnly(false);
+			//FIXME need to rework the permutation node as we stack scans here otherwise!!!
 			Node rootScan = explore(modifier!=QueryModifier.LAST, false);
 
 			// For now we don't honor the 'consumed' flag on IqlElement instances
@@ -1441,7 +1465,7 @@ public class SequencePattern {
 			sm.borderCount = borderCount;
 			sm.bufferCount = bufferCount;
 			sm.gateCount = gateCount;
-			sm.permutators = permutators.toIntArray();
+			sm.permutations = permutators.toIntArray();
 			sm.markerPos = markerPos.toIntArray();
 			sm.intervals = intervals.toArray(new Interval[0]);
 			sm.markers = markers.toArray(new RangeMarker[0]);
@@ -1482,8 +1506,8 @@ public class SequencePattern {
 		final RangeMarker[] markers;
 		/** All the gate caches for keeping track of duplicate matcher positions */
 		final Gate[] gates;
-		/** In-place permutation generators to be used for unordered groups */
-		final Permutator[] permutators;
+		/** In-place permutation generators and contexts to be used for unordered groups */
+		final PermutationContext[] permutations;
 		/** Positions into 'intervals' to signal what intervals to update for what marker */
 		final int[] markerPos;
 		/** Keeps track of the last hit index for every raw node */
@@ -1557,7 +1581,7 @@ public class SequencePattern {
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
 			gates = setup.makeGates();
-			permutators = setup.makePermutators();
+			permutations = setup.makePermutations();
 
 			from = 0;
 			to = 0;
@@ -2189,22 +2213,67 @@ public class SequencePattern {
 		}
 	}
 
+	static final class PermutationContext {
+		/** Source of the permutation */
+		final Permutator source;
+		/** Permutated list of nodes, following {@link Permutator#current() current} configuration */
+		final Node[] current;
+		/** Right border for traversal of each atom */
+		final int[] fences;
+		/** Smallest index that produced a direct fail when matching the respective atom */
+		int skip;
+
+		PermutationContext(int size) {
+			source = Permutator.forSize(size);
+			current = new Node[size];
+			fences = new int[size];
+		}
+
+		void reset() {
+			Arrays.fill(current, null);
+			source.reset();
+		}
+	}
+
+	/**
+	 * Utility class to track and accumulate information about (a portion of) the
+	 * state machine.
+	 * <p>
+	 * Properties of this class are organized into upstream and downstream information,
+	 * depending on how they are used:
+	 * <p>
+	 * <i>downstream</i> information is accumulated in a forward way and provided to
+	 * child nodes by their "parents". In other words, nodes read this information
+	 * before modifying the {@link TreeInfo} instance passed to them or forwarding it
+	 * to subsequent parts of the state machine. Downstream properties are often set
+	 * to a new value by specific nodes and then reset to their previous values after
+	 * those nodes have studied their subsection of the state machine.
+	 * <p>
+	 * <i>upstream</i> information is accumulated in a post-order fashion, i.e. backwards
+	 * and after nested parts of the state machine have been studied. This is effectively
+	 * information obtained from child nodes and passed on to parent nodes.
+	 *
+	 *
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	static class TreeInfo implements Cloneable {
-		/** Minimum number of elements to be matched by a subtree. */
+		/** Minimum number of elements to be matched by a subtree. (upstream property) */
 		int minSize = 0;
-		/** Maximum number of elements to be matched by a subtree. */
+		/** Maximum number of elements to be matched by a subtree. (upstream property) */
 		int maxSize = 0;
-		/** Flag to indicate whether {@link #maxSize} is actually valid. */
+		/** Flag to indicate whether {@link #maxSize} is actually valid. (upstream property) */
 		boolean maxValid = true;
-		/** Indicates that the state machine corresponding to a sub node is fully deterministic. */
+		/** Indicates that the state machine corresponding to a sub node is fully deterministic. (upstream property) */
 		boolean deterministic = true;
-		/** Indicates that parts of the input can be skipped. */
+		/** Indicates that parts of the input can be skipped. (downstream property) */
 		boolean skip = false;
-		/** Indicates that a part of the state machine should stop after a successful match */
+		/** Indicates that a part of the state machine should stop after a successful match. (upstream property) */
 		boolean stopOnSuccess = false;
 		/**
 		 * Size of the current segment between matching 'save' and 'restore' border nodes.
-		 * If no markers are used, this is equal to {@link #minSize}.
+		 * If no markers are used, this is equal to {@link #minSize}. (downstream property)
 		 */
 		int segmentSize = 0;
 
@@ -2270,6 +2339,12 @@ public class SequencePattern {
 			BORDER(Integer.class),
 			/** Id of a filter save/restore point. */
 			GATE(Integer.class),
+			/** Id of a permutation context that holds the state and utility information for permutating node lists. */
+			PERMUTATION_CONTEXT(Integer.class),
+			/** Positional index inside a permutation array. */
+			PERMUTATION_SLOT(Integer.class),
+			/** Indicates whether or not a permutation element is meant to scan the search space for a match. */
+			SCAN(Boolean.class),
 			/** Indicates that a node is a reset or restore point for a shared operation. */
 			RESET(Boolean.class),
 			/** Indicates that a explorative node is allowed to produce zero-width assertions. */
@@ -2300,10 +2375,14 @@ public class SequencePattern {
 			SCAN_EXHAUSTIVE,
 			/** Scan that stops after first match. */
 			SCAN_FIRST,
-			/** Branch head */
+			/** Branch head to initiate a node disjunction. */
 			BRANCH,
-			/** BRanch tail */
+			/** Branch tail to wrap up a node disjunction. */
 			BRANCH_CONN,
+			/** Entry node for a permutation */
+			PERMUTATE,
+			/** Intermediate proxy node inside a permutation that wraps around the actual atom node. */
+			PERMUTATION_ELEMENT,
 			/** Final node that manages dispatch of search result. */
 			FINISH,
 			/** Special node that handles global constraints. */
@@ -3331,7 +3410,6 @@ public class SequencePattern {
 			return result;
 		}
 
-		/** @see Exhaust#study(TreeInfo) */
 		@Override
 		boolean study(TreeInfo info) {
 			int minSize0 = info.segmentSize;
@@ -3499,18 +3577,23 @@ public class SequencePattern {
 	}
 
 	/** Try out different permutations of a set of nodes inthe current search space */
-	static final class Permutate extends ProperNode {
-		final Node[] elements;
-		final int permIndex;
+	static final class PermInit extends ProperNode {
+		/** Raw list of elements to shuffle */
+		final Node[] atoms;
+		/** Reference to the {@link Permutator} instance */
+		final int permId;
 
-		int[] minSizes;
+		final int[] minSizes;
 		int minSize;
 
-		Permutate(int id, IqlQueryElement source, int permIndex, Node...elements) {
+		private static final int NO_SKIP = Integer.MAX_VALUE;
+
+		PermInit(int id, IqlQueryElement source, int permId, Node...atoms) {
 			super(id, source);
-			this.permIndex = permIndex;
-			checkArgument("Need at least 2 elements", elements.length>1);
-			this.elements = elements;
+			this.permId = permId;
+			checkArgument("Need at least 2 elements", atoms.length>1);
+			this.atoms = atoms;
+			minSizes = new int[atoms.length];
 		}
 
 		/**
@@ -3518,38 +3601,176 @@ public class SequencePattern {
 		 */
 		@Override
 		public NodeInfo info() {
-			// TODO Auto-generated method stub
-			return null;
+			return new NodeInfo(this, Type.PERMUTATE)
+					.atoms(false, atoms)
+					.property(Field.PERMUTATION_CONTEXT, permId)
+					.property(Field.MIN_SIZE, minSize);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			TreeInfo tmp = new TreeInfo();
+
+			for (int i = 0; i < atoms.length; i++) {
+				tmp.stopOnSuccess = info.stopOnSuccess;
+				tmp.skip = info.skip; //TODO rly?
+
+				Node atom = atoms[i];
+				atom.study(tmp);
+
+				minSizes[i] = tmp.minSize;
+				info.minSize += tmp.minSize;
+				info.maxSize += tmp.maxSize;
+				info.maxValid &= tmp.maxValid;
+				info.deterministic &= tmp.deterministic;
+				info.segmentSize += tmp.segmentSize;
+
+				tmp.reset();
+			}
+
+			int minSize0 = info.segmentSize;
+			next.study(info);
+			minSize = info.segmentSize-minSize0;
+
+			return info.deterministic;
 		}
 
 		@Override
 		boolean match(State state, int pos) {
-			final Permutator perm = state.permutators[permIndex];
-    		final int from = state.from;
-    		final int to = state.to;
+			final PermutationContext ctx = state.permutations[permId];
 
     		boolean result = false;
+    		final int last = state.last;
 
 			while(!state.stop) {
 				//TODO match current permutation
+				// Apply current permutation and calculate boundaries
+				prepare(ctx, state.to);
 
-				// Bail as soon as permutations are exhausted
-				if(!perm.next()) {
+				state.last = last;
+
+				boolean matched = next.match(state, pos);
+
+				/*
+				 * We might have failed due to one of the permutated nodes.
+				 * If so, check skip index and try to skip permutations. If
+				 * skipping fails, we need to bail completely.
+				 */
+				if(!matched && ctx.skip!=NO_SKIP && !ctx.source.skip(ctx.skip)) {
 					break;
 				}
+
+				result |= matched;
+
+				// Bail as soon as permutations are exhausted
+				if(!ctx.source.next()) {
+					break;
+				}
+			}
+
+			ctx.reset();
+
+			return result;
+		}
+
+		private void prepare(PermutationContext ctx, int to) {
+			int[] config = ctx.source.current();
+    		final int last = atoms.length-1;
+
+			// Update lookups
+			ctx.fences[last] = to - minSize;
+			ctx.current[last] = atoms[config[last]];
+			// Accumulate fences back to front
+			for (int i = last-1; i >= 0; i--) {
+				ctx.fences[i] = ctx.fences[i+1] - minSizes[config[i+1]];
+				ctx.current[i] = atoms[config[i]];
+			}
+    		ctx.skip = NO_SKIP;
+		}
+
+		@Override
+		Node[] getAtoms() { return atoms.clone(); }
+	}
+
+	static final class PermSlot extends Node {
+		/** Reference to the {@link Permutator} instance */
+		final int permIndex;
+		/** Position of this wrapper node in the permutation */
+		final int slot;
+		/** If we are an intermediate node, we need to do a proper scan for the respective atom */
+		final boolean scan;
+
+		PermSlot(int id, int permIndex, int slot, boolean scan) {
+			super(id);
+			this.permIndex = permIndex;
+			this.slot = slot;
+			this.scan = scan;
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.PERMUTATION_ELEMENT)
+					.property(Field.PERMUTATION_CONTEXT, permIndex)
+					.property(Field.PERMUTATION_SLOT, slot)
+					.property(Field.SCAN, scan);
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			// In case we do scan for atom node, we act effectively as a Find node
+			if(scan) {
+				info.skip = true;
+				info.deterministic = false;
+			}
+
+			super.study(info);
+
+			return info.deterministic;
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			final PermutationContext ctx = state.permutations[permIndex];
+
+			boolean result = false;
+
+			// We can either search iteratively for the next match
+			if(scan) {
+	    		final int from = state.from;
+	    		final int to = state.to;
+	    		final int fence = ctx.fences[slot];
+	    		final int last = state.last;
+
+				for (int i = pos; i <= fence && !state.stop; i++) {
+					int scope = state.scope();
+					state.last = last;
+					// Local match result
+					boolean matched = matchAtom(state, i, ctx);
+
+					state.resetScope(scope);
+					state.reset(from, to);
+
+					result |= matched;
+				}
+
+			} else {
+				// Or only try a a single index, due to an outer scan
+				result = matchAtom(state, pos, ctx);
 			}
 
 			return result;
 		}
 
-		@Override
-		boolean isScanCapable() {
-			// TODO Auto-generated method stub
-			return super.isScanCapable();
+		private boolean matchAtom(State state, int pos, PermutationContext ctx) {
+			boolean result = ctx.current[slot].match(state, pos);
+			if(result) {
+				result = next.match(state, state.last);
+			} else if(slot < ctx.skip) {
+				// Otherwise update the skip index
+				ctx.skip = slot;
+			}
+			return result;
 		}
-
-		@Override
-		Node[] getAtoms() { return elements.clone(); }
 	}
 
 	/**

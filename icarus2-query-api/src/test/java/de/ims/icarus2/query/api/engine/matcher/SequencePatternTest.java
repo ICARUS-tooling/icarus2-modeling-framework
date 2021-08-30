@@ -50,7 +50,6 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.seq;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_LABEL;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_MARKER;
-import static de.ims.icarus2.query.api.iql.IqlTestUtils.adjacent;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.atLeastPossessive;
@@ -71,7 +70,6 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantify;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.rangeGreedy;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.rangePossessive;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.rangeReluctant;
-import static de.ims.icarus2.query.api.iql.IqlTestUtils.set;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.unordered;
 import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -4914,7 +4912,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(unordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastGreedy(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -4996,7 +4994,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(unordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastGreedy(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5298,7 +5296,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastReluctant(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5382,7 +5380,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastReluctant(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5410,7 +5408,7 @@ class SequencePatternTest {
 					void testReluctantExpansion() {
 						final String target = "-XXxXXx-";
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastReluctant(2, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5597,7 +5595,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(ordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5632,7 +5630,7 @@ class SequencePatternTest {
 							@IntervalArg Interval visited2) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(ordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5665,7 +5663,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5697,7 +5695,7 @@ class SequencePatternTest {
 							@IntervalArg Interval visited2) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -5748,7 +5746,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -5803,7 +5801,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atLeastPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -6098,7 +6096,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(unordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostGreedy(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6168,7 +6166,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(unordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostGreedy(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6465,7 +6463,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostReluctant(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6548,7 +6546,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostReluctant(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6575,7 +6573,7 @@ class SequencePatternTest {
 					void testReluctantExpansion() {
 						final String target = "-XXxXXx-";
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostReluctant(2, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6615,7 +6613,7 @@ class SequencePatternTest {
 					void testReluctantExpansionDiscontinuous() {
 						final String target = "-XXxXXx-";
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostReluctant(2, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6821,7 +6819,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(ordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6861,7 +6859,7 @@ class SequencePatternTest {
 							@IntervalArg Interval visited2) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(ordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6894,7 +6892,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6928,7 +6926,7 @@ class SequencePatternTest {
 							@IntervalArg Interval visited2) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -6988,7 +6986,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostPossessive(count, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -7056,7 +7054,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), atMostPossessive(count, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -7356,7 +7354,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangeGreedy(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -7506,7 +7504,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangeGreedy(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -7840,7 +7838,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangeReluctant(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -7931,7 +7929,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangeReluctant(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -7959,7 +7957,7 @@ class SequencePatternTest {
 						//TODO add discontinuous counterpart?
 						final String target = "-XXxXXx-";
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangeReluctant(1, 2, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -8216,7 +8214,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(ordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangePossessive(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -8255,7 +8253,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(ordered(
+								builder(ordered(false,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangePossessive(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -8288,7 +8286,7 @@ class SequencePatternTest {
 							@IntervalArg Interval candidates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangePossessive(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -8325,7 +8323,7 @@ class SequencePatternTest {
 							@IntervalArg Interval visited2) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
-								builder(adjacent(
+								builder(ordered(true,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangePossessive(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('x'))))
@@ -8397,7 +8395,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangePossessive(min, max, CONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -8474,7 +8472,7 @@ class SequencePatternTest {
 						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
-								builder(set(adjacent,
+								builder(ordered(adjacent,
 										quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
 												constraint(ic_exp('X'))), rangePossessive(min, max, DISCONTINUOUS)),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
@@ -8529,9 +8527,9 @@ class SequencePatternTest {
 		}
 
 		@Nested
-		class ForIqlSet {
+		class ForIqlSequence {
 
-			@DisplayName("no specified node arrangement")
+			@DisplayName("node arrangement UNORDERED")
 			@Nested
 			class WhenUnordered {
 
@@ -8555,7 +8553,7 @@ class SequencePatternTest {
 				@DisplayName("Two nodes with no matches")
 				void testDualNodeFail(String target) {
 					assertResult(target,
-							builder(unordered(
+							builder(unordered(false,
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
@@ -8576,7 +8574,7 @@ class SequencePatternTest {
 				@DisplayName("Two nodes at various positions")
 				void testDualNodeHits(String target, int hitX, int hitY) {
 					assertResult(target,
-							builder(unordered(
+							builder(unordered(false,
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
@@ -8620,7 +8618,7 @@ class SequencePatternTest {
 				@DisplayName("Two nodes with no matches")
 				void testDualNodeFail(String target) {
 					assertResult(target,
-							builder(ordered(
+							builder(ordered(false,
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
@@ -8641,7 +8639,7 @@ class SequencePatternTest {
 				@DisplayName("Two nodes at various positions")
 				void testDualNodeHits(String target, int hitX, int hitY) {
 					assertResult(target,
-							builder(ordered(
+							builder(ordered(false,
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
@@ -8688,7 +8686,7 @@ class SequencePatternTest {
 				@DisplayName("Two nodes with no matches")
 				void testDualNodeFail(String target) {
 					assertResult(target,
-							builder(adjacent(
+							builder(ordered(true,
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
@@ -8706,7 +8704,7 @@ class SequencePatternTest {
 				@DisplayName("Two nodes at various positions")
 				void testDualNodeHits(String target, int hitX, int hitY) {
 					assertResult(target,
-							builder(adjacent(
+							builder(ordered(true,
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
 									).build(),
@@ -8746,10 +8744,10 @@ class SequencePatternTest {
 			@DisplayName("Node pair with no matches")
 			void testDoubleNodeFail(String target) {
 				assertResult(target,
-						builder(grouping(
+						builder(grouping(ordered(false,
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y')))
-								)
+								))
 						).build(),
 						mismatch());
 			}
@@ -8775,11 +8773,11 @@ class SequencePatternTest {
 			@DisplayName("Node triplet with no matches")
 			void testTripleNodeFail(String target) {
 				assertResult(target,
-						builder(grouping(
+						builder(grouping(ordered(false,
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))),
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Z')))
-								)
+								))
 						).build(),
 						mismatch());
 			}
@@ -8813,11 +8811,11 @@ class SequencePatternTest {
 				assertThat(hits1).hasSameSizeAs(hits3);
 
 				assertResult(target,
-						builder(grouping(
+						builder(grouping(ordered(false,
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))),
 								IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Z')))
-								)
+								))
 						).build(),
 						match(hits1.length)
 							// Cache for 3rd node
@@ -8907,10 +8905,10 @@ class SequencePatternTest {
 					void testNegatedDual(String target,
 							@IntervalArg Interval visited1, @IntervalArg Interval visited2) {
 						assertResult(target,
-								builder(quantify(grouping(
+								builder(quantify(grouping(ordered(false,
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y')))
-										),
+										)),
 										negated()
 										)).build(),
 								match(1)

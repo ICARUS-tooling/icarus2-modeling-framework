@@ -523,7 +523,7 @@ public class QueryProcessorTest {
 			return element -> {
 				assertThat(element).isInstanceOf(IqlSequence.class);
 				IqlSequence set = (IqlSequence)element;
-				assertThat(set.getArrangement()).isSameAs(arrangement);
+				assertThat(set.getArrangements()).isSameAs(arrangement);
 				List<IqlElement> items = set.getElements();
 				assertThat(items).hasSize(asserters.length);
 				for (int i = 0; i < asserters.length; i++) {
