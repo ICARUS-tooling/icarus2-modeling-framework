@@ -24,8 +24,10 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -43,7 +45,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public abstract class IqlElement extends IqlUnique {
 
-	@JsonProperty(IqlProperties.CONSUMED)
+	@JsonProperty(IqlTags.CONSUMED)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean consumed = false;
 
@@ -57,11 +59,11 @@ public abstract class IqlElement extends IqlUnique {
 
 	public static abstract class IqlProperElement extends IqlElement {
 
-		@JsonProperty(IqlProperties.LABEL)
+		@JsonProperty(IqlTags.LABEL)
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<String> label = Optional.empty();
 
-		@JsonProperty(IqlProperties.CONSTRAINT)
+		@JsonProperty(IqlTags.CONSTRAINT)
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<IqlConstraint> constraint = Optional.empty();
 
@@ -77,7 +79,7 @@ public abstract class IqlElement extends IqlUnique {
 		public void checkIntegrity() {
 			super.checkIntegrity();
 
-			checkOptionalStringNotEmpty(label, IqlProperties.LABEL);
+			checkOptionalStringNotEmpty(label, IqlTags.LABEL);
 			checkOptionalNested(constraint);
 		}
 
@@ -93,11 +95,11 @@ public abstract class IqlElement extends IqlUnique {
 	 */
 	public static class IqlGrouping extends IqlElement implements IqlQuantifier.Quantifiable {
 
-		@JsonProperty(IqlProperties.QUANTIFIERS)
+		@JsonProperty(IqlTags.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
 
-		@JsonProperty(value=IqlProperties.ELEMENT, required=true)
+		@JsonProperty(value=IqlTags.ELEMENT, required=true)
 		private IqlElement element;
 
 		@Override
@@ -108,7 +110,7 @@ public abstract class IqlElement extends IqlUnique {
 			super.checkIntegrity();
 
 			checkCollection(quantifiers);
-			checkNotNull(element, IqlProperties.ELEMENT);
+			checkNotNull(element, IqlTags.ELEMENT);
 		}
 
 		@Override
@@ -142,11 +144,11 @@ public abstract class IqlElement extends IqlUnique {
 	 */
 	public static class IqlNode extends IqlProperElement implements IqlQuantifier.Quantifiable  {
 
-		@JsonProperty(IqlProperties.QUANTIFIERS)
+		@JsonProperty(IqlTags.QUANTIFIERS)
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlQuantifier> quantifiers = new ArrayList<>();
 
-		@JsonProperty(IqlProperties.MARKER)
+		@JsonProperty(IqlTags.MARKER)
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<IqlMarker> marker = Optional.empty();
 
@@ -190,13 +192,13 @@ public abstract class IqlElement extends IqlUnique {
 	 */
 	public static class IqlSequence extends IqlElement {
 
-		@JsonProperty(IqlProperties.ELEMENTS)
+		@JsonProperty(IqlTags.ELEMENTS)
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlElement> elements = new ArrayList<>();
 
-		@JsonProperty(IqlProperties.ARRANGEMENT)
-		@JsonInclude(Include.NON_DEFAULT)
-		private NodeArrangement nodeArrangement = NodeArrangement.UNORDERED;
+		@JsonProperty(IqlTags.ARRANGEMENTS)
+		@JsonInclude(Include.NON_EMPTY)
+		private Set<NodeArrangement> nodeArrangements = EnumSet.noneOf(NodeArrangement.class);
 
 		@Override
 		public IqlType getType() { return IqlType.SEQUENCE; }
@@ -205,7 +207,7 @@ public abstract class IqlElement extends IqlUnique {
 		public void checkIntegrity() {
 			super.checkIntegrity();
 
-			checkCollectionNotEmpty(elements, IqlProperties.ELEMENTS);
+			checkCollectionNotEmpty(elements, IqlTags.ELEMENTS);
 		}
 
 		@Override
@@ -213,15 +215,16 @@ public abstract class IqlElement extends IqlUnique {
 
 		public List<IqlElement> getElements() { return CollectionUtils.unmodifiableListProxy(elements); }
 
-		public NodeArrangement getArrangement() { return nodeArrangement; }
+		public Set<NodeArrangement> getArrangements() { return CollectionUtils.unmodifiableSetProxy(nodeArrangements); }
 
 
 		public void addElement(IqlElement child) { elements.add(requireNonNull(child)); }
 
-		public void setArrangement(NodeArrangement nodeArrangement) { this.nodeArrangement = requireNonNull(nodeArrangement); }
+		public void addArrangement(NodeArrangement nodeArrangement) { nodeArrangements.add(requireNonNull(nodeArrangement)); }
 
 		public void forEachElement(Consumer<? super IqlElement> action) { elements.forEach(requireNonNull(action)); }
 
+		public boolean hasArrangement(NodeArrangement arrangement) { return nodeArrangements.contains(arrangement); }
 	}
 
 	/**
@@ -239,7 +242,7 @@ public abstract class IqlElement extends IqlUnique {
 		 * Children of this tree node, can either be a single (tree)node,
 		 * an IqlSequence or an IqlElementDisjunction.
 		 */
-		@JsonProperty(IqlProperties.CHILDREN)
+		@JsonProperty(IqlTags.CHILDREN)
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<IqlElement> children = Optional.empty();
 
@@ -268,13 +271,13 @@ public abstract class IqlElement extends IqlUnique {
 	 */
 	public static class IqlEdge extends IqlProperElement implements IqlQuantifier.Quantifiable {
 
-		@JsonProperty(value=IqlProperties.SOURCE, required=true)
+		@JsonProperty(value=IqlTags.SOURCE, required=true)
 		private IqlNode source;
 
-		@JsonProperty(value=IqlProperties.TARGET, required=true)
+		@JsonProperty(value=IqlTags.TARGET, required=true)
 		private IqlNode target;
 
-		@JsonProperty(value=IqlProperties.EDGE_TYPE, required=true)
+		@JsonProperty(value=IqlTags.EDGE_TYPE, required=true)
 		private EdgeType edgeType;
 
 		@Override
@@ -283,9 +286,9 @@ public abstract class IqlElement extends IqlUnique {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
-			checkNestedNotNull(source, IqlProperties.SOURCE);
-			checkNestedNotNull(target, IqlProperties.TARGET);
-			checkNotNull(edgeType, IqlProperties.EDGE_TYPE);
+			checkNestedNotNull(source, IqlTags.SOURCE);
+			checkNestedNotNull(target, IqlTags.TARGET);
+			checkNotNull(edgeType, IqlTags.EDGE_TYPE);
 //			checkCondition(source.getQuantifiers().isEmpty() || target.getQuantifiers().isEmpty(),
 //					"source/target", "Redundant quantifiers on edge - only one of 'source' or 'target' nodes may be assigned a quantifier!");
 			//TODO having the quantifier check here causes test issues. is it ok to do that check only in the QueryProcessor
@@ -343,7 +346,7 @@ public abstract class IqlElement extends IqlUnique {
 	 */
 	public static class IqlElementDisjunction extends IqlElement {
 
-		@JsonProperty(value=IqlProperties.ALTERNATIVES, required=true)
+		@JsonProperty(value=IqlTags.ALTERNATIVES, required=true)
 		private final List<IqlElement> alternatives = new ArrayList<>();
 
 		private transient int size = UNSET_INT;
@@ -354,7 +357,7 @@ public abstract class IqlElement extends IqlUnique {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
-			checkCondition(alternatives.size()>1, IqlProperties.ALTERNATIVES, "Must have at least 2 alternatives");
+			checkCondition(alternatives.size()>1, IqlTags.ALTERNATIVES, "Must have at least 2 alternatives");
 
 			for(int i=0; i<alternatives.size(); i++) {
 				checkNestedNotNull(alternatives.get(i), "alternatives["+i+"]");

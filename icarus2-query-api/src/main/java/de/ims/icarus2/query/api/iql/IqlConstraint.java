@@ -38,11 +38,11 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public abstract class IqlConstraint extends IqlUnique {
 
-	@JsonProperty(IqlProperties.SOLVED)
+	@JsonProperty(IqlTags.SOLVED)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<Boolean> solved = Optional.empty();
 
-	@JsonProperty(IqlProperties.SOLVED_AS)
+	@JsonProperty(IqlTags.SOLVED_AS)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<Boolean> solvedAs = Optional.empty();
 
@@ -57,13 +57,13 @@ public abstract class IqlConstraint extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkCondition(!solvedAs.isPresent() || solved.isPresent(), IqlProperties.SOLVED_AS,
+		checkCondition(!solvedAs.isPresent() || solved.isPresent(), IqlTags.SOLVED_AS,
 				"cannot give 'solvedAs' value if constraint is not marked 'solved'");
 	}
 
 	public static class IqlPredicate extends IqlConstraint {
 
-		@JsonProperty(value=IqlProperties.EXPRESSION, required=true)
+		@JsonProperty(value=IqlTags.EXPRESSION, required=true)
 		private IqlExpression expression;
 
 		@Override
@@ -76,16 +76,16 @@ public abstract class IqlConstraint extends IqlUnique {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
-			checkNestedNotNull(expression, IqlProperties.EXPRESSION);
+			checkNestedNotNull(expression, IqlTags.EXPRESSION);
 		}
 	}
 
 	public static class IqlTerm extends IqlConstraint {
 
-		@JsonProperty(value=IqlProperties.ITEMS, required=true)
+		@JsonProperty(value=IqlTags.ITEMS, required=true)
 		private final List<IqlConstraint> items = new ArrayList<>();
 
-		@JsonProperty(value=IqlProperties.OPERATION, required=true)
+		@JsonProperty(value=IqlTags.OPERATION, required=true)
 		private BooleanOperation operation;
 
 		@Override
@@ -102,7 +102,7 @@ public abstract class IqlConstraint extends IqlUnique {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
-			checkNotNull(operation, IqlProperties.OPERATION);
+			checkNotNull(operation, IqlTags.OPERATION);
 			checkCollectionNotEmpty(items, "items");
 		}
 	}

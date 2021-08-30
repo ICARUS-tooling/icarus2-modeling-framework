@@ -41,11 +41,11 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 
 	public static class IqlMarkerCall extends IqlMarker {
 
-		@JsonProperty(value=IqlProperties.NAME, required=true)
+		@JsonProperty(value=IqlTags.NAME, required=true)
 		@JsonInclude(Include.NON_EMPTY)
 		private String name;
 
-		@JsonProperty(IqlProperties.ARGUMENTS)
+		@JsonProperty(IqlTags.ARGUMENTS)
 		@JsonInclude(Include.NON_DEFAULT)
 		private Number[] arguments = EMPTY;
 
@@ -58,7 +58,7 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 		public void checkIntegrity() {
 			super.checkIntegrity();
 
-			checkStringNotEmpty(name, IqlProperties.NAME);
+			checkStringNotEmpty(name, IqlTags.NAME);
 		}
 
 		public String getName() { return name; }
@@ -75,11 +75,11 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 
 	public static class IqlMarkerExpression extends IqlMarker {
 
-		@JsonProperty(IqlProperties.ITEMS)
+		@JsonProperty(IqlTags.ITEMS)
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlMarker> items = new ArrayList<>();
 
-		@JsonProperty(value=IqlProperties.EXPRESSION_TYPE, required=true)
+		@JsonProperty(value=IqlTags.EXPRESSION_TYPE, required=true)
 		private MarkerExpressionType expressionType;
 
 		@Override
@@ -88,10 +88,10 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
-			checkCondition(items.size()>1, IqlProperties.ITEMS, "Must have at least 2 items");
+			checkCondition(items.size()>1, IqlTags.ITEMS, "Must have at least 2 items");
 
 			checkCollection(items);
-			checkNotNull(expressionType, IqlProperties.EXPRESSION_TYPE);
+			checkNotNull(expressionType, IqlTags.EXPRESSION_TYPE);
 		}
 
 		public List<IqlMarker> getItems() { return CollectionUtils.unmodifiableListProxy(items); }

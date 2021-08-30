@@ -77,26 +77,26 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 		}
 	};
 
-	@JsonProperty(value=IqlProperties.QUANTIFIER_TYPE, required=true)
+	@JsonProperty(value=IqlTags.QUANTIFIER_TYPE, required=true)
 	private QuantifierType quantifierType;
 
-	@JsonProperty(value=IqlProperties.QUANTIFIER_MODIFIER)
+	@JsonProperty(value=IqlTags.QUANTIFIER_MODIFIER)
 	@JsonInclude(Include.NON_DEFAULT)
 	private QuantifierModifier quantifierModifier = QuantifierModifier.GREEDY;
 
-	@JsonProperty(IqlProperties.VALUE)
+	@JsonProperty(IqlTags.VALUE)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt value = OptionalInt.empty();
 
-	@JsonProperty(IqlProperties.LOWER_BOUND)
+	@JsonProperty(IqlTags.LOWER_BOUND)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt lowerBound = OptionalInt.empty();
 
-	@JsonProperty(IqlProperties.UPPER_BOUND)
+	@JsonProperty(IqlTags.UPPER_BOUND)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalInt upperBound = OptionalInt.empty();
 
-	@JsonProperty(IqlProperties.DISCONTINUOUS)
+	@JsonProperty(IqlTags.DISCONTINUOUS)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean discontinuous = false;
 
@@ -106,26 +106,26 @@ public class IqlQuantifier extends AbstractIqlQueryElement {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkNotNull(quantifierType, IqlProperties.QUANTIFIER_TYPE);
+		checkNotNull(quantifierType, IqlTags.QUANTIFIER_TYPE);
 		switch (quantifierType) {
 		case ALL:
-			checkCondition(!discontinuous, IqlProperties.DISCONTINUOUS,
+			checkCondition(!discontinuous, IqlTags.DISCONTINUOUS,
 					"Cannot set 'discontinuous' flag for universal quantification");
-//			checkNotPresent(value, IqlProperties.VALUE);
-//			checkNotPresent(lowerBound, IqlProperties.LOWER_BOUND);
-//			checkNotPresent(upperBound, IqlProperties.UPPER_BOUND);
+//			checkNotPresent(value, IqlTags.VALUE);
+//			checkNotPresent(lowerBound, IqlTags.LOWER_BOUND);
+//			checkNotPresent(upperBound, IqlTags.UPPER_BOUND);
 			break;
 		case EXACT:
 		case AT_LEAST:
 		case AT_MOST:
-			checkPresent(value, IqlProperties.VALUE);
-//			checkNotPresent(lowerBound, IqlProperties.LOWER_BOUND);
-//			checkNotPresent(upperBound, IqlProperties.UPPER_BOUND);
+			checkPresent(value, IqlTags.VALUE);
+//			checkNotPresent(lowerBound, IqlTags.LOWER_BOUND);
+//			checkNotPresent(upperBound, IqlTags.UPPER_BOUND);
 			break;
 		case RANGE:
-			checkPresent(lowerBound, IqlProperties.LOWER_BOUND);
-			checkPresent(upperBound, IqlProperties.UPPER_BOUND);
-//			checkNotPresent(value, IqlProperties.VALUE);
+			checkPresent(lowerBound, IqlTags.LOWER_BOUND);
+			checkPresent(upperBound, IqlTags.UPPER_BOUND);
+//			checkNotPresent(value, IqlTags.VALUE);
 			break;
 		default:
 			throw new IcarusRuntimeException(GlobalErrorCode.INTERNAL_ERROR,

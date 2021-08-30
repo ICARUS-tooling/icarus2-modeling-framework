@@ -40,17 +40,17 @@ public class IqlLane extends IqlAliasedReference {
 	//TODO need a better mechanism for indicating proxy state
 	public static final String PROXY_NAME = "lane_proxy";
 
-	@JsonProperty(value=IqlProperties.LANE_TYPE, required=true)
+	@JsonProperty(value=IqlTags.LANE_TYPE, required=true)
 	private LaneType laneType;
 
-	@JsonProperty(value=IqlProperties.ELEMENT, required=true)
+	@JsonProperty(value=IqlTags.ELEMENT, required=true)
 	private IqlElement element;
 
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkNotNull(laneType, IqlProperties.LANE_TYPE);
-		checkNestedNotNull(element, IqlProperties.ELEMENT);
+		checkNotNull(laneType, IqlTags.LANE_TYPE);
+		checkNestedNotNull(element, IqlTags.ELEMENT);
 	}
 
 	@Override

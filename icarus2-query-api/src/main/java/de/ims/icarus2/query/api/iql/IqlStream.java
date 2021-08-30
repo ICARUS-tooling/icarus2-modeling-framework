@@ -46,21 +46,21 @@ public class IqlStream extends IqlUnique {
 	 * Indicates that the primary layer of this stream is meant to be
 	 * used as a primary layer in the global query result.
 	 */
-	@JsonProperty(IqlProperties.PRIMARY)
+	@JsonProperty(IqlTags.PRIMARY)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean primary = false;
 
 	/**
 	 * The source of data for this stream.
 	 */
-	@JsonProperty(value=IqlProperties.CORPUS, required=true)
+	@JsonProperty(value=IqlTags.CORPUS, required=true)
 	private IqlCorpus corpus;
 
 	/**
 	 * Vertical filtering via declaring a subset of the entire
 	 * layer graph defined by the {@link #corpora} list.
 	 */
-	@JsonProperty(IqlProperties.LAYERS)
+	@JsonProperty(IqlTags.LAYERS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlLayer> layers = new ArrayList<>();
 
@@ -69,27 +69,27 @@ public class IqlStream extends IqlUnique {
 	 * {@link #layers} list. Takes priority over {@link #layers}
 	 * when both are present.
 	 */
-	@JsonProperty(IqlProperties.SCOPE)
+	@JsonProperty(IqlTags.SCOPE)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlScope> scope = Optional.empty();
 
 	/**
 	 * The raw unprocessed query payload as provided by the user.
 	 */
-	@JsonProperty(value=IqlProperties.RAW_PAYLOAD)
+	@JsonProperty(value=IqlTags.RAW_PAYLOAD)
 	private Optional<String> rawPayload;
 
 	/**
 	 * The processed query payload after being parsed by the query engine.
 	 */
-	@JsonProperty(IqlProperties.PAYLOAD)
+	@JsonProperty(IqlTags.PAYLOAD)
 	@JsonInclude(Include.NON_EMPTY)
 	private Optional<IqlPayload> payload = Optional.empty();
 
 	/**
 	 * The raw unprocessed grouping definitions if provided.
 	 */
-	@JsonProperty(IqlProperties.RAW_GROUPING)
+	@JsonProperty(IqlTags.RAW_GROUPING)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> rawGrouping = Optional.empty();
 
@@ -97,7 +97,7 @@ public class IqlStream extends IqlUnique {
 	 * The processed grouping definitions if {@link #rawGrouping}
 	 * was set or if it was provided directly.
 	 */
-	@JsonProperty(IqlProperties.GROUPING)
+	@JsonProperty(IqlTags.GROUPING)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlGroup> grouping = new ArrayList<>();
 
@@ -109,7 +109,7 @@ public class IqlStream extends IqlUnique {
 	 * honoring this limitation will cause an exception on evaluation
 	 * time as those types of checks are outside the scope of this layer.
 	 */
-	@JsonProperty(IqlProperties.RAW_RESULT)
+	@JsonProperty(IqlTags.RAW_RESULT)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> rawResult = Optional.empty();
 
@@ -119,7 +119,7 @@ public class IqlStream extends IqlUnique {
 	 * The minimal result specification is a declaration of the desired
 	 * result type.
 	 */
-	@JsonProperty(value=IqlProperties.RESULT, required=true)
+	@JsonProperty(value=IqlTags.RESULT, required=true)
 	private IqlResult result;
 
 	/**
@@ -138,19 +138,19 @@ public class IqlStream extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkNestedNotNull(corpus, IqlProperties.CORPUS);
+		checkNestedNotNull(corpus, IqlTags.CORPUS);
 		checkNestedNotNull(result, "result");
 
 		checkCollection(layers);
 		checkCollection(grouping);
 		checkOptionalNested(scope);
 		checkOptionalNested(payload);
-		checkOptionalStringNotEmpty(rawPayload, IqlProperties.RAW_PAYLOAD);
-		checkOptionalStringNotEmpty(rawGrouping, IqlProperties.RAW_GROUPING);
-		checkOptionalStringNotEmpty(rawResult, IqlProperties.RAW_RESULT);
+		checkOptionalStringNotEmpty(rawPayload, IqlTags.RAW_PAYLOAD);
+		checkOptionalStringNotEmpty(rawGrouping, IqlTags.RAW_GROUPING);
+		checkOptionalStringNotEmpty(rawResult, IqlTags.RAW_RESULT);
 
 		checkCondition(rawPayload.isPresent() || payload.isPresent(),
-				IqlProperties.PAYLOAD, "Must either define a raw payload or provide fully processed payload element");
+				IqlTags.PAYLOAD, "Must either define a raw payload or provide fully processed payload element");
 	}
 
 	public boolean isProcessed() { return processed; }

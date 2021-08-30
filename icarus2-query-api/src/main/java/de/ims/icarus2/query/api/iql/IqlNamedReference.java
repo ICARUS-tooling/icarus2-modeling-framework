@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public abstract class IqlNamedReference extends IqlUnique {
 
-	@JsonProperty(value=IqlProperties.NAME, required=true)
+	@JsonProperty(value=IqlTags.NAME, required=true)
 	private String name;
 
 	public String getName() { return name; }
@@ -41,6 +41,6 @@ public abstract class IqlNamedReference extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(name, IqlProperties.NAME);
+		checkStringNotEmpty(name, IqlTags.NAME);
 	}
 }

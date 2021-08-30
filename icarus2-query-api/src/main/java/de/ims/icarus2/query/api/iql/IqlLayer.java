@@ -33,7 +33,7 @@ public class IqlLayer extends IqlAliasedReference {
 	 * Indicates that this layer is meant to be used as a primary layer
 	 * in the query result.
 	 */
-	@JsonProperty(IqlProperties.PRIMARY)
+	@JsonProperty(IqlTags.PRIMARY)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean primary = false;
 
@@ -45,7 +45,7 @@ public class IqlLayer extends IqlAliasedReference {
 	 * {@link IqlStream#getLayers() layers} declaration, as in that case all member subgraphs
 	 * for each layer are already being added to the global scope!
 	 */
-	@JsonProperty(IqlProperties.ALL_MEMBERS)
+	@JsonProperty(IqlTags.ALL_MEMBERS)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean allMembers = false;
 

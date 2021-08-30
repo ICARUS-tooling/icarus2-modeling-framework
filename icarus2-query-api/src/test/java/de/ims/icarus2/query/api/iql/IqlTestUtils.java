@@ -70,37 +70,31 @@ public class IqlTestUtils {
 		return disjunction;
 	}
 
-	public static IqlGrouping grouping(IqlElement...elements) {
+	public static IqlGrouping grouping(IqlElement element) {
 		IqlGrouping grouping = new IqlGrouping();
 		setId(grouping);
-		if(elements.length==1) {
-			grouping.setElement(elements[0]);
-		} else {
-			grouping.setElement(set(false, elements));
-		}
+		grouping.setElement(element);
 		return grouping;
 	}
 
-	public static IqlSequence set(boolean adjacent, IqlElement...elements) {
-		return adjacent ? adjacent(elements) : ordered(elements);
-	}
-
-	public static IqlSequence unordered(IqlElement...elements) {
+	private static IqlSequence sequence(IqlElement...elements) {
 		IqlSequence sequence = new IqlSequence();
 		setId(sequence);
 		Stream.of(elements).forEach(sequence::addElement);
 		return sequence;
 	}
 
-	public static IqlSequence adjacent(IqlElement...elements) {
-		IqlSequence sequence = unordered(elements);
-		sequence.setArrangement(NodeArrangement.ADJACENT);
+	public static IqlSequence unordered(boolean adjacent, IqlElement...elements) {
+		IqlSequence sequence = sequence(elements);
+		sequence.addArrangement(NodeArrangement.UNORDERED);
+		if(adjacent) sequence.addArrangement(NodeArrangement.ADJACENT);
 		return sequence;
 	}
 
-	public static IqlSequence ordered(IqlElement...elements) {
-		IqlSequence sequence = unordered(elements);
-		sequence.setArrangement(NodeArrangement.ORDERED);
+	public static IqlSequence ordered(boolean adjacent, IqlElement...elements) {
+		IqlSequence sequence = sequence(elements);
+		sequence.addArrangement(NodeArrangement.ORDERED);
+		if(adjacent) sequence.addArrangement(NodeArrangement.ADJACENT);
 		return sequence;
 	}
 

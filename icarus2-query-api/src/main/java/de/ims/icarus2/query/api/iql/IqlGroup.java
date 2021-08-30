@@ -34,17 +34,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlGroup extends IqlUnique {
 
-	@JsonProperty(value=IqlProperties.GROUP_BY, required=true)
+	@JsonProperty(value=IqlTags.GROUP_BY, required=true)
 	private IqlExpression groupBy;
 
-	@JsonProperty(IqlProperties.FILTER_ON)
+	@JsonProperty(IqlTags.FILTER_ON)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlExpression> filterOn = Optional.empty();
 
-	@JsonProperty(value=IqlProperties.LABEL, required=true)
+	@JsonProperty(value=IqlTags.LABEL, required=true)
 	private String label;
 
-	@JsonProperty(IqlProperties.DEFAULT_VALUE)
+	@JsonProperty(IqlTags.DEFAULT_VALUE)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlExpression> defaultValue = Optional.empty();
 
@@ -54,8 +54,8 @@ public class IqlGroup extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(label, IqlProperties.LABEL);
-		checkNestedNotNull(groupBy, IqlProperties.GROUP_BY);
+		checkStringNotEmpty(label, IqlTags.LABEL);
+		checkNestedNotNull(groupBy, IqlTags.GROUP_BY);
 
 		checkOptionalNested(filterOn);
 		checkOptionalNested(defaultValue);

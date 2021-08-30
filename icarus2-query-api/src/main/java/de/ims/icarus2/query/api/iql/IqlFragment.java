@@ -28,9 +28,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Deprecated
 public class IqlFragment extends AbstractIqlQueryElement {
 
-	@JsonProperty(IqlProperties.START)
+	@JsonProperty(IqlTags.START)
 	private int start;
-	@JsonProperty(IqlProperties.START)
+	@JsonProperty(IqlTags.START)
 	private int stop;
 
 	/**

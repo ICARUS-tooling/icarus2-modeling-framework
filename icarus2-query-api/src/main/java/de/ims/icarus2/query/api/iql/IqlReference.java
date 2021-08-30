@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public class IqlReference extends IqlNamedReference {
 
-	@JsonProperty(value=IqlProperties.REFERENCE_TYPE, required=true)
+	@JsonProperty(value=IqlTags.REFERENCE_TYPE, required=true)
 	private ReferenceType referenceType;
 
 	public ReferenceType getReferenceType() { return referenceType; }

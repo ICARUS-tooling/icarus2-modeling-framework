@@ -46,28 +46,28 @@ public class IqlQuery extends IqlUnique {
 	 * Specifies the IQL dialect to be used. When not defined, the framework
 	 * will default to {@value IqlConstants#DEFAULT_VERSION}.
 	 */
-	@JsonProperty(IqlProperties.DIALECT)
+	@JsonProperty(IqlTags.DIALECT)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> dialect = Optional.empty();
 
 	/**
 	 * Import declarations for additional extensions or feature sets.
 	 */
-	@JsonProperty(IqlProperties.IMPORTS)
+	@JsonProperty(IqlTags.IMPORTS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlImport> imports = new ArrayList<>();
 
 	/**
 	 * Configuration of properties and/or switches.
 	 */
-	@JsonProperty(IqlProperties.SETUP)
+	@JsonProperty(IqlTags.SETUP)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlProperty> setup = new ArrayList<>();
 
 	/**
 	 * Basic definition of the streams/corpora to be used for this query
 	 */
-	@JsonProperty(value=IqlProperties.STREAMS, required=true)
+	@JsonProperty(value=IqlTags.STREAMS, required=true)
 	private final List<IqlStream> streams = new ArrayList<>();
 
 	//TODO add entries for pre and post processing of data (outside of result processing)
@@ -79,7 +79,7 @@ public class IqlQuery extends IqlUnique {
 	 * <p>
 	 * Note that those variables are implicitly read-only!
 	 */
-	@JsonProperty(IqlProperties.EMBEDDED_DATA)
+	@JsonProperty(IqlTags.EMBEDDED_DATA)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlData> embeddedData = new ArrayList<>();
 
@@ -89,7 +89,7 @@ public class IqlQuery extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkCollectionNotEmpty(streams, IqlProperties.STREAMS);
+		checkCollectionNotEmpty(streams, IqlTags.STREAMS);
 
 		checkOptionalStringNotEmpty(dialect, "dialect");
 		checkCollection(imports);

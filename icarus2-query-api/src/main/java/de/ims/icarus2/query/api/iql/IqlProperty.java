@@ -36,14 +36,14 @@ public class IqlProperty extends AbstractIqlQueryElement {
 	/**
 	 * Mandatory key used to identify this property or switch
 	 */
-	@JsonProperty(value=IqlProperties.KEY, required=true)
+	@JsonProperty(value=IqlTags.KEY, required=true)
 	private String key;
 
 	/**
 	 * Value to set for this property if it is not a switch.
 	 * Can be either a String or any primitive value.
 	 */
-	@JsonProperty(IqlProperties.VALUE)
+	@JsonProperty(IqlTags.VALUE)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<Object> value = Optional.empty();
 
@@ -53,7 +53,7 @@ public class IqlProperty extends AbstractIqlQueryElement {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(key, IqlProperties.KEY);
+		checkStringNotEmpty(key, IqlTags.KEY);
 	}
 
 	public String getKey() { return key; }

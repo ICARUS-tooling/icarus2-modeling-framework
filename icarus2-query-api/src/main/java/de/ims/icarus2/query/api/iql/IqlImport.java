@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlImport extends IqlNamedReference {
 
-	@JsonProperty(IqlProperties.OPTIONAL)
+	@JsonProperty(IqlTags.OPTIONAL)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean optional = false;
 

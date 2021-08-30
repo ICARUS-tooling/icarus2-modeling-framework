@@ -39,7 +39,7 @@ public class IqlCorpus extends IqlNamedReference {
 	 * Describes a persistent identifier stemming from a third-party
 	 * storage system or referencing service.
 	 */
-	@JsonProperty(value=IqlProperties.PID)
+	@JsonProperty(value=IqlTags.PID)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> pid = Optional.empty();
 
@@ -53,7 +53,7 @@ public class IqlCorpus extends IqlNamedReference {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 
-		checkOptionalStringNotEmpty(pid, IqlProperties.PID);
+		checkOptionalStringNotEmpty(pid, IqlTags.PID);
 	}
 
 	public Optional<String> getPid() { return pid; }

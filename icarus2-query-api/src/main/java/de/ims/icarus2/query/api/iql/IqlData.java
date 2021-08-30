@@ -37,19 +37,19 @@ public class IqlData extends IqlNamedReference {
 
 	public static final String DEFAULT_CODEC = "hex";
 
-	@JsonProperty(value=IqlProperties.CONTENT, required=true)
+	@JsonProperty(value=IqlTags.CONTENT, required=true)
 	private String content;
 
 	/** Defines how to interpret the 'content' string. Defaults to {@link #DEFAULT_CODEC}. */
-	@JsonProperty(value=IqlProperties.CODEC)
+	@JsonProperty(value=IqlTags.CODEC)
 	@JsonInclude(Include.NON_DEFAULT)
 	private String codec = DEFAULT_CODEC;
 
-	@JsonProperty(IqlProperties.CHECKSUM)
+	@JsonProperty(IqlTags.CHECKSUM)
 	@JsonInclude(Include.NON_EMPTY)
 	private Optional<String> checksum = Optional.empty();
 
-	@JsonProperty(IqlProperties.CHECKSUM_TYPE)
+	@JsonProperty(IqlTags.CHECKSUM_TYPE)
 	@JsonInclude(Include.NON_EMPTY)
 	private Optional<ChecksumType> checksumType = Optional.empty();
 
@@ -59,10 +59,10 @@ public class IqlData extends IqlNamedReference {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(content, IqlProperties.CONTENT);
-		checkStringNotEmpty(codec, IqlProperties.CODEC);
+		checkStringNotEmpty(content, IqlTags.CONTENT);
+		checkStringNotEmpty(codec, IqlTags.CODEC);
 
-		checkOptionalStringNotEmpty(checksum, IqlProperties.CHECKSUM);
+		checkOptionalStringNotEmpty(checksum, IqlTags.CHECKSUM);
 	}
 
 	public String getContent() { return content; }

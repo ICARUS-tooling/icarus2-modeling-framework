@@ -46,14 +46,14 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	 * might be redundant (e.g. when using the member references as identifiers for tree nodes
 	 * who already are structurally distinct), but can still be used to make that fact explicit.
 	 */
-	@JsonProperty(IqlProperties.DISTINCT)
+	@JsonProperty(IqlTags.DISTINCT)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean distinct = false;
 
 	/**
 	 * Reference to the layer the members should be bound to.
 	 */
-	@JsonProperty(value=IqlProperties.TARGET, required=true)
+	@JsonProperty(value=IqlTags.TARGET, required=true)
 	private String target;
 
 	/**
@@ -62,7 +62,7 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	 * Note that the {@link #getTarget()} of this binding must resolve to
 	 * a structure layer in order for this to work!
 	 */
-	@JsonProperty(IqlProperties.EDGES)
+	@JsonProperty(IqlTags.EDGES)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean edges = false;
 
@@ -70,7 +70,7 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	 * List of the actual member variables that should be bound
 	 * to the specified {@link #target target layer}.
 	 */
-	@JsonProperty(value=IqlProperties.MEMBERS, required=true)
+	@JsonProperty(value=IqlTags.MEMBERS, required=true)
 	private final List<IqlReference> members = new ArrayList<>();
 
 	@Override
@@ -79,8 +79,8 @@ public class IqlBinding extends AbstractIqlQueryElement {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(target, IqlProperties.TARGET);
-		checkCollectionNotEmpty(members, IqlProperties.MEMBERS);
+		checkStringNotEmpty(target, IqlTags.TARGET);
+		checkCollectionNotEmpty(members, IqlTags.MEMBERS);
 	}
 
 	public boolean isDistinct() { return distinct; }

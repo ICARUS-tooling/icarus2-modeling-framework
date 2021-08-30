@@ -41,22 +41,22 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class IqlResult extends AbstractIqlQueryElement {
 
-	@JsonProperty(value=IqlProperties.RESULT_TYPES, required=true)
+	@JsonProperty(value=IqlTags.RESULT_TYPES, required=true)
 	private final Set<ResultType> resultTypes = new HashSet<>();
 
-	@JsonProperty(IqlProperties.RESULT_INSTRUCTIONS)
+	@JsonProperty(IqlTags.RESULT_INSTRUCTIONS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlResultInstruction> resultInstructions = new ArrayList<>();
 
-	@JsonProperty(IqlProperties.LIMIT)
+	@JsonProperty(IqlTags.LIMIT)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalLong limit = OptionalLong.empty();
 
-	@JsonProperty(IqlProperties.PERCENT)
+	@JsonProperty(IqlTags.PERCENT)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean percent = false;
 
-	@JsonProperty(IqlProperties.SORTINGS)
+	@JsonProperty(IqlTags.SORTINGS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlSorting> sortings = new ArrayList<>();
 

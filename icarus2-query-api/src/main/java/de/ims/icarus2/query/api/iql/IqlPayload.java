@@ -45,43 +45,43 @@ import de.ims.icarus2.util.strings.StringResource;
  */
 public class IqlPayload extends IqlUnique {
 
-	@JsonProperty(value=IqlProperties.QUERY_TYPE, required=true)
+	@JsonProperty(value=IqlTags.QUERY_TYPE, required=true)
 	private QueryType queryType;
 
-	@JsonProperty(value=IqlProperties.QUERY_MODIFIER)
+	@JsonProperty(value=IqlTags.QUERY_MODIFIER)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<QueryModifier> queryModifier = Optional.empty();
 
-	@JsonProperty(value=IqlProperties.LIMIT)
+	@JsonProperty(value=IqlTags.LIMIT)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalLong limit = OptionalLong.empty();
 
-	@JsonProperty(IqlProperties.NAME)
+	@JsonProperty(IqlTags.NAME)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> name = Optional.empty();
 
-	@JsonProperty(value=IqlProperties.MATCH_FLAG)
+	@JsonProperty(value=IqlTags.MATCH_FLAG)
 	@JsonInclude(Include.NON_EMPTY)
 	private final EnumSet<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 
 	/**
 	 * All the bindings to be usable for this query, if defined.
 	 */
-	@JsonProperty(IqlProperties.BINDINGS)
+	@JsonProperty(IqlTags.BINDINGS)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlBinding> bindings = new ArrayList<>();
 
-	@JsonProperty(IqlProperties.LANES)
+	@JsonProperty(IqlTags.LANES)
 	@JsonInclude(Include.NON_EMPTY)
 	private final List<IqlLane> lanes = new ArrayList<>();
 
 	// Pre-search filter (not compatible with plain constraints!!)
-	@JsonProperty(IqlProperties.FILTER)
+	@JsonProperty(IqlTags.FILTER)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlConstraint> filter = Optional.empty();
 
 	// Either plain or global constraints
-	@JsonProperty(IqlProperties.CONSTRAINT)
+	@JsonProperty(IqlTags.CONSTRAINT)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<IqlConstraint> constraint = Optional.empty();
 
@@ -91,13 +91,13 @@ public class IqlPayload extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkNotNull(queryType, IqlProperties.QUERY_TYPE);
-		checkOptionalStringNotEmpty(name, IqlProperties.NAME);
+		checkNotNull(queryType, IqlTags.QUERY_TYPE);
+		checkOptionalStringNotEmpty(name, IqlTags.NAME);
 
 		if(queryType==QueryType.ALL) {
-			checkCondition(!constraint.isPresent(), IqlProperties.CONSTRAINT,
+			checkCondition(!constraint.isPresent(), IqlTags.CONSTRAINT,
 					"must not define a global 'constraint' entry if query type is 'all'");
-			checkCondition(lanes.isEmpty(), IqlProperties.LANES,
+			checkCondition(lanes.isEmpty(), IqlTags.LANES,
 					"must not define a global 'lanes' entry if query type is 'all'");
 		} else {
 			checkCondition(constraint.isPresent() || !lanes.isEmpty(), "constraint/lanes",

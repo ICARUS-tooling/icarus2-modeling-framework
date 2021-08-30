@@ -36,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public abstract class IqlAliasedReference extends IqlNamedReference {
 
-	@JsonProperty(IqlProperties.ALIAS)
+	@JsonProperty(IqlTags.ALIAS)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> alias = Optional.empty();
 
@@ -48,6 +48,6 @@ public abstract class IqlAliasedReference extends IqlNamedReference {
 	public void checkIntegrity() {
 		super.checkIntegrity();
 
-		checkOptionalStringNotEmpty(alias, IqlProperties.ALIAS);
+		checkOptionalStringNotEmpty(alias, IqlTags.ALIAS);
 	}
 }

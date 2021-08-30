@@ -35,10 +35,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IqlExpression extends AbstractIqlQueryElement {
 
-	@JsonProperty(value=IqlProperties.CONTENT, required=true)
+	@JsonProperty(value=IqlTags.CONTENT, required=true)
 	private String content;
 
-	@JsonProperty(IqlProperties.RETURN_TYPE)
+	@JsonProperty(IqlTags.RETURN_TYPE)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<Class<?>> returnType = Optional.empty();
 
@@ -48,7 +48,7 @@ public class IqlExpression extends AbstractIqlQueryElement {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkStringNotEmpty(content, IqlProperties.CONTENT);
+		checkStringNotEmpty(content, IqlTags.CONTENT);
 	}
 
 	public String getContent() { return content; }

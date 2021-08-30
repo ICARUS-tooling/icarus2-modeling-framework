@@ -38,7 +38,7 @@ public class IqlScope extends IqlUnique {
 	/**
 	 * Defines the members of this scope.
 	 */
-	@JsonProperty(value=IqlProperties.LAYERS, required=true)
+	@JsonProperty(value=IqlTags.LAYERS, required=true)
 	private List<IqlLayer> layers = new ArrayList<>();
 
 	@Override
@@ -47,7 +47,7 @@ public class IqlScope extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkCollectionNotEmpty(layers, IqlProperties.LAYERS);
+		checkCollectionNotEmpty(layers, IqlTags.LAYERS);
 	}
 
 	public List<IqlLayer> getLayers() { return CollectionUtils.unmodifiableListProxy(layers); }
