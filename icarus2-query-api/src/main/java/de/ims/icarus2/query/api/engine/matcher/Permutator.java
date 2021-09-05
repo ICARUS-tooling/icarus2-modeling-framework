@@ -168,7 +168,7 @@ public abstract class Permutator {
 		}
 
 		@Override
-		public boolean skip(int index) { return (cursor = skips[cursor][index]) != UNSET_INT; }
+		public boolean skip(int index) { return cursor!=UNSET_INT && cursor<data.length && (cursor = skips[cursor][index]) != UNSET_INT; }
 
 		@Override
 		public void reset() { cursor = 0; }
@@ -303,14 +303,30 @@ public abstract class Permutator {
 				{3, 2, 1, 0},
 		};
 		static final int[][] SKIPS = {
-				{ 2,  1,  1},
-				{ 2,  2,  2},
-				{ 4,  3,  3},
-				{ 4,  4,  4},
-				{-1,  5,  5},
-				{-1, -1, -1},
-
-				//TODO
+				{6, 2, 1, 1},
+				{6, 2, 2, 2},
+				{6, 4, 3, 3},
+				{6, 4, 4, 4},
+				{6, 6, 5, 5},
+				{6, 6, 6, 6},
+				{12, 8, 7, 7},
+				{12, 8, 8, 8},
+				{12, 10, 9, 9},
+				{12, 10, 10, 10},
+				{12, 12, 11, 11},
+				{12, 12, 12, 12},
+				{18, 14, 13, 13},
+				{18, 14, 14, 14},
+				{18, 16, 15, 15},
+				{18, 16, 16, 16},
+				{18, 18, 17, 17},
+				{18, 18, 18, 18},
+				{-1, 20, 19, 19},
+				{-1, 20, 20, 20},
+				{-1, 22, 21, 21},
+				{-1, 22, 22, 22},
+				{-1, -1, 23, 23},
+				{-1, -1, -1, -1},
 		};
 	}
 }

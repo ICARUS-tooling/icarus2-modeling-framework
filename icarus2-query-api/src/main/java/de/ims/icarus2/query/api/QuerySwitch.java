@@ -38,7 +38,7 @@ public enum QuerySwitch {
 	STRING_DIRECTION_RLT("string.direction.right2left", "Signals the engine that all string oeprations need to be performed right-to-left."),
 	STRING_UNICODE_OFF("string.unicode.off", "Disables support for unicode code points."),
 
-	PREDICATES_OPTIMIZE_OFF("predicates.optimize.off", "Disables the engines ability to exit boolean rpedicates early"
+	PREDICATES_OPTIMIZE_OFF("predicates.optimize.off", "Disables the engines ability to exit boolean predicates early"
 			+ " when the result already reached a stable state (e.g. when a single conjunction element evaluates to false)."),
 
 	AUTOCAST_OFF("autocast.off", "Disables automatic casting between compatible or convertible types."),
