@@ -8546,9 +8546,12 @@ class SequencePatternTest {
 					"Y--",
 					"-Y-",
 
-					"-YX",
-					"Y-X",
-					"YX-",
+					"-YY",
+					"-XX",
+					"Y-Y",
+					"X-X",
+					"YY-",
+					"XX-",
 				})
 				@DisplayName("Two nodes with no matches")
 				void testDualNodeFail(String target) {
@@ -8570,6 +8573,10 @@ class SequencePatternTest {
 					"-XY-, 1, 2",
 					"XY--, 0, 1",
 					"X--Y, 0, 3",
+
+					"-YX, 2, 1",
+					"Y-X, 2, 0",
+					"YX-, 1, 0",
 				})
 				@DisplayName("Two nodes at various positions")
 				void testDualNodeHits(String target, int hitX, int hitY) {
@@ -9290,10 +9297,10 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'[][]', XX, 1, { {{0}} {{1}} }",
-				"'[][]', XXX, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
-				"'[][][]', XXX, 1, { {{0}} {{1}} {{2}} }",
-				"'[][][][]', XXXX, 1, { {{0}} {{1}} {{2}} {{3}} }",
+				"'ORDERED [][]', XX, 1, { {{0}} {{1}} }",
+				"'ORDERED [][]', XXX, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'ORDERED [][][]', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'ORDERED [][][][]', XXXX, 1, { {{0}} {{1}} {{2}} {{3}} }",
 			})
 			@DisplayName("set of blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -9309,44 +9316,44 @@ class SequencePatternTest {
 				 */
 
 				// Pure singular reluctance
-				"'[?][?]', X, 1, { {{}} }",
-				"'[?][?]', XY, 3, { {{}{}{}} {{}{}{}} }",
+				"'ORDERED [?][?]', X, 1, { {{}} }",
+				"'ORDERED [?][?]', XY, 3, { {{}{}{}} {{}{}{}} }",
 
 				// Mandatory node with following optional
-				"'[][?]', XY, 2, { {{0}{1}} {{}{}} }",
-				"'[][?]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'ORDERED [][?]', XY, 2, { {{0}{1}} {{}{}} }",
+				"'ORDERED [][?]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
 
 				// Mandatory node with following optional expansion
-				"'[][*]', XY, 2, { {{0}{1}} {{}{}} }",
-				"'[][*]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'ORDERED [][*]', XY, 2, { {{0}{1}} {{}{}} }",
+				"'ORDERED [][*]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
 
 				// Mandatory node with following dummy node with reluctant expansion
-				"'[][+]', XY, 1, { {{0}} {{1}} }",
-				"'[][+]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'ORDERED [][+]', XY, 1, { {{0}} {{1}} }",
+				"'ORDERED [][+]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
 
 				// Mandatory node after optional
-				"'[?][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'[?][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'ORDERED [?][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'ORDERED [?][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
 
 				// Mandatory node after optional expansion
-				"'[*][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'[*][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'ORDERED [*][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'ORDERED [*][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
 
 				// Mandatory node after dummy node with reluctant expansion
-				"'[+][]', XY, 1, { {{0}} {{1}} }",
-				"'[+][]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'ORDERED [+][]', XY, 1, { {{0}} {{1}} }",
+				"'ORDERED [+][]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate optional
-				"'[][?][]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'[][?][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'ORDERED [][?][]', XY, 1, { {{0}} {{}} {{1}} }",
+				"'ORDERED [][?][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate optional expansion
-				"'[][*][]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'[][*][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'ORDERED [][*][]', XY, 1, { {{0}} {{}} {{1}} }",
+				"'ORDERED [][*][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate dummy node with reluctant expansion
 				"'[][+][]', XY, 0, -",
-				"'[][+][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'ORDERED [][+][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
 			})
 			@DisplayName("set of dummy nodes")
 			void testDummyNodes(String query, String target, int matches,
@@ -9405,54 +9412,54 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'ADJACENT [][]', XYZ, 2, { {{0}{1}} {{1}{2}} }",
-				"'ADJACENT [][][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'ADJACENT ORDERED [][]', XYZ, 2, { {{0}{1}} {{1}{2}} }",
+				"'ADJACENT ORDERED [][][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
 				"'ADJACENT [$X][$Y]', XY, 1, { {{0}} {{1}} }",
 				"'ADJACENT [$X][$Y]', XXY, 1, { {{1}} {{2}} }",
 				"'ADJACENT [$X][$Y][$Z]', XYZ, 1, { {{0}} {{1}} {{2}} }",
 				"'ADJACENT [$X][$Y][$Z]', XYYZ, 0, -",
-				"'ADJACENT [$X][$Y][$Z]', XYYZXXYZZ, 1, { {{5}} {{6}} {{7}} }",
+				"'ADJACENT ORDERED [$X][$Y][$Z]', XYYZXXYZZ, 1, { {{5}} {{6}} {{7}} }",
 
 				// Dummy nodes and forcing reluctant expansion
 
 				// Mandatory node after optional
-				"'ADJACENT [?][]', XY, 2, { {{}{}} {{0}{1}} }",
-				"'ADJACENT [?][]', XYZ, 3, { {{}{}{}} {{0}{1}{2}} }",
-				"'ADJACENT [?][$Y]', XYZ, 2, { {{0}{}} {{1}{1}} }",
-				"'ADJACENT [?][$Y]', XXYZ, 2, { {{1}{}} {{2}{2}} }",
+				"'ADJACENT ORDERED [?][]', XY, 2, { {{}{}} {{0}{1}} }",
+				"'ADJACENT ORDERED [?][]', XYZ, 3, { {{}{}{}} {{0}{1}{2}} }",
+				"'ADJACENT ORDERED [?][$Y]', XYZ, 2, { {{0}{}} {{1}{1}} }",
+				"'ADJACENT ORDERED [?][$Y]', XXYZ, 2, { {{1}{}} {{2}{2}} }",
 
 				// Mandatory node after optional expansion
-				"'ADJACENT [*][]', XY, 2, { {{}{}} {{0}{1}} }",
-				"'ADJACENT [*][]', XYZ, 3, { {{}{}{}} {{0}{1}{2}} }",
-				"'ADJACENT [*][$Y]', XYZ, 2, { {{0}{}} {{1}{1}} }",
-				"'ADJACENT [*][$Y]', XXYZ, 3, { {{0;1}{1}{}} {{2}{2}{2}} }",
+				"'ADJACENT ORDERED [*][]', XY, 2, { {{}{}} {{0}{1}} }",
+				"'ADJACENT ORDERED [*][]', XYZ, 3, { {{}{}{}} {{0}{1}{2}} }",
+				"'ADJACENT ORDERED [*][$Y]', XYZ, 2, { {{0}{}} {{1}{1}} }",
+				"'ADJACENT ORDERED [*][$Y]', XXYZ, 3, { {{0;1}{1}{}} {{2}{2}{2}} }",
 
 				// Mandatory node after dummy node with reluctant expansion
-				"'ADJACENT [+][]', XY, 1, { {{0}} {{1}} }",
-				"'ADJACENT [+][]', XYZ, 2, { {{0}{1}} {{1}{2}} }",
+				"'ADJACENT ORDERED [+][]', XY, 1, { {{0}} {{1}} }",
+				"'ADJACENT ORDERED [+][]', XYZ, 2, { {{0}{1}} {{1}{2}} }",
 				"'ADJACENT [+][$Y]', XYZ, 1, { {{0}} {{1}} }",
-				"'ADJACENT [+][$Y]', XXYZ, 2, { {{0;1}{1}} {{2}{2}} }",
+				"'ADJACENT ORDERED [+][$Y]', XXYZ, 2, { {{0;1}{1}} {{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate optional
-				"'ADJACENT [][?][]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'ADJACENT [][?][]', XYZ, 2, { {{0}{1}} {{}{}} {{1}{2}} }",
-				"'ADJACENT [$X][?][$Y]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'ADJACENT [$X][?][$Y]', X-Y, 1, { {{0}} {{1}} {{2}} }",
+				"'ADJACENT ORDERED [][?][]', XY, 1, { {{0}} {{}} {{1}} }",
+				"'ADJACENT ORDERED [][?][]', XYZ, 2, { {{0}{1}} {{}{}} {{1}{2}} }",
+				"'ADJACENT ORDERED [$X][?][$Y]', XY, 1, { {{0}} {{}} {{1}} }",
+				"'ADJACENT ORDERED [$X][?][$Y]', X-Y, 1, { {{0}} {{1}} {{2}} }",
 				"'ADJACENT [$X][?][$Y]', X--Y, 0, -",
 
 				// Mandatory nodes surrounding intermediate optional expansion
-				"'ADJACENT [][*][]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'ADJACENT [][*][]', XYZ, 2, { {{0}{1}} {{}{}} {{1}{2}} }",
-				"'ADJACENT [$X][*][$Y]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'ADJACENT [$X][*][$Y]', X-Y, 1, { {{0}} {{1}} {{2}} }",
-				"'ADJACENT [$X][*][$Y]', X--Y, 1, { {{0}} {{1;2}} {{3}} }",
+				"'ADJACENT ORDERED [][*][]', XY, 1, { {{0}} {{}} {{1}} }",
+				"'ADJACENT ORDERED [][*][]', XYZ, 2, { {{0}{1}} {{}{}} {{1}{2}} }",
+				"'ADJACENT ORDERED [$X][*][$Y]', XY, 1, { {{0}} {{}} {{1}} }",
+				"'ADJACENT ORDERED [$X][*][$Y]', X-Y, 1, { {{0}} {{1}} {{2}} }",
+				"'ADJACENT ORDERED [$X][*][$Y]', X--Y, 1, { {{0}} {{1;2}} {{3}} }",
 
 				// Mandatory nodes surrounding intermediate dummy node with reluctant expansion
 				"'ADJACENT [][+][]', XY, 0, -",
-				"'ADJACENT [][+][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'ADJACENT ORDERED [][+][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
 				"'ADJACENT [$X][+][$Y]', XY, 0, -",
 				"'ADJACENT [$X][+][$Y]', X-Y, 1, { {{0}} {{1}} {{2}} }",
-				"'ADJACENT [$X][+][$Y]', X--Y, 1, { {{0}} {{1;2}} {{3}} }",
+				"'ADJACENT ORDERED [$X][+][$Y]', X--Y, 1, { {{0}} {{1;2}} {{3}} }",
 			})
 			@DisplayName("set with explicit arrangement")
 			void testArrangement(String query, String target, int matches,
@@ -9483,10 +9490,10 @@ class SequencePatternTest {
 				"'ADJACENT [isFirst,$X]<2+>[isInside(2,5),$X][isLast,$X]', XX-XX-XX, 0, -",
 				"'ADJACENT [isFirst,$X]<2+>[isInside(2,5),$Y][isLast,$Z]', XYYYYZ, 1, { {{0}} {{1;2;3;4}} {{5}} }",
 				"'ADJACENT <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', XYZZ, 0, -",
-				"'ADJACENT <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', ---XYZZ, 1, { {{3}} {{4}} {{5;6}} }",
-				"'ADJACENT <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', X---YZZ, 1, { {{0}} {{4}} {{5;6}} }",
-				"'ADJACENT <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', -XXXYZZ, 3, { {{1;2;3}{2;3}{3}} {{4}{4}{4}} {{5;6}{5;6}{5;6}} }",
-				"'ADJACENT <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', XXXXYZZ, 4, { {{0;1;2}{1;2;3}{2;3}{3}} {{4}{4}{4}{4}} {{5;6}{5;6}{5;6}{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', ---XYZZ, 1, { {{3}} {{4}} {{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', X---YZZ, 1, { {{0}} {{4}} {{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', -XXXYZZ, 3, { {{1;2;3}{2;3}{3}} {{4}{4}{4}} {{5;6}{5;6}{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', XXXXYZZ, 4, { {{0;1;2}{1;2;3}{2;3}{3}} {{4}{4}{4}{4}} {{5;6}{5;6}{5;6}{5;6}} }",
 			})
 			@DisplayName("set with explicit arrangement and quantified nodes with markers")
 			void testArrangementWithQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -9633,7 +9640,8 @@ class SequencePatternTest {
 			private SequencePattern.Builder _builder(String query) {
 				return builder(expand(query),
 						QueryConfig.fromQuery(query),
-						Option.KEEP_REDUNDANT_GROUPING);
+						Option.KEEP_REDUNDANT_GROUPING,
+						Option.DEFAULT_ORDERED_SEQUENCE);
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9808,15 +9816,22 @@ class SequencePatternTest {
 						Option.KEEP_REDUNDANT_GROUPING);
 			}
 
+//			private SequencePattern.Builder _ordered(String query) {
+//				return builder(expand(query),
+//						QueryConfig.fromQuery(query),
+//						Option.KEEP_REDUNDANT_GROUPING,
+//						Option.DEFAULT_ORDERED_SEQUENCE);
+//			}
+
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'[] {[][]}', XX, 0, -",
-				"'[] {[][]}', XXX, 1, { {{0}} {{1}} {{2}} }",
-				"'[] {[] {[]}}', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'[] {[][]}', XXX, 4, { {{0}{0}{2}{2}} {{1}{2}{0}{1}} {{2}{1}{1}{0}} }",
+				"'[] {[] {[]}}', XXX, 4, { {{0}{0}{2}{2}} {{1}{2}{0}{1}} {{2}{1}{1}{0}} }",
 				"'{[][]} []', XX, 0, -",
-				"'{[][]} []', XXX, 1, { {{0}} {{1}} {{2}} }",
-				"'{{[]} []} []', XXX, 1, { {{0}} {{1}} {{2}} }",
-				"'{[][]} [] {[][]}', XXXXX, 1, { {{0}} {{1}} {{2}} {{3}} {{4}} }",
+				"'{[][]} []', XXX, 4, { {{0}{1}{1}{2}} {{1}{0}{2}{1}} {{2}{2}{0}{0}} }",
+				"'{{[]} []} []', XXX, 4, { {{0}{1}{1}{2}} {{1}{0}{2}{1}} {{2}{2}{0}{0}} }",
+				"'FIRST 4 HITS {[][]} [] {[][]}', XXXXX, 4, { {{0}{0}{1}{1}} {{1}{1}{0}{0}} {{2}{2}{2}{2}} {{3}{4}{3}{4}} {{4}{3}{4}{3}} }",
 			})
 			@DisplayName("nested groups of blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -9828,19 +9843,19 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'{[?]}[]', X, 1, { {{}} {{0}} }",
-				"'[]{[?]}', X, 1, { {{0}} {{}} }",
+				"'ORDERED []{[?]}', X, 1, { {{0}} {{}} }",
 
 				"'{[*]}[]', X, 1, { {{}} {{0}} }",
-				"'[]{[*]}', X, 1, { {{0}} {{}} }",
+				"'ORDERED []{[*]}', X, 1, { {{0}} {{}} }",
 
 				"'{[+]}[]', X, 0, -",
-				"'{[+]}[]', XX, 1, { {{0}} {{1}} }",
+				"'ORDERED {[+]}[]', XX, 1, { {{0}} {{1}} }",
 				"'[]{[+]}', X, 0, -",
-				"'[]{[+]}', XX, 1, { {{0}} {{1}} }",
-				"'{[+]}[*]', X, 1, { {{0}} {{}} }",
-				"'{[+]}[*]', XX, 2, { {{0}{1}} {{}{}} }",
+				"'ORDERED []{[+]}', XX, 1, { {{0}} {{1}} }",
+				"'ORDERED {[+]}[*]', X, 1, { {{0}} {{}} }",
+				"'ORDERED {[+]}[*]', XX, 2, { {{0}{1}} {{}{}} }",
 				"'[*]{[+]}', X, 1, { {{}} {{0}} }",
-				"'[*]{[+]}', XX, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'ORDERED [*]{[+]}', XX, 3, { {{}{}{}} {{0}{1}{1}} }",
 			})
 			@DisplayName("nested groups of dummy nodes")
 			void testDummyNodes(String query, String target, int matches,
@@ -9852,26 +9867,34 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				// Singleton markers
-				"'{[isAt(2), $X][]}[]', XXX, 0, -",
-				"'{[isAt(2), $X][]}[]', XXXX, 1, { {{1}} }",
-				"'{[isNotAt(2), $X][]}[]', XXX, 1, { {{0}} }",
-				"'{[isAfter(2), $X][]}[]', XXXXX, 1, { {{2}} }",
+				"'ORDERED {ORDERED [isAt(2), $X][]}[]', XXX, 0, -",
+				"'ORDERED {[isAt(2), $X][]}[]', XXX, 1, { {{1}} }",
+				"'{[isAt(2), $X][]}[]', XXX, 2, { {{1}{1}} }",
+				"'{ORDERED [isAt(2), $X][]}[]', XXX, 1, { {{1}} }",
+				"'ORDERED {[isAt(2), $X][]}[]', XXXX, 3, { {{1}{1}{1}} }",
+				"'ORDERED {[isNotAt(2), $X][]}[]', XXX, 1, { {{0}} }",
+				"'{[isNotAt(2), $X][]}[]', XXX, 2, { {{0}{2}} }",
+				"'ORDERED {[isAfter(2), $X][]}[]', XXXXX, 8, { {{2}{2}{3}{2}{2}{3}{2}{3}} }",
+				"'{ORDERED [isAfter(2), $X][]}[]', XXXXX, 12, { {{2}{2}{2}{2}{2}{3}{2}{2}{2}{3}{2}{3}} }",
+				"'ORDERED {[isBefore(2), $X][]}[]', XXX, 1, { {{0}} }",
 				"'{[isBefore(2), $X][]}[]', XXX, 1, { {{0}} }",
-				"'{[isInside(2,4), $X][]}[]', XXXXX, 4, { {{1}{1}{1}{2}} }",
+				"'ORDERED {[isInside(2,4), $X][]}[]', XXXX, 5, { {{1}{1}{2}{1}{2}} }",
+				"'FIRST 7 HITS {[isInside(2,4), $X][]}[]', XXXXX, 7, { {{1}{1}{1}{2}{2}{3}{1}} }",
+				"'ORDERED []{[isOutside(3,4), $X][$Y]}', XXYXXY, 6, { {{1}{1}{4}{4}{4}{4}} {{2}{5}{5}{5}{5}{5}} }",
 				"'[]{[isOutside(3,4), $X][$Y]}', XXYXXY, 6, { {{1}{1}{4}{4}{4}{4}} {{2}{5}{5}{5}{5}{5}} }",
 				// Marker intersection
 				"'[]{[][isNotAt(2) && isLast, $X]}', XX, 0, -",
-				"'[]{[][isNotAt(2) && isLast, $X]}', XXX, 1, { {{2}} }",
+				"'ORDERED []{[][isNotAt(2) && isLast, $X]}', XXX, 1, { {{2}} }",
 				// Marker union
-				"'{[isFirst || isLast, $X][]}[]', XXX, 1, { {{0}} }",
-				"'[]{[][isFirst || isLast, $X]}', XXX, 1, { {{2}} }",
+				"'ORDERED {[isFirst || isLast, $X][]}[]', XXX, 1, { {{0}} }",
+				"'ORDERED []{[][isFirst || isLast, $X]}', XXX, 1, { {{2}} }",
 				// Complex marker nesting
 				"'{[isFirst || (isNotAt(3) && isBefore(4)), $X]}', XXXX, 2, { {{0}{1}} }",
 
 				// Proper nesting
-				"'{[isAt(2), $X][]}[isNotAt(3),$X]', XXX, 0, -",
-				"'{[isAt(2), $X][]}[isNotAt(3),$X]', XXXX, 1, { {{1}} {{3}} }",
-				"'{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]', XXXX, 3, { {{1}{0}{0}} {{3}{3}{3}} }",
+				"'ORDERED {[isAt(2), $X][]}[isNotAt(3),$X]', XXX, 0, -",
+				"'ORDERED {[isAt(2), $X][]}[isNotAt(3),$X]', XXXX, 1, { {{1}} {{3}} }",
+				"'ORDERED {[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]', XXXX, 3, { {{1}{0}{0}} {{3}{3}{3}} }",
 			})
 			@DisplayName("nested groups of nodes with markers")
 			void testMarkers(String query, String target, int matches,
@@ -9883,10 +9906,10 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'{2+[$X][$Y]}[$Z]', XYZ, 0, -",
-				"'{2+[$X][$Y]}[$Z]', XXYZ, 1, { {{0;1}} {{2}} {{3}} }",
-				"'{2+[$X][$Y]}[$Z]', XXXYZZ, 4, { {{0;1;2}{0;1;2}{1;2}{1;2}} {{3}{3}{3}{3}} {{4}{5}{4}{5}} }",
+				"'ORDERED {2+[$X][$Y]}[$Z]', XXYZ, 1, { {{0;1}} {{2}} {{3}} }",
+				"'ORDERED {2+[$X][$Y]}[$Z]', XXXYZZ, 4, { {{0;1;2}{0;1;2}{1;2}{1;2}} {{3}{3}{3}{3}} {{4}{5}{4}{5}} }",
 				"'{2+[$X][$Y]}2+[$Z]', XXYZ, 0, -",
-				"'{2+[$X][$Y]}2+[$Z]', XXYZZ, 1, { {{0;1}} {{2}} {{3;4}} }",
+				"'ORDERED {2+[$X][$Y]}2+[$Z]', XXYZZ, 1, { {{0;1}} {{2}} {{3;4}} }",
 			})
 			@DisplayName("nested groups of quantified nodes")
 			void testQuantifiedNodes(String query, String target, int matches,
@@ -9924,7 +9947,7 @@ class SequencePatternTest {
 				"'ADJACENT {[$X]<1+>[$Y]}{<2..3>[$Y][$Z]}', X-YYY--Z, 1, { {{0}} {{2}} {{3;4}} {{7}} }",
 				"'ADJACENT {[$X]<1+>[$Y]}{[$Y][$Z]}', XYYYZ, 2, { {{0}{0}} {{1;2}{2}} {{3}{3}} {{4}{4}} }",
 			})
-			@DisplayName("explicit arangement on set")
+			@DisplayName("explicit arrangement")
 			void testArrangement(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
@@ -9965,8 +9988,10 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'{[][]} or {[][][]}', X, 0, -",
-				"'{[][]} or {[][][]}', XX, 1, { {{0}} {{1}} }",
-				"'{[][][]} or {[][]}', XX, 1, { {-} {-} {-} {{0}} {{1}} }",
+				"'{[][]} or {[][][]}', XX, 2, { {{0}{1}} {{1}{0}} }",
+				"'{ORDERED [][]} or {[][][]}', XX, 1, { {{0}} {{1}} }",
+				"'{[][][]} or {[][]}', XX, 2, { {-} {-} {-} {{0}{1}} {{1}{0}} }",
+				"'{[][][]} or {ORDERED [][]}', XX, 1, { {-} {-} {-} {{0}} {{1}} }",
 			})
 			@DisplayName("disjunction of blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -9980,7 +10005,7 @@ class SequencePatternTest {
 			@CsvSource({
 				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', X, 0, -",
 				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', XY, 0, -",
-				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', XYXY, 1, { {{0;2}} {{1;3}} }",
+				"'<2+>{ORDERED [$X][$Y]} or {<2>[$X][$Z]}', XYXY, 1, { {{0;2}} {{1;3}} }",
 				"'<2+>{[$X][$Y]} or {<2>[$X][$Z]}', XXXZY, 2, { {-} {-} {{0;1}{1;2}} {{3}{3}} }",
 			})
 			@DisplayName("quantified groupings and nodes")
@@ -9997,9 +10022,9 @@ class SequencePatternTest {
 				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XZ, 0, -",
 				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-Y, 1, { {{0}} {{2}} }",
 				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XY, 1, { {{1}} {{2}} }",
-				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', XZ, 1, { {-} {-} {{0}} {{1}} }",
-				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X--Z, 1, { {-} {-} {{0}} {{3}} }",
-				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-ZY, 2, { {{0}{}} {{3}{}} {{}{0}} {{}{2}} }",
+				"'{ORDERED [$X][isAfter(2), $Y]} or {ORDERED [isOutside(2,5), $X][$Z]}', XZ, 1, { {-} {-} {{0}} {{1}} }",
+				"'{ORDERED [$X][isAfter(2), $Y]} or {ORDERED [isOutside(2,5), $X][$Z]}', X--Z, 1, { {-} {-} {{0}} {{3}} }",
+				"'{ORDERED [$X][isAfter(2), $Y]} or {ORDERED [isOutside(2,5), $X][$Z]}', X-ZY, 2, { {{0}{}} {{3}{}} {{}{0}} {{}{2}} }",
 			})
 			@DisplayName("nodes with markers")
 			void testMarkers(String query, String target, int matches,
@@ -10013,9 +10038,12 @@ class SequencePatternTest {
 			@CsvSource({
 				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', X, 0, -",
 				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XY-, 1, { {{1}} {{2}} }",
-				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YZ-, 1, { {-} {-} {{1}} {{2}} }",
-				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XYZ-, 2, { {{1}{}} {{2}{}} {{}{2}} {{}{3}} }",
-				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -ZY-, 1, { {-} {-} {-} {-} {{1}} {{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YX-, 1, { {{2}} {{1}} }",
+				"'{ORDERED [$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XY-, 1, { {{1}} {{2}} }",
+				"'{ORDERED [$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YX-, 0, -",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YZ-, 2, { {-} {-} {{1}{}} {{2}{}} {{}{2}} {{}{1}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XYZ-, 3, { {{1}{}{}} {{2}{}{}} {{}{2}{}} {{}{3}{}} {{}{}{3}} {{}{}{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -ZY-, 2, { {-} {-} {{2}{}} {{1}{}} {{}{1}} {{}{2}} }",
 			})
 			@DisplayName("multiple disjunctions")
 			void testMultipleBranches(String query, String target, int matches,
@@ -10054,8 +10082,8 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'{[][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }", // not adjacent, so can expand multiple  times
-				"'{[][][]}', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'{ORDERED [][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }", // not adjacent, so can expand multiple  times
+				"'{ORDERED [][][]}', XYZ, 1, { {{0}} {{1}} {{2}} }",
 			})
 			@DisplayName("grouping of blank node(s)")
 			void testBlank(String query, String target, int matches,
@@ -10071,44 +10099,44 @@ class SequencePatternTest {
 				 */
 
 				// Pure singular reluctance
-				"'{[?][?]}', X, 1, { {{}} }",
-				"'{[?][?]}', XY, 3, { {{}{}{}} {{}{}{}} }",
+				"'{ORDERED [?][?]}', X, 1, { {{}} }",
+				"'{ORDERED [?][?]}', XY, 3, { {{}{}{}} {{}{}{}} }",
 
 				// Mandatory node with following optional
-				"'{[][?]}', XY, 2, { {{0}{1}} {{}{}} }",
-				"'{[][?]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'{ORDERED [][?]}', XY, 2, { {{0}{1}} {{}{}} }",
+				"'{ORDERED [][?]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
 
 				// Mandatory node with following optional expansion
-				"'{[][*]}', XY, 2, { {{0}{1}} {{}{}} }",
-				"'{[][*]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'{ORDERED [][*]}', XY, 2, { {{0}{1}} {{}{}} }",
+				"'{ORDERED [][*]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
 
 				// Mandatory node with following dummy node with reluctant expansion
-				"'{[][+]}', XY, 1, { {{0}} {{1}} }",
-				"'{[][+]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'{ORDERED [][+]}', XY, 1, { {{0}} {{1}} }",
+				"'{ORDERED [][+]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
 
 				// Mandatory node after optional
-				"'{[?][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'{[?][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'{ORDERED [?][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'{ORDERED [?][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
 
 				// Mandatory node after optional expansion
-				"'{[*][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'{[*][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'{ORDERED [*][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'{ORDERED [*][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
 
 				// Mandatory node after dummy node with reluctant expansion
-				"'{[+][]}', XY, 1, { {{0}} {{1}} }",
-				"'{[+][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'{ORDERED [+][]}', XY, 1, { {{0}} {{1}} }",
+				"'{ORDERED [+][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate optional
-				"'{[][?][]}', XY, 1, { {{0}} {{}} {{1}} }",
-				"'{[][?][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'{ORDERED [][?][]}', XY, 1, { {{0}} {{}} {{1}} }",
+				"'{ORDERED [][?][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate optional expansion
-				"'{[][*][]}', XY, 1, { {{0}} {{}} {{1}} }",
-				"'{[][*][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'{ORDERED [][*][]}', XY, 1, { {{0}} {{}} {{1}} }",
+				"'{ORDERED [][*][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate dummy node with reluctant expansion
 				"'{[][+][]}', XY, 0, -",
-				"'{[][+][]}', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'{ORDERED [][+][]}', XYZ, 1, { {{0}} {{1}} {{2}} }",
 
 				// Cannot force expansion with non-adjacent sequence, we leave that to the NodeInSet group
 			})
@@ -10178,11 +10206,11 @@ class SequencePatternTest {
 			@CsvSource({
 				"'<1..3>{[$X][$Y]}', XX, 0, -",
 				"'<1..3>{[$X][$Y]}', X-Z, 0, -",
-				"'<1..3>{[$X][$Y]}', XY, 1, { {{0}} {{1}} }",
-				"'<1..3>{[$X][$Y]}', XYXY, 2, { {{0;2}{2}} {{1;3}{3}} }",
-				"'<1..3>{[$X][$Y]}', XY-XY, 2, { {{0}{3}} {{1}{4}} }",
-				"'<1..3>{[$X][$Y]}', XY-XY--XY, 3, { {{0}{3}{7}} {{1}{4}{8}} }",
-				"'<1..3^>{[$X][$Y]}', XY-XY--XY, 3, { {{0;3;7}{3;7}{7}} {{1;4;8}{4;8}{8}} }",
+				"'<1..3>{ORDERED [$X][$Y]}', XY, 1, { {{0}} {{1}} }",
+				"'<1..3>{ORDERED [$X][$Y]}', XYXY, 2, { {{0;2}{2}} {{1;3}{3}} }",
+				"'<1..3>{ORDERED [$X][$Y]}', XY-XY, 2, { {{0}{3}} {{1}{4}} }",
+				"'<1..3>{ORDERED [$X][$Y]}', XY-XY--XY, 3, { {{0}{3}{7}} {{1}{4}{8}} }",
+				"'<1..3^>{ORDERED [$X][$Y]}', XY-XY--XY, 3, { {{0;3;7}{3;7}{7}} {{1;4;8}{4;8}{8}} }",
 			})
 			@DisplayName("quantified grouping of blank nodes")
 			void testQuantifiedGrouping(String query, String target, int matches,
@@ -10237,15 +10265,15 @@ class SequencePatternTest {
 			@CsvSource({
 				"'<1+>{<2+>[isAfter(1), $X][$Y]}', X, 0, -",
 				"'<1+>{<2+>[isAfter(1), $X][$Y]}', XXY, 0, -",
-				"'<1+>{<2+>[isAfter(1), $X][$Y]}', XXXY, 1, { {{1;2}} {{3}} }",
-				"'<1+>{<2+>[isAfter(1), $X][$Y]}', XXXXXY-, 3, { {{1;2;3;4}{2;3;4}{3;4}} {{5}{5}{5}} }",
+				"'<1+>{ORDERED <2+>[isAfter(1), $X][$Y]}', XXXY, 1, { {{1;2}} {{3}} }",
+				"'<1+>{ORDERED <2+>[isAfter(1), $X][$Y]}', XXXXXY-, 3, { {{1;2;3;4}{2;3;4}{3;4}} {{5}{5}{5}} }",
 				// outer quantifier only reinforces existential quantification, so group search is exhaustive
 				"'<1>{<2+>[isAfter(1), $X][$Y]}', XXXXYY-, 4, { {{1;2;3}{1;2;3}{2;3}{2;3}} {{4}{5}{4}{5}} }",
 				// nodes within quantified grouping are reduced to "find" scan
-				"'<1+>{<2+>[isAfter(1), $X][$Y]}', XXXXYY-, 2, { {{1;2;3}{2;3}} {{4}{4}} }",
+				"'<1+>{ORDERED <2+>[isAfter(1), $X][$Y]}', XXXXYY-, 2, { {{1;2;3}{2;3}} {{4}{4}} }",
 
 				"'<2+>{<2+>[isAfter(1), $X][$Y]}', XXXY, 0, -",
-				"'<2+>{<2+>[isAfter(1), $X][$Y]}', XXXYXXY, 1, { {{1;2;4;5}} {{3;6}} }",
+				"'<2+>{ORDERED <2+>[isAfter(1), $X][$Y]}', XXXYXXY, 1, { {{1;2;4;5}} {{3;6}} }",
 			})
 			@DisplayName("quantified grouping of quantified nodes with markers")
 			void testQuantifiedGroupingWithQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -10269,7 +10297,6 @@ class SequencePatternTest {
 		 * declarations.
 		 */
 		@Nested
-		@Disabled("not possible to construct test cases")
 		class SequenceInSequence {
 			// no-op
 		}
@@ -10305,8 +10332,8 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'{[][]} or {[][][]}', X, 0, -",
-				"'{[][]} or {[][][]}', XX, 1, { {{0}} {{1}} }",
-				"'{[][][]} or {[][]}', XX, 1, { {-} {-} {-} {{0}} {{1}} }",
+				"'{[][]} or {[][][]}', XX, 2, { {{0}{1}} {{1}{0}} }",
+				"'{[][][]} or {[][]}', XX, 2, { {-} {-} {-} {{0}{1}} {{1}{0}} }",
 			})
 			@DisplayName("disjunction of blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -10337,9 +10364,9 @@ class SequencePatternTest {
 				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XZ, 0, -",
 				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-Y, 1, { {{0}} {{2}} }",
 				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', -XY, 1, { {{1}} {{2}} }",
-				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', XZ, 1, { {-} {-} {{0}} {{1}} }",
-				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X--Z, 1, { {-} {-} {{0}} {{3}} }",
-				"'{[$X][isAfter(2), $Y]} or {[isOutside(2,5), $X][$Z]}', X-ZY, 2, { {{0}{}} {{3}{}} {{}{0}} {{}{2}} }",
+				"'{ORDERED [$X][isAfter(2), $Y]} or {ORDERED [isOutside(2,5), $X][$Z]}', XZ, 1, { {-} {-} {{0}} {{1}} }",
+				"'{ORDERED [$X][isAfter(2), $Y]} or {ORDERED [isOutside(2,5), $X][$Z]}', X--Z, 1, { {-} {-} {{0}} {{3}} }",
+				"'{ORDERED [$X][isAfter(2), $Y]} or {ORDERED [isOutside(2,5), $X][$Z]}', X-ZY, 2, { {{0}{}} {{3}{}} {{}{0}} {{}{2}} }",
 			})
 			@DisplayName("nodes with markers")
 			void testMarkers(String query, String target, int matches,
@@ -10404,10 +10431,10 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'{[][][] or [][]}', X, 0, -, 4, 3",
-				"'{[] or [][][][]}', XXXX, 2, { {{0}{-}} {{-}{0}} {{1}{1}} {{2}{2}} {{3}{3}} }, 4, 1",
-				"'{[][] or [][][]}', XXXX, 2, { {{0}{0}} {{1}{-}} {{-}{1}} {{2}{2}} {{3}{3}} }, 4, 2",
-				"'{[][][] or [][]}', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{}} {{}{2}} {{3}{3}} }, 4, 3",
-				"'{[][][][] or []}', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{2}} {{3}{-}} {{-}{3}} }, 4, 4",
+				"'{ORDERED [] or [][][][]}', XXXX, 2, { {{0}{-}} {{-}{0}} {{1}{1}} {{2}{2}} {{3}{3}} }, 4, 1",
+				"'{ORDERED [][] or [][][]}', XXXX, 2, { {{0}{0}} {{1}{-}} {{-}{1}} {{2}{2}} {{3}{3}} }, 4, 2",
+				"'{ORDERED [][][] or [][]}', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{}} {{}{2}} {{3}{3}} }, 4, 3",
+				"'{ORDERED [][][][] or []}', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{2}} {{3}{-}} {{-}{3}} }, 4, 4",
 			})
 			@DisplayName("blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -10422,11 +10449,11 @@ class SequencePatternTest {
 			@CsvSource({
 				"'{[$X][$Y][$A] or [$B][$Z]}', X, 0, -, 4, 3",
 				"'{[$X][$Y][$A] or [$B][$Z]}', XYCZ, 0, -, 4, 3",
-				"'{[$X][$Y][$A] or [$B][$Z]}', XYAZ, 1, { {{0}} {{1}} {{2}} {-} {{3}} }, 4, 3",
-				"'{[$X][$Y][$A] or [$B][$Z]}', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+				"'{ORDERED [$X][$Y][$A] or [$B][$Z]}', XYAZ, 1, { {{0}} {{1}} {{2}} {-} {{3}} }, 4, 3",
+				"'{ORDERED [$X][$Y][$A] or [$B][$Z]}', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
 
-				"'{[$X][$Y][$A] or [$B][$Z]}', X-YAAZ, 2, { {{0}{0}} {{2}{2}} {{3}{4}} {-} {{5}{5}} }, 4, 3",
-				"'{[$X][$Y][$A] or [$B][$Z]}', X-YBAZ, 2, { {{0}{0}} {{2}{2}} {{}{4}} {{3}{}} {{5}{5}} }, 4, 3",
+				"'{ORDERED [$X][$Y][$A] or [$B][$Z]}', X-YAAZ, 2, { {{0}{0}} {{2}{2}} {{3}{4}} {-} {{5}{5}} }, 4, 3",
+				"'{ORDERED [$X][$Y][$A] or [$B][$Z]}', X-YBAZ, 2, { {{0}{0}} {{2}{2}} {{}{4}} {{3}{}} {{5}{5}} }, 4, 3",
 			})
 			@DisplayName("nodes with constraints")
 			void testContent(String query, String target, int matches,
@@ -10440,10 +10467,10 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAZ, 0, -, 4, 3",
-				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
-				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBBBZ, 1, { {{0}} {{1}} {-} {{2;3;4}} {{5}} }, 4, 3",
-				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZ, 1, { {{0}} {{1}} {{2;3}} {-} {{4}} }, 4, 3",
-				"'{ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYYYAAAAZ, 1, { {{0}} {{1;2;3}} {{4;5;6;7}} {-} {{8}} }, 4, 3",
+				"'{ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+				"'{ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBBBZ, 1, { {{0}} {{1}} {-} {{2;3;4}} {{5}} }, 4, 3",
+				"'{ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZ, 1, { {{0}} {{1}} {{2;3}} {-} {{4}} }, 4, 3",
+				"'{ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]}', XYYYAAAAZ, 1, { {{0}} {{1;2;3}} {{4;5;6;7}} {-} {{8}} }, 4, 3",
 			})
 			@DisplayName("nodes with quantification")
 			void testQuantifiedNodes(String query, String target, int matches,
@@ -10458,11 +10485,11 @@ class SequencePatternTest {
 			@CsvSource({
 				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZ, 0, -, 4, 3",
 				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZ, 0, -, 4, 3",
-				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZXYAAZ, 1, { {{0;5}} {{1;6}} {{2;3;7;8}} {-} {{4;9}} }, 4, 3",
-				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZXYBZ, 1, { {{0;5}} {{1;6}} {{2;3}} {{7}} {{4;8}} }, 4, 3",
-				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYBZ, 1, { {{0;4}} {{1;5}} {-} {{2;6}} {{3;7}} }, 4, 3",
-				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYAAZ, 1, { {{0;4}} {{1;5}} {{6;7}} {{2}} {{3;8}} }, 4, 3",
-				"'<2+>{[$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYAAZXYBBBZ, 2, { {{0;4;9}{4;9}} {{1;5;10}{5;10}} {{6;7}{6;7}} {{2;11;12;13}{11;12;13}} {{3;8;14}{8;14}} }, 4, 3",
+				"'<2+>{ORDERED [$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZXYAAZ, 1, { {{0;5}} {{1;6}} {{2;3;7;8}} {-} {{4;9}} }, 4, 3",
+				"'<2+>{ORDERED [$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYAAZXYBZ, 1, { {{0;5}} {{1;6}} {{2;3}} {{7}} {{4;8}} }, 4, 3",
+				"'<2+>{ORDERED [$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYBZ, 1, { {{0;4}} {{1;5}} {-} {{2;6}} {{3;7}} }, 4, 3",
+				"'<2+>{ORDERED [$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYAAZ, 1, { {{0;4}} {{1;5}} {{6;7}} {{2}} {{3;8}} }, 4, 3",
+				"'<2+>{ORDERED [$X][$Y]<2+>[$A] or <1+>[$B][$Z]}', XYBZXYAAZXYBBBZ, 2, { {{0;4;9}{4;9}} {{1;5;10}{5;10}} {{6;7}{6;7}} {{2;11;12;13}{11;12;13}} {{3;8;14}{8;14}} }, 4, 3",
 			})
 			@DisplayName("quantified group")
 			void testQuantified(String query, String target, int matches,
@@ -10510,10 +10537,10 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'[][][] or [][]', X, 0, -, 4, 3",
-				"'[] or [][][][]', XXXX, 2, { {{0}{-}} {{-}{0}} {{1}{1}} {{2}{2}} {{3}{3}} }, 4, 1",
-				"'[][] or [][][]', XXXX, 2, { {{0}{0}} {{1}{-}} {{-}{1}} {{2}{2}} {{3}{3}} }, 4, 2",
-				"'[][][] or [][]', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{}} {{}{2}} {{3}{3}} }, 4, 3",
-				"'[][][][] or []', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{2}} {{3}{-}} {{-}{3}} }, 4, 4",
+				"'ORDERED [] or [][][][]', XXXX, 2, { {{0}{-}} {{-}{0}} {{1}{1}} {{2}{2}} {{3}{3}} }, 4, 1",
+				"'ORDERED [][] or [][][]', XXXX, 2, { {{0}{0}} {{1}{-}} {{-}{1}} {{2}{2}} {{3}{3}} }, 4, 2",
+				"'ORDERED [][][] or [][]', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{}} {{}{2}} {{3}{3}} }, 4, 3",
+				"'ORDERED [][][][] or []', XXXX, 2, { {{0}{0}} {{1}{1}} {{2}{2}} {{3}{-}} {{-}{3}} }, 4, 4",
 			})
 			@DisplayName("blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -10527,11 +10554,11 @@ class SequencePatternTest {
 			@CsvSource({
 				"'[$X][$Y][$A] or [$B][$Z]', X, 0, -, 4, 3",
 				"'[$X][$Y][$A] or [$B][$Z]', XYCZ, 0, -, 4, 3",
-				"'[$X][$Y][$A] or [$B][$Z]', XYAZ, 1, { {{0}} {{1}} {{2}} {-} {{3}} }, 4, 3",
-				"'[$X][$Y][$A] or [$B][$Z]', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+				"'ORDERED [$X][$Y][$A] or [$B][$Z]', XYAZ, 1, { {{0}} {{1}} {{2}} {-} {{3}} }, 4, 3",
+				"'ORDERED [$X][$Y][$A] or [$B][$Z]', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
 
-				"'[$X][$Y][$A] or [$B][$Z]', X-YAAZ, 2, { {{0}{0}} {{2}{2}} {{3}{4}} {-} {{5}{5}} }, 4, 3",
-				"'[$X][$Y][$A] or [$B][$Z]', X-YBAZ, 2, { {{0}{0}} {{2}{2}} {{}{4}} {{3}{}} {{5}{5}} }, 4, 3",
+				"'ORDERED [$X][$Y][$A] or [$B][$Z]', X-YAAZ, 2, { {{0}{0}} {{2}{2}} {{3}{4}} {-} {{5}{5}} }, 4, 3",
+				"'ORDERED [$X][$Y][$A] or [$B][$Z]', X-YBAZ, 2, { {{0}{0}} {{2}{2}} {{}{4}} {{3}{}} {{5}{5}} }, 4, 3",
 			})
 			@DisplayName("nodes with constraints")
 			void testContent(String query, String target, int matches,
@@ -10544,10 +10571,10 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYAZ, 0, -, 4, 3",
-				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
-				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYBBBZ, 1, { {{0}} {{1}} {-} {{2;3;4}} {{5}} }, 4, 3",
-				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYAAZ, 1, { {{0}} {{1}} {{2;3}} {-} {{4}} }, 4, 3",
-				"'ADJACENT [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYYYAAAAZ, 1, { {{0}} {{1;2;3}} {{4;5;6;7}} {-} {{8}} }, 4, 3",
+				"'ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYBZ, 1, { {{0}} {{1}} {-} {{2}} {{3}} }, 4, 3",
+				"'ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYBBBZ, 1, { {{0}} {{1}} {-} {{2;3;4}} {{5}} }, 4, 3",
+				"'ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYAAZ, 1, { {{0}} {{1}} {{2;3}} {-} {{4}} }, 4, 3",
+				"'ADJACENT ORDERED [$X]<1+>[$Y]<2+>[$A] or <1+>[$B][$Z]', XYYYAAAAZ, 1, { {{0}} {{1;2;3}} {{4;5;6;7}} {-} {{8}} }, 4, 3",
 			})
 			@DisplayName("nodes with quantification")
 			void testQuantified(String query, String target, int matches,
@@ -10580,12 +10607,12 @@ class SequencePatternTest {
 			"'<1+>{[$X][$Y]}', --, 0, -",
 
 			// Simple matches - ordered
-			"'<1+>{[$X][$Y]}', XY, 1, {{{0}}{{1}}}",
-			"'<1+>{[$X][$Y]}', X-Y, 1, {{{0}}{{2}}}",
+			"'<1+>{ORDERED [$X][$Y]}', XY, 1, {{{0}}{{1}}}",
+			"'<1+>{ORDERED [$X][$Y]}', X-Y, 1, {{{0}}{{2}}}",
 
 			// Multiple matches - ordered
-			"'FIRST <1+>{[$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
-			"'<1+>{[$X][$Y]}', XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
+			"'FIRST <1+>{ORDERED [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
+			"'<1+>{ORDERED [$X][$Y]}', XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
 
 			// Mismatches - adjacent
 			"'<1+>{ADJACENT [$X][$Y]}', -, 0, -",
@@ -10598,7 +10625,7 @@ class SequencePatternTest {
 			// Multiple matches - adjacent
 			"'FIRST <1+>{ADJACENT [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
 			// separate matches
-			"'<1+>{ADJACENT [$X][$Y]}', XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
+			"'<1+>{ADJACENT [$X][$Y]}', XYXY, 3, {{{0;2}{2}{2}}{{1;3}{1}{3}}}",
 			"'<1+>{ADJACENT [$X][$Y]}', XY-XY, 2, {{{0}{3}}{{1}{4}}}",
 			"'<1+^>{ADJACENT [$X][$Y]}', XY-XY, 2, {{{0;3}{3}}{{1;4}{4}}}",
 			"'ADJACENT <1+>{ADJACENT [$X][$Y]} [$Z]', XYZ-XY-XYXYZ, 3, { {{0}{7;9}{9}} {{1}{8;10}{10}} {{2}{11}{11}} }",
@@ -10611,9 +10638,9 @@ class SequencePatternTest {
 			// Simple (and multiple continuous) matches - adjacent
 			"'<2+>{ADJACENT [$X][$Y]}', XY-XY, 0, -",
 			"'<2+>{ADJACENT [$X][$Y]}', XY---XY, 0, -",
-			"'<2+>{ADJACENT [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
-			"'<2+>{ADJACENT [$X][$Y]}', XYXYXY, 2, {{{0;2;4}{2;4}}{{1;3;5}{3;5}}}",
-			"'<2+>{ADJACENT [$X][$Y]}', XYXYXYXY, 3, {{{0;2;4;6}{2;4;6}{4;6}}{{1;3;5;7}{3;5;7}{5;7}}}",
+			"'<2+>{ADJACENT [$X][$Y]}', XYXY, 1, { {{0;2}} {{1;3}} }",
+			"'<2+>{ADJACENT [$X][$Y]}', XYXYXY, 3, { {{0;2;4}{2;4}{2;4}} {{1;3;5}{1;3}{3;5}} }",
+			"'<2+>{ADJACENT [$X][$Y]}', XYXYXYXY, 5, { {{0;2;4;6}{2;4;6}{2;4;6}{4;6}{4;6}} {{1;3;5;7}{1;3;5}{3;5;7}{3;5}{5;7}} }",
 
 			// Multiple discontinuous matches - adjacent
 			"'<2+^>{ADJACENT [$X][$Y]}', XY-XY, 1, {{{0;3}}{{1;4}}}",
@@ -10622,9 +10649,9 @@ class SequencePatternTest {
 			// Nested quantification
 			"'<2+>{<2+>[$X][$Y]}', XYY, 0, -",
 			"'<2+>{<2+>[$X][$Y]}', XXY, 0, -",
-			"'<2+>{<2+>[$X][$Y]}', XXYXXY, 1, {{{0;1;3;4}}{{2;5}}}",
-			"'<2+>{<2+>[$X][$Y]}', XXXXYXXY, 3, {{{0;1;2;3;5;6}{1;2;3;5;6}{2;3;5;6}}{{4;7}{4;7}{4;7}}}",
-			"'<2+>{<2+>[$X][$Y]}', XXYXXXXY, 1, {{{0;1;3;4;5;6}}{{2;7}}}",
+			"'<2+>{ORDERED <2+>[$X][$Y]}', XXYXXY, 1, {{{0;1;3;4}}{{2;5}}}",
+			"'<2+>{ORDERED <2+>[$X][$Y]}', XXXXYXXY, 3, {{{0;1;2;3;5;6}{1;2;3;5;6}{2;3;5;6}}{{4;7}{4;7}{4;7}}}",
+			"'<2+>{ORDERED <2+>[$X][$Y]}', XXYXXXXY, 1, {{{0;1;3;4;5;6}}{{2;7}}}",
 
 			// Repetition with follow-up node
 			"'ADJACENT <3+>{ADJACENT [$X][$Y]} [$Z]', XYXYXYZ, 1, {{{0;2;4}}{{1;3;5}}{{6}}}",

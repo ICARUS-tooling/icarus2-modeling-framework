@@ -45,6 +45,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -161,11 +163,13 @@ public class QueryProcessor {
 
 	private final boolean ignoreWarnings;
 	private final boolean keepRedundantGrouping;
+	private final boolean defaultOrderedSequence;
 
 	public QueryProcessor(Set<Option> options) {
 		requireNonNull(options);
 		ignoreWarnings = options.contains(Option.IGNORE_WARNINGS);
 		keepRedundantGrouping = options.contains(Option.KEEP_REDUNDANT_GROUPING);
+		defaultOrderedSequence = options.contains(Option.DEFAULT_ORDERED_SEQUENCE);
 	}
 
 	public QueryProcessor(Option...options) {
@@ -183,6 +187,10 @@ public class QueryProcessor {
 		IGNORE_WARNINGS,
 		/** {@link IqlGrouping} instances without quantifiers will not be unwrapped. */
 		KEEP_REDUNDANT_GROUPING,
+		/** {@link IqlSequence} instances without any {@link NodeArrangement} will have their
+		 * arrangement set to {@link NodeArrangement#ORDERED}. */
+		@VisibleForTesting
+		DEFAULT_ORDERED_SEQUENCE,
 		;
 	}
 
@@ -929,8 +937,14 @@ public class QueryProcessor {
 				}
 			}
 
-			// Make sure top-level structures get assigned ORDDERED
-			if((arrangements==null || arrangements.isEmpty()) && !tree.hasParent()) {
+//			// Make sure top-level structures get assigned ORDERED
+//			if((arrangements==null || arrangements.isEmpty()) && !tree.hasParent()) {
+//				sequence.addArrangement(NodeArrangement.ORDERED);
+//			} else
+			// Honor default settings for node ordering
+			if(defaultOrderedSequence
+					&& !sequence.hasArrangement(NodeArrangement.ORDERED)
+					&& !sequence.hasArrangement(NodeArrangement.UNORDERED)) {
 				sequence.addArrangement(NodeArrangement.ORDERED);
 			}
 

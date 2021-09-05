@@ -113,6 +113,7 @@ import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 /**
@@ -210,6 +211,7 @@ public class InteractiveMatcher {
 		static final String SM_EDGE = "sm_edge";
 		static final String SM_EDGE_ATOM = "sm_edge_atom";
 		static final String SM_EDGE_BRANCH = "sm_edge_branch";
+		static final String SM_ATOM_ROOT = "sm_atom_root";
 
 		static final String IQL_BASIC = "iql_basic";
 		static final String IQL_EDGE = "iql_edge";
@@ -297,6 +299,13 @@ public class InteractiveMatcher {
 			.newEntry(mxConstants.STYLE_FILLCOLOR, "#FF2A55")
 			.newEntry(mxConstants.STYLE_STROKECOLOR, "#FF0000")
 			.newEntry(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE)
+			.newEntry(mxConstants.STYLE_STROKEWIDTH, _float(1.0F))
+			.commit();
+
+		builder.newStyle(Styles.SM_ATOM_ROOT)
+			.newEntry(mxConstants.STYLE_FILLCOLOR, "#55FF7F")
+			.newEntry(mxConstants.STYLE_STROKECOLOR, "#618B36")
+			.newEntry(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS)
 			.newEntry(mxConstants.STYLE_STROKEWIDTH, _float(1.0F))
 			.commit();
 
@@ -593,11 +602,42 @@ public class InteractiveMatcher {
 			if(next!=null) {
 				layoutSMNode(next, info, parent, atom);
 			}
+
+			adjustSMNode(cell, info);
 		}
 
 		makeSMEdge(previous, info, parent, atom);
 
 		return cell;
+	}
+
+	private void adjustSMNode(mxCell cell, NodeInfo info) {
+		// Apply tree layout to nested cells
+		if(isOwner(info)) {
+			mxCompactTreeLayout layout = new mxCompactTreeLayout(graph, true);
+			layout.setGroupPadding(7); // default is 10
+			layout.setNodeDistance(10); // default is 20
+			layout.setLevelDistance(5); // default is 10
+			layout.setResizeParent(true);
+			layout.setMoveTree(true);
+
+			IntList atoms = info.getAtoms();
+			mxCell atomRoot;
+			if(atoms.size()>1) {
+				atomRoot = (mxCell) graph.insertVertex(cell,
+						cell.getId()+"_atoms", null, 10, 10, 16, 16, Styles.SM_ATOM_ROOT);
+				for(int atomId : atoms) {
+					graph.insertEdge(cell, null, null, atomRoot,
+							sm2graph.get(id2info.get(atomId)), Styles.SM_EDGE_BRANCH);
+				}
+			} else {
+				atomRoot = sm2graph.get(id2info.get(atoms.getInt(0)));
+			}
+			layout.execute(cell, atomRoot);
+			mxGeometry geo = model.getGeometry(cell);
+			geo.setHeight(geo.getHeight()+15);
+			graph.moveCells(graph.getChildCells(cell), 0, 15);
+		}
 	}
 
 	private boolean isOwner(NodeInfo info) {
@@ -634,36 +674,6 @@ public class InteractiveMatcher {
 		checkState("No root node specified", root!=null);
 		// Second pass: make nodes
 		layoutSMNode(root, null, parent, false);
-
-		for(NodeInfo info : nodes) {
-			// Apply tree layout to nested cells
-			if(isOwner(info)) {
-				mxCell cell = sm2graph.get(info);
-				mxCompactTreeLayout layout = new mxCompactTreeLayout(graph, true);
-				layout.setGroupPadding(7); // default is 10
-				layout.setNodeDistance(10); // default is 20
-				layout.setLevelDistance(5); // default is 10
-				layout.setResizeParent(true);
-				layout.setMoveTree(true);
-				for(int atomId : info.getAtoms()) {
-					layout.execute(cell, sm2graph.get(id2info.get(atomId)));
-				}
-				mxGeometry geo = model.getGeometry(cell);
-				geo.setHeight(geo.getHeight()+15);
-				graph.moveCells(graph.getChildCells(cell), 0, 15);
-			}
-		}
-
-
-//		mxHierarchicalLayout layout = new mxHierarchicalLayout(graph, SwingConstants.WEST);
-////		layout.setResizeParent(true);
-////		layout.setFineTuning(true);
-//		layout.setParentBorder(20);
-//		layout.setDisableEdgeStyle(false);
-//		layout.setInterRankCellSpacing(35); // default is 50
-//		layout.setIntraCellSpacing(25); // default is 30
-//		layout.setInterHierarchySpacing(35); // default is 60
-//		layout.execute(parent, null/*Arrays.asList(root)*/);
 
 		mxCompactTreeLayout layout = new mxCompactTreeLayout(graph, true);
 		layout.setGroupPadding(40); // default is 10
@@ -1108,11 +1118,33 @@ public class InteractiveMatcher {
 			int count = state.entry;
 			nodes = new int[count];
 			spots = new int[count];
-			int offset = state.hits.length;
 			for (int i = 0; i < count; i++) {
 				nodes[i] = state.m_node[i];
 				spots[i] = state.m_pos[i];
 			}
+
+			System.out.println(getClass() + " " + toString());
+		}
+
+		void appendTo(StringBuilder buffer) {
+			int count = nodes.length;
+			buffer.append(id+1).append(": [").append(count).append("] ");
+
+			for (int i = 0; i < count; i++) {
+				if(i>0) {
+					buffer.append(", ");
+				}
+				buffer.append(nodes[i]).append("->").append(spots[i]);
+			}
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append('[');
+			appendTo(sb);
+			sb.append(']');
+			return sb.toString();
 		}
 	}
 
@@ -1129,6 +1161,9 @@ public class InteractiveMatcher {
 
 		@Override
 		public void exitNode(Node node, State state, int pos, boolean result) {
+//			if(!result) {
+//				System.out.println("xx");
+//			}
 			sink.accept(new Step(false, node.id, pos, -1, result));
 		}
 
@@ -1431,17 +1466,7 @@ public class InteractiveMatcher {
 			if(value instanceof Result) {
 				Result result = (Result) value;
 				buffer.setLength(0);
-
-				int count = result.nodes.length;
-				buffer.append(result.id+1).append(": [").append(count).append("] ");
-
-				for (int i = 0; i < count; i++) {
-					if(i>0) {
-						buffer.append(", ");
-					}
-					buffer.append(result.nodes[i]).append("->").append(result.spots[i]);
-				}
-
+				result.appendTo(buffer);
 				value = buffer.toString();
 			}
 
