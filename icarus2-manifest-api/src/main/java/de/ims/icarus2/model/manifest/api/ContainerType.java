@@ -20,10 +20,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
 
 import de.ims.icarus2.util.EditOperation;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -168,23 +167,14 @@ public enum ContainerType implements StringResource {
 		return (byte) ordinal();
 	}
 
-	private static Map<String, ContainerType> xmlLookup;
+	private static LazyStore<ContainerType, String> store = LazyStore.forStringResource(
+			ContainerType.class, true);
 
 	public static ContainerType parseContainerType(String s) {
-		if(xmlLookup==null) {
-			Map<String, ContainerType> map = new HashMap<>();
-			for(ContainerType type : values()) {
-				map.put(type.xmlForm, type);
-			}
-			xmlLookup = map;
-		}
-
-		return xmlLookup.get(s);
+		return store.lookup(s);
 	}
 
-	private static final ContainerType[] values = values();
-
 	public static ContainerType forId(byte id) {
-		return values[id];
+		return _values[id];
 	}
 }

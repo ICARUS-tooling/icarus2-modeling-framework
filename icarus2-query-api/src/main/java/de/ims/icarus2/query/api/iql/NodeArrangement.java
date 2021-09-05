@@ -21,7 +21,10 @@ package de.ims.icarus2.query.api.iql;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum NodeArrangement {
+import de.ims.icarus2.util.LazyStore;
+import de.ims.icarus2.util.strings.StringResource;
+
+public enum NodeArrangement implements StringResource {
 	UNORDERED("unordered"),
 	ORDERED("ordered"),
 	ADJACENT("adjacent")
@@ -33,4 +36,14 @@ public enum NodeArrangement {
 
 	@JsonValue
 	public String getLabel() { return label; }
+
+	@Override
+	public String getStringValue() { return label; }
+
+	private static final LazyStore<NodeArrangement, String> store = LazyStore.forStringResource(
+			NodeArrangement.class, true);
+
+	public static NodeArrangement parseArrangement(String s) {
+		return store.lookup(s);
+	}
 }

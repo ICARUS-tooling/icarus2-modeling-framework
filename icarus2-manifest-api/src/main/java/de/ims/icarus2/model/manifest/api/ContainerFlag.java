@@ -79,7 +79,8 @@ public enum ContainerFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static LazyStore<ContainerFlag,String> store = LazyStore.forStringResource(ContainerFlag.class);
+	private static LazyStore<ContainerFlag,String> store = LazyStore.forStringResource(
+			ContainerFlag.class, true);
 
 	public static ContainerFlag parseContainerFlag(String s) {
 		return store.lookup(s);

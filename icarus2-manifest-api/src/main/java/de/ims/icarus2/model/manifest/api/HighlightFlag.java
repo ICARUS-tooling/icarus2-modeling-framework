@@ -67,7 +67,8 @@ public enum HighlightFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static LazyStore<HighlightFlag,String> store = LazyStore.forStringResource(HighlightFlag.class);
+	private static LazyStore<HighlightFlag,String> store = LazyStore.forStringResource(
+			HighlightFlag.class, true);
 
 	public static HighlightFlag parseHighlightFlag(String s) {
 		return store.lookup(s);

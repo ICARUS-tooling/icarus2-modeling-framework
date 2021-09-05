@@ -120,7 +120,8 @@ public enum StructureFlag implements StringResource, Flag {
 	}
 
 
-	private static LazyStore<StructureFlag, String> store = LazyStore.forStringResource(StructureFlag.class);
+	private static LazyStore<StructureFlag, String> store = LazyStore.forStringResource(
+			StructureFlag.class, true);
 
 	public static StructureFlag parseStructureFlag(String s) {
 		return store.lookup(s);

@@ -194,7 +194,8 @@ public interface LocationManifest extends Manifest {
 			return xmlForm;
 		}
 
-		private static LazyStore<PathType, String> store = LazyStore.forStringResource(PathType.class);
+		private static LazyStore<PathType, String> store = LazyStore.forStringResource(
+				PathType.class, true);
 
 		public static PathType parsePathType(String s) {
 			return store.lookup(s);

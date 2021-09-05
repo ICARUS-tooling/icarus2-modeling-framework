@@ -38,8 +38,13 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public class LazyStore<F extends Object, K extends Object> {
 
-	public static <S extends StringResource> LazyStore<S, String> forStringResource(Class<S> clazz) {
-		return new LazyStore<>(clazz, StringResource::getStringValue);
+	public static <S extends StringResource> LazyStore<S, String> forStringResource(
+			Class<S> clazz, boolean ignoreCase) {
+		Function<String, String> keyMod = null;
+		if(ignoreCase) {
+			keyMod = String::toLowerCase;
+		}
+		return new LazyStore<>(clazz, StringResource::getStringValue, keyMod);
 	}
 
 	private Map<K, F> lookup;

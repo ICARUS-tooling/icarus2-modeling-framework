@@ -63,7 +63,8 @@ public enum LocationType implements StringResource {
 		this.xmlForm = xmlForm;
 	}
 
-	private static final LazyStore<LocationType, String> store = LazyStore.forStringResource(LocationType.class);
+	private static final LazyStore<LocationType, String> store = LazyStore.forStringResource(
+			LocationType.class, true);
 
 	/**
 	 * @see de.ims.icarus2.model.util.StringResource.XmlResource#getStringValue()

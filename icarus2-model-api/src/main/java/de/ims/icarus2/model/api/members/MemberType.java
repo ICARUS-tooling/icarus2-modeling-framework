@@ -54,7 +54,8 @@ public enum MemberType implements StringResource {
 		return xmlForm;
 	}
 
-	private static LazyStore<MemberType,String> store = LazyStore.forStringResource(MemberType.class);
+	private static LazyStore<MemberType,String> store
+		= LazyStore.forStringResource(MemberType.class, true);
 
 	public static MemberType parseMemberType(String s) {
 		return store.lookup(s);

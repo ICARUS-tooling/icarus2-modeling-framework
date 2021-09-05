@@ -214,7 +214,7 @@ public class IqlPayload extends IqlUnique {
 		public String getLabel() { return label; }
 
 		private static final LazyStore<QueryModifier, String> store =
-				LazyStore.forStringResource(QueryModifier.class);
+				LazyStore.forStringResource(QueryModifier.class, true);
 
 		public static QueryModifier parse(String s) {
 			return store.lookup(s);
@@ -237,7 +237,7 @@ public class IqlPayload extends IqlUnique {
 		public String getLabel() { return label; }
 
 		private static final LazyStore<MatchFlag, String> store =
-				LazyStore.forStringResource(MatchFlag.class);
+				LazyStore.forStringResource(MatchFlag.class, true);
 
 		public static MatchFlag parse(String s) {
 			return store.lookup(s);

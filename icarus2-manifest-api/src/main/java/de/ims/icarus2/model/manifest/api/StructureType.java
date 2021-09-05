@@ -20,11 +20,10 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import de.ims.icarus2.util.EditOperation;
+import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.strings.StringResource;
 
 /**
@@ -213,23 +212,14 @@ public enum StructureType implements StringResource {
 		return (byte) ordinal();
 	}
 
-	private static Map<String, StructureType> xmlLookup;
+	private static LazyStore<StructureType, String> store = LazyStore.forStringResource(
+			StructureType.class, true);
 
 	public static StructureType parseStructureType(String s) {
-		if(xmlLookup==null) {
-			Map<String, StructureType> map = new HashMap<>();
-			for(StructureType type : values()) {
-				map.put(type.xmlForm, type);
-			}
-			xmlLookup = map;
-		}
-
-		return xmlLookup.get(s);
+		return store.lookup(s);
 	}
 
-	private static final StructureType[] values = values();
-
 	public static StructureType forId(byte id) {
-		return values[id];
+		return _values[id];
 	}
 }

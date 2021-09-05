@@ -368,7 +368,8 @@ public interface TableSchema extends Schema {
 			this.xml = requireNonNull(xml);
 		}
 
-		private static final LazyStore<SubstituteType, String> store = LazyStore.forStringResource(SubstituteType.class);
+		private static final LazyStore<SubstituteType, String> store
+			= LazyStore.forStringResource(SubstituteType.class, true);
 
 		public static SubstituteType parseSubstituteType(String s) {
 			return store.lookup(s);

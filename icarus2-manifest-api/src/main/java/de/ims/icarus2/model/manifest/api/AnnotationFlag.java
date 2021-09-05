@@ -122,7 +122,8 @@ public enum AnnotationFlag implements StringResource, Flag {
 		return xmlForm;
 	}
 
-	private static LazyStore<AnnotationFlag, String> store = LazyStore.forStringResource(AnnotationFlag.class);
+	private static LazyStore<AnnotationFlag, String> store = LazyStore.forStringResource(
+			AnnotationFlag.class, true);
 
 	public static AnnotationFlag parseAnnotationFlag(String s) {
 		return store.lookup(s);

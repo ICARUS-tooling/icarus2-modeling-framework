@@ -200,7 +200,8 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 			return xmlForm;
 		}
 
-		private static LazyStore<Relation, String> store = LazyStore.forStringResource(Relation.class);
+		private static LazyStore<Relation, String> store = LazyStore.forStringResource(
+				Relation.class, true);
 
 		public static Relation parseRelation(String s) {
 			return store.lookup(s);
@@ -310,7 +311,8 @@ public interface MappingManifest extends ManifestFragment, Embedded {
 			return xmlForm;
 		}
 
-		private static LazyStore<Coverage, String> store = LazyStore.forStringResource(Coverage.class);
+		private static LazyStore<Coverage, String> store = LazyStore.forStringResource(
+				Coverage.class, true);
 
 		public static Coverage parseCoverage(String s) {
 			return store.lookup(s);
