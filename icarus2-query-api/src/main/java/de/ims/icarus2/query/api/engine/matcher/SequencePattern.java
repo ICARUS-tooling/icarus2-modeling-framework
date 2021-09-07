@@ -86,6 +86,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
@@ -4443,13 +4444,19 @@ public class SequencePattern {
 
 			return result;
 		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			info.stopOnSuccess = true;
+			return next.study(info);
+		}
 	}
 
 	static final class Descend extends ProperNode {
 
 		final Node[] children;
 
-		Descend(int id, IqlQueryElement source, Node...children) {
+		Descend(int id, IqlTreeNode source, Node...children) {
 			super(id, source);
 			checkArgument("Need at least 1 child", children.length>0);
 			this.children = children;
