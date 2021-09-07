@@ -144,11 +144,11 @@ public interface Container extends Item, ManifestOwner<ContainerManifestBase<?>>
 	@Override
 	Item getItemAt(long index);
 
-	default Item getFirstItem() {
+	default @Nullable Item getFirstItem() {
 		return getItemCount()==0L ? null : getItemAt(0L);
 	}
 
-	default Item getLastItem() {
+	default @Nullable Item getLastItem() {
 		return getItemCount()==0L ? null : getItemAt(getItemCount()-1);
 	}
 

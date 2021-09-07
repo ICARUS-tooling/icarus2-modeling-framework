@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.members.container.ContainerEditVerifier;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -88,6 +90,7 @@ public interface EdgeStorage extends Recyclable {
 	 * @see Structure#getParent(Item)
 	 */
 	@OptionalMethod
+	@Nullable
 	Item getParent(Structure context, Item node);
 
 	/**

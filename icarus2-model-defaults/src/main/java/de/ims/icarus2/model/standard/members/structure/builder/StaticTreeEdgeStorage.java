@@ -23,6 +23,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -214,24 +216,24 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		private static final int OFFSET_DEPTH = 17;
 		private static final int OFFSET_DESCENDANTS = 24;
 
-		private static int extract(int data, int shifts, int mask) {
+		private static int _extract(int data, int shifts, int mask) {
 			return (data >>> shifts) & mask;
 		}
 
-		private static int pointer(int data) {
-			return extract(data, OFFSET_POINTER, MASK_10)-1;
+		private static int _pointer(int data) {
+			return _extract(data, OFFSET_POINTER, MASK_10)-1;
 		}
 
-		private static int height(int data) {
-			return extract(data, OFFSET_HEIGHT, MASK_7);
+		private static int _height(int data) {
+			return _extract(data, OFFSET_HEIGHT, MASK_7);
 		}
 
-		private static int depth(int data) {
-			return extract(data, OFFSET_DEPTH, MASK_7)-1;
+		private static int _depth(int data) {
+			return _extract(data, OFFSET_DEPTH, MASK_7)-1;
 		}
 
-		private static int descendants(int data) {
-			return extract(data, OFFSET_DESCENDANTS, MASK_8);
+		private static int _descendants(int data) {
+			return _extract(data, OFFSET_DESCENDANTS, MASK_8);
 		}
 
 		private static final byte OFFSET = Byte.MAX_VALUE;
@@ -278,7 +280,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int outgoing(int data, int index) {
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			int count = toInt(edgeData[pointer+1]);
 			if(index<0 || index>=count)
 				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
@@ -288,12 +290,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int outgoingCount(int data) {
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			return toInt(edgeData[pointer+1]);
 		}
 
 		private int incoming(int data) {
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			return toInt(edgeData[pointer])-1;
 		}
 
@@ -349,11 +351,11 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getHeight(Structure context, Item node) {
 			requireNonNull(node);
 			if(node==virtualRoot) {
-				return height(treeData[0]);
+				return _height(treeData[0]);
 			}
 
 			int data = treeData[localIndex(context, node)];
-			return height(data);
+			return _height(data);
 		}
 
 		/**
@@ -367,7 +369,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			int data = treeData[localIndex(context, node)];
-			return depth(data);
+			return _depth(data);
 		}
 
 		/**
@@ -377,11 +379,11 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDescendantCount(Structure context, Item parent) {
 			requireNonNull(parent);
 			if(parent==virtualRoot) {
-				return descendants(treeData[0]);
+				return _descendants(treeData[0]);
 			}
 
 			int data = treeData[localIndex(context, parent)];
-			return descendants(data);
+			return _descendants(data);
 		}
 
 		private Edge incomingEdge(Structure context, Item node) {
@@ -406,7 +408,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		 * @see de.ims.icarus2.model.standard.members.structure.EdgeStorage#getParent(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Item)
 		 */
 		@Override
-		public Item getParent(Structure context, Item node) {
+		public @Nullable Item getParent(Structure context, Item node) {
 			requireNonNull(node);
 			Edge incomingEdge = incomingEdge(context, node);
 			return incomingEdge==null ? null : incomingEdge.getSource();
@@ -414,7 +416,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 		private int indexOfEdge(Structure context, Item parent, Edge edge) {
 			int data = treeData[localIndex(context, parent)];
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			byte gloablIndex = toByte(indexOfEdge(edge));
 
 			int fromIndex = pointer+2;
@@ -615,24 +617,24 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		private static final int OFFSET_DEPTH = 33;
 		private static final int OFFSET_DESCENDANTS = 48;
 
-		private static int extract(long data, int shifts, long mask) {
+		private static int _extract(long data, int shifts, long mask) {
 			return (int)((data >>> shifts) & mask);
 		}
 
-		private static int pointer(long data) {
-			return extract(data, OFFSET_POINTER, MASK_18)-1;
+		private static int _pointer(long data) {
+			return _extract(data, OFFSET_POINTER, MASK_18)-1;
 		}
 
-		private static int height(long data) {
-			return extract(data, OFFSET_HEIGHT, MASK_15);
+		private static int _height(long data) {
+			return _extract(data, OFFSET_HEIGHT, MASK_15);
 		}
 
-		private static int depth(long data) {
-			return extract(data, OFFSET_DEPTH, MASK_15)-1;
+		private static int _depth(long data) {
+			return _extract(data, OFFSET_DEPTH, MASK_15)-1;
 		}
 
-		private static int descendants(long data) {
-			return extract(data, OFFSET_DESCENDANTS, MASK_16);
+		private static int _descendants(long data) {
+			return _extract(data, OFFSET_DESCENDANTS, MASK_16);
 		}
 
 		private static final short OFFSET = Short.MAX_VALUE;
@@ -678,7 +680,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int outgoing(long data, int index) {
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			int count = toInt(edgeData[pointer+1]);
 			if(index<0 || index>=count)
 				throw new ModelException(ModelErrorCode.MODEL_INDEX_OUT_OF_BOUNDS,
@@ -688,12 +690,12 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		}
 
 		private int outgoingCount(long data) {
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			return toInt(edgeData[pointer+1]);
 		}
 
 		private int incoming(long data) {
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			return toInt(edgeData[pointer])-1;
 		}
 
@@ -749,11 +751,11 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getHeight(Structure context, Item node) {
 			requireNonNull(node);
 			if(node==virtualRoot) {
-				return height(treeData[0]);
+				return _height(treeData[0]);
 			}
 
 			long data = treeData[localIndex(context, node)];
-			return height(data);
+			return _height(data);
 		}
 
 		/**
@@ -767,7 +769,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 			}
 
 			long data = treeData[localIndex(context, node)];
-			return depth(data);
+			return _depth(data);
 		}
 
 		/**
@@ -777,11 +779,11 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 		public long getDescendantCount(Structure context, Item parent) {
 			requireNonNull(parent);
 			if(parent==virtualRoot) {
-				return descendants(treeData[0]);
+				return _descendants(treeData[0]);
 			}
 
 			long data = treeData[localIndex(context, parent)];
-			return descendants(data);
+			return _descendants(data);
 		}
 
 		private Edge incomingEdge(Structure context, Item node) {
@@ -814,7 +816,7 @@ public abstract class StaticTreeEdgeStorage extends AbstractStaticEdgeStorage<Ro
 
 		private int indexOfEdge(Structure context, Item parent, Edge edge) {
 			long data = treeData[localIndex(context, parent)];
-			int pointer = pointer(data);
+			int pointer = _pointer(data);
 			short gloablIndex = toShort(indexOfEdge(edge));
 
 			int fromIndex = pointer+2;
