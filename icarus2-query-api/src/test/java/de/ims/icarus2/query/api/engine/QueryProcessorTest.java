@@ -24,18 +24,23 @@ import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -536,7 +541,7 @@ public class QueryProcessorTest {
 
 		private final Consumer<IqlSequence> arrangements(NodeArrangement...arrangements) {
 			return sequence -> {
-				assertThat(sequence.getArrangements()).containsExactly(arrangements);
+				assertThat(sequence.getArrangements()).containsExactlyInAnyOrder(arrangements);
 			};
 		}
 
@@ -810,6 +815,40 @@ public class QueryProcessorTest {
 					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", pred("pos!=\"NNP\""))));
 				}
 
+			}
+
+			@Nested
+			class Arrangements {
+
+				@ParameterizedTest
+				@EnumSource(NodeArrangement.class)
+				void testSingularArrangement(NodeArrangement arrangement) {
+					String rawPayload = "FIND "+arrangement.getLabel()+" [][]";
+					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+					assertSequence(payload);
+					assertBindings(payload);
+					assertLanes(payload, lane(LaneType.SEQUENCE,
+							sequence(arrangements(arrangement),
+									node(null, null),
+									node(null, null))));
+				}
+
+				@TestFactory
+				Stream<DynamicNode> testLegalCombinations() {
+					return Stream.of(NodeArrangement.values()).map(
+							arr1 -> dynamicContainer(arr1.getLabel(),
+									arr1.getCompatibleArrangements().stream().map(
+											arr2 -> dynamicTest(arr2.getLabel(), () -> {
+												String rawPayload = "FIND "+arr1.getLabel()+" "+arr2.getLabel()+" [][]";
+												IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
+												assertSequence(payload);
+												assertBindings(payload);
+												assertLanes(payload, lane(LaneType.SEQUENCE,
+														sequence(arrangements(arr1, arr2),
+																node(null, null),
+																node(null, null))));
+											}))));
+				}
 			}
 
 			@Nested

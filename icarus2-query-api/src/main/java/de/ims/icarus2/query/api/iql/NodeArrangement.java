@@ -27,6 +27,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import de.ims.icarus2.util.LazyStore;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.StringResource;
 
 public enum NodeArrangement implements StringResource {
@@ -49,6 +50,10 @@ public enum NodeArrangement implements StringResource {
 
 	public boolean isCompatibleWith(NodeArrangement other) {
 		return compatibleWith.contains(requireNonNull(other));
+	}
+
+	public Set<NodeArrangement> getCompatibleArrangements() {
+		return CollectionUtils.unmodifiableSetProxy(compatibleWith);
 	}
 
 	private static final LazyStore<NodeArrangement, String> store = LazyStore.forStringResource(
