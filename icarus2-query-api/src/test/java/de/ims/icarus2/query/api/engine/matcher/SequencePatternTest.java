@@ -3353,6 +3353,21 @@ class SequencePatternTest {
 		}
 
 		@Nested
+		class ForPermutation {
+			//TODO add explicit tests for internal sof the permutation nodes
+
+			@Nested
+			class Adjacent {
+
+			}
+
+			@Nested
+			class NonAdjacent {
+
+			}
+		}
+
+		@Nested
 		class ForCombinations {
 
 			@Nested
