@@ -24,7 +24,7 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -198,7 +198,7 @@ public abstract class IqlElement extends IqlUnique {
 
 		@JsonProperty(IqlTags.ARRANGEMENTS)
 		@JsonInclude(Include.NON_EMPTY)
-		private Set<NodeArrangement> nodeArrangements = EnumSet.noneOf(NodeArrangement.class);
+		private Set<NodeArrangement> nodeArrangements = new HashSet<>();
 
 		@Override
 		public IqlType getType() { return IqlType.SEQUENCE; }

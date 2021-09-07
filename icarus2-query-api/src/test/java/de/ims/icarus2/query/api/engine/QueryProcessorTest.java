@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -189,6 +190,7 @@ public class QueryProcessorTest {
 		@ValueSource(strings = {
 				"FIND ORDERED [![]]",
 		})
+		@Disabled("IQL specification allows overspecified arrangement declarations now")
 		void testInsufficientNodesForAlignment(String rawPayload) {
 			assertReportHasWarnings(expectReport(rawPayload),
 					pair(QueryErrorCode.INCORRECT_USE, list(msgContains("existentially"))));
@@ -518,18 +520,28 @@ public class QueryProcessorTest {
 		}
 
 		@SafeVarargs
-		private final Consumer<IqlElement> sequence(NodeArrangement arrangement,
+		private final Consumer<IqlElement> sequence(Consumer<IqlSequence> arrAsserter,
 				Consumer<IqlElement>...asserters) {
 			return element -> {
 				assertThat(element).isInstanceOf(IqlSequence.class);
-				IqlSequence set = (IqlSequence)element;
-				assertThat(set.getArrangements()).isSameAs(arrangement);
-				List<IqlElement> items = set.getElements();
+				IqlSequence sequence = (IqlSequence)element;
+				arrAsserter.accept(sequence);
+				List<IqlElement> items = sequence.getElements();
 				assertThat(items).hasSize(asserters.length);
 				for (int i = 0; i < asserters.length; i++) {
 					asserters[i].accept(items.get(i));
 				}
 			};
+		}
+
+		private final Consumer<IqlSequence> arrangements(NodeArrangement...arrangements) {
+			return sequence -> {
+				assertThat(sequence.getArrangements()).containsExactly(arrangements);
+			};
+		}
+
+		private final Consumer<IqlSequence> noArrangements() {
+			return sequence -> assertThat(sequence.getArrangements()).isEmpty();
 		}
 
 		private final Consumer<IqlElement> grouping(Consumer<IqlQuantifier> qAsserter,
@@ -905,17 +917,19 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
+							noArrangements(),
 							node(null, null), node(null, null), node(null, null))));
 				}
 
 				@Test
 				void testEmptyUnnamedQuantifiedNodeSequence() {
-					String rawPayload = "FIND 4-[] 2..10[] <3|5+>[] ![]";
+					String rawPayload = "FIND ORDERED 4-[] 2..10[] <3|5+>[] ![]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
+							arrangements(NodeArrangement.ORDERED),
 							node(null, null, quant(QuantifierType.AT_MOST, 4)),
 							node(null, null, quant(2, 10)),
 							node(null, null, quant(QuantifierType.EXACT, 3), quant(QuantifierType.AT_LEAST, 5)),
@@ -947,11 +961,12 @@ public class QueryProcessorTest {
 
 				@Test
 				void testEmptyNamedNodes() {
-					String rawPayload = "WITH $token1,$token2 FROM layer1 FIND [$token1:][$token2:]";
+					String rawPayload = "WITH $token1,$token2 FROM layer1 FIND UNORDERED [$token1:][$token2:]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload, bind("layer1", false, "token1", "token2"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
+							arrangements(NodeArrangement.UNORDERED),
 							node("token1", null), node("token2", null))));
 				}
  			}
@@ -971,7 +986,8 @@ public class QueryProcessorTest {
 					assertBindings(payload,
 							bind("layer1", true, "token1", "token2"),
 							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(NodeArrangement.UNORDERED,
+					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
+							noArrangements(),
 							node("token1", pred("pos!=\"NNP\"")),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
 							node("token2", pred("length()>12")))));
@@ -1013,7 +1029,8 @@ public class QueryProcessorTest {
 					assertTree(payload);
 					assertBindings(payload);
 					assertLanes(payload, lane(LaneType.TREE,
-							tree(null, null, sequence(NodeArrangement.UNORDERED,
+							tree(null, null, sequence(
+									noArrangements(),
 									node(), node()))));
 				}
 
@@ -1051,7 +1068,7 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH DISTINCT $token1,$token2 FROM layer1 "
 							+ "AND $p FROM phrase "
 							+ "FIND ORDERED [5-[][$token1: pos!=\"NNP\"]] 4+[] "
-							+ "	  [$token2: length()>12 ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
+							+ "	  [$token2: length()>12 ADJACENT ![pos==\"DET\"] 3+[pos==\"MOD\"]] "
 							+ "HAVING $p.contains($token1) && !$p.contains($token2)";
 //					System.out.println(rawPayload);
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
@@ -1059,12 +1076,15 @@ public class QueryProcessorTest {
 					assertBindings(payload,
 							bind("layer1", true, "token1", "token2"),
 							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.TREE, sequence(NodeArrangement.ORDERED,
-							tree(null, null, sequence(NodeArrangement.UNORDERED,
+					assertLanes(payload, lane(LaneType.TREE, sequence(
+							arrangements(NodeArrangement.ORDERED),
+							tree(null, null, sequence(
+									noArrangements(),
 									node(null, null, quant(QuantifierType.AT_MOST, 5)),
 									node("token1", pred("pos!=\"NNP\"")))),
 							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
-							tree("token2", pred("length()>12"), sequence(NodeArrangement.UNORDERED,
+							tree("token2", pred("length()>12"), sequence(
+									arrangements(NodeArrangement.ADJACENT),
 									node(null, pred("pos==\"DET\""), quantNone()),
 									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3)))))));
 					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,

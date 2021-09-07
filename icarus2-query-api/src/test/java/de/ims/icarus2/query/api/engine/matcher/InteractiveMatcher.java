@@ -623,16 +623,16 @@ public class InteractiveMatcher {
 
 			IntList atoms = info.getAtoms();
 			mxCell atomRoot;
-			if(atoms.size()>1) {
+//			if(atoms.size()>1) {
 				atomRoot = (mxCell) graph.insertVertex(cell,
 						cell.getId()+"_atoms", null, 10, 10, 16, 16, Styles.SM_ATOM_ROOT);
 				for(int atomId : atoms) {
 					graph.insertEdge(cell, null, null, atomRoot,
 							sm2graph.get(id2info.get(atomId)), Styles.SM_EDGE_BRANCH);
 				}
-			} else {
-				atomRoot = sm2graph.get(id2info.get(atoms.getInt(0)));
-			}
+//			} else {
+//				atomRoot = sm2graph.get(id2info.get(atoms.getInt(0)));
+//			}
 			layout.execute(cell, atomRoot);
 			mxGeometry geo = model.getGeometry(cell);
 			geo.setHeight(geo.getHeight()+15);

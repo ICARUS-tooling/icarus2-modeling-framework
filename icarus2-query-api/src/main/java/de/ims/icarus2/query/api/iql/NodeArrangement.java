@@ -19,6 +19,11 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.EnumSet;
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import de.ims.icarus2.util.LazyStore;
@@ -32,6 +37,8 @@ public enum NodeArrangement implements StringResource {
 
 	private final String label;
 
+	private Set<NodeArrangement> compatibleWith;
+
 	private NodeArrangement(String label) { this.label = label; }
 
 	@JsonValue
@@ -40,10 +47,28 @@ public enum NodeArrangement implements StringResource {
 	@Override
 	public String getStringValue() { return label; }
 
+	public boolean isCompatibleWith(NodeArrangement other) {
+		return compatibleWith.contains(requireNonNull(other));
+	}
+
 	private static final LazyStore<NodeArrangement, String> store = LazyStore.forStringResource(
 			NodeArrangement.class, true);
 
 	public static NodeArrangement parseArrangement(String s) {
 		return store.lookup(s);
+	}
+
+	private static void _comp(NodeArrangement a, NodeArrangement b) {
+		a.compatibleWith.add(b);
+		b.compatibleWith.add(a);
+	}
+
+	static {
+		for(NodeArrangement arrangement : values()) {
+			arrangement.compatibleWith = EnumSet.noneOf(NodeArrangement.class);
+		}
+
+		_comp(ORDERED, ADJACENT);
+		_comp(UNORDERED, ADJACENT);
 	}
 }

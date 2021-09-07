@@ -90,6 +90,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -180,6 +181,7 @@ import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * IMPORTANT NOTE:
@@ -1016,9 +1018,13 @@ class SequencePatternTest {
 		private int nextResult = 0;
 		/** Monitor to be used to track the state machine */
 		private Monitor monitor;
+		/** Flag to allow duplicate mappings in the overall result */
+		private boolean allowDuplicates = false;
 
 		/** Intermediate mappings expected to exist during result assertion */
 		private final ResultConfig mapping = new ResultConfig(-1);
+		/** */
+		private final Set<String> mappings = new ObjectOpenHashSet<>();
 
 		MatchConfig(int startPos, boolean expectedResult, int expectedCount) {
 			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
@@ -1034,6 +1040,8 @@ class SequencePatternTest {
 			this.expectedResult = expectedResult;
 			this.expectedCount = expectedCount;
 		}
+
+		MatchConfig allowDuplicates(boolean allowDuplicates) { this.allowDuplicates = allowDuplicates; return this; }
 
 		MatchConfig monitor(Monitor monitor) { this.monitor = monitor; return this; }
 
@@ -1085,28 +1093,22 @@ class SequencePatternTest {
 			return this;
 		}
 
-		private static String state2Mapping(State state) {
-			StringBuilder sb = new StringBuilder();
-			sb.append('{');
-			for(int i=0; i<state.entry; i++) {
-				if(i>0) {
-					sb.append(',');
-				}
-				sb.append(state.m_node[i])
-					.append("->")
-					.append(state.m_pos[i]);
-			}
-			sb.append('}');
-			return sb.toString();
-		}
-
 		/** Asserts the dispatched state based on the list of expected results */
 		@Override
 		public void accept(State state) {
+			StateProxy proxy = new StateProxy(state);
+
 			assertThat(nextResult)
 				.as("No more results buffered - only expected %d: %s",
-						_int(results.size()), state2Mapping(state)) //FIXME very inefficient, as we create the error message ALWAYS
+						_int(results.size()), proxy) // use proxy to delay serialization till construction of error message
 				.isLessThan(results.size());
+
+			if(!allowDuplicates) {
+				String entry = proxy.toString();
+				// Ignore empty mappings for duplicity checks
+				if(!"{}".equals(entry) && !mappings.add(proxy.toString()))
+					throw new AssertionError("Duplicate mapping: "+proxy.toString());
+			}
 
 			results.get(nextResult++).assertMapping(state);
 		}
@@ -1170,6 +1172,30 @@ class SequencePatternTest {
 
 			// Now perform deep validation of the final (internal) matcher state
 			assertState(matcher);
+		}
+	}
+
+	private static class StateProxy {
+		private final State state;
+		private String text;
+		StateProxy(State state) { this.state = requireNonNull(state); }
+		@Override
+		public String toString() {
+			if(text==null) {
+				StringBuilder sb = new StringBuilder();
+				sb.append('{');
+				for(int i=0; i<state.entry; i++) {
+					if(i>0) {
+						sb.append(',');
+					}
+					sb.append(state.m_node[i])
+						.append("->")
+						.append(state.m_pos[i]);
+				}
+				sb.append('}');
+				text = sb.toString();
+			}
+			return text;
 		}
 	}
 
@@ -1337,9 +1363,10 @@ class SequencePatternTest {
 		ResultConfig map(boolean condition, int nodeId, Interval...indices) { if(condition) map(nodeId, indices); return this;}
 
 		void assertMapping(State state) {
+			StateProxy proxy = new StateProxy(state);
 			int size = mapping.size();
 			assertThat(state.entry)
-				.as("Incorrect number of mappings in result #%d", _int(index))
+				.as("Incorrect number of mappings in result #%d:\n%s", _int(index), proxy)
 				.isEqualTo(size);
 
 			// Process mappings in their natural occurrence order
@@ -1349,12 +1376,12 @@ class SequencePatternTest {
 			for (int i = 0; i < size; i++) {
 				Pair<Integer, Integer> m = entries.get(i);
 				assertThat(state.m_node[i])
-					.as("Node id mismatch in mapping at index %d in result #%d",
-							_int(i), _int(index))
+					.as("Node id mismatch in mapping at index %d in result #%d:\n%s",
+							_int(i), _int(index), proxy)
 					.isEqualTo(m.first.intValue());
 				assertThat(state.m_pos[i])
-					.as("Position mismatch in mapping at index %d in result #%d for node %d",
-							_int(i), _int(index), _int(state.m_node[i]))
+					.as("Position mismatch in mapping at index %d in result #%d for node %d:\n%s",
+							_int(i), _int(index), _int(state.m_node[i]), proxy)
 					.isEqualTo(m.second.intValue());
 			}
 		}
@@ -7084,41 +7111,42 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: <{1}..{2}>[X] in {0}")
 					@CsvSource({
 						// Optional
-						"Y, 0, 1, {-}, 0",
-						"Y-, 0, 1, {-;-}, 0-1",
-						"X, 0, 1, {0}, 0",
-						"-X, 0, 1, {-;1}, 0-1",
-						"X-, 0, 1, {0;-}, 0-1",
+						"Y, 0, 1, {-}, 0, false",
+						"Y-, 0, 1, {-;-}, 0-1, true",
+						"X, 0, 1, {0}, 0, false",
+						"-X, 0, 1, {-;1}, 0-1, false",
+						"X-, 0, 1, {0;-}, 0-1, false",
 						// Singular
-						"X, 1, 1, {0}, 0",
-						"X-, 1, 1, {0}, 0-1",
-						"-X, 1, 1, {1}, 0-1",
-						"XX-, 1, 1, {0;1}, 0-2",
-						"-XX, 1, 1, {1;2}, 0-2",
-						"X-X, 1, 1, {0;2}, 0-2",
+						"X, 1, 1, {0}, 0, false",
+						"X-, 1, 1, {0}, 0-1, false",
+						"-X, 1, 1, {1}, 0-1, false",
+						"XX-, 1, 1, {0;1}, 0-2, false",
+						"-XX, 1, 1, {1;2}, 0-2, false",
+						"X-X, 1, 1, {0;2}, 0-2, false",
 						// Sequence of 1 to 2
-						"XX, 1, 2, {0-1;1}, 0-1",
-						"X-, 1, 2, {0}, 0-1",
-						"XX-, 1, 2, {0-1;1}, 0-2",
-						"XXX, 1, 2, {0-1;1-2;2}, 0-2",
-						"-X-, 1, 2, {1}, 0-2",
-						"-XX, 1, 2, {1-2;2}, 0-2",
-						"-XX-, 1, 2, {1-2;2}, 0-3",
-						"-XXX, 1, 2, {1-2;2-3;3}, 0-3",
-						"XXX-, 1, 2, {0-1;1-2;2}, 0-3",
-						"--XX, 1, 2, {2-3;3}, 0-3",
-						"XX--, 1, 2, {0-1;1}, 0-3",
-						"X-XX, 1, 2, {0;2-3;3}, 0-3",
+						"XX, 1, 2, {0-1;1}, 0-1, false",
+						"X-, 1, 2, {0}, 0-1, false",
+						"XX-, 1, 2, {0-1;1}, 0-2, false",
+						"XXX, 1, 2, {0-1;1-2;2}, 0-2, false",
+						"-X-, 1, 2, {1}, 0-2, false",
+						"-XX, 1, 2, {1-2;2}, 0-2, false",
+						"-XX-, 1, 2, {1-2;2}, 0-3, false",
+						"-XXX, 1, 2, {1-2;2-3;3}, 0-3, false",
+						"XXX-, 1, 2, {0-1;1-2;2}, 0-3, false",
+						"--XX, 1, 2, {2-3;3}, 0-3, false",
+						"XX--, 1, 2, {0-1;1}, 0-3, false",
+						"X-XX, 1, 2, {0;2-3;3}, 0-3, false",
 						// Sequence of 2 to 3
-						"X-XX, 2, 3, {2-3}, 0-3",
+						"X-XX, 2, 3, {2-3}, 0-3, false",
 
-						"--XXXXXXXXXX--, 8, 10, {2-11;3-11;4-11}, 0-12",
-						"--XXXXXXXXXXX--, 8, 10, {2-11;3-12;4-12;5-12}, 0-13",
+						"--XXXXXXXXXX--, 8, 10, {2-11;3-11;4-11}, 0-12, false",
+						"--XXXXXXXXXXX--, 8, 10, {2-11;3-12;4-12;5-12}, 0-13, false",
 					})
 					@DisplayName("Node with a bounded multiplicity [greedy mode, multiple hits]")
 					void testGreedy(String target, int min, int max,
 							@IntervalArrayArg Interval[] hits,
-							@IntervalArg Interval visited) {
+							@IntervalArg Interval visited,
+							boolean allowDuplicates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
@@ -7127,6 +7155,7 @@ class SequencePatternTest {
 										)
 								).build(),
 								match(hits.length)
+									.allowDuplicates(allowDuplicates)
 									// Underlying cache of atom node
 									.cache(cache(CACHE_0, false)
 											.window(target)
@@ -7139,46 +7168,47 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: <{1}..{2}^>[X] in {0}")
 					@CsvSource({
 						// Optional
-						"Y, 0, 1, {{}}, 0",
-						"Y-, 0, 1, {{}{}}, 0-1",
-						"X, 0, 1, {{0}}, 0",
-						"-X, 0, 1, {{}{1}}, 0-1",
-						"X-, 0, 1, {{0}{}}, 0-1",
+						"Y, 0, 1, {{}}, 0, false",
+						"Y-, 0, 1, {{}{}}, 0-1, true",
+						"X, 0, 1, {{0}}, 0, false",
+						"-X, 0, 1, {{}{1}}, 0-1, false",
+						"X-, 0, 1, {{0}{}}, 0-1, false",
 						// Singular
-						"X, 1, 1, {{0}}, 0",
-						"X-, 1, 1, {{0}}, 0-1",
-						"-X, 1, 1, {{1}}, 0-1",
-						"XX-, 1, 1, {{0}{1}}, 0-2",
-						"-XX, 1, 1, {{1}{2}}, 0-2",
-						"X-X, 1, 1, {{0}{2}}, 0-2",
+						"X, 1, 1, {{0}}, 0, false",
+						"X-, 1, 1, {{0}}, 0-1, false",
+						"-X, 1, 1, {{1}}, 0-1, false",
+						"XX-, 1, 1, {{0}{1}}, 0-2, false",
+						"-XX, 1, 1, {{1}{2}}, 0-2, false",
+						"X-X, 1, 1, {{0}{2}}, 0-2, false",
 						// Sequence of 1 to 2
-						"XX, 1, 2, {{0;1}{1}}, 0-1",
-						"X-, 1, 2, {{0}}, 0-1",
-						"XX-, 1, 2, {{0;1}{1}}, 0-2",
-						"X-X, 1, 2, {{0;2}{2}}, 0-2",
-						"XXX, 1, 2, {{0;1}{1;2}{2}}, 0-2",
-						"-X-, 1, 2, {{1}}, 0-2",
-						"-XX, 1, 2, {{1;2}{2}}, 0-2",
-						"-XX-, 1, 2, {{1;2}{2}}, 0-3",
-						"-XXX, 1, 2, {{1;2}{2;3}{3}}, 0-3",
-						"XXX-, 1, 2, {{0;1}{1;2}{2}}, 0-3",
-						"--XX, 1, 2, {{2;3}{3}}, 0-3",
-						"XX--, 1, 2, {{0;1}{1}}, 0-3",
+						"XX, 1, 2, {{0;1}{1}}, 0-1, false",
+						"X-, 1, 2, {{0}}, 0-1, false",
+						"XX-, 1, 2, {{0;1}{1}}, 0-2, false",
+						"X-X, 1, 2, {{0;2}{2}}, 0-2, false",
+						"XXX, 1, 2, {{0;1}{1;2}{2}}, 0-2, false",
+						"-X-, 1, 2, {{1}}, 0-2, false",
+						"-XX, 1, 2, {{1;2}{2}}, 0-2, false",
+						"-XX-, 1, 2, {{1;2}{2}}, 0-3, false",
+						"-XXX, 1, 2, {{1;2}{2;3}{3}}, 0-3, false",
+						"XXX-, 1, 2, {{0;1}{1;2}{2}}, 0-3, false",
+						"--XX, 1, 2, {{2;3}{3}}, 0-3, false",
+						"XX--, 1, 2, {{0;1}{1}}, 0-3, false",
 						// Sequence of 2 to 3
-						"X-XX, 2, 3, {{0;2;3}{2;3}}, 0-3",
+						"X-XX, 2, 3, {{0;2;3}{2;3}}, 0-3, false",
 						// Sequence of 2 to 4
-						"X-XX, 2, 4, {{0;2;3}{2;3}}, 0-3",
-						"X-XX-X, 2, 4, {{0;2;3;5}{2;3;5}{3;5}}, 0-5",
+						"X-XX, 2, 4, {{0;2;3}{2;3}}, 0-3, false",
+						"X-XX-X, 2, 4, {{0;2;3;5}{2;3;5}{3;5}}, 0-5, false",
 
-						"--XXX--XXX--, 4, 5, {{2;3;4;7;8}{3;4;7;8;9}{4;7;8;9}}, 0-11",
+						"--XXX--XXX--, 4, 5, {{2;3;4;7;8}{3;4;7;8;9}{4;7;8;9}}, 0-11, false",
 
-						"--XXXXXXXX--, 4, 6, {{2;3;4;5;6;7}{3;4;5;6;7;8}{4;5;6;7;8;9}{5;6;7;8;9}{6;7;8;9}}, 0-11",
-						"--XXXXXXXXX--, 4, 6, {{2;3;4;5;6;7}{3;4;5;6;7;8}{4;5;6;7;8;9}{5;6;7;8;9;10}{6;7;8;9;10}{7;8;9;10}}, 0-12",
+						"--XXXXXXXX--, 4, 6, {{2;3;4;5;6;7}{3;4;5;6;7;8}{4;5;6;7;8;9}{5;6;7;8;9}{6;7;8;9}}, 0-11, false",
+						"--XXXXXXXXX--, 4, 6, {{2;3;4;5;6;7}{3;4;5;6;7;8}{4;5;6;7;8;9}{5;6;7;8;9;10}{6;7;8;9;10}{7;8;9;10}}, 0-12, false",
 					})
 					@DisplayName("Node with a bounded multiplicity [greedy mode, multiple hits, discontinuous]")
 					void testGreedyDiscontinuous(String target, int min, int max,
 							@IntMatrixArg int[][] hits,
-							@IntervalArg Interval visited) {
+							@IntervalArg Interval visited,
+							boolean allowDuplicates) {
 						// 'Repetition' node sets minSize so that scan can abort early
 						assertResult(target,
 								builder(quantify(IqlTestUtils.node(NO_LABEL, NO_MARKER,
@@ -7187,6 +7217,7 @@ class SequencePatternTest {
 										)
 								).build(),
 								match(hits.length)
+									.allowDuplicates(allowDuplicates)
 									// Underlying cache of atom node
 									.cache(cache(CACHE_0, false)
 											.window(target)
@@ -8344,35 +8375,35 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: <{3}..{4}!>[x|X][{1}] in {0}, adjacent={2}")
 					@CsvSource({
 						// Optional - ordered
-						"Y, Y, false, 0, 1, {-}, {0}, {0}, {0}, -",
-						"-Y, Y, false, 0, 1, {-;-}, {1;1}, {0-1}, {0-1}, -",
-						"XY, Y, false, 0, 1, {0;-}, {1;1}, {0-1}, {1}, {0}",
-						"XXY, Y, false, 0, 1, {0;1;-}, {2;2;2}, {0-2}, {1-2}, {0-1}",
-						"XXY, Y, false, 0, 2, {0-1;1;-}, {2;2;2}, {0-2}, {2}, {0-1}",
+						"Y, Y, false, 0, 1, {-}, {0}, {0}, {0}, -, false",
+						"-Y, Y, false, 0, 1, {-;-}, {1;1}, {0-1}, {0-1}, -, true",
+						"XY, Y, false, 0, 1, {0;-}, {1;1}, {0-1}, {1}, {0}, false",
+						"XXY, Y, false, 0, 1, {0;1;-}, {2;2;2}, {0-2}, {1-2}, {0-1}, false",
+						"XXY, Y, false, 0, 2, {0-1;1;-}, {2;2;2}, {0-2}, {2}, {0-1}, false",
 						// Optional - adjacent
-						"Y, Y, true, 0, 1, {-}, {0}, {0}, {0}, -",
-						"-Y, Y, true, 0, 1, {-}, {1}, {0-1}, {0-1}, -",
-						"XY, Y, true, 0, 1, {0;-}, {1;1}, {0-1}, {1}, {0}",
-						"XXY, Y, true, 0, 1, {1;-}, {2;2}, {0-2}, {1-2}, {0-1}",
+						"Y, Y, true, 0, 1, {-}, {0}, {0}, {0}, -, false",
+						"-Y, Y, true, 0, 1, {-}, {1}, {0-1}, {0-1}, -, false",
+						"XY, Y, true, 0, 1, {0;-}, {1;1}, {0-1}, {1}, {0}, false",
+						"XXY, Y, true, 0, 1, {1;-}, {2;2}, {0-2}, {1-2}, {0-1}, false",
 						// Expansion of size 1 to 2 - ordered
-						"XY, Y, false, 1, 2, {0}, {1}, {0-1}, {1}, {0}",
-						"XXY, Y, false, 1, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
-						"XX-XX, X, false, 1, 2, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}",
+						"XY, Y, false, 1, 2, {0}, {1}, {0-1}, {1}, {0}, false",
+						"XXY, Y, false, 1, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}, false",
+						"XX-XX, X, false, 1, 2, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}, false",
 						// Expansion of size 1 to 2 - adjacent
-						"XY, Y, true, 1, 2, {0}, {1}, {0-1}, {1}, {0}",
-						"XXY, Y, true, 1, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
+						"XY, Y, true, 1, 2, {0}, {1}, {0-1}, {1}, {0}, false",
+						"XXY, Y, true, 1, 2, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}, false",
 						// Expansion of size 1 to 3 - ordered
-						"XY, Y, false, 1, 3, {0}, {1}, {0-1}, {1}, {0}",
-						"XXY, Y, false, 1, 3, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
-						"XXX-X, X, false, 1, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}, {0-2}",
-						"XX-XX, X, false, 1, 3, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}", // we miss the 5. match due to possessive expansion
-						"XXx-x, x, false, 1, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}, {0-2}",
+						"XY, Y, false, 1, 3, {0}, {1}, {0-1}, {1}, {0}, false",
+						"XXY, Y, false, 1, 3, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}, false",
+						"XXX-X, X, false, 1, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}, {0-2}, false",
+						"XX-XX, X, false, 1, 3, {0-1;0-1;1;1}, {3;4;3;4}, {0-4}, {2-4}, {0-1;3-4}, false", // we miss the 5. match due to possessive expansion
+						"XXx-x, x, false, 1, 3, {0-2;1-2;2}, {4;4;4}, {0-3}, {3-4}, {0-2}, false",
 						// Expansion of size 1 to 3 - adjacent
-						"XXY, Y, true, 1, 3, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}",
-						"XXXX, X, true, 1, 3, {0-2}, {3}, {0-3}, {3}, {0-3}",
+						"XXY, Y, true, 1, 3, {0-1;1}, {2;2}, {0-2}, {2}, {0-1}, false",
+						"XXXX, X, true, 1, 3, {0-2}, {3}, {0-3}, {3}, {0-3}, false",
 						// Expansion of size 2 to 3 - ordered
-						"XXX-X, X, false, 2, 3, {0-2;1-2}, {4;4;}, {0-3}, {3-4}, {0-2}",
-						"XX-XX, X, false, 2, 3, {0-1;0-1}, {3;4}, {0-2}, {2-4}, {0-1}",
+						"XXX-X, X, false, 2, 3, {0-2;1-2}, {4;4;}, {0-3}, {3-4}, {0-2}, false",
+						"XX-XX, X, false, 2, 3, {0-1;0-1}, {3;4}, {0-2}, {2-4}, {0-1}, false",
 					})
 					@DisplayName("verify possessive expansion with multiple nodes")
 					void testPossessiveCompetition(String target,
@@ -8383,7 +8414,8 @@ class SequencePatternTest {
 							@IntervalArrayArg Interval[] hit2, // reported hits for second node
 							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
 							@IntervalArrayArg Interval[] visited2, // all slots visited for second node
-							@IntervalArrayArg Interval[] candidates1) {
+							@IntervalArrayArg Interval[] candidates1,
+							boolean allowDuplicates) {
 
 						// Sanity check since we expect symmetric results here
 						assertThat(hits1).hasSameSizeAs(hit2);
@@ -8401,6 +8433,7 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
+									.allowDuplicates(allowDuplicates)
 									// Cache of first node
 									.cache(cache(CACHE_0, false)
 											.window(target)
@@ -8420,37 +8453,37 @@ class SequencePatternTest {
 					@ParameterizedTest(name="{index}: <{3}..{4}!^>[x|X][{1}] in {0}, adjacent={2}")
 					@CsvSource({
 						// Optional - ordered
-						"Y, Y, false, 0, 1, {{}}, {0}, {0}, {0}",
-						"-Y, Y, false, 0, 1, {{}{}}, {1;1}, {0-1}, {0-1}",
-						"XY, Y, false, 0, 1, {{0}{}}, {1;1}, {0-1}, {1}",
-						"XXY, Y, false, 0, 1, {{0}{1}{}}, {2;2;2}, {0-2}, {1-2}",
-						"XXY, Y, false, 0, 2, {{0;1}{1}{}}, {2;2;2}, {0-2}, {2}",
+						"Y, Y, false, 0, 1, {{}}, {0}, {0}, {0}, false",
+						"-Y, Y, false, 0, 1, {{}{}}, {1;1}, {0-1}, {0-1}, true",
+						"XY, Y, false, 0, 1, {{0}{}}, {1;1}, {0-1}, {1}, false",
+						"XXY, Y, false, 0, 1, {{0}{1}{}}, {2;2;2}, {0-2}, {1-2}, false",
+						"XXY, Y, false, 0, 2, {{0;1}{1}{}}, {2;2;2}, {0-2}, {2}, false",
 						// Optional - adjacent
-						"Y, Y, true, 0, 1, {{}}, {0}, {0}, {0}",
-						"-Y, Y, true, 0, 1, {{}}, {1}, {0-1}, {0-1}",
-						"XY, Y, true, 0, 1, {{0}{}}, {1;1}, {0-1}, {1}",
-						"XXY, Y, true, 0, 1, {{1}{}}, {2;2}, {0-2}, {1-2}",
+						"Y, Y, true, 0, 1, {{}}, {0}, {0}, {0}, false",
+						"-Y, Y, true, 0, 1, {{}}, {1}, {0-1}, {0-1}, false",
+						"XY, Y, true, 0, 1, {{0}{}}, {1;1}, {0-1}, {1}, false",
+						"XXY, Y, true, 0, 1, {{1}{}}, {2;2}, {0-2}, {1-2}, false",
 						// Expansion of size 1 to 2 - ordered
-						"XY, Y, false, 1, 2, {{0}}, {1}, {0-1}, {1}",
-						"XXY, Y, false, 1, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}",
-						"XX-XX, X, false, 1, 2, {{0;1}{0;1}{1;3}}, {3;4;4}, {0-4}, {2-4}",
+						"XY, Y, false, 1, 2, {{0}}, {1}, {0-1}, {1}, false",
+						"XXY, Y, false, 1, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}, false",
+						"XX-XX, X, false, 1, 2, {{0;1}{0;1}{1;3}}, {3;4;4}, {0-4}, {2-4}, false",
 						// Expansion of size 1 to 2 - adjacent
-						"XY, Y, true, 1, 2, {{0}}, {1}, {0-1}, {1}",
-						"XXY, Y, true, 1, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}",
+						"XY, Y, true, 1, 2, {{0}}, {1}, {0-1}, {1}, false",
+						"XXY, Y, true, 1, 2, {{0;1}{1}}, {2;2}, {0-2}, {2}, false",
 						// Expansion of size 1 to 3 - ordered
-						"XY, Y, false, 1, 3, {{0}}, {1}, {0-1}, {1}",
-						"XXY, Y, false, 1, 3, {{0;1}{1}}, {2;2}, {0-2}, {2}",
-						"XXX-X, X, false, 1, 3, {{0;1;2}}, {4}, {0-4}, {3-4}",
-						"XX-XX, X, false, 1, 3, {{0;1;3}}, {4}, {0-4}, {4}",
-						"XX-XX-X, X, false, 1, 3, {{0;1;3}{0;1;3}{1;3;4}}, {4;6;6}, {0-6}, {4-6}",
-						"XXx-x, x, false, 1, 3, {{0;1;2}}, {4}, {0-4}, {3-4}",
+						"XY, Y, false, 1, 3, {{0}}, {1}, {0-1}, {1}, false",
+						"XXY, Y, false, 1, 3, {{0;1}{1}}, {2;2}, {0-2}, {2}, false",
+						"XXX-X, X, false, 1, 3, {{0;1;2}}, {4}, {0-4}, {3-4}, false",
+						"XX-XX, X, false, 1, 3, {{0;1;3}}, {4}, {0-4}, {4}, false",
+						"XX-XX-X, X, false, 1, 3, {{0;1;3}{0;1;3}{1;3;4}}, {4;6;6}, {0-6}, {4-6}, false",
+						"XXx-x, x, false, 1, 3, {{0;1;2}}, {4}, {0-4}, {3-4}, false",
 						// Expansion of size 1 to 3 - adjacent
-						"XXY, Y, true, 1, 3, {{0;1}{1}}, {2;2}, {0-2}, {2}",
-						"XXXX, X, true, 1, 3, {{0;1;2}}, {3}, {0-3}, {3}",
-						"XX-XX, X, true, 1, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+						"XXY, Y, true, 1, 3, {{0;1}{1}}, {2;2}, {0-2}, {2}, false",
+						"XXXX, X, true, 1, 3, {{0;1;2}}, {3}, {0-3}, {3}, false",
+						"XX-XX, X, true, 1, 3, {{0;1;3}}, {4}, {0-4}, {4}, false",
 						// Expansion of size 2 to 3 - ordered
-						"XXX-X, X, false, 2, 3, {{0;1;2}}, {4;}, {0-4}, {3-4}",
-						"XX-XX, X, false, 2, 3, {{0;1;3}}, {4}, {0-4}, {4}",
+						"XXX-X, X, false, 2, 3, {{0;1;2}}, {4;}, {0-4}, {3-4}, false",
+						"XX-XX, X, false, 2, 3, {{0;1;3}}, {4}, {0-4}, {4}, false",
 					})
 					@DisplayName("verify possessive expansion with multiple nodes")
 					void testPossessiveCompetitionDiscontinuous(String target,
@@ -8460,7 +8493,8 @@ class SequencePatternTest {
 							@IntMatrixArg int[][] hits1, // reported hits for first node
 							@IntervalArrayArg Interval[] hit2, // reported hits for second node
 							@IntervalArrayArg Interval[] visited1,  // all slots visited for first node
-							@IntervalArrayArg Interval[] visited2) { // all slots visited for second node
+							@IntervalArrayArg Interval[] visited2, // all slots visited for second node
+							boolean allowDuplicates) {
 
 						// Sanity check since we expect symmetric results here
 						assertThat(hits1).as("Different match counts").hasSameSizeAs(hit2);
@@ -8478,6 +8512,7 @@ class SequencePatternTest {
 										IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp(c2))))
 								).build(), // we don't need multiple matches for confirmation
 								match(hits1.length)
+									.allowDuplicates(allowDuplicates)
 									// Cache of first node
 									.cache(cache(CACHE_0, false)
 											.window(target)
@@ -9316,50 +9351,52 @@ class SequencePatternTest {
 				 */
 
 				// Pure singular reluctance
-				"'ORDERED [?][?]', X, 1, { {{}} }",
-				"'ORDERED [?][?]', XY, 3, { {{}{}{}} {{}{}{}} }",
+				"'ORDERED [?][?]', X, 1, { {{}} }, false",
+				"'ORDERED [?][?]', XY, 3, { {{}{}{}} {{}{}{}} }, true",
 
 				// Mandatory node with following optional
-				"'ORDERED [][?]', XY, 2, { {{0}{1}} {{}{}} }",
-				"'ORDERED [][?]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'ORDERED [][?]', XY, 2, { {{0}{1}} {{}{}} }, false",
+				"'ORDERED [][?]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }, true",
 
 				// Mandatory node with following optional expansion
-				"'ORDERED [][*]', XY, 2, { {{0}{1}} {{}{}} }",
-				"'ORDERED [][*]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'ORDERED [][*]', XY, 2, { {{0}{1}} {{}{}} }, false",
+				"'ORDERED [][*]', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }, true",
 
 				// Mandatory node with following dummy node with reluctant expansion
-				"'ORDERED [][+]', XY, 1, { {{0}} {{1}} }",
-				"'ORDERED [][+]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'ORDERED [][+]', XY, 1, { {{0}} {{1}} }, false",
+				"'ORDERED [][+]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }, false",
 
 				// Mandatory node after optional
-				"'ORDERED [?][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'ORDERED [?][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'ORDERED [?][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }, true",
+				"'ORDERED [?][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }, true",
 
 				// Mandatory node after optional expansion
-				"'ORDERED [*][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'ORDERED [*][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'ORDERED [*][]', XY, 3, { {{}{}{}} {{0}{1}{1}} }, true",
+				"'ORDERED [*][]', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }, true",
 
 				// Mandatory node after dummy node with reluctant expansion
-				"'ORDERED [+][]', XY, 1, { {{0}} {{1}} }",
-				"'ORDERED [+][]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'ORDERED [+][]', XY, 1, { {{0}} {{1}} }, false",
+				"'ORDERED [+][]', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }, false",
 
 				// Mandatory nodes surrounding intermediate optional
-				"'ORDERED [][?][]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'ORDERED [][?][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'ORDERED [][?][]', XY, 1, { {{0}} {{}} {{1}} }, false",
+				"'ORDERED [][?][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }, true",
 
 				// Mandatory nodes surrounding intermediate optional expansion
-				"'ORDERED [][*][]', XY, 1, { {{0}} {{}} {{1}} }",
-				"'ORDERED [][*][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'ORDERED [][*][]', XY, 1, { {{0}} {{}} {{1}} }, false",
+				"'ORDERED [][*][]', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }, true",
 
 				// Mandatory nodes surrounding intermediate dummy node with reluctant expansion
-				"'[][+][]', XY, 0, -",
-				"'ORDERED [][+][]', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'[][+][]', XY, 0, -, false",
+				"'ORDERED [][+][]', XYZ, 1, { {{0}} {{1}} {{2}} }, false",
 			})
 			@DisplayName("set of dummy nodes")
 			void testDummyNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
-					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+					@IntMatrixArg int[][][] hits,
+					boolean allowDuplicates) {
+				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(),
+						config(matches, hits).allowDuplicates(allowDuplicates));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9437,7 +9474,7 @@ class SequencePatternTest {
 				// Mandatory node after dummy node with reluctant expansion
 				"'ADJACENT ORDERED [+][]', XY, 1, { {{0}} {{1}} }",
 				"'ADJACENT ORDERED [+][]', XYZ, 2, { {{0}{1}} {{1}{2}} }",
-				"'ADJACENT [+][$Y]', XYZ, 1, { {{0}} {{1}} }",
+				"'ADJACENT [+][$Y]', XYZ, 2, { {{0}{2}} {{1}{1}} }",
 				"'ADJACENT ORDERED [+][$Y]', XXYZ, 2, { {{0;1}{1}} {{2}{2}} }",
 
 				// Mandatory nodes surrounding intermediate optional
@@ -9637,7 +9674,7 @@ class SequencePatternTest {
 		@Nested
 		class GroupingInGrouping {
 
-			private SequencePattern.Builder _builder(String query) {
+			private SequencePattern.Builder _ordered(String query) {
 				return builder(expand(query),
 						QueryConfig.fromQuery(query),
 						Option.KEEP_REDUNDANT_GROUPING,
@@ -9659,35 +9696,37 @@ class SequencePatternTest {
 			void testBlank(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+				assertResult(target, _ordered(query).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'{{[?]}}', X, 1, { {{}} }",
+				"'{{[?]}}', X, 1, { {{}} }, false",
 
-				"'{{[?]}[]}', X, 1, { {{}} {{0}} }",
-				"'{[]{[?]}}', X, 1, { {{0}} {{}} }",
+				"'{{[?]}[]}', X, 1, { {{}} {{0}} }, false",
+				"'{[]{[?]}}', X, 1, { {{0}} {{}} }, false",
 
-				"'{{[*]}}', X, 1, { {{}} }",
-				"'{{[*]}[]}', X, 1, { {{}} {{0}} }",
-				"'{[]{[*]}}', X, 1, { {{0}} {{}} }",
+				"'{{[*]}}', X, 1, { {{}} }, false",
+				"'{{[*]}[]}', X, 1, { {{}} {{0}} }, false",
+				"'{[]{[*]}}', X, 1, { {{0}} {{}} }, false",
 
-				"'{{[+]}}', X, 1, { {{0}} }",
-				"'{{[+]}[]}', X, 0, -",
-				"'{{[+]}[]}', XX, 1, { {{0}} {{1}} }",
-				"'{[]{[+]}}', X, 0, -",
-				"'{[]{[+]}}', XX, 1, { {{0}} {{1}} }",
-				"'{{[+]}[*]}', X, 1, { {{0}} {{}} }",
-				"'{{[+]}[*]}', XX, 2, { {{0}{1}} {{}{}} }",
-				"'{[*]{[+]}}', X, 1, { {{}} {{0}} }",
-				"'{[*]{[+]}}', XX, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'{{[+]}}', X, 1, { {{0}} }, false",
+				"'{{[+]}[]}', X, 0, -, false",
+				"'{{[+]}[]}', XX, 1, { {{0}} {{1}} }, false",
+				"'{[]{[+]}}', X, 0, -, false",
+				"'{[]{[+]}}', XX, 1, { {{0}} {{1}} }, false",
+				"'{{[+]}[*]}', X, 1, { {{0}} {{}} }, false",
+				"'{{[+]}[*]}', XX, 2, { {{0}{1}} {{}{}} }, false",
+				"'{[*]{[+]}}', X, 1, { {{}} {{0}} }, false",
+				"'{[*]{[+]}}', XX, 3, { {{}{}{}} {{0}{1}{1}} }, true",
 			})
 			@DisplayName("nested groups of dummy nodes")
 			void testDummyNodesWithGrouping(String query, String target, int matches,
 					// [node_id][match_id][hits]
-					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+					@IntMatrixArg int[][][] hits,
+					boolean allowDuplicates) {
+				assertResult(target, _ordered(query).nodeTransform(PROMOTE_NODE).build(),
+						config(matches, hits).allowDuplicates(allowDuplicates));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9723,7 +9762,7 @@ class SequencePatternTest {
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(),
+				assertResult(target, _ordered(query).nodeTransform(PROMOTE_NODE).build(),
 						config(matches, hits));
 			}
 
@@ -9739,7 +9778,7 @@ class SequencePatternTest {
 			void testQuantifiedNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(),
+				assertResult(target, _ordered(query).nodeTransform(PROMOTE_NODE).build(),
 						config(matches, hits));
 			}
 
@@ -9756,7 +9795,7 @@ class SequencePatternTest {
 			void testInnerQuantification(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).build(), config(matches, hits));
+				assertResult(target, _ordered(query).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9770,7 +9809,7 @@ class SequencePatternTest {
 			void testOuterQuantification(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).build(), config(matches, hits));
+				assertResult(target, _ordered(query).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9784,7 +9823,7 @@ class SequencePatternTest {
 			void testFullQuantification(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).build(), config(matches, hits));
+				assertResult(target, _ordered(query).build(), config(matches, hits));
 			}
 		}
 
@@ -9816,13 +9855,6 @@ class SequencePatternTest {
 						Option.KEEP_REDUNDANT_GROUPING);
 			}
 
-//			private SequencePattern.Builder _ordered(String query) {
-//				return builder(expand(query),
-//						QueryConfig.fromQuery(query),
-//						Option.KEEP_REDUNDANT_GROUPING,
-//						Option.DEFAULT_ORDERED_SEQUENCE);
-//			}
-
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'[] {[][]}', XX, 0, -",
@@ -9842,65 +9874,67 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'{[?]}[]', X, 1, { {{}} {{0}} }",
-				"'ORDERED []{[?]}', X, 1, { {{0}} {{}} }",
+				"'{[?]}[]', X, 1, { {{}} {{0}} }, false",
+				"'ORDERED []{[?]}', X, 1, { {{0}} {{}} }, false",
 
-				"'{[*]}[]', X, 1, { {{}} {{0}} }",
-				"'ORDERED []{[*]}', X, 1, { {{0}} {{}} }",
+				"'{[*]}[]', X, 1, { {{}} {{0}} }, false",
+				"'ORDERED []{[*]}', X, 1, { {{0}} {{}} }, false",
 
-				"'{[+]}[]', X, 0, -",
-				"'ORDERED {[+]}[]', XX, 1, { {{0}} {{1}} }",
-				"'[]{[+]}', X, 0, -",
-				"'ORDERED []{[+]}', XX, 1, { {{0}} {{1}} }",
-				"'ORDERED {[+]}[*]', X, 1, { {{0}} {{}} }",
-				"'ORDERED {[+]}[*]', XX, 2, { {{0}{1}} {{}{}} }",
-				"'[*]{[+]}', X, 1, { {{}} {{0}} }",
-				"'ORDERED [*]{[+]}', XX, 3, { {{}{}{}} {{0}{1}{1}} }",
+				"'{[+]}[]', X, 0, -, false",
+				"'ORDERED {[+]}[]', XX, 1, { {{0}} {{1}} }, false",
+				"'[]{[+]}', X, 0, -, false",
+				"'ORDERED []{[+]}', XX, 1, { {{0}} {{1}} }, false",
+				"'ORDERED {[+]}[*]', X, 1, { {{0}} {{}} }, false",
+				"'ORDERED {[+]}[*]', XX, 2, { {{0}{1}} {{}{}} }, false",
+				"'[*]{[+]}', X, 1, { {{}} {{0}} }, false",
+				"'ORDERED [*]{[+]}', XX, 3, { {{}{}{}} {{0}{1}{1}} }, true",
 			})
 			@DisplayName("nested groups of dummy nodes")
 			void testDummyNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
-					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+					@IntMatrixArg int[][][] hits,
+					boolean allowDuplicates) {
+				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(),
+						config(matches, hits).allowDuplicates(allowDuplicates));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				// Singleton markers
 				"'ORDERED {ORDERED [isAt(2), $X][]}[]', XXX, 0, -",
-				"'ORDERED {[isAt(2), $X][]}[]', XXX, 1, { {{1}} }",
-				"'{[isAt(2), $X][]}[]', XXX, 2, { {{1}{1}} }",
-				"'{ORDERED [isAt(2), $X][]}[]', XXX, 1, { {{1}} }",
-				"'ORDERED {[isAt(2), $X][]}[]', XXXX, 3, { {{1}{1}{1}} }",
-				"'ORDERED {[isNotAt(2), $X][]}[]', XXX, 1, { {{0}} }",
-				"'{[isNotAt(2), $X][]}[]', XXX, 2, { {{0}{2}} }",
-				"'ORDERED {[isAfter(2), $X][]}[]', XXXXX, 8, { {{2}{2}{3}{2}{2}{3}{2}{3}} }",
-				"'{ORDERED [isAfter(2), $X][]}[]', XXXXX, 12, { {{2}{2}{2}{2}{2}{3}{2}{2}{2}{3}{2}{3}} }",
-				"'ORDERED {[isBefore(2), $X][]}[]', XXX, 1, { {{0}} }",
-				"'{[isBefore(2), $X][]}[]', XXX, 1, { {{0}} }",
-				"'ORDERED {[isInside(2,4), $X][]}[]', XXXX, 5, { {{1}{1}{2}{1}{2}} }",
-				"'FIRST 7 HITS {[isInside(2,4), $X][]}[]', XXXXX, 7, { {{1}{1}{1}{2}{2}{3}{1}} }",
-				"'ORDERED []{[isOutside(3,4), $X][$Y]}', XXYXXY, 6, { {{1}{1}{4}{4}{4}{4}} {{2}{5}{5}{5}{5}{5}} }",
-				"'[]{[isOutside(3,4), $X][$Y]}', XXYXXY, 6, { {{1}{1}{4}{4}{4}{4}} {{2}{5}{5}{5}{5}{5}} }",
+				"'ORDERED {[isAt(2), $X][]}[]', XXX, 1, { {{1}} {{0}} {{2}} }",
+				"'{[isAt(2), $X][]}[]', XXX, 2, { {{1}{1}} {{0}{2}} {{2}{0}} }",
+				"'{ORDERED [isAt(2), $X][]}[]', XXX, 1, { {{1}} {{2}} {{0}} }",
+				"'ORDERED {[isAt(2), $X][]}[]', XXXX, 3, { {{1}{1}{1}} {{0}{0}{2}} {{2}{3}{3}} }",
+				"'ORDERED {[isNotAt(2), $X][]}[]', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{[isNotAt(2), $X][]}[]', XXX, 2, { {{0}{2}} {{1}{1}} {{2}{0}} }",
+				"'ORDERED {[isAfter(2), $X][]}[]', XXXX, 2, { {{2}{2}} {{0}{1}} {{3}{3}} }",
+				"'{ORDERED [isAfter(2), $X][]}[]', XXXX, 2, { {{2}{2}} {{3}{3}} {{0}{1}} }",
+				"'ORDERED {[isBefore(2), $X][]}[]', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'{[isBefore(2), $X][]}[]', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'ORDERED {[isInside(2,4), $X][]}[]', XXXX, 5, { {{1}{1}{2}{1}{2}} {{0}{0}{0}{2}{1}} {{2}{3}{3}{3}{3}} }",
+				"'FIRST 7 HITS {[isInside(2,4), $X][]}[]', XXXXX, 7, { {{1}{1}{1}{2}{2}{3}{1}} {{0}{0}{0}{0}{0}{0}{2}} {{2}{3}{4}{3}{4}{4}{0}} }",
+				"'ORDERED []{[isOutside(3,4), $X][$Y]}', XXYXXY, 8, { {{0}{0}{0}{0}{1}{1}{2}{3}} {{1}{1}{4}{4}{4}{4}{4}{4}} {{2}{5}{2}{5}{2}{5}{5}{5}} }",
+				"'[]{[isOutside(3,4), $X][$Y]}', XXYXX, 7, { {{0}{0}{3}{4}{1}{3}{4}} {{1}{4}{0}{0}{4}{1}{1}} {{2}{2}{2}{2}{2}{2}{2}} }",
 				// Marker intersection
 				"'[]{[][isNotAt(2) && isLast, $X]}', XX, 0, -",
-				"'ORDERED []{[][isNotAt(2) && isLast, $X]}', XXX, 1, { {{2}} }",
+				"'ORDERED []{[][isNotAt(2) && isLast, $X]}', XXX, 1, { {{0}} {{1}} {{2}} }",
 				// Marker union
-				"'ORDERED {[isFirst || isLast, $X][]}[]', XXX, 1, { {{0}} }",
-				"'ORDERED []{[][isFirst || isLast, $X]}', XXX, 1, { {{2}} }",
+				"'ORDERED {[isFirst || isLast, $X][]}[]', XXX, 1, { {{0}} {{1}} {{2}} }",
+				"'ORDERED []{[][isFirst || isLast, $X]}', XXX, 1, { {{0}} {{1}} {{2}} }",
 				// Complex marker nesting
-				"'{[isFirst || (isNotAt(3) && isBefore(4)), $X]}', XXXX, 2, { {{0}{1}} }",
+				"'{[isFirst || (isNotAt(3) && isBefore(4)), $X]}', XXXX, 2, { {{0}{1}}}",
 
 				// Proper nesting
 				"'ORDERED {[isAt(2), $X][]}[isNotAt(3),$X]', XXX, 0, -",
-				"'ORDERED {[isAt(2), $X][]}[isNotAt(3),$X]', XXXX, 1, { {{1}} {{3}} }",
-				"'ORDERED {[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]', XXXX, 3, { {{1}{0}{0}} {{3}{3}{3}} }",
+				"'ORDERED {[isAt(2), $X][]}[isNotAt(3),$X]', XXXX, 2, { {{1}{1}} {{0}{2}} {{3}{3}} }",
+				"'ORDERED {[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]', XXXX, 4, { {{0}{0}{1}{1}} {{1}{2}{0}{2}} {{3}{3}{3}{3}} }",
 			})
 			@DisplayName("nested groups of nodes with markers")
 			void testMarkers(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query).build(), config(matches, hits));
+				assertResult(target, _builder(query).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -9921,12 +9955,17 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'<1+>{[$X]<2+>[$Y]}[]', XY, 0, -",
-				"'<1+>{[$X]<2+>[$Y]}[]', XYYX, 1, { {{0}} {{1;2}} }",
-				"'<1+>{[$X]<2+>[$Y]}', XYY-XYYY-, 2, { {{0}{4}} {{1;2}{5;6;7}} }",
-				"'<1+>{[$X]<2+>[$Y]}', XYYXYYY-, 2, { {{0;3}{3}} {{1;2;4;5;6}{4;5;6}} }",
-				"'<1+>{[$X]<2+>[$Y]}', XYYXY-XYY-, 3, { {{0;3}{3}{6}} {{1;2;7;8}{7;8}{7;8}} }",
-				"'<1+>{[$X]<2+>[$Y]}2+[$Z]', XYZZXYZZZ, 0, -",
-				"'<1+>{[$X]<2+>[$Y]}2+[$Z]', XYZZXYYZZZ, 4, { {{0}{0}{4}{4}} {{5;6}{5;6}{5;6}{5;6}} {{7;8;9}{8;9}{7;8;9}{8;9}} }",
+				"'<1+>{ORDERED [$X]<2+>[$Y]}[]', XYYX, 1, { {{0}} {{1;2}} }",
+				"'<1+>{[$X]<2+>[$Y]}[]', XYYX, 2, { {{0}{3}} {{1;2}{1;2}} }",
+				"'<1+>{ORDERED [$X]<2+>[$Y]}', XYY-XYYY-, 2, { {{0}{4}} {{1;2}{5;6;7}} }",
+				"'<1+>{[$X]<2+>[$Y]}', XYY-XYYY-, 3, { {{0}{4}{4}} {{1;2}{1;2}{5;6;7}} }",
+				"'<1+>{ORDERED [$X]<2+>[$Y]}', XYYXYYY-, 2, { {{0;3}{3}} {{1;2;4;5;6}{4;5;6}} }",
+				"'<1+>{[$X]<2+>[$Y]}', XYYXYYY-, 3, { {{0;3}{3}{3}} {{1;2;4;5;6}{1;2}{4;5;6}} }",
+				"'<1+>{ORDERED[$X]<2+>[$Y]}', XYYXY-XYY-, 3, { {{0;3}{3}{6}} {{1;2;7;8}{7;8}{7;8}} }",
+				"'<1+>{[$X]<2+>[$Y]}', XYYXY-XYY-, 4, { {{0;3}{3}{3}{6}} {{1;2;7;8}{1;2}{7;8}{7;8}} }",
+				"'<1+>{[$X]<2+>[$Y]}<2+>[$Z]', XYZZXYZZZ, 0, -",
+				"'ORDERED <1+>{ORDERED [$X]<2+>[$Y]}<2+>[$Z]', XYZZXYYZZZ, 4, { {{0}{0}{4}{4}} {{5;6}{5;6}{5;6}{5;6}} {{7;8;9}{8;9}{7;8;9}{8;9}} }",
+				"'<1+>{[$X]<2+>[$Y]}<2+>[$Z]', XYZZXYYZZZ, 5, { {{0}{0}{4}{4}{4}} {{5;6}{5;6}{5;6}{5;6}{5;6}} {{7;8;9}{8;9}{2;3}{7;8;9}{8;9}} }",
 			})
 			@DisplayName("quantified groups of quantified nodes")
 			void testFullQuantification(String query, String target, int matches,
@@ -10099,52 +10138,55 @@ class SequencePatternTest {
 				 */
 
 				// Pure singular reluctance
-				"'{ORDERED [?][?]}', X, 1, { {{}} }",
-				"'{ORDERED [?][?]}', XY, 3, { {{}{}{}} {{}{}{}} }",
+				"'{ORDERED [?][?]}', X, 1, { {{}} }, false",
+				"'{ORDERED [?][?]}', XY, 3, { {{}{}{}} {{}{}{}} }, false",
 
 				// Mandatory node with following optional
-				"'{ORDERED [][?]}', XY, 2, { {{0}{1}} {{}{}} }",
-				"'{ORDERED [][?]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'{ORDERED [][?]}', XY, 2, { {{0}{1}} {{}{}} }, false",
+				"'{ORDERED [][?]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }, true",
 
 				// Mandatory node with following optional expansion
-				"'{ORDERED [][*]}', XY, 2, { {{0}{1}} {{}{}} }",
-				"'{ORDERED [][*]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }",
+				"'{ORDERED [][*]}', XY, 2, { {{0}{1}} {{}{}} }, false",
+				"'{ORDERED [][*]}', XYZ, 4, { {{0}{0}{1}{2}} {{}{}{}{}} }, true",
 
 				// Mandatory node with following dummy node with reluctant expansion
-				"'{ORDERED [][+]}', XY, 1, { {{0}} {{1}} }",
-				"'{ORDERED [][+]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'{ORDERED [][+]}', XY, 1, { {{0}} {{1}} }, false",
+				"'{ORDERED [][+]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }, false",
 
 				// Mandatory node after optional
-				"'{ORDERED [?][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'{ORDERED [?][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'{ORDERED [?][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }, true",
+				"'{ORDERED [?][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }, true",
 
 				// Mandatory node after optional expansion
-				"'{ORDERED [*][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }",
-				"'{ORDERED [*][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }",
+				"'{ORDERED [*][]}', XY, 3, { {{}{}{}} {{0}{1}{1}} }, true",
+				"'{ORDERED [*][]}', XYZ, 6, { {{}{}{}{}{}{}} {{0}{1}{2}{1}{2}{2}} }, true",
 
 				// Mandatory node after dummy node with reluctant expansion
-				"'{ORDERED [+][]}', XY, 1, { {{0}} {{1}} }",
-				"'{ORDERED [+][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }",
+				"'{ORDERED [+][]}', XY, 1, { {{0}} {{1}} }, false",
+				"'{ORDERED [+][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }, false",
 
 				// Mandatory nodes surrounding intermediate optional
-				"'{ORDERED [][?][]}', XY, 1, { {{0}} {{}} {{1}} }",
-				"'{ORDERED [][?][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'{ORDERED [][?][]}', XY, 1, { {{0}} {{}} {{1}} }, false",
+				"'{ORDERED [][?][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }, true",
 
 				// Mandatory nodes surrounding intermediate optional expansion
-				"'{ORDERED [][*][]}', XY, 1, { {{0}} {{}} {{1}} }",
-				"'{ORDERED [][*][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }",
+				"'{ORDERED [][*][]}', XY, 1, { {{0}} {{}} {{1}} }, false",
+				"'{ORDERED [][*][]}', XYZ, 4, { {{0}{0}{0}{1}} {{}{}{}{}} {{1}{2}{2}{2}} }, true",
 
 				// Mandatory nodes surrounding intermediate dummy node with reluctant expansion
-				"'{[][+][]}', XY, 0, -",
-				"'{ORDERED [][+][]}', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'{[][+][]}', XY, 0, -, false",
+				"'{ORDERED [][+][]}', XYZ, 1, { {{0}} {{1}} {{2}} }, false",
 
 				// Cannot force expansion with non-adjacent sequence, we leave that to the NodeInSet group
 			})
 			@DisplayName("grouping of dummy node(s)")
 			void testDummyNodes(String query, String target, int matches,
 					// [node_id][match_id][hits]
-					@IntMatrixArg int[][][] hits) {
-				assertResult(target, _builder(query, Option.KEEP_REDUNDANT_GROUPING).nodeTransform(PROMOTE_NODE).build(), config(matches, hits));
+					@IntMatrixArg int[][][] hits,
+					boolean allowDuplicates) {
+				assertResult(target, _builder(query,
+						Option.KEEP_REDUNDANT_GROUPING).nodeTransform(PROMOTE_NODE).build(),
+						config(matches, hits).allowDuplicates(allowDuplicates));
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
@@ -10380,9 +10422,9 @@ class SequencePatternTest {
 			@CsvSource({
 				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', X, 0, -",
 				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XY-, 1, { {{1}} {{2}} }",
-				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YZ-, 1, { {-} {-} {{1}} {{2}} }",
-				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XYZ-, 2, { {{1}{}} {{2}{}} {{}{2}} {{}{3}} }",
-				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -ZY-, 1, { {-} {-} {-} {-} {{1}} {{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -YZ-, 2, { {{}{}} {{}{}} {{1}{}} {{2}{}} {{}{2}} {{}{1}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -XYZ-, 3, { {{1}{}{}} {{2}{}{}} {{}{2}{}} {{}{3}{}} {{}{}{3}} {{}{}{2}} }",
+				"'{[$X][$Y]} or {[$Y][$Z]} or {[$Z][$Y]}', -ZY-, 2, { {{}{}} {{}{}} {{2}{}} {{1}{}} {{}{1}} {{}{2}} }",
 			})
 			@DisplayName("multiple disjunctions")
 			void testMultipleBranches(String query, String target, int matches,

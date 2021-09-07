@@ -2247,23 +2247,32 @@ public class SequencePattern {
 		}
 	}
 
+	/**
+	 * Utility class for handling permutations in the state machine during matching.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	static final class PermutationContext {
 		/** Source of the permutation */
 		final Permutator source;
-		/** Permutated list of atom nodes, following {@link Permutator#current() current} configuration */
+		/**
+		 * Permutated list of atom nodes, following {@link Permutator#current() current} configuration.
+		 * (indexed by atom index)
+		 */
 		final Node[] current;
-		/** Indicator what slot atom i is located in the current permutation */
+		/** Indicator what slot atom i is located in the current permutation. (indexed by atom index) */
 		final int[] slots;
-		/** Right border for traversal of each atom */
+		/** Right border for traversal of each atom. (indexed by atom index) */
 		final int[] fences;
-		/** Smallest index that produced a direct fail when matching the respective atom */
+		/** Smallest slot index that produced a direct fail when matching the respective atom */
 		int skip;
-		/** Links to next perm-slot node for the tail section of atom nodes */
+		/** Links to next perm-slot node for the tail section of atom nodes. (indexed by atom index) */
 		final Node[] next;
-		/** Flag to signal that a {@link PermConn} has been activated. Used for skipping. */
+		/** Flag to signal that a {@link PermConn} has been activated. Used for skipping. (indexed by atom index) */
 		final boolean[] used;
-		/** Flag to indicate that the {@link PermSlot} node for a given index is allowed to use scanning */
-		final boolean[] scan;
+		/** Flag to indicate that the {@link PermSlot} node for a given index is allowed to use scanning. (indexed by atom index) */
+		boolean scan;
 
 		PermutationContext(int size) {
 			source = Permutator.forSize(size);
@@ -2272,7 +2281,6 @@ public class SequencePattern {
 			next = new Node[size];
 			fences = new int[size];
 			used = new boolean[size];
-			scan = new boolean[size];
 		}
 
 		void reset() {
@@ -3669,6 +3677,9 @@ public class SequencePattern {
 		}
 
 		@Override
+		boolean isSkipControl() { return true; }
+
+		@Override
 		boolean study(TreeInfo info) {
 
 			stopOnSuccess = info.stopOnSuccess;
@@ -3676,6 +3687,7 @@ public class SequencePattern {
 			TreeInfo tmp = new TreeInfo();
 
 			for (int i = 0; i < atoms.length; i++) {
+				// Pass on downstream properties
 				tmp.stopOnSuccess = info.stopOnSuccess;
 
 				Node atom = atoms[i];
@@ -3712,7 +3724,9 @@ public class SequencePattern {
 				prepare(ctx, to);
 
 				// Let atoms do their job
+				state.setSkip(false);
 				boolean matched = ctx.current[0].match(state, pos);
+				state.resetSkip();
 
 				result |= matched;
 
@@ -3748,25 +3762,32 @@ public class SequencePattern {
 
 		//TODO change back to not use "slot" value for indexing but original atom index!!
 		private void prepare(PermutationContext ctx, int to) {
+
 			int[] config = ctx.source.current();
     		final int last = atoms.length-1;
 
-			// Update lookups
-			ctx.fences[last] = to - minSize - Math.max(1, minSizes[config[last]]) + 1;
-			ctx.current[last] = atoms[config[last]];
-			// Accumulate fences back to front
-			for (int i = last-1; i >= 0; i--) {
-				ctx.fences[i] = ctx.fences[i+1] - minSizes[config[i]];
-				ctx.current[i] = atoms[config[i]];
-			}
-			// Build forward links and set scan
+    		int[] slots = ctx.slots;
+
+			// Build forward links and set scan flags
 			for (int i = 0; i <= last; i++) {
 				int slot = config[i];
+				slots[slot] = i;
 				ctx.next[slot] = i==last ? next : atoms[config[i+1]];
-				ctx.scan[slot] = scan && i>0;
-				ctx.slots[slot] = i;
+				ctx.current[i] = atoms[config[i]];
 			}
+
+			// Update lookups
+			int fence = to - minSize - Math.max(1, minSizes[config[last]]) + 1;
+			ctx.fences[config[last]] = fence;
+			// Accumulate fences back to front
+			for (int i = last-1; i >= 0; i--) {
+				int slot = config[i];
+				fence -= minSizes[slot];
+				ctx.fences[slot] = fence;
+			}
+
     		ctx.skip = NO_SKIP;
+    		ctx.scan = scan;
 		}
 
 		@Override
@@ -3791,6 +3812,8 @@ public class SequencePattern {
 		final int permId;
 		/** Position of this wrapper node in the permutation */
 		final int atomIndex;
+		/** Only look for first successful hit. Used by repitition nodes. */
+		boolean stopOnSuccess;
 
 		PermSlot(int id, int permId, int atomIndex) {
 			super(id);
@@ -3813,6 +3836,9 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
+
+			stopOnSuccess = info.stopOnSuccess;
+
 			next.study(info);
 
             /*
@@ -3828,14 +3854,17 @@ public class SequencePattern {
 		@Override
 		boolean match(State state, int pos) {
 			final PermutationContext ctx = state.permutations[permId];
-			final boolean scan = ctx.scan[atomIndex];
 
 			boolean result = false;
 
-			state.setSkip(scan);
+			/*
+			 *  Allow skipping inside the permutation (PermInit node takes
+			 *  care of disabling it for the first slot) as.
+			 */
+			state.setSkip(ctx.scan);
 
 			// We can either search iteratively for the next match
-			if(scan) {
+			if(ctx.scan && ctx.slots[atomIndex]>0) {
 	    		final int from = state.from;
 	    		final int to = state.to;
 	    		final int fence = ctx.fences[atomIndex];
@@ -3845,10 +3874,15 @@ public class SequencePattern {
 					// Local match result
 					boolean matched = matchAtom(state, i, ctx);
 
-					state.resetScope(scope);
+					result |= matched;
+
 					state.reset(from, to);
 
-					result |= matched;
+	                if(stopOnSuccess && result) {
+	                	break;
+	                }
+
+					state.resetScope(scope);
 				}
 
 			} else {
