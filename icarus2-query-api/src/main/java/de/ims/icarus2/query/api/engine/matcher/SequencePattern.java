@@ -1743,8 +1743,10 @@ public class SequencePattern {
 		int[] m_node = new int[INITIAL_SIZE];
 		/** Values for the node mapping, i.e. the associated indices */
 		int[] m_pos = new int[INITIAL_SIZE];
+		/** Marks individual nodes as excluded from further matching */
+		boolean[] locked = new boolean[INITIAL_SIZE];
 
-		/** THe frame representing the overal list of items in the container */
+		/** The frame representing the overal list of items in the container */
 		RootFrame rootFrame = new RootFrame();
 
 		/** View on the target tree as frames */
@@ -1824,13 +1826,21 @@ public class SequencePattern {
 			return entry;
 		}
 
-		/** Reset scope to an old marker, i.e. discard all mappings stored since then. */
+		/**
+		 * Reset scope to an old marker, i.e. discard all mappings stored since then.
+		 */
 		final void resetScope(int scope) {
-			entry = scope;
+			while(entry>scope) {
+				entry--;
+				locked[m_pos[entry]] = false;
+			}
 		}
 
 		/** Resolve raw node for 'nodeId' and map to 'index' in result buffer. */
 		final void map(int nodeId, int index) {
+			assert !locked[index] : "index "+index+" already locked";
+			locked[index] = true;
+
 			m_node[entry] = nodeId;
 			m_pos[entry] = index;
 			entry++;
@@ -1849,6 +1859,7 @@ public class SequencePattern {
 			// Cleanup duty -> we must erase all references to target and its elements
 			target = null;
 			Arrays.fill(elements, 0, size, null);
+			Arrays.fill(locked, 0, size, false);
 			Arrays.fill(hits, UNSET_INT);
 			for (int i = 0; i < caches.length; i++) {
 				caches[i].reset(size);
@@ -1966,6 +1977,7 @@ public class SequencePattern {
 			elements = new Item[newSize];
 			m_node = new int[newSize];
 			m_pos = new int[newSize];
+			locked = new boolean[newSize];
 			trace = new int[newSize];
 			roots = new int[newSize];
 			for (int i = 0; i < buffers.length; i++) {
@@ -2591,6 +2603,7 @@ public class SequencePattern {
 			CACHE(Integer.class),
 			SCOPE_BUFFER(Integer.class),
 			POSITION_BUFFER(Integer.class),
+			PREVIOUS_BUFFER(Integer.class),
 			MIN_SIZE(Integer.class),
 			MIN_REPETITION(Integer.class),
 			MAX_REPETITION(Integer.class),
@@ -2982,6 +2995,11 @@ public class SequencePattern {
 			}
 
 			final int index = frame.posAt(pos);
+
+			// Bail on locked index
+			if(state.locked[index]) {
+				return false;
+			}
 
 			// Ensure adjacent matching if desired
 			if(frame.previous!=UNSET_INT && frame.previous!=index-1) {
@@ -3600,6 +3618,12 @@ public class SequencePattern {
 
 			final int index = frame.posAt(pos);
 
+			// Bail on locked index
+			if(state.locked[index]) {
+				return false;
+			}
+
+			// Ensure adjacent matching if desired
 			if(frame.previous!=UNSET_INT && frame.previous!=index-1) {
 				return false;
 			}
@@ -4446,6 +4470,7 @@ public class SequencePattern {
 					.property(Field.GREEDINESS, QuantifierModifier.forId(type))
 					.property(Field.SCOPE_BUFFER, scopeBuf)
 					.property(Field.POSITION_BUFFER, posBuf)
+					.property(Field.PREVIOUS_BUFFER, prevBuf)
 					.atoms(false, atom);
 		}
 
@@ -4465,6 +4490,7 @@ public class SequencePattern {
 					.add("type", type)
 					.add("scopeBuf", scopeBuf)
 					.add("posBuf", posBuf)
+					.add("prevBuf", prevBuf)
 					.build();
 		}
 
@@ -4544,12 +4570,12 @@ public class SequencePattern {
 			// Options for 'atom' exhausted, now try matching our tail
 
 			// Handle backing off if tail match fails
-			while (count >= backLimit) {
+			for (;;) {
 				if (next.match(state, pos)) {
 					return true;
 				}
 				// Can't backtrack further
-				if(count==0) {
+				if(count==backLimit) {
 					break;
 				}
 				// Need to backtrack one more step
