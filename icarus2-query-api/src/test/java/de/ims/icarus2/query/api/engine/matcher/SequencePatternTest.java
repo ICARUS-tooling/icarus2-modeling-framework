@@ -24,6 +24,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_1;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_2;
@@ -318,6 +319,7 @@ class SequencePatternTest {
 		static final int CACHE_3 = 3;
 		static final int BUFFER_0 = 0;
 		static final int BUFFER_1 = 1;
+		static final int BUFFER_2 = 2;
 		static final int REGION_0 = 0;
 		static final int REGION_1 = 1;
 
@@ -2425,11 +2427,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -2447,11 +2449,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, NO_STOP));
 							sms.matchers = matchers(
@@ -2500,11 +2502,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -2520,11 +2522,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2589,11 +2591,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
@@ -2660,11 +2662,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2719,11 +2721,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2795,11 +2797,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -2815,11 +2817,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2868,11 +2870,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -2888,11 +2890,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2930,11 +2932,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2979,11 +2981,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
@@ -3050,11 +3052,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -3110,11 +3112,11 @@ class SequencePatternTest {
 							StateMachineSetup sms = new StateMachineSetup();
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
-							sms.bufferCount = 2;
+							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, -1),
+											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -4951,7 +4953,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
 						 * reached for NODE_0.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(false,
@@ -5033,7 +5034,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
 						 * reached for NODE_0.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(false,
@@ -5335,7 +5335,6 @@ class SequencePatternTest {
 						/*
 						 * We expect NODE_1 to only proceed with consumption of slots
 						 * while NODE_0 does not already match the next one.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -5419,7 +5418,6 @@ class SequencePatternTest {
 						/*
 						 * We expect NODE_1 to only proceed with consumption of slots
 						 * while NODE_0 does not already match the next one.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -5785,7 +5783,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to aggressively consume slots with
 						 * no regards for NODE_0, so that in contrast to reluctant mode
 						 * we will miss some multi-match situations.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -5840,7 +5837,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to aggressively consume slots with
 						 * no regards for NODE_0, so that in contrast to reluctant mode
 						 * we will miss some multi-match situations.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -6135,7 +6131,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
 						 * reached for NODE_0.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(false,
@@ -6205,7 +6200,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
 						 * reached for NODE_0.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(false,
@@ -6502,7 +6496,6 @@ class SequencePatternTest {
 						/*
 						 * We expect NODE_1 to only proceed with consumption of slots
 						 * while NODE_0 does not already match the next one.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -6585,7 +6578,6 @@ class SequencePatternTest {
 						/*
 						 * We expect NODE_1 to only proceed with consumption of slots
 						 * while NODE_0 does not already match the next one.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -7025,7 +7017,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to aggressively consume slots with
 						 * no regards for NODE_0, so that in contrast to reluctant mode
 						 * we will miss some multi-match situations.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -7397,7 +7388,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
 						 * reached for NODE_0.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -7547,7 +7537,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to visit and greedily consume all the
 						 * X and x slots and then back off until the first x is
 						 * reached for NODE_0.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -7881,7 +7870,6 @@ class SequencePatternTest {
 						/*
 						 * We expect NODE_1 to only proceed with consumption of slots
 						 * while NODE_0 does not already match the next one.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -7972,7 +7960,6 @@ class SequencePatternTest {
 						/*
 						 * We expect NODE_1 to only proceed with consumption of slots
 						 * while NODE_0 does not already match the next one.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -8439,7 +8426,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to aggressively consume slots with
 						 * no regards for NODE_0, so that in contrast to reluctant mode
 						 * we will miss some multi-match situations.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,
@@ -8518,7 +8504,6 @@ class SequencePatternTest {
 						 * We expect NODE_1 to aggressively consume slots with
 						 * no regards for NODE_0, so that in contrast to reluctant mode
 						 * we will miss some multi-match situations.
-						 * (remember: state machine gets built back to front)
 						 */
 						assertResult(target,
 								builder(ordered(adjacent,

@@ -1245,7 +1245,7 @@ public class SequencePattern {
 		private Node repetition(IqlQuantifier source, Node atom, int cmin, int cmax,
 				int mode, boolean discontinuous) {
 			return storeTrackable(new Repetition(id(), source, atom, cmin, cmax, mode,
-					buffer(), buffer(), discontinuous ? id() : -1));
+					buffer(), buffer(), buffer(), discontinuous ? id() : -1));
 		}
 
 		private boolean needsCacheForScan(Node node) {
@@ -3979,6 +3979,7 @@ public class SequencePattern {
     		final int from = frame.from();
     		final int to = frame.to();
         	final int scope = state.scope();
+        	final int previous = frame.previous;
     		boolean result = false;
 
 			while(!state.stop) {
@@ -4010,6 +4011,7 @@ public class SequencePattern {
 
 	        	// Only reset if we failed or are not meant to keep the first match
 	        	state.resetScope(scope);
+	        	frame.previous = previous;
 
 				// Bail as soon as permutations are exhausted
 				if(!ctx.source.next()) {
@@ -4341,6 +4343,8 @@ public class SequencePattern {
     		final int from = frame.from();
     		final int to = frame.to();
         	final int scope = state.scope();
+        	final int previous = frame.previous;
+
     		boolean result = false;
 	        for (int n = 0; n < atoms.length && !state.stop; n++) {
 	        	final Node atom = atoms[n];
@@ -4359,6 +4363,7 @@ public class SequencePattern {
 
 	        	// Only reset if we failed or are not meant to keep the first match
 	        	state.resetScope(scope);
+	        	frame.previous = previous;
 	        }
 	        return result;
 		}
@@ -4413,9 +4418,10 @@ public class SequencePattern {
     	final int type;
     	final int scopeBuf;
     	final int posBuf;
+    	final int prevBuf;
 
 		Repetition(int id, IqlQuantifier source, Node atom, int cmin, int cmax, int type,
-				int scopeBuf, int posBuf, int findId) {
+				int scopeBuf, int posBuf, int prevBuf, int findId) {
 			super(id, source);
 			this.atom = atom;
 			this.cmin = cmin;
@@ -4423,6 +4429,7 @@ public class SequencePattern {
 			this.type = type;
 			this.scopeBuf = scopeBuf;
 			this.posBuf = posBuf;
+			this.prevBuf = prevBuf;
 			if(findId!=-1) {
 				findAtom = new Find(findId);
 				findAtom.setNext(atom);
@@ -4504,17 +4511,21 @@ public class SequencePattern {
          * @param count the number of atoms that have matched already
          */
         boolean matchGreedy(State state, int pos, int count) {
+        	final TreeFrame frame = state.frame;
 			int backLimit = count;
 			// Stores scope handles for reset when backing off
 			int[] b_scope = state.buffers[scopeBuf];
 			// Stores matcher positions for backing off
 			int[] b_pos = state.buffers[posBuf];
+			// Stores value of frame.previous for backing off
+			int[] b_prev = state.buffers[prevBuf];
 			// We are greedy so match as many as we can
 			while (count<cmax) {
 				// Keep track of scope and position
 				int scope = state.scope();
 				b_pos[count] = pos;
 				b_scope[count] = scope;
+				b_prev[count] = frame.previous;
 				// Try advancing
 				if(!matchAtom(state, pos, count)) {
 					state.resetScope(scope);
@@ -4544,6 +4555,7 @@ public class SequencePattern {
 				// Need to backtrack one more step
 				count--;
 				pos = b_pos[count];
+				frame.previous = b_prev[count];
 				state.resetScope(b_scope[count]);
 			}
 			// Could not find a match for next, so fail
@@ -4557,13 +4569,19 @@ public class SequencePattern {
          * @param count the number of atoms that have matched already
          */
         boolean matchReluctant(State state, int pos, int count) {
+        	final TreeFrame frame = state.frame;
 			for (;;) {
                 // Try finishing match without consuming any more
+				final int from = frame.from();
+				final int to = frame.to();
 				int scope = state.scope();
+				final int previous = frame.previous;
 				if (next.match(state, pos)) {
 					return true;
 				}
 				state.resetScope(scope);
+				frame.resetWindow(from, to);
+				frame.previous = previous;
                 // At the maximum, no match found
 				if (count >= cmax) {
 					return false;
