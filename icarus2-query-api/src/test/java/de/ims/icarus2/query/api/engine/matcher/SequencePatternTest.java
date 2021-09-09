@@ -421,7 +421,7 @@ class SequencePatternTest {
 
 		@Override
 		boolean match(State state, int pos) {
-			if(pos>state.to) {
+			if(pos>state.frame.to()) {
 				return false;
 			}
 
@@ -960,8 +960,8 @@ class SequencePatternTest {
 		assertThat(s).isNotEmpty();
 
 		State state = new State(setup);
-		state.size = s.length();
-		state.to = s.length()-1;
+		state.rootFrame.length = s.length();
+		state.rootFrame.to(s.length()-1);
 		state.elements = IntStream.range(0, s.length())
 				.mapToObj(i -> item(i, s.charAt(i)))
 				.toArray(Item[]::new);
