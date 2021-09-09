@@ -1099,12 +1099,14 @@ public class InteractiveMatcher {
 		final int pos;
 		final boolean result;
 		final int last;
+		final int prev;
 
-		Step(boolean enter, int nodeId, int pos, int last, boolean result) {
+		Step(boolean enter, int nodeId, int pos, int last, int prev, boolean result) {
 			this.enter = enter;
 			this.nodeId = nodeId;
 			this.pos = pos;
 			this.last = last;
+			this.prev = prev;
 			this.result = result;
 		}
 	}
@@ -1156,7 +1158,7 @@ public class InteractiveMatcher {
 
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			sink.accept(new Step(true, node.id, pos, state.last, false));
+			sink.accept(new Step(true, node.id, pos, state.last, state.frame.previous, false));
 		}
 
 		@Override
@@ -1164,7 +1166,7 @@ public class InteractiveMatcher {
 //			if(!result) {
 //				System.out.println("xx");
 //			}
-			sink.accept(new Step(false, node.id, pos, -1, result));
+			sink.accept(new Step(false, node.id, pos, state.last, state.frame.previous, result));
 		}
 
 	}
@@ -1444,6 +1446,7 @@ public class InteractiveMatcher {
 						info.getClassLabel(), _int(info.getId()), _int(step.pos));
 				if(step.enter) {
 					text += String.format(" (last=%d)",  _int(step.last));
+					text += String.format(" (prev=%d)",  _int(step.prev));
 				}
 				value = text;
 			}
