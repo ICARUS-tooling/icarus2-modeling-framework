@@ -40,6 +40,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_ANCHOR;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
@@ -185,23 +186,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
- * IMPORTANT NOTE:
- * <p>
- * Many test methods in this class state it explicitly, some omit it, but here the
- * information is once again:
- * <br>
- * <b>OUTDATED INFO</b> TODO fix
- * The state machine behind {@link SequencePattern} is built <b>BACK TO FRONT</b>!
- * This means that all cache ids, node ids and other identifying properties of nodes
- * inside the state machine that "count incrementally" also start with the node
- * farthest from the query begin as {@code 0}. To simplify test code and make it more
- * intuitive, a collection of utility methods exists, taking care of automatically
- * reversing manually defined expected mappings for result assertions. Unless a test
- * method explicitly states otherwise, it should always be assumed that the arguments
- * for testing can be given in the "natural" order of elements in the query and proper
- * conversion will happen under the hood.
- *
- * <p>
  * This test class is one big unification of test suites for various aspects of the
  * {@link SequencePattern} state machine for IQL. Strictly speaking we should divide
  * this instantiation of anti-patterns into a small selection of test suites (in also
@@ -328,6 +312,7 @@ class SequencePatternTest {
 		static final int NO_CACHE = UNSET_INT;
 		static final int NO_LIMIT = UNSET_INT;
 		static final int NO_MEMBER = UNSET_INT;
+		static final int NO_ANCHOR = UNSET_INT;
 
 		static final boolean CONTINUOUS = false;
 		static final boolean DISCONTINUOUS = true;
@@ -1592,7 +1577,7 @@ class SequencePatternTest {
 					sms.rawNodes = new IqlNode[1];
 					sms.cacheCount = 1;
 					sms.root = seq(
-							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X));
 					return sms;
@@ -1625,8 +1610,8 @@ class SequencePatternTest {
 					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
 					sms.root = seq(
-							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X), matcher(1, EQUALS_Y));
 					return sms;
@@ -1680,7 +1665,7 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.root = seq(
 								new Exhaust(id(), NO_CACHE, true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1785,7 +1770,7 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.root = seq(
 								new Exhaust(id(), CACHE_0, true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -1896,7 +1881,7 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.root = seq(
 								new Exhaust(id(), NO_CACHE, false),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2008,7 +1993,7 @@ class SequencePatternTest {
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
 								new Exhaust(id(), NO_CACHE, true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2142,7 +2127,7 @@ class SequencePatternTest {
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
 								new Exhaust(id(), CACHE_0, true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2287,7 +2272,7 @@ class SequencePatternTest {
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
 								new Exhaust(id(), NO_CACHE, false),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2430,7 +2415,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2452,9 +2437,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, NO_STOP));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2505,7 +2490,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2525,9 +2510,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2594,7 +2579,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -2665,7 +2650,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), UNSET_LONG, false));
@@ -2724,9 +2709,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2800,7 +2785,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2820,9 +2805,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2873,7 +2858,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2893,9 +2878,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -2935,9 +2920,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
@@ -2984,7 +2969,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
@@ -3055,7 +3040,7 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), UNSET_LONG, false));
@@ -3115,9 +3100,9 @@ class SequencePatternTest {
 							sms.bufferCount = 3;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), UNSET_LONG, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3186,8 +3171,8 @@ class SequencePatternTest {
 					sms.cacheCount = 2;
 					sms.root = seq(
 							branch(0,
-									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER)),
+									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR)),
 							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
@@ -3257,7 +3242,7 @@ class SequencePatternTest {
 					sms.limit = 1;
 					sms.root = seq(
 							branch(0,
-									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER),
+									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 									null),
 							new Finish(id(), 1, false));
 					sms.matchers = matchers(
@@ -3307,8 +3292,8 @@ class SequencePatternTest {
 					sms.root = seq(
 							branch(0,
 									null,
-									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER)),
-							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER), // needed to force reluctant expansion
+									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR)),
+							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR), // needed to force reluctant expansion
 							new Finish(id(), UNSET_LONG, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
@@ -3379,7 +3364,7 @@ class SequencePatternTest {
 					List<Node> nodes = new ArrayList<>();
 					for (int i = 0; i < predicates.length; i++) {
 						nodes.add(new Exhaust(id(), NO_CACHE, true));
-						nodes.add(new Single(id++, mock(IqlNode.class), i, i, NO_MEMBER));
+						nodes.add(new Single(id++, mock(IqlNode.class), i, i, NO_MEMBER, NO_ANCHOR));
 					}
 					nodes.add(new Finish(id(), limit, false));
 					return nodes.toArray(new Node[0]);

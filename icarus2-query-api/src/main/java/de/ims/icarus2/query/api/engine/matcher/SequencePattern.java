@@ -257,6 +257,8 @@ public class SequencePattern {
 		int borderCount = 0;
 		/** Total number of gates that prevent duplicate position matching */
 		int gateCount = 0;
+		/** Total number of tree node anchors */
+		int anchorCount = 0;
 		/** Total number of nodes that affect the skip flag */
 		int skipControlCount;
 		/** Size info of all the permutations */
@@ -287,6 +289,7 @@ public class SequencePattern {
 		IqlNode[] getRawNodes() { return rawNodes; }
 		int[] getHits() { return new int[rawNodes.length]; }
 		int[] getBorders() { return new int[borderCount]; }
+		int[] getAnchors() { return new int[anchorCount]; }
 		Matcher<Container> makeFilterConstraint() {
 			return filterConstraint==null ? null : filterConstraint.get();
 		}
@@ -368,6 +371,7 @@ public class SequencePattern {
 		int borderCount;
 		int gateCount;
 		int skipControlCount;
+		int anchorCount;
 		IntList permutators = new IntArrayList();
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
@@ -682,7 +686,8 @@ public class SequencePattern {
 			switch (source.getType()) {
 			case GROUPING: return grouping((IqlGrouping) source, scan);
 			case SEQUENCE: return sequence((IqlSequence) source, scan);
-			case NODE: return node((IqlNode) source, scan);
+			case NODE: return node((IqlNode) source, scan, false);
+			case TREE_NODE: return node((IqlNode) source, scan, true);
 			// Only disjunction inherits the 'adjacency' property from surrounding context
 			case DISJUNCTION: return disjunction((IqlElementDisjunction) source, scan);
 
@@ -697,7 +702,7 @@ public class SequencePattern {
 		//FIXME currently we might distort the legal intervals when shifting them to the left
 
 		/** Process single node */
-		private Frame node(IqlNode source, @Nullable Node scan) {
+		private Frame node(IqlNode source, @Nullable Node scan, boolean isTree) {
 
 			if(nodeTransform!=null) {
 				source = requireNonNull(nodeTransform.apply(source), "Node transformation fail");
@@ -707,6 +712,17 @@ public class SequencePattern {
 			final IqlMarker marker = source.getMarker().orElse(null);
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
+
+			final IqlTreeNode treeNode;
+			final int anchorId;
+
+			if(isTree) {
+				treeNode = (IqlTreeNode)source;
+				anchorId = treeNode.getChildren().isPresent() ? anchor() : UNSET_INT;
+			} else {
+				treeNode = null;
+				anchorId = UNSET_INT;
+			}
 
 			final Frame frame = new Frame();
 
@@ -735,7 +751,7 @@ public class SequencePattern {
 			// Process actual node content
 			if(constraint==null) {
 				// Dummy nodes don't get added to the "proper nodes" list
-				atom = segment(empty(source, label));
+				atom = segment(empty(source, label, anchorId));
 			} else {
 				// Full fledged node with local constraints and potentially a member label
 
@@ -745,7 +761,7 @@ public class SequencePattern {
 						.element(source)
 						.build();
 				expressionFactory = new ExpressionFactory(context);
-				atom = segment(single(source, label, constraint));
+				atom = segment(single(source, label, constraint, anchorId));
 				// Reset context
 				expressionFactory = null;
 				context = null;
@@ -757,6 +773,10 @@ public class SequencePattern {
 			}
 
 			frame.push(atom);
+
+			if(anchorId!=UNSET_INT) {
+				//TODO add nested child nodes if present
+			}
 
 			// Only apply external scan if our content cannot scan for itself
 			if(scan!=null && !unwrap(frame.start()).isScanCapable()) {
@@ -1125,12 +1145,10 @@ public class SequencePattern {
 		}
 
 		private int cache() { return cacheCount++; }
-
 		private int buffer() { return bufferCount++; }
-
 		private int border() { return borderCount++; }
-
 		private int gate() { return gateCount++; }
+		private int anchor() { return anchorCount++; }
 
 		private int permutator(int size) {
 			int index = permutators.size();
@@ -1158,8 +1176,8 @@ public class SequencePattern {
 			return intervalIndex;
 		}
 
-		private Node empty(IqlQueryElement source, @Nullable String label) {
-			return storeTrackable(new Empty(id(), source, member(label)));
+		private Node empty(IqlQueryElement source, @Nullable String label, int anchorId) {
+			return storeTrackable(new Empty(id(), source, member(label), anchorId));
 		}
 
 		private Begin begin() { return store(new Begin(id())); }
@@ -1183,8 +1201,8 @@ public class SequencePattern {
 
 		private Reset reset() { return store(new Reset(id())); }
 
-		private Node single(IqlNode source, @Nullable String label, IqlConstraint constraint) {
-			return storeTrackable(new Single(id(), source, matcher(constraint), cache(), member(label)));
+		private Node single(IqlNode source, @Nullable String label, IqlConstraint constraint, int anchorId) {
+			return storeTrackable(new Single(id(), source, matcher(constraint), cache(), member(label), anchorId));
 		}
 
 		private Node find() {
@@ -1468,6 +1486,7 @@ public class SequencePattern {
 			sm.borderCount = borderCount;
 			sm.bufferCount = bufferCount;
 			sm.gateCount = gateCount;
+			sm.anchorCount = anchorCount;
 			sm.skipControlCount = skipControlCount;
 			sm.permutations = permutators.toIntArray();
 			sm.markerPos = markerPos.toIntArray();
@@ -1746,7 +1765,7 @@ public class SequencePattern {
 		/** Marks individual nodes as excluded from further matching */
 		boolean[] locked = new boolean[INITIAL_SIZE];
 
-		/** The frame representing the overal list of items in the container */
+		/** The frame representing the overall list of items in the container */
 		RootFrame rootFrame = new RootFrame();
 
 		/** View on the target tree as frames */
@@ -1755,6 +1774,8 @@ public class SequencePattern {
 		int[] roots = new int[INITIAL_SIZE];
 		/** Path from a root node to current node */
 		int[] trace = new int[INITIAL_SIZE];
+		/** Tentatively marked tree node spots. Stores the positional index for node. */
+		int[] anchors;
 
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
 		boolean finished;
@@ -1811,6 +1832,7 @@ public class SequencePattern {
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
 			gates = setup.makeGates();
+			anchors = setup.getAnchors();
 			permutations = setup.makePermutations();
 
 			frame = rootFrame;
@@ -2637,6 +2659,8 @@ public class SequencePattern {
 			SKIP(Boolean.class),
 			/** The actual level of greediness for repetitive nodes. */
 			GREEDINESS(QuantifierModifier.class),
+			/** Id of an anchor point to store a tree node assignment */
+			ANCHOR(Integer.class),
 			;
 
 			private final Class<?> valueClass;
@@ -2974,16 +2998,19 @@ public class SequencePattern {
 	/** Helper for "empty" nodes that are only existentially quantified. */
 	static final class Empty extends ProperNode {
 		final int memberId;
+		final int anchorId;
 
-		Empty(int id, IqlQueryElement source, int memberId) {
+		Empty(int id, IqlQueryElement source, int memberId, int anchorId) {
 			super(id, source);
 			this.memberId = memberId;
+			this.anchorId = anchorId;
 		}
 
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.EMPTY)
-					.property(Field.MEMBER, memberId);
+					.property(Field.MEMBER, memberId)
+					.property(Field.ANCHOR, anchorId);
 		}
 
 		@Override
@@ -3013,6 +3040,10 @@ public class SequencePattern {
 			if(memberId!=UNSET_INT) {
 				state.members[memberId].assign(state.elements[pos]);
 			}
+			// Store tree anchor
+			if(anchorId!=UNSET_INT) {
+				state.anchors[anchorId] = index;
+			}
 			// Immediately forward to next node
 			boolean result = next.match(state, pos+1);
 			// Ensure we don't keep item references
@@ -3033,7 +3064,10 @@ public class SequencePattern {
 
 		@Override
 		public String toString() {
-			return ToStringBuilder.create(this).add("memberId", memberId).build();
+			return ToStringBuilder.create(this)
+					.add("memberId", memberId)
+					.add("anchorId", anchorId)
+					.build();
 		}
 	}
 
@@ -3592,12 +3626,14 @@ public class SequencePattern {
 		final int nodeId;
 		final int cacheId;
 		final int memberId;
+		final int anchorId;
 
-		Single(int id, IqlNode source, int nodeId, int cacheId, int memberId) {
+		Single(int id, IqlNode source, int nodeId, int cacheId, int memberId, int anchorId) {
 			super(id, source);
 			this.nodeId = nodeId;
 			this.cacheId = cacheId;
 			this.memberId = memberId;
+			this.anchorId = anchorId;
 		}
 
 		@Override
@@ -3605,7 +3641,8 @@ public class SequencePattern {
 			return new NodeInfo(this, Type.SINGLE)
 					.property(Field.NODE, nodeId)
 					.property(Field.CACHE, cacheId)
-					.property(Field.MEMBER, memberId);
+					.property(Field.MEMBER, memberId)
+					.property(Field.ANCHOR, anchorId);
 		}
 
 		@Override
@@ -3649,6 +3686,10 @@ public class SequencePattern {
 				if(memberId!=UNSET_INT) {
 					state.members[memberId].assign(state.elements[pos]);
 				}
+				// Store tree anchor
+				if(anchorId!=UNSET_INT) {
+					state.anchors[anchorId] = index;
+				}
 
 				frame.previous = index;
 
@@ -3685,6 +3726,7 @@ public class SequencePattern {
 					.add("nodeId", nodeId)
 					.add("cacheId", cacheId)
 					.add("memberId", memberId)
+					.add("anchorId", anchorId)
 					.build();
 		}
 	}
@@ -4481,20 +4523,6 @@ public class SequencePattern {
 		Node[] getAtoms() { return new Node[] {findAtom==null ? atom : findAtom}; }
 
 		@Override
-		public String toString() {
-			return ToStringBuilder.create(this)
-					.add("id", id)
-					.add("cmin", cmin)
-					.add("cmax", cmax)
-					.add("atom", atom)
-					.add("type", type)
-					.add("scopeBuf", scopeBuf)
-					.add("posBuf", posBuf)
-					.add("prevBuf", prevBuf)
-					.build();
-		}
-
-        @Override
 		boolean match(State state, int pos) {
         	// Save state for entire match call
         	int scope = state.scope();
@@ -4717,6 +4745,20 @@ public class SequencePattern {
 
             return info.deterministic;
         }
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("cmin", cmin)
+					.add("cmax", cmax)
+					.add("atom", atom)
+					.add("type", type)
+					.add("scopeBuf", scopeBuf)
+					.add("posBuf", posBuf)
+					.add("prevBuf", prevBuf)
+					.build();
+		}
     }
 
 	/** Enforces disjoint match results */
@@ -4761,15 +4803,21 @@ public class SequencePattern {
 		}
 	}
 
-	/** Steps down into the child node at current position */
+	/** Steps down into the child nodes of previously anchored node */
 	static final class StepInto extends ProperNode {
+		/** */
+		final int anchorId;
 
-		StepInto(int id, IqlTreeNode source) {
+		StepInto(int id, IqlTreeNode source, int anchorId) {
 			super(id, source);
+			this.anchorId = anchorId;
 		}
 
 		@Override
-		public NodeInfo info() { return new NodeInfo(this, Type.STEP_INTO); }
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.STEP_INTO)
+					.property(Field.ANCHOR, anchorId);
+		}
 
 		@Override
 		boolean match(State state, int pos) {
@@ -4781,6 +4829,13 @@ public class SequencePattern {
 		boolean study(TreeInfo info) {
 			// TODO Auto-generated method stub
 			return super.study(info);
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("anchorId", anchorId)
+					.build();
 		}
 	}
 }
