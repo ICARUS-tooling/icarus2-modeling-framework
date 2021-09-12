@@ -3485,7 +3485,7 @@ class SequencePatternTest {
 			@Nested
 			class Plain {
 
-				private StateMachineSetup setup() {
+				private StateMachineSetup setup(CharPredicate predParent, CharPredicate predChild) {
 					IqlTreeNode treeNode = mock(IqlTreeNode.class);
 
 					StateMachineSetup sms = new StateMachineSetup();
@@ -3498,18 +3498,20 @@ class SequencePatternTest {
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR)),
 							new Finish(id(), NO_LIMIT, false));
 					sms.matchers = matchers(
-							matcher(0, EQUALS_A),
-							matcher(1, EQUALS_B));
+							matcher(0, predParent),
+							matcher(1, predChild));
 					return sms;
 				}
 
 				@Test
+				@DisplayName("[$A [$B]] in [A [B]]")
 				void testSimpleNesting() {
 					test()
-						.setup(setup())
+						.setup(setup(EQUALS_A, EQUALS_B))
 						.target("AB")
 						.tree("*0")
-						.assertResult(match(0, true, 1)
+						.assertResult(
+								match(0, true, 1)
 								.map(0, 0)
 								.map(1, 1));
 				}
