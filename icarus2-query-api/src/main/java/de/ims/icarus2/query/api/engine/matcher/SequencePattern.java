@@ -1548,17 +1548,10 @@ public class SequencePattern {
 		}
 
 		public void reset() {
-			window.reset();
+			window.reset(0, length-1);
 			previous = UNSET_INT;
 			valid = false;
 		}
-
-//		static final int HEADER_OFFSET = 5;
-//		static final int HEADER_PARENT = 0;
-//		static final int HEADER_LENGTH = 1;
-//		static final int HEADER_DEPTH = 2;
-//		static final int HEADER_HEIGHT = 3;
-//		static final int HEADER_DESCENDANTS = 4;
 
 		// tree methods
 
@@ -1649,7 +1642,7 @@ public class SequencePattern {
 
 			window.reset(0, 0);
 			depth = height = descendants = 0;
-			parent = -1;
+			parent = UNSET_INT;
 			valid = true;
 		}
 
@@ -3674,17 +3667,17 @@ public class SequencePattern {
 			} else {
 				// Unknown index -> compute local constraints once and cache result
 				final Matcher<Item> m = state.matchers[nodeId];
-				value = m.matches(pos, state.elements[pos]);
-				cache.setValue(pos, value);
+				value = m.matches(index, state.elements[index]);
+				cache.setValue(index, value);
 			}
 
 			if(value) {
 				// Keep track of preliminary match
-				state.map(nodeId, pos);
+				state.map(nodeId, index);
 
 				// Store member mapping so that other constraints can reference it
 				if(memberId!=UNSET_INT) {
-					state.members[memberId].assign(state.elements[pos]);
+					state.members[memberId].assign(state.elements[index]);
 				}
 				// Store tree anchor
 				if(anchorId!=UNSET_INT) {
@@ -3703,7 +3696,7 @@ public class SequencePattern {
 
 				if(value) {
 					// Store last successful match
-					state.hits[nodeId] = pos;
+					state.hits[nodeId] = index;
 				}
 			}
 
@@ -4803,31 +4796,61 @@ public class SequencePattern {
 		}
 	}
 
-	/** Steps down into the child nodes of previously anchored node */
+	/**
+	 * Steps down into the child nodes of previously anchored node.
+	 * <p>
+	 * This node replaces the current {@link State#frame} temporarily
+	 * and starts a new matching process at the beginning of the new
+	 * frame. After trying to match the {@link Node#next tail} the old
+	 * frame is restored and matching continues from the previous position
+	 * there (if and only if matching the child nodes actually succeeded).
+	 */
 	static final class StepInto extends ProperNode {
-		/** */
+		/** Pointer to the anchor slot to fetch the node index that we step into */
 		final int anchorId;
+		/** Nested part of the state machine to match against the subtree */
+		final Node atom;
 
-		StepInto(int id, IqlTreeNode source, int anchorId) {
+		StepInto(int id, IqlTreeNode source, int anchorId, Node atom) {
 			super(id, source);
 			this.anchorId = anchorId;
+			this.atom = atom;
 		}
 
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.STEP_INTO)
-					.property(Field.ANCHOR, anchorId);
+					.property(Field.ANCHOR, anchorId)
+					.atoms(false, atom);
 		}
 
 		@Override
 		boolean match(State state, int pos) {
-			// TODO Auto-generated method stub
-			return super.match(state, pos);
+			final int index = state.anchors[anchorId];
+			final TreeFrame oldFrame = state.frame;
+
+			assert index != UNSET_INT : "illegal index for frame: "+index;
+			final TreeFrame newFrame = state.tree[index];
+			newFrame.reset();
+			state.frame = newFrame;
+
+			// Start again at beginning of the (nested) frame
+			boolean matched = atom.match(state, 0);
+
+			// Reset frame and go back to parent frame
+			state.frame = oldFrame;
+
+			// Continue matching at old level
+			if(matched) {
+				matched &= next.match(state, pos);
+			}
+
+			return matched;
 		}
 
 		@Override
 		boolean study(TreeInfo info) {
-			// TODO Auto-generated method stub
+			// TODO do we actually need any optimization at this point? (or can we even achieve any?)
 			return super.study(info);
 		}
 
@@ -4835,6 +4858,7 @@ public class SequencePattern {
 		public String toString() {
 			return ToStringBuilder.create(this)
 					.add("anchorId", anchorId)
+					.add("atom", atom)
 					.build();
 		}
 	}
