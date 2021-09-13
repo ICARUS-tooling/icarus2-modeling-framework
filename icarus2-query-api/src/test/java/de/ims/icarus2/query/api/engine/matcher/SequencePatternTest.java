@@ -91,6 +91,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -1205,6 +1206,11 @@ class SequencePatternTest {
 			return this;
 		}
 
+		MatchConfig modResults(Consumer<? super ResultConfig> action) {
+			results.forEach(action);
+			return this;
+		}
+
 		/** Asserts the dispatched state based on the list of expected results */
 		@Override
 		public void accept(State state) {
@@ -1455,8 +1461,13 @@ class SequencePatternTest {
 	static class ResultConfig {
 		private final int index;
 		private final List<Pair<Integer, Integer>> mapping = new ArrayList<>();
+		private boolean ignoreOrder = false;
 
 		ResultConfig(int index) { this.index = index; }
+
+		ResultConfig ignoreOrder(boolean ignoreOrder) { this.ignoreOrder = ignoreOrder; return this; }
+		ResultConfig ordered() { return ignoreOrder(false); }
+		ResultConfig unordered() { return ignoreOrder(true); }
 
 		ResultConfig map(int nodeId, int...indices) {
 			IntStream.of(indices).mapToObj(pos -> Pair.pair(nodeId, pos)).forEach(mapping::add);
@@ -1474,19 +1485,44 @@ class SequencePatternTest {
 		ResultConfig map(boolean condition, int nodeId, int...indices) { if(condition) map(nodeId, indices); return this;}
 		ResultConfig map(boolean condition, int nodeId, Interval...indices) { if(condition) map(nodeId, indices); return this;}
 
+		ResultConfig sortByNodeId() {
+			mapping.sort((p1, p2) -> p1.first.compareTo(p2.first));
+			return this;
+		}
+
+		ResultConfig sortByIndex() {
+			mapping.sort((p1, p2) -> p1.second.compareTo(p2.second));
+			return this;
+		}
+
 		void assertMapping(State state) {
 			StateProxy proxy = new StateProxy(state);
-			int size = mapping.size();
 			assertThat(state.entry)
 				.as("Incorrect number of mappings in result #%d:\n%s", _int(index), proxy)
-				.isEqualTo(size);
+				.isEqualTo(mapping.size());
 
-			// Process mappings in their natural occurrence order
-			List<Pair<Integer, Integer>> entries = new ObjectArrayList<>(mapping);
-			entries.sort((p1, p2) -> p1.second.compareTo(p2.second));
+			if(ignoreOrder) {
+				assertUnordered(state, proxy);
+			} else {
+				assertOrdered(state, proxy);
+			}
+		}
 
-			for (int i = 0; i < size; i++) {
-				Pair<Integer, Integer> m = entries.get(i);
+		private void assertUnordered(State state, StateProxy proxy) {
+			Set<Pair<Integer, Integer>> entries = new LinkedHashSet<>(mapping);
+			for (int i = 0; i < state.entry; i++) {
+				Pair<Integer, Integer> m = Pair.pair(state.m_node[i], state.m_pos[i]);
+				if(!entries.remove(m))
+					throw new AssertionError(String.format("Unexpected mapping %s at index %d", m, _int(i)));
+			}
+
+			if(!entries.isEmpty())
+				throw new AssertionError(String.format("Missing %d entries in result: %s", _int(entries.size()), entries));
+		}
+
+		private void assertOrdered(State state, StateProxy proxy) {
+			for (int i = 0; i < mapping.size(); i++) {
+				Pair<Integer, Integer> m = mapping.get(i);
 				assertThat(state.m_node[i])
 					.as("Node id mismatch in mapping at index %d in result #%d:\n%s",
 							_int(i), _int(index), proxy)
@@ -3493,6 +3529,7 @@ class SequencePatternTest {
 					sms.cacheCount = 2;
 					sms.anchorCount = 1;
 					sms.root = seq(
+							new Exhaust(id(), NO_CACHE, true),
 							new Single(id(), treeNode, NODE_0, CACHE_0, NO_MEMBER, ANCHOR_0),
 							new StepInto(id(), treeNode, ANCHOR_0,
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR)),
@@ -3512,8 +3549,23 @@ class SequencePatternTest {
 						.tree("*0")
 						.assertResult(
 								match(0, true, 1)
-								.map(0, 0)
-								.map(1, 1));
+								.result(result(0)
+										.map(0, 0)
+										.map(1, 1)));
+				}
+
+				@Test
+				@DisplayName("[$A [$B]] in [[B] A]")
+				void testSimpleNestingReverse() {
+					test()
+						.setup(setup(EQUALS_A, EQUALS_B))
+						.target("BA")
+						.tree("1*")
+						.assertResult(
+								match(0, true, 1)
+								.result(result(0)
+										.map(0, 1)
+										.map(1, 0)));
 				}
 			}
 		}
@@ -8757,10 +8809,6 @@ class SequencePatternTest {
 					"-XY-, 1, 2",
 					"XY--, 0, 1",
 					"X--Y, 0, 3",
-
-					"-YX, 2, 1",
-					"Y-X, 2, 0",
-					"YX-, 1, 0",
 				})
 				@DisplayName("Two nodes at various positions")
 				void testDualNodeHits(String target, int hitX, int hitY) {
@@ -8783,6 +8831,32 @@ class SequencePatternTest {
 					);
 				}
 
+				@ParameterizedTest(name="{index}: [X][Y] in {0}, hitX={1}, hitY={2}")
+				@CsvSource({
+					"-YX, 2, 1",
+					"Y-X, 2, 0",
+					"YX-, 1, 0",
+				})
+				@DisplayName("Two nodes at reversed positions")
+				void testDualNodeHits2(String target, int hitX, int hitY) {
+					assertResult(target,
+							builder(unordered(false,
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
+									IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y'))))
+									).build(),
+							match(1)
+							// scan won't use cache if content is only a simple node
+							.cache(cache(CACHE_0, true)
+									.window(0, target.length()-2)
+									.hits(hitX))
+							.cache(cache(CACHE_1, true)
+									.window(hitX+1, target.length()-1)
+									.hits(hitY))
+							.result(result(0)
+									.map(NODE_1, hitY)
+									.map(NODE_0, hitX))
+							);
+				}
 			}
 
 			@DisplayName("node arrangement ORDERED")
@@ -9219,8 +9293,14 @@ class SequencePatternTest {
 	 * <tr><th>{@link IqlSequence sequence}</th><td>-</td><td>{@link SequenceInGrouping X}</td><td>-</td><td>{@link SequenceInBranch X}</td></tr>
 	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td>{@link BranchInGrouping X}</td><td>{@link BranchInSequence X}</td><td>{@link BranchInBranch X}</td></tr>
 	 * </table>
-	 *
+	 * <p>
 	 * Row nested in column.
+	 * <p>
+	 * Note that for reasons of simplicity we switch result assertions to ignore the exact
+	 * order of mappings via {@link ResultConfig#unordered()}. This way we don't have to
+	 * split test cases needlessly or introduce additional parameters to control the assertion
+	 * modus. Strictly speaking this results in a slight loss of control when it comes to
+	 * verifying result mappings, but we also still verify the same overall mapping state.
 	 */
 	@Nested
 	class ForRawQueries {
@@ -9238,7 +9318,8 @@ class SequencePatternTest {
 								r.map(j, hits[j][i]);
 							}
 						}
-					});
+					})
+					.modResults(ResultConfig::unordered);
 		}
 
 		/**
