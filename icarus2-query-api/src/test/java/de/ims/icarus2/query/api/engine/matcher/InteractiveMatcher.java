@@ -1158,7 +1158,7 @@ public class InteractiveMatcher {
 
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			sink.accept(new Step(true, node.id, pos, state.last, state.frame.previous, false));
+			sink.accept(new Step(true, node.id, pos, state.last, state.frame.previousIndex, false));
 		}
 
 		@Override
@@ -1166,7 +1166,7 @@ public class InteractiveMatcher {
 //			if(!result) {
 //				System.out.println("xx");
 //			}
-			sink.accept(new Step(false, node.id, pos, state.last, state.frame.previous, result));
+			sink.accept(new Step(false, node.id, pos, state.last, state.frame.previousIndex, result));
 		}
 
 	}

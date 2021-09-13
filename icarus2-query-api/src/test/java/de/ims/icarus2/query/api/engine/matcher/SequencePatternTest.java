@@ -22,7 +22,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockCorpus;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.ANCHOR_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_2;
@@ -34,6 +33,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.DISCONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_B;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_C;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_NOT_X;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_X;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_X_IC;
@@ -51,6 +51,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.item;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.matchers;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.seq;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.tree;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_LABEL;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_MARKER;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
@@ -98,6 +99,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -146,7 +148,8 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceQueryProc
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StepInto;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Tree;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
 import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.RepetitionUtils.ClosedBase;
@@ -373,7 +376,17 @@ class SequencePatternTest {
 			}
 			return new Branch(id, mock(IqlQueryElement.class), conn, atoms);
 		}
-
+		/** Attaches a {@link Tree} to {@code node} and returns matching {@link TreeConn} */
+		static Node tree(Single node, Node atom, IntSupplier idGen) {
+			TreeConn conn = new TreeConn(idGen.getAsInt(), node.source, node.anchorId);
+			Node scan = new Exhaust(idGen.getAsInt(), NO_CACHE, true);
+			scan.setNext(atom);
+			Tree tree = new Tree(idGen.getAsInt(), node.source, node.anchorId, scan, conn);
+			node.setNext(tree);
+			SequencePattern.last(atom).setNext(conn);
+			atom = node;
+			return conn;
+		}
 
 		static final String LANE_NAME = "test_lane";
 		static final String ITEMS_NAME = "test_items";
@@ -3521,51 +3534,150 @@ class SequencePatternTest {
 			@Nested
 			class Plain {
 
-				private StateMachineSetup setup(CharPredicate predParent, CharPredicate predChild) {
-					IqlTreeNode treeNode = mock(IqlTreeNode.class);
+
+				private StateMachineSetup setup(CharPredicate...preds) {
+
+					Single[] atoms = new Single[preds.length];
+					@SuppressWarnings("unchecked")
+					Matcher<Item>[] matchers = new Matcher[preds.length];
+					for (int i = 0; i < preds.length; i++) {
+						boolean hasChild = i<preds.length-1;
+						matchers[i] = matcher(i, preds[i]);
+						IqlTreeNode treeNode = mock(IqlTreeNode.class);
+						atoms[i] = new Single(id(), treeNode, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
+					}
+
+					Node atom = atoms[atoms.length-1];
+					Node tail = atom;
+
+					for (int i = atoms.length-2; i >= 0; i--) {
+						Single node = atoms[i];
+						Node conn = tree(node, atom, () -> id());
+						atom = node;
+						tail = conn;
+					}
+
+					Node scan = new Exhaust(id(), NO_CACHE, true);
+					Node finish = new Finish(id(), NO_LIMIT, false);
+
+					scan.setNext(atom);
+					tail.setNext(finish);
 
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[2];
-					sms.cacheCount = 2;
-					sms.anchorCount = 1;
-					sms.root = seq(
-							new Exhaust(id(), NO_CACHE, true),
-							new Single(id(), treeNode, NODE_0, CACHE_0, NO_MEMBER, ANCHOR_0),
-							new StepInto(id(), treeNode, ANCHOR_0,
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR)),
-							new Finish(id(), NO_LIMIT, false));
-					sms.matchers = matchers(
-							matcher(0, predParent),
-							matcher(1, predChild));
+					sms.rawNodes = new IqlNode[preds.length];
+					sms.cacheCount = preds.length;
+					sms.anchorCount = preds.length-1;
+					sms.root = scan;
+					sms.matchers = matchers(matchers);
 					return sms;
 				}
 
-				@Test
-				@DisplayName("[$A [$B]] in [A [B]]")
-				void testSimpleNesting() {
+				@ParameterizedTest
+				@CsvSource({
+					"AB, 0*",
+					"ACB, *01",
+				})
+				@DisplayName("[$A [$B]] -> no matches")
+				void testSimpleNestingFail(String target, String tree) {
 					test()
 						.setup(setup(EQUALS_A, EQUALS_B))
-						.target("AB")
-						.tree("*0")
-						.assertResult(
-								match(0, true, 1)
-								.result(result(0)
-										.map(0, 0)
-										.map(1, 1)));
+						.target(target)
+						.tree(tree)
+						.assertResult(match(0, false, 0));
 				}
 
-				@Test
-				@DisplayName("[$A [$B]] in [[B] A]")
-				void testSimpleNestingReverse() {
+				@ParameterizedTest
+				@CsvSource({
+					// Normal order - adjacent
+					"AB, *0, 0, 1",
+					"ABC, *00, 0, 1",
+					"ABC, *01, 0, 1",
+					// Normal order - mixed
+					"ACB, *00, 0, 2",
+					"ACB, *10, 0, 2",
+					// Reversed order - adjacent
+					"BA, 1*, 1, 0",
+					"BAC, 1*1, 1, 0",
+					"BAC, 1*0, 1, 0",
+					"ACB, *10, 0, 2",
+					// Reversed order - mixed
+					"BCA, 22*, 2, 0",
+					"BCA, 20*, 2, 0",
+				})
+				@DisplayName("[$A [$B]] -> 1 match")
+				void testSimpleNesting(String target, String tree, int hitA, int hitB) {
 					test()
 						.setup(setup(EQUALS_A, EQUALS_B))
-						.target("BA")
-						.tree("1*")
+						.target(target)
+						.tree(tree)
 						.assertResult(
 								match(0, true, 1)
 								.result(result(0)
-										.map(0, 1)
-										.map(1, 0)));
+										.map(NODE_0, hitA)
+										.map(NODE_1, hitB)));
+				}
+
+				@ParameterizedTest
+				@CsvSource({
+					"AB, 0*",
+					"ABC, *00",
+					"ACB, *01",
+				})
+				@DisplayName("[$A [$B [$C]]] -> no matches")
+				void testDoubleNestingFail(String target, String tree) {
+					test()
+						.setup(setup(EQUALS_A, EQUALS_B, EQUALS_C))
+						.target(target)
+						.tree(tree)
+						.assertResult(match(0, false, 0));
+				}
+
+				@ParameterizedTest
+				@CsvSource({
+					// Normal order - adjacent
+					"ABC, *01, 0, 1, 2",
+					"ABCD, *010, 0, 1, 2",
+					"ABCD, *011, 0, 1, 2",
+					"ABCD, *012, 0, 1, 2",
+					// Normal order - mixed
+					"ACB, *20, 0, 2, 1",
+					"ACBD, *200, 0, 2, 1",
+					"ACBD, *201, 0, 2, 1",
+					"ACBD, *202, 0, 2, 1",
+					"ACDB, *300, 0, 3, 1",
+					"ACDB, *310, 0, 3, 1",
+					"ACDB, *320, 0, 3, 1",
+					"ACDB, *330, 0, 3, 1",
+					"ADCB, *030, 0, 3, 2",
+					// Reversed order - adjacent
+					"BAC, 1*0, 1, 0, 2",
+					"BCA, 20*, 2, 0, 1",
+					// Reversed order - mixed
+					"DBAC, 12*1, 2, 1, 3",
+					"DBAC, 22*1, 2, 1, 3",
+					"DBAC, 32*1, 2, 1, 3",
+					"BDAC, 20*0, 2, 0, 3",
+					"BDAC, 22*0, 2, 0, 3",
+					"BDAC, 23*0, 2, 0, 3",
+					"BADC, 1*00, 1, 0, 3",
+					"BADC, 1*10, 1, 0, 3",
+					"BADC, 1*20, 1, 0, 3",
+					"BACD, 1*00, 1, 0, 2",
+					"BACD, 1*01, 1, 0, 2",
+					"BACD, 1*02, 1, 0, 2",
+				})
+				@DisplayName("[$A [$B [$C]]] -> 1 match")
+				void testDoubleNesting(String target, String tree, int hitA, int hitB, int hitC) {
+					test()
+						.setup(setup(EQUALS_A, EQUALS_B, EQUALS_C))
+						.target(target)
+						.tree(tree)
+						.assertResult(
+								match(0, true, 1)
+								.result(result(0)
+										.map(NODE_0, hitA)
+										.map(NODE_1, hitB)
+										.map(NODE_2, hitC)));
 				}
 			}
 		}

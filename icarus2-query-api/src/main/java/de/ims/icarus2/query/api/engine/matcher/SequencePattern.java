@@ -239,6 +239,9 @@ public class SequencePattern {
 	 */
 	static class StateMachineSetup {
 
+		/** Hint for the starting size of all buffer structures */
+		int initialSize = INITIAL_SIZE;
+
 		/** Stores all the raw node definitions from the query extracted from {@link #source} */
 		IqlNode[] rawNodes = {};
 		/** Constraint from the 'FILTER BY' section */
@@ -289,7 +292,6 @@ public class SequencePattern {
 		IqlNode[] getRawNodes() { return rawNodes; }
 		int[] getHits() { return new int[rawNodes.length]; }
 		int[] getBorders() { return new int[borderCount]; }
-		int[] getAnchors() { return new int[anchorCount]; }
 		Matcher<Container> makeFilterConstraint() {
 			return filterConstraint==null ? null : filterConstraint.get();
 		}
@@ -325,6 +327,11 @@ public class SequencePattern {
 			return IntStream.range(0, gateCount)
 				.mapToObj(i -> new Gate())
 				.toArray(Gate[]::new);
+		}
+		Anchor[] makeAnchors() {
+			return IntStream.range(0, anchorCount)
+					.mapToObj(i -> new Anchor())
+					.toArray(Anchor[]::new);
 		}
 		PermutationContext[] makePermutations() {
 			return IntStream.range(0, permutations.length)
@@ -736,11 +743,11 @@ public class SequencePattern {
 			 */
 			if(marker!=null) {
 				int border = border();
-				// Saves the previous window
+				// Saves the previousIndex window
 				frame.prefix().push(border(true, border));
 				// Creates the marker window
 				frame.prefix().append(marker(marker, scan, IcarusUtils.DO_NOTHING()));
-				// Restores previous window
+				// Restores previousIndex window
 				frame.suffix().append(border(false, border));
 				// Consume scan
 				scan = null;
@@ -1534,13 +1541,13 @@ public class SequencePattern {
 		 * Used to enforce adjacent node matching. If free positioning
 		 * is allowed, scan nodes will reset this value to {@code IcarusUtils#UNSET_INT};
 		 */
-		int previous = UNSET_INT;
+		int previousIndex = UNSET_INT;
 
 		/** Region of allowed positional values */
 		Interval window = Interval.blank();
 
 		/** Flag to signal that frame data is up to date */
-		boolean valid;
+		boolean valid; //TODO actually use this for lazy tree construction
 
 		/** Ensure that {@code newSize} index values fit into the indices buffer */
 		void resize(int newSize) {
@@ -1549,8 +1556,7 @@ public class SequencePattern {
 
 		public void reset() {
 			window.reset(0, length-1);
-			previous = UNSET_INT;
-			valid = false;
+			previousIndex = UNSET_INT;
 		}
 
 		// tree methods
@@ -1685,14 +1691,14 @@ public class SequencePattern {
 		void reset(int length) {
 			this.length = length;
 			window.reset(0, length-1);
-			previous = UNSET_INT;
+			previousIndex = UNSET_INT;
 		}
 
 		@Override
 		public void reset() {
 			length = 0;
 			window.reset(0, 0);
-			previous = UNSET_INT;
+			previousIndex = UNSET_INT;
 		}
 	}
 
@@ -1712,8 +1718,6 @@ public class SequencePattern {
 		Container target;
 		/** Total number of items in container */
 		int size = 0;
-		/** Items in target container, copied for faster access */
-		Item[] elements = new Item[INITIAL_SIZE];
 
 		/** Raw nodes from the query, order matches the items in 'matchers' */
 		final IqlNode[] nodes;
@@ -1751,24 +1755,11 @@ public class SequencePattern {
 		/** Number of mappings stored so far and also the next insertion index */
 		int entry = 0;
 
-		/** Keys for the node mapping */
-		int[] m_node = new int[INITIAL_SIZE];
-		/** Values for the node mapping, i.e. the associated indices */
-		int[] m_pos = new int[INITIAL_SIZE];
-		/** Marks individual nodes as excluded from further matching */
-		boolean[] locked = new boolean[INITIAL_SIZE];
-
 		/** The frame representing the overall list of items in the container */
-		RootFrame rootFrame = new RootFrame();
+		final RootFrame rootFrame = new RootFrame();
 
-		/** View on the target tree as frames */
-		TreeFrame[] tree = new TreeFrame[INITIAL_SIZE];
-		/** Indices of root nodes in the tree. {@code -1} indicates end of list */
-		int[] roots = new int[INITIAL_SIZE];
-		/** Path from a root node to current node */
-		int[] trace = new int[INITIAL_SIZE];
 		/** Tentatively marked tree node spots. Stores the positional index for node. */
-		int[] anchors;
+		final Anchor[] anchors;
 
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
 		boolean finished;
@@ -1807,7 +1798,33 @@ public class SequencePattern {
 
 		Consumer<State> resultHandler;
 
+		// Growing Buffers
+
+		/** Items in target container, copied for faster access */
+		Item[] elements;
+		/** View on the target tree as frames */
+		TreeFrame[] tree;
+		/** Indices of root nodes in the tree. {@code -1} indicates end of list */
+		int[] roots;
+		/** Path from a root node to current node */
+		int[] trace;
+		/** Keys for the node mapping */
+		int[] m_node;
+		/** Values for the node mapping, i.e. the associated indices */
+		int[] m_pos;
+		/** Marks individual nodes as excluded from further matching */
+		boolean[] locked;
+
 		State(StateMachineSetup setup) {
+			final int initialSize = setup.initialSize;
+			elements = new Item[initialSize];
+			tree = new TreeFrame[initialSize];
+			roots = new int[initialSize];
+			trace = new int[initialSize];
+			m_node = new int[initialSize];
+			m_pos = new int[initialSize];
+			locked = new boolean[initialSize];
+
 			markers = setup.getMarkers();
 			markerPos = setup.getMarkerPos();
 			nodes = setup.getRawNodes();
@@ -1825,7 +1842,7 @@ public class SequencePattern {
 			intervals = setup.makeIntervals();
 			buffers = setup.makeBuffer();
 			gates = setup.makeGates();
-			anchors = setup.getAnchors();
+			anchors = setup.makeAnchors();
 			permutations = setup.makePermutations();
 
 			frame = rootFrame;
@@ -2525,9 +2542,23 @@ public class SequencePattern {
 		void reset() {
 			Arrays.fill(current, null);
 			Arrays.fill(next, null);
-//			Arrays.fill(used, false);
-//			Arrays.fill(scan, false);
 			source.reset();
+		}
+	}
+
+	static final class Anchor {
+		/** Frame to step into */
+		TreeFrame frame;
+		/** Surrounding frame in which the node was anchored. */
+		TreeFrame parent;
+		/** Return position for the {@link TreeConn} node. */
+		int pos = UNSET_INT;
+		/** The global index the node has been anchored to. */
+		int index = UNSET_INT;
+
+		void reset() {
+			frame = parent = null;
+			pos = index = UNSET_INT;
 		}
 	}
 
@@ -2542,7 +2573,7 @@ public class SequencePattern {
 	 * child nodes by their "parents". In other words, nodes read this information
 	 * before modifying the {@link TreeInfo} instance passed to them or forwarding it
 	 * to subsequent parts of the state machine. Downstream properties are often set
-	 * to a new value by specific nodes and then reset to their previous values after
+	 * to a new value by specific nodes and then reset to their previousIndex values after
 	 * those nodes have studied their subsection of the state machine.
 	 * <p>
 	 * <i>upstream</i> information is accumulated in a post-order fashion, i.e. backwards
@@ -2572,6 +2603,11 @@ public class SequencePattern {
 		 * If no markers are used, this is equal to {@link #minSize}. (downstream property)
 		 */
 		int segmentSize = 0;
+		/**
+		 * Accumulated number of nodes in a subtree. Calculated post-order when studying
+		 * a search graph. (upstream property)
+		 */
+		int descendants = 0;
 
 		/** Used to track fixed positions or areas. */
 		int from, to;
@@ -2706,8 +2742,8 @@ public class SequencePattern {
 			RESET,
 			/** Vertical navigation node to enter a child tree. */
 			STEP_INTO,
-			/** Vertical reset node to go back to a definite node in the tree. */
-			GO_TO,
+			/** Vertical reset node to go back to a definite (outer) frame in the tree. */
+			STEP_OUT,
 			;
 		}
 
@@ -2837,12 +2873,12 @@ public class SequencePattern {
 	}
 
 	/** Traverse the node's sequence via {@link Node#next} till its own actual tail. */
-	private static Node last(Node n) {
+	static Node last(Node n) {
 		return lastBefore(n, accept);
 	}
 
 	/** Traverse the node's sequence via {@link Node#next} till reaching the designated fence. */
-	private static Node lastBefore(Node n, Node fence) {
+	static Node lastBefore(Node n, Node fence) {
 		assert n!=accept : "cannot start with generic accept node";
 		while(n.next!=null && n.next!=fence) {
 			n = n.next;
@@ -2852,7 +2888,7 @@ public class SequencePattern {
 
 	/** Traverse and return the size of the node's sequence via {@link Node#next}
 	 * till its own actual tail. */
-	private static int length(Node n) {
+	static int length(Node n) {
 		assert n!=accept : "cannot start with generic accept node";
 		int size = 1;
 		while(n.next!=null && n.next!=accept) {
@@ -2863,7 +2899,7 @@ public class SequencePattern {
 	}
 
 	/** Unwraps proxy nodes */
-	private static Node unwrap(Node node) {
+	static Node unwrap(Node node) {
 		while(node.isProxy()) {
 			node = node.next;
 		}
@@ -3022,12 +3058,12 @@ public class SequencePattern {
 			}
 
 			// Ensure adjacent matching if desired
-			if(frame.previous!=UNSET_INT && frame.previous!=index-1) {
+			if(frame.previousIndex!=UNSET_INT && frame.previousIndex!=index-1) {
 				return false;
 			}
 
-			// We match every node, so no extra check needed to refresh 'previous'
-			frame.previous = index;
+			// We match every node, so no extra check needed to refresh 'previousIndex'
+			frame.previousIndex = index;
 
 			// Store member mapping so that other constraints can reference it
 			if(memberId!=UNSET_INT) {
@@ -3035,7 +3071,9 @@ public class SequencePattern {
 			}
 			// Store tree anchor
 			if(anchorId!=UNSET_INT) {
-				state.anchors[anchorId] = index;
+				Anchor anchor = state.anchors[anchorId];
+				anchor.parent = frame;
+				anchor.index = index;
 			}
 			// Immediately forward to next node
 			boolean result = next.match(state, pos+1);
@@ -3049,6 +3087,7 @@ public class SequencePattern {
 		@Override
 		boolean study(TreeInfo info) {
 			next.study(info);
+			info.descendants++;
 			info.minSize++;
 			info.maxSize++;
 			info.segmentSize++;
@@ -3453,7 +3492,7 @@ public class SequencePattern {
 			final int fence = frame.length-1;
 
 			for (int i = pos; i <= fence; i++) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				int scope = state.scope();
 				boolean stored = cache.isSet(i);
 				boolean matched;
@@ -3481,12 +3520,12 @@ public class SequencePattern {
     		final int to = frame.to();
 			final Cache cache = state.caches[cacheId];
 			final int fence = to - minSize + 1;
-			final int previous = frame.previous;
+			final int previous = frame.previousIndex;
 
 			boolean result = false;
 
 			for (int i = pos; i <= fence && !state.stop; i++) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				int scope = state.scope();
 				boolean stored = cache.isSet(i);
 				boolean matched;
@@ -3512,7 +3551,7 @@ public class SequencePattern {
 				frame.resetWindow(from, to);
 			}
 
-			frame.previous = previous;
+			frame.previousIndex = previous;
 
 			return result;
 		}
@@ -3572,11 +3611,11 @@ public class SequencePattern {
 		boolean match(State state, int pos) {
 			final TreeFrame frame = state.frame;
 			final int last = frame.to()-minSize+1;
-			final int previous = frame.previous;
+			final int previous = frame.previousIndex;
 			// Visit all elements of initial search window!
 			boolean result = true;
 			while (pos <=last) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				// mismatch or zero-width assertion
 				if(!atom.match(state, pos) || pos==state.last) {
 					result = false;
@@ -3584,7 +3623,7 @@ public class SequencePattern {
 				}
 				pos = state.last;
 			}
-			frame.previous = previous;
+			frame.previousIndex = previous;
 			if(!result) {
 				return false;
 			}
@@ -3654,7 +3693,7 @@ public class SequencePattern {
 			}
 
 			// Ensure adjacent matching if desired
-			if(frame.previous!=UNSET_INT && frame.previous!=index-1) {
+			if(frame.previousIndex!=UNSET_INT && frame.previousIndex!=index-1) {
 				return false;
 			}
 
@@ -3662,8 +3701,8 @@ public class SequencePattern {
 
 			boolean value;
 
-			if(cache.isSet(pos)) {
-				value = cache.getValue(pos);
+			if(cache.isSet(index)) {
+				value = cache.getValue(index);
 			} else {
 				// Unknown index -> compute local constraints once and cache result
 				final Matcher<Item> m = state.matchers[nodeId];
@@ -3681,10 +3720,12 @@ public class SequencePattern {
 				}
 				// Store tree anchor
 				if(anchorId!=UNSET_INT) {
-					state.anchors[anchorId] = index;
+					Anchor anchor = state.anchors[anchorId];
+					anchor.parent = frame;
+					anchor.index = index;
 				}
 
-				frame.previous = index;
+				frame.previousIndex = index;
 
 				// Continue down the path
 				value = next.match(state, pos+1);
@@ -3706,6 +3747,7 @@ public class SequencePattern {
 		@Override
 		boolean study(TreeInfo info) {
 			next.study(info);
+			info.descendants++;
 			info.minSize++;
 			info.maxSize++;
 			info.segmentSize++;
@@ -3768,7 +3810,7 @@ public class SequencePattern {
 			boolean result = false;
 
 			for (int i = pos; i <= fence && !state.stop; i++) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				int scope = state.scope();
 				result |= next.match(state, i);
 				frame.resetWindow(from, to);
@@ -3872,7 +3914,7 @@ public class SequencePattern {
 			boolean result = false;
 
 			for (int i = pos; i <= fence && !state.stop; i++) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				int scope = state.scope();
 				result |= next.match(state, i);
 				state.resetScope(scope);
@@ -3900,7 +3942,7 @@ public class SequencePattern {
 			boolean result = false;
 
 			for (int i = pos; i <= fence && !state.stop; i++) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				int scope = state.scope();
 				boolean stored = cache.isSet(i);
 				boolean matched;
@@ -3946,7 +3988,7 @@ public class SequencePattern {
 			boolean result = false;
 
 			for (int i = to - minSize + 1; i >= pos && !state.stop; i--) {
-				frame.previous = UNSET_INT;
+				frame.previousIndex = UNSET_INT;
 				int scope = state.scope();
 				result |= next.match(state, i);
 				state.resetScope(scope);
@@ -4038,7 +4080,7 @@ public class SequencePattern {
     		final int from = frame.from();
     		final int to = frame.to();
         	final int scope = state.scope();
-        	final int previous = frame.previous;
+        	final int previous = frame.previousIndex;
     		boolean result = false;
 
 			while(!state.stop) {
@@ -4070,7 +4112,7 @@ public class SequencePattern {
 
 	        	// Only reset if we failed or are not meant to keep the first match
 	        	state.resetScope(scope);
-	        	frame.previous = previous;
+	        	frame.previousIndex = previous;
 
 				// Bail as soon as permutations are exhausted
 				if(!ctx.source.next()) {
@@ -4194,7 +4236,7 @@ public class SequencePattern {
 	    		final int fence = ctx.fences[atomIndex];
 
 				for (int i = pos; i <= fence && !state.stop; i++) {
-					frame.previous = UNSET_INT;
+					frame.previousIndex = UNSET_INT;
 					int scope = state.scope();
 					// Local match result
 					boolean matched = matchAtom(state, i, ctx);
@@ -4402,7 +4444,7 @@ public class SequencePattern {
     		final int from = frame.from();
     		final int to = frame.to();
         	final int scope = state.scope();
-        	final int previous = frame.previous;
+        	final int previous = frame.previousIndex;
 
     		boolean result = false;
 	        for (int n = 0; n < atoms.length && !state.stop; n++) {
@@ -4422,7 +4464,7 @@ public class SequencePattern {
 
 	        	// Only reset if we failed or are not meant to keep the first match
 	        	state.resetScope(scope);
-	        	frame.previous = previous;
+	        	frame.previousIndex = previous;
 	        }
 	        return result;
 		}
@@ -4438,6 +4480,7 @@ public class SequencePattern {
 			int minL2 = Integer.MAX_VALUE; // we only operate in int space here anyway
 			int maxL2 = -1;
 			int segL = Integer.MAX_VALUE;
+			int descL = Integer.MAX_VALUE;
 
 			for (int n = 0; n < atoms.length; n++) {
 				Node atom = atoms[n];
@@ -4449,6 +4492,7 @@ public class SequencePattern {
 				minL2 = Math.min(minL2, info.minSize);
 				maxL2 = Math.max(maxL2, info.maxSize);
 				segL = Math.min(segL, info.segmentSize);
+				descL = Math.min(descL, info.descendants);
 				tmp.maxValid &= info.maxValid;
 				info.reset();
 			}
@@ -4456,11 +4500,13 @@ public class SequencePattern {
 			tmp.minSize += minL2;
 			tmp.maxSize += maxL2;
 			tmp.segmentSize += segL;
+			tmp.descendants += descL;
 
 			conn.next.study(info);
 
 			info.minSize += tmp.minSize;
 			info.maxSize += tmp.maxSize;
+			info.descendants += tmp.descendants;
 			info.segmentSize += tmp.segmentSize;
 			info.maxValid &= tmp.maxValid;
 			info.deterministic = false;
@@ -4572,7 +4618,7 @@ public class SequencePattern {
 				int scope = state.scope();
 				b_pos[count] = pos;
 				b_scope[count] = scope;
-				b_prev[count] = frame.previous;
+				b_prev[count] = frame.previousIndex;
 				// Try advancing
 				if(!matchAtom(state, pos, count)) {
 					state.resetScope(scope);
@@ -4602,7 +4648,7 @@ public class SequencePattern {
 				// Need to backtrack one more step
 				count--;
 				pos = b_pos[count];
-				frame.previous = b_prev[count];
+				frame.previousIndex = b_prev[count];
 				state.resetScope(b_scope[count]);
 			}
 			// Could not find a match for next, so fail
@@ -4622,13 +4668,13 @@ public class SequencePattern {
 				final int from = frame.from();
 				final int to = frame.to();
 				int scope = state.scope();
-				final int previous = frame.previous;
+				final int previous = frame.previousIndex;
 				if (next.match(state, pos)) {
 					return true;
 				}
 				state.resetScope(scope);
 				frame.resetWindow(from, to);
-				frame.previous = previous;
+				frame.previousIndex = previous;
                 // At the maximum, no match found
 				if (count >= cmax) {
 					return false;
@@ -4689,6 +4735,7 @@ public class SequencePattern {
             int minL = info.minSize;
             int maxL = info.maxSize;
             int segL = info.segmentSize;
+            int descL = info.descendants;
             boolean maxV = info.maxValid;
             boolean detm = info.deterministic;
             boolean stopOnSuccess = info.stopOnSuccess;
@@ -4709,10 +4756,16 @@ public class SequencePattern {
             info.minSize = temp;
 
             temp = info.segmentSize * cmin + segL;
-            if (temp < minL) {
+            if (temp < segL) {
                 temp = Integer.MAX_VALUE; // we only operate in int space here anyway
             }
             info.segmentSize = temp;
+
+            temp = info.descendants * cmin + descL;
+            if (temp < descL) {
+                temp = Integer.MAX_VALUE; // we only operate in int space here anyway
+            }
+            info.descendants = temp;
 
             if (maxV & info.maxValid) {
                 temp = info.maxSize * cmax + maxL;
@@ -4799,66 +4852,133 @@ public class SequencePattern {
 	/**
 	 * Steps down into the child nodes of previously anchored node.
 	 * <p>
-	 * This node replaces the current {@link State#frame} temporarily
+	 * This node replaces the current {@link State#frame}
 	 * and starts a new matching process at the beginning of the new
-	 * frame. After trying to match the {@link Node#next tail} the old
-	 * frame is restored and matching continues from the previous position
-	 * there (if and only if matching the child nodes actually succeeded).
+	 * frame.
 	 */
-	static final class StepInto extends ProperNode {
+	static final class Tree extends ProperNode {
 		/** Pointer to the anchor slot to fetch the node index that we step into */
 		final int anchorId;
-		/** Nested part of the state machine to match against the subtree */
-		final Node atom;
+		final Node child;
+		final TreeConn conn;
 
-		StepInto(int id, IqlTreeNode source, int anchorId, Node atom) {
+		Tree(int id, IqlQueryElement source, int anchorId, Node child, TreeConn conn) {
 			super(id, source);
 			this.anchorId = anchorId;
-			this.atom = atom;
+			this.child = requireNonNull(child);
+			this.conn = requireNonNull(conn);
 		}
 
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.STEP_INTO)
 					.property(Field.ANCHOR, anchorId)
-					.atoms(false, atom);
+					.atoms(false, child);
 		}
 
 		@Override
-		boolean match(State state, int pos) {
-			final int index = state.anchors[anchorId];
-			final TreeFrame oldFrame = state.frame;
+		void setNext(Node next) {
+			super.setNext(next);
+			conn.setNext(next);
+		}
 
-			assert index != UNSET_INT : "illegal index for frame: "+index;
-			final TreeFrame newFrame = state.tree[index];
+		@Override
+		Node[] getAtoms() { return new Node[] {child}; }
+
+		@Override
+		boolean match(State state, int pos) {
+			final TreeFrame oldFrame = state.frame;
+			final Anchor anchor = state.anchors[anchorId];
+			assert anchor.index != UNSET_INT : "illegal index for frame: "+anchor.index;
+
+			final TreeFrame newFrame = state.tree[anchor.index];
 			newFrame.reset();
 			state.frame = newFrame;
 
+			// Store our return position and frame for the TreeConn node
+			anchor.pos = pos;
+			anchor.frame = newFrame;
+
 			// Start again at beginning of the (nested) frame
-			boolean matched = atom.match(state, 0);
+			boolean result = child.match(state, 0);
 
-			// Reset frame and go back to parent frame
+			// Finally reset frame and anchor data
 			state.frame = oldFrame;
+			anchor.reset();
 
-			// Continue matching at old level
-			if(matched) {
-				matched &= next.match(state, pos);
-			}
-
-			return matched;
+			return result;
 		}
 
 		@Override
 		boolean study(TreeInfo info) {
-			// TODO do we actually need any optimization at this point? (or can we even achieve any?)
-			return super.study(info);
+			conn.next.study(info);
+
+			TreeInfo tmp = new TreeInfo();
+			child.study(tmp);
+
+			info.descendants += tmp.descendants;
+			info.deterministic &= tmp.deterministic;
+
+			return info.deterministic;
 		}
 
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this)
 					.add("anchorId", anchorId)
-					.add("atom", atom)
+					.add("child", child)
+					.build();
+		}
+	}
+
+	/**
+	 * Steps out of a previously anchored child node into the old frame to continue the
+	 * state machine and then resets back to the child frame.
+	 */
+	static final class TreeConn extends ProperNode {
+		/** Pointer to the anchor slot to fetch the node index that we step into */
+		final int anchorId;
+
+		TreeConn(int id, IqlQueryElement source, int anchorId) {
+			super(id, source);
+			this.anchorId = anchorId;
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.STEP_OUT)
+					.property(Field.ANCHOR, anchorId);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			final Anchor anchor = state.anchors[anchorId];
+			assert anchor.pos != UNSET_INT : "illegal return position for anchor id: "+anchorId;
+			assert anchor.parent != null : "missing return frame for anchor id: "+anchorId;
+			assert anchor.frame != null : "missing nested frame for anchor id: "+anchorId;
+
+			// Apply previously savedanchor data
+			state.frame = anchor.parent;
+			pos = anchor.pos;
+
+			boolean result = next.match(state, pos);
+
+			// Reset back to child frame (needed for e.g. scans)
+			state.frame = anchor.frame;
+
+			return result;
+		}
+
+		/** Block any studying to reach the outer tree */
+		@Override
+		boolean study(TreeInfo info) {
+			return info.deterministic;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("anchorId", anchorId)
 					.build();
 		}
 	}
