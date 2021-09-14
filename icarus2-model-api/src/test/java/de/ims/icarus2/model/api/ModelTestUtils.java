@@ -34,7 +34,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
@@ -42,7 +41,6 @@ import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.internal.stubbing.answers.CallsRealMethods;
 
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
@@ -349,7 +347,7 @@ public class ModelTestUtils {
 	}
 
 	public static Structure mockStructure() {
-		Structure structure = mock(Structure.class, withSettings().defaultAnswer(new CallsRealMethods()));
+		Structure structure = mock(Structure.class, CALLS_REAL_METHODS);
 
 		Item root = mockItem(structure);
 		when(structure.getVirtualRoot()).thenReturn(root);
