@@ -720,16 +720,7 @@ public class SequencePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 
-			final IqlTreeNode treeNode;
-			final int anchorId;
-
-			if(isTree) {
-				treeNode = (IqlTreeNode)source;
-				anchorId = treeNode.getChildren().isPresent() ? anchor() : UNSET_INT;
-			} else {
-				treeNode = null;
-				anchorId = UNSET_INT;
-			}
+			final int anchorId = isTree && ((IqlTreeNode)source).getChildren().isPresent() ? anchor() : UNSET_INT;
 
 			final Frame frame = new Frame();
 
@@ -782,7 +773,23 @@ public class SequencePattern {
 			frame.push(atom);
 
 			if(anchorId!=UNSET_INT) {
-				//TODO add nested child nodes if present
+				IqlTreeNode treeNode = (IqlTreeNode) source;
+				IqlElement children = treeNode.getChildren().get();
+
+				// Exhaustive inner search for child node construct
+				boolean cached = needsCacheForChild(children);
+				Node innerScan = exhaust(true, cached ? cache() : UNSET_INT);
+				Frame child = process(treeNode.getChildren().get(), innerScan);
+				// Collapse entire atom as we cannot hoist anything out of the tree node
+				child.collapse();
+
+				// Connect atom to tail
+				TreeConn conn = treeCon(treeNode, anchorId);
+				child.append(conn);
+
+				// Wrap atom into tree node and add after the "content" node section
+				Node tree = tree(treeNode, anchorId, child.start(), conn);
+				frame.append(tree);
 			}
 
 			// Only apply external scan if our content cannot scan for itself
@@ -878,6 +885,32 @@ public class SequencePattern {
 			}
 
 			return true;
+		}
+
+		/** Check if child element has quantification, disjunction, nesting or multiple actual nodes */
+		private boolean needsCacheForChild(IqlElement child) {
+			switch (child.getType()) {
+			case NODE:
+				return false;
+
+			case DISJUNCTION:
+			case TREE_NODE:
+				return true;
+
+			case GROUPING: {
+				IqlGrouping grouping = (IqlGrouping) child;
+				return grouping.hasQuantifiers() || needsCacheForChild(grouping.getElement());
+			}
+
+			case SEQUENCE: {
+				IqlSequence sequence = (IqlSequence) child;
+				List<IqlElement> elements = sequence.getElements();
+				return elements.size() > 1 || (!elements.isEmpty() && needsCacheForChild(elements.get(0)));
+			}
+
+			default:
+				return false;
+			}
 		}
 
 		private int id() { return id++; }
@@ -1204,6 +1237,14 @@ public class SequencePattern {
 
 		private Node permutationElement(int permId, int slot) {
 			return storeTrackable(new PermSlot(id(), permId, slot));
+		}
+
+		private Node tree(IqlTreeNode source, int anchorId, Node child, TreeConn conn) {
+			return storeTrackable(new Tree(id(), source, anchorId, child, conn));
+		}
+
+		private TreeConn treeCon(IqlTreeNode source, int anchorId) {
+			return store(new TreeConn(id(), source, anchorId));
 		}
 
 		private Reset reset() { return store(new Reset(id())); }
@@ -2608,6 +2649,9 @@ public class SequencePattern {
 		 * a search graph. (upstream property)
 		 */
 		int descendants = 0;
+		/** Nesting depths of tree nodes */
+		int depth = 0;
+		//TODO properly propagate 'depth' for accumulating nodes (Branch, PermInit and Repetition)
 
 		/** Used to track fixed positions or areas. */
 		int from, to;
@@ -2622,6 +2666,8 @@ public class SequencePattern {
             stopOnSuccess = false;
             from = UNSET_INT;
             to = UNSET_INT;
+            depth = 0;
+            descendants = 0;
 		}
 
 		@Override
@@ -2690,6 +2736,14 @@ public class SequencePattern {
 			GREEDINESS(QuantifierModifier.class),
 			/** Id of an anchor point to store a tree node assignment */
 			ANCHOR(Integer.class),
+			/** Minimum height of a tree node */
+			HEIGHT(Integer.class),
+			/** Minimum depth of a tree node */
+			DEPTH(Integer.class),
+			/** Minimum number of imemdiate children of a tree node */
+			CHILDREN(Integer.class),
+			/** Minimum number of accumulated descendants of a tree node */
+			DESCENDANTS(Integer.class),
 			;
 
 			private final Class<?> valueClass;
@@ -4859,8 +4913,16 @@ public class SequencePattern {
 	static final class Tree extends ProperNode {
 		/** Pointer to the anchor slot to fetch the node index that we step into */
 		final int anchorId;
+		/** Nested part of the automaton */
 		final Node child;
+		/** Connection of {@code child} to rest of state machine  */
 		final TreeConn conn;
+
+
+		int height = UNSET_INT;
+		int depth = UNSET_INT;
+		int descendants = UNSET_INT;
+		int children = UNSET_INT;
 
 		Tree(int id, IqlQueryElement source, int anchorId, Node child, TreeConn conn) {
 			super(id, source);
@@ -4873,7 +4935,11 @@ public class SequencePattern {
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.STEP_INTO)
 					.property(Field.ANCHOR, anchorId)
-					.atoms(false, child);
+					.atoms(false, child)
+					.property(Field.HEIGHT, height)
+					.property(Field.DEPTH, depth)
+					.property(Field.CHILDREN, children)
+					.property(Field.DESCENDANTS, descendants);
 		}
 
 		@Override
@@ -4892,6 +4958,14 @@ public class SequencePattern {
 			assert anchor.index != UNSET_INT : "illegal index for frame: "+anchor.index;
 
 			final TreeFrame newFrame = state.tree[anchor.index];
+
+			// Bail early if basic tree properties aren't met
+			if(newFrame.length < children || newFrame.depth < depth
+					|| newFrame.height < height || newFrame.descendants < descendants) {
+				return false;
+			}
+
+			// Step into new frame
 			newFrame.reset();
 			state.frame = newFrame;
 
@@ -4911,13 +4985,21 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
-			conn.next.study(info);
+			depth = info.depth+1;
 
+			// Study subtree in isolation
 			TreeInfo tmp = new TreeInfo();
 			child.study(tmp);
 
+			height = tmp.depth;
+			children = tmp.minSize;
+			descendants = tmp.descendants;
+
+			conn.next.study(info);
+
 			info.descendants += tmp.descendants;
 			info.deterministic &= tmp.deterministic;
+			info.depth += tmp.depth;
 
 			return info.deterministic;
 		}
@@ -4927,6 +5009,10 @@ public class SequencePattern {
 			return ToStringBuilder.create(this)
 					.add("anchorId", anchorId)
 					.add("child", child)
+					.add("height", height)
+					.add("depth", depth)
+					.add("children", children)
+					.add("descendants", descendants)
 					.build();
 		}
 	}

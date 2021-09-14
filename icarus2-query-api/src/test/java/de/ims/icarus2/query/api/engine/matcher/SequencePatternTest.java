@@ -76,9 +76,11 @@ import static de.ims.icarus2.query.api.iql.IqlTestUtils.rangePossessive;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.rangeReluctant;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.unordered;
 import static de.ims.icarus2.test.TestUtils.filledArray;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.ArrayUtils.asSet;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
@@ -92,6 +94,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -966,17 +969,18 @@ class SequencePatternTest {
 		return builder;
 	}
 
-	static class TestConfig {
+	static class RawTestConfig {
 		private State state;
 		private Node root;
+		private MatchConfig matchConfig;
 
-		TestConfig state(State state) {
+		RawTestConfig state(State state) {
 			checkState("State already set", this.state==null);
 			this.state = requireNonNull(state);
 			return this;
 		}
 
-		TestConfig setup(StateMachineSetup setup) {
+		RawTestConfig setup(StateMachineSetup setup) {
 			checkState("State already set", this.state==null);
 			checkState("Root already set", this.root==null);
 			state = new State(setup);
@@ -984,13 +988,13 @@ class SequencePatternTest {
 			return this;
 		}
 
-		TestConfig root(Node root) {
+		RawTestConfig root(Node root) {
 			checkState("Root already set", this.root==null);
 			this.root = requireNonNull(root);
 			return this;
 		}
 
-		TestConfig target(String s) {
+		RawTestConfig target(String s) {
 			checkState("State not set", this.state!=null);
 			requireNonNull(s);
 
@@ -1003,28 +1007,215 @@ class SequencePatternTest {
 			return this;
 		}
 
-		TestConfig tree(String encodedHeads) {
+		RawTestConfig tree(String encodedHeads) {
 			checkState("State not set", state!=null);
 			requireNonNull(encodedHeads);
 			int[] parents = parseTree(encodedHeads, encodedHeads.contains(" "));
 			return tree(parents);
 		}
 
-		TestConfig tree(int[] parents) {
+		RawTestConfig tree(int[] parents) {
 			checkState("State not set", state!=null);
 			requireNonNull(parents);
 			applyTree(state, parents);
 			return this;
 		}
 
-		void assertResult(MatchConfig config) {
+		RawTestConfig matchConfig(MatchConfig matchConfig) {
+			checkState("Match config already set", this.matchConfig==null);
+			this.matchConfig = requireNonNull(matchConfig);
+			return this;
+		}
+
+		void assertResult() {
 			checkState("State not set", state!=null);
 			checkState("Root not set", root!=null);
-			config.assertResult(root, state);
+			checkState("Match config not set", matchConfig!=null);
+
+			assertThat(matchConfig.startPos).as("Negative position").isGreaterThanOrEqualTo(0);
+			matchConfig.prepareState(state);
+
+			/*
+			 *  Verify correct result (this does not use the full matcher API,
+			 *  so we don't need to worry about a state reset messing up our expectations)
+			 */
+			assertThat(root.match(state, matchConfig.startPos))
+				.as("Result for start position %d", _int(matchConfig.startPos))
+				.isEqualTo(matchConfig.expectedResult);
+
+			// Now perform deep validation of the final (internal) matcher state
+			matchConfig.assertState(state);
 		}
 	}
 
-	static TestConfig test() { return new TestConfig(); }
+	static RawTestConfig rawTest() { return new RawTestConfig(); }
+
+	static class MatcherTestConfig {
+		private SequencePattern.Builder builder;
+		private SequencePattern pattern;
+		private String target;
+		private String query;
+		private Boolean expand;
+		private QueryConfig queryConfig;
+		private MatchConfig matchConfig;
+		private Set<Option> options = EnumSet.noneOf(Option.class);
+		private int[] tree;
+
+		static final boolean DEFAULT_EXPAND = false;
+
+		private void checkNoBuilder() {
+			checkState("Builder already set", builder==null);
+		}
+
+		private void checkNoPattern() {
+			checkState("Pattern already set", pattern==null);
+		}
+
+		MatcherTestConfig target(String target) {
+			checkState("Target already set", this.target==null);
+			this.target = requireNonNull(target);
+			return this;
+		}
+
+		MatcherTestConfig builder(SequencePattern.Builder builder) {
+			checkNoPattern();
+			checkState("Builder already set", this.builder==null);
+			this.builder = requireNonNull(builder);
+			return this;
+		}
+
+		MatcherTestConfig pattern(SequencePattern pattern) {
+			checkNoBuilder();
+			checkState("Pattern already set", this.pattern==null);
+			this.pattern = requireNonNull(pattern);
+			return this;
+		}
+
+		MatcherTestConfig query(String query) {
+			checkNoBuilder();
+			checkNoPattern();
+			checkState("Query already set", this.query==null);
+			this.query = requireNonNull(query);
+			return this;
+		}
+
+		MatcherTestConfig expand(boolean expand) {
+			checkState("Expand flag already set", this.expand==null);
+			this.expand = Boolean.valueOf(expand);
+			return this;
+		}
+
+		MatcherTestConfig queryConfig(QueryConfig queryConfig) {
+			checkState("Query config already set", this.queryConfig==null);
+			this.queryConfig = requireNonNull(queryConfig);
+			return this;
+		}
+
+		MatcherTestConfig matchConfig(MatchConfig matchConfig) {
+			checkState("Match config already set", this.matchConfig==null);
+			this.matchConfig = requireNonNull(matchConfig);
+			return this;
+		}
+
+		MatcherTestConfig options(Option...additionalOptions) {
+			checkNoBuilder();
+			checkNoPattern();
+			checkArgument("Empty options set", additionalOptions.length>0);
+			options.addAll(set(additionalOptions));
+			return this;
+		}
+
+		MatcherTestConfig tree(String encodedHeads) {
+			checkState("Tree already set", this.tree==null);
+			requireNonNull(encodedHeads);
+			tree = parseTree(encodedHeads, encodedHeads.contains(" "));
+			return this;
+		}
+
+		MatcherTestConfig tree(int[] parents) {
+			checkState("Tree already set", this.tree==null);
+			this.tree = requireNonNull(parents);
+			return this;
+		}
+
+		void assertResult() {
+
+			if(pattern==null) {
+				if(builder==null) {
+					checkState("Query not set", query!=null);
+
+					String payloadString = query;
+					if(expand!=null && expand.booleanValue()) {
+						payloadString = SequencePatternTest.expand(payloadString);
+					}
+
+					IqlPayload payload = new QueryProcessor(options).processPayload(payloadString);
+					assertThat(payload).as("No payload").isNotNull();
+					assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
+					assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
+					IqlLane lane = payload.getLanes().get(0);
+					LaneType expectedLaneType = tree!=null ? LaneType.TREE : LaneType.SEQUENCE;
+					assertThat(lane.getLaneType()).isEqualTo(expectedLaneType);
+					IqlElement root = lane.getElement();
+
+					Scope scope = Utils.scope();
+
+					builder = SequencePattern.builder();
+					builder.root(root);
+					builder.id(1);
+					RootContext rootContext = EvaluationContext.rootBuilder()
+							.corpus(scope.getCorpus())
+							.scope(scope)
+							.environment(SharedUtilityEnvironments.all())
+							.build();
+					LaneContext context = rootContext.derive()
+							.lane(lane)
+							.build();
+					builder.context(context);
+					payload.getLimit().ifPresent(builder::limit);
+				}
+
+				checkState("Builder not set", builder!=null);
+
+				pattern = builder.build();
+			}
+
+			if(queryConfig!=null) {
+				queryConfig.assertQuery((IqlElement) pattern.getSource());
+			}
+
+			checkState("Target not set", target!=null);
+			checkState("Match config not set", matchConfig!=null);
+
+			Container container = mockContainer(IntStream.range(0, target.length())
+					.mapToObj(i -> item(i, target.charAt(i)))
+					.toArray(Item[]::new));
+
+			NonResettingMatcher matcher = pattern.matcherForTesting();
+
+			matchConfig.prepareState(matcher);
+
+			// Verify correct result
+			assertThat(matcher.matches(0, container))
+				.as("Result mismatch")
+				.isEqualTo(matchConfig.expectedResult);
+
+			/*
+			 * Reset only the temporary utility stuff and external references.
+			 * We still need the caches for our assertions!!
+			 */
+			matcher.softReset();
+
+			// Now perform deep validation of the final (internal) matcher state
+			matchConfig.assertState(matcher);
+		}
+	}
+
+	static MatcherTestConfig matcherTest() { return new MatcherTestConfig(); }
+
+	static MatcherTestConfig expandingMatcherTest(String query, String target) {
+		return matcherTest().target(target).expand(true).query(query);
+	}
 
 	static void assertResult(String s, StateMachineSetup setup, MatchConfig config) {
 		assertThat(s).isNotEmpty();
@@ -1036,19 +1227,22 @@ class SequencePatternTest {
 				.mapToObj(i -> item(i, s.charAt(i)))
 				.toArray(Item[]::new);
 
-		config.assertResult(setup.root, state);
+		rawTest()
+			.state(state)
+			.target(s)
+			.matchConfig(config)
+			.root(setup.root)
+			.assertResult();
 	}
 
 	static void assertResult(String s, SequencePattern pattern, MatchConfig config) {
 		assertThat(s).isNotEmpty();
 
-		Container target = mockContainer(IntStream.range(0, s.length())
-				.mapToObj(i -> item(i, s.charAt(i)))
-				.toArray(Item[]::new));
-
-		NonResettingMatcher matcher = pattern.matcherForTesting();
-
-		config.assertResult(matcher, target);
+		matcherTest()
+			.target(s)
+			.pattern(pattern)
+			.matchConfig(config)
+			.assertResult();
 	}
 
 	/** Parses a dependency style "list of heads" and uses the '*' symbol to recognize roots */
@@ -1244,7 +1438,7 @@ class SequencePatternTest {
 			results.get(nextResult++).assertMapping(state);
 		}
 
-		private void assertState(State state) {
+		void assertState(State state) {
 			assertThat(state.reported)
 				.as("Total number of matches")
 				.isEqualTo(expectedCount);
@@ -1260,7 +1454,7 @@ class SequencePatternTest {
 			}
 		}
 
-		private void prepareState(State state) {
+		void prepareState(State state) {
 
 			if(!results.isEmpty()) {
 				state.resultHandler(this);
@@ -1269,40 +1463,6 @@ class SequencePatternTest {
 			if(monitor!=null) {
 				state.monitor(monitor);
 			}
-		}
-
-		void assertResult(Node root, State state) {
-			assertThat(startPos).as("Negative position").isGreaterThanOrEqualTo(0);
-			prepareState(state);
-
-			/*
-			 *  Verify correct result (this does not use the full matcher API,
-			 *  so we don't need to worry about a state reset messing up our expectations)
-			 */
-			assertThat(root.match(state, startPos))
-				.as("Result for start position %d", _int(startPos))
-				.isEqualTo(expectedResult);
-
-			// Now perform deep validation of the final (internal) matcher state
-			assertState(state);
-		}
-
-		void assertResult(NonResettingMatcher matcher, Container target) {
-			prepareState(matcher);
-
-			// Verify correct result
-			assertThat(matcher.matches(0, target))
-				.as("Result mismatch")
-				.isEqualTo(expectedResult);
-
-			/*
-			 * Reset only the temporary utility stuff and external references.
-			 * We still need the caches for our assertions!!
-			 */
-			matcher.softReset();
-
-			// Now perform deep validation of the final (internal) matcher state
-			assertState(matcher);
 		}
 	}
 
@@ -3579,11 +3739,12 @@ class SequencePatternTest {
 				})
 				@DisplayName("[$A [$B]] -> no matches")
 				void testSimpleNestingFail(String target, String tree) {
-					test()
+					rawTest()
 						.setup(setup(EQUALS_A, EQUALS_B))
 						.target(target)
 						.tree(tree)
-						.assertResult(match(0, false, 0));
+						.matchConfig(match(0, false, 0))
+						.assertResult();
 				}
 
 				@ParameterizedTest
@@ -3606,15 +3767,15 @@ class SequencePatternTest {
 				})
 				@DisplayName("[$A [$B]] -> 1 match")
 				void testSimpleNesting(String target, String tree, int hitA, int hitB) {
-					test()
+					rawTest()
 						.setup(setup(EQUALS_A, EQUALS_B))
 						.target(target)
 						.tree(tree)
-						.assertResult(
-								match(0, true, 1)
+						.matchConfig(match(0, true, 1)
 								.result(result(0)
 										.map(NODE_0, hitA)
-										.map(NODE_1, hitB)));
+										.map(NODE_1, hitB)))
+						.assertResult();
 				}
 
 				@ParameterizedTest
@@ -3625,11 +3786,12 @@ class SequencePatternTest {
 				})
 				@DisplayName("[$A [$B [$C]]] -> no matches")
 				void testDoubleNestingFail(String target, String tree) {
-					test()
+					rawTest()
 						.setup(setup(EQUALS_A, EQUALS_B, EQUALS_C))
 						.target(target)
 						.tree(tree)
-						.assertResult(match(0, false, 0));
+						.matchConfig(match(0, false, 0))
+						.assertResult();
 				}
 
 				@ParameterizedTest
@@ -3668,16 +3830,16 @@ class SequencePatternTest {
 				})
 				@DisplayName("[$A [$B [$C]]] -> 1 match")
 				void testDoubleNesting(String target, String tree, int hitA, int hitB, int hitC) {
-					test()
+					rawTest()
 						.setup(setup(EQUALS_A, EQUALS_B, EQUALS_C))
 						.target(target)
 						.tree(tree)
-						.assertResult(
-								match(0, true, 1)
+						.matchConfig(match(0, true, 1)
 								.result(result(0)
 										.map(NODE_0, hitA)
 										.map(NODE_1, hitB)
-										.map(NODE_2, hitC)));
+										.map(NODE_2, hitC)))
+						.assertResult();
 				}
 			}
 		}
@@ -9398,12 +9560,17 @@ class SequencePatternTest {
 	 *
 	 * <table border="1">
 	 * <tr><th>&nbsp;</th><th>{@link IqlNode node}</th><th>{@link IqlGrouping grouping}</th>
-	 * 		<th>{@link IqlSequence sequence}</th><th>{@link IqlElementDisjunction branch}</th></tr>
+	 * 		<th>{@link IqlSequence sequence}</th><th>{@link IqlElementDisjunction branch}</th><th>{@link IqlTreeNode tree}</th></tr>
 	 * <tr><th>{@link IqlNode node}</th><td>-</td><td>{@link NodeInGrouping X}</td>
-	 * 		<td>{@link NodeInSet X}</td><td>{@link NodeInBranch X}</td></tr>
-	 * <tr><th>{@link IqlGrouping grouping}</th><td>-</td><td>{@link GroupingInGrouping X}</td><td>{@link GroupingInSequence X}</td><td>{@link GroupingInBranch X}</td></tr>
-	 * <tr><th>{@link IqlSequence sequence}</th><td>-</td><td>{@link SequenceInGrouping X}</td><td>-</td><td>{@link SequenceInBranch X}</td></tr>
-	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td>{@link BranchInGrouping X}</td><td>{@link BranchInSequence X}</td><td>{@link BranchInBranch X}</td></tr>
+	 * 		<td>{@link NodeInSet X}</td><td>{@link NodeInBranch X}</td><<td>{@link NodeInTreeNode X}</td>/tr>
+	 * <tr><th>{@link IqlGrouping grouping}</th><td>-</td><td>{@link GroupingInGrouping X}</td>
+	 * 		<td>{@link GroupingInSequence X}</td><td>{@link GroupingInBranch X}</td><td>{@link GroupingInTreeNode X}</td></tr>
+	 * <tr><th>{@link IqlSequence sequence}</th><td>-</td><td>{@link SequenceInGrouping X}</td>
+	 * 		<td>-</td><td>{@link SequenceInBranch X}</td><td>{@link SequenceInTreeNode X}</td></tr>
+	 * <tr><th>{@link IqlElementDisjunction branch}</th><td>-</td><td>{@link BranchInGrouping X}</td>
+	 * 		<td>{@link BranchInSequence X}</td><td>{@link BranchInBranch X}</td><td>{@link BranchInTreeNode X}</td></tr>
+	 * <tr><th>{@link IqlTreeNode tree}</th><td>-</td><td>{@link TreeNodeInGrouping X}</td>
+	 * 		<td>{@link TreeNodeInSequence X}</td><td>{@link TreeNodeInBranch X}</td><td>{@link TreeNodeInTreeNode X}</td></tr>
 	 * </table>
 	 * <p>
 	 * Row nested in column.
@@ -9995,6 +10162,45 @@ class SequencePatternTest {
 		}
 
 		/**
+		 * {@link IqlNode} nested inside {@link IqlTreeNode}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>blank node</li>
+		 * <li>dummy node</li>
+		 * <li>quantifier on node</li>
+		 * <li>markers on node</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
+		@Nested
+		class NodeInTreeNode {
+
+			private final QueryConfig QUERY_CONFIG = QueryConfig.tree(QueryConfig.of(IqlNode.class));
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'[[]]', X, *, 0, -",
+				"'[[]]', XX, *0, 1, { {{0}} {{1}} }",
+			})
+			@DisplayName("blank nodes")
+			void testBlank(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				expandingMatcherTest(query, target)
+					.tree(tree)
+					.queryConfig(QUERY_CONFIG)
+					.matchConfig(config(matches, hits))
+					.assertResult();
+			}
+
+		}
+
+		/**
 		 * {@link IqlGrouping} nested inside {@link IqlGrouping}
 		 * <p>
 		 * Aspects to cover:
@@ -10437,6 +10643,11 @@ class SequencePatternTest {
 			//TODO cover remaining aspects
 		}
 
+		@Nested
+		class GroupingInTreeNode {
+
+		}
+
 		/**
 		 * {@link IqlSequence} nested inside {@link IqlGrouping}
 		 * <p>
@@ -10779,6 +10990,11 @@ class SequencePatternTest {
 			//TODO add marker tests
 		}
 
+		@Nested
+		class SequenceInTreeNode {
+
+		}
+
 		/**
 		 * {@link IqlElementDisjunction} nested inside {@link IqlGrouping}
 		 * <p>
@@ -10982,6 +11198,31 @@ class SequencePatternTest {
 		@Disabled("not possible to construct test cases")
 		class BranchInBranch {
 			// no-op
+		}
+
+		@Nested
+		class BranchInTreeNode {
+
+		}
+
+		@Nested
+		class TreeNodeInGrouping {
+
+		}
+
+		@Nested
+		class TreeNodeInSequence {
+			// no-op
+		}
+
+		@Nested
+		class TreeNodeInBranch {
+
+		}
+
+		@Nested
+		class TreeNodeInTreeNode {
+
 		}
 
 		@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
