@@ -79,6 +79,7 @@ import com.mxgraph.view.mxStylesheet;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
@@ -88,6 +89,11 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
+import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils;
+import de.ims.icarus2.query.api.exp.EvaluationContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
+import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
@@ -1328,8 +1334,22 @@ public class InteractiveMatcher {
 			pattern = null;
 
 			IqlElement root = payload.getLanes().get(0).getElement();
-			SequencePattern.Builder builder = SequencePatternTest.builder(root)
-					.allowMonitor(true);
+
+			Scope scope = Utils.scope();
+
+			SequencePattern.Builder builder = SequencePattern.builder();
+			builder.root(root);
+			builder.id(1);
+			RootContext rootContext = EvaluationContext.rootBuilder()
+					.corpus(scope.getCorpus())
+					.scope(scope)
+					.environment(SharedUtilityEnvironments.all())
+					.build();
+			LaneContext context = rootContext.derive()
+					.lane(Utils.lane())
+					.build();
+			builder.context(context);
+			builder.allowMonitor(true);
 
 			if(cbPromote.isSelected()) {
 				builder.nodeTransform(SequencePatternTest.PROMOTE_NODE);
