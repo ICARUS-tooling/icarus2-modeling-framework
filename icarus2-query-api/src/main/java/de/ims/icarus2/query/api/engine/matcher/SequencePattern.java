@@ -2649,7 +2649,7 @@ public class SequencePattern {
 		 * a search graph. (upstream property)
 		 */
 		int descendants = 0;
-		/** Nesting depths of tree nodes */
+		/** Nesting depth of tree nodes */
 		int depth = 0;
 		//TODO properly propagate 'depth' for accumulating nodes (Branch, PermInit and Repetition)
 
@@ -4985,13 +4985,14 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
-			depth = info.depth+1;
+			depth = info.depth;
 
 			// Study subtree in isolation
 			TreeInfo tmp = new TreeInfo();
+			tmp.depth = info.depth + 1;
 			child.study(tmp);
 
-			height = tmp.depth;
+			height = tmp.depth - depth;
 			children = tmp.minSize;
 			descendants = tmp.descendants;
 
@@ -4999,7 +5000,7 @@ public class SequencePattern {
 
 			info.descendants += tmp.descendants;
 			info.deterministic &= tmp.deterministic;
-			info.depth += tmp.depth;
+			info.depth = tmp.depth;
 
 			return info.deterministic;
 		}

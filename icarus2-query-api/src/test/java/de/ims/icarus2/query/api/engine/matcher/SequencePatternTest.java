@@ -1056,6 +1056,7 @@ class SequencePatternTest {
 		private String target;
 		private String query;
 		private Boolean expand;
+		private Boolean promote;
 		private QueryConfig queryConfig;
 		private MatchConfig matchConfig;
 		private Set<Option> options = EnumSet.noneOf(Option.class);
@@ -1105,6 +1106,12 @@ class SequencePatternTest {
 			return this;
 		}
 
+		MatcherTestConfig promote(boolean promote) {
+			checkState("Promote flag already set", this.promote==null);
+			this.promote = Boolean.valueOf(promote);
+			return this;
+		}
+
 		MatcherTestConfig queryConfig(QueryConfig queryConfig) {
 			checkState("Query config already set", this.queryConfig==null);
 			this.queryConfig = requireNonNull(queryConfig);
@@ -1138,41 +1145,57 @@ class SequencePatternTest {
 			return this;
 		}
 
+		private static boolean isSet(Boolean b) { return b!=null && b.booleanValue(); }
+
+		private void makeBuilder() {
+			checkState("Query not set", query!=null);
+
+			String payloadString = query;
+			if(isSet(expand)) {
+				payloadString = SequencePatternTest.expand(payloadString);
+			}
+
+			IqlPayload payload = new QueryProcessor(options).processPayload(payloadString);
+			assertThat(payload).as("No payload").isNotNull();
+			assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
+			assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
+			IqlLane lane = payload.getLanes().get(0);
+			LaneType expectedLaneType = tree!=null ? LaneType.TREE : LaneType.SEQUENCE;
+			assertThat(lane.getLaneType()).isEqualTo(expectedLaneType);
+			IqlElement root = lane.getElement();
+
+			Scope scope = Utils.scope();
+
+			builder = SequencePattern.builder();
+			builder.root(root);
+			builder.id(1);
+			RootContext rootContext = EvaluationContext.rootBuilder()
+					.corpus(scope.getCorpus())
+					.scope(scope)
+					.environment(SharedUtilityEnvironments.all())
+					.build();
+			LaneContext context = rootContext.derive()
+					.lane(lane)
+					.build();
+			builder.context(context);
+			payload.getLimit().ifPresent(builder::limit);
+			if(isSet(promote)) {
+				builder.nodeTransform(PROMOTE_NODE);
+			}
+		}
+
+		private Container makeContainer() {
+			return mockContainer(IntStream.range(0, target.length())
+					.mapToObj(i -> item(i, target.charAt(i)))
+					.toArray(Item[]::new));
+		}
+
 		void assertResult() {
 
 			if(pattern==null) {
+
 				if(builder==null) {
-					checkState("Query not set", query!=null);
-
-					String payloadString = query;
-					if(expand!=null && expand.booleanValue()) {
-						payloadString = SequencePatternTest.expand(payloadString);
-					}
-
-					IqlPayload payload = new QueryProcessor(options).processPayload(payloadString);
-					assertThat(payload).as("No payload").isNotNull();
-					assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
-					assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
-					IqlLane lane = payload.getLanes().get(0);
-					LaneType expectedLaneType = tree!=null ? LaneType.TREE : LaneType.SEQUENCE;
-					assertThat(lane.getLaneType()).isEqualTo(expectedLaneType);
-					IqlElement root = lane.getElement();
-
-					Scope scope = Utils.scope();
-
-					builder = SequencePattern.builder();
-					builder.root(root);
-					builder.id(1);
-					RootContext rootContext = EvaluationContext.rootBuilder()
-							.corpus(scope.getCorpus())
-							.scope(scope)
-							.environment(SharedUtilityEnvironments.all())
-							.build();
-					LaneContext context = rootContext.derive()
-							.lane(lane)
-							.build();
-					builder.context(context);
-					payload.getLimit().ifPresent(builder::limit);
+					makeBuilder();
 				}
 
 				checkState("Builder not set", builder!=null);
@@ -1180,20 +1203,25 @@ class SequencePatternTest {
 				pattern = builder.build();
 			}
 
+			checkState("Pattern not set", pattern!=null);
+
 			if(queryConfig!=null) {
 				queryConfig.assertQuery((IqlElement) pattern.getSource());
 			}
 
 			checkState("Target not set", target!=null);
-			checkState("Match config not set", matchConfig!=null);
 
-			Container container = mockContainer(IntStream.range(0, target.length())
-					.mapToObj(i -> item(i, target.charAt(i)))
-					.toArray(Item[]::new));
+			Container container = makeContainer();
 
 			NonResettingMatcher matcher = pattern.matcherForTesting();
 
+			checkState("Match config not set", matchConfig!=null);
+
 			matchConfig.prepareState(matcher);
+
+			if(tree!=null) {
+				applyTree(matcher, tree);
+			}
 
 			// Verify correct result
 			assertThat(matcher.matches(0, container))
@@ -10182,7 +10210,7 @@ class SequencePatternTest {
 
 			private final QueryConfig QUERY_CONFIG = QueryConfig.tree(QueryConfig.of(IqlNode.class));
 
-			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
 				"'[[]]', X, *, 0, -",
 				"'[[]]', XX, *0, 1, { {{0}} {{1}} }",
@@ -10193,6 +10221,7 @@ class SequencePatternTest {
 					@IntMatrixArg int[][][] hits) {
 				expandingMatcherTest(query, target)
 					.tree(tree)
+					.promote(true)
 					.queryConfig(QUERY_CONFIG)
 					.matchConfig(config(matches, hits))
 					.assertResult();
@@ -11318,7 +11347,7 @@ class SequencePatternTest {
 		@CsvSource({
 			"'QUERY_2', TARGET, MATCH_COUNT, { {HITS_1} {HITS_2} {HITS_3} }",
 		})
-		@DisplayName("NAME")
+		@DisplayName("DUMMY NAME")
 		void test__Template(String query, String target, int matches,
 				// [node_id][match_id][hits]
 				@IntMatrixArg int[][][] hits) {
