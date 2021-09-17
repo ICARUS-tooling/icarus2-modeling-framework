@@ -93,21 +93,22 @@ public class LazyStore<F extends Object, K extends Object> {
 		}
 	}
 
-	public synchronized F lookup(K key) {
+	public synchronized @Nullable F tryLookup(K key) {
 		requireNonNull(key);
 		ensureLookup();
 
-		F value = lookup.get(adjust(key));
+		return lookup.get(adjust(key));
+	}
+
+	public synchronized F lookup(K key) {
+		F value = tryLookup(key);
 		if(value==null)
 			throw new IllegalArgumentException("Unknown key: "+key);
 		return value;
 	}
 
 	public synchronized F lookup(K key, Function<K, ? extends RuntimeException> exGen) {
-		requireNonNull(key);
-		ensureLookup();
-
-		F value = lookup.get(adjust(key));
+		F value = tryLookup(key);
 		if(value==null)
 			throw exGen.apply(key);
 		return value;
