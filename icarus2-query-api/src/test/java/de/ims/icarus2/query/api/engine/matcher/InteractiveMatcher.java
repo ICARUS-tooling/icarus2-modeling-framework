@@ -444,14 +444,19 @@ public class InteractiveMatcher {
 						.sorted()
 						.collect(Collectors.toList());
 
+				sb.append("<table>");
+				sb.append("<tr><td>").append("next").append("</td><td>")
+					.append(info.getNext()).append("</td></tr>");
+				sb.append("<tr><td>").append("logical_next").append("</td><td>")
+					.append(info.getLogicalNext()).append("</td></tr>");
+
 				if(!fields.isEmpty()) {
-					sb.append("<table>");
 					for(Field field : fields) {
 						sb.append("<tr><td>").append(field.name()).append("</td><td>")
 							.append(info.getProperty(field)).append("</td></tr>");
 					}
-					sb.append("</table>");
 				}
+				sb.append("</table>");
 
 				return sb.toString();
 			}
