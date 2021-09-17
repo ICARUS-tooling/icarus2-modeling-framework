@@ -1583,6 +1583,12 @@ public class SequencePattern {
 		 * is allowed, scan nodes will reset this value to {@code IcarusUtils#UNSET_INT};
 		 */
 		int previousIndex = UNSET_INT;
+		/**
+		 * Position of the most recent node matched inside the current frame.
+		 * This is used to
+		 */
+		@Deprecated
+		int previousPos = UNSET_INT;
 
 		/** Region of allowed positional values */
 		Interval window = Interval.blank();
@@ -1743,6 +1749,9 @@ public class SequencePattern {
 		}
 	}
 
+	static final int MODE_SKIP = 0;
+	static final int MODE_ADJACENT = 0;
+
 	/**
 	 * Contains all the state information for a {@link SequenceMatcher}
 	 * operating on a single thread.
@@ -1819,9 +1828,7 @@ public class SequencePattern {
 		 * of the automaton. If any node changes this value, it must make sure to reset it
 		 * to the previously set value!
 		 */
-		final boolean[] skipTrace;
-		boolean skip = true;
-		int skipPos = 0;
+		final ModeTrace[] modes;
 
 		/**
 		 * End index of the last (sub)match, used by repetitions and similar nodes to keep track.
@@ -1872,7 +1879,9 @@ public class SequencePattern {
 			hits = setup.getHits();
 			borders = setup.getBorders();
 
-			skipTrace = new boolean[setup.skipControlCount];
+			modes = new ModeTrace[2];
+
+			modes[MODE_SKIP] = new ModeTrace(setup.skipControlCount);
 
 			filterConstraint = setup.makeFilterConstraint();
 			globalConstraint = setup.makeGlobalConstraint();
@@ -1919,14 +1928,9 @@ public class SequencePattern {
 			entry++;
 		}
 
-		final void setSkip(boolean value) {
-			skipTrace[skipPos++] = skip;
-			skip = value;
-		}
-
-		final void resetSkip() {
-			skip = skipTrace[--skipPos];
-		}
+		final void setMode(int mode, boolean value) { modes[mode].set(value); }
+		final boolean isSet(int mode) { return modes[mode].value; }
+		final void resetMode(int mode) { modes[mode].back(); }
 
 		public void reset() {
 			// Cleanup duty -> we must erase all references to target and its elements
@@ -1940,11 +1944,12 @@ public class SequencePattern {
 			for (int i = 0; i < tree.length; i++) {
 				tree[i].reset();
 			}
+			for (int i = 0; i < modes.length; i++) {
+				modes[i].reset();
+			}
 			entry = 0;
 			last = 0;
 			size = 0;
-			skip = true;
-			skipPos = 0;
 			rootFrame.reset();
 			Arrays.fill(roots, UNSET_INT);
 			frame = rootFrame;
@@ -2494,6 +2499,30 @@ public class SequencePattern {
 		}
 	}
 
+	static final class ModeTrace {
+		private final boolean[] trace;
+		private int index;
+		boolean value = false;
+
+		ModeTrace(int size) {
+			trace = new boolean[size];
+		}
+
+		final void set(boolean value) {
+			trace[index++] = this.value;
+			this.value = value;
+		}
+
+		final void back() {
+			this.value = trace[--index];
+		}
+
+		final void reset() {
+			value = false;
+			index = 0;
+		}
+	}
+
 	static final class Gate {
 		/**
 		 * For each slot indicates if it has been visited already.
@@ -2999,6 +3028,9 @@ public class SequencePattern {
 		/** Returns {@code true} iff this node is part of the finishing block of the state machine. */
 		boolean isFinisher() { return false; }
 
+		/** Returns {@code true} iff this node is connective bridge for atoms */
+		boolean isConnective() { return false; }
+
 		boolean isProxy() { return false; }
 
 		boolean isFixed() { return isProxy() ? getNext().isFixed() : false; }
@@ -3283,7 +3315,7 @@ public class SequencePattern {
 				return false;
 			}
 			// Skip ahead if allowed
-			if(skip && state.skip && pos<frame.from()) {
+			if(skip && state.isSet(MODE_SKIP) && pos<frame.from()) {
 				pos = frame.from();
 			}
 			// Early bail in case we're outside of allowed search space
@@ -4142,9 +4174,9 @@ public class SequencePattern {
 				prepare(ctx, to);
 
 				// Let atoms do their job
-				state.setSkip(false);
+				state.setMode(MODE_SKIP, false);
 				boolean matched = ctx.current[0].match(state, pos);
-				state.resetSkip();
+				state.resetMode(MODE_SKIP);
 
 				result |= matched;
 
@@ -4278,9 +4310,9 @@ public class SequencePattern {
 
 			/*
 			 *  Allow skipping inside the permutation (PermInit node takes
-			 *  care of disabling it for the first slot) as.
+			 *  care of disabling it for the first slot) depending on context.
 			 */
-			state.setSkip(ctx.scan);
+			state.setMode(MODE_SKIP, ctx.scan);
 
 			// We can either search iteratively for the next match
 			if(ctx.scan && ctx.slots[atomIndex]>0) {
@@ -4311,7 +4343,7 @@ public class SequencePattern {
 				result = matchAtom(state, pos, ctx);
 			}
 
-			state.resetSkip();
+			state.resetMode(MODE_SKIP);
 
 			return result;
 		}
@@ -4421,6 +4453,9 @@ public class SequencePattern {
             return false;
         }
 
+        @Override
+        boolean isConnective() { return true; }
+
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this)
@@ -4479,10 +4514,10 @@ public class SequencePattern {
 		}
 
 		@Override
-		Node[] getAtoms() { return atoms.clone(); }
+		Node getLogicalNext() { return null; }
 
 		@Override
-		Node getLogicalNext() { return null; }
+		Node[] getAtoms() { return atoms.clone(); }
 
 		@Override
 		public String toString() {
@@ -4923,6 +4958,8 @@ public class SequencePattern {
 		int depth = UNSET_INT;
 		int descendants = UNSET_INT;
 		int children = UNSET_INT;
+		/** If set we can continue even if node doesn't have a subtree */
+		boolean optional = false;
 
 		Tree(int id, IqlQueryElement source, int anchorId, Node child, TreeConn conn) {
 			super(id, source);
@@ -4959,9 +4996,18 @@ public class SequencePattern {
 
 			final TreeFrame newFrame = state.tree[anchor.index];
 
-			// Bail early if basic tree properties aren't met
-			if(newFrame.length < children || newFrame.depth < depth
-					|| newFrame.height < height || newFrame.descendants < descendants) {
+			// Bail early if basic (upper) tree properties aren't met
+			if(newFrame.length < children || newFrame.depth < depth) {
+				return false;
+			}
+
+			// Skip costly vertical movement if there's no subtree and 'optional' flag is set
+			if(optional && newFrame.length==0) {
+				return conn.next.match(state, pos);
+			}
+
+			// Bail early if basic (lower) tree properties aren't met
+			if(newFrame.height < height || newFrame.descendants < descendants) {
 				return false;
 			}
 
@@ -4995,6 +5041,9 @@ public class SequencePattern {
 			height = tmp.depth - depth;
 			children = tmp.minSize;
 			descendants = tmp.descendants;
+
+			// Enable fast-path option for matching in case of missing subtree
+			optional = children==0;
 
 			conn.next.study(info);
 
@@ -5068,5 +5117,11 @@ public class SequencePattern {
 					.add("anchorId", anchorId)
 					.build();
 		}
+
+        @Override
+        boolean isConnective() { return true; }
+
+		@Override
+		Node getLogicalNext() { return next.isConnective() ? next : null; }
 	}
 }

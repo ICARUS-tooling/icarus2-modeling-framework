@@ -94,6 +94,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -468,26 +469,6 @@ class SequencePatternTest {
 		@Override
 		boolean isProxy() { return true; }
 	}
-
-	//TODO cleanup when refactoring is done
-//	static SequencePattern.Builder builder(IqlElement root) {
-//		Scope scope = Utils.scope();
-//
-//		SequencePattern.Builder builder = SequencePattern.builder();
-//		builder.root(root);
-//		builder.id(1);
-//		RootContext rootContext = EvaluationContext.rootBuilder()
-//				.corpus(scope.getCorpus())
-//				.scope(scope)
-//				.environment(SharedUtilityEnvironments.all())
-//				.build();
-//		LaneContext context = rootContext.derive()
-//				.lane(Utils.lane())
-//				.build();
-//		builder.context(context);
-//
-//		return builder;
-//	}
 
 	private static final Pattern NODE = Pattern.compile("\\$([A-Za-z])");
 
@@ -941,40 +922,6 @@ class SequencePatternTest {
 			}
 		}
 	}
-
-	//TODO clean up when refactoring is done
-//	static SequencePattern.Builder builder(String rawPayload, @Nullable QueryConfig config,
-//			Option...additionalOptions) {
-//		IqlPayload payload = new QueryProcessor(asSet(additionalOptions)).processPayload(rawPayload);
-//		assertThat(payload).as("No payload").isNotNull();
-//		assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
-//		assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
-//		IqlLane lane = payload.getLanes().get(0);
-//		assertThat(lane.getLaneType()).isEqualTo(LaneType.SEQUENCE);
-//		IqlElement root = lane.getElement();
-//
-//		if(config!=null) {
-//			config.assertQuery(root);
-//		}
-//
-//		Scope scope = Utils.scope();
-//
-//		SequencePattern.Builder builder = SequencePattern.builder();
-//		builder.root(root);
-//		builder.id(1);
-//		RootContext rootContext = EvaluationContext.rootBuilder()
-//				.corpus(scope.getCorpus())
-//				.scope(scope)
-//				.environment(SharedUtilityEnvironments.all())
-//				.build();
-//		LaneContext context = rootContext.derive()
-//				.lane(lane)
-//				.build();
-//		builder.context(context);
-//		payload.getLimit().ifPresent(builder::limit);
-//
-//		return builder;
-//	}
 
 	/** Encapsulates the info for expected matches and hits inside a single target sequence */
 	abstract static class MatchConfig<C extends MatchConfig<C>> implements Consumer<State> {
@@ -1486,6 +1433,7 @@ class SequencePatternTest {
 		int[] parents = new int[s.length()];
 		for (int i = 0; i < parents.length; i++) {
 			parents[i] = s.charAt(i)=='*' ? UNSET_INT : s.charAt(i)-'0';
+			assertThat(parents[i]).as("can't set node as its own parent: %d", _int(i)).isNotEqualTo(i);
 		}
 		return parents;
 	}
@@ -1552,6 +1500,31 @@ class SequencePatternTest {
 					sb.append(state.m_node[i])
 						.append("->")
 						.append(state.m_pos[i]);
+				}
+				sb.append('}');
+				text = sb.toString();
+			}
+			return text;
+		}
+	}
+
+	private static class MappingProxy {
+		private final List<Pair<Integer, Integer>> mapping;
+		private String text;
+		MappingProxy(List<Pair<Integer, Integer>> mapping) { this.mapping = requireNonNull(mapping); }
+		@Override
+		public String toString() {
+			if(text==null) {
+				StringBuilder sb = new StringBuilder();
+				sb.append('{');
+				for(Iterator<Pair<Integer, Integer>> i = mapping.iterator(); i.hasNext();) {
+					Pair<Integer, Integer> m = i.next();
+					sb.append(m.first)
+						.append("->")
+						.append(m.second);
+					if(i.hasNext()) {
+						sb.append(',');
+					}
 				}
 				sb.append('}');
 				text = sb.toString();
@@ -1739,15 +1712,18 @@ class SequencePatternTest {
 		}
 
 		void assertMapping(State state) {
-			StateProxy proxy = new StateProxy(state);
+			StateProxy stateProxy = new StateProxy(state);
+			MappingProxy mappingProxy = new MappingProxy(mapping);
+
 			assertThat(state.entry)
-				.as("Incorrect number of mappings in result #%d:\n%s", _int(index), proxy)
+				.as("Incorrect number of mappings in result #%d:\nexpected: %s\ngiven: %s",
+						_int(index), mappingProxy, stateProxy)
 				.isEqualTo(mapping.size());
 
 			if(ignoreOrder) {
-				assertUnordered(state, proxy);
+				assertUnordered(state, stateProxy);
 			} else {
-				assertOrdered(state, proxy);
+				assertOrdered(state, stateProxy);
 			}
 		}
 
@@ -9910,24 +9886,6 @@ class SequencePatternTest {
 	@Nested
 	class ForRawQueries {
 
-		//TODO clean up and remove once refactoring is done
-//		/** Turns a 3-level hit matrix into a basic match config for testing */
-//		private MatchConfig config(int matches,
-//				// [node_id][match_id][hits]
-//				int[][][] hits) {
-//			return match(matches>0, matches)
-//					// Format of 'hits' matrix: [node_id][match_id][hits]
-//					.results(matches, (r, i) -> {
-//						for(int j = 0; j<hits.length; j++) {
-//							// Make sure we handle "empty" assignments
-//							if(hits[j].length>0) {
-//								r.map(j, hits[j][i]);
-//							}
-//						}
-//					})
-//					.modResults(ResultConfig::unordered);
-//		}
-
 		/** generate basic test config with expansion and basic result settings */
 		private MatcherTestConfig rawQueryTest(String query, String target,
 				int matches, @IntMatrixArg int[][][] hits) {
@@ -10094,7 +10052,7 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'<1+>{[isFirst, $X]}', X, 1, { {{0}} }",
-				"'<1+>{[isFirst, $X]}', XX, 1, { {{0}} }", //FIXME SM ignores  marker here, maybe hoisting issue?
+				"'<1+>{[isFirst, $X]}', XX, 1, { {{0}} }",
 				"'<1+>{[isBefore(3), $X]}', X, 1, { {{0}} }",
 				"'<1+>{[isBefore(3), $X]}', XX, 2, { {{0;1}{1}} }",
 				"'<1+>{[isBefore(3), $X]}', XXX, 2, { {{0;1}{1}} }",
@@ -10556,6 +10514,7 @@ class SequencePatternTest {
 		 * <li>dummy node</li>
 		 * <li>quantifier on node</li>
 		 * <li>markers on node</li>
+		 * <li>tree markers on node</li>
 		 * </ul>
 		 *
 		 * Note that blank nodes produce no mappings, so we are using the
@@ -10572,8 +10531,16 @@ class SequencePatternTest {
 			@CsvSource({
 				"'[[]]', X, *, 0, -",
 				"'[[]]', XX, *0, 1, { {{0}} {{1}} }",
+				"'[[]]', XX, 1*, 1, { {{1}} {{0}} }",
+				"'[[]]', XXX, *00, 2, { {{0}{0}} {{1}{2}} }",
+				"'[[]]', XXX, *01, 2, { {{0}{1}} {{1}{2}} }",
+				"'[[]]', XXX, *20, 2, { {{0}{2}} {{2}{1}} }",
+				"'[[]]', XXX, 1*1, 2, { {{1}{1}} {{0}{2}} }",
+				"'[[]]', XXX, 2*1, 2, { {{1}{2}} {{2}{0}} }",
+				"'[[]]', XXX, 1*0, 2, { {{0}{1}} {{2}{0}} }",
+				"'[[]]', XXXX, *012, 3, { {{0}{1}{2}} {{1}{2}{3}} }",
 			})
-			@DisplayName("blank nodes")
+			@DisplayName("blank child node")
 			void testBlank(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
@@ -10584,6 +10551,107 @@ class SequencePatternTest {
 				.assertResult();
 			}
 
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				// Optional single child
+				"'[[?]]', X, *, 1, false, { {{0}} }",
+				"'[[?]]', XX, *0, 2, false, { {{0}{1}} {-} }",
+				"'[[?]]', XX, 1*, 2, false, { {{0}{1}} {-} }",
+				"'[[?]]', XXX, *00, 4, true, { {{0}{0}{1}{2}} {-} }",
+				"'[[?]]', XXX, *01, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[?]]', XXX, *20, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[?]]', XXX, 1*1, 4, true, { {{0}{1}{1}{2}} {-} }",
+				"'[[?]]', XXX, 2*1, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[?]]', XXX, 1*0, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[?]]', XXX, 22*, 4, true, { {{0}{1}{2}{2}} {-} }",
+				"'[[?]]', XXX, 20*, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[?]]', XXX, 12*, 3, false, { {{0}{1}{2}} {-} }",
+
+				// Mandatory child with  expansion
+				"'[[+]]', X, *, 0, false, -",
+				"'[[+]]', XX, *0, 1, false, { {{0}} {{1}} }",
+				"'[[+]]', XX, 1*, 1, false, { {{1}} {{0}} }",
+				"'[[+]]', XXX, *00, 2, false, { {{0}{0}} {{1}{2}} }",
+				"'[[+]]', XXX, *01, 2, false, { {{0}{1}} {{1}{2}} }",
+				"'[[+]]', XXX, *20, 2, false, { {{0}{2}} {{2}{1}} }",
+				"'[[+]]', XXX, 1*1, 2, false, { {{1}{1}} {{0}{2}} }",
+				"'[[+]]', XXX, 2*1, 2, false, { {{1}{2}} {{2}{0}} }",
+				"'[[+]]', XXX, 1*0, 2, false, { {{0}{1}} {{2}{0}} }",
+				"'[[+]]', XXX, 22*, 2, false, { {{2}{2}} {{0}{1}} }",
+				"'[[+]]', XXX, 20*, 2, false, { {{0}{2}} {{1}{0}} }",
+				"'[[+]]', XXX, 12*, 2, false, { {{1}{2}} {{0}{1}} }",
+
+				// Optional child with expansion
+				"'[[*]]', X, *, 1, false, { {{0}} }",
+				"'[[*]]', XX, *0, 2, false, { {{0}{1}} {-} }",
+				"'[[*]]', XX, 1*, 2, false, { {{0}{1}} {-} }",
+				"'[[*]]', XXX, *00, 4, true, { {{0}{0}{1}{2}} {-} }",
+				"'[[*]]', XXX, *01, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[*]]', XXX, *20, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[*]]', XXX, 1*1, 4, true, { {{0}{1}{1}{2}} {-} }",
+				"'[[*]]', XXX, 2*1, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[*]]', XXX, 1*0, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[*]]', XXX, 22*, 4, true, { {{0}{1}{2}{2}} {-} }",
+				"'[[*]]', XXX, 20*, 3, false, { {{0}{1}{2}} {-} }",
+				"'[[*]]', XXX, 12*, 3, false, { {{0}{1}{2}} {-} }",
+			})
+			@DisplayName("dummy child node")
+			void testDummyNode(String query, String target, String tree,
+					int matches, boolean allowDuplicates,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.promote(true)
+				.allowDuplicates(allowDuplicates)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[$X <2+>[$Y]]', XY, *0, 0, false, -",
+				"'[$X <2+>[$Y]]', XYY, *00, 1, false, { {{0}} {{1;2}} }",
+				"'[$X <2+>[$Y]]', XYYYY, *0000, 3, false, { {{0}{0}{0}} {{1;2;3;4}{2;3;4}{3;4}} }",
+				"'[$X <2+>[$Y]]', XYY-YY, *00000, 2, false, { {{0}{0}} {{1;2}{4;5}} }",
+				"'[$X <2+^>[$Y]]', XYY-YY, *00000, 3, false, { {{0}{0}{0}} {{1;2;4;5}{2;4;5}{4;5}} }",
+				"'[$X <3+^>[$Y]]', XYY-YY, *00000, 2, false, { {{0}{0}} {{1;2;4;5}{2;4;5}} }",
+				"'[$X <2+>[$Y]]', XYYXYY, *00033, 2, false, { {{0}{3}} {{1;2}{4;5}} }",
+				"'[$X <3+>[$Y]]', XYYXYY, *00033, 0, false, -",
+				"'[$X <2+>[$Y]]', XYYXYY, *33000, 2, false, { {{0}{3}} {{4;5}{1;2}} }",
+				//TODO
+			})
+			@DisplayName("child node with quantification")
+			void testQuantifiedChild(String query, String target, String tree,
+					int matches, boolean allowDuplicates,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.allowDuplicates(allowDuplicates)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[$X <2+>[$Y]]', XY, *0, 0, false, -",
+				"'[$X <2+>[$Y]]', XYY, *00, 1, false, { {{0}} {{1;2}} }",
+				//TODO
+			})
+			@DisplayName("child node with quantification")
+			void testMarkerOnChild(String query, String target, String tree,
+					int matches, boolean allowDuplicates,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.allowDuplicates(allowDuplicates)
+				.assertResult();
+			}
+
+			//TODO
 		}
 
 		/**
@@ -11448,6 +11516,15 @@ class SequencePatternTest {
 		@Nested
 		class SequenceInTreeNode {
 
+			private QueryConfig flatTreeConfig(int childCount) {
+				assertThat(childCount).as("must have at least 2 children").isGreaterThan(1);
+				return QueryConfig.tree(QueryConfig.sequence(
+						IntStream.range(0, childCount)
+						.mapToObj(i -> QueryConfig.of(IqlNode.class))
+						.toArray(QueryConfig[]::new)));
+			}
+
+			//TODO
 		}
 
 		/**
