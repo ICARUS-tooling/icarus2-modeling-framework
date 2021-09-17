@@ -64,9 +64,9 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
+import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
-import de.ims.icarus2.query.api.engine.matcher.mark.SequenceMarker;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
@@ -106,6 +106,7 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
+import de.ims.icarus2.util.tree.IntTree;
 import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -1057,13 +1058,13 @@ public class SequencePattern {
 			return scan;
 		}
 
-		/** Create graph for the marker construct and attach to tail. */
+		/** Create graph for the marker construct. */
 		private Segment marker(IqlMarker marker, Node scan, Consumer<? super Node> action) {
 			Segment seg;
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				seg = range(call, action);
+				seg = markerCall(call, action);
 				if(scan!=null) {
 					seg.append(scan);
 				}
@@ -1086,42 +1087,50 @@ public class SequencePattern {
 			return seg;
 		}
 
-		private Segment range(IqlMarkerCall markerCall, Consumer<? super Node> action) {
-			final RangeMarker marker = marker(markerCall);
+		private Segment markerCall(IqlMarkerCall call, Consumer<? super Node> action) {
+			final String name = call.getName();
 
-			if(marker.isDynamic()) {
-				final int intervalIndex = interval(marker);
-				final int count = marker.intervalCount();
-				if(count>1) {
-					return branch(markerCall, count, i -> {
-						final Node clip = clip(markerCall, intervalIndex+i);
-						action.accept(clip);
-						return frame(clip);
-					});
+			if(HorizontalMarker.isValidName(name)) {
+				final boolean isSequence = HorizontalMarker.isSequenceName(name);
+
+				final RangeMarker marker = HorizontalMarker.of(name, markerArgs(call));
+
+				if(marker.isDynamic()) {
+					final int intervalIndex = interval(marker);
+					final int count = marker.intervalCount();
+					if(count>1) {
+						return branch(call, count, i -> {
+							final Node clip = dynamicClip(call, isSequence, intervalIndex+i);
+							action.accept(clip);
+							return frame(clip);
+						});
+					}
+
+					final Node clip = dynamicClip(call, isSequence, intervalIndex);
+					action.accept(clip);
+					return segment(clip);
 				}
 
-				final Node clip = clip(markerCall, intervalIndex);
-				action.accept(clip);
-				return segment(clip);
+				assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
+
+				final Interval interval = Interval.blank();
+				marker.adjust(new Interval[] {interval}, 0, 1);
+				final Node fixed = fixedClip(call, isSequence, interval.from, interval.to);
+				action.accept(fixed);
+				return segment(fixed);
 			}
 
-			assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
-
-			final Interval interval = Interval.blank();
-			marker.adjust(new Interval[] {interval}, 0, 1);
-			final Node fixed = fixed(markerCall, interval.from, interval.to);
-			action.accept(fixed);
-			return segment(fixed);
+			throw EvaluationUtils.forUnsupportedValue("marker-name", name);
 		}
 
 		/** Create single fixed clip */
-		private Node fixed(IqlMarkerCall source, int from, int to) {
-			return storeTrackable(new Fixed(id(), source, from, to));
+		private Node fixedClip(IqlMarkerCall source, boolean clipIndex, int from, int to) {
+			return storeTrackable(new FixedClip(id(), source, clipIndex, from, to));
 		}
 
 		/** Create single dynamic clip */
-		private Node clip(IqlMarkerCall source, int intervalIndex) {
-			return storeTrackable(new DynamicClip(id(), source, intervalIndex));
+		private Node dynamicClip(IqlMarkerCall source, boolean clipIndex, int intervalIndex) {
+			return storeTrackable(new DynamicClip(id(), source, clipIndex, intervalIndex));
 		}
 
 		/**
@@ -1160,11 +1169,11 @@ public class SequencePattern {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
 			MutableBoolean hasDynamicInterval = new MutableBoolean(false);
-			List<Fixed> fixedIntervals = new ArrayList<>();
+			List<FixedClip> fixedIntervals = new ArrayList<>();
 
 			Consumer<? super Node> action2 = action.andThen(node -> {
-				if(node instanceof Fixed) {
-					fixedIntervals.add((Fixed) node);
+				if(node instanceof FixedClip) {
+					fixedIntervals.add((FixedClip) node);
 				} else {
 					hasDynamicInterval.setBoolean(true);
 				}
@@ -1196,12 +1205,11 @@ public class SequencePattern {
 			return index;
 		}
 
-		private RangeMarker marker(IqlMarkerCall call) {
-			Number[] arguments = IntStream.range(0, call.getArgumentCount())
+		private static Number[] markerArgs(IqlMarkerCall call) {
+			return IntStream.range(0, call.getArgumentCount())
 					.mapToObj(call::getArgument)
 					.map(Number.class::cast)
 					.toArray(Number[]::new);
-			return SequenceMarker.of(call.getName(), arguments);
 		}
 
 		/** Push intervals for given marker on the stack and return index of first interval */
@@ -1577,6 +1585,10 @@ public class SequencePattern {
 		int parent;
 		/** Accumulated number of descendants in the subtree rooted at this frame */
 		int descendants;
+		/** Begin index of span covered by node */
+		int begin;
+		/** End index of span covered by node */
+		int end;
 		/**
 		 * Index of the most recent node matched in this frame.
 		 * Used to enforce adjacent node matching. If free positioning
@@ -1608,17 +1620,18 @@ public class SequencePattern {
 
 		// tree methods
 
-		/** Length (number of items) of current sequence */
-		final int length() { return length; }
-		/** Nesting depth of current node */
-		final int depth() { return depth; }
-		/** Height (distance to deepest leaf) of current node */
-		final int height() { return height; }
-		/** Index of parent node */
-		final int parent() { return parent; }
+		//TODO do we need those methods or is direct access preferred?
+//		/** Length (number of items) of current sequence */
+//		final int length() { return length; }
+//		/** Nesting depth of current node */
+//		final int depth() { return depth; }
+//		/** Height (distance to deepest leaf) of current node */
+//		final int height() { return height; }
+//		/** Index of parent node */
+//		final int parent() { return parent; }
 
 		/** Fetches global index for (child) node at given index */
-		final int posAt(int index) { return indices[index]; }
+		final int childAt(int index) { return indices[index]; }
 
 		// positioning methods
 
@@ -1662,10 +1675,9 @@ public class SequencePattern {
 		 * within the specified  filter interval.
 		 *
 		 * @param window interval of legal index values
-		 * @param skip flag to indicate if we're allowed to
 		 * @return {@code true} if after filtering the window is not empty
 		 */
-		boolean retain(Interval filter) {
+		boolean retainIndices(Interval filter) {
 			int from = window.from;
 			int to = window.to;
 
@@ -1677,7 +1689,7 @@ public class SequencePattern {
 			}
 
 			if(from <= to) {
-				to = Arrays.binarySearch(indices, from, to, filter.to);
+				to = Arrays.binarySearch(indices, from, to+1, filter.to);
 				if(to < 0) {
 					to = -to - 1; // we need the last element smaller than filter.to value
 				}
@@ -1685,6 +1697,18 @@ public class SequencePattern {
 
 			window.reset(from, to);
 			return !window.isEmpty();
+		}
+
+		/**
+		 * Applies a span-based index filter to this frame, limiting the
+		 * current window to only those positional values that are also
+		 * contained in the given filter interval.
+		 *
+		 * @param filter window interval of legal index values
+		 * @return {@code true} if after filtering the window is not empty
+		 */
+		boolean retainPos(Interval filter) {
+			return window.intersect(filter);
 		}
 	}
 
@@ -1697,6 +1721,7 @@ public class SequencePattern {
 			depth = height = descendants = 0;
 			parent = UNSET_INT;
 			valid = true;
+			begin = end = UNSET_INT;
 		}
 
 		/**
@@ -1714,10 +1739,10 @@ public class SequencePattern {
 		 * can simply intersect the raw window with the filter interval.
 		 *
 		 * @see Interval#intersect(Interval)
-		 * @see de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame#retain(de.ims.icarus2.query.api.engine.matcher.mark.Interval)
+		 * @see de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame#retainIndices(de.ims.icarus2.query.api.engine.matcher.mark.Interval)
 		 */
 		@Override
-		boolean retain(Interval filter) {
+		boolean retainIndices(Interval filter) {
 			return window.intersect(filter);
 		}
 
@@ -1763,7 +1788,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class State {
+	static class State implements IntTree {
 		/** Raw target container or structure */
 		Container target;
 		/** Total number of items in container */
@@ -1881,7 +1906,7 @@ public class SequencePattern {
 
 			modes = new ModeTrace[2];
 
-			modes[MODE_SKIP] = new ModeTrace(setup.skipControlCount);
+			modes[MODE_SKIP] = new ModeTrace(setup.skipControlCount, true);
 
 			filterConstraint = setup.makeFilterConstraint();
 			globalConstraint = setup.makeGlobalConstraint();
@@ -1970,6 +1995,24 @@ public class SequencePattern {
 			checkState("Result handler already set", this.resultHandler==null);
 			this.resultHandler = resultHandler;
 		}
+
+		// tree interface
+
+		@Override
+		public final int size() { return size; }
+
+		@Override
+		public final int size(int nodeId) { return tree[nodeId].length; }
+
+		@Override
+		public final int height(int nodeId) { return tree[nodeId].height; }
+
+		@Override
+		public final int depth(int nodeId) { return tree[nodeId].depth; }
+
+		@Override
+		public final int childAt(int nodeId, int index) { return tree[nodeId].indices[index]; }
+
 	}
 
 	/**
@@ -2501,11 +2544,14 @@ public class SequencePattern {
 
 	static final class ModeTrace {
 		private final boolean[] trace;
+		private final boolean defaultValue;
 		private int index;
-		boolean value = false;
+		boolean value;
 
-		ModeTrace(int size) {
+		ModeTrace(int size, boolean defaultValue) {
 			trace = new boolean[size];
+			this.defaultValue = defaultValue;
+			value = defaultValue;
 		}
 
 		final void set(boolean value) {
@@ -2518,7 +2564,7 @@ public class SequencePattern {
 		}
 
 		final void reset() {
-			value = false;
+			value = defaultValue;
 			index = 0;
 		}
 	}
@@ -3136,7 +3182,7 @@ public class SequencePattern {
 				return false;
 			}
 
-			final int index = frame.posAt(pos);
+			final int index = frame.childAt(pos);
 
 			// Bail on locked index
 			if(state.locked[index]) {
@@ -3300,22 +3346,26 @@ public class SequencePattern {
 	}
 
 	static abstract class Clip extends ProperNode {
+		final boolean clipIndex;
+
 		boolean skip = false;
 
-		Clip(int id, IqlMarkerCall source) { super(id, source); }
-
-		abstract Interval interval(State state);
+		Clip(int id, IqlMarkerCall source, boolean clipIndex) {
+			super(id, source);
+			this.clipIndex = clipIndex;
+		}
 
 		@Override
 		boolean match(State state, int pos) {
 			final TreeFrame frame = state.frame;
-			final Interval filter = interval(state);
-			// Update search interval
-			if(!frame.retain(filter)) {
+			final Interval interval = interval(state);
+			// Update search interval and bail early if we fail
+			if((clipIndex && !frame.retainIndices(interval))
+					|| (!clipIndex && !frame.retainPos(interval))) {
 				return false;
 			}
 			// Skip ahead if allowed
-			if(skip && state.isSet(MODE_SKIP) && pos<frame.from()) {
+			if(pos<frame.from() && skip && state.isSet(MODE_SKIP)) {
 				pos = frame.from();
 			}
 			// Early bail in case we're outside of allowed search space
@@ -3325,6 +3375,8 @@ public class SequencePattern {
 			// Continue with actual search
 			return next.match(state, pos);
 		}
+
+		abstract Interval interval(State state);
 
 		void study0(TreeInfo info) {
 			boolean skip0 = info.skip;
@@ -3340,11 +3392,11 @@ public class SequencePattern {
 		}
 	}
 
-	static final class Fixed extends Clip {
+	static final class FixedClip extends Clip {
 		final Interval region;
 
-		Fixed(int id, IqlMarkerCall source, int from, int to) {
-			super(id, source);
+		FixedClip(int id, IqlMarkerCall source, boolean clipIndex, int from, int to) {
+			super(id, source, clipIndex);
 			checkArgument("Invalid interval begin", from>=0);
 			checkArgument("Invalid interval end", to>=0);
 			checkArgument("Empty interval", from<=to);
@@ -3388,8 +3440,8 @@ public class SequencePattern {
 	/** Interval filter based on raw intervals in the matcher */
 	static final class DynamicClip extends Clip {
 		final int intervalIndex;
-		DynamicClip(int id, IqlMarkerCall source, int intervalIndex) {
-			super(id, source);
+		DynamicClip(int id, IqlMarkerCall source, boolean clipIndex, int intervalIndex) {
+			super(id, source, clipIndex);
 			this.intervalIndex = intervalIndex;
 		}
 
@@ -3771,7 +3823,7 @@ public class SequencePattern {
 				return false;
 			}
 
-			final int index = frame.posAt(pos);
+			final int index = frame.childAt(pos);
 
 			// Bail on locked index
 			if(state.locked[index]) {

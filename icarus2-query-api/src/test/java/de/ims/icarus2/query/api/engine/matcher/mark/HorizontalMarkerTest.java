@@ -36,16 +36,16 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
-import de.ims.icarus2.query.api.engine.matcher.mark.SequenceMarker.Name;
+import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker.Type;
 import de.ims.icarus2.test.util.convert.NumberConverter;
 
 /**
  * @author Markus Gärtner
  *
  */
-class SequenceMarkerTest {
+class HorizontalMarkerTest {
 
-	private static Consumer<SequenceMarker.MarkerBase> hasName(Name name) {
+	private static Consumer<HorizontalMarker.MarkerBase> hasName(Type name) {
 		return m -> assertThat(m.getRawName()).isSameAs(name);
 	}
 
@@ -53,13 +53,13 @@ class SequenceMarkerTest {
 	class FactoryMethod {
 		@Test
 		void testNullName() {
-			assertThatNullPointerException().isThrownBy(() -> SequenceMarker.of(null));
+			assertThatNullPointerException().isThrownBy(() -> HorizontalMarker.of(null));
 		}
 
 		@Test
 		void testNullArguments() {
 			assertThatNullPointerException().isThrownBy(
-					() -> SequenceMarker.of("IsAt", (Number[])null));
+					() -> HorizontalMarker.of("IsAt", (Number[])null));
 		}
 
 
@@ -74,20 +74,20 @@ class SequenceMarkerTest {
 			"IsFirst, FIRST",
 			"IsLast, LAST",
 		})
-		void testConsistency(String name, Name rawName) {
+		void testConsistency(String name, Type rawName) {
 			Number[] args = {_int(1), _int(2)};
 			// Verify normal casing
-			assertThat(SequenceMarker.of(name, args))
+			assertThat(HorizontalMarker.of(name, args))
 				.as("Default casing")
-				.isInstanceOfSatisfying(SequenceMarker.MarkerBase.class, hasName(rawName));
+				.isInstanceOfSatisfying(HorizontalMarker.MarkerBase.class, hasName(rawName));
 			// Verify lower casing
-			assertThat(SequenceMarker.of(name.toLowerCase(), args))
+			assertThat(HorizontalMarker.of(name.toLowerCase(), args))
 				.as("Lower casing")
-				.isInstanceOfSatisfying(SequenceMarker.MarkerBase.class, hasName(rawName));
+				.isInstanceOfSatisfying(HorizontalMarker.MarkerBase.class, hasName(rawName));
 			// Verify upper casing
-			assertThat(SequenceMarker.of(name.toUpperCase(), args))
+			assertThat(HorizontalMarker.of(name.toUpperCase(), args))
 				.as("Upper casing")
-				.isInstanceOfSatisfying(SequenceMarker.MarkerBase.class, hasName(rawName));
+				.isInstanceOfSatisfying(HorizontalMarker.MarkerBase.class, hasName(rawName));
 		}
 	}
 
@@ -96,19 +96,19 @@ class SequenceMarkerTest {
 		@Test
 		void onIsAt() {
 			assertThatIllegalArgumentException().isThrownBy(
-					() -> SequenceMarker.of("IsAt", Double.valueOf(0.5)));
+					() -> HorizontalMarker.of("IsAt", Double.valueOf(0.5)));
 		}
 		@Test
 		void onIsNotAt() {
 			assertThatIllegalArgumentException().isThrownBy(
-					() -> SequenceMarker.of("IsNotAt", Double.valueOf(0.5)));
+					() -> HorizontalMarker.of("IsNotAt", Double.valueOf(0.5)));
 		}
 	}
 
 	@ParameterizedTest
 	@ValueSource(ints={1, 10, 100, Integer.MAX_VALUE})
 	void testFirst(int size) {
-		RangeMarker marker = SequenceMarker.of("IsFirst");
+		RangeMarker marker = HorizontalMarker.of("IsFirst");
 		Interval interval = new Interval();
 
 		assertThat(marker.adjust(array(interval), 0, size)).isTrue();
@@ -119,7 +119,7 @@ class SequenceMarkerTest {
 	@ParameterizedTest
 	@ValueSource(ints={1, 10, 100, Integer.MAX_VALUE})
 	void testLast(int size) {
-		RangeMarker marker = SequenceMarker.of("IsLast");
+		RangeMarker marker = HorizontalMarker.of("IsLast");
 		Interval interval = new Interval();
 
 		assertThat(marker.adjust(array(interval), 0, size)).isTrue();
@@ -187,7 +187,7 @@ class SequenceMarkerTest {
 	void testSingleIntervalMarkersWith1Arg(String name,
 			@ConvertWith(NumberConverter.class) Number arg,
 			int size, boolean empty, int begin, int end) {
-		RangeMarker marker = SequenceMarker.of(name, arg);
+		RangeMarker marker = HorizontalMarker.of(name, arg);
 		Interval interval = new Interval();
 		assertThat(marker.adjust(array(interval), 0, size)).isNotEqualTo(empty);
 		assertThat(interval.from).isEqualTo(begin);
@@ -209,7 +209,7 @@ class SequenceMarkerTest {
 	void testDualIntervalMarkersWith1Arg(String name,
 			@ConvertWith(NumberConverter.class) Number arg,
 			int size, boolean empty, int begin1, int end1, int begin2, int end2) {
-		RangeMarker marker = SequenceMarker.of(name, arg);
+		RangeMarker marker = HorizontalMarker.of(name, arg);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
 		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
@@ -256,7 +256,7 @@ class SequenceMarkerTest {
 	void testSingleIntervalMarkersWith2Arg(String name,
 			@ConvertWith(NumberConverter.class) Number arg1, @ConvertWith(NumberConverter.class) Number arg2,
 			int size, boolean empty, int begin, int end) {
-		RangeMarker marker = SequenceMarker.of(name, arg1, arg2);
+		RangeMarker marker = HorizontalMarker.of(name, arg1, arg2);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
 		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
@@ -274,7 +274,7 @@ class SequenceMarkerTest {
 	void testDualIntervalMarkersWith2Arg(String name,
 			@ConvertWith(NumberConverter.class) Number arg1, @ConvertWith(NumberConverter.class) Number arg2,
 			int size, boolean empty, int begin1, int end1, int begin2, int end2) {
-		RangeMarker marker = SequenceMarker.of(name, arg1, arg2);
+		RangeMarker marker = HorizontalMarker.of(name, arg1, arg2);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
 		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);

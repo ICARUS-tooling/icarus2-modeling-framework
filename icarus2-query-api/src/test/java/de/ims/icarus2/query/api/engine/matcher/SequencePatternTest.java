@@ -1447,6 +1447,8 @@ class SequencePatternTest {
 			TreeFrame frame = tree[i];
 			frame.parent = parentIndex;
 			frame.index = i;
+			frame.begin = i;
+			frame.end = i;
 			frame.valid = true;
 
 			if(parentIndex != UNSET_INT) {
@@ -2453,7 +2455,7 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
+								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
 								new Exhaust(id(), NO_CACHE, true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
@@ -2603,7 +2605,7 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
+								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
 								new Exhaust(id(), CACHE_0, true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
@@ -2764,7 +2766,7 @@ class SequencePatternTest {
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
-								new DynamicClip(id(), mock(IqlMarkerCall.class), REGION_0),
+								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
 								new Exhaust(id(), NO_CACHE, false),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
@@ -4005,7 +4007,7 @@ class SequencePatternTest {
 
 				@ParameterizedTest
 				@CsvSource({
-					"AB, 0*",
+					"AB, 1*",
 					"ACB, *01",
 				})
 				@DisplayName("[$A [$B]] -> no matches")
@@ -4027,12 +4029,12 @@ class SequencePatternTest {
 					"ABC, *01, 0, 1",
 					// Normal order - mixed
 					"ACB, *00, 0, 2",
-					"ACB, *10, 0, 2",
+					"ACB, *20, 0, 2",
 					// Reversed order - adjacent
 					"BA, 1*, 1, 0",
 					"BAC, 1*1, 1, 0",
 					"BAC, 1*0, 1, 0",
-					"ACB, *10, 0, 2",
+					"ACB, *20, 0, 2",
 					// Reversed order - mixed
 					"BCA, 22*, 2, 0",
 					"BCA, 20*, 2, 0",
@@ -4053,7 +4055,7 @@ class SequencePatternTest {
 
 				@ParameterizedTest
 				@CsvSource({
-					"AB, 0*",
+					"AB, 1*",
 					"ABC, *00",
 					"ACB, *01",
 				})
@@ -4082,7 +4084,6 @@ class SequencePatternTest {
 					"ACBD, *202, 0, 2, 1",
 					"ACDB, *300, 0, 3, 1",
 					"ACDB, *310, 0, 3, 1",
-					"ACDB, *320, 0, 3, 1",
 					"ACDB, *330, 0, 3, 1",
 					"ADCB, *030, 0, 3, 2",
 					// Reversed order - adjacent
@@ -4097,7 +4098,7 @@ class SequencePatternTest {
 					"BDAC, 23*0, 2, 0, 3",
 					"BADC, 1*00, 1, 0, 3",
 					"BADC, 1*10, 1, 0, 3",
-					"BADC, 1*20, 1, 0, 3",
+					"BADC, 1*30, 1, 0, 3",
 					"BACD, 1*00, 1, 0, 2",
 					"BACD, 1*01, 1, 0, 2",
 					"BACD, 1*02, 1, 0, 2",

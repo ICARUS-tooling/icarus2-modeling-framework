@@ -21,6 +21,7 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -30,27 +31,28 @@ import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.util.LazyStore;
-import de.ims.icarus2.util.strings.StringResource;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class SequenceMarker {
+public abstract class HorizontalMarker {
 
 	public static Marker.RangeMarker of(String name, Number...arguments) {
 		requireNonNull(name);
 		requireNonNull(arguments);
 
-		if(!Name.isValidName(name))
+		if(!Type.isValidName(name))
 			throw EvaluationUtils.forUnknownIdentifier(name, "marker");
 
-		Name n = Name.parseName(name);
+		Type n = Type.parseName(name);
 		Position[] pos = arguments.length==0 ? NO_ARGS : toPos(arguments);
 		return n.instantiate(pos);
 	}
 
-	public static boolean isSequenceMarker(String name) { return Name.isValidName(name); }
+	public static boolean isValidName(String name) { return Type.isValidName(name); }
+	public static boolean isSequenceName(String name) { return Type.isSequenceName(name); }
+	public static boolean isTreeHierarchyName(String name) { return Type.isTreeHierarchyName(name); }
 
 	private static final Position[] NO_ARGS = {};
 
@@ -72,57 +74,58 @@ public abstract class SequenceMarker {
 		return false;
 	}
 
-	public static enum Name implements StringResource {
-		FIRST("IsFirst", 0) {
+	public static enum Type {
+		FIRST("IsFirst", "IsFirstChild", 0) {
 			@Override
 			public RangeMarker instantiate(Position[] positions) { return IsFirst.INSTANCE; }
 		},
-		LAST("IsLast", 0) {
+		LAST("IsLast", "IsLastChild", 0) {
 			@Override
 			public RangeMarker instantiate(Position[] positions) { return IsLast.INSTANCE; }
 		},
 
-		AT("IsAt", 1) {
+		AT("IsAt", "IsChildAt", 1) {
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsAt(posAt(positions, 0));
 			}
 		},
-		NOT_AT("IsNotAt", 1) {
+		NOT_AT("IsNotAt", "IsChildNotAt", 1) {
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsNotAt(posAt(positions, 0));
 			}
 		},
 
-		AFTER("IsAfter", 1){
+		AFTER("IsAfter", "IsChildAfter", 1){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsAfter(posAt(positions, 0));
 			}},
-		BEFORE("IsBefore", 1){
+		BEFORE("IsBefore", "IsChildBefore", 1){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsBefore(posAt(positions, 0));
 			}},
 
-		INSIDE("IsInside", 2){
+		INSIDE("IsInside", "IsChildInside", 2){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsInside(posAt(positions, 0), posAt(positions, 1));
 			}},
-		OUTSIDE("IsOutside", 2){
+		OUTSIDE("IsOutside", "IsChildOutside", 2){
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsOutside(posAt(positions, 0), posAt(positions, 1));
 			}},
 		;
 
-		private final String label;
+		private final String sequenceLabel, treeHierarchyLabel;
 		private final int argCount;
 
-		private Name(String label, int argCount) {
-			this.label = checkNotEmpty(label);
+		private Type(String sequenceLabel, String treeHierarchyLabel, int argCount) {
+			this.sequenceLabel = checkNotEmpty(sequenceLabel);
+			this.treeHierarchyLabel = requireNonNull(treeHierarchyLabel);
 			checkArgument(argCount>=0);
 			this.argCount = argCount;
 		}
@@ -131,7 +134,7 @@ public abstract class SequenceMarker {
 			if(index>=positions.length)
 				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
 						String.format("No position available for index %d - %s needs %d arguments, %d provided",
-								_int(index), label, _int(argCount), _int(positions.length)));
+								_int(index), sequenceLabel, _int(argCount), _int(positions.length)));
 			return positions[index];
 		}
 
@@ -139,29 +142,47 @@ public abstract class SequenceMarker {
 
 		public int getArgCount() { return argCount; }
 
-		public String getLabel() { return label; }
+		public String getSequenceLabel() { return sequenceLabel; }
 
-		@Override
-		public String getStringValue() { return label; }
+		public String getTreeHierarchyLabel() { return treeHierarchyLabel; }
 
-		private static final LazyStore<Name, String> store
-				= new LazyStore<>(Name.class, Name::getLabel, String::toLowerCase);
+		private static final LazyStore<Type, String> sequenceStore
+				= new LazyStore<>(Type.class, Type::getSequenceLabel, String::toLowerCase);
+		private static final LazyStore<Type, String> treeHierarchyStore
+			= new LazyStore<>(Type.class, Type::getTreeHierarchyLabel, String::toLowerCase);
 
-		public static Name parseName(String s) {
-			return store.lookup(s, name -> EvaluationUtils.forUnknownIdentifier(name, "marker"));
+		private static final Function<String, RuntimeException> ERROR
+			= name -> EvaluationUtils.forUnknownIdentifier(name, "marker");
+
+		public static Type parseName(String s) {
+			Type type = sequenceStore.tryLookup(s);
+			if(type==null) {
+				type = treeHierarchyStore.lookup(s, ERROR);
+			}
+			return type;
 		}
 
-		public static boolean isValidName(String s) { return store.hasKey(s); }
+		public static boolean isValidName(String s) {
+			return sequenceStore.hasKey(s) || treeHierarchyStore.hasKey(s);
+		}
+
+		public static boolean isSequenceName(String s) {
+			return sequenceStore.hasKey(s);
+		}
+
+		public static boolean isTreeHierarchyName(String s) {
+			return treeHierarchyStore.hasKey(s);
+		}
 	}
 
 	@VisibleForTesting
 	static abstract class MarkerBase implements Marker.RangeMarker {
 
-		private final Name name;
+		private final Type name;
 		private final boolean dynamic;
 		private final int intervalCount;
 
-		private MarkerBase(Name name, boolean dynamic, int intervalCount) {
+		private MarkerBase(Type name, boolean dynamic, int intervalCount) {
 			checkArgument(intervalCount>=1);
 			this.name = requireNonNull(name);
 			this.dynamic = dynamic;
@@ -169,13 +190,13 @@ public abstract class SequenceMarker {
 		}
 
 		@VisibleForTesting
-		Name getRawName() { return name; }
+		Type getRawName() { return name; }
 
 		@Override
 		public MarkerType getType() { return MarkerType.SEQUENCE; }
 
 		@Override
-		public String getName() { return name.getLabel(); }
+		public String getName() { return name.getSequenceLabel(); }
 
 		@Override
 		public boolean isDynamic() { return dynamic; }
@@ -188,7 +209,7 @@ public abstract class SequenceMarker {
 	private static final class IsFirst extends MarkerBase {
 		static final IsFirst INSTANCE = new IsFirst();
 
-		IsFirst() { super(Name.FIRST, false, 1); }
+		IsFirst() { super(Type.FIRST, false, 1); }
 
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
@@ -201,7 +222,7 @@ public abstract class SequenceMarker {
 	private static final class IsLast extends MarkerBase {
 		static final IsLast INSTANCE = new IsLast();
 
-		IsLast() { super(Name.LAST, true, 1); }
+		IsLast() { super(Type.LAST, true, 1); }
 
 		@Override
 		public boolean adjust(Interval[] intervals, int index, int size) {
@@ -215,7 +236,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsAt(Position position) {
-			super(Name.AT, position.isReverse(), 1);
+			super(Type.AT, position.isReverse(), 1);
 			requireNonNull(position);
 			this.pos = checkNotRelative(position);
 		}
@@ -232,7 +253,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsNotAt(Position position) {
-			super(Name.NOT_AT, true, 2);
+			super(Type.NOT_AT, true, 2);
 			requireNonNull(position);
 			this.pos = checkNotRelative(position);
 		}
@@ -254,7 +275,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsAfter(Position position) {
-			super(Name.AFTER, true, 1);
+			super(Type.AFTER, true, 1);
 			this.pos = requireNonNull(position);
 		}
 
@@ -271,7 +292,7 @@ public abstract class SequenceMarker {
 		private final Position pos;
 
 		IsBefore(Position position) {
-			super(Name.BEFORE, isRelativeOrReverse(position), 1);
+			super(Type.BEFORE, isRelativeOrReverse(position), 1);
 			this.pos = requireNonNull(position);
 		}
 
@@ -288,7 +309,7 @@ public abstract class SequenceMarker {
 		private final Position start, end;
 
 		IsInside(Position start, Position end) {
-			super(Name.INSIDE, isRelativeOrReverse(start, end), 1);
+			super(Type.INSIDE, isRelativeOrReverse(start, end), 1);
 			this.start = requireNonNull(start);
 			this.end = requireNonNull(end);
 		}
@@ -306,7 +327,7 @@ public abstract class SequenceMarker {
 		private final Position start, end;
 
 		IsOutside(Position start, Position end) {
-			super(Name.OUTSIDE, true, 2);
+			super(Type.OUTSIDE, true, 2);
 			this.start = requireNonNull(start);
 			this.end = requireNonNull(end);
 		}
