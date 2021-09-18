@@ -90,7 +90,7 @@ public abstract class HorizontalMarker {
 				return new IsAt(posAt(positions, 0));
 			}
 		},
-		NOT_AT("IsNotAt", "IsChildNotAt", 1) {
+		NOT_AT("IsNotAt", "IsNotChildAt", 1) {
 			@Override
 			public RangeMarker instantiate(Position[] positions) {
 				return new IsNotAt(posAt(positions, 0));
