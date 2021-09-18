@@ -64,10 +64,13 @@ public class Interval implements Cloneable {
 
 	public boolean isValid() { return from!=UNSET_INT && to!=UNSET_INT; }
 
+	/** Invalidates the interval */
 	public void reset() { from = UNSET_INT; to = UNSET_INT; }
 
+	/** Sets the entire interval to the new boundaries (which can be {@code -1}). */
 	public void reset(int from, int to) { this.from = from; this.to = to; }
 
+	/** Overwrites this interval with the boudnaries of another interval. */
 	public void reset(Interval other) { this.from = other.from; this.to = other.to; }
 
 	public int size() { return isEmpty() ? 0 : to-from+1; }
