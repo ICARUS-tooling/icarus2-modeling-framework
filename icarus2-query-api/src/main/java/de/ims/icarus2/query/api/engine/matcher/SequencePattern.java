@@ -488,6 +488,8 @@ public class SequencePattern {
 			/** Add given node as head of inner sequence. */
 			<N extends Node> N push(N node) {
 				requireNonNull(node);
+				maybeIncNodes(node);
+				size += length(node);
 				if(end==accept) {
 					start = node;
 					end = last(node);
@@ -495,14 +497,14 @@ public class SequencePattern {
 					last(node).setNext(start);
 					start = node;
 				}
-				maybeIncNodes(node);
-				size += length(node);
 				return node;
 			}
 
 			/** Add given node as tail of inner sequence. */
 			<N extends Node> N append(N node) {
 				requireNonNull(node);
+				maybeIncNodes(node);
+				size += length(node);
 				if(end==accept) {
 					start = node;
 					end = last(node);
@@ -510,8 +512,6 @@ public class SequencePattern {
 					end.setNext(node);
 					end = last(node);
 				}
-				maybeIncNodes(node);
-				size += length(node);
 				return node;
 			}
 
@@ -621,8 +621,8 @@ public class SequencePattern {
 				suffix = other.suffix;
 			}
 
-			private Segment clearPrefix() { Segment s = prefix; prefix = null; return s; }
-			private Segment clearSuffix() { Segment s = suffix; suffix = null; return s; }
+			Segment clearPrefix() { Segment s = prefix; prefix = null; return s; }
+			Segment clearSuffix() { Segment s = suffix; suffix = null; return s; }
 
 			/**
 			 * Add other frame as head to this one (if this is empty, replace all content instead):
@@ -1106,7 +1106,7 @@ public class SequencePattern {
 
 				if(marker.isDynamic()) {
 					// Register markers only if we have to dynamically adjust their intervals
-					if(level>0) {
+					if(level>0 && !isSequence) {
 						nestedMarkerAction.accept(nestedMarkers.size());
 						nestedMarkers.add(marker);
 					} else {
@@ -3555,16 +3555,17 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			// Refresh nested markers based on current frame
-			if(nestedMarkers!=null) {
-				final int size = state.frame.length;
-				for(int markerIndex : nestedMarkers) {
-					state.nestedMarkers[markerIndex].adjust(state.intervals, size);
-				}
-			}
-
 			if(save) {
 				state.borders[borderId] = state.frame.to();
+
+				// Refresh nested markers based on current frame
+				if(nestedMarkers!=null) {
+					final int size = state.frame.length;
+					for(int markerIndex : nestedMarkers) {
+						state.nestedMarkers[markerIndex].adjust(state.intervals, size);
+					}
+				}
+
 			} else {
 				state.frame.to(state.borders[borderId]);
 			}

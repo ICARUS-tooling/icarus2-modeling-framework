@@ -46,9 +46,9 @@ public abstract class HorizontalMarker {
 		if(!Type.isValidName(name))
 			throw EvaluationUtils.forUnknownIdentifier(name, "marker");
 
-		Type n = Type.parseName(name);
+		Type ntype = Type.parseName(name);
 		Position[] pos = arguments.length==0 ? NO_ARGS : toPos(arguments);
-		return n.instantiate(pos);
+		return ntype.instantiate(pos);
 	}
 
 	public static boolean isValidName(String name) { return Type.isValidName(name); }
