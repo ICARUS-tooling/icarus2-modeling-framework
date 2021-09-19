@@ -18,6 +18,7 @@ package de.ims.icarus2.query.api.engine.matcher.mark;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
@@ -181,7 +182,7 @@ public abstract class HorizontalMarker {
 		private final Type name;
 		private final boolean dynamic;
 		private final int intervalCount;
-		protected int index = 0;
+		protected int index = UNSET_INT;
 
 		private MarkerBase(Type name, boolean dynamic, int intervalCount) {
 			checkArgument(intervalCount>=1);

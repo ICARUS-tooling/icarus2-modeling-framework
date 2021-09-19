@@ -109,6 +109,7 @@ class HorizontalMarkerTest {
 	@ValueSource(ints={1, 10, 100, Integer.MAX_VALUE})
 	void testFirst(int size) {
 		RangeMarker marker = HorizontalMarker.of("IsFirst");
+		marker.setIndex(0);
 		Interval interval = new Interval();
 
 		assertThat(marker.adjust(array(interval), size)).isTrue();
@@ -120,6 +121,7 @@ class HorizontalMarkerTest {
 	@ValueSource(ints={1, 10, 100, Integer.MAX_VALUE})
 	void testLast(int size) {
 		RangeMarker marker = HorizontalMarker.of("IsLast");
+		marker.setIndex(0);
 		Interval interval = new Interval();
 
 		assertThat(marker.adjust(array(interval), size)).isTrue();
@@ -188,6 +190,7 @@ class HorizontalMarkerTest {
 			@ConvertWith(NumberConverter.class) Number arg,
 			int size, boolean empty, int begin, int end) {
 		RangeMarker marker = HorizontalMarker.of(name, arg);
+		marker.setIndex(0);
 		Interval interval = new Interval();
 		assertThat(marker.adjust(array(interval), size)).isNotEqualTo(empty);
 		assertThat(interval.from).isEqualTo(begin);
@@ -210,6 +213,7 @@ class HorizontalMarkerTest {
 			@ConvertWith(NumberConverter.class) Number arg,
 			int size, boolean empty, int begin1, int end1, int begin2, int end2) {
 		RangeMarker marker = HorizontalMarker.of(name, arg);
+		marker.setIndex(0);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
 		assertThat(marker.adjust(array(interval1, interval2), size)).isNotEqualTo(empty);
@@ -257,6 +261,7 @@ class HorizontalMarkerTest {
 			@ConvertWith(NumberConverter.class) Number arg1, @ConvertWith(NumberConverter.class) Number arg2,
 			int size, boolean empty, int begin, int end) {
 		RangeMarker marker = HorizontalMarker.of(name, arg1, arg2);
+		marker.setIndex(0);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
 		assertThat(marker.adjust(array(interval1, interval2), size)).isNotEqualTo(empty);
@@ -275,6 +280,7 @@ class HorizontalMarkerTest {
 			@ConvertWith(NumberConverter.class) Number arg1, @ConvertWith(NumberConverter.class) Number arg2,
 			int size, boolean empty, int begin1, int end1, int begin2, int end2) {
 		RangeMarker marker = HorizontalMarker.of(name, arg1, arg2);
+		marker.setIndex(0);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
 		assertThat(marker.adjust(array(interval1, interval2), size)).isNotEqualTo(empty);
