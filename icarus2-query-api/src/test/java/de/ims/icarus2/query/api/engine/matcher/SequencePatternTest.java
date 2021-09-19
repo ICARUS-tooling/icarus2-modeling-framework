@@ -1734,7 +1734,8 @@ class SequencePatternTest {
 			for (int i = 0; i < state.entry; i++) {
 				Pair<Integer, Integer> m = Pair.pair(state.m_node[i], state.m_pos[i]);
 				if(!entries.remove(m))
-					throw new AssertionError(String.format("Unexpected mapping %s at index %d", m, _int(i)));
+					throw new AssertionError(String.format("Unexpected mapping %s at index %d [%s]",
+							m, _int(i), proxy));
 			}
 
 			if(!entries.isEmpty())
@@ -1917,15 +1918,42 @@ class SequencePatternTest {
 		assertThat(SequencePattern.builder()).isNotNull();
 	}
 
-	/**
-	 * Test family for raw {@link Node} implementations.
-	 */
 	@Nested
-	class ForRawNodes {
+	class ForUtilityClasses {
 
-		private int id = 0;
+		@Nested
+		class ForTreeFrame {
 
-		private int id() { return id++; }
+			private TreeFrame frame(int...indices) {
+				TreeFrame frame = new TreeFrame(indices.length);
+				System.arraycopy(indices, 0, frame.indices, 0, indices.length);
+				frame.length = indices.length;
+				frame.reset();
+				return frame;
+			}
+
+			@ParameterizedTest
+			@CsvSource({
+				"{0;1;2;3;4}, 1, 2, {1;2}",
+				"{0;1;2;3;4}, 0, 2, {0;1;2}",
+				"{1;2;3;4}, 0, 2, {0;1}",
+				"{3;4}, 0, 2, -",
+				"{0;3;4}, 1, 1, -",
+				"{0;3;4}, 1, 2, -",
+				"{0;3;4}, 5, 7, -",
+			})
+			void testRetainIndices(@IntArrayArg int[] indices,
+					int from,  int to, @IntArrayArg int[] expected) {
+				TreeFrame frame = frame(indices);
+				assertThat(frame.retainIndices(Interval.of(from, to)))
+					.as("Retain call result: %s", frame.window)
+					.isEqualTo(expected.length > 0);
+
+				assertThat(frame.window.asArray()).containsExactly(expected);
+			}
+
+			//TODO
+		}
 
 		@Nested
 		class ForCache {
@@ -1970,6 +1998,17 @@ class SequencePatternTest {
 
 			//TODO test reset(int)?
 		}
+	}
+
+	/**
+	 * Test family for raw {@link Node} implementations.
+	 */
+	@Nested
+	class ForRawNodes {
+
+		private int id = 0;
+
+		private int id() { return id++; }
 
 		@Nested
 		class ForSingle {
@@ -10636,12 +10675,40 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[$X <2+>[$Y]]', XY, *0, 0, false, -",
-				"'[$X <2+>[$Y]]', XYY, *00, 1, false, { {{0}} {{1;2}} }",
+				"'[$X [IsAt(1),$Y]]', XY, *0, 0, false, -",
+				"'[$X [IsAt(1),$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
+				"'[$X [IsNotAt(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
 				//TODO
 			})
-			@DisplayName("child node with quantification")
-			void testMarkerOnChild(String query, String target, String tree,
+			@DisplayName("child node with sequence marker")
+			void testSequenceMarkerOnChild(String query, String target, String tree,
+					int matches, boolean allowDuplicates,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.allowDuplicates(allowDuplicates)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[$X [IsChildAt(2),$Y]]', XY, *0, 0, false, -",
+				"'[$X [IsChildAt(1),$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
+				"'[$X [IsChildAt(1),$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
+				"'[$X [IsFirstChild,$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
+				"'[$X [IsFirstChild,$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
+				"'[$X [IsLastChild,$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
+				"'[$X [IsLastChild,$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
+				"'[$X [IsNotChildAt(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsNotChildAt(2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{3}} }",
+				"'[$X [IsNotChildAt(3),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
+				"'[$X [IsNotChildAt(4),$Y]]', YYXY, 22*2, 3, false, { {{2}{2}{2}} {{0}{1}{3}} }",
+				//TODO
+			})
+			@DisplayName("child node with tree hierarchy marker")
+			void testTreeHierarchyMarkerOnChild(String query, String target, String tree,
 					int matches, boolean allowDuplicates,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {

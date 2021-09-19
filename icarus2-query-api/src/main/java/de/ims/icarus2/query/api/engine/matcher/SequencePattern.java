@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -107,7 +108,6 @@ import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
 import de.ims.icarus2.util.tree.IntTree;
-import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
@@ -273,10 +273,10 @@ public class SequencePattern {
 		Node[] trackedNodes = {};
 		/** All the nodes in this state machine */
 		Node[] nodes = {};
-		/** Lists all the markers used by original nodes */
-		RangeMarker[] markers = {};
-		/** Positions into 'intervals' to signal what intervals to update for what marker */
-		int[] markerPos = {};
+		/** Lists all the markers operating on the root frame */
+		RangeMarker[] globalMarkers = {};
+		/** Lists all the markers operating on nested frames */
+		RangeMarker[] nestedMarkers = {};
 		/** Blueprints for creating new {@link NodeMatcher} instances per thread */
 		@SuppressWarnings("unchecked")
 		Supplier<Matcher<Item>>[] matchers = new Supplier[0];
@@ -288,8 +288,8 @@ public class SequencePattern {
 		// Access methods for the matcher/state
 		Node getRoot() { return root; }
 		Node[] getNodes() { return nodes; }
-		RangeMarker[] getMarkers() { return markers; }
-		int[] getMarkerPos() { return markerPos; }
+		RangeMarker[] getGlobalMarkers() { return globalMarkers; }
+		RangeMarker[] getNestedMarkers() { return nestedMarkers; }
 		IqlNode[] getRawNodes() { return rawNodes; }
 		int[] getHits() { return new int[rawNodes.length]; }
 		int[] getBorders() { return new int[borderCount]; }
@@ -390,6 +390,8 @@ public class SequencePattern {
 
 		int id;
 
+		int level = 0;
+
 		final List<Node> nodes = new ArrayList<>();
 		final LaneContext rootContext;
 		final QueryModifier modifier;
@@ -398,8 +400,8 @@ public class SequencePattern {
 		final List<NodeDef> matchers = new ArrayList<>();
 		final List<MemberDef> members = new ArrayList<>();
 		final List<Node> trackedNodes = new ArrayList<>();
-		final List<RangeMarker> markers = new ArrayList<>();
-		final IntList markerPos = new IntArrayList();
+		final List<RangeMarker> globalMarkers = new ArrayList<>();
+		final List<RangeMarker> nestedMarkers = new ArrayList<>();
 		final long limit;
 		final IqlElement rootElement;
 		final IqlConstraint filterConstraint;
@@ -409,8 +411,6 @@ public class SequencePattern {
 		final boolean monitor;
 		final Function<IqlNode, IqlNode> nodeTransform;
 		final boolean cacheAll;
-
-		final Stack<Frame> stack = new ObjectArrayList<>();
 
 		private static enum Flag {
 			/** Signals that the segment is accompanied by a disjunctive marker
@@ -720,7 +720,6 @@ public class SequencePattern {
 			final IqlMarker marker = source.getMarker().orElse(null);
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
-
 			final int anchorId = isTree && ((IqlTreeNode)source).getChildren().isPresent() ? anchor() : UNSET_INT;
 
 			final Frame frame = new Frame();
@@ -735,12 +734,14 @@ public class SequencePattern {
 			 */
 			if(marker!=null) {
 				int border = border();
+				IntList nestedMarkerIndices = new IntArrayList();
+				Segment filter = marker(marker, scan, IcarusUtils.DO_NOTHING(), nestedMarkerIndices::add);
 				// Saves the previousIndex window
-				frame.prefix().push(border(true, border));
+				frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
 				// Creates the marker window
-				frame.prefix().append(marker(marker, scan, IcarusUtils.DO_NOTHING()));
+				frame.prefix().append(filter);
 				// Restores previousIndex window
-				frame.suffix().append(border(false, border));
+				frame.suffix().append(borderEnd(border));
 				// Consume scan
 				scan = null;
 			}
@@ -780,7 +781,9 @@ public class SequencePattern {
 				// Exhaustive inner search for child node construct
 				boolean cached = needsCacheForChild(children);
 				Node innerScan = exhaust(true, cached ? cache() : UNSET_INT);
+				level++;
 				Frame child = process(treeNode.getChildren().get(), innerScan);
+				level--;
 				// Collapse entire atom as we cannot hoist anything out of the tree node
 				child.collapse();
 
@@ -1059,12 +1062,13 @@ public class SequencePattern {
 		}
 
 		/** Create graph for the marker construct. */
-		private Segment marker(IqlMarker marker, Node scan, Consumer<? super Node> action) {
+		private Segment marker(IqlMarker marker, Node scan, Consumer<? super Node> nodeAction,
+				IntConsumer nestedMarkerAction) {
 			Segment seg;
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				seg = markerCall(call, action);
+				seg = markerCall(call, nodeAction, nestedMarkerAction);
 				if(scan!=null) {
 					seg.append(scan);
 				}
@@ -1074,9 +1078,9 @@ public class SequencePattern {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					seg = intersection(items, action);
+					seg = intersection(items, nodeAction, nestedMarkerAction);
 				} else {
-					seg = union(items, scan, action);
+					seg = union(items, scan, nodeAction, nestedMarkerAction);
 				}
 			} break;
 
@@ -1087,36 +1091,50 @@ public class SequencePattern {
 			return seg;
 		}
 
-		private Segment markerCall(IqlMarkerCall call, Consumer<? super Node> action) {
+		private Segment markerCall(IqlMarkerCall call, Consumer<? super Node> nodeAction,
+				IntConsumer nestedMarkerAction) {
 			final String name = call.getName();
 
 			if(HorizontalMarker.isValidName(name)) {
+				// 'isSewuence' is to be read here as 'clipIndex' flag for the Clip nodes
 				final boolean isSequence = HorizontalMarker.isSequenceName(name);
+
+				if(level==0 && !isSequence)
+					throw EvaluationUtils.forIncorrectUse("Tree hierarchy marker not allowed outside of nested nodes: %s", name);
 
 				final RangeMarker marker = HorizontalMarker.of(name, markerArgs(call));
 
 				if(marker.isDynamic()) {
+					// Register markers only if we have to dynamically adjust their intervals
+					if(level>0) {
+						nestedMarkerAction.accept(nestedMarkers.size());
+						nestedMarkers.add(marker);
+					} else {
+						globalMarkers.add(marker);
+					}
 					final int intervalIndex = interval(marker);
+					marker.setIndex(intervalIndex);
 					final int count = marker.intervalCount();
 					if(count>1) {
 						return branch(call, count, i -> {
 							final Node clip = dynamicClip(call, isSequence, intervalIndex+i);
-							action.accept(clip);
+							nodeAction.accept(clip);
 							return frame(clip);
 						});
 					}
 
 					final Node clip = dynamicClip(call, isSequence, intervalIndex);
-					action.accept(clip);
+					nodeAction.accept(clip);
 					return segment(clip);
 				}
 
 				assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
 
 				final Interval interval = Interval.blank();
-				marker.adjust(new Interval[] {interval}, 0, 1);
+				marker.setIndex(0);
+				marker.adjust(new Interval[] {interval}, 1);
 				final Node fixed = fixedClip(call, isSequence, interval.from, interval.to);
-				action.accept(fixed);
+				nodeAction.accept(fixed);
 				return segment(fixed);
 			}
 
@@ -1153,11 +1171,12 @@ public class SequencePattern {
 		};
 
 		/** Combine sequence of intersecting markers */
-		private Segment intersection(List<IqlMarker> markers, Consumer<? super Node> action) {
+		private Segment intersection(List<IqlMarker> markers, Consumer<? super Node> nodeAction,
+				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
 			markers.stream()
-					.map(m -> marker(m, null, action))
+					.map(m -> marker(m, null, nodeAction, nestedMarkerAction))
 					// For optimization reasons we 'should' sort markers, but that would violate the specification
 					//.sorted(SEGMENT_COMPLEXITY_ORDER)
 					.forEach(seg::append);
@@ -1165,13 +1184,14 @@ public class SequencePattern {
 		}
 
 		/** Create branches for disjunctive markers */
-		private Segment union(List<IqlMarker> markers, Node scan, Consumer<? super Node> action) {
+		private Segment union(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
 			MutableBoolean hasDynamicInterval = new MutableBoolean(false);
 			List<FixedClip> fixedIntervals = new ArrayList<>();
 
-			Consumer<? super Node> action2 = action.andThen(node -> {
+			Consumer<? super Node> action2 = nodeAction.andThen(node -> {
 				if(node instanceof FixedClip) {
 					fixedIntervals.add((FixedClip) node);
 				} else {
@@ -1180,7 +1200,7 @@ public class SequencePattern {
 			});
 
 			final Segment seg = branch(new IqlListProxy(markers), markers.size(),
-					i -> marker(markers.get(i), null, action2).toFrame());
+					i -> marker(markers.get(i), null, action2, nestedMarkerAction).toFrame());
 			seg.setFlag(Flag.COMPLEX_MARKER);
 
 			//TODO use the info from hasDynamicInterval and fixedIntervals to decide on whether we need gates here!
@@ -1214,9 +1234,7 @@ public class SequencePattern {
 
 		/** Push intervals for given marker on the stack and return index of first interval */
 		private int interval(RangeMarker marker) {
-			markers.add(marker);
 			final int intervalIndex = intervals.size();
-			markerPos.add(intervalIndex);
 			final int count = marker.intervalCount();
 			for (int i = 0; i < count; i++) {
 				intervals.add(Interval.blank());
@@ -1231,7 +1249,12 @@ public class SequencePattern {
 		private Begin begin() { return store(new Begin(id())); }
 
 		/** Make a utility node that either saves or restores a border point  */
-		private Border border(boolean save, int borderId) { return store(new Border(id(), save, borderId)); }
+		private Border borderBegin(int borderId, int[] nestedMarkerIndices) {
+			return store(new Border(id(), borderId, nestedMarkerIndices));
+		}
+
+		/** Make a utility node that either saves or restores a border point  */
+		private Border borderEnd(int borderId) { return store(new Border(id(), borderId)); }
 
 		private Filter filter(boolean reset, int gateId) { return store(new Filter(id(), reset, gateId)); }
 
@@ -1545,9 +1568,9 @@ public class SequencePattern {
 			sm.anchorCount = anchorCount;
 			sm.skipControlCount = skipControlCount;
 			sm.permutations = permutators.toIntArray();
-			sm.markerPos = markerPos.toIntArray();
 			sm.intervals = intervals.toArray(new Interval[0]);
-			sm.markers = markers.toArray(new RangeMarker[0]);
+			sm.globalMarkers = globalMarkers.toArray(new RangeMarker[0]);
+			sm.nestedMarkers = nestedMarkers.toArray(new RangeMarker[0]);
 			sm.matchers = matchers.toArray(new Supplier[0]);
 
 			return sm;
@@ -1574,7 +1597,7 @@ public class SequencePattern {
 		/** Index of the node that this frame represents or {@code -1} for the virtual root node */
 		int index = -1;
 		/** Sorted index values */
-		int[] indices = new int[INITIAL_SIZE];
+		int[] indices;
 		/** Total number of index values available */
 		int length;
 		/** Length of path to root */
@@ -1607,6 +1630,10 @@ public class SequencePattern {
 
 		/** Flag to signal that frame data is up to date */
 		boolean valid; //TODO actually use this for lazy tree construction
+
+		TreeFrame(int initialSize) {
+			indices = new int[initialSize];
+		}
 
 		/** Ensure that {@code newSize} index values fit into the indices buffer */
 		void resize(int newSize) {
@@ -1681,21 +1708,34 @@ public class SequencePattern {
 			int from = window.from;
 			int to = window.to;
 
-			// binary search return -insertion_point - 1
+			// Filter fully outside window
+			if(filter.to<indices[from] || filter.from>indices[to]) {
+				window.reset();
+				return false;
+			}
+
+			// binary search returns -insertion_point - 1
+
+			to = Arrays.binarySearch(indices, from, to+1, filter.to);
+			if(to < 0) {
+				to = -to - 1; // we need the last element smaller than filter.to value
+			}
 
 			from = Arrays.binarySearch(indices, from, to+1, filter.from);
 			if(from < 0) {
 				from = -from - 1;
-			}
-
-			if(from <= to) {
-				to = Arrays.binarySearch(indices, from, to+1, filter.to);
-				if(to < 0) {
-					to = -to - 1; // we need the last element smaller than filter.to value
+				// we need the first element greater than filter.from value
+				if(indices[from] < filter.from) {
+					from++;
 				}
 			}
 
-			window.reset(from, to);
+			if(from==to && !filter.contains(indices[from])) {
+				window.reset();
+			} else {
+				window.reset(from, to);
+			}
+
 			return !window.isEmpty();
 		}
 
@@ -1714,7 +1754,8 @@ public class SequencePattern {
 
 	static final class RootFrame extends TreeFrame {
 
-		RootFrame() {
+		RootFrame(int initialSize) {
+			super(initialSize);
 			ArrayUtils.fillAscending(indices);
 
 			window.reset(0, 0);
@@ -1804,14 +1845,14 @@ public class SequencePattern {
 		final Cache[] caches;
 		/** Raw position intervals and referential intervals used by nodes */
 		final Interval[] intervals;
-		/** All the raw markers that produce restrictions on node positions */
-		final RangeMarker[] markers;
+		/** All the raw markers that produce global restrictions on node positions */
+		final RangeMarker[] globalMarkers;
+		/** All the raw markers that produce nested restrictions on node positions */
+		final RangeMarker[] nestedMarkers;
 		/** All the gate caches for keeping track of duplicate matcher positions */
 		final Gate[] gates;
 		/** In-place permutation generators and contexts to be used for unordered groups */
 		final PermutationContext[] permutations;
-		/** Positions into 'intervals' to signal what intervals to update for what marker */
-		final int[] markerPos;
 		/** Keeps track of the last hit index for every raw node */
 		final int[] hits;
 		/** The available int[] buffers used by various node implementations */
@@ -1831,7 +1872,7 @@ public class SequencePattern {
 		int entry = 0;
 
 		/** The frame representing the overall list of items in the container */
-		final RootFrame rootFrame = new RootFrame();
+		final RootFrame rootFrame;
 
 		/** Tentatively marked tree node spots. Stores the positional index for node. */
 		final Anchor[] anchors;
@@ -1898,8 +1939,9 @@ public class SequencePattern {
 			m_pos = new int[initialSize];
 			locked = new boolean[initialSize];
 
-			markers = setup.getMarkers();
-			markerPos = setup.getMarkerPos();
+			globalMarkers = setup.getGlobalMarkers();
+			nestedMarkers = setup.getNestedMarkers();
+
 			nodes = setup.getRawNodes();
 			hits = setup.getHits();
 			borders = setup.getBorders();
@@ -1920,11 +1962,12 @@ public class SequencePattern {
 			anchors = setup.makeAnchors();
 			permutations = setup.makePermutations();
 
+			rootFrame = new RootFrame(initialSize);
 			frame = rootFrame;
 
 			Arrays.fill(roots, UNSET_INT);
 			for (int i = 0; i < tree.length; i++) {
-				tree[i] = new TreeFrame();
+				tree[i] = new TreeFrame(initialSize);
 			}
 		}
 
@@ -2069,7 +2112,7 @@ public class SequencePattern {
 			rootFrame.reset(size);
 
 			// Update dynamic marker intervals
-			for (int i = 0; i < markers.length; i++) {
+			for (int i = 0; i < globalMarkers.length; i++) {
 				/* The 'adjust' method allows for early exit in case no valid
 				 * intervals have been produced. But we can't make use of that
 				 * here, as markers can be used in complex disjunctive query
@@ -2077,7 +2120,7 @@ public class SequencePattern {
 				 * can be used as quick-check for an early abort.
 				 */
 				//TODO maybe add flag array to mark intervals that can be used as early exit check?
-				markers[i].adjust(intervals, markerPos[i], size);
+				globalMarkers[i].adjust(intervals, size);
 			}
 
 			// Let the state machine do its work
@@ -2117,7 +2160,7 @@ public class SequencePattern {
 			Arrays.fill(roots, UNSET_INT);
 			rootFrame.resize(newSize);
 			for (int i = oldSize; i < elements.length; i++) {
-				tree[i] = new TreeFrame();
+				tree[i].resize(newSize);
 			}
 		}
 	}
@@ -3361,6 +3404,7 @@ public class SequencePattern {
 			final Interval interval = interval(state);
 			// Update search interval and bail early if we fail
 			if((clipIndex && !frame.retainIndices(interval))
+					//TODO split index-based (global) markers and positional (local) markers, refresh the latter inside a Border node that starts a marker graph
 					|| (!clipIndex && !frame.retainPos(interval))) {
 				return false;
 			}
@@ -3433,6 +3477,7 @@ public class SequencePattern {
 					.add("from", region.from)
 					.add("to", region.to)
 					.add("skip", skip)
+					.add("clipIndex", clipIndex)
 					.build();
 		}
 	}
@@ -3470,6 +3515,7 @@ public class SequencePattern {
 			return ToStringBuilder.create(this)
 					.add("intervalIndex", intervalIndex)
 					.add("skip", skip)
+					.add("clipIndex", clipIndex)
 					.build();
 		}
 	}
@@ -3478,10 +3524,22 @@ public class SequencePattern {
 	static final class Border extends Node {
 		final boolean save;
 		final int borderId;
+		final int[] nestedMarkers;
 
-		Border(int id, boolean save, int borderId) {
+		/** Create a border-start node that saves the window and potentially refreshes nested markers */
+		Border(int id, int borderId, int[] nestedMarkers) {
 			super(id);
-			this.save = save;
+			this.save = true;
+			// Ignore empty array
+			this.nestedMarkers = nestedMarkers.length==0 ? null : nestedMarkers;
+			this.borderId = borderId;
+		}
+
+		/** Create a border-end node that restores a previously saved window state */
+		Border(int id, int borderId) {
+			super(id);
+			this.save = false;
+			this.nestedMarkers = null;
 			this.borderId = borderId;
 		}
 
@@ -3497,6 +3555,14 @@ public class SequencePattern {
 
 		@Override
 		boolean match(State state, int pos) {
+			// Refresh nested markers based on current frame
+			if(nestedMarkers!=null) {
+				final int size = state.frame.length;
+				for(int markerIndex : nestedMarkers) {
+					state.nestedMarkers[markerIndex].adjust(state.intervals, size);
+				}
+			}
+
 			if(save) {
 				state.borders[borderId] = state.frame.to();
 			} else {
