@@ -35,8 +35,8 @@ import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker.Type;
+import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.test.util.convert.NumberConverter;
 
 /**
@@ -111,7 +111,7 @@ class HorizontalMarkerTest {
 		RangeMarker marker = HorizontalMarker.of("IsFirst");
 		Interval interval = new Interval();
 
-		assertThat(marker.adjust(array(interval), 0, size)).isTrue();
+		assertThat(marker.adjust(array(interval), size)).isTrue();
 		assertThat(interval.from).isEqualTo(0);
 		assertThat(interval.to).isEqualTo(0);
 	}
@@ -122,7 +122,7 @@ class HorizontalMarkerTest {
 		RangeMarker marker = HorizontalMarker.of("IsLast");
 		Interval interval = new Interval();
 
-		assertThat(marker.adjust(array(interval), 0, size)).isTrue();
+		assertThat(marker.adjust(array(interval), size)).isTrue();
 		int expected = size-1;
 		assertThat(interval.from).isEqualTo(expected);
 		assertThat(interval.to).isEqualTo(expected);
@@ -189,7 +189,7 @@ class HorizontalMarkerTest {
 			int size, boolean empty, int begin, int end) {
 		RangeMarker marker = HorizontalMarker.of(name, arg);
 		Interval interval = new Interval();
-		assertThat(marker.adjust(array(interval), 0, size)).isNotEqualTo(empty);
+		assertThat(marker.adjust(array(interval), size)).isNotEqualTo(empty);
 		assertThat(interval.from).isEqualTo(begin);
 		assertThat(interval.to).isEqualTo(end);
 	}
@@ -212,7 +212,7 @@ class HorizontalMarkerTest {
 		RangeMarker marker = HorizontalMarker.of(name, arg);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
-		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
+		assertThat(marker.adjust(array(interval1, interval2), size)).isNotEqualTo(empty);
 		assertThat(interval1.from).isEqualTo(begin1);
 		assertThat(interval1.to).isEqualTo(end1);
 		assertThat(interval2.from).isEqualTo(begin2);
@@ -259,7 +259,7 @@ class HorizontalMarkerTest {
 		RangeMarker marker = HorizontalMarker.of(name, arg1, arg2);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
-		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
+		assertThat(marker.adjust(array(interval1, interval2), size)).isNotEqualTo(empty);
 		assertThat(interval1.from).isEqualTo(begin);
 		assertThat(interval1.to).isEqualTo(end);
 	}
@@ -277,7 +277,7 @@ class HorizontalMarkerTest {
 		RangeMarker marker = HorizontalMarker.of(name, arg1, arg2);
 		Interval interval1 = new Interval();
 		Interval interval2 = new Interval();
-		assertThat(marker.adjust(array(interval1, interval2), 0, size)).isNotEqualTo(empty);
+		assertThat(marker.adjust(array(interval1, interval2), size)).isNotEqualTo(empty);
 		assertThat(interval1.from).isEqualTo(begin1);
 		assertThat(interval1.to).isEqualTo(end1);
 		assertThat(interval2.from).isEqualTo(begin2);

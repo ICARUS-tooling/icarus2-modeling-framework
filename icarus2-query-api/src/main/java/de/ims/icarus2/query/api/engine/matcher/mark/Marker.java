@@ -68,6 +68,9 @@ public interface Marker {
 		/** The number of intervals this marker manages */
 		int intervalCount();
 
+		/** Assigns the marker an index into a shared array of intervals to oeprate on. */
+		void setIndex(int index);
+
 		/**
 		 * Adjusts a selection of intervals managed by this marker and
 		 * returns {@code true} iff at least a single legal index has
@@ -86,6 +89,6 @@ public interface Marker {
 		 * @param size the total number of elements available in the target sequence,
 		 * guaranteed to be greater than zero.
 		 */
-		boolean adjust(Interval[] intervals, int index, int size);
+		boolean adjust(Interval[] intervals, int size);
 	}
 }

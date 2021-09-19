@@ -77,11 +77,11 @@ public abstract class HorizontalMarker {
 	public static enum Type {
 		FIRST("IsFirst", "IsFirstChild", 0) {
 			@Override
-			public RangeMarker instantiate(Position[] positions) { return IsFirst.INSTANCE; }
+			public RangeMarker instantiate(Position[] positions) { return new IsFirst(); }
 		},
 		LAST("IsLast", "IsLastChild", 0) {
 			@Override
-			public RangeMarker instantiate(Position[] positions) { return IsLast.INSTANCE; }
+			public RangeMarker instantiate(Position[] positions) { return new IsLast(); }
 		},
 
 		AT("IsAt", "IsChildAt", 1) {
@@ -181,6 +181,7 @@ public abstract class HorizontalMarker {
 		private final Type name;
 		private final boolean dynamic;
 		private final int intervalCount;
+		protected int index = 0;
 
 		private MarkerBase(Type name, boolean dynamic, int intervalCount) {
 			checkArgument(intervalCount>=1);
@@ -188,6 +189,9 @@ public abstract class HorizontalMarker {
 			this.dynamic = dynamic;
 			this.intervalCount = intervalCount;
 		}
+
+		@Override
+		public void setIndex(int index) { this.index = index; }
 
 		@VisibleForTesting
 		Type getRawName() { return name; }
@@ -207,12 +211,10 @@ public abstract class HorizontalMarker {
 	}
 
 	private static final class IsFirst extends MarkerBase {
-		static final IsFirst INSTANCE = new IsFirst();
-
 		IsFirst() { super(Type.FIRST, false, 1); }
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv = intervals[index];
 			iv.from = iv.to = 0;
 			return true;
@@ -220,12 +222,10 @@ public abstract class HorizontalMarker {
 	}
 
 	private static final class IsLast extends MarkerBase {
-		static final IsLast INSTANCE = new IsLast();
-
 		IsLast() { super(Type.LAST, true, 1); }
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv = intervals[index];
 			iv.from = iv.to = size-1;
 			return true;
@@ -242,7 +242,7 @@ public abstract class HorizontalMarker {
 		}
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv = intervals[index];
 			iv.from = iv.to = pos.asPosition(size);
 			return !iv.isEmpty() && size>iv.from;
@@ -259,7 +259,7 @@ public abstract class HorizontalMarker {
 		}
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv1 = intervals[index];
 			Interval iv2 = intervals[index+1];
 			iv1.from = 0;
@@ -280,7 +280,7 @@ public abstract class HorizontalMarker {
 		}
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv = intervals[index];
 			iv.from = pos.asLowerBound(size, false);
 			iv.to = size-1;
@@ -297,7 +297,7 @@ public abstract class HorizontalMarker {
 		}
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv = intervals[index];
 			iv.from = 0;
 			iv.to = pos.asUpperBound(size, false);
@@ -315,7 +315,7 @@ public abstract class HorizontalMarker {
 		}
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv = intervals[index];
 			iv.from = start.asLowerBound(size, true);
 			iv.to = end.asUpperBound(size, true);
@@ -333,7 +333,7 @@ public abstract class HorizontalMarker {
 		}
 
 		@Override
-		public boolean adjust(Interval[] intervals, int index, int size) {
+		public boolean adjust(Interval[] intervals, int size) {
 			Interval iv1 = intervals[index];
 			Interval iv2 = intervals[index+1];
 			iv1.from = 0;
