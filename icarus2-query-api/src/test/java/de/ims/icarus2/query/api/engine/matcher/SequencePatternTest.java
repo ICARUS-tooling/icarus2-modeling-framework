@@ -10677,9 +10677,11 @@ class SequencePatternTest {
 			@CsvSource({
 				"'[$X [IsAt(1),$Y]]', XY, *0, 0, false, -",
 				"'[$X [IsAt(1),$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
+
+				"'[$X [IsNotAt(1),$Y]]', YX, 1*, 0, false, -",
 				"'[$X [IsNotAt(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
 				"'[$X [IsNotAt(2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{3}} }",
-				//TODO
+				//TODO add at least 1 fail/success test for each sequence marker
 			})
 			@DisplayName("child node with sequence marker")
 			void testSequenceMarkerOnChild(String query, String target, String tree,
@@ -10696,34 +10698,66 @@ class SequencePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
 				"'[$X [IsChildAt(2),$Y]]', XY, *0, 0, false, -",
+				"'[$X [IsChildAt(1),$Y]]', XXY, *00, 0, false, -",
 				"'[$X [IsChildAt(1),$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
 				"'[$X [IsChildAt(1),$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
 
+				"'[$X [IsFirstChild,$Y]]', XXY, *00, 0, false, -",
 				"'[$X [IsFirstChild,$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
 				"'[$X [IsFirstChild,$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
 				"'[$X [IsFirstChild,$Y]]', YXY, 1*1, 1, false, { {{1}} {{0}} }",
 				"'[$X [IsFirstChild,$Y]]', XYY, *00, 1, false, { {{0}} {{1}} }",
+				"'[$X [IsFirstChild,$Y]]', XXY, *01, 1, false, { {{1}} {{2}} }",
 
+				"'[$X [IsLastChild,$Y]]', XYX, *00, 0, false, -",
 				"'[$X [IsLastChild,$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
 				"'[$X [IsLastChild,$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
 				"'[$X [IsLastChild,$Y]]', YXY, 1*1, 1, false, { {{1}} {{2}} }",
 				"'[$X [IsLastChild,$Y]]', XYY, *00, 1, false, { {{0}} {{2}} }",
 
+				"'[$X [IsNotChildAt(1),$Y]]', XYX, *00, 0, false, -",
 				"'[$X [IsNotChildAt(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
 				"'[$X [IsNotChildAt(2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{3}} }",
 				"'[$X [IsNotChildAt(3),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
 				"'[$X [IsNotChildAt(4),$Y]]', YYXY, 22*2, 3, false, { {{2}{2}{2}} {{0}{1}{3}} }",
 
+				"'[$X [IsChildAfter(1),$Y]]', XYX, *00, 0, false, -",
+				"'[$X [IsChildAfter(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsChildAfter(2),$Y]]', YYXY, 22*2, 1, false, { {{2}} {{3}} }",
+
+				"'[$X [IsChildBefore(2),$Y]]', XXY, *00, 0, false, -",
+				"'[$X [IsChildBefore(2),$Y]]', YYXY, 22*2, 1, false, { {{2}} {{0}} }",
+				"'[$X [IsChildBefore(3),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
+
+				"'[$X [IsChildInside(2,3),$Y]]', XYX, *00, 0, false, -",
 				"'[$X [IsChildInside(2,4),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
 				"'[$X [IsChildInside(1,2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
 				"'[$X [IsChildInside(1,2),$Y]]', YYXY, 12*2, 2, false, { {{2}{2}} {{1}{3}} }",
 
+				"'[$X [IsChildOutside(2,3),$Y]]', XXY, *00, 0, false, -",
 				"'[$X [IsChildOutside(2,4),$Y]]', YYXY, 22*2, 1, false, { {{2}} {{0}} }",
 				"'[$X [IsChildOutside(2,3),$Y]]', YYXYY, 22*22, 2, false, { {{2}{2}} {{0}{4}} }",
-				//TODO
 			})
 			@DisplayName("child node with tree hierarchy marker")
 			void testTreeHierarchyMarkerOnChild(String query, String target, String tree,
+					int matches, boolean allowDuplicates,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.allowDuplicates(allowDuplicates)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', XY, *0, 0, false, -",
+				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', XYY, *00, 0, false, -",
+				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', YYX, 22*, 1, false, { {{2}} {{1}} }",
+			})
+			@DisplayName("child node with sequence and tree hierarchy marker")
+			void testMixedMarkersOnChild(String query, String target, String tree,
 					int matches, boolean allowDuplicates,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {

@@ -724,28 +724,6 @@ public class SequencePattern {
 
 			final Frame frame = new Frame();
 
-			/*
-			 * We don't handle markers immediately at the node position they
-			 * appear, but on the first enclosing  explorative node, which
-			 * currently are only the Exhaust, Find and PermSlot nodes.
-			 * This way the state machine can properly and early reduce the
-			 * search space for exploration. This also allows us to treat
-			 * markers on multiple (nested) nodes in an ADJACENT sequence as erroneous.
-			 */
-			if(marker!=null) {
-				int border = border();
-				IntList nestedMarkerIndices = new IntArrayList();
-				Segment filter = marker(marker, scan, IcarusUtils.DO_NOTHING(), nestedMarkerIndices::add);
-				// Saves the previousIndex window
-				frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
-				// Creates the marker window
-				frame.prefix().append(filter);
-				// Restores previousIndex window
-				frame.suffix().append(borderEnd(border));
-				// Consume scan
-				scan = null;
-			}
-
 			Segment atom;
 
 			// Process actual node content
@@ -774,6 +752,33 @@ public class SequencePattern {
 
 			frame.push(atom);
 
+			// Ignore outer scan if our atom is actually capable of scanning
+			if(scan!=null && unwrap(frame.start()).isScanCapable()) {
+				scan = null;
+			}
+
+			/*
+			 * We don't handle markers immediately at the node position they
+			 * appear, but on the first enclosing  explorative node, which
+			 * currently are only the Exhaust, Find and PermSlot nodes.
+			 * This way the state machine can properly and early reduce the
+			 * search space for exploration. This also allows us to treat
+			 * markers on multiple (nested) nodes in an ADJACENT sequence as erroneous.
+			 */
+			if(marker!=null) {
+				int border = border();
+				IntList nestedMarkerIndices = new IntArrayList();
+				Segment filter = marker(marker, scan, IcarusUtils.DO_NOTHING(), nestedMarkerIndices::add);
+				// Saves the previousIndex window
+				frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
+				// Creates the marker window
+				frame.prefix().append(filter);
+				// Restores previousIndex window
+				frame.suffix().append(borderEnd(border));
+				// Consume scan
+				scan = null;
+			}
+
 			if(anchorId!=UNSET_INT) {
 				IqlTreeNode treeNode = (IqlTreeNode) source;
 				IqlElement children = treeNode.getChildren().get();
@@ -796,8 +801,8 @@ public class SequencePattern {
 				frame.append(tree);
 			}
 
-			// Only apply external scan if our content cannot scan for itself
-			if(scan!=null && !unwrap(frame.start()).isScanCapable()) {
+			// If external scan survived atom and marker overrides, apply it finally
+			if(scan!=null) {
 				frame.push(scan);
 			}
 
@@ -1078,7 +1083,7 @@ public class SequencePattern {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					seg = intersection(items, nodeAction, nestedMarkerAction);
+					seg = intersection(items, scan, nodeAction, nestedMarkerAction);
 				} else {
 					seg = union(items, scan, nodeAction, nestedMarkerAction);
 				}
@@ -1171,7 +1176,7 @@ public class SequencePattern {
 		};
 
 		/** Combine sequence of intersecting markers */
-		private Segment intersection(List<IqlMarker> markers, Consumer<? super Node> nodeAction,
+		private Segment intersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
@@ -1180,6 +1185,9 @@ public class SequencePattern {
 					// For optimization reasons we 'should' sort markers, but that would violate the specification
 					//.sorted(SEGMENT_COMPLEXITY_ORDER)
 					.forEach(seg::append);
+			if(scan!=null) {
+				seg.append(scan);
+			}
 			return seg;
 		}
 
