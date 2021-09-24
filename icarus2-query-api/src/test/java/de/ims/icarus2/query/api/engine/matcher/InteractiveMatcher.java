@@ -36,6 +36,7 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -89,6 +90,7 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceMatcher;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
@@ -117,6 +119,7 @@ import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlScope;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlStream;
+import de.ims.icarus2.test.util.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -921,12 +924,14 @@ public class InteractiveMatcher {
 	}
 
 	Object[] linkResult(Result result) {
-		Object[] edges = new Object[result.nodes.length];
+		int size = result.mapping.size();
+		Object[] edges = new Object[size];
 		Object parent = graph.getDefaultParent();
-		for (int i = 0; i < result.nodes.length; i++) {
-			NodeInfo info = node2info.get(result.nodes[i]);
+		for (int i = 0; i < size; i++) {
+			Pair<Integer, Integer> m = result.mapping.get(i);
+			NodeInfo info = node2info.get(m.first.intValue());
 			mxCell source = sm2graph.get(info);
-			mxCell target = targets.get(result.spots[i]);
+			mxCell target = targets.get(m.second.intValue());
 			String id = source.getId()+"-"+target.getId();
 			Object value = String.valueOf(result.id+1);
 			edges[i] = graph.insertEdge(parent, id, value, source, target, Styles.LINK_RESULT);
@@ -942,10 +947,10 @@ public class InteractiveMatcher {
 			NodeInfo info = id2info.get(step.nodeId);
 			mxCell source = sm2graph.get(info);
 			mxCell target;
-			if(info.getType()==Type.FINISH || step.pos>=targets.size()) {
+			if(info.getType()==Type.FINISH || step.index>=targets.size()) {
 				target = dummyTarget;
 			} else {
-				target = targets.get(step.pos);
+				target = targets.get(step.index);
 			}
 			String id = source.getId()+"-"+target.getId();
 			String value = String.valueOf(i+1);
@@ -982,10 +987,10 @@ public class InteractiveMatcher {
 			NodeInfo info = id2info.get(step.nodeId);
 			mxCell source = sm2graph.get(info);
 			mxCell target;
-			if(info.getType()==Type.FINISH || step.pos>=targets.size()) {
+			if(info.getType()==Type.FINISH || step.index>=targets.size()) {
 				target = dummyTarget;
 			} else {
-				target = targets.get(step.pos);
+				target = targets.get(step.index);
 			}
 			String id = source.getId()+"-"+target.getId();
 			String value = String.valueOf(i+1);
@@ -1012,12 +1017,12 @@ public class InteractiveMatcher {
 			} else if(obj instanceof Link) {
 				Link other = (Link) obj;
 				return step.nodeId==other.step.nodeId
-						&& step.pos==other.step.pos;
+						&& step.index==other.step.index;
 			}
 			return false;
 		}
 		@Override
-		public int hashCode() { return (step.nodeId+1) * (step.pos+1); }
+		public int hashCode() { return (step.nodeId+1) * (step.index+1); }
 	}
 
 	void showFrame(String query, String target) {
@@ -1107,15 +1112,18 @@ public class InteractiveMatcher {
 	private static class Step {
 		final boolean enter;
 		final int nodeId;
+		@Deprecated
 		final int pos;
 		final boolean result;
 		final int last;
 		final int prev;
+		final int index;
 
-		Step(boolean enter, int nodeId, int pos, int last, int prev, boolean result) {
+		Step(boolean enter, int nodeId, int pos, int index, int last, int prev, boolean result) {
 			this.enter = enter;
 			this.nodeId = nodeId;
 			this.pos = pos;
+			this.index = index;
 			this.last = last;
 			this.prev = prev;
 			this.result = result;
@@ -1124,30 +1132,36 @@ public class InteractiveMatcher {
 
 	private static class Result {
 		final long id;
-		final int[] nodes;
-		final int[] spots;
+		final List<Pair<Integer, Integer>> mapping;
 		Result(State state) {
 			id = state.reported;
 			int count = state.entry;
-			nodes = new int[count];
-			spots = new int[count];
+			mapping = new ArrayList<>(count);
 			for (int i = 0; i < count; i++) {
-				nodes[i] = state.m_node[i];
-				spots[i] = state.m_pos[i];
+				mapping.add(Pair.pair(state.m_node[i], state.m_pos[i]));
 			}
+
+			Collections.sort(mapping, (m1, m2) -> {
+				int r = m1.first.compareTo(m2.first);
+				if(r==0) {
+					r = m1.second.compareTo(m2.second);
+				}
+				return r;
+			});
 
 			System.out.println(getClass() + " " + toString());
 		}
 
 		void appendTo(StringBuilder buffer) {
-			int count = nodes.length;
+			int count = mapping.size();
 			buffer.append(id+1).append(": [").append(count).append("] ");
 
 			for (int i = 0; i < count; i++) {
 				if(i>0) {
 					buffer.append(", ");
 				}
-				buffer.append(nodes[i]).append("->").append(spots[i]);
+				Pair<Integer, Integer> m = mapping.get(i);
+				buffer.append(m.first).append("->").append(m.second);
 			}
 		}
 
@@ -1167,9 +1181,14 @@ public class InteractiveMatcher {
 
 		public MonitorDelegate(Consumer<Step> sink) { this.sink = requireNonNull(sink); }
 
+		private static int index(State state, int pos) {
+			TreeFrame frame = state.frame;
+			return frame.indices[pos];
+		}
+
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			sink.accept(new Step(true, node.id, pos, state.last, state.frame.previousIndex, false));
+			sink.accept(new Step(true, node.id, pos, index(state, pos), state.last, state.frame.previousIndex, false));
 		}
 
 		@Override
@@ -1177,7 +1196,7 @@ public class InteractiveMatcher {
 //			if(!result) {
 //				System.out.println("xx");
 //			}
-			sink.accept(new Step(false, node.id, pos, state.last, state.frame.previousIndex, result));
+			sink.accept(new Step(false, node.id, pos, index(state, pos), state.last, state.frame.previousIndex, result));
 		}
 
 	}
@@ -1187,6 +1206,7 @@ public class InteractiveMatcher {
 
 		private final JTextField tfQuery;
 		private final JTextField tfTarget;
+		private final JTextField tfTree;
 		private final JCheckBox cbExpand, cbPromote;
 		private final JButton bParse, bMakeSM, bMatch;
 		private final JList<Step> lSteps;
@@ -1197,6 +1217,7 @@ public class InteractiveMatcher {
 		private transient IqlPayload payload;
 		private transient SequencePattern pattern;
 		private transient Container target;
+		private transient int[] tree;
 		private final Vector<Step> steps = new Vector<>();
 
 		/** Temporary edges for state machine <-> target */
@@ -1205,6 +1226,7 @@ public class InteractiveMatcher {
 		Control() {
 			tfQuery = makeTextField(100);
 			tfTarget = makeTextField(100);
+			tfTree = makeTextField(100);
 
 			cbExpand = new JCheckBox("Expand", true);
 			cbExpand.setToolTipText("Expand $X into $.toString()==\"X\" inside nodes");
@@ -1249,11 +1271,10 @@ public class InteractiveMatcher {
 			JPanel topInput = FormBuilder.create()
 					.padding(Paddings.DLU4)
 					.columns("pref, 5dlu, pref, 6dlu, pref")
-					.rows("pref, $lg, pref")
-					.addLabel("Query:").rc(1, 1)
-					.add(tfQuery).rc(1, 3)
-					.addLabel("Target:").rc(3, 1)
-					.add(tfTarget).rc(3, 3)
+					.rows("pref, $lg, pref, $lg, pref")
+					.addLabel("Query:").rc(1, 1).add(tfQuery).rc(1, 3)
+					.addLabel("Target:").rc(3, 1).add(tfTarget).rc(3, 3)
+					.addLabel("Tree:").rc(5, 1).add(tfTree).rc(5, 3)
 
 					.add(Forms.horizontal("4dlu", cbExpand, cbPromote)).rc(1, 5)
 					.build();
@@ -1302,6 +1323,14 @@ public class InteractiveMatcher {
 		}
 
 		private void onParse(ActionEvent e) {
+
+			String encodedTree = tfTree.getText();
+
+			if(encodedTree.isEmpty()) {
+				tree = null;
+			} else {
+				tree = SequencePatternTest.parseTree(encodedTree, encodedTree.contains(" "));
+			}
 
 			String input = tfTarget.getText();
 			if(input.isEmpty()) {
@@ -1381,6 +1410,9 @@ public class InteractiveMatcher {
 				@Override
 				protected Boolean doInBackground() throws Exception {
 					SequenceMatcher matcher = pattern.matcher();
+					if(tree!=null) {
+						SequencePatternTest.applyTree(matcher, tree);
+					}
 					matcher.monitor(monitor);
 					matcher.resultHandler(state -> results.add(new Result(state)));
 					return _boolean(matcher.matches(0, target));
@@ -1467,8 +1499,8 @@ public class InteractiveMatcher {
 				Step step = (Step) value;
 				icon.setup(step.enter, step.result);
 				NodeInfo info = id2info.get(step.nodeId);
-				String text = String.format("%2d: %s[%d] at %d", _int(index+1),
-						info.getClassLabel(), _int(info.getId()), _int(step.pos));
+				String text = String.format("%2d: %s[%d] at %d -> %d", _int(index+1),
+						info.getClassLabel(), _int(info.getId()), _int(step.pos), _int(step.index));
 				if(step.enter) {
 					text += String.format(" (last=%d)",  _int(step.last));
 					text += String.format(" (prev=%d)",  _int(step.prev));

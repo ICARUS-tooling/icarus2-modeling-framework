@@ -29,6 +29,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_3;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CLOSURE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.DISCONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
@@ -83,6 +84,7 @@ import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -150,6 +152,7 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Tree;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeClosure;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
@@ -259,6 +262,8 @@ class SequencePatternTest {
 	static final Consumer<? super SequencePattern.Builder> CACHE_ALL = b -> b.cacheAll(true);
 	static final Consumer<? super SequencePattern.Builder> LIMIT_SINGLE = b -> b.limit(1);
 
+	static final Consumer<? super ResultConfig> UNORDERED = r -> r.ignoreOrder(true);
+
 	private interface CharPredicate {
 		boolean test(char c);
 	}
@@ -328,6 +333,9 @@ class SequencePatternTest {
 		static final int ANCHOR_1 = 1;
 		static final int ANCHOR_2 = 2;
 		static final int ANCHOR_3 = 3;
+		static final int CLOSURE_0 = 0;
+		static final int CLOSURE_1 = 1;
+		static final int CLOSURE_2 = 2;
 
 		static final int NO_FIND = UNSET_INT;
 
@@ -1285,6 +1293,13 @@ class SequencePatternTest {
 			return this;
 		}
 
+		MatcherTestConfig options(boolean condition, Option...additionalOptions) {
+			if(condition) {
+				options(additionalOptions);
+			}
+			return this;
+		}
+
 		MatcherTestConfig tree(String encodedHeads) {
 			checkState("Tree already set", this.tree==null);
 			requireNonNull(encodedHeads);
@@ -1300,7 +1315,7 @@ class SequencePatternTest {
 
 		private static boolean isSet(Boolean b) { return b!=null && b.booleanValue(); }
 
-		private void makeBuilderFromQueryElement() {
+		private void makeBuilderFromQueryElement(int size) {
 			checkState("Root element not set", root!=null);
 
 			Scope scope = Utils.scope();
@@ -1317,9 +1332,10 @@ class SequencePatternTest {
 					.lane(Utils.lane())
 					.build();
 			builder.context(context);
+			builder.initialBufferSize(size*2);
 		}
 
-		private void makeBuilderFromQueryString() {
+		private void makeBuilderFromQueryString(int size) {
 			checkState("Query not set", query!=null);
 
 			String payloadString = query;
@@ -1354,6 +1370,7 @@ class SequencePatternTest {
 			if(isSet(promote)) {
 				builder.nodeTransform(PROMOTE_NODE);
 			}
+			builder.initialBufferSize(size*2);
 		}
 
 		private Container makeContainer() {
@@ -1364,13 +1381,17 @@ class SequencePatternTest {
 
 		void assertResult() {
 
+			checkState("Target not set", target!=null);
+
+			Container container = makeContainer();
+
 			if(pattern==null) {
 
 				if(builder==null) {
 					if(root!=null) {
-						makeBuilderFromQueryElement();
+						makeBuilderFromQueryElement(strictToInt(container.getItemCount()));
 					} else if(query!=null) {
-						makeBuilderFromQueryString();
+						makeBuilderFromQueryString(strictToInt(container.getItemCount()));
 					}
 				}
 
@@ -1388,10 +1409,6 @@ class SequencePatternTest {
 			if(queryConfig!=null) {
 				queryConfig.assertQuery((IqlElement) pattern.getSource());
 			}
-
-			checkState("Target not set", target!=null);
-
-			Container container = makeContainer();
 
 			NonResettingMatcher matcher = pattern.matcherForTesting();
 
@@ -1731,11 +1748,11 @@ class SequencePatternTest {
 
 		private void assertUnordered(State state, StateProxy proxy) {
 			Set<Pair<Integer, Integer>> entries = new LinkedHashSet<>(mapping);
-			for (int i = 0; i < state.entry; i++) {
+			for (int i = 0; i < mapping.size(); i++) {
 				Pair<Integer, Integer> m = Pair.pair(state.m_node[i], state.m_pos[i]);
 				if(!entries.remove(m))
-					throw new AssertionError(String.format("Unexpected mapping %s at index %d [%s]",
-							m, _int(i), proxy));
+					throw new AssertionError(String.format("Unexpected mapping at index %d in result #%d:\ngiven: %s\nexpected: %s]",
+							_int(index), _int(i), proxy, mapping));
 			}
 
 			if(!entries.isEmpty())
@@ -1961,7 +1978,7 @@ class SequencePatternTest {
 			private Cache cache;
 
 			@BeforeEach
-			void setUp() { cache = new Cache(); }
+			void setUp() { cache = new Cache(20); }
 
 			@AfterEach
 			void tearDown() { cache = null; }
@@ -4035,6 +4052,9 @@ class SequencePatternTest {
 					scan.setNext(atom);
 					tail.setNext(finish);
 
+					// Enforce optimization
+					scan.study(new TreeInfo());
+
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.rawNodes = new IqlNode[preds.length];
 					sms.cacheCount = preds.length;
@@ -4156,6 +4176,78 @@ class SequencePatternTest {
 							.map(NODE_2, hitC))
 						.assertResult();
 				}
+			}
+		}
+
+		@Nested
+		class ForTreeClosure {
+
+
+			/** {@code [$X [isAnyGeneration, $Y]]} */
+			private StateMachineSetup transitiveSingleChildSetup() {
+				Node finish = new Finish(id(), NO_LIMIT, false);
+
+				Single child = new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, UNSET_INT);
+				child.setNext(finish);
+
+				TreeClosure closure = new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0);
+				closure.setNext(child);
+
+				Node scan = new Exhaust(id(), NO_CACHE, true);
+
+
+				Single[] atoms = new Single[preds.length];
+				@SuppressWarnings("unchecked")
+				Matcher<Item>[] matchers = new Matcher[preds.length];
+				for (int i = 0; i < preds.length; i++) {
+					boolean hasChild = i<preds.length-1;
+					matchers[i] = matcher(i, preds[i]);
+					IqlTreeNode treeNode = mock(IqlTreeNode.class);
+					atoms[i] = new Single(id(), treeNode, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
+				}
+
+				Node atom = atoms[atoms.length-1];
+				Node tail = atom;
+
+				for (int i = atoms.length-2; i >= 0; i--) {
+					Single node = atoms[i];
+					Node conn = tree(node, atom, () -> id());
+					atom = node;
+					tail = conn;
+				}
+
+				Node scan = new Exhaust(id(), NO_CACHE, true);
+				Node finish = new Finish(id(), NO_LIMIT, false);
+
+				scan.setNext(atom);
+				tail.setNext(finish);
+
+				StateMachineSetup sms = new StateMachineSetup();
+				sms.rawNodes = new IqlNode[2];
+				sms.cacheCount = 3; // 0 = first node, 1 = closure, 2 = second node
+				sms.anchorCount = 1;
+				sms.closureCount = 1;
+				sms.root = scan;
+				sms.matchers = matchers(matcher(NODE_0, EQUALS_X), matcher(NODE_1, EQUALS_Y));
+				return sms;
+			}
+
+			@ParameterizedTest
+			@CsvSource({
+				"AB, 1*",
+				"ABC, *00",
+				"ACB, *01",
+			})
+			@DisplayName("[$A [$B [$C]]] -> no matches")
+			void testDoubleNestingFail(String target, String tree) {
+				rawTest()
+					.setup(transitiveSingleChildSetup())
+					.target(target)
+					.tree(tree)
+					.startPos(0)
+					//TODO define proper success expectations!!
+					.expectFail()
+					.assertResult();
 			}
 		}
 
@@ -9946,11 +10038,6 @@ class SequencePatternTest {
 		 * <li>multiple nodes</li>
 		 * <li>quantifier on grouping</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class NodeInGrouping {
@@ -10171,13 +10258,8 @@ class SequencePatternTest {
 		 * <li>multiple nodes</li>
 		 * <li>arrangement on sequence</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 * <p>
-		 * Note further that we always need at least {@code 2} nodes in a sequence
+		 * Note that we always need at least {@code 2} nodes in a sequence
 		 * to force the creation of a {@link IqlSequence} wrapper!
 		 */
 		@Nested
@@ -10434,11 +10516,6 @@ class SequencePatternTest {
 		 * <li>multiple nodes</li>
 		 * <li>"nested" disjunction</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class NodeInBranch {
@@ -10556,11 +10633,6 @@ class SequencePatternTest {
 		 * <li>markers on node</li>
 		 * <li>tree markers on node</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class NodeInTreeNode {
@@ -10650,121 +10722,113 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[$X <2+>[$Y]]', XY, *0, 0, false, -",
-				"'[$X <2+>[$Y]]', XYY, *00, 1, false, { {{0}} {{1;2}} }",
-				"'[$X <2+>[$Y]]', XYYYY, *0000, 3, false, { {{0}{0}{0}} {{1;2;3;4}{2;3;4}{3;4}} }",
-				"'[$X <2+>[$Y]]', XYY-YY, *00000, 2, false, { {{0}{0}} {{1;2}{4;5}} }",
-				"'[$X <2+^>[$Y]]', XYY-YY, *00000, 3, false, { {{0}{0}{0}} {{1;2;4;5}{2;4;5}{4;5}} }",
-				"'[$X <3+^>[$Y]]', XYY-YY, *00000, 2, false, { {{0}{0}} {{1;2;4;5}{2;4;5}} }",
-				"'[$X <2+>[$Y]]', XYYXYY, *00033, 2, false, { {{0}{3}} {{1;2}{4;5}} }",
-				"'[$X <3+>[$Y]]', XYYXYY, *00033, 0, false, -",
-				"'[$X <2+>[$Y]]', XYYXYY, *33000, 2, false, { {{0}{3}} {{4;5}{1;2}} }",
+				"'[$X <2+>[$Y]]', XY, *0, 0, -",
+				"'[$X <2+>[$Y]]', XYY, *00, 1, { {{0}} {{1;2}} }",
+				"'[$X <2+>[$Y]]', XYYYY, *0000, 3, { {{0}{0}{0}} {{1;2;3;4}{2;3;4}{3;4}} }",
+				"'[$X <2+>[$Y]]', XYY-YY, *00000, 2, { {{0}{0}} {{1;2}{4;5}} }",
+				"'[$X <2+^>[$Y]]', XYY-YY, *00000, 3, { {{0}{0}{0}} {{1;2;4;5}{2;4;5}{4;5}} }",
+				"'[$X <3+^>[$Y]]', XYY-YY, *00000, 2, { {{0}{0}} {{1;2;4;5}{2;4;5}} }",
+				"'[$X <2+>[$Y]]', XYYXYY, *00033, 2, { {{0}{3}} {{1;2}{4;5}} }",
+				"'[$X <3+>[$Y]]', XYYXYY, *00033, 0, -",
+				"'[$X <2+>[$Y]]', XYYXYY, *33000, 2, { {{0}{3}} {{4;5}{1;2}} }",
 				//TODO
 			})
 			@DisplayName("child node with quantification")
-			void testQuantifiedChild(String query, String target, String tree,
-					int matches, boolean allowDuplicates,
+			void testQuantifiedChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QUERY_CONFIG)
 				.tree(tree)
-				.allowDuplicates(allowDuplicates)
 				.assertResult();
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[$X [IsAt(1),$Y]]', XY, *0, 0, false, -",
-				"'[$X [IsAt(1),$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
+				"'[$X [IsAt(1),$Y]]', XY, *0, 0, -",
+				"'[$X [IsAt(1),$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
 
-				"'[$X [IsNotAt(1),$Y]]', YX, 1*, 0, false, -",
-				"'[$X [IsNotAt(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
-				"'[$X [IsNotAt(2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{3}} }",
+				"'[$X [IsNotAt(1),$Y]]', YX, 1*, 0, -",
+				"'[$X [IsNotAt(1),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsNotAt(2),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{0}{3}} }",
 				//TODO add at least 1 fail/success test for each sequence marker
 			})
 			@DisplayName("child node with sequence marker")
-			void testSequenceMarkerOnChild(String query, String target, String tree,
-					int matches, boolean allowDuplicates,
+			void testSequenceMarkerOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QUERY_CONFIG)
 				.tree(tree)
-				.allowDuplicates(allowDuplicates)
 				.assertResult();
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[$X [IsChildAt(2),$Y]]', XY, *0, 0, false, -",
-				"'[$X [IsChildAt(1),$Y]]', XXY, *00, 0, false, -",
-				"'[$X [IsChildAt(1),$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
-				"'[$X [IsChildAt(1),$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
+				"'[$X [IsChildAt(2),$Y]]', XY, *0, 0, -",
+				"'[$X [IsChildAt(1),$Y]]', XXY, *00, 0, -",
+				"'[$X [IsChildAt(1),$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
+				"'[$X [IsChildAt(1),$Y]]', XY, *0, 1, { {{0}} {{1}} }",
 
-				"'[$X [IsFirstChild,$Y]]', XXY, *00, 0, false, -",
-				"'[$X [IsFirstChild,$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
-				"'[$X [IsFirstChild,$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
-				"'[$X [IsFirstChild,$Y]]', YXY, 1*1, 1, false, { {{1}} {{0}} }",
-				"'[$X [IsFirstChild,$Y]]', XYY, *00, 1, false, { {{0}} {{1}} }",
-				"'[$X [IsFirstChild,$Y]]', XXY, *01, 1, false, { {{1}} {{2}} }",
+				"'[$X [IsFirstChild,$Y]]', XXY, *00, 0, -",
+				"'[$X [IsFirstChild,$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
+				"'[$X [IsFirstChild,$Y]]', XY, *0, 1, { {{0}} {{1}} }",
+				"'[$X [IsFirstChild,$Y]]', YXY, 1*1, 1, { {{1}} {{0}} }",
+				"'[$X [IsFirstChild,$Y]]', XYY, *00, 1, { {{0}} {{1}} }",
+				"'[$X [IsFirstChild,$Y]]', XXY, *01, 1, { {{1}} {{2}} }",
 
-				"'[$X [IsLastChild,$Y]]', XYX, *00, 0, false, -",
-				"'[$X [IsLastChild,$Y]]', YX, 1*, 1, false, { {{1}} {{0}} }",
-				"'[$X [IsLastChild,$Y]]', XY, *0, 1, false, { {{0}} {{1}} }",
-				"'[$X [IsLastChild,$Y]]', YXY, 1*1, 1, false, { {{1}} {{2}} }",
-				"'[$X [IsLastChild,$Y]]', XYY, *00, 1, false, { {{0}} {{2}} }",
+				"'[$X [IsLastChild,$Y]]', XYX, *00, 0, -",
+				"'[$X [IsLastChild,$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
+				"'[$X [IsLastChild,$Y]]', XY, *0, 1, { {{0}} {{1}} }",
+				"'[$X [IsLastChild,$Y]]', YXY, 1*1, 1, { {{1}} {{2}} }",
+				"'[$X [IsLastChild,$Y]]', XYY, *00, 1, { {{0}} {{2}} }",
 
-				"'[$X [IsNotChildAt(1),$Y]]', XYX, *00, 0, false, -",
-				"'[$X [IsNotChildAt(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
-				"'[$X [IsNotChildAt(2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{3}} }",
-				"'[$X [IsNotChildAt(3),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
-				"'[$X [IsNotChildAt(4),$Y]]', YYXY, 22*2, 3, false, { {{2}{2}{2}} {{0}{1}{3}} }",
+				"'[$X [IsNotChildAt(1),$Y]]', XYX, *00, 0, -",
+				"'[$X [IsNotChildAt(1),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsNotChildAt(2),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{0}{3}} }",
+				"'[$X [IsNotChildAt(3),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{0}{1}} }",
+				"'[$X [IsNotChildAt(4),$Y]]', YYXY, 22*2, 3, { {{2}{2}{2}} {{0}{1}{3}} }",
 
-				"'[$X [IsChildAfter(1),$Y]]', XYX, *00, 0, false, -",
-				"'[$X [IsChildAfter(1),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
-				"'[$X [IsChildAfter(2),$Y]]', YYXY, 22*2, 1, false, { {{2}} {{3}} }",
+				"'[$X [IsChildAfter(1),$Y]]', XYX, *00, 0, -",
+				"'[$X [IsChildAfter(1),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsChildAfter(2),$Y]]', YYXY, 22*2, 1, { {{2}} {{3}} }",
 
-				"'[$X [IsChildBefore(2),$Y]]', XXY, *00, 0, false, -",
-				"'[$X [IsChildBefore(2),$Y]]', YYXY, 22*2, 1, false, { {{2}} {{0}} }",
-				"'[$X [IsChildBefore(3),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
+				"'[$X [IsChildBefore(2),$Y]]', XXY, *00, 0, -",
+				"'[$X [IsChildBefore(2),$Y]]', YYXY, 22*2, 1, { {{2}} {{0}} }",
+				"'[$X [IsChildBefore(3),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{0}{1}} }",
 
-				"'[$X [IsChildInside(2,3),$Y]]', XYX, *00, 0, false, -",
-				"'[$X [IsChildInside(2,4),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{1}{3}} }",
-				"'[$X [IsChildInside(1,2),$Y]]', YYXY, 22*2, 2, false, { {{2}{2}} {{0}{1}} }",
-				"'[$X [IsChildInside(1,2),$Y]]', YYXY, 12*2, 2, false, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsChildInside(2,3),$Y]]', XYX, *00, 0, -",
+				"'[$X [IsChildInside(2,4),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{1}{3}} }",
+				"'[$X [IsChildInside(1,2),$Y]]', YYXY, 22*2, 2, { {{2}{2}} {{0}{1}} }",
+				"'[$X [IsChildInside(1,2),$Y]]', YYXY, 12*2, 2, { {{2}{2}} {{1}{3}} }",
 
-				"'[$X [IsChildOutside(2,3),$Y]]', XXY, *00, 0, false, -",
-				"'[$X [IsChildOutside(2,4),$Y]]', YYXY, 22*2, 1, false, { {{2}} {{0}} }",
-				"'[$X [IsChildOutside(2,3),$Y]]', YYXYY, 22*22, 2, false, { {{2}{2}} {{0}{4}} }",
+				"'[$X [IsChildOutside(2,3),$Y]]', XXY, *00, 0, -",
+				"'[$X [IsChildOutside(2,4),$Y]]', YYXY, 22*2, 1, { {{2}} {{0}} }",
+				"'[$X [IsChildOutside(2,3),$Y]]', YYXYY, 22*22, 2, { {{2}{2}} {{0}{4}} }",
 			})
 			@DisplayName("child node with tree hierarchy marker")
-			void testTreeHierarchyMarkerOnChild(String query, String target, String tree,
-					int matches, boolean allowDuplicates,
+			void testTreeHierarchyMarkerOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QUERY_CONFIG)
 				.tree(tree)
-				.allowDuplicates(allowDuplicates)
 				.assertResult();
 			}
 
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', XY, *0, 0, false, -",
-				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', XYY, *00, 0, false, -",
-				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', YYX, 22*, 1, false, { {{2}} {{1}} }",
+				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', XY, *0, 0, -",
+				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', XYY, *00, 0, -",
+				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', YYX, 22*, 1, { {{2}} {{1}} }",
 			})
 			@DisplayName("child node with sequence and tree hierarchy marker")
-			void testMixedMarkersOnChild(String query, String target, String tree,
-					int matches, boolean allowDuplicates,
+			void testMixedMarkersOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QUERY_CONFIG)
 				.tree(tree)
-				.allowDuplicates(allowDuplicates)
 				.assertResult();
 			}
 
@@ -10784,11 +10848,6 @@ class SequencePatternTest {
 		 * <li>markers on nodes on various nesting depths</li>
 		 * <li>quantifiers on nodes on various nesting depths</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class GroupingInGrouping {
@@ -10975,11 +11034,6 @@ class SequencePatternTest {
 		 * <li>markers on nodes on various nesting depths</li>
 		 * <li>quantifiers on nodes on various nesting depths</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class GroupingInSequence {
@@ -11156,11 +11210,6 @@ class SequencePatternTest {
 		 * <li>markers on nodes on various nesting depths</li>
 		 * <li>quantifiers on nodes on various nesting depths</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class GroupingInBranch {
@@ -11253,13 +11302,122 @@ class SequencePatternTest {
 				.options(Option.KEEP_REDUNDANT_GROUPING)
 				.assertResult();
 			}
-
-			//TODO cover remaining aspects
 		}
 
+		/**
+		 * {@link IqlGrouping} nested inside {@link IqlTreeNode}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>blank nodes</li>
+		 * <li>dummy nodes</li>
+		 * <li>quantifier on grouping</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 */
 		@Nested
 		class GroupingInTreeNode {
 
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[{[][]}]', XX, *0, 0, -",
+				"'[{[][]}]', XXX, *01, 0, -",
+				"'[{[][]}]', XXX, *00, 2, { {{0}{0}} {{1}{2}} {{2}{1}} }",
+				"'[{[][][]}]', XXXXX, *0010, 6, { {{0}{0}{0}{0}{0}{0}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
+				"'[{[][][]}]', XXXXX, 133*3, 6, { {{3}{3}{3}{3}{3}{3}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
+			})
+			@DisplayName("child group of blank nodes")
+			void testBlank(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.tree(tree)
+				.promote(true)
+				.options(Option.KEEP_REDUNDANT_GROUPING)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[{[][?]}]', XX, **, 0, -",
+				"'[{[][?]}]', XX, *0, 1, { {{0}} {{1}} }",
+				"'[{[][?]}]', XX, 1*, 1, { {{1}} {{0}} }",
+				"'[{[?][]}]', XX, **, 0, -",
+				"'[{[?][]}]', XX, *0, 1, { {{0}} {{}} {{1}} }",
+				"'[{[?][]}]', XX, 1*, 1, { {{1}} {{}} {{0}} }",
+
+				"'[{[][*]}]', XX, **, 0, -",
+				"'[{[][*]}]', XX, *0, 1, { {{0}} {{1}} }",
+				"'[{[][*]}]', XX, 1*, 1, { {{1}} {{0}} }",
+				"'[{[*][]}]', XX, **, 0, -",
+				"'[{[*][]}]', XX, *0, 1, { {{0}} {{}} {{1}} }",
+				"'[{[*][]}]', XX, 1*, 1, { {{1}} {{}} {{0}} }",
+
+				"'[{[][+]}]', XXX, *00, 2, { {{0}{0}} {{1}{2}} {{2}{1}} }",
+				"'[{[][+][]}]', XXXXX, *0010, 6, { {{0}{0}{0}{0}{0}{0}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
+				"'[{[][+][]}]', XXXXX, 133*3, 6, { {{3}{3}{3}{3}{3}{3}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
+			})
+			@DisplayName("child group with dummy nodes")
+			void testDummyNodes(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.tree(tree)
+				.promote(true)
+				.options(Option.KEEP_REDUNDANT_GROUPING)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[<1+>{[$Y][$Z]}]', XYZ, **1, 0, -",
+				"'[<1+>{[$Y][$Z]}]', XYZ, *00, 1, { {{0}} {{1}} {{2}} }",
+				"'[<1+>{[$Y][$Z]}]', XYZY, *000, 1, { {{0}} {{1}} {{2}} }",
+				"'[<1+>{[$Y][$Z]}]', XYZYZ, *0000, 2, { {{0}{0}} {{1;3}{3}} {{2;4}{4}} }",
+				"'[<2+>{[$Y][$Z]}]', XYZY, *000, 0, -",
+				"'[<2+>{[$Y][$Z]}]', XYZYZ, *0000, 1, { {{0}} {{1;3}} {{2;4}} }",
+				//TODO
+			})
+			@DisplayName("child group with outer quantification")
+			void testQuantifiedGroup(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.tree(tree)
+				.promote(true)
+				.options(Option.KEEP_REDUNDANT_GROUPING, Option.DEFAULT_ORDERED_SEQUENCE)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				// Use dummy nodes as quantification
+				"'[$X {ADJACENT [$Y][*][$Z]}]', XYY, *00, 0, -",
+				"'[$X {ADJACENT [$Y][*][$Z]}]', XYZ, *00, 1, { {{0}} {{1}} {{2}} }",
+				"'[$X {ADJACENT [$Y][*][$Z]}]', XY--Z, *0000, 1, { {{0}} {{1}} {{4}} }",
+				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XY--Z, *0000, 0, -",
+				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYY--Z, *00000, 1, { {{0}} {{1;2}} {{5}} }",
+				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYYY--Z, *000000, 2, { {{0}{0}} {{1;2;3}{2;3}} {{6}{6}} }",
+				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYY--Z, *00500, 0, -",
+				//TODO
+			})
+
+			@DisplayName("child group with inner quantification")
+			void testQuantifiedNodes(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.tree(tree)
+				.options(Option.KEEP_REDUNDANT_GROUPING, Option.DEFAULT_ORDERED_SEQUENCE)
+				.assertResult();
+			}
+
+			//TODO add markers on inner nodes
 		}
 
 		/**
@@ -11273,11 +11431,6 @@ class SequencePatternTest {
 		 * <li>markers on nodes on various nesting depths</li>
 		 * <li>quantifiers on nodes on various nesting depths</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class SequenceInGrouping {
@@ -11286,6 +11439,8 @@ class SequencePatternTest {
 			@CsvSource({
 				"'{ORDERED [][]}', XYZ, 3, { {{0}{0}{1}} {{1}{2}{2}} }", // not adjacent, so can expand multiple  times
 				"'{ORDERED [][][]}', XYZ, 1, { {{0}} {{1}} {{2}} }",
+				"'{[][]}', XX, 2, { {{0}{1}} {{1}{0}} }",
+				"'{[][][]}', XXX, 6, { {{0}{0}{1}{2}{1}{2}} {{1}{2}{0}{0}{2}{1}} {{2}{1}{2}{1}{0}{0}} }",
 			})
 			@DisplayName("grouping of blank node(s)")
 			void testBlank(String query, String target, int matches,
@@ -11653,11 +11808,6 @@ class SequencePatternTest {
 		 * <li>markers on nodes on various nesting depths</li>
 		 * <li>quantifiers on nodes on various nesting depths</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class BranchInGrouping {
@@ -11768,11 +11918,6 @@ class SequencePatternTest {
 		 * <li>markers on nodes on various nesting depths</li>
 		 * <li>quantifiers on nodes on various nesting depths</li>
 		 * </ul>
-		 *
-		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
-		 * to inject artificial node labels after the query has been parsed,
-		 * causing the final matcher to actually create mappings we can verify.
 		 */
 		@Nested
 		class BranchInSequence {
@@ -11875,7 +12020,7 @@ class SequencePatternTest {
 
 		@Nested
 		class TreeNodeInSequence {
-			// no-op
+
 		}
 
 		@Nested
@@ -11883,8 +12028,50 @@ class SequencePatternTest {
 
 		}
 
+		/**
+		 * {@link IqlTreeNode} nested inside {@link IqlTreeNode}
+		 * <p>
+		 * Aspects to cover:
+		 * <ul>
+		 * <li>blank nodes</li>
+		 * <li>dummy nodes</li>
+		 * <li>more than 3 nested levels</li>
+		 * <li>markers on nodes on various nesting depths</li>
+		 * <li>quantifiers on nodes on various nesting depths</li>
+		 * </ul>
+		 *
+		 * Note that blank nodes produce no mappings, so we are using the
+		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * to inject artificial node labels after the query has been parsed,
+		 * causing the final matcher to actually create mappings we can verify.
+		 */
 		@Nested
 		class TreeNodeInTreeNode {
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[[[]]]', XXX, *00, 0, -",
+				// Permutate all simple cases
+				"'[[[]]]', XXX, *01, 1, { {{0}} {{1}} {{2}} }",
+				"'[[[]]]', XXX, *20, 1, { {{0}} {{2}} {{1}} }",
+				"'[[[]]]', XXX, 1*0, 1, { {{1}} {{0}} {{2}} }",
+				"'[[[]]]', XXX, 2*1, 1, { {{1}} {{2}} {{0}} }",
+				"'[[[]]]', XXX, 20*, 1, { {{2}} {{0}} {{1}} }",
+				"'[[[]]]', XXX, 12*, 1, { {{2}} {{1}} {{0}} }",
+				// Permutate intermediate dead-end children
+				"'[[[]]]', XYXX, 233*, 1, { {{3}} {{2}} {{0}} }",
+				//TODO complete
+			})
+			@DisplayName("blank trees")
+			void testBlank(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.tree(tree)
+				.promote(true)
+				.assertResult();
+			}
 
 		}
 

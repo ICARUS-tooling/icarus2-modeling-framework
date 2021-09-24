@@ -185,10 +185,16 @@ public class QueryProcessor {
 	public enum Option {
 		/** Warnings will not cause the query parsing to fail */
 		IGNORE_WARNINGS,
-		/** {@link IqlGrouping} instances without quantifiers will not be unwrapped. */
+		/**
+		 * {@link IqlGrouping} instances without quantifiers will not be unwrapped.
+		 * This option mainly exists to control the structure of the state machine
+		 * during testing.
+		 */
 		KEEP_REDUNDANT_GROUPING,
-		/** {@link IqlSequence} instances without any {@link NodeArrangement} will have their
-		 * arrangement set to {@link NodeArrangement#ORDERED}. */
+		/**
+		 * {@link IqlSequence} instances without any order-related {@link NodeArrangement}
+		 * will have their arrangement set to {@link NodeArrangement#ORDERED}.
+		 */
 		@VisibleForTesting
 		DEFAULT_ORDERED_SEQUENCE,
 		;

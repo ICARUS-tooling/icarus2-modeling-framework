@@ -194,6 +194,8 @@ public class SequencePattern {
 		SequenceQueryProcessor proc = new SequenceQueryProcessor(builder);
 		setup = proc.createStateMachine();
 
+		setup.initialSize = builder.getInitialBufferSize();
+
 		//TODO
 	}
 
@@ -263,6 +265,8 @@ public class SequencePattern {
 		int gateCount = 0;
 		/** Total number of tree node anchors */
 		int anchorCount = 0;
+		/** Total number of closure buffers */
+		int closureCount = 0;
 		/** Total number of nodes that affect the skip flag */
 		int skipControlCount;
 		/** Size info of all the permutations */
@@ -309,9 +313,9 @@ public class SequencePattern {
 				.map(Supplier::get)
 				.toArray(Assignable[]::new);
 		}
-		Cache[] makeCaches() {
+		Cache[] makeCaches(int initalSize) {
 			return IntStream.range(0, cacheCount)
-				.mapToObj(i -> new Cache())
+				.mapToObj(i -> new Cache(initalSize))
 				.toArray(Cache[]::new);
 		}
 		Interval[] makeIntervals() {
@@ -319,20 +323,25 @@ public class SequencePattern {
 					.map(Interval::clone)
 					.toArray(Interval[]::new);
 		}
-		int[][] makeBuffer() {
+		int[][] makeBuffer(int initalSize) {
 			return IntStream.range(0, bufferCount)
-				.mapToObj(i -> new int[INITIAL_SIZE])
+				.mapToObj(i -> new int[initalSize])
 				.toArray(int[][]::new);
 		}
-		Gate[] makeGates() {
+		Gate[] makeGates(int initialSize) {
 			return IntStream.range(0, gateCount)
-				.mapToObj(i -> new Gate())
+				.mapToObj(i -> new Gate(initialSize))
 				.toArray(Gate[]::new);
 		}
 		Anchor[] makeAnchors() {
 			return IntStream.range(0, anchorCount)
 					.mapToObj(i -> new Anchor())
 					.toArray(Anchor[]::new);
+		}
+		ClosureContext[] makeClosures(int initialSize) {
+			return IntStream.range(0, closureCount)
+					.mapToObj(i -> new ClosureContext(initialSize))
+					.toArray(ClosureContext[]::new);
 		}
 		PermutationContext[] makePermutations() {
 			return IntStream.range(0, permutations.length)
@@ -700,7 +709,7 @@ public class SequencePattern {
 			case DISJUNCTION: return disjunction((IqlElementDisjunction) source, scan);
 
 			default:
-				// We do not support IqlTreeNode and IqlEdge here!!
+				// We do not support IqlEdge here!!
 				throw EvaluationUtils.forUnsupportedQueryFragment("element", source.getType());
 			}
 		}
@@ -1645,7 +1654,7 @@ public class SequencePattern {
 
 		/** Ensure that {@code newSize} index values fit into the indices buffer */
 		void resize(int newSize) {
-			indices = new int[newSize];
+			indices = Arrays.copyOf(indices, newSize);
 		}
 
 		public void reset() {
@@ -1885,6 +1894,9 @@ public class SequencePattern {
 		/** Tentatively marked tree node spots. Stores the positional index for node. */
 		final Anchor[] anchors;
 
+		/** Utility buffers for closure operations over node dominance */
+		final ClosureContext[] closures;
+
 		/** Set by the Finish node if a result limit exists and we already found enough matches. */
 		boolean finished;
 		/**
@@ -1938,7 +1950,7 @@ public class SequencePattern {
 		boolean[] locked;
 
 		State(StateMachineSetup setup) {
-			final int initialSize = setup.initialSize;
+			final int initialSize = setup.initialSize == UNSET_INT ? INITIAL_SIZE : setup.initialSize;
 			elements = new Item[initialSize];
 			tree = new TreeFrame[initialSize];
 			roots = new int[initialSize];
@@ -1963,11 +1975,12 @@ public class SequencePattern {
 
 			matchers = setup.makeMatchers();
 			members = setup.makeMembers();
-			caches = setup.makeCaches();
+			caches = setup.makeCaches(initialSize);
 			intervals = setup.makeIntervals();
-			buffers = setup.makeBuffer();
-			gates = setup.makeGates();
+			buffers = setup.makeBuffer(initialSize);
+			gates = setup.makeGates(initialSize);
 			anchors = setup.makeAnchors();
+			closures = setup.makeClosures(initialSize);
 			permutations = setup.makePermutations();
 
 			rootFrame = new RootFrame(initialSize);
@@ -2108,9 +2121,10 @@ public class SequencePattern {
 			}
 
 			int size = strictToInt(target.getItemCount());
+			int requiredBufferSize = size + 1;
 			// If new size exceeds buffer, grow all storages
-			if(size>=elements.length) {
-				growBuffers(size);
+			if(requiredBufferSize>=elements.length) {
+				growBuffers(requiredBufferSize);
 			}
 			// Now copy container content into our buffer for faster access during matching
 			this.target = target;
@@ -2145,7 +2159,7 @@ public class SequencePattern {
 
 		private void growBuffers(int minCapacity) {
 			final int oldSize = elements.length;
-			final int newSize = CollectionUtils.growSize(elements.length, minCapacity);
+			final int newSize = CollectionUtils.growSize(oldSize, minCapacity);
 			elements = new Item[newSize];
 			m_node = new int[newSize];
 			m_pos = new int[newSize];
@@ -2156,18 +2170,21 @@ public class SequencePattern {
 				buffers[i] = new int[newSize];
 			}
 			for (int i = 0; i < caches.length; i++) {
-				caches[i].reset(newSize);
+				caches[i].resize(newSize);
 			}
 			for (int i = 0; i < gates.length; i++) {
-				gates[i].reset(newSize);
+				gates[i].resize(newSize);
 			}
 			for (int i = 0; i < tree.length; i++) {
 				tree[i].resize(newSize);
 			}
+			for (int i = 0; i < closures.length; i++) {
+				closures[i].resize(newSize);
+			}
 
 			Arrays.fill(roots, UNSET_INT);
 			rootFrame.resize(newSize);
-			for (int i = oldSize; i < elements.length; i++) {
+			for (int i = oldSize; i < tree.length; i++) {
 				tree[i].resize(newSize);
 			}
 		}
@@ -2224,6 +2241,7 @@ public class SequencePattern {
 
 		private IqlElement root;
 		private Integer id;
+		private Integer initialBufferSize;
 		private QueryModifier modifier = QueryModifier.ANY;
 		private Long limit;
 		private IqlConstraint filterConstraint;
@@ -2274,6 +2292,15 @@ public class SequencePattern {
 			checkArgument("ID must be positive", id>=0);
 			checkState("ID already set", this.id==null);
 			this.id = Integer.valueOf(id);
+			return this;
+		}
+
+		public int getInitialBufferSize() { return initialBufferSize==null ? UNSET_INT : initialBufferSize.intValue(); }
+
+		public Builder initialBufferSize(int initialBufferSize) {
+			checkArgument("Initial buffer size must be positive", initialBufferSize>=0);
+			checkState("Initial buffer size already set", this.initialBufferSize==null);
+			this.initialBufferSize = Integer.valueOf(initialBufferSize);
 			return this;
 		}
 
@@ -2554,21 +2581,30 @@ public class SequencePattern {
 		}
 	}
 
-	static final class Cache {
+	interface AdaptableSize {
+		void resize(int newSize);
+	}
+
+	static final class Cache implements AdaptableSize {
 		/**
 		 * Paired booleans for each entry, leaving capacity for 512 entries by default.
 		 * First value of each entry indicates whether it is actually set, second one
 		 * stores the cached value.
 		 */
-		boolean[] data = new boolean[INITIAL_SIZE];
+		boolean[] data;
+
+		Cache(int initialSize) {
+			data = new boolean[initialSize<<1];
+		}
+
+		@Override
+		public
+		void resize(int newSize) {
+			data = Arrays.copyOf(data, newSize<<1);
+		}
 
 		void reset(int size) {
-			int capacity = size<<1;
-			if(capacity>=data.length) {
-				data = new boolean[CollectionUtils.growSize(data.length, capacity)];
-			} else {
-				Arrays.fill(data, 0, capacity, false);
-			}
+			Arrays.fill(data, 0, size<<1, false);
 		}
 
 		@VisibleForTesting
@@ -2620,22 +2656,21 @@ public class SequencePattern {
 		}
 	}
 
-	static final class Gate {
+	static final class Gate implements AdaptableSize {
 		/**
 		 * For each slot indicates if it has been visited already.
 		 */
-		boolean[] data = new boolean[INITIAL_SIZE];
+		boolean[] data;
 		int min = Integer.MAX_VALUE;
 		int max = Integer.MIN_VALUE;
 
-		Gate() { resetBounds(); }
+		Gate(int initialSize) {
+			data = new boolean[initialSize];
+		}
 
-		void reset(int size) {
-			if(size>=data.length) {
-				data = new boolean[CollectionUtils.growSize(data.length, size)];
-			} else {
-				Arrays.fill(data, 0, size, false);
-			}
+		@Override
+		public void resize(int newSize) {
+			data = Arrays.copyOf(data, newSize);
 			resetBounds();
 		}
 
@@ -2711,6 +2746,49 @@ public class SequencePattern {
 			Arrays.fill(next, null);
 			source.reset();
 		}
+	}
+
+	static final class ClosureStep {
+		int frameId;
+		int pos;
+
+		void reset(int frameId, int pos) {
+			this.frameId = frameId;
+			this.pos = pos;
+		}
+	}
+
+	/** Models a trace for the {@link TreeClosure} node. */
+	static final class ClosureContext implements AdaptableSize {
+		/** Current position in the trace */
+		int depth;
+		/** */
+		ClosureStep[] steps;
+
+		ClosureContext(int initialSize) {
+			depth = UNSET_INT;
+			steps = new ClosureStep[initialSize];
+		}
+
+		@Override
+		public void resize(int newSize) {
+			int oldSize = steps.length;
+			steps = Arrays.copyOf(steps, newSize);
+			for (int i = oldSize; i < newSize; i++) {
+				steps[i] = new ClosureStep();
+			}
+		}
+
+		void reset() {
+			depth = 0;
+		}
+
+		ClosureStep current() { return steps[depth]; }
+
+		/** Go up one level */
+		void ascend() { depth--; }
+		/** Go down one level and store frameId and 0-pos as step data */
+		void descend(int frameId) { depth++; current().reset(frameId, 0); }
 	}
 
 	static final class Anchor {
@@ -2844,6 +2922,8 @@ public class SequencePattern {
 			BORDER(Integer.class),
 			/** Id of a filter save/restore point. */
 			GATE(Integer.class),
+			/** Id of a {@link ClosureContext}. */
+			CLOSURE(Integer.class),
 			/** Id of a permutation context that holds the state and utility information for permutating node lists. */
 			PERMUTATION_CONTEXT(Integer.class),
 			/** Original index of an atom within the permutation - used for linking. */
@@ -2924,6 +3004,10 @@ public class SequencePattern {
 			STEP_INTO,
 			/** Vertical reset node to go back to a definite (outer) frame in the tree. */
 			STEP_OUT,
+			/** Utility node to track the actual invocation of other nodes. */
+			CALLBACK,
+			/** Exploration node to search an entire subtree. */
+			CLOSURE,
 			;
 		}
 
@@ -3866,6 +3950,33 @@ public class SequencePattern {
 		}
 	}
 
+	/** Utility node to track whether a portion of the SM actually got executed. */
+	static class Callback extends Node {
+		boolean called = false;
+
+		Callback(int id) { super(id); }
+
+		@Override
+		public NodeInfo info() { return new NodeInfo(this, Type.CALLBACK); }
+
+		/**
+		 * Default implementation only sets the {@link #called} flag and then
+		 * delegates to the {@link #getNext() next} node for actual matching.
+		 * <p>
+		 * Subclasses should make sure that when they override this method the
+		 * flag gets properly set or they call {@code super.match(state, pos)}
+		 * as part of the execution!
+		 */
+		@Override
+		boolean match(State state, int pos) {
+			called = true;
+			return next.match(state, pos);
+		}
+
+		@Override
+		public String toString() { return ToStringBuilder.create(this).toString(); }
+	}
+
 	/** Matches an inner constraint to a specific node, employing memoization. */
 	static final class Single extends ProperNode {
 		final int nodeId;
@@ -3919,7 +4030,10 @@ public class SequencePattern {
 			} else {
 				// Unknown index -> compute local constraints once and cache result
 				final Matcher<Item> m = state.matchers[nodeId];
-				value = m.matches(index, state.elements[index]);
+				assert m!=null : "Null matcher at node-id "+nodeId;
+				final Item item = state.elements[index];
+				assert item!=null : "Null item at index "+index;
+				value = m.matches(index, item);
 				cache.setValue(index, value);
 			}
 
@@ -4156,13 +4270,15 @@ public class SequencePattern {
 
 			for (int i = pos; i <= fence && !state.stop; i++) {
 				frame.previousIndex = UNSET_INT;
-				int scope = state.scope();
-				boolean stored = cache.isSet(i);
+				final int scope = state.scope();
+				final int index = frame.indices[i];
+				final boolean stored = cache.isSet(index);
 				boolean matched;
 				if(stored) {
-					matched = cache.getValue(i);
+					matched = cache.getValue(index);
 					if(matched) {
 						// Continue matching, but we know it will succeed
+						//TODO re-evaluate this in the context of complex SM graphs (subgraph could still fail?)
 						next.match(state, i);
 					} else {
 						// We know this is a dead-end, so skip
@@ -4172,7 +4288,7 @@ public class SequencePattern {
 				} else {
 					// Previously unseen index, so explore and cache result
 					matched = next.match(state, i);
-					cache.setValue(i, matched);
+					cache.setValue(index, matched);
 				}
 
 				result |= matched;
@@ -4338,21 +4454,20 @@ public class SequencePattern {
 			return result;
 		}
 
-		//TODO change back to not use "slot" value for indexing but original atom index!!
 		private void prepare(PermutationContext ctx, int to) {
 
-			int[] config = ctx.source.current();
+			final int[] config = ctx.source.current();
     		final int last = atoms.length-1;
 
-    		int[] slots = ctx.slots;
-
-			// Build forward links and set scan flags
+			// Build forward links
 			for (int i = 0; i <= last; i++) {
 				int slot = config[i];
-				slots[slot] = i;
+				ctx.slots[slot] = i;
 				ctx.next[slot] = i==last ? next : atoms[config[i+1]];
 				ctx.current[i] = atoms[config[i]];
 			}
+
+//			System.out.printf("perm %s -> %s%n", Arrays.toString(config), Arrays.toString(ctx.current));
 
 			// Update lookups
 			int fence = to - minSize - Math.max(1, minSizes[config[last]]) + 1;
@@ -4506,9 +4621,6 @@ public class SequencePattern {
 		/** Index of the atom this perm-conn acts as tail */
 		final int atomIndex;
 
-		/** Flag to signal a {@link PermSlot} that this connection has been used */
-		boolean called;
-
 		PermConn(int id, int permId, int atomIndex) {
 			super(id);
 
@@ -4525,8 +4637,10 @@ public class SequencePattern {
 
         @Override
 		boolean match(State state, int pos) {
-        	called = true;
 			final PermutationContext ctx = state.permutations[permId];
+			// Mark slot as used
+			ctx.used[atomIndex] = true;
+			// COntinue matching with next slot
 			return ctx.next[atomIndex].match(state, pos);
         }
 
@@ -5119,9 +5233,10 @@ public class SequencePattern {
 		boolean match(State state, int pos) {
 			final TreeFrame oldFrame = state.frame;
 			final Anchor anchor = state.anchors[anchorId];
-			assert anchor.index != UNSET_INT : "illegal index for frame: "+anchor.index;
+			assert anchor.index != UNSET_INT : "Illegal index for frame: "+anchor.index;
 
 			final TreeFrame newFrame = state.tree[anchor.index];
+			assert newFrame.valid : "Invalid tree frame for index "+anchor.index;
 
 			// Bail early if basic (upper) tree properties aren't met
 			if(newFrame.length < children || newFrame.depth < depth) {
@@ -5250,5 +5365,147 @@ public class SequencePattern {
 
 		@Override
 		Node getLogicalNext() { return next.isConnective() ? next : null; }
+	}
+
+	/**
+	 * Explorative node that will continue tail of the matcher graph for
+	 * the currently active frame and <b>all</b> of its descendants.
+	 */
+	static final class TreeClosure extends ProperNode {
+		/** Key to fetch the {@link ClosureContext} for this node */
+		final int closureId;
+		/** */
+		final int cacheId;
+		/** Tracker to determine whether the subtree actually got fully invoked */
+		final Callback callback;
+
+		boolean stopOnSuccess;
+
+		TreeClosure(int id, IqlMarkerCall source, int closureId, int cacheId, Callback callback) {
+			super(id, source);
+			this.closureId = closureId;
+			this.cacheId = cacheId;
+			this.callback = requireNonNull(callback);
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.CLOSURE)
+					.property(Field.CLOSURE, closureId)
+					.property(Field.CACHE, cacheId)
+					.property(Field.STOP, stopOnSuccess);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			//TODO determine what mode we need to use for traversal
+			final TreeFrame root = state.frame;
+			final ClosureContext ctx = state.closures[closureId];
+			final Cache cache = state.caches[cacheId];
+
+			/*
+			 * We run a pre-order traversal on the subtree with
+			 * local trace so that we don't blow up the Java stack.
+			 */
+
+			// 0-depth frame, match in current context
+			boolean result = next.match(state, pos);
+
+			// Prepare first child frame
+			ctx.depth = 1;
+			ctx.current().reset(root.index, pos);
+
+			while(!state.stop && ctx.depth>0) {
+				ClosureStep step = ctx.current();
+
+				TreeFrame frame = state.tree[step.frameId];
+				assert frame!=state.rootFrame : "Cannot descend _into_ root frame";
+
+				// Try remaining nodes in current frame
+				if(step.pos < frame.length) {
+					// Assign current frame context
+					state.frame = frame;
+
+					// And start a search from current position
+					final int index = frame.indices[step.pos];
+		    		final int from = frame.from();
+		    		final int to = frame.to();
+		        	final int scope = state.scope();
+		        	final int previous = frame.previousIndex;
+
+		        	// Reset callback tracking
+		        	callback.called = false;
+
+					boolean stored = cache.isSet(index);
+					boolean matched = false;
+					if(stored) {
+						matched = cache.getValue(index);
+						if(matched) {
+							/*
+							 * This is a tricky situation:
+							 * We know the node itself will match, but since we
+							 * can be embedded into a more complex construct such
+							 * as a permutation, the tail can still fail!
+							 * Therefore we must not simply accept success, but
+							 * actually use the result of the subtree matching.
+							 */
+							matched = next.match(state, step.pos);
+						}
+						// We know this is a dead-end, nothing further to do there
+					} else {
+						// Previously unseen index, so explore and cache result
+						matched = next.match(state, step.pos);
+						// We only store the "local" success of next node
+						cache.setValue(index, callback.called);
+					}
+
+					result |= matched;
+
+		        	// Only reset range here
+		        	frame.resetWindow(from, to);
+
+	                if(stopOnSuccess && result) {
+	                	break;
+	                }
+
+		        	// Only reset if we failed or are not meant to keep the first match
+		        	state.resetScope(scope);
+		        	frame.previousIndex = previous;
+
+					// Continue to next neighbor for future traversal
+					step.pos++;
+					// Now descend if possible
+					if(frame.length > 0) {
+						ctx.descend(frame.lowest());
+					}
+				}
+				// Subtree exhausted, ascend and move on
+				else {
+					ctx.ascend();
+					ctx.current().pos++;
+				}
+			}
+
+			// Reset back to old frame
+			state.frame = root;
+
+			return result;
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			stopOnSuccess = info.stopOnSuccess;
+			info.deterministic = false;
+			next.study(info);
+			return info.deterministic;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("closureId", closureId)
+					.add("stopOnSuccess", stopOnSuccess)
+					.build();
+		}
 	}
 }
