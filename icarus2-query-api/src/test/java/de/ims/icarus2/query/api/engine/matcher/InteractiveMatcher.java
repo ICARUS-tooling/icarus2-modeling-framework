@@ -24,6 +24,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives._float;
 import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.awt.BorderLayout;
@@ -1389,6 +1390,10 @@ public class InteractiveMatcher {
 				builder.nodeTransform(SequencePatternTest.PROMOTE_NODE);
 			}
 
+			if(target!=null) {
+				builder.initialBufferSize(strictToInt(target.getItemCount() + 1));
+			}
+
 			pattern = builder.build();
 
 			displayStateMachine(pattern);
@@ -1423,7 +1428,7 @@ public class InteractiveMatcher {
 					lSteps.setListData(steps);
 					lResults.setListData(results);
 					refreshButtons();
-				};
+				}
 			}.execute();
 
 			refreshButtons();

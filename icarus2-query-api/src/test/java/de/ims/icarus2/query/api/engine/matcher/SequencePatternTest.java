@@ -28,8 +28,6 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_2;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_3;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CLOSURE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.DISCONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
@@ -43,7 +41,6 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_ANCHOR;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_CACHE;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_STOP;
@@ -152,7 +149,6 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Tree;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeClosure;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
@@ -396,7 +392,7 @@ class SequencePatternTest {
 		/** Attaches a {@link Tree} to {@code node} and returns matching {@link TreeConn} */
 		static Node tree(Single node, Node atom, IntSupplier idGen) {
 			TreeConn conn = new TreeConn(idGen.getAsInt(), node.source, node.anchorId);
-			Node scan = new Exhaust(idGen.getAsInt(), NO_CACHE, true);
+			Node scan = new Exhaust(idGen.getAsInt(), true);
 			scan.setNext(atom);
 			Tree tree = new Tree(idGen.getAsInt(), node.source, node.anchorId, scan, conn);
 			node.setNext(tree);
@@ -2136,7 +2132,7 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(id(), NO_CACHE, true),
+								new Exhaust(id(), true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2248,17 +2244,18 @@ class SequencePatternTest {
 					}
 				}
 
+				@Deprecated
 				@Nested
 				class ForwardSingleCached {
 
 					StateMachineSetup setup(int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
 						sms.rawNodes = new IqlNode[1];
-						sms.cacheCount = 2;
+						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(id(), CACHE_0, true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER, NO_ANCHOR),
+								new Exhaust(id(), true),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2324,9 +2321,6 @@ class SequencePatternTest {
 						.startPos(startPos)
 						.expectSuccess(matchCount)
 						.cache(cache(CACHE_0, true)
-								.window(startPos, target.length()-1)
-								.hits(target, EQUALS_X))
-						.cache(cache(CACHE_1, true)
 								.window(startPos, target.length()-1).
 								hits(target, EQUALS_X))
 						.node(node(NODE_0).last(last))
@@ -2367,9 +2361,6 @@ class SequencePatternTest {
 						.cache(cache(CACHE_0, true)
 								.window(startPos, last)
 								.hits(target, EQUALS_X))
-						.cache(cache(CACHE_1, true)
-								.window(startPos, last)
-								.hits(target, EQUALS_X))
 						.node(node(NODE_0).last(last))
 						.assertResult();
 					}
@@ -2384,7 +2375,7 @@ class SequencePatternTest {
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.root = seq(
-								new Exhaust(id(), NO_CACHE, false),
+								new Exhaust(id(), false),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2512,7 +2503,7 @@ class SequencePatternTest {
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
-								new Exhaust(id(), NO_CACHE, true),
+								new Exhaust(id(), true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -2651,19 +2642,20 @@ class SequencePatternTest {
 					}
 				}
 
+				@Deprecated
 				@Nested
 				class ForwardSingleCached {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
 						sms.rawNodes = new IqlNode[1];
-						sms.cacheCount = 2;
+						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
-								new Exhaust(id(), CACHE_0, true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_1, NO_MEMBER, NO_ANCHOR),
+								new Exhaust(id(), true),
+								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2688,8 +2680,6 @@ class SequencePatternTest {
 						.startPos(startPos)
 						.expectFail()
 						.cache(cache(CACHE_0, true)
-								.window(startPos, region.to))
-						.cache(cache(CACHE_1, true)
 								.window(startPos, region.to))
 						.assertResult();
 					}
@@ -2717,9 +2707,6 @@ class SequencePatternTest {
 						.startPos(startPos)
 						.expectSuccess(1)
 						.cache(cache(CACHE_0, true)
-								.window(startPos, region.to)
-								.hits(hit))
-						.cache(cache(CACHE_1, true)
 								.window(startPos, region.to)
 								.hits(hit))
 						.node(node(NODE_0).last(hit))
@@ -2753,9 +2740,6 @@ class SequencePatternTest {
 						.startPos(startPos)
 						.expectSuccess(matchCount)
 						.cache(cache(CACHE_0, true)
-								.window(startPos, region.to)
-								.hits(target, region, EQUALS_X))
-						.cache(cache(CACHE_1, true)
 								.window(startPos, region.to)
 								.hits(target, region, EQUALS_X))
 						.node(node(NODE_0).last(last))
@@ -2804,9 +2788,6 @@ class SequencePatternTest {
 						.cache(cache(CACHE_0, true)
 								.window(startPos, last)
 								.hits(target, EQUALS_X))
-						.cache(cache(CACHE_1, true)
-								.window(startPos, last)
-								.hits(target, EQUALS_X))
 						.node(node(NODE_0).last(last))
 						.assertResult();
 					}
@@ -2823,7 +2804,7 @@ class SequencePatternTest {
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
-								new Exhaust(id(), NO_CACHE, false),
+								new Exhaust(id(), false),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -4046,7 +4027,7 @@ class SequencePatternTest {
 						tail = conn;
 					}
 
-					Node scan = new Exhaust(id(), NO_CACHE, true);
+					Node scan = new Exhaust(id(), true);
 					Node finish = new Finish(id(), NO_LIMIT, false);
 
 					scan.setNext(atom);
@@ -4182,56 +4163,59 @@ class SequencePatternTest {
 		@Nested
 		class ForTreeClosure {
 
+			//TODO fix setup
+
 
 			/** {@code [$X [isAnyGeneration, $Y]]} */
 			private StateMachineSetup transitiveSingleChildSetup() {
-				Node finish = new Finish(id(), NO_LIMIT, false);
-
-				Single child = new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, UNSET_INT);
-				child.setNext(finish);
-
-				TreeClosure closure = new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0);
-				closure.setNext(child);
-
-				Node scan = new Exhaust(id(), NO_CACHE, true);
-
-
-				Single[] atoms = new Single[preds.length];
-				@SuppressWarnings("unchecked")
-				Matcher<Item>[] matchers = new Matcher[preds.length];
-				for (int i = 0; i < preds.length; i++) {
-					boolean hasChild = i<preds.length-1;
-					matchers[i] = matcher(i, preds[i]);
-					IqlTreeNode treeNode = mock(IqlTreeNode.class);
-					atoms[i] = new Single(id(), treeNode, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
-				}
-
-				Node atom = atoms[atoms.length-1];
-				Node tail = atom;
-
-				for (int i = atoms.length-2; i >= 0; i--) {
-					Single node = atoms[i];
-					Node conn = tree(node, atom, () -> id());
-					atom = node;
-					tail = conn;
-				}
-
-				Node scan = new Exhaust(id(), NO_CACHE, true);
-				Node finish = new Finish(id(), NO_LIMIT, false);
-
-				scan.setNext(atom);
-				tail.setNext(finish);
+//				Node finish = new Finish(id(), NO_LIMIT, false);
+//
+//				Single child = new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, UNSET_INT);
+//				child.setNext(finish);
+//
+//				TreeClosure closure = new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0);
+//				closure.setNext(child);
+//
+//				Node scan = new Exhaust(id(), true);
+//
+//
+//				Single[] atoms = new Single[preds.length];
+//				@SuppressWarnings("unchecked")
+//				Matcher<Item>[] matchers = new Matcher[preds.length];
+//				for (int i = 0; i < preds.length; i++) {
+//					boolean hasChild = i<preds.length-1;
+//					matchers[i] = matcher(i, preds[i]);
+//					IqlTreeNode treeNode = mock(IqlTreeNode.class);
+//					atoms[i] = new Single(id(), treeNode, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
+//				}
+//
+//				Node atom = atoms[atoms.length-1];
+//				Node tail = atom;
+//
+//				for (int i = atoms.length-2; i >= 0; i--) {
+//					Single node = atoms[i];
+//					Node conn = tree(node, atom, () -> id());
+//					atom = node;
+//					tail = conn;
+//				}
+//
+//				Node scan = new Exhaust(id(), NO_CACHE, true);
+//				Node finish = new Finish(id(), NO_LIMIT, false);
+//
+//				scan.setNext(atom);
+//				tail.setNext(finish);
 
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.rawNodes = new IqlNode[2];
 				sms.cacheCount = 3; // 0 = first node, 1 = closure, 2 = second node
 				sms.anchorCount = 1;
 				sms.closureCount = 1;
-				sms.root = scan;
+				sms.root = null;
 				sms.matchers = matchers(matcher(NODE_0, EQUALS_X), matcher(NODE_1, EQUALS_Y));
 				return sms;
 			}
 
+			@Disabled("needs rework of setup method!!!")
 			@ParameterizedTest
 			@CsvSource({
 				"AB, 1*",
@@ -4260,7 +4244,7 @@ class SequencePatternTest {
 					int id = 0;
 					List<Node> nodes = new ArrayList<>();
 					for (int i = 0; i < predicates.length; i++) {
-						nodes.add(new Exhaust(id(), NO_CACHE, true));
+						nodes.add(new Exhaust(id(), true));
 						nodes.add(new Single(id++, mock(IqlNode.class), i, i, NO_MEMBER, NO_ANCHOR));
 					}
 					nodes.add(new Finish(id(), limit, false));
@@ -5078,7 +5062,7 @@ class SequencePatternTest {
 					.modBuilder(CACHE_ALL)
 					.target(target)
 					.expectSuccess(hits.size())
-					.cache(cache(CACHE_1, false)
+					.cache(cache(CACHE_0, false)
 							.window(target)
 							.set(visited)
 							.hits(hits))
@@ -9793,7 +9777,7 @@ class SequencePatternTest {
 				.target(target)
 				.expectSuccess(hits1.length)
 				// Cache for 3rd node
-				.cache(cache(CACHE_3, true)
+				.cache(cache(CACHE_2, true)
 						.window(visited3)
 						.hits(candidates3))
 				// Cache for 2nd node

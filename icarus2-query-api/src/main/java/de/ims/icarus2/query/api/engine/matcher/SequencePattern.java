@@ -793,10 +793,9 @@ public class SequencePattern {
 				IqlElement children = treeNode.getChildren().get();
 
 				// Exhaustive inner search for child node construct
-				boolean cached = needsCacheForChild(children);
-				Node innerScan = exhaust(true, cached ? cache() : UNSET_INT);
+				Node innerScan = exhaust(true);
 				level++;
-				Frame child = process(treeNode.getChildren().get(), innerScan);
+				Frame child = process(children, innerScan);
 				level--;
 				// Collapse entire atom as we cannot hoist anything out of the tree node
 				child.collapse();
@@ -1069,7 +1068,7 @@ public class SequencePattern {
 							"Cannot do backwards scan inside 'find-only' environment");
 				scan = find();
 			} else {
-				scan = exhaust(forward, cached ? cache() : UNSET_INT);
+				scan = exhaust(forward);
 			}
 
 			return scan;
@@ -1305,8 +1304,8 @@ public class SequencePattern {
 			return storeTrackable(new Find(id()));
 		}
 
-		private Node exhaust(boolean forward, int cacheId) {
-			return storeTrackable(new Exhaust(id(), cacheId, forward));
+		private Node exhaust(boolean forward) {
+			return storeTrackable(new Exhaust(id(), forward));
 		}
 
 		private Node negate(IqlQuantifier source, Node atom) {
@@ -4181,12 +4180,10 @@ public class SequencePattern {
 	 * also offers the ability to scan backwards and also uses (optional) caching.
 	 */
 	static final class Exhaust extends Find {
-		final int cacheId;
 		final boolean forward;
 
-		Exhaust(int id, int cacheId, boolean forward) {
+		Exhaust(int id, boolean forward) {
 			super(id);
-			this.cacheId = cacheId;
 			this.forward = forward;
 		}
 
@@ -4195,7 +4192,6 @@ public class SequencePattern {
 			return new NodeInfo(this, Type.SCAN_EXHAUSTIVE)
 					.property(Field.MIN_SIZE, minSize)
 					.property(Field.OPTIONAL, optional)
-					.property(Field.CACHE, cacheId)
 					.property(Field.FORWARD, forward);
 		}
 
@@ -4203,7 +4199,6 @@ public class SequencePattern {
 		public String toString() {
 			return ToStringBuilder.create(this)
 					.add("forward", forward)
-					.add("cacheId", cacheId)
 					.add("minSize", minSize)
 					.build();
 		}
@@ -4216,9 +4211,7 @@ public class SequencePattern {
 				return next.match(state, pos);
 			}
 
-			if(cacheId!=UNSET_INT) {
-				return matchForwardCached(state, pos);
-			} else if(forward) {
+			if(forward) {
 				return matchForwardUncached(state, pos);
 			}
 			return matchBackwards(state, pos);
@@ -4259,11 +4252,12 @@ public class SequencePattern {
 		 * continue down all further nodes in the state machine, but we can
 		 * effectively rule out unsuccessful paths.
 		 */
+		@Deprecated
 		private boolean matchForwardCached(State state, int pos) {
 			final TreeFrame frame = state.frame;
     		final int from = frame.from();
     		final int to = frame.to();
-			final Cache cache = state.caches[cacheId];
+			final Cache cache = state.caches[UNSET_INT];
 			final int fence = to - minSize + 1;
 
 			boolean result = false;
