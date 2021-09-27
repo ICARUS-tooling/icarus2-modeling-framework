@@ -35,17 +35,23 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,11 +66,28 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import com.jgoodies.forms.builder.FormBuilder;
 import com.jgoodies.forms.factories.Forms;
@@ -90,8 +113,8 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceMatcher;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Snapshot;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
@@ -124,6 +147,7 @@ import de.ims.icarus2.test.util.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 /**
@@ -1119,15 +1143,17 @@ public class InteractiveMatcher {
 		final int last;
 		final int prev;
 		final int index;
+		final Snapshot snapshot;
 
-		Step(boolean enter, int nodeId, int pos, int index, int last, int prev, boolean result) {
+		Step(boolean enter, Node node, State state, int pos, boolean result) {
 			this.enter = enter;
-			this.nodeId = nodeId;
+			this.nodeId = node.id;
 			this.pos = pos;
-			this.index = index;
-			this.last = last;
-			this.prev = prev;
+			this.index = state.frame.indices[pos];
+			this.last = state.last;
+			this.prev = state.frame.previousIndex;
 			this.result = result;
+			this.snapshot = state.snapshot();
 		}
 	}
 
@@ -1182,14 +1208,10 @@ public class InteractiveMatcher {
 
 		public MonitorDelegate(Consumer<Step> sink) { this.sink = requireNonNull(sink); }
 
-		private static int index(State state, int pos) {
-			TreeFrame frame = state.frame;
-			return frame.indices[pos];
-		}
 
 		@Override
 		public void enterNode(Node node, State state, int pos) {
-			sink.accept(new Step(true, node.id, pos, index(state, pos), state.last, state.frame.previousIndex, false));
+			sink.accept(new Step(true, node, state, pos, false));
 		}
 
 		@Override
@@ -1197,7 +1219,7 @@ public class InteractiveMatcher {
 //			if(!result) {
 //				System.out.println("xx");
 //			}
-			sink.accept(new Step(false, node.id, pos, index(state, pos), state.last, state.frame.previousIndex, result));
+			sink.accept(new Step(false, node, state, pos, result));
 		}
 
 	}
@@ -1213,7 +1235,10 @@ public class InteractiveMatcher {
 		private final JList<Step> lSteps;
 		private final JList<Result> lResults;
 		private final JButton bNextStep, bPrevStep;
-		private JLabel lStep;
+		private final JLabel lStep;
+
+		private final StateModel stateModel;
+		private final JTable tState;
 
 		private transient IqlPayload payload;
 		private transient SequencePattern pattern;
@@ -1262,10 +1287,49 @@ public class InteractiveMatcher {
 			bPrevStep = new JButton("<-");
 			bPrevStep.addActionListener(this::onPrevStep);
 
-			JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true,
+			tState = new JTable();
+			tState.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			stateModel = new StateModel();
+
+			final TreeTableCellRenderer cellRenderer = new TreeTableCellRenderer(tState, stateModel);
+			cellRenderer.setRootVisible(false);
+			cellRenderer.setShowsRootHandles(true);
+
+			final TreeTableModel treeTableModel = new TreeTableModel(cellRenderer);
+			tState.setModel(treeTableModel);
+
+			TableColumnModel columnModel = tState.getColumnModel();
+			TableColumn column = columnModel.getColumn(0);
+			column.setCellRenderer(cellRenderer);
+			column.setPreferredWidth(75);
+			column.setResizable(true);
+			column = columnModel.getColumn(1);
+			column.setCellRenderer(new StateValueRenderer());
+			column.setPreferredWidth(150);
+			column.setResizable(true);
+
+			tState.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					if(e.getClickCount()!=2) {
+						return;
+					}
+					int row = tState.rowAtPoint(e.getPoint());
+					if(row==-1) {
+						return;
+					}
+					if(cellRenderer.isCollapsed(row)) {
+						cellRenderer.expandRow(row);
+					} else if(cellRenderer.isExpanded(row)) {
+						cellRenderer.collapseRow(row);
+					}
+				}
+			});
+
+			JSplitPane splitPaneV = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true,
 					new JScrollPane(lSteps), new JScrollPane(lResults));
-			splitPane.setOneTouchExpandable(true);
-			splitPane.setDividerLocation(400);
+			splitPaneV.setOneTouchExpandable(true);
+			splitPaneV.setDividerLocation(400);
 
 			setLayout(new BorderLayout());
 
@@ -1291,9 +1355,22 @@ public class InteractiveMatcher {
 					.add(bPrevStep).rc(3, 1)
 					.add(lStep).rc(3, 3)
 					.add(bNextStep).rc(3, 5)
-					.add(splitPane).rcw(5, 1, 5)
+					.add(splitPaneV).rcw(5, 1, 5)
 					.build();
-			add(rightControl, BorderLayout.EAST);
+
+			JPanel stateOutline = FormBuilder.create()
+					.padding("10dlu, 4dlu, 1dlu, 4dlu")
+					.columns("fill:pref:grow")
+					.rows("fill:pref:grow")
+					.addScrolled(tState).rc(1, 1)
+					.build();
+
+			JSplitPane splitPaneH = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true,
+					rightControl, stateOutline);
+			splitPaneH.setOneTouchExpandable(true);
+			splitPaneH.setDividerLocation(300);
+
+			add(splitPaneH, BorderLayout.EAST);
 
 			add(graphComponent, BorderLayout.CENTER);
 
@@ -1459,6 +1536,7 @@ public class InteractiveMatcher {
 			if(!e.getValueIsAdjusting()) {
 				int idx = lSteps.getSelectedIndex();
 				if(idx!=-1) {
+					stateModel.setData(steps.get(idx).snapshot);
 					tempEdges = linkSteps(steps.subList(0, idx+1), true);
 					lStep.setText(String.valueOf(idx+1));
 				} else {
@@ -1491,7 +1569,303 @@ public class InteractiveMatcher {
 		}
 	}
 
-	class StepRenderer extends DefaultListCellRenderer {
+	private static class StateField implements Comparable<StateField> {
+		final String name;
+		final Object value;
+
+		public StateField(String name, Object value) {
+			this.name = requireNonNull(name);
+			this.value = value;
+		}
+
+		@Override
+		public int compareTo(StateField o) { return name.compareTo(o.name); }
+
+		@Override
+		public String toString() { return name + " - " + String.valueOf(value); }
+	}
+
+	private static class StateModel implements TreeModel {
+		private final List<TreeModelListener> listeners = new ObjectArrayList<>();
+		private Snapshot snapshot;
+		private final Object root = new Object();
+		private final List<StateField> fields = new ObjectArrayList<>();
+
+		void setData(Snapshot snapshot) {
+			if(this.snapshot==snapshot) {
+				return;
+			}
+
+			this.snapshot = snapshot;
+			fields.clear();
+			if(snapshot!=null) {
+				for(java.lang.reflect.Field field : snapshot.getClass().getFields()) {
+					try {
+						fields.add(new StateField(field.getName(), field.get(snapshot)));
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+						// not supposed to happen anyway
+					}
+				}
+				Collections.sort(fields);
+			}
+
+			final TreeModelEvent e = new TreeModelEvent(this, new Object[] {root});
+			listeners.forEach(l -> l.treeStructureChanged(e));
+		}
+
+		@Override
+		public Object getRoot() { return root; }
+
+		@Override
+		public Object getChild(Object parent, int index) {
+			if(parent==root) {
+				return fields.get(index);
+			}
+
+			if(parent instanceof StateField) {
+				parent = ((StateField)parent).value;
+			}
+
+			if(parent instanceof Pair) {
+				parent = ((Pair<?,?>)parent).second;
+			} else if(parent.getClass().isArray()) {
+				return Pair.pair(_int(index), Array.get(parent, index));
+			}
+
+			throw new NoSuchElementException();
+		}
+
+		@Override
+		public int getChildCount(Object parent) {
+			if(parent==root) {
+				return fields.size();
+			}
+
+			if(parent instanceof StateField) {
+				parent = ((StateField)parent).value;
+			} else if(parent instanceof Pair) {
+				parent = ((Pair<?,?>)parent).second;
+			}
+
+			if(parent.getClass().isArray()) {
+				return Array.getLength(parent);
+			}
+
+			return 0;
+		}
+
+		@Override
+		public boolean isLeaf(Object node) {
+			return getChildCount(node)==0;
+		}
+
+		@Override
+		public void valueForPathChanged(TreePath path, Object newValue) {
+			throw new UnsupportedOperationException();
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public int getIndexOfChild(Object parent, Object child) {
+			if(parent==root) {
+				return fields.indexOf(child);
+			}
+
+			if(parent instanceof Pair) {
+				return ((Pair<Integer,?>)parent).first.intValue();
+			}
+
+			if(parent instanceof StateField) {
+				parent = ((StateField)parent).value;
+			}
+
+			if(parent.getClass().isArray()) {
+				//TODO do we even need this method?
+			}
+
+			return -1;
+		}
+
+		@Override
+		public void addTreeModelListener(TreeModelListener l) { listeners.add(l); }
+
+		@Override
+		public void removeTreeModelListener(TreeModelListener l) { listeners.remove(l); }
+	}
+
+	@SuppressWarnings("serial")
+	private static class TreeTableModel extends AbstractTableModel
+			implements TreeExpansionListener, TreeModelListener {
+
+		private final JTree tree;
+
+		TreeTableModel(JTree tree) {
+			this.tree = requireNonNull(tree);
+			tree.addTreeExpansionListener(this);
+			tree.getModel().addTreeModelListener(this);
+		}
+
+		@Override
+		public int getRowCount() { return tree.getRowCount(); }
+
+		@Override
+		public int getColumnCount() { return 2; }
+
+		@Override
+		public String getColumnName(int column) { return column==0 ? "Field" : "Value"; }
+
+		@Override
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			TreePath path = tree.getPathForRow(rowIndex);
+			if(path==null) {
+				return null;
+			}
+			Object value = path.getLastPathComponent();
+
+			// TODO Auto-generated method stub
+			return value;
+		}
+
+		private void refreshTree() {
+			tree.expandPath(new TreePath(tree.getModel().getRoot()));
+			fireTableDataChanged();
+		}
+
+		@Override
+		public void treeNodesChanged(TreeModelEvent e) { refreshTree(); }
+
+		@Override
+		public void treeNodesInserted(TreeModelEvent e) { refreshTree(); }
+
+		@Override
+		public void treeNodesRemoved(TreeModelEvent e) { refreshTree(); }
+
+		@Override
+		public void treeStructureChanged(TreeModelEvent e) { refreshTree(); }
+
+		@Override
+		public void treeExpanded(TreeExpansionEvent event) { refreshTree(); }
+
+		@Override
+		public void treeCollapsed(TreeExpansionEvent event) { refreshTree(); }
+	}
+
+	@SuppressWarnings("serial")
+	private static class StateValueRenderer extends DefaultTableCellRenderer {
+
+		private static final Map<Class<?>, Function<Object, String>> renderers = new HashMap<>();
+		static {
+			renderers.put(int[].class, obj -> Arrays.toString((int[])obj));
+			renderers.put(long[].class, obj -> Arrays.toString((long[])obj));
+			renderers.put(float[].class, obj -> Arrays.toString((float[])obj));
+			renderers.put(double[].class, obj -> Arrays.toString((double[])obj));
+			renderers.put(boolean[].class, obj -> Arrays.toString((boolean[])obj));
+			renderers.put(short[].class, obj -> Arrays.toString((short[])obj));
+			renderers.put(char[].class, obj -> Arrays.toString((char[])obj));
+		}
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+				int row, int column) {
+			if(value instanceof StateField) {
+				value = ((StateField)value).value;
+			} else if(value instanceof Pair) {
+				value = ((Pair<?,?>)value).second;
+			}
+
+			if(value!=null) {
+				Function<Object, String> renderer = renderers.get(value.getClass());
+				if(renderer!=null) {
+					value = renderer.apply(value);
+				}
+			}
+
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+			return this;
+		}
+	}
+
+	@SuppressWarnings("serial")
+	private static class TreeTableCellRenderer extends JTree
+		implements TableCellRenderer, ListSelectionListener {
+
+		/** last rendered row */
+		protected int visibleRow;
+
+		private JTable table;
+
+		public TreeTableCellRenderer(JTable table, TreeModel model) {
+			super(model);
+			this.table = table;
+
+			setRowHeight(getRowHeight());
+			setEditable(false);
+			TreeSelectionModel selectionModel = new DefaultTreeSelectionModel();
+			selectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+			setSelectionModel(selectionModel);
+			setExpandsSelectedPaths(true);
+
+			table.getSelectionModel().addListSelectionListener(this);
+
+			setCellRenderer(new DefaultTreeCellRenderer() {
+				@SuppressWarnings("unchecked")
+				@Override
+				public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded,
+						boolean leaf, int row, boolean hasFocus) {
+					if(value instanceof StateField) {
+						value = ((StateField)value).name;
+					} else if(value instanceof Pair) {
+						value = ((Pair<Integer,?>)value).first;
+					}
+
+					return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+				}
+			});
+		}
+
+		@Override
+		public void valueChanged(ListSelectionEvent e) {
+			setSelectionRow(e.getFirstIndex());
+		}
+
+		@Override
+		public void setRowHeight(int rowHeight) {
+			if (rowHeight > 0) {
+				super.setRowHeight(rowHeight);
+				if (table != null && table.getRowHeight() != rowHeight) {
+					table.setRowHeight(getRowHeight());
+				}
+			}
+		}
+
+		@Override
+		public void setBounds(int x, int y, int w, int h) {
+			super.setBounds(x, 0, w, table.getHeight());
+		}
+
+		@Override
+		public void paint(Graphics g) {
+			g.translate(0, -visibleRow * getRowHeight());
+
+			super.paint(g);
+		}
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value,
+				boolean isSelected, boolean hasFocus, int row, int column) {
+			if (isSelected)
+				setBackground(table.getSelectionBackground());
+			else
+				setBackground(table.getBackground());
+
+			visibleRow = row;
+			return this;
+		}
+	}
+
+	private class StepRenderer extends DefaultListCellRenderer {
 		private static final long serialVersionUID = 7466797464454660084L;
 
 		private final StepIcon icon = new StepIcon();
@@ -1521,7 +1895,7 @@ public class InteractiveMatcher {
 		}
 	}
 
-	class ResultRenderer extends DefaultListCellRenderer {
+	private static class ResultRenderer extends DefaultListCellRenderer {
 		private static final long serialVersionUID = 4296826121562843768L;
 		private StringBuilder buffer = new StringBuilder(100);
 		@Override

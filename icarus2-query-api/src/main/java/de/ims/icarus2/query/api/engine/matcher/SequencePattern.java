@@ -33,6 +33,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,6 +49,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -101,6 +103,7 @@ import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
+import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
@@ -1600,7 +1603,7 @@ public class SequencePattern {
 	 * to the (ordered) lists of child nodes in the tree.
 	 * <p>
 	 * Each frame is essentially a window to a sorted list of index values
-	 * which also can non-continuous:
+	 * which also can be non-continuous:
 	 * <pre>
 	 * +------------------------------------------------------------+
 	 * |       from  from+1  from+2  ...  to-2   to-1   to          |
@@ -1991,6 +1994,8 @@ public class SequencePattern {
 			}
 		}
 
+		public Snapshot snapshot() { return new Snapshot(this); }
+
 		/** Fetch current scope id, i.e. a marker for resetting.  */
 		final int scope() {
 			return entry;
@@ -2076,6 +2081,50 @@ public class SequencePattern {
 		@Override
 		public final int childAt(int nodeId, int index) { return tree[nodeId].indices[index]; }
 
+	}
+
+	/** A sharable snapshot of a {@link State} instance */
+	public static class Snapshot {
+		public final int size;
+		public final Interval[] intervals;
+		public final BitSet[] gates;
+		public final int[] hits;
+		public final int[][] buffers;
+		public final int[] borders;
+		public final List<Pair<Integer, Integer>> mapping;
+		public final int[] anchors;
+		public final int last;
+		public final int frameId;
+		public final int from, to;
+		public final int[] trace;
+		public final boolean[] locked;
+
+		Snapshot(State source) {
+			size = source.size;
+			intervals = Stream.of(source.intervals)
+					.map(Interval::clone)
+					.toArray(Interval[]::new);
+			gates = Stream.of(source.gates)
+					.map(Gate::asBitSet)
+					.toArray(BitSet[]::new);
+			hits = source.hits.clone();
+			buffers = Stream.of(source.buffers)
+					.map(b -> Arrays.copyOf(b, size))
+					.toArray(int[][]::new);
+			borders = source.borders.clone();
+			mapping = IntStream.range(0, source.entry)
+					.mapToObj(i -> Pair.pair(source.m_node[i], source.m_pos[i]))
+					.collect(Collectors.toList());
+			anchors = Stream.of(source.anchors)
+					.mapToInt(a -> a.index)
+					.toArray();
+			last = source.last;
+			frameId = source.frame.index;
+			from = source.frame.from();
+			to = source.frame.to();
+			trace = Arrays.copyOf(source.trace, size);
+			locked = Arrays.copyOf(source.locked, size);
+		}
 	}
 
 	/**
@@ -2701,6 +2750,16 @@ public class SequencePattern {
 				Arrays.fill(data, min, max+1, false);
 			}
 			resetBounds();
+		}
+
+		BitSet asBitSet() {
+			BitSet bs = new BitSet();
+			if(min<=max) {
+				for(int i=min; i<=max; i++) {
+					bs.set(i);
+				}
+			}
+			return bs;
 		}
 	}
 
