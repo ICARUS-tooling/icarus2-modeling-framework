@@ -1778,6 +1778,9 @@ public class InteractiveMatcher {
 				Function<Object, String> renderer = renderers.get(value.getClass());
 				if(renderer!=null) {
 					value = renderer.apply(value);
+				} else if(value.getClass().isArray()) {
+					// should only be object arrays now
+					value = Arrays.toString((Object[])value);
 				}
 			}
 
