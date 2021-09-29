@@ -270,6 +270,8 @@ public class SequencePattern {
 		int anchorCount = 0;
 		/** Total number of closure buffers */
 		int closureCount = 0;
+		/** Total number of ping buffers */
+		int pingCount = 0;
 		/** Total number of nodes that affect the skip flag */
 		int skipControlCount;
 		/** Size info of all the permutations */
@@ -300,6 +302,7 @@ public class SequencePattern {
 		IqlNode[] getRawNodes() { return rawNodes; }
 		int[] getHits() { return new int[rawNodes.length]; }
 		int[] getBorders() { return new int[borderCount]; }
+		boolean[] getPings() { return new boolean[pingCount]; }
 		Matcher<Container> makeFilterConstraint() {
 			return filterConstraint==null ? null : filterConstraint.get();
 		}
@@ -392,6 +395,7 @@ public class SequencePattern {
 		int gateCount;
 		int skipControlCount;
 		int anchorCount;
+		int pingCount;
 		IntList permutators = new IntArrayList();
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
@@ -1237,6 +1241,7 @@ public class SequencePattern {
 		private int border() { return borderCount++; }
 		private int gate() { return gateCount++; }
 		private int anchor() { return anchorCount++; }
+		private int ping() { return pingCount++; }
 
 		private int permutator(int size) {
 			int index = permutators.size();
@@ -1878,6 +1883,8 @@ public class SequencePattern {
 		final int[][] buffers;
 		/** Stores the right boundary around marker interval operations */
 		final int[] borders;
+		/** Allows tracking whether sections of the SM actually got executed */
+		final boolean[] pings;
 
 		final Matcher<Container> filterConstraint;
 		final Expression<?> globalConstraint;
@@ -1967,6 +1974,7 @@ public class SequencePattern {
 			nodes = setup.getRawNodes();
 			hits = setup.getHits();
 			borders = setup.getBorders();
+			pings = setup.getPings();
 
 			modes = new ModeTrace[2];
 
@@ -2787,6 +2795,8 @@ public class SequencePattern {
 		final Node[] next;
 		/** Flag to signal that a {@link PermConn} has been activated. Used for skipping. (indexed by atom index) */
 		final boolean[] used;
+		/** Flag to indicate whether a slot is optional */
+//		final boolean[] optional; //TODO cleanup
 		/** Flag to indicate that the {@link PermSlot} node for a given index is allowed to use scanning. (indexed by atom index) */
 		boolean scan;
 
@@ -2797,6 +2807,7 @@ public class SequencePattern {
 			next = new Node[size];
 			fences = new int[size];
 			used = new boolean[size];
+//			optional = new boolean[size];
 		}
 
 		void reset() {
@@ -2986,11 +2997,13 @@ public class SequencePattern {
 			PERMUTATION_CONTEXT(Integer.class),
 			/** Original index of an atom within the permutation - used for linking. */
 			PERMUTATION_INDEX(Integer.class),
+			/** Id of a ping buffer */
+			PING(Integer.class),
 			/** Indicates whether or not a permutation element is meant to scan the search space for a match. */
 			SCAN(Boolean.class),
 			/** Indicates that a node is a reset or restore point for a shared operation. */
 			RESET(Boolean.class),
-			/** Indicates that a explorative node is allowed to produce zero-width assertions. */
+			/** Indicates that an explorative node is allowed to produce zero-width assertions. */
 			OPTIONAL(Boolean.class),
 			/** Direction indicator for an exhaustive scan. */
 			FORWARD(Boolean.class),
@@ -3335,18 +3348,28 @@ public class SequencePattern {
 	}
 
 	static abstract class ProperNode extends Node implements Comparable<ProperNode> {
+		private static final IqlQueryElement DUMMY = new IqlQueryElement() {
+			@Override
+			public IqlType getType() { return IqlType.DUMMY; }
+			@Override
+			public void checkIntegrity() { /* no-op */ }
+		};
+
 		final IqlQueryElement source;
+
 		ProperNode(int id, IqlQueryElement source) {
 			super(id);
 			this.source = requireNonNull(source);
+		}
+
+		ProperNode(int id) {
+			super(id);
+			this.source = DUMMY;
 		}
 		@Override
 		public int compareTo(ProperNode o) { return Integer.compare(id, o.id); }
 
 		public IqlQueryElement getSource() { return source; }
-
-		//TODO once the state machine is implemented, add monitoring methods
-//		abstract void append(StringBuilder sb);
 	}
 
 	/** Helper for "empty" nodes that are only existentially quantified. */
@@ -4009,13 +4032,19 @@ public class SequencePattern {
 	}
 
 	/** Utility node to track whether a portion of the SM actually got executed. */
-	static class Callback extends Node {
-		boolean called = false;
+	static class Ping extends Node {
+		final int pingId;
 
-		Callback(int id) { super(id); }
+		Ping(int id, int pingId) {
+			super(id);
+			this.pingId = pingId;
+		}
 
 		@Override
-		public NodeInfo info() { return new NodeInfo(this, Type.CALLBACK); }
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.CALLBACK)
+					.property(Field.PING, pingId);
+		}
 
 		/**
 		 * Default implementation only sets the {@link #called} flag and then
@@ -4027,12 +4056,16 @@ public class SequencePattern {
 		 */
 		@Override
 		boolean match(State state, int pos) {
-			called = true;
+			state.pings[pingId] = true;
 			return next.match(state, pos);
 		}
 
 		@Override
-		public String toString() { return ToStringBuilder.create(this).toString(); }
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("pingId", pingId)
+					.toString();
+		}
 	}
 
 	/** Matches an inner constraint to a specific node, employing memoization. */
@@ -4151,15 +4184,26 @@ public class SequencePattern {
 		}
 	}
 
+	/** Utility class to lay the groundwork for scan capable node implementation */
+	static abstract class Explorative extends ProperNode {
+		/** Flag to indicate that we are allowed to zero-width */
+		boolean optional;
+		/** Stop any further exploration after the first successful match has been found */
+		boolean stopOnSuccess;
+
+		Explorative(int id) { super(id); }
+
+		Explorative(int id, IqlQueryElement source) { super(id, source); }
+	}
+
 	/**
 	 * Implements a forward-only one-shot exploration of the remaining
 	 * search space. In contrast to {@link Exhaust} this type of scan will
 	 * not reset the current mapping after a matching attempt, but rather
 	 * finish the search after the first successful full match.
 	 */
-	static class Find extends Node {
+	static class Find extends Explorative {
 		int minSize = 1;
-		boolean optional;
 
 		Find(int id) { super(id); }
 
@@ -4270,10 +4314,15 @@ public class SequencePattern {
 				return next.match(state, pos);
 			}
 
+			boolean result = false;
+
 			if(forward) {
-				return matchForwardUncached(state, pos);
+				result = matchForwardUncached(state, pos);
+			} else {
+				result = matchBackwards(state, pos);
 			}
-			return matchBackwards(state, pos);
+
+			return result;
 		}
 
 		/**
@@ -4382,7 +4431,7 @@ public class SequencePattern {
 	}
 
 	/** Head node for a permutation */
-	static final class PermInit extends ProperNode {
+	static final class PermInit extends Explorative {
 		/** Raw list of elements to shuffle */
 		final Node[] atoms;
 		/** Reference to the {@link Permutator} instance */
@@ -4394,8 +4443,6 @@ public class SequencePattern {
 
 		/** Minimum length of SM tail after this permutation*/
 		int minSize;
-		/** Only look for first successful hit. Used by repitition nodes. */
-		boolean stopOnSuccess;
 
 		static final int NO_SKIP = Integer.MAX_VALUE;
 
@@ -4430,12 +4477,16 @@ public class SequencePattern {
 
 			TreeInfo tmp = new TreeInfo();
 
+			int minPermSize = 0;
+
 			for (int i = 0; i < atoms.length; i++) {
 				// Pass on downstream properties
 				tmp.stopOnSuccess = info.stopOnSuccess;
 
 				Node atom = atoms[i];
 				atom.study(tmp);
+
+				minPermSize += tmp.minSize;
 
 				minSizes[i] = tmp.minSize;
 				info.minSize += tmp.minSize;
@@ -4450,6 +4501,7 @@ public class SequencePattern {
 			int minSize0 = info.segmentSize;
 			next.study(info);
 			minSize = info.segmentSize-minSize0;
+			optional = minPermSize==0;
 
 			return info.deterministic;
 		}
@@ -4461,6 +4513,12 @@ public class SequencePattern {
 			final TreeFrame frame = state.frame;
     		final int from = frame.from();
     		final int to = frame.to();
+
+			// Short-cut for zero-width assertion
+			if(optional && pos==to+1) {
+				return next.match(state, pos);
+			}
+
         	final int scope = state.scope();
         	final int previous = frame.previousIndex;
     		boolean result = false;
@@ -4479,6 +4537,14 @@ public class SequencePattern {
 	        	// Only reset range here
 				frame.resetWindow(from, to);
 
+                if(stopOnSuccess && result) {
+                	break;
+                }
+
+	        	// Only reset if we failed or are not meant to keep the first match
+	        	state.resetScope(scope);
+	        	frame.previousIndex = previous;
+
 				/*
 				 * We might have failed due to one of the permutated nodes.
 				 * If so, check skip index and try to skip permutations. If
@@ -4488,16 +4554,9 @@ public class SequencePattern {
 					break;
 				}
 
-                if(stopOnSuccess && result) {
-                	break;
-                }
-
-	        	// Only reset if we failed or are not meant to keep the first match
-	        	state.resetScope(scope);
-	        	frame.previousIndex = previous;
-
 				// Bail as soon as permutations are exhausted
-				if(!ctx.source.next()) {
+	        	// Need to make sure we're not skipping AND trying to advance in the same pass!
+				if((matched || ctx.skip==NO_SKIP) && !ctx.source.next()) {
 					break;
 				}
 			}
@@ -4517,7 +4576,7 @@ public class SequencePattern {
 				int slot = config[i];
 				ctx.slots[slot] = i;
 				ctx.next[slot] = i==last ? next : atoms[config[i+1]];
-				ctx.current[i] = atoms[config[i]];
+				ctx.current[i] = atoms[slot];
 			}
 
 //			System.out.printf("perm %s -> %s%n", Arrays.toString(config), Arrays.toString(ctx.current));
@@ -4552,14 +4611,15 @@ public class SequencePattern {
 		}
 	}
 
-	/** Multiplexer for an individual slot in the permutation */
-	static final class PermSlot extends Node {
+	/**
+	 * Multiplexer for an individual slot in the permutation. Each {@link PermSlot}
+	 * node has a fixed {@link PermConn} as tail of its "atom".
+	 */
+	static final class PermSlot extends Explorative {
 		/** Reference to the {@link Permutator} instance */
 		final int permId;
 		/** Position of this wrapper node in the permutation */
 		final int atomIndex;
-		/** Only look for first successful hit. Used by repitition nodes. */
-		boolean stopOnSuccess;
 
 		PermSlot(int id, int permId, int atomIndex) {
 			super(id);
@@ -4583,9 +4643,13 @@ public class SequencePattern {
 		@Override
 		boolean study(TreeInfo info) {
 
+			// We can only study the SM graph until the next PermConn
+
 			stopOnSuccess = info.stopOnSuccess;
 
+			int minSize0 = info.segmentSize;
 			next.study(info);
+			optional = info.segmentSize-minSize0==0;
 
             /*
              *  We generally support skipping, but have to determine at search time
@@ -4601,13 +4665,18 @@ public class SequencePattern {
 		boolean match(State state, int pos) {
 			final PermutationContext ctx = state.permutations[permId];
 
-			boolean result = false;
+			// Short-cut for zero-width assertion
+			if(optional && pos==state.frame.to()+1) {
+				return ctx.next[atomIndex].match(state, pos);
+			}
 
 			/*
 			 *  Allow skipping inside the permutation (PermInit node takes
 			 *  care of disabling it for the first slot) depending on context.
 			 */
 			state.setMode(MODE_SKIP, ctx.scan);
+
+			boolean result = false;
 
 			// We can either search iteratively for the next match
 			if(ctx.scan && ctx.slots[atomIndex]>0) {
@@ -4647,7 +4716,7 @@ public class SequencePattern {
 			ctx.used[atomIndex] = false;
 			final boolean result = next.match(state, pos);
 			final int slot = ctx.slots[atomIndex];
-			if(!result && ctx.used[atomIndex] && slot < ctx.skip) {
+			if(!result && !ctx.used[atomIndex] && slot < ctx.skip) {
 				// Otherwise update the skip index
 				ctx.skip = slot;
 			}
@@ -4765,10 +4834,9 @@ public class SequencePattern {
 	 * {@code 0..1} (greedy) and {@code 0..1?} (reluctant) ranged
 	 * quantifiers.
 	 */
-	static final class Branch extends ProperNode {
+	static final class Branch extends Explorative {
 		final BranchConn conn;
 		final Node[] atoms;
-		boolean stopOnSuccess;
 
 		Branch(int id, IqlQueryElement source, BranchConn conn, Node...atoms) {
 			// 'source' can be either IqlMarkerExpression or IqlElementDisjunction
@@ -4826,6 +4894,12 @@ public class SequencePattern {
 			final TreeFrame frame = state.frame;
     		final int from = frame.from();
     		final int to = frame.to();
+
+			// Short-cut for zero-width assertion
+			if(optional && pos==to+1) {
+				return conn.next.match(state, pos);
+			}
+
         	final int scope = state.scope();
         	final int previous = frame.previousIndex;
 
@@ -4868,6 +4942,7 @@ public class SequencePattern {
 			for (int n = 0; n < atoms.length; n++) {
 				Node atom = atoms[n];
 				if (atom == null) {
+					minL2 = 0;
 					continue;
 				}
 				// This will cause "conn" node to forward study call at most once!
@@ -4879,6 +4954,8 @@ public class SequencePattern {
 				tmp.maxValid &= info.maxValid;
 				info.reset();
 			}
+
+			optional = minL2==0;
 
 			tmp.minSize += minL2;
 			tmp.maxSize += maxL2;
@@ -5239,7 +5316,7 @@ public class SequencePattern {
 	 * and starts a new matching process at the beginning of the new
 	 * frame.
 	 */
-	static final class Tree extends ProperNode {
+	static final class Tree extends Explorative {
 		/** Pointer to the anchor slot to fetch the node index that we step into */
 		final int anchorId;
 		/** Nested part of the automaton */
@@ -5252,8 +5329,6 @@ public class SequencePattern {
 		int depth = UNSET_INT;
 		int descendants = UNSET_INT;
 		int children = UNSET_INT;
-		/** If set we can continue even if node doesn't have a subtree */
-		boolean optional = false;
 
 		Tree(int id, IqlQueryElement source, int anchorId, Node child, TreeConn conn) {
 			super(id, source);
@@ -5327,6 +5402,7 @@ public class SequencePattern {
 		@Override
 		boolean study(TreeInfo info) {
 			depth = info.depth;
+			stopOnSuccess = info.stopOnSuccess;
 
 			// Study subtree in isolation
 			TreeInfo tmp = new TreeInfo();
@@ -5388,7 +5464,7 @@ public class SequencePattern {
 			assert anchor.parent != null : "missing return frame for anchor id: "+anchorId;
 			assert anchor.frame != null : "missing nested frame for anchor id: "+anchorId;
 
-			// Apply previously savedanchor data
+			// Apply previously saved anchor data
 			state.frame = anchor.parent;
 			pos = anchor.pos;
 
@@ -5424,21 +5500,19 @@ public class SequencePattern {
 	 * Explorative node that will continue tail of the matcher graph for
 	 * the currently active frame and <b>all</b> of its descendants.
 	 */
-	static final class TreeClosure extends ProperNode {
+	static final class TreeClosure extends Explorative {
 		/** Key to fetch the {@link ClosureContext} for this node */
 		final int closureId;
 		/** */
 		final int cacheId;
-		/** Tracker to determine whether the subtree actually got fully invoked */
-		final Callback callback;
+		/** */
+		final int pingId;
 
-		boolean stopOnSuccess;
-
-		TreeClosure(int id, IqlMarkerCall source, int closureId, int cacheId, Callback callback) {
+		TreeClosure(int id, IqlMarkerCall source, int closureId, int cacheId, int pingId) {
 			super(id, source);
 			this.closureId = closureId;
 			this.cacheId = cacheId;
-			this.callback = requireNonNull(callback);
+			this.pingId = pingId;
 		}
 
 		@Override
@@ -5446,6 +5520,8 @@ public class SequencePattern {
 			return new NodeInfo(this, Type.CLOSURE)
 					.property(Field.CLOSURE, closureId)
 					.property(Field.CACHE, cacheId)
+					.property(Field.PING, pingId)
+					.property(Field.OPTIONAL, optional)
 					.property(Field.STOP, stopOnSuccess);
 		}
 
@@ -5486,8 +5562,8 @@ public class SequencePattern {
 		        	final int scope = state.scope();
 		        	final int previous = frame.previousIndex;
 
-		        	// Reset callback tracking
-		        	callback.called = false;
+		        	// Reset ping tracking
+		        	state.pings[pingId] = false;
 
 					boolean stored = cache.isSet(index);
 					boolean matched = false;
@@ -5509,7 +5585,7 @@ public class SequencePattern {
 						// Previously unseen index, so explore and cache result
 						matched = next.match(state, step.pos);
 						// We only store the "local" success of next node
-						cache.setValue(index, callback.called);
+						cache.setValue(index, state.pings[pingId]);
 					}
 
 					result |= matched;
@@ -5549,7 +5625,11 @@ public class SequencePattern {
 		boolean study(TreeInfo info) {
 			stopOnSuccess = info.stopOnSuccess;
 			info.deterministic = false;
+
+			int minSize0 = info.segmentSize;
 			next.study(info);
+			optional = info.segmentSize-minSize0 == 0;
+
 			return info.deterministic;
 		}
 

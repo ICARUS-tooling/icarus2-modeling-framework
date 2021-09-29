@@ -11045,26 +11045,26 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'{[?]}[]', X, 1, { {{}} {{0}} }, false",
-				"'ORDERED []{[?]}', X, 1, { {{0}} {{}} }, false",
+				"'{[?]}[]', X, 2, true, { {{}{}} {{0}{0}} }",
+				"'ORDERED []{[?]}', X, 1, false, { {{0}} {{}} }",
 
-				"'{[*]}[]', X, 1, { {{}} {{0}} }, false",
-				"'ORDERED []{[*]}', X, 1, { {{0}} {{}} }, false",
+				"'{[*]}[]', X, 2, true, { {{}{}} {{0}{0}} }",
+				"'ORDERED []{[*]}', X, 1, false, { {{0}} {{}} }",
 
-				"'{[+]}[]', X, 0, -, false",
-				"'ORDERED {[+]}[]', XX, 1, { {{0}} {{1}} }, false",
-				"'[]{[+]}', X, 0, -, false",
-				"'ORDERED []{[+]}', XX, 1, { {{0}} {{1}} }, false",
-				"'ORDERED {[+]}[*]', X, 1, { {{0}} {{}} }, false",
-				"'ORDERED {[+]}[*]', XX, 2, { {{0}{1}} {{}{}} }, false",
-				"'[*]{[+]}', X, 1, { {{}} {{0}} }, false",
-				"'ORDERED [*]{[+]}', XX, 3, { {{}{}{}} {{0}{1}{1}} }, true",
+				"'{[+]}[]', X, 0, false, -",
+				"'ORDERED {[+]}[]', XX, 1, false, { {{0}} {{1}} }",
+				"'[]{[+]}', X, 0, false, -",
+				"'ORDERED []{[+]}', XX, 1, false, { {{0}} {{1}} }",
+				"'ORDERED {[+]}[*]', X, 1, false, { {{0}} {{}} }",
+				"'ORDERED {[+]}[*]', XX, 2, false, { {{0}{1}} {{}{}} }",
+				"'[*]{[+]}', X, 2, true, { {{}{}} {{0}{0}} }",
+				"'ORDERED [*]{[+]}', XX, 3, true, { {{}{}{}} {{0}{1}{1}} }",
 			})
 			@DisplayName("nested groups of dummy nodes")
 			void testDummyNodes(String query, String target, int matches,
+					boolean allowDuplicates,
 					// [node_id][match_id][hits]
-					@IntMatrixArg int[][][] hits,
-					boolean allowDuplicates) {
+					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QueryConfig.fromQuery(query))
 				.promote(true)
@@ -11325,32 +11325,34 @@ class SequencePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[{[][?]}]', XX, **, 0, -",
-				"'[{[][?]}]', XX, *0, 1, { {{0}} {{1}} }",
-				"'[{[][?]}]', XX, 1*, 1, { {{1}} {{0}} }",
-				"'[{[?][]}]', XX, **, 0, -",
-				"'[{[?][]}]', XX, *0, 1, { {{0}} {{}} {{1}} }",
-				"'[{[?][]}]', XX, 1*, 1, { {{1}} {{}} {{0}} }",
+				"'[{[][?]}]', XX, **, 0, false, -",
+				"'[{[][?]}]', XX, *0, 2, true, { {{0}{0}} {{1}{1}} }",
+				"'[{[][?]}]', XX, 1*, 2, true, { {{1}{1}} {{0}{0}} }",
+				"'[{[?][]}]', XX, **, 0, false, -",
+				"'[{[?][]}]', XX, *0, 2, true, { {{0}{0}} {{}{}} {{1}{1}} }",
+				"'[{[?][]}]', XX, 1*, 2, true, { {{1}{1}} {{}{}} {{0}{0}} }",
 
-				"'[{[][*]}]', XX, **, 0, -",
-				"'[{[][*]}]', XX, *0, 1, { {{0}} {{1}} }",
-				"'[{[][*]}]', XX, 1*, 1, { {{1}} {{0}} }",
-				"'[{[*][]}]', XX, **, 0, -",
-				"'[{[*][]}]', XX, *0, 1, { {{0}} {{}} {{1}} }",
-				"'[{[*][]}]', XX, 1*, 1, { {{1}} {{}} {{0}} }",
+				"'[{[][*]}]', XX, **, 0, false, -",
+				"'[{[][*]}]', XX, *0, 2, true, { {{0}{0}} {{1}{1}} }",
+				"'[{[][*]}]', XX, 1*, 2, true, { {{1}{1}} {{0}{0}} }",
+				"'[{[*][]}]', XX, **, 0, false, -",
+				"'[{[*][]}]', XX, *0, 2, true, { {{0}{0}} {{}{}} {{1}{1}} }",
+				"'[{[*][]}]', XX, 1*, 2, true, { {{1}{1}} {{}{}} {{0}{0}} }",
 
-				"'[{[][+]}]', XXX, *00, 2, { {{0}{0}} {{1}{2}} {{2}{1}} }",
-				"'[{[][+][]}]', XXXXX, *0010, 6, { {{0}{0}{0}{0}{0}{0}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
-				"'[{[][+][]}]', XXXXX, 133*3, 6, { {{3}{3}{3}{3}{3}{3}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
+				"'[{[][+]}]', XXX, *00, 2, false, { {{0}{0}} {{1}{2}} {{2}{1}} }",
+				"'[{[][+][]}]', XXXXX, *0010, 6, false, { {{0}{0}{0}{0}{0}{0}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
+				"'[{[][+][]}]', XXXXX, 133*3, 6, false, { {{3}{3}{3}{3}{3}{3}} {{1}{1}{2}{4}{2}{4}} {{2}{4}{1}{1}{4}{2}} {{4}{2}{4}{2}{1}{1}} }",
 			})
 			@DisplayName("child group with dummy nodes")
 			void testDummyNodes(String query, String target, String tree, int matches,
+					boolean allowDuplicates,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QueryConfig.fromQuery(query))
 				.tree(tree)
 				.promote(true)
+				.allowDuplicates(allowDuplicates)
 				.options(Option.KEEP_REDUNDANT_GROUPING)
 				.assertResult();
 			}

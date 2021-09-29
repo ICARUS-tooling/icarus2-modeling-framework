@@ -168,7 +168,10 @@ public abstract class Permutator {
 		}
 
 		@Override
-		public boolean skip(int index) { return cursor!=UNSET_INT && cursor<data.length && (cursor = skips[cursor][index]) != UNSET_INT; }
+		public boolean skip(int index) {
+			return cursor!=UNSET_INT && cursor<data.length
+					&& (cursor = skips[cursor][index]) != UNSET_INT;
+		}
 
 		@Override
 		public void reset() { cursor = 0; }
