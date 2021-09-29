@@ -22,6 +22,8 @@ package de.ims.icarus2.query.api.engine.matcher.mark;
 import java.util.HashSet;
 import java.util.Set;
 
+import de.ims.icarus2.query.api.iql.IqlMarker;
+
 /**
  * @author Markus Gärtner
  *
@@ -46,5 +48,10 @@ public class GenerationMarker {
 
 	public static boolean isValidName(String s) {
 		return names.contains(s.toLowerCase());
+	}
+
+	public static boolean containsGenerationMarker(IqlMarker marker) {
+		//TODO implement full scan of marker tree
+		throw new UnsupportedOperationException();
 	}
 }
