@@ -10816,6 +10816,20 @@ class SequencePatternTest {
 				.assertResult();
 			}
 
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[$X [IsAnyGeneration,$Y]]', XY, *0, 0, -",
+			})
+			@DisplayName("child node with sequence marker")
+			void testGenerationMarkerOnChild(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.assertResult();
+			}
+
 			//TODO
 		}
 

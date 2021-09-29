@@ -103,7 +103,6 @@ import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
-import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
@@ -2091,6 +2090,18 @@ public class SequencePattern {
 
 	}
 
+	public static class Mapping {
+		public final int nodeId, index;
+
+		public Mapping(int nodeId, int index) {
+			this.nodeId = nodeId;
+			this.index = index;
+		}
+
+		@Override
+		public String toString() { return nodeId + "->" + index;}
+	}
+
 	/** A sharable snapshot of a {@link State} instance */
 	public static class Snapshot {
 		public final int size;
@@ -2099,7 +2110,7 @@ public class SequencePattern {
 		public final int[] hits;
 		public final int[][] buffers;
 		public final int[] borders;
-		public final List<Pair<Integer, Integer>> mapping;
+		public final List<Mapping> mapping;
 		public final int[] anchors;
 		public final int last;
 		public final int frameId;
@@ -2121,7 +2132,7 @@ public class SequencePattern {
 					.toArray(int[][]::new);
 			borders = source.borders.clone();
 			mapping = IntStream.range(0, source.entry)
-					.mapToObj(i -> Pair.pair(source.m_node[i], source.m_pos[i]))
+					.mapToObj(i -> new Mapping(source.m_node[i], source.m_pos[i]))
 					.collect(Collectors.toList());
 			anchors = Stream.of(source.anchors)
 					.mapToInt(a -> a.index)
