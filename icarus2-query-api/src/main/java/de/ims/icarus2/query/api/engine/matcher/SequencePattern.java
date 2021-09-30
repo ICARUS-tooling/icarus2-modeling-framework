@@ -1097,9 +1097,9 @@ public class SequencePattern {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					seg = intersection(items, scan, nodeAction, nestedMarkerAction);
+					seg = markerIntersection(items, scan, nodeAction, nestedMarkerAction);
 				} else {
-					seg = union(items, scan, nodeAction, nestedMarkerAction);
+					seg = markerUnion(items, scan, nodeAction, nestedMarkerAction);
 				}
 			} break;
 
@@ -1190,7 +1190,7 @@ public class SequencePattern {
 		};
 
 		/** Combine sequence of intersecting markers */
-		private Segment intersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment markerIntersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
@@ -1206,16 +1206,16 @@ public class SequencePattern {
 		}
 
 		/** Create branches for disjunctive markers */
-		private Segment union(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment markerUnion(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
 			MutableBoolean hasDynamicInterval = new MutableBoolean(false);
-			List<FixedClip> fixedIntervals = new ArrayList<>();
+			List<Interval> fixedIntervals = new ArrayList<>();
 
 			Consumer<? super Node> action2 = nodeAction.andThen(node -> {
 				if(node instanceof FixedClip) {
-					fixedIntervals.add((FixedClip) node);
+					fixedIntervals.add(((FixedClip) node).region);
 				} else {
 					hasDynamicInterval.setBoolean(true);
 				}
@@ -1225,13 +1225,26 @@ public class SequencePattern {
 					i -> marker(markers.get(i), null, action2, nestedMarkerAction).toFrame());
 			seg.setFlag(Flag.COMPLEX_MARKER);
 
-			//TODO use the info from hasDynamicInterval and fixedIntervals to decide on whether we need gates here!
-			final int gateId = gate();
 			if(scan!=null) {
 				seg.append(scan);
 			}
-			seg.push(filter(true, gateId));
-			seg.append(filter(false, gateId));
+
+			// We only need a gate in case alternative branches can produce overlapping intervals
+			boolean requiresGate = hasDynamicInterval.booleanValue();
+			if(!requiresGate && !fixedIntervals.isEmpty()) {
+				Collections.sort(fixedIntervals);
+				for (int i = 1; i < fixedIntervals.size(); i++) {
+					if(fixedIntervals.get(i-1).to >= fixedIntervals.get(i).from) {
+						requiresGate = true;
+						break;
+					}
+				}
+			}
+			if(requiresGate) {
+				final int gateId = gate();
+				seg.push(filter(true, gateId));
+				seg.append(filter(false, gateId));
+			}
 			return seg;
 		}
 
@@ -1338,8 +1351,7 @@ public class SequencePattern {
 				 * do not have an additional tail set to them.
 				 */
 				if(start instanceof Branch && !atom.hasAffix()
-						&& end instanceof BranchConn
-						&& ((Branch)start).conn==end) {
+						&& end == start) {
 					Branch branch = (Branch) start;
 					Node[] nestedAtoms = branch.getAtoms();
 					Node nestedConn = branch.conn;
@@ -1658,11 +1670,12 @@ public class SequencePattern {
 			indices = new int[initialSize];
 		}
 
-		/** Ensure that {@code newSize} index values fit into the indices buffer */
+		/** Ensure that {@code newSize} index values fit into the indices buffer. */
 		void resize(int newSize) {
 			indices = Arrays.copyOf(indices, newSize);
 		}
 
+		/** Discard previousIndex and set the window of this frame to cover its entire length. */
 		public void reset() {
 			window.reset(0, length-1);
 			previousIndex = UNSET_INT;
@@ -2848,6 +2861,9 @@ public class SequencePattern {
 		ClosureContext(int initialSize) {
 			depth = UNSET_INT;
 			steps = new ClosureStep[initialSize];
+			for (int i = 0; i < initialSize; i++) {
+				steps[i] = new ClosureStep();
+			}
 		}
 
 		@Override
@@ -2866,7 +2882,7 @@ public class SequencePattern {
 		ClosureStep current() { return steps[depth]; }
 
 		/** Go up one level */
-		void ascend() { depth--; }
+		boolean ascend() { return depth-- > 0; }
 		/** Go down one level and store frameId and 0-pos as step data */
 		void descend(int frameId) { depth++; current().reset(frameId, 0); }
 	}
@@ -4043,7 +4059,7 @@ public class SequencePattern {
 	}
 
 	/** Utility node to track whether a portion of the SM actually got executed. */
-	static class Ping extends Node {
+	static final class Ping extends Node {
 		final int pingId;
 
 		Ping(int id, int pingId) {
@@ -4214,6 +4230,7 @@ public class SequencePattern {
 	 * finish the search after the first successful full match.
 	 */
 	static class Find extends Explorative {
+		/** Minimum size of tail */
 		int minSize = 1;
 
 		Find(int id) { super(id); }
@@ -4269,12 +4286,12 @@ public class SequencePattern {
 
 		@Override
 		boolean study(TreeInfo info) {
-			int minSize0 = info.segmentSize;
+			int segmentSize0 = info.segmentSize;
 			next.study(info);
-			minSize = info.segmentSize-minSize0;
+			minSize = info.segmentSize-segmentSize0;
 			optional = minSize==0;
 
-			/* For scanning an optional inner atom behaves similar to a single
+			/* For scanning, an optional inner atom behaves similar to a single
 			 * node of size 1, as in either case we are going to scan till the last
 			 * position in the current search space.
 			 */
@@ -4509,9 +4526,9 @@ public class SequencePattern {
 				tmp.reset();
 			}
 
-			int minSize0 = info.segmentSize;
+			int segmentSize0 = info.segmentSize;
 			next.study(info);
-			minSize = info.segmentSize-minSize0;
+			minSize = info.segmentSize-segmentSize0;
 			optional = minPermSize==0;
 
 			return info.deterministic;
@@ -4658,9 +4675,9 @@ public class SequencePattern {
 
 			stopOnSuccess = info.stopOnSuccess;
 
-			int minSize0 = info.segmentSize;
+			int segmentSize0 = info.segmentSize;
 			next.study(info);
-			optional = info.segmentSize-minSize0==0;
+			optional = info.segmentSize-segmentSize0==0;
 
             /*
              *  We generally support skipping, but have to determine at search time
@@ -4966,7 +4983,7 @@ public class SequencePattern {
 				info.reset();
 			}
 
-			optional = minL2==0;
+			optional = segL==0;
 
 			tmp.minSize += minL2;
 			tmp.maxSize += maxL2;
@@ -5518,6 +5535,8 @@ public class SequencePattern {
 		final int cacheId;
 		/** */
 		final int pingId;
+		/** Minimum size of the nested atom */
+		int minSize;
 
 		TreeClosure(int id, IqlMarkerCall source, int closureId, int cacheId, int pingId) {
 			super(id, source);
@@ -5543,26 +5562,31 @@ public class SequencePattern {
 			final ClosureContext ctx = state.closures[closureId];
 			final Cache cache = state.caches[cacheId];
 
+			assert root!=state.rootFrame : "Cannot descend _into_ root frame";
+
 			/*
 			 * We run a pre-order traversal on the subtree with
 			 * local trace so that we don't blow up the Java stack.
 			 */
 
-			// 0-depth frame, match in current context
-			boolean result = next.match(state, pos);
+			boolean result = false;
 
-			// Prepare first child frame
-			ctx.depth = 1;
+			// Prepare current frame and pos as starting point
+			ctx.depth = 0;
 			ctx.current().reset(root.index, pos);
 
-			while(!state.stop && ctx.depth>0) {
+			while(!state.stop) {
 				ClosureStep step = ctx.current();
 
 				TreeFrame frame = state.tree[step.frameId];
 				assert frame!=state.rootFrame : "Cannot descend _into_ root frame";
 
 				// Try remaining nodes in current frame
-				if(step.pos < frame.length) {
+				if(step.pos < frame.length - minSize + 1) {
+					if(step.pos==0) {
+						frame.reset();
+					}
+
 					// Assign current frame context
 					state.frame = frame;
 
@@ -5612,17 +5636,21 @@ public class SequencePattern {
 		        	state.resetScope(scope);
 		        	frame.previousIndex = previous;
 
-					// Continue to next neighbor for future traversal
-					step.pos++;
 					// Now descend if possible
-					if(frame.length > 0) {
-						ctx.descend(frame.lowest());
+					if(state.tree[index].length > 0) {
+						ctx.descend(index);
+					} else {
+						// Or continue to next neighbor for future traversal
+						step.pos++;
 					}
 				}
 				// Subtree exhausted, ascend and move on
-				else {
-					ctx.ascend();
+				else if(ctx.ascend()) {
 					ctx.current().pos++;
+				}
+				// Cannot ascend further -> bail
+				else {
+					break;
 				}
 			}
 
@@ -5637,9 +5665,16 @@ public class SequencePattern {
 			stopOnSuccess = info.stopOnSuccess;
 			info.deterministic = false;
 
-			int minSize0 = info.segmentSize;
+			int segmentSize0 = info.segmentSize;
 			next.study(info);
-			optional = info.segmentSize-minSize0 == 0;
+			minSize = info.segmentSize-segmentSize0;
+			optional = minSize==0;
+
+			/* For scanning, an optional inner atom behaves similar to a single
+			 * node of size 1, as in either case we are going to scan till the last
+			 * position in the current search space.
+			 */
+			minSize = Math.max(minSize, 1);
 
 			return info.deterministic;
 		}

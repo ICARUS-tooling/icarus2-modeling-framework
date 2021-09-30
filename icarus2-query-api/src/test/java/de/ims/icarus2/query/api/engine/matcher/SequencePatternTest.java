@@ -22,12 +22,15 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockCorpus;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePattern.last;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.ANCHOR_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_2;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_2;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CLOSURE_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.DISCONTINUOUS;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
@@ -44,6 +47,7 @@ import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_STOP;
+import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.PING_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_0;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.branch;
 import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.item;
@@ -143,12 +147,14 @@ import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NonResettingMatcher;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Ping;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceQueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Tree;
+import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeClosure;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeConn;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
@@ -332,6 +338,9 @@ class SequencePatternTest {
 		static final int CLOSURE_0 = 0;
 		static final int CLOSURE_1 = 1;
 		static final int CLOSURE_2 = 2;
+		static final int PING_0 = 0;
+		static final int PING_1 = 1;
+		static final int PING_2 = 2;
 
 		static final int NO_FIND = UNSET_INT;
 
@@ -955,6 +964,10 @@ class SequencePatternTest {
 		@SuppressWarnings("unchecked")
 		private C thisAsCast() { return (C) this; }
 
+		/**
+		 * Designate start position for matching. If root note is not scan capable
+		 * no additional exploration will be performed besides that start value!
+		 */
 		C startPos(int startPos) {
 			checkArgument("Start pos must be 0 or positive", startPos>=0);
 			checkState("Start position already set", this.startPos==null);
@@ -962,12 +975,14 @@ class SequencePatternTest {
 			return thisAsCast();
 		}
 
+		/** Designate overall result value. Does not influence expected match count. */
 		C expectedResult(boolean expectedResult) {
 			checkState("Expected result already set", this.expectedResult==null);
 			this.expectedResult = Boolean.valueOf(expectedResult);
 			return thisAsCast();
 		}
 
+		/** Designate expected result count. Does not influence expected result value. */
 		C expectedCount(int expectedCount) {
 			checkArgument("Expected count must be 0 or positive", expectedCount>=0);
 			checkState("Expected count already set", this.expectedCount==null);
@@ -975,14 +990,20 @@ class SequencePatternTest {
 			return thisAsCast();
 		}
 
+		/**
+		 * Designate result value and count simultaneously. If {@code expectedCount}
+		 * is geater than {@code 0} expected result value will be set to {@code true}.
+		 */
 		C expectMatches(int expectedCount) {
 			return expectedResult(expectedCount>0).expectedCount(expectedCount);
 		}
 
+		/** Set expected result value to {@code true} and expected count to given value. */
 		C expectSuccess(int expectedCount) {
 			return expectedResult(true).expectedCount(expectedCount);
 		}
 
+		/** Set expected result value to {@code false} and expected count to {@code 0}. */
 		C expectFail() {
 			return expectedResult(false).expectedCount(0);
 		}
@@ -997,16 +1018,20 @@ class SequencePatternTest {
 		protected boolean expectedResult() { return expectedResult.booleanValue(); }
 		protected int expectedCount() { return expectedCount.intValue(); }
 
+		/** Specify if result is allowed to contain duplicate mapping sets. */
 		C allowDuplicates(boolean allowDuplicates) {
 			checkState("Allow duplicates flag already set", this.allowDuplicates==null);
 			this.allowDuplicates = Boolean.valueOf(allowDuplicates);
 			return thisAsCast();
 		}
 
+		/** Designate a monitor for tracking the state machine during mactching. */
 		C monitor(Monitor monitor) { this.monitor = monitor; return thisAsCast(); }
 
+		/** Add a config with assertions for a single node. */
 		C node(NodeConfig node) { nodes.add(requireNonNull(node)); return thisAsCast(); }
 
+		/** Add assertions for a cache. */
 		C cache(CacheConfig cache) { caches.add(requireNonNull(cache)); return thisAsCast(); }
 
 		/** Map set of indices to nodeId in active mapping */
@@ -2034,6 +2059,7 @@ class SequencePatternTest {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.rawNodes = new IqlNode[1];
 					sms.cacheCount = 1;
+					sms.initialSize = 10;
 					sms.root = seq(
 							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 							new Finish(id(), NO_LIMIT, false));
@@ -2072,6 +2098,7 @@ class SequencePatternTest {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
+					sms.initialSize = 10;
 					sms.root = seq(
 							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
@@ -2131,6 +2158,7 @@ class SequencePatternTest {
 						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
+						sms.initialSize = 10;
 						sms.root = seq(
 								new Exhaust(id(), true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -2253,6 +2281,7 @@ class SequencePatternTest {
 						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
+						sms.initialSize = 10;
 						sms.root = seq(
 								new Exhaust(id(), true),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -2374,6 +2403,7 @@ class SequencePatternTest {
 						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
+						sms.initialSize = 10;
 						sms.root = seq(
 								new Exhaust(id(), false),
 								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -2500,6 +2530,7 @@ class SequencePatternTest {
 						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
+						sms.initialSize = 10;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
@@ -2651,6 +2682,7 @@ class SequencePatternTest {
 						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
+						sms.initialSize = 10;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
@@ -2801,6 +2833,7 @@ class SequencePatternTest {
 						sms.rawNodes = new IqlNode[1];
 						sms.cacheCount = 1;
 						sms.limit = limit;
+						sms.initialSize = 10;
 						sms.intervals = new Interval[]{ region };
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
@@ -2962,6 +2995,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -2984,6 +3018,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3041,6 +3076,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3061,6 +3097,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3138,6 +3175,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3221,6 +3259,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3288,6 +3327,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3370,6 +3410,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3390,6 +3431,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3446,6 +3488,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3466,6 +3509,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3511,6 +3555,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3563,6 +3608,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3646,6 +3692,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[1];
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3714,6 +3761,7 @@ class SequencePatternTest {
 							sms.rawNodes = new IqlNode[2];
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
+							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3791,6 +3839,7 @@ class SequencePatternTest {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
+					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0,
 									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3871,6 +3920,7 @@ class SequencePatternTest {
 					sms.rawNodes = new IqlNode[1];
 					sms.cacheCount = 1;
 					sms.limit = 1;
+					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0,
 									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
@@ -3927,6 +3977,7 @@ class SequencePatternTest {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
+					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0,
 									null,
@@ -4040,6 +4091,7 @@ class SequencePatternTest {
 					sms.rawNodes = new IqlNode[preds.length];
 					sms.cacheCount = preds.length;
 					sms.anchorCount = preds.length-1;
+					sms.initialSize = 10;
 					sms.root = scan;
 					sms.matchers = matchers(matchers);
 					return sms;
@@ -4168,69 +4220,97 @@ class SequencePatternTest {
 
 			/** {@code [$X [isAnyGeneration, $Y]]} */
 			private StateMachineSetup transitiveSingleChildSetup() {
-//				Node finish = new Finish(id(), NO_LIMIT, false);
-//
-//				Single child = new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, UNSET_INT);
-//				child.setNext(finish);
-//
-//				TreeClosure closure = new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0);
-//				closure.setNext(child);
-//
-//				Node scan = new Exhaust(id(), true);
-//
-//
-//				Single[] atoms = new Single[preds.length];
-//				@SuppressWarnings("unchecked")
-//				Matcher<Item>[] matchers = new Matcher[preds.length];
-//				for (int i = 0; i < preds.length; i++) {
-//					boolean hasChild = i<preds.length-1;
-//					matchers[i] = matcher(i, preds[i]);
-//					IqlTreeNode treeNode = mock(IqlTreeNode.class);
-//					atoms[i] = new Single(id(), treeNode, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
-//				}
-//
-//				Node atom = atoms[atoms.length-1];
-//				Node tail = atom;
-//
-//				for (int i = atoms.length-2; i >= 0; i--) {
-//					Single node = atoms[i];
-//					Node conn = tree(node, atom, () -> id());
-//					atom = node;
-//					tail = conn;
-//				}
-//
-//				Node scan = new Exhaust(id(), NO_CACHE, true);
-//				Node finish = new Finish(id(), NO_LIMIT, false);
-//
-//				scan.setNext(atom);
-//				tail.setNext(finish);
+
+				Node atom = seq(
+						new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0, CACHE_1, PING_0),
+						new Single(id(), mock(IqlNode.class), NODE_1, CACHE_2, NO_MEMBER, UNSET_INT),
+						new Ping(id(), PING_0)
+				);
+
+				IqlTreeNode treeNode = mock(IqlTreeNode.class);
+				TreeConn conn = new TreeConn(id(), treeNode, ANCHOR_0);
+				Tree tree = new Tree(id(), treeNode, ANCHOR_0, atom, conn);
+				last(atom).setNext(conn);
 
 				StateMachineSetup sms = new StateMachineSetup();
 				sms.rawNodes = new IqlNode[2];
 				sms.cacheCount = 3; // 0 = first node, 1 = closure, 2 = second node
 				sms.anchorCount = 1;
 				sms.closureCount = 1;
-				sms.root = null;
+				sms.pingCount = 1;
+				sms.initialSize = 10;
+				sms.root = seq(
+						new Exhaust(id(), true),
+						new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, ANCHOR_0),
+						tree,
+						new Finish(id(), NO_LIMIT, NO_STOP)
+				);
 				sms.matchers = matchers(matcher(NODE_0, EQUALS_X), matcher(NODE_1, EQUALS_Y));
 				return sms;
 			}
 
-			@Disabled("needs rework of setup method!!!")
 			@ParameterizedTest
 			@CsvSource({
-				"AB, 1*",
-				"ABC, *00",
-				"ACB, *01",
+				"XY, 1*",
+				"XXX, *01",
+				"YXX, *01",
 			})
-			@DisplayName("[$A [$B [$C]]] -> no matches")
+			@DisplayName("[$X [isAnyGeneration, $Y]] -> no matches in {0} [{1}]")
 			void testDoubleNestingFail(String target, String tree) {
 				rawTest()
 					.setup(transitiveSingleChildSetup())
 					.target(target)
 					.tree(tree)
 					.startPos(0)
-					//TODO define proper success expectations!!
 					.expectFail()
+					.assertResult();
+			}
+
+			@ParameterizedTest
+			@CsvSource({
+				// direct child
+				"XY, *0, 0, 0, 1",
+				"YX, 1*, 1, 1, 0",
+				// direct child with siblings
+				"XABY, *000, 0, 0, 3",
+				"XAYB, *000, 0, 0, 2",
+				"XYAB, *000, 0, 0, 1",
+				"AXBY, 1*11, 1, 1, 3",
+				"AXYB, 1*11, 1, 1, 2",
+				"YXAB, 1*11, 1, 1, 0",
+				"ABXY, 22*2, 2, 2, 3",
+				"AYXB, 22*2, 2, 2, 1",
+				"YAXB, 22*2, 2, 2, 0",
+				"ABYX, 333*, 3, 3, 2",
+				"AYBX, 333*, 3, 3, 1",
+				"YABX, 333*, 3, 3, 0",
+				// 1 intermediate node
+				"XAY, *01, 0, 0, 2",
+				"XYA, *20, 0, 0, 1",
+				"AXY, 1*0, 1, 1, 2",
+				"YXA, 2*1, 1, 1, 0",
+				"YAX, 12*, 2, 2, 0",
+				"AYX, 20*, 2, 2, 1",
+				// multiple intermediate nodes (list-degenerated tree)
+				"XABY, *012, 0, 0, 3",
+				"AXBY, 1*02, 1, 1, 3",
+				"ABXY, 20*1, 2, 2, 3",
+				"ABYX, 301*, 3, 3, 2",
+				// multiple intermediate nodes (flat tree) with sibling
+				"XABCY, *0122, 0, 0, 4",
+				"XABYC, *0122, 0, 0, 3",
+			})
+			@DisplayName("[$X [isAnyGeneration, $Y]] -> 1 hit in {0} [{1}] at {2} (hitX={3}, hitY={4})")
+			void testSingleHit(String target, String tree, int startPos, int hitX, int hitY) {
+				rawTest()
+					.setup(transitiveSingleChildSetup())
+					.target(target)
+					.tree(tree)
+					.startPos(startPos)
+					.expectSuccess(1)
+					.result(result(0)
+							.map(NODE_0, hitX)
+							.map(NODE_1, hitY))
 					.assertResult();
 			}
 		}
@@ -4258,6 +4338,7 @@ class SequencePatternTest {
 					sms.rawNodes = new IqlNode[nodeCount];
 					sms.cacheCount = nodeCount;
 					sms.limit = limit;
+					sms.initialSize = 10;
 					sms.root = seq(nodes(limit, predicates));
 					sms.matchers = matchers(IntStream.range(0, nodeCount)
 								.mapToObj(i -> matcher(i, predicates[i]))
@@ -4426,6 +4507,7 @@ class SequencePatternTest {
 					StateMachineSetup sms = new StateMachineSetup();
 					sms.rawNodes = new IqlNode[2];
 					sms.cacheCount = 2;
+					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0, options),
 							new Finish(id(), NO_LIMIT, false));
