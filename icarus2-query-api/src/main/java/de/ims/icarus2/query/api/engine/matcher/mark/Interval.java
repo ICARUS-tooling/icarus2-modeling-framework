@@ -35,7 +35,7 @@ import com.google.common.annotations.VisibleForTesting;
  * @author Markus Gärtner
  *
  */
-public class Interval implements Cloneable {
+public class Interval implements Cloneable, Comparable<Interval> {
 
 	public static Interval of(int value) {
 		Interval iv = new Interval();
@@ -109,6 +109,19 @@ public class Interval implements Cloneable {
 		this.from = Math.max(this.from, from);
 		this.to = Math.min(this.to, to);
 		return this.from<=this.to;
+	}
+
+	@Override
+	public int compareTo(Interval o) {
+		if(isEmpty()) {
+			return o.isEmpty() ? 0 : -1 ;
+		}
+
+		int r = from - o.from;
+		if(r==0) {
+			r = to - o.to;
+		}
+		return r;
 	}
 
 	@Override
