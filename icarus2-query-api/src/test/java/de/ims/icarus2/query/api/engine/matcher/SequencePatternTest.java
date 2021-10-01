@@ -1652,6 +1652,16 @@ class SequencePatternTest {
 			return this;
 		}
 
+		CacheConfig hitsExcept(String s, int...exceptions) {
+			for (int i = 0; i < s.length(); i++) {
+				hits.add(i);
+			}
+			for (int exception : exceptions) {
+				hits.remove(exception);
+			}
+			return this;
+		}
+
 		void assertResult(int startPos, State state) {
 			Interval[] window = this.window;
 			if(window==null) {
@@ -4222,8 +4232,8 @@ class SequencePatternTest {
 			private StateMachineSetup transitiveSingleChildSetup() {
 
 				Node atom = seq(
-						new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0, CACHE_1, PING_0),
-						new Single(id(), mock(IqlNode.class), NODE_1, CACHE_2, NO_MEMBER, UNSET_INT),
+						new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0, CACHE_2, PING_0),
+						new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, UNSET_INT),
 						new Ping(id(), PING_0)
 				);
 
@@ -4311,6 +4321,20 @@ class SequencePatternTest {
 					.result(result(0)
 							.map(NODE_0, hitX)
 							.map(NODE_1, hitY))
+					// Cache for parent node
+					.cache(cache(CACHE_0, false).set(startPos).hits(hitX))
+					// Cache for child node
+					.cache(cache(CACHE_1, false)
+							.window(target)
+							.setForWindow()
+							.unset(hitX)
+							.hits(hitY))
+					// Cache for closure
+					.cache(cache(CACHE_2, false)
+							.window(target)
+							.setForWindow()
+							.unset(hitX)
+							.hits(hitY))
 					.assertResult();
 			}
 		}
@@ -10898,12 +10922,23 @@ class SequencePatternTest {
 				.assertResult();
 			}
 
-			@Disabled("not possible with current processor") //TODO enable when proper marker detection is implemented
 			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
 			@CsvSource({
-				"'[$X [IsAnyGeneration,$Y]]', XY, *0, 0, -",
+				// Fails
+				"'[$X [IsAnyGeneration,$Y]]', XY, 1*, 0, -",
+				// Simple nesting
+				"'[$X [IsAnyGeneration,$Y]]', XY, *0, 1, { {{0}} {{1}} }",
+				"'[$X [IsAnyGeneration,$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
+				// Simple nesting with siblings
+				"'[$X [IsAnyGeneration,$Y]]', XYY, *00, 2, { {{0}{0}} {{1}{2}} }",
+				"'[$X [IsAnyGeneration,$Y]]', YXY, 1*1, 2, { {{1}{1}} {{0}{2}} }",
+				"'[$X [IsAnyGeneration,$Y]]', YYX, 22*, 2, { {{2}{2}} {{0}{1}} }",
+				// Simple nesting with non-matching siblings
+				"'[$X [IsAnyGeneration,$Y]]', XAYB, *000, 1, { {{0}} {{2}} }",
+				"'[$X [IsAnyGeneration,$Y]]', XYAY, *000, 2, { {{0}{0}} {{1}{3}} }",
+				// Cascaded nesting
 			})
-			@DisplayName("child node with sequence marker")
+			@DisplayName("child node with generation marker")
 			void testGenerationMarkerOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {

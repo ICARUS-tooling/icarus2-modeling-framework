@@ -67,6 +67,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
+import de.ims.icarus2.query.api.engine.matcher.mark.GenerationMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
@@ -395,11 +396,13 @@ public class SequencePattern {
 		int skipControlCount;
 		int anchorCount;
 		int pingCount;
+		int closureCount;
 		IntList permutators = new IntArrayList();
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
 		ElementContext context;
 		ExpressionFactory expressionFactory;
+		final MarkerUtils markerUtils = new MarkerUtils();
 
 		boolean findOnly = false;
 
@@ -687,6 +690,79 @@ public class SequencePattern {
 			}
 		}
 
+		private static class MarkerUtils {
+			private int markerCount;
+			private int genMarkerCount;
+			private boolean hasDisjunction;
+			private IqlMarker marker;
+			/** Disjunctive sections of the marker construct */
+			private final List<MarkerSetup> setups = new ArrayList<>();
+
+			void checkMarker(IqlMarker marker) {
+				switch (marker.getType()) {
+				case MARKER_CALL: {
+					IqlMarkerCall call = (IqlMarkerCall) marker;
+					if(GenerationMarker.isValidName(call.getName())) {
+						genMarkerCount++;
+					}
+					markerCount++;
+				} break;
+
+				case MARKER_EXPRESSION: {
+					IqlMarkerExpression exp = (IqlMarkerExpression) marker;
+					if(exp.getExpressionType()==MarkerExpressionType.DISJUNCTION) {
+						hasDisjunction = true;
+					}
+					exp.getItems().forEach(this::checkMarker);
+				} break;
+
+				default:
+					throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
+				}
+			}
+
+			void reset() {
+				marker = null;
+				markerCount = genMarkerCount = 0;
+				hasDisjunction = false;
+				setups.clear();
+			}
+
+			void extractGenerationMarkers(IqlMarker marker) {
+				reset();
+				this.marker = requireNonNull(marker);
+				checkMarker(marker);
+
+				// No generation markers
+				if(genMarkerCount==0) {
+					setups.add(new MarkerSetup(marker, null));
+					return;
+				}
+				// Only generation markers
+				else if(markerCount==genMarkerCount) {
+					setups.add(new MarkerSetup(null, marker));
+					return;
+				}
+				// Fully conjunctive mix -> collect generation markers in front
+				else if(!hasDisjunction) {
+					//TODO colelct markers and split in 2 lists
+				}
+				//TODO split marker construct and assign horizontalMarker and generationMarker
+				else {
+					throw new UnsupportedOperationException("not implemented yet");
+				}
+			}
+		}
+
+		private static class MarkerSetup {
+			final IqlMarker horizontalMarker, generationMarker;
+
+			public MarkerSetup(IqlMarker horizontalMarker, IqlMarker generationMarker) {
+				this.horizontalMarker = horizontalMarker;
+				this.generationMarker = generationMarker;
+			}
+		}
+
 		SequenceQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
 			modifier = builder.getModifier();
@@ -722,8 +798,6 @@ public class SequencePattern {
 
 		// RAW ELEMENT PROCESSING
 
-		//FIXME currently we might distort the legal intervals when shifting them to the left
-
 		/** Process single node */
 		private Frame node(IqlNode source, @Nullable Node scan, boolean isTree) {
 
@@ -736,8 +810,6 @@ public class SequencePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 			final int anchorId = isTree && ((IqlTreeNode)source).getChildren().isPresent() ? anchor() : UNSET_INT;
-
-			final Frame frame = new Frame();
 
 			Segment atom;
 
@@ -765,12 +837,12 @@ public class SequencePattern {
 				atom = quantify(atom, quantifiers);
 			}
 
-			frame.push(atom);
-
 			// Ignore outer scan if our atom is actually capable of scanning
-			if(scan!=null && unwrap(frame.start()).isScanCapable()) {
+			if(scan!=null && unwrap(atom.start()).isScanCapable()) {
 				scan = null;
 			}
+
+			final Frame frame;
 
 			/*
 			 * We don't handle markers immediately at the node position they
@@ -781,46 +853,59 @@ public class SequencePattern {
 			 * markers on multiple (nested) nodes in an ADJACENT sequence as erroneous.
 			 */
 			if(marker!=null) {
-				int border = border();
-				IntList nestedMarkerIndices = new IntArrayList();
-				Segment filter = marker(marker, scan, IcarusUtils.DO_NOTHING(), nestedMarkerIndices::add);
-				// Saves the previousIndex window
-				frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
-				// Creates the marker window
-				frame.prefix().append(filter);
-				// Restores previousIndex window
-				frame.suffix().append(borderEnd(border));
-				// Consume scan
+				markerUtils.extractGenerationMarkers(marker);
+
+				if(markerUtils.setups.size()>1) {
+					//TODO need a way to use the same atom node for all branches
+					throw new UnsupportedOperationException("not implemented yet");
+				} else {
+					frame = markerSetup(markerUtils.setups.get(0), scan, atom);
+				}
+
+				markerUtils.reset();
+
+				// Marker construct consumes scan
 				scan = null;
+			} else {
+				// Start with atom itself
+				frame = new Frame();
+				frame.push(atom);
 			}
 
+
 			if(anchorId!=UNSET_INT) {
-				IqlTreeNode treeNode = (IqlTreeNode) source;
-				IqlElement children = treeNode.getChildren().get();
-
-				// Exhaustive inner search for child node construct
-				Node innerScan = exhaust(true);
-				level++;
-				Frame child = process(children, innerScan);
-				level--;
-				// Collapse entire atom as we cannot hoist anything out of the tree node
-				child.collapse();
-
-				// Connect atom to tail
-				TreeConn conn = treeCon(treeNode, anchorId);
-				child.append(conn);
-
-				// Wrap atom into tree node and add after the "content" node section
-				Node tree = tree(treeNode, anchorId, child.start(), conn);
-				frame.append(tree);
+				// Only modifies center content (tail) of frame
+				addTree(frame, (IqlTreeNode) source, anchorId);
 			}
 
 			// If external scan survived atom and marker overrides, apply it finally
 			if(scan!=null) {
+				// Only modifies center content (head) of frame
 				frame.push(scan);
 			}
 
 			return frame;
+		}
+
+		/** Append a tree construct at end of (single node) frame */
+		private void addTree(Frame frame, IqlTreeNode treeNode, int anchorId) {
+			IqlElement children = treeNode.getChildren().get();
+
+			// Exhaustive inner search for child node construct
+			Node innerScan = exhaust(true);
+			level++;
+			Frame child = process(children, innerScan);
+			level--;
+			// Collapse entire atom as we cannot hoist anything out of the tree node
+			child.collapse();
+
+			// Connect atom to tail
+			TreeConn conn = treeConn(treeNode, anchorId);
+			child.append(conn);
+
+			// Wrap atom into tree node and add after the "content" node section
+			Node tree = tree(treeNode, anchorId, child.start(), conn);
+			frame.append(tree);
 		}
 
 		/** Process (quantified) node group */
@@ -1080,14 +1165,48 @@ public class SequencePattern {
 			return scan;
 		}
 
+		/** Combine different types of markers around atom node */
+		private Frame markerSetup(MarkerSetup setup, @Nullable Node scan, Segment atom) {
+			Frame frame = new Frame();
+			// Start with atom
+			frame.push(atom);
+
+			if(setup.horizontalMarker!=null) {
+				addHorizontalMarker(frame, setup.horizontalMarker, scan);
+				// Consumes scan
+				scan = null;
+			}
+
+			if(setup.generationMarker!=null) {
+				addGenerationMarker(frame, setup.generationMarker, scan);
+				// Consumes scan
+				scan = null;
+			}
+
+			return frame;
+		}
+
+		/** Add marker decoration around a (single node) frame. */
+		private void addHorizontalMarker(Frame frame, IqlMarker marker, @Nullable Node scan) {
+			int border = border();
+			IntList nestedMarkerIndices = new IntArrayList();
+			Segment filter = horizontalMarker(marker, scan, IcarusUtils.DO_NOTHING(), nestedMarkerIndices::add);
+			// Saves the previousIndex window
+			frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
+			// Creates the marker window
+			frame.prefix().append(filter);
+			// Restores previousIndex window
+			frame.suffix().append(borderEnd(border));
+		}
+
 		/** Create graph for the marker construct. */
-		private Segment marker(IqlMarker marker, Node scan, Consumer<? super Node> nodeAction,
+		private Segment horizontalMarker(IqlMarker marker, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			Segment seg;
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				seg = markerCall(call, nodeAction, nestedMarkerAction);
+				seg = horizontalMarkerCall(call, nodeAction, nestedMarkerAction);
 				if(scan!=null) {
 					seg.append(scan);
 				}
@@ -1097,9 +1216,9 @@ public class SequencePattern {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					seg = markerIntersection(items, scan, nodeAction, nestedMarkerAction);
+					seg = horizontalMarkerIntersection(items, scan, nodeAction, nestedMarkerAction);
 				} else {
-					seg = markerUnion(items, scan, nodeAction, nestedMarkerAction);
+					seg = horizontalMarkerUnion(items, scan, nodeAction, nestedMarkerAction);
 				}
 			} break;
 
@@ -1110,7 +1229,7 @@ public class SequencePattern {
 			return seg;
 		}
 
-		private Segment markerCall(IqlMarkerCall call, Consumer<? super Node> nodeAction,
+		private Segment horizontalMarkerCall(IqlMarkerCall call, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			final String name = call.getName();
 
@@ -1190,15 +1309,17 @@ public class SequencePattern {
 		};
 
 		/** Combine sequence of intersecting markers */
-		private Segment markerIntersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment horizontalMarkerIntersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
 			markers.stream()
-					.map(m -> marker(m, null, nodeAction, nestedMarkerAction))
+					.map(m -> horizontalMarker(m, null, nodeAction, nestedMarkerAction))
 					// For optimization reasons we 'should' sort markers, but that would violate the specification
 					//.sorted(SEGMENT_COMPLEXITY_ORDER)
 					.forEach(seg::append);
+
+			// Append scan if available
 			if(scan!=null) {
 				seg.append(scan);
 			}
@@ -1206,7 +1327,7 @@ public class SequencePattern {
 		}
 
 		/** Create branches for disjunctive markers */
-		private Segment markerUnion(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment horizontalMarkerUnion(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
@@ -1222,9 +1343,10 @@ public class SequencePattern {
 			});
 
 			final Segment seg = branch(new IqlListProxy(markers), markers.size(),
-					i -> marker(markers.get(i), null, action2, nestedMarkerAction).toFrame());
+					i -> horizontalMarker(markers.get(i), null, action2, nestedMarkerAction).toFrame());
 			seg.setFlag(Flag.COMPLEX_MARKER);
 
+			// Append scan if available
 			if(scan!=null) {
 				seg.append(scan);
 			}
@@ -1240,6 +1362,7 @@ public class SequencePattern {
 					}
 				}
 			}
+			// If required, finally wrap the entire segment into filter gates
 			if(requiresGate) {
 				final int gateId = gate();
 				seg.push(filter(true, gateId));
@@ -1248,12 +1371,30 @@ public class SequencePattern {
 			return seg;
 		}
 
+		private void addGenerationMarker(Frame frame, IqlMarker marker, @Nullable Node scan) {
+			final IqlQueryElement source;
+
+			if(marker.getType()==IqlType.MARKER_EXPRESSION) {
+				IqlMarkerExpression exp = (IqlMarkerExpression) marker;
+				source = new IqlListProxy(exp.getItems());
+				//TODO extract filter expression for generations
+			} else {
+				source = marker;
+			}
+
+			final int pingId = ping();
+
+			frame.prefix().push(closure(source, pingId));
+			frame.suffix().append(ping(pingId));
+		}
+
 		private int cache() { return cacheCount++; }
 		private int buffer() { return bufferCount++; }
 		private int border() { return borderCount++; }
 		private int gate() { return gateCount++; }
 		private int anchor() { return anchorCount++; }
 		private int ping() { return pingCount++; }
+		private int closure() { return closureCount++; }
 
 		private int permutator(int size) {
 			int index = permutators.size();
@@ -1261,6 +1402,7 @@ public class SequencePattern {
 			return index;
 		}
 
+		/** Extract marker arguments as {@link Number} array */
 		private static Number[] markerArgs(IqlMarkerCall call) {
 			return IntStream.range(0, call.getArgumentCount())
 					.mapToObj(call::getArgument)
@@ -1310,9 +1452,15 @@ public class SequencePattern {
 			return storeTrackable(new Tree(id(), source, anchorId, child, conn));
 		}
 
-		private TreeConn treeCon(IqlTreeNode source, int anchorId) {
+		private TreeConn treeConn(IqlTreeNode source, int anchorId) {
 			return store(new TreeConn(id(), source, anchorId));
 		}
+
+		private Node closure(IqlQueryElement source, int pingId) {
+			return storeTrackable(new TreeClosure(id(), source, closure(), cache(), pingId));
+		}
+
+		private Ping ping(int pingId) { return store(new Ping(id(), pingId)); }
 
 		private Reset reset() { return store(new Reset(id())); }
 
@@ -1601,6 +1749,8 @@ public class SequencePattern {
 			sm.bufferCount = bufferCount;
 			sm.gateCount = gateCount;
 			sm.anchorCount = anchorCount;
+			sm.pingCount = pingCount;
+			sm.closureCount = closureCount;
 			sm.skipControlCount = skipControlCount;
 			sm.permutations = permutators.toIntArray();
 			sm.intervals = intervals.toArray(new Interval[0]);
@@ -5538,7 +5688,7 @@ public class SequencePattern {
 		/** Minimum size of the nested atom */
 		int minSize;
 
-		TreeClosure(int id, IqlMarkerCall source, int closureId, int cacheId, int pingId) {
+		TreeClosure(int id, IqlQueryElement source, int closureId, int cacheId, int pingId) {
 			super(id, source);
 			this.closureId = closureId;
 			this.cacheId = cacheId;
