@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -381,7 +382,7 @@ public class StructurePattern {
 	/** Utility class for generating the state machine */
 	static class StructureQueryProcessor {
 		private static final ObjectMapper mapper = IqlUtils.createMapper();
-		private static String serialize(IqlElement element) {
+		private static String serialize(IqlQueryElement element) {
 			try {
 				return mapper.writeValueAsString(element);
 			} catch (JsonProcessingException e) {
@@ -398,7 +399,8 @@ public class StructurePattern {
 		int anchorCount;
 		int pingCount;
 		int closureCount;
-		IntList permutators = new IntArrayList();
+		final List<LevelFilter> levelFilters = new ObjectArrayList<>();
+		final IntList permutators = new IntArrayList();
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
 		ElementContext context;
@@ -692,13 +694,12 @@ public class StructurePattern {
 		}
 
 		private static class MarkerUtils {
-			private int markerCount;
-			private int genMarkerCount;
+			private int markerCount, genMarkerCount, levelMarkerCount;
 			private boolean hasDisjunction;
 			/** Disjunctive sections of the marker construct */
 			private final List<MarkerSetup> setups = new ObjectArrayList<>();
 
-			private void traverse(IqlMarker marker,
+			static void traverse(IqlMarker marker,
 					Consumer<? super IqlMarkerCall> callAction,
 					Consumer<? super IqlMarkerExpression> expAction) {
 				switch (marker.getType()) {
@@ -720,7 +721,11 @@ public class StructurePattern {
 
 			private void checkMarker(IqlMarker marker) {
 				Consumer<? super IqlMarkerCall> callAction = call -> {
-					if(GenerationMarker.isValidName(call.getName())) {
+					String name = call.getName();
+					if(GenerationMarker.isGenerationMarker(name)) {
+						if(GenerationMarker.isLevelMarker(name)) {
+							levelMarkerCount++;
+						}
 						genMarkerCount++;
 					}
 					markerCount++;
@@ -740,6 +745,13 @@ public class StructurePattern {
 				setups.clear();
 			}
 
+			private static @Nullable IqlMarker _and(List<IqlMarkerCall> calls) {
+				if(calls.isEmpty()) {
+					return null;
+				}
+				return calls.size()==1 ? calls.get(0) : IqlMarkerExpression.and(calls);
+			}
+
 			void extractGenerationMarkers(IqlMarker marker) {
 				reset();
 				checkMarker(marker);
@@ -748,29 +760,31 @@ public class StructurePattern {
 
 				// No generation markers
 				if(genMarkerCount==0) {
-					setups.add(new MarkerSetup(null, marker));
+					setups.add(new MarkerSetup(null, marker, null));
 					return;
 				}
 				// Only generation markers
-				else if(markerCount==genMarkerCount) {
-					setups.add(new MarkerSetup(marker, null));
+				else if(markerCount==genMarkerCount && levelMarkerCount==0) {
+					setups.add(new MarkerSetup(marker, null, null));
 					return;
 				}
-				// Fully conjunctive mix -> collect generation markers in front
+				// Fully conjunctive mix
 				else if(!hasDisjunction) {
 					List<IqlMarkerCall> genMarkers = new ObjectArrayList<>();
 					List<IqlMarkerCall> horMarkers = new ObjectArrayList<>();
-					traverse(marker, m -> {
-						if(GenerationMarker.isValidName(m.getName())) {
-							genMarkers.add(m);
+					List<IqlMarkerCall> levelMarkers = new ObjectArrayList<>();
+					traverse(marker, call -> {
+						String name = call.getName();
+						if(GenerationMarker.isLevelMarker(name)) {
+							levelMarkers.add(call);
+						} else if(GenerationMarker.isGenerationMarker(name)) {
+							genMarkers.add(call);
 						} else {
-							horMarkers.add(m);
+							horMarkers.add(call);
 						}
 					}, DO_NOTHING());
 
-					setups.add(new MarkerSetup(
-							IqlMarkerExpression.and(genMarkers),
-							IqlMarkerExpression.and(horMarkers)));
+					setups.add(new MarkerSetup(_and(genMarkers), _and(horMarkers), _and(levelMarkers)));
 				}
 				//TODO split marker construct and assign horizontalMarker and generationMarker sections
 				else {
@@ -780,11 +794,13 @@ public class StructurePattern {
 		}
 
 		private static class MarkerSetup {
-			final IqlMarker horizontalMarker, generationMarker;
+			final IqlMarker horizontalMarker, generationMarker, levelMarker;
 
-			public MarkerSetup(IqlMarker generationMarker, IqlMarker horizontalMarker) {
+			public MarkerSetup(IqlMarker generationMarker, IqlMarker horizontalMarker,
+					IqlMarker levelMarker) {
 				this.horizontalMarker = horizontalMarker;
 				this.generationMarker = generationMarker;
+				this.levelMarker = levelMarker;
 			}
 		}
 
@@ -960,16 +976,17 @@ public class StructurePattern {
 
 		/** Process (ordered or adjacent) node sequence */
 		private Frame sequence(IqlSequence source, @Nullable Node scan) {
+			if(source.hasArrangement(NodeArrangement.ORDERED)
+					&& source.hasArrangement(NodeArrangement.UNORDERED))
+				throw EvaluationUtils.forUnsupportedValue("arrangement", source.getArrangements());
+
 			final List<IqlElement> elements = source.getElements();
 			final boolean adjacent = source.hasArrangement(NodeArrangement.ADJACENT);
-			//TODO throw error on illegal arrangement combinations!
 			if(source.hasArrangement(NodeArrangement.ORDERED)) {
 				return orderedGroup(elements, adjacent, scan);
 			}
 
 			return unorderedGroup(elements, adjacent, scan);
-
-//			throw EvaluationUtils.forUnsupportedValue("arrangement", source.getArrangements());
 		}
 
 		/** Process alternatives for branching */
@@ -1196,19 +1213,89 @@ public class StructurePattern {
 			// Start with atom
 			frame.push(atom);
 
-			if(setup.horizontalMarker!=null) {
-				addHorizontalMarker(frame, setup.horizontalMarker, scan);
-				// Consumes scan
+			// Tree closure node already performs full exhaustive scan
+			if(setup.generationMarker!=null) {
 				scan = null;
 			}
 
+			// Non-closure generation markers only get prepended
+			if(setup.levelMarker!=null) {
+				frame.push(frameFilter(setup.levelMarker));
+			}
+
+			// First layer of wrapping
+			if(setup.horizontalMarker!=null) {
+				addHorizontalMarker(frame, setup.horizontalMarker, scan);
+			}
+
+			// Second layer of wrapping
 			if(setup.generationMarker!=null) {
-				addGenerationMarker(frame, setup.generationMarker, scan);
-				// Consumes scan
-				scan = null;
+				addGenerationMarker(frame, setup.generationMarker);
 			}
 
 			return frame;
+		}
+
+		/** Create potentially branching structure for frame-based tree filtering */
+		private Segment frameFilter(IqlMarker marker) {
+			switch (marker.getType()) {
+			case MARKER_CALL: {
+				IqlMarkerCall call = (IqlMarkerCall) marker;
+				return segment(treeFilter(call, FrameFilter.forMarker(call)));
+			}
+
+			case MARKER_EXPRESSION: {
+				LinkedHashSet<FrameFilter> rawFilters = new LinkedHashSet<>();
+				List<Node> nodes = new ObjectArrayList<>();
+				MarkerUtils.traverse(marker,
+						call -> {
+							// Filter redundant markers
+							FrameFilter filter = FrameFilter.forMarker(call);
+							if(rawFilters.add(filter)) {
+								nodes.add(treeFilter(call, filter));
+							}
+						},
+						exp -> {
+							// For expressions we only need to make sure that it's one big disjunction
+							if(exp.getExpressionType()==MarkerExpressionType.CONJUNCTION)
+								throw EvaluationUtils.forIncorrectUse(
+										"Cannot disjunctively combine frame-based generation markers", exp.getExpressionType());
+						});
+
+				// Finally wrap all options into a branch structure
+				return branch(marker, nodes.size(), i -> frame(nodes.get(i)));
+			}
+
+			default:
+				throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
+			}
+		}
+
+		private static LevelFilter levelFilter(IqlMarker marker) {
+			switch (marker.getType()) {
+			case MARKER_CALL: {
+				IqlMarkerCall call = (IqlMarkerCall) marker;
+				return LevelFilter.forMarker(call);
+			}
+
+			case MARKER_EXPRESSION: {
+				IqlMarkerExpression exp = (IqlMarkerExpression) marker;
+				LevelFilter[] elements = exp.getItems().stream()
+						.map(StructureQueryProcessor::levelFilter)
+						.toArray(LevelFilter[]::new);
+
+				LevelFilter result;
+				if(exp.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
+					result = new LevelFilter.MatchAll(elements);
+				} else {
+					result = new LevelFilter.MatchAny(elements);
+				}
+				return result;
+			}
+
+			default:
+				throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
+			}
 		}
 
 		/** Add marker decoration around a (single node) frame. */
@@ -1396,7 +1483,7 @@ public class StructurePattern {
 			return seg;
 		}
 
-		private void addGenerationMarker(Frame frame, IqlMarker marker, @Nullable Node scan) {
+		private void addGenerationMarker(Frame frame, IqlMarker marker) {
 			final IqlQueryElement source;
 
 			if(marker.getType()==IqlType.MARKER_EXPRESSION) {
@@ -1407,9 +1494,10 @@ public class StructurePattern {
 				source = marker;
 			}
 
+			final LevelFilter levelFilter = levelFilter(marker);
 			final int pingId = ping();
 
-			frame.prefix().push(closure(source, pingId));
+			frame.prefix().push(closure(source, levelFilter, pingId));
 			frame.suffix().append(ping(pingId));
 		}
 
@@ -1481,8 +1569,12 @@ public class StructurePattern {
 			return store(new TreeConn(id(), source, anchorId));
 		}
 
-		private Node closure(IqlQueryElement source, int pingId) {
-			return storeTrackable(new TreeClosure(id(), source, closure(), cache(), pingId));
+		private Node closure(IqlQueryElement source, LevelFilter levelFilter, int pingId) {
+			return storeTrackable(new TreeClosure(id(), source, closure(), levelFilter, cache(), pingId));
+		}
+
+		private Node treeFilter(IqlQueryElement source, FrameFilter filter) {
+			return storeTrackable(new TreeFilter(id(), source, filter));
 		}
 
 		private Ping ping(int pingId) { return store(new Ping(id(), pingId)); }
@@ -1511,8 +1603,8 @@ public class StructurePattern {
 
 		private Segment branch(IqlQueryElement source, int count, IntFunction<Frame> atomGen) {
 			List<Node> atoms = new ObjectArrayList<>();
-			BranchConn conn = store(new BranchConn(id()));
-			// For consistency we collect branches in reverse order
+			final BranchConn conn = store(new BranchConn(id()));
+			// Collect branches in natural order
 			for (int i = 0; i < count; i++) {
 				// Might be a complex sub-structure
 				Frame atom = atomGen.apply(i);
@@ -1760,10 +1852,10 @@ public class StructurePattern {
 			// Force optimization
 			root.study(new TreeInfo());
 
-			// Fill state machine
+			// Fill state machine setup
 			StateMachineSetup sm = new StateMachineSetup();
 			sm.nodes = nodes.toArray(new Node[0]);
-			sm.trackedNodes = trackedNodes.stream().toArray(Node[]::new);
+			sm.trackedNodes = trackedNodes.toArray(new Node[0]);
 			sm.filterConstraint = filter;
 			sm.globalConstraint = global;
 			sm.rawNodes = rawNodes.toArray(new IqlNode[0]);
@@ -1784,6 +1876,213 @@ public class StructurePattern {
 			sm.matchers = matchers.toArray(new Supplier[0]);
 
 			return sm;
+		}
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	static enum FrameFilter {
+
+		ROOT {
+			@Override
+			boolean contains(TreeFrame frame) { return frame.index==UNSET_INT; }
+		},
+		NO_ROOT {
+			@Override
+			boolean contains(TreeFrame frame) { return frame.index!=UNSET_INT; }
+		},
+		LEAF {
+			@Override
+			boolean contains(TreeFrame frame) { return frame.length==0; }
+		},
+		NO_LEAF {
+			@Override
+			boolean contains(TreeFrame frame) { return frame.length>0; }
+		},
+		INTERMEDIATE {
+			@Override
+			boolean contains(TreeFrame frame) { return frame.index!=UNSET_INT && frame.length>0; }
+		}
+		;
+
+		/** Checks if the given {@code frame} is allowed to be visited for evaluation. */
+		abstract boolean contains(TreeFrame frame);
+
+		static FrameFilter forMarker(IqlMarkerCall call) {
+			GenerationMarker.Type type = GenerationMarker.typeFor(call.getName());
+			switch (type) {
+			case ROOT: return ROOT;
+			case NOT_ROOT: return NO_ROOT;
+			case LEAFT: return LEAF;
+			case NO_LEAF: return NO_LEAF;
+			case INTERMEDIATE: return INTERMEDIATE;
+
+			default:
+				throw EvaluationUtils.forUnsupportedValue("generation-marker-type", type);
+			}
+		}
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	static abstract class LevelFilter {
+
+		static LevelFilter forMarker(IqlMarkerCall call) {
+			GenerationMarker.Type type = GenerationMarker.typeFor(call.getName());
+			switch (type) {
+			case GENERATION: return new Singular(arg(call, 0));
+			case NOT_GENERATION: return new Others(arg(call, 0));
+			case GENERATION_AFTER: return new After(arg(call, 0));
+			case GENERATION_BEFORE: return new Before(arg(call, 0));
+			case ANY_GENERATION: return ALL;
+
+			default:
+				throw EvaluationUtils.forUnsupportedValue("generation-marker-type", type);
+			}
+		}
+
+		private static int arg(IqlMarkerCall call, int index) {
+			if(index>=call.getArgumentCount())
+				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
+						String.format("No position available for index %d at %s - only %d provided",
+								_int(index), call.getName(), _int(call.getArgumentCount())));
+
+			Number num = call.getArgument(index);
+			Class<?> cls = num.getClass();
+			if(cls==Float.class || cls==Double.class)
+				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
+						String.format("Generation marker '%s' can only take non-relative arguments: %f",
+								call.getName(), num));
+
+			int value = strictToInt(num.longValue());
+			if(value < 0)
+				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
+						String.format("Generation marker '%s' can only take non-negative arguments: %d",
+								call.getName(), num));
+
+			return value;
+		}
+
+		public static final LevelFilter ALL = new LevelFilter(0, UNSET_INT) {
+			@Override
+			boolean contains(int level) { return true; }
+		};
+
+		final int minLevel, maxLevel;
+
+		protected LevelFilter(int minLevel, int maxLevel) {
+			this.minLevel = minLevel;
+			this.maxLevel = maxLevel;
+		}
+
+		protected LevelFilter() {
+			this(UNSET_INT, UNSET_INT);
+		}
+
+		/** Checks if the given {@code level} is allowed to be visited for evaluation. */
+		abstract boolean contains(int level);
+
+		/** Only focus on a singular generation level */
+		static final class Singular extends LevelFilter {
+			Singular(int level) { super(level, level); }
+			@Override
+			boolean contains(int level) { return level==minLevel; }
+		}
+
+		/** Only focus on a singular generation level */
+		static final class Others extends LevelFilter {
+			final int level;
+			Others(int level) {
+				super(UNSET_INT, UNSET_INT);
+				this.level = level;
+			}
+			@Override
+			boolean contains(int level) { return level!=this.level; }
+		}
+
+		/** Only accept levels after a certain generation level */
+		static final class After extends LevelFilter {
+			After(int level) { super(level, UNSET_INT); }
+			@Override
+			boolean contains(int level) { return level>=minLevel; }
+		}
+
+		/** Only accept levels prior to a certain generation level */
+		static final class Before extends LevelFilter {
+			Before(int level) { super(UNSET_INT, level); }
+			@Override
+			boolean contains(int level) { return level<=maxLevel; }
+		}
+
+		/** Consider all generations between selected levels. */
+		static final class Ranged extends LevelFilter {
+			Ranged(int minLevel, int maxLevel) { super(minLevel, maxLevel); }
+			@Override
+			boolean contains(int level) { return level>=minLevel && level<=maxLevel; }
+		}
+
+		private static int _min(LevelFilter[] filters) {
+			return Stream.of(filters)
+					.mapToInt(f -> f.minLevel)
+					.filter(i -> i!=UNSET_INT)
+					.max()
+					.orElse(UNSET_INT);
+		}
+
+		private static int _max(LevelFilter[] filters) {
+			return Stream.of(filters)
+					.mapToInt(f -> f.maxLevel)
+					.filter(i -> i!=UNSET_INT)
+					.min()
+					.orElse(UNSET_INT);
+		}
+
+		/** Multiplexes a set of filters with a disjunctive connective. */
+		static final class MatchAny extends LevelFilter {
+			private final LevelFilter[] filters;
+
+			MatchAny(LevelFilter[] filters) {
+				checkArgument("Need at least 2 filters for a disjunctive mix", filters.length>1);
+				this.filters = filters.clone();
+			}
+
+			@Override
+			boolean contains(int level) {
+				for (int i = 0; i < filters.length; i++) {
+					if(filters[i].contains(level)) {
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+
+		/** Multiplexes a set of filters with a conjunctive connective. */
+		static final class MatchAll extends LevelFilter {
+
+			private final LevelFilter[] filters;
+
+			MatchAll(LevelFilter[] filters) {
+				super(_min(filters), _max(filters));
+				checkArgument("Need at least 2 filters for a conjunctive mix", filters.length>1);
+				this.filters = filters.clone();
+			}
+
+			@Override
+			boolean contains(int level) {
+				for (int i = 0; i < filters.length; i++) {
+					if(!filters[i].contains(level)) {
+						return false;
+					}
+				}
+				return true;
+			}
 		}
 	}
 
@@ -1971,6 +2270,7 @@ public class StructurePattern {
 
 			window.reset(0, 0);
 			depth = height = descendants = 0;
+			index = UNSET_INT;
 			parent = UNSET_INT;
 			valid = true;
 			begin = end = UNSET_INT;
@@ -3028,15 +3328,18 @@ public class StructurePattern {
 
 	/** Models a trace for the {@link TreeClosure} node. */
 	static final class ClosureContext implements AdaptableSize {
+
+		static final int START_LEVEL = 1;
+
 		/** Current position in the trace */
-		int depth;
+		int level;
 		/** */
 		ClosureStep[] steps;
 
 		ClosureContext(int initialSize) {
-			depth = UNSET_INT;
-			steps = new ClosureStep[initialSize];
-			for (int i = 0; i < initialSize; i++) {
+			level = UNSET_INT;
+			steps = new ClosureStep[initialSize+1];
+			for (int i = 0; i < steps.length; i++) {
 				steps[i] = new ClosureStep();
 			}
 		}
@@ -3044,22 +3347,23 @@ public class StructurePattern {
 		@Override
 		public void resize(int newSize) {
 			int oldSize = steps.length;
-			steps = Arrays.copyOf(steps, newSize);
-			for (int i = oldSize; i < newSize; i++) {
+			steps = Arrays.copyOf(steps, newSize+1);
+			for (int i = oldSize; i < steps.length; i++) {
 				steps[i] = new ClosureStep();
 			}
 		}
 
-		void reset() {
-			depth = 0;
+		ClosureStep rewind() {
+			level = START_LEVEL;
+			return steps[level];
 		}
 
-		ClosureStep current() { return steps[depth]; }
+		ClosureStep current() { return steps[level]; }
 
-		/** Go up one level */
-		boolean ascend() { return depth-- > 0; }
+		/** Go up one level and return {@code true} if that was still possible */
+		boolean ascend() { return level-- > START_LEVEL; }
 		/** Go down one level and store frameId and 0-pos as step data */
-		void descend(int frameId) { depth++; current().reset(frameId, 0); }
+		void descend(int frameId) { level++; current().reset(frameId, 0); }
 	}
 
 	static final class Anchor {
@@ -3219,7 +3523,7 @@ public class StructurePattern {
 			HEIGHT(Integer.class),
 			/** Minimum depth of a tree node */
 			DEPTH(Integer.class),
-			/** Minimum number of imemdiate children of a tree node */
+			/** Minimum number of immediate children of a tree node */
 			CHILDREN(Integer.class),
 			/** Minimum number of accumulated descendants of a tree node */
 			DESCENDANTS(Integer.class),
@@ -3281,6 +3585,8 @@ public class StructurePattern {
 			CALLBACK,
 			/** Exploration node to search an entire subtree. */
 			CLOSURE,
+			/** Vertical filter node based on tree properties. */
+			LEVEL,
 			;
 		}
 
@@ -3575,7 +3881,7 @@ public class StructurePattern {
 	}
 
 	/** Helper for "empty" nodes that are only existentially quantified. */
-	static final class Empty extends ProperNode {
+	static class Empty extends ProperNode {
 		final int memberId;
 		final int anchorId;
 
@@ -3647,6 +3953,118 @@ public class StructurePattern {
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this)
+					.add("memberId", memberId)
+					.add("anchorId", anchorId)
+					.build();
+		}
+	}
+
+	/** Matches an inner constraint to a specific node, employing memoization. */
+	static final class Single extends Empty {
+		final int nodeId;
+		final int cacheId;
+
+		Single(int id, IqlNode source, int nodeId, int cacheId, int memberId, int anchorId) {
+			super(id, source, memberId, anchorId);
+			this.nodeId = nodeId;
+			this.cacheId = cacheId;
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.SINGLE)
+					.property(Field.NODE, nodeId)
+					.property(Field.CACHE, cacheId)
+					.property(Field.MEMBER, memberId)
+					.property(Field.ANCHOR, anchorId);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			final TreeFrame frame = state.frame;
+
+			if(!frame.containsPos(pos)) {
+				return false;
+			}
+
+			final int index = frame.childAt(pos);
+
+			// Bail on locked index
+			if(state.locked[index]) {
+				return false;
+			}
+
+			// Ensure adjacent matching if desired
+			if(frame.previousIndex!=UNSET_INT && frame.previousIndex!=index-1) {
+				return false;
+			}
+
+			final Cache cache = state.caches[cacheId];
+
+			boolean value;
+
+			if(cache.isSet(index)) {
+				value = cache.getValue(index);
+			} else {
+				// Unknown index -> compute local constraints once and cache result
+				final Matcher<Item> m = state.matchers[nodeId];
+				assert m!=null : "Null matcher at node-id "+nodeId;
+				final Item item = state.elements[index];
+				assert item!=null : "Null item at index "+index;
+				value = m.matches(index, item);
+				cache.setValue(index, value);
+			}
+
+			if(value) {
+				// Keep track of preliminary match
+				state.map(nodeId, index);
+
+				// Store member mapping so that other constraints can reference it
+				if(memberId!=UNSET_INT) {
+					state.members[memberId].assign(state.elements[index]);
+				}
+				// Store tree anchor
+				if(anchorId!=UNSET_INT) {
+					Anchor anchor = state.anchors[anchorId];
+					anchor.parent = frame;
+					anchor.index = index;
+				}
+
+				frame.previousIndex = index;
+
+				// Continue down the path
+				value = next.match(state, pos+1);
+
+				// Ensure we don't keep item references
+				if(memberId!=UNSET_INT) {
+					state.members[memberId].clear();
+				}
+
+				if(value) {
+					// Store last successful match
+					state.hits[nodeId] = index;
+				}
+			}
+
+			return value;
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			next.study(info);
+			info.descendants++;
+			info.minSize++;
+			info.maxSize++;
+			info.segmentSize++;
+			return info.deterministic;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("nodeId", nodeId)
+					.add("cacheId", cacheId)
 					.add("memberId", memberId)
 					.add("anchorId", anchorId)
 					.build();
@@ -4267,122 +4685,6 @@ public class StructurePattern {
 			return ToStringBuilder.create(this)
 					.add("pingId", pingId)
 					.toString();
-		}
-	}
-
-	/** Matches an inner constraint to a specific node, employing memoization. */
-	static final class Single extends ProperNode {
-		final int nodeId;
-		final int cacheId;
-		final int memberId;
-		final int anchorId;
-
-		Single(int id, IqlNode source, int nodeId, int cacheId, int memberId, int anchorId) {
-			super(id, source);
-			this.nodeId = nodeId;
-			this.cacheId = cacheId;
-			this.memberId = memberId;
-			this.anchorId = anchorId;
-		}
-
-		@Override
-		public NodeInfo info() {
-			return new NodeInfo(this, Type.SINGLE)
-					.property(Field.NODE, nodeId)
-					.property(Field.CACHE, cacheId)
-					.property(Field.MEMBER, memberId)
-					.property(Field.ANCHOR, anchorId);
-		}
-
-		@Override
-		boolean match(State state, int pos) {
-			final TreeFrame frame = state.frame;
-
-			if(!frame.containsPos(pos)) {
-				return false;
-			}
-
-			final int index = frame.childAt(pos);
-
-			// Bail on locked index
-			if(state.locked[index]) {
-				return false;
-			}
-
-			// Ensure adjacent matching if desired
-			if(frame.previousIndex!=UNSET_INT && frame.previousIndex!=index-1) {
-				return false;
-			}
-
-			final Cache cache = state.caches[cacheId];
-
-			boolean value;
-
-			if(cache.isSet(index)) {
-				value = cache.getValue(index);
-			} else {
-				// Unknown index -> compute local constraints once and cache result
-				final Matcher<Item> m = state.matchers[nodeId];
-				assert m!=null : "Null matcher at node-id "+nodeId;
-				final Item item = state.elements[index];
-				assert item!=null : "Null item at index "+index;
-				value = m.matches(index, item);
-				cache.setValue(index, value);
-			}
-
-			if(value) {
-				// Keep track of preliminary match
-				state.map(nodeId, index);
-
-				// Store member mapping so that other constraints can reference it
-				if(memberId!=UNSET_INT) {
-					state.members[memberId].assign(state.elements[index]);
-				}
-				// Store tree anchor
-				if(anchorId!=UNSET_INT) {
-					Anchor anchor = state.anchors[anchorId];
-					anchor.parent = frame;
-					anchor.index = index;
-				}
-
-				frame.previousIndex = index;
-
-				// Continue down the path
-				value = next.match(state, pos+1);
-
-				// Ensure we don't keep item references
-				if(memberId!=UNSET_INT) {
-					state.members[memberId].clear();
-				}
-
-				if(value) {
-					// Store last successful match
-					state.hits[nodeId] = index;
-				}
-			}
-
-			return value;
-		}
-
-		@Override
-		boolean study(TreeInfo info) {
-			next.study(info);
-			info.descendants++;
-			info.minSize++;
-			info.maxSize++;
-			info.segmentSize++;
-			return info.deterministic;
-		}
-
-		@Override
-		public String toString() {
-			return ToStringBuilder.create(this)
-					.add("id", id)
-					.add("nodeId", nodeId)
-					.add("cacheId", cacheId)
-					.add("memberId", memberId)
-					.add("anchorId", anchorId)
-					.build();
 		}
 	}
 
@@ -5700,6 +6002,33 @@ public class StructurePattern {
 	}
 
 	/**
+	 * Filter node based on tree properties that do not require a
+	 * surrounding {@link TreeClosure} instance.
+	 */
+	static final class TreeFilter extends ProperNode {
+		final FrameFilter filter;
+
+		TreeFilter(int id, IqlQueryElement source, FrameFilter filter) {
+			super(id, source);
+			this.filter = requireNonNull(filter);
+		}
+
+		@Override
+		public NodeInfo info() { return new NodeInfo(this, Type.LEVEL); }
+
+		@Override
+		boolean match(State state, int pos) {
+			if(!filter.contains(state.frame)) {
+				return false;
+			}
+			return next.match(state, pos);
+		}
+
+		@Override
+		public String toString() { return ToStringBuilder.create(this).build(); }
+	}
+
+	/**
 	 * Explorative node that will continue tail of the matcher graph for
 	 * the currently active frame and <b>all</b> of its descendants.
 	 */
@@ -5710,12 +6039,16 @@ public class StructurePattern {
 		final int cacheId;
 		/** */
 		final int pingId;
+		/** */
+		final LevelFilter levelFilter;
 		/** Minimum size of the nested atom */
 		int minSize;
 
-		TreeClosure(int id, IqlQueryElement source, int closureId, int cacheId, int pingId) {
+		TreeClosure(int id, IqlQueryElement source, int closureId, LevelFilter levelFilter,
+				int cacheId, int pingId) {
 			super(id, source);
 			this.closureId = closureId;
+			this.levelFilter = requireNonNull(levelFilter);
 			this.cacheId = cacheId;
 			this.pingId = pingId;
 		}
@@ -5736,6 +6069,8 @@ public class StructurePattern {
 			final TreeFrame root = state.frame;
 			final ClosureContext ctx = state.closures[closureId];
 			final Cache cache = state.caches[cacheId];
+			final int minLevel = levelFilter.minLevel;
+			final int maxLevel = levelFilter.maxLevel;
 
 			assert root!=state.rootFrame : "Cannot descend _into_ root frame";
 
@@ -5747,13 +6082,12 @@ public class StructurePattern {
 			boolean result = false;
 
 			// Prepare current frame and pos as starting point
-			ctx.depth = 0;
-			ctx.current().reset(root.index, pos);
+			ctx.rewind().reset(root.index, pos);
 
 			while(!state.stop) {
 				ClosureStep step = ctx.current();
 
-				TreeFrame frame = state.tree[step.frameId];
+				final TreeFrame frame = state.tree[step.frameId];
 				assert frame!=state.rootFrame : "Cannot descend _into_ root frame";
 
 				// Try remaining nodes in current frame
@@ -5764,55 +6098,57 @@ public class StructurePattern {
 
 					// Assign current frame context
 					state.frame = frame;
-
-					// And start a search from current position
 					final int index = frame.indices[step.pos];
-		    		final int from = frame.from();
-		    		final int to = frame.to();
-		        	final int scope = state.scope();
-		        	final int previous = frame.previousIndex;
 
-		        	// Reset ping tracking
-		        	state.pings[pingId] = false;
+					if(levelFilter.contains(ctx.level)) {
+						// And start a search from current position
+			    		final int from = frame.from();
+			    		final int to = frame.to();
+			        	final int scope = state.scope();
+			        	final int previous = frame.previousIndex;
 
-					boolean stored = cache.isSet(index);
-					boolean matched = false;
-					if(stored) {
-						matched = cache.getValue(index);
-						if(matched) {
-							/*
-							 * This is a tricky situation:
-							 * We know the node itself will match, but since we
-							 * can be embedded into a more complex construct such
-							 * as a permutation, the tail can still fail!
-							 * Therefore we must not simply accept success, but
-							 * actually use the result of the subtree matching.
-							 */
+			        	// Reset ping tracking
+			        	state.pings[pingId] = false;
+
+						boolean stored = cache.isSet(index);
+						boolean matched = false;
+						if(stored) {
+							matched = cache.getValue(index);
+							if(matched) {
+								/*
+								 * This is a tricky situation:
+								 * We know the node itself will match, but since we
+								 * can be embedded into a more complex construct such
+								 * as a permutation, the tail can still fail!
+								 * Therefore we must not simply accept success, but
+								 * actually use the result of the subtree matching.
+								 */
+								matched = next.match(state, step.pos);
+							}
+							// We know this is a dead-end, nothing further to do there
+						} else {
+							// Previously unseen index, so explore and cache result
 							matched = next.match(state, step.pos);
+							// We only store the "local" success of next node
+							cache.setValue(index, state.pings[pingId]);
 						}
-						// We know this is a dead-end, nothing further to do there
-					} else {
-						// Previously unseen index, so explore and cache result
-						matched = next.match(state, step.pos);
-						// We only store the "local" success of next node
-						cache.setValue(index, state.pings[pingId]);
+
+						result |= matched;
+
+			        	// Only reset range here
+			        	frame.resetWindow(from, to);
+
+		                if(stopOnSuccess && result) {
+		                	break;
+		                }
+
+			        	// Only reset if we failed or are not meant to keep the first match
+			        	state.resetScope(scope);
+			        	frame.previousIndex = previous;
 					}
 
-					result |= matched;
-
-		        	// Only reset range here
-		        	frame.resetWindow(from, to);
-
-	                if(stopOnSuccess && result) {
-	                	break;
-	                }
-
-		        	// Only reset if we failed or are not meant to keep the first match
-		        	state.resetScope(scope);
-		        	frame.previousIndex = previous;
-
 					// Now descend if possible
-					if(state.tree[index].length > 0) {
+					if(state.tree[index].length > 0 && (maxLevel==UNSET_INT || ctx.level < maxLevel)) {
 						ctx.descend(index);
 					} else {
 						// Or continue to next neighbor for future traversal

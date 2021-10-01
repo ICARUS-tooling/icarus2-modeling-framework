@@ -143,6 +143,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Cache;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.DynamicClip;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Exhaust;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Finish;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.LevelFilter;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
@@ -1457,8 +1458,12 @@ class StructurePatternTest {
 
 	static MatcherTestConfig matcherTest() { return new MatcherTestConfig(); }
 
+	/** Create a expanding test for the given query and target string. */
 	static MatcherTestConfig expandingMatcherTest(String query, String target) {
-		return matcherTest().target(target).expand(true).query(query);
+		return matcherTest()
+				.target(target)
+				.expand(true)
+				.query(query);
 	}
 
 	/** Parses a dependency style "list of heads" and uses the '*' symbol to recognize roots */
@@ -2045,6 +2050,11 @@ class StructurePatternTest {
 			}
 
 			//TODO test reset(int)?
+		}
+
+		@Nested
+		class ForLevelFilter {
+			//TODO
 		}
 	}
 
@@ -4229,10 +4239,10 @@ class StructurePatternTest {
 
 
 			/** {@code [$X [isAnyGeneration, $Y]]} */
-			private StateMachineSetup transitiveSingleChildSetup() {
+			private StateMachineSetup transitiveSingleChildSetup(LevelFilter levelFilter) {
 
 				Node atom = seq(
-						new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0, CACHE_2, PING_0),
+						new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0, levelFilter, CACHE_2, PING_0),
 						new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, UNSET_INT),
 						new Ping(id(), PING_0)
 				);
@@ -4268,7 +4278,7 @@ class StructurePatternTest {
 			@DisplayName("[$X [isAnyGeneration, $Y]] -> no matches in {0} [{1}]")
 			void testDoubleNestingFail(String target, String tree) {
 				rawTest()
-					.setup(transitiveSingleChildSetup())
+					.setup(transitiveSingleChildSetup(LevelFilter.ALL))
 					.target(target)
 					.tree(tree)
 					.startPos(0)
@@ -4313,7 +4323,7 @@ class StructurePatternTest {
 			@DisplayName("[$X [isAnyGeneration, $Y]] -> 1 hit in {0} [{1}] at {2} (hitX={3}, hitY={4})")
 			void testSingleHit(String target, String tree, int startPos, int hitX, int hitY) {
 				rawTest()
-					.setup(transitiveSingleChildSetup())
+					.setup(transitiveSingleChildSetup(LevelFilter.ALL))
 					.target(target)
 					.tree(tree)
 					.startPos(startPos)
@@ -10108,9 +10118,11 @@ class StructurePatternTest {
 	@Nested
 	class ForRawQueries {
 
-		/** generate basic test config with expansion and basic result settings */
+		/** Generate basic test config with expansion and basic result settings */
 		private MatcherTestConfig rawQueryTest(String query, String target,
-				int matches, @IntMatrixArg int[][][] hits) {
+				int matches,
+				// [node_id][match_id][hits]
+				@IntMatrixArg int[][][] hits) {
 			return expandingMatcherTest(query, target)
 					.expectMatches(matches)
 					.results(matches, hits);
@@ -10913,7 +10925,7 @@ class StructurePatternTest {
 				"'[$X [IsBefore(3) && IsChildAfter(1),$Y]]', YYX, 22*, 1, { {{2}} {{1}} }",
 			})
 			@DisplayName("child node with sequence and tree hierarchy marker")
-			void testMixedMarkersOnChild(String query, String target, String tree, int matches,
+			void testMixedHorizontalMarkersOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
@@ -10937,9 +10949,53 @@ class StructurePatternTest {
 				"'[$X [IsAnyGeneration,$Y]]', XAYB, *000, 1, { {{0}} {{2}} }",
 				"'[$X [IsAnyGeneration,$Y]]', XYAY, *000, 2, { {{0}{0}} {{1}{3}} }",
 				// Cascaded nesting
+				"'[$X [IsAnyGeneration,$Y]]', XYYY, *012, 3, { {{0}{0}{0}} {{1}{2}{3}} }",
+				"'[$X [IsAnyGeneration,$Y]]', XYYY, *302, 3, { {{0}{0}{0}} {{2}{3}{1}} }",
+
+				//TODO add tests for other generation markers once we implement the level filter
 			})
 			@DisplayName("child node with generation marker")
 			void testGenerationMarkerOnChild(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				/*
+				 *  Many tests are doubled with varying order of markers to
+				 *  test that the query processor properly sorts the different
+				 *  types of markers.
+				 */
+
+				// Fails
+				"'[$X [IsAnyGeneration && IsFirst,$Y]]', XY, *0, 0, -",
+				"'[$X [IsFirst && IsAnyGeneration,$Y]]', XY, *0, 0, -",
+				"'[$X [IsAnyGeneration && IsLast,$Y]]', YX, 1*, 0, -",
+				"'[$X [IsLast && IsAnyGeneration,$Y]]', YX, 1*, 0, -",
+				// Sequence and generation markers
+				"'[$X [IsAnyGeneration && IsFirst,$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
+				"'[$X [IsFirst && IsAnyGeneration,$Y]]', YX, 1*, 1, { {{1}} {{0}} }",
+				"'[$X [IsAnyGeneration && IsLast,$Y]]', XY, *0, 1, { {{0}} {{1}} }",
+				"'[$X [IsLast && IsAnyGeneration,$Y]]', XY, *0, 1, { {{0}} {{1}} }",
+				"'[$X [IsAnyGeneration && IsNotAt(2),$Y]]', XYY, *00, 1, { {{0}} {{2}} }",
+				"'[$X [IsNotAt(2) && IsAnyGeneration,$Y]]', XYY, *00, 1, { {{0}} {{2}} }",
+				"'[$X [IsAnyGeneration && IsNotAt(3),$Y]]', XYYY, *001, 2, { {{0}{0}} {{1}{3}} }",
+				"'[$X [IsNotAt(3) && IsAnyGeneration,$Y]]', XYYY, *001, 2, { {{0}{0}} {{1}{3}} }",
+				//TODO complete
+				// Tree hierarchy and generation markers
+				// All types of markers intermixed
+				"'[$X [IsAnyGeneration && IsNotAt(3) && IsChildAfter(1),$Y]]', XYYY, *000, 1, { {{0}} {{3}} }",
+				"'[$X [IsNotAt(3) && IsAnyGeneration && IsChildAfter(1),$Y]]', XYYY, *000, 1, { {{0}} {{3}} }",
+
+				//TODO add tests for other generation markers once we implement the level filter
+			})
+			@DisplayName("child node with horizontal and generation markers (conjunctive)")
+			void testMixedMarkersOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
