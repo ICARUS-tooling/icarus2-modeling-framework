@@ -22,6 +22,7 @@ package de.ims.icarus2.query.api.engine.matcher;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.DO_NOTHING;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
@@ -31,7 +32,6 @@ import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -411,16 +411,16 @@ public class StructurePattern {
 
 		int level = 0;
 
-		final List<Node> nodes = new ArrayList<>();
+		final List<Node> nodes = new ObjectArrayList<>();
 		final LaneContext rootContext;
 		final QueryModifier modifier;
-		final List<IqlNode> rawNodes = new ArrayList<>();
-		final List<Interval> intervals = new ArrayList<>();
-		final List<NodeDef> matchers = new ArrayList<>();
-		final List<MemberDef> members = new ArrayList<>();
-		final List<Node> trackedNodes = new ArrayList<>();
-		final List<RangeMarker> globalMarkers = new ArrayList<>();
-		final List<RangeMarker> nestedMarkers = new ArrayList<>();
+		final List<IqlNode> rawNodes = new ObjectArrayList<>();
+		final List<Interval> intervals = new ObjectArrayList<>();
+		final List<NodeDef> matchers = new ObjectArrayList<>();
+		final List<MemberDef> members = new ObjectArrayList<>();
+		final List<Node> trackedNodes = new ObjectArrayList<>();
+		final List<RangeMarker> globalMarkers = new ObjectArrayList<>();
+		final List<RangeMarker> nestedMarkers = new ObjectArrayList<>();
 		final long limit;
 		final IqlElement rootElement;
 		final IqlConstraint filterConstraint;
@@ -695,26 +695,22 @@ public class StructurePattern {
 			private int markerCount;
 			private int genMarkerCount;
 			private boolean hasDisjunction;
-			private IqlMarker marker;
 			/** Disjunctive sections of the marker construct */
-			private final List<MarkerSetup> setups = new ArrayList<>();
+			private final List<MarkerSetup> setups = new ObjectArrayList<>();
 
-			void checkMarker(IqlMarker marker) {
+			private void traverse(IqlMarker marker,
+					Consumer<? super IqlMarkerCall> callAction,
+					Consumer<? super IqlMarkerExpression> expAction) {
 				switch (marker.getType()) {
 				case MARKER_CALL: {
 					IqlMarkerCall call = (IqlMarkerCall) marker;
-					if(GenerationMarker.isValidName(call.getName())) {
-						genMarkerCount++;
-					}
-					markerCount++;
+					callAction.accept(call);
 				} break;
 
 				case MARKER_EXPRESSION: {
 					IqlMarkerExpression exp = (IqlMarkerExpression) marker;
-					if(exp.getExpressionType()==MarkerExpressionType.DISJUNCTION) {
-						hasDisjunction = true;
-					}
-					exp.getItems().forEach(this::checkMarker);
+					expAction.accept(exp);
+					exp.getItems().forEach(m -> traverse(m, callAction, expAction));
 				} break;
 
 				default:
@@ -722,8 +718,23 @@ public class StructurePattern {
 				}
 			}
 
+			private void checkMarker(IqlMarker marker) {
+				Consumer<? super IqlMarkerCall> callAction = call -> {
+					if(GenerationMarker.isValidName(call.getName())) {
+						genMarkerCount++;
+					}
+					markerCount++;
+				};
+				Consumer<? super IqlMarkerExpression> expAction = exp -> {
+					if(exp.getExpressionType()==MarkerExpressionType.DISJUNCTION) {
+						hasDisjunction = true;
+					}
+				};
+
+				traverse(marker, callAction, expAction);
+			}
+
 			void reset() {
-				marker = null;
 				markerCount = genMarkerCount = 0;
 				hasDisjunction = false;
 				setups.clear();
@@ -731,24 +742,37 @@ public class StructurePattern {
 
 			void extractGenerationMarkers(IqlMarker marker) {
 				reset();
-				this.marker = requireNonNull(marker);
 				checkMarker(marker);
+
+				assert markerCount>0 : "Empty marker construct";
 
 				// No generation markers
 				if(genMarkerCount==0) {
-					setups.add(new MarkerSetup(marker, null));
+					setups.add(new MarkerSetup(null, marker));
 					return;
 				}
 				// Only generation markers
 				else if(markerCount==genMarkerCount) {
-					setups.add(new MarkerSetup(null, marker));
+					setups.add(new MarkerSetup(marker, null));
 					return;
 				}
 				// Fully conjunctive mix -> collect generation markers in front
 				else if(!hasDisjunction) {
-					//TODO colelct markers and split in 2 lists
+					List<IqlMarkerCall> genMarkers = new ObjectArrayList<>();
+					List<IqlMarkerCall> horMarkers = new ObjectArrayList<>();
+					traverse(marker, m -> {
+						if(GenerationMarker.isValidName(m.getName())) {
+							genMarkers.add(m);
+						} else {
+							horMarkers.add(m);
+						}
+					}, DO_NOTHING());
+
+					setups.add(new MarkerSetup(
+							IqlMarkerExpression.and(genMarkers),
+							IqlMarkerExpression.and(horMarkers)));
 				}
-				//TODO split marker construct and assign horizontalMarker and generationMarker
+				//TODO split marker construct and assign horizontalMarker and generationMarker sections
 				else {
 					throw new UnsupportedOperationException("not implemented yet");
 				}
@@ -758,7 +782,7 @@ public class StructurePattern {
 		private static class MarkerSetup {
 			final IqlMarker horizontalMarker, generationMarker;
 
-			public MarkerSetup(IqlMarker horizontalMarker, IqlMarker generationMarker) {
+			public MarkerSetup(IqlMarker generationMarker, IqlMarker horizontalMarker) {
 				this.horizontalMarker = horizontalMarker;
 				this.generationMarker = generationMarker;
 			}
@@ -1333,7 +1357,7 @@ public class StructurePattern {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
 			MutableBoolean hasDynamicInterval = new MutableBoolean(false);
-			List<Interval> fixedIntervals = new ArrayList<>();
+			List<Interval> fixedIntervals = new ObjectArrayList<>();
 
 			Consumer<? super Node> action2 = nodeAction.andThen(node -> {
 				if(node instanceof FixedClip) {
@@ -1486,7 +1510,7 @@ public class StructurePattern {
 		}
 
 		private Segment branch(IqlQueryElement source, int count, IntFunction<Frame> atomGen) {
-			List<Node> atoms = new ArrayList<>();
+			List<Node> atoms = new ObjectArrayList<>();
 			BranchConn conn = store(new BranchConn(id()));
 			// For consistency we collect branches in reverse order
 			for (int i = 0; i < count; i++) {

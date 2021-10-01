@@ -75,6 +75,20 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 
 	public static class IqlMarkerExpression extends IqlMarker {
 
+		public static IqlMarkerExpression and(Iterable<? extends IqlMarker> items) {
+			IqlMarkerExpression exp = new IqlMarkerExpression();
+			exp.setExpressionType(MarkerExpressionType.CONJUNCTION);
+			items.forEach(exp::addItem);
+			return exp;
+		}
+
+		public static IqlMarkerExpression or(Iterable<? extends IqlMarker> items) {
+			IqlMarkerExpression exp = new IqlMarkerExpression();
+			exp.setExpressionType(MarkerExpressionType.DISJUNCTION);
+			items.forEach(exp::addItem);
+			return exp;
+		}
+
 		@JsonProperty(IqlTags.ITEMS)
 		@JsonInclude(Include.NON_EMPTY)
 		private final List<IqlMarker> items = new ArrayList<>();

@@ -149,10 +149,10 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NonResettingMatcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Ping;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Repetition;
-import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureQueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StateMachineSetup;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureQueryProcessor;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Tree;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeClosure;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeConn;
@@ -10948,7 +10948,7 @@ class StructurePatternTest {
 				.assertResult();
 			}
 
-			//TODO
+			//TODO test with mixed markers (currently we support conjunctive mix)
 		}
 
 		/**
