@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -65,7 +66,7 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 
 		public int getArgumentCount() { return arguments.length; }
 
-		public Object getArgument(int index) { return arguments[index]; }
+		public Number getArgument(int index) { return arguments[index]; }
 
 		public void setName(String name) { this.name = checkNotEmpty(name); }
 
@@ -75,14 +76,16 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 
 	public static class IqlMarkerExpression extends IqlMarker {
 
-		public static IqlMarkerExpression and(Iterable<? extends IqlMarker> items) {
+		public static IqlMarkerExpression and(List<? extends IqlMarker> items) {
+			checkArgument("Need at least 2 markers to create conjunctive expression", items.size()>1);
 			IqlMarkerExpression exp = new IqlMarkerExpression();
 			exp.setExpressionType(MarkerExpressionType.CONJUNCTION);
 			items.forEach(exp::addItem);
 			return exp;
 		}
 
-		public static IqlMarkerExpression or(Iterable<? extends IqlMarker> items) {
+		public static IqlMarkerExpression or(List<? extends IqlMarker> items) {
+			checkArgument("Need at least 2 markers to create disjunctive expression", items.size()>1);
 			IqlMarkerExpression exp = new IqlMarkerExpression();
 			exp.setExpressionType(MarkerExpressionType.DISJUNCTION);
 			items.forEach(exp::addItem);
