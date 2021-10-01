@@ -65,8 +65,8 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Field;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.mark.GenerationMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
@@ -141,11 +141,12 @@ import it.unimi.dsi.fastutil.objects.ObjectLists;
  * <p>
  * A typical usage scenario looks like the following:
  * <pre><code>
- * SequencePattern.Builder builder = SequencePattern.builder();
+ * StructurePattern.Builder builder = StructurePattern.builder();
  * ...                                                           // configure builder
- * SequencePattern pattern = builder.build();                    // obtain state machine
+ * StructurePattern pattern = builder.build();                    // obtain state machine
  *
- * SequenceMatcher matcher = pattern.matcher();                  // instantiate a new matcher
+ * StructureMatcher matcher1 = pattern.matcher();                  // instantiate a new matcher
+ * StructureMatcher matcher2 = pattern.matcher();                  // instantiate a new matcher
  *
  * </code></pre>
  *
@@ -153,7 +154,7 @@ import it.unimi.dsi.fastutil.objects.ObjectLists;
  *
  */
 @NotThreadSafe
-public class SequencePattern {
+public class StructurePattern {
 
 	public static Builder builder() {
 		return new Builder();
@@ -185,16 +186,16 @@ public class SequencePattern {
 	private final Set<MatchFlag> flags;
 	/** The root context for evaluations in this pattern */
 	private final LaneContext context;
-	/** Blueprint for instantiating a new {@link SequenceMatcher} */
+	/** Blueprint for instantiating a new {@link StructureMatcher} */
 	private final StateMachineSetup setup;
 
-	private SequencePattern(Builder builder) {
+	private StructurePattern(Builder builder) {
 		modifier = builder.getModifier();
 		flags = builder.geFlags();
 		source = builder.getRoot();
 		context = builder.geContext();
 
-		SequenceQueryProcessor proc = new SequenceQueryProcessor(builder);
+		StructureQueryProcessor proc = new StructureQueryProcessor(builder);
 		setup = proc.createStateMachine();
 
 		setup.initialSize = builder.getInitialBufferSize();
@@ -214,10 +215,10 @@ public class SequencePattern {
 	 * instances use {@link ThreadLocal} to fetch expressions and assignables.
 	 */
 	//TODO add arguments to delegate result buffer, dispatch output and attach monitoring
-	public SequenceMatcher matcher() {
+	public StructureMatcher matcher() {
 		final int id = matcherIdGen.getAndIncrement();
 
-		return new SequenceMatcher(setup, id);
+		return new StructureMatcher(setup, id);
 	}
 
 	public NodeInfo[] info() {
@@ -378,7 +379,7 @@ public class SequencePattern {
 	}
 
 	/** Utility class for generating the state machine */
-	static class SequenceQueryProcessor {
+	static class StructureQueryProcessor {
 		private static final ObjectMapper mapper = IqlUtils.createMapper();
 		private static String serialize(IqlElement element) {
 			try {
@@ -453,9 +454,9 @@ public class SequencePattern {
 		 */
 		private static class Segment {
 
-			/** Begin of the state machine section for this frame. {@link SequencePattern#accept} by default. */
+			/** Begin of the state machine section for this frame. {@link StructurePattern#accept} by default. */
 			private Node start = accept;
-			/** End  of the state machine section for this frame. {@link SequencePattern#accept} by default. */
+			/** End  of the state machine section for this frame. {@link StructurePattern#accept} by default. */
 			private Node end = accept;
 			/** Number of non-virtual nodes that directly match elements in the target structure. */
 			private int nodes = 0;
@@ -763,7 +764,7 @@ public class SequencePattern {
 			}
 		}
 
-		SequenceQueryProcessor(Builder builder) {
+		StructureQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
 			modifier = builder.getModifier();
 			flags = builder.geFlags();
@@ -1954,7 +1955,7 @@ public class SequencePattern {
 		/**
 		 * For the top level traversal we can directly use the span-based
 		 * interval method for membership checks of individual index values.
-		 * @see de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame#containsIndex(int)
+		 * @see de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeFrame#containsIndex(int)
 		 */
 		@Override
 		boolean containsIndex(int index) {
@@ -1966,7 +1967,7 @@ public class SequencePattern {
 		 * can simply intersect the raw window with the filter interval.
 		 *
 		 * @see Interval#intersect(Interval)
-		 * @see de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame#retainIndices(de.ims.icarus2.query.api.engine.matcher.mark.Interval)
+		 * @see de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeFrame#retainIndices(de.ims.icarus2.query.api.engine.matcher.mark.Interval)
 		 */
 		@Override
 		boolean retainIndices(Interval filter) {
@@ -2005,7 +2006,7 @@ public class SequencePattern {
 	static final int MODE_ADJACENT = 0;
 
 	/**
-	 * Contains all the state information for a {@link SequenceMatcher}
+	 * Contains all the state information for a {@link StructureMatcher}
 	 * operating on a single thread.
 	 * <p>
 	 * This class mainly exists as an intermediary access point for
@@ -2316,7 +2317,7 @@ public class SequencePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class SequenceMatcher extends State implements Matcher<Container> {
+	public static class StructureMatcher extends State implements Matcher<Container> {
 
 		/** The only thread allowed to call {@link #matches(long, Container)} on this instance */
 		final Thread thread;
@@ -2326,7 +2327,7 @@ public class SequencePattern {
 		/** The node of the state machine to start matching with. */
 		final Node root;
 
-		SequenceMatcher(StateMachineSetup stateMachineSetup, int id) {
+		StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup);
 
 			this.id = id;
@@ -2423,11 +2424,11 @@ public class SequencePattern {
 	/**
 	 * A special helper class for testing.
 	 * <p>
-	 * This implementation overrides the default {@link SequenceMatcher#reset()} method
+	 * This implementation overrides the default {@link StructureMatcher#reset()} method
 	 * to do nothing. This is so that test code can actually do proper assertions on the
 	 * internal matcher state <b>after</b> a matching attempt (be it a fail or success).
 	 * In addition a dedicated {@link NonResettingMatcher#fullReset()} method is provided
-	 * that does the job of the former {@link SequenceMatcher#reset()} method and the
+	 * that does the job of the former {@link StructureMatcher#reset()} method and the
 	 * added {@link NonResettingMatcher#softReset()} to only reset state information
 	 * not used by testing code. To not pollute the public API, this class and
 	 * all the dedicated methods are kept package-private.
@@ -2436,7 +2437,7 @@ public class SequencePattern {
 	 *
 	 */
 	@VisibleForTesting
-	static class NonResettingMatcher extends SequenceMatcher {
+	static class NonResettingMatcher extends StructureMatcher {
 
 		NonResettingMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup, id);
@@ -2450,7 +2451,7 @@ public class SequencePattern {
 		public void reset() { /* no-op */ }
 
 		/**
-		 * Replacement for the original {@link SequenceMatcher#reset()} method so
+		 * Replacement for the original {@link StructureMatcher#reset()} method so
 		 * that test code can decide to reset matcher state if needed.
 		 */
 		@VisibleForTesting
@@ -2467,7 +2468,7 @@ public class SequencePattern {
 		}
 	}
 
-	public static class Builder extends AbstractBuilder<Builder, SequencePattern> {
+	public static class Builder extends AbstractBuilder<Builder, StructurePattern> {
 
 		private IqlElement root;
 		private Integer id;
@@ -2615,7 +2616,7 @@ public class SequencePattern {
 		}
 
 		@Override
-		protected SequencePattern create() { return new SequencePattern(this); }
+		protected StructurePattern create() { return new StructurePattern(this); }
 	}
 
 	//TODO add mechanics to properly collect results from multiple buffers
@@ -2711,7 +2712,7 @@ public class SequencePattern {
 
 	/**
 	 * Buffer for all the information needed to create a {@link NodeMatcher}
-	 * for a new {@link SequenceMatcher} instance.
+	 * for a new {@link StructureMatcher} instance.
 	 */
 	static class NodeDef implements Supplier<Matcher<Item>> {
 		final Assignable<? extends Item> element;
@@ -2737,7 +2738,7 @@ public class SequencePattern {
 
 	/**
 	 * Buffer for all the information needed to create a {@link ContainerMatcher}
-	 * for a new {@link SequenceMatcher} instance.
+	 * for a new {@link StructureMatcher} instance.
 	 */
 	static class FilterDef implements Supplier<Matcher<Container>> {
 		final Assignable<? extends Container> element;
@@ -4634,7 +4635,7 @@ public class SequencePattern {
 		}
 
 		/**
-		 * @see de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node#info()
+		 * @see de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node#info()
 		 */
 		@Override
 		public NodeInfo info() {

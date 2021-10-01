@@ -22,38 +22,38 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockCorpus;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePattern.last;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.ANCHOR_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_1;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.BUFFER_2;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_1;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CACHE_2;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CLOSURE_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.CONTINUOUS;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.DISCONTINUOUS;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_A;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_B;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_C;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_NOT_X;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_X;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_X_IC;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.EQUALS_Y;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_1;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NODE_2;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_ANCHOR;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_LIMIT;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_MEMBER;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.NO_STOP;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.PING_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.REGION_0;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.branch;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.item;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.matchers;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.seq;
-import static de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils.tree;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePattern.last;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.ANCHOR_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.BUFFER_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.BUFFER_1;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.BUFFER_2;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.CACHE_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.CACHE_1;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.CACHE_2;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.CLOSURE_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.CONTINUOUS;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.DISCONTINUOUS;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_A;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_B;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_C;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_NOT_X;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_X;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_X_IC;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_Y;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NODE_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NODE_1;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NODE_2;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NO_ANCHOR;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NO_LIMIT;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NO_MEMBER;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NO_STOP;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.PING_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.REGION_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.branch;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.item;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.matchers;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.seq;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.tree;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_LABEL;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_MARKER;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
@@ -137,29 +137,29 @@ import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArg;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArrayArg;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Branch;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.BranchConn;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Cache;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.DynamicClip;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Exhaust;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Finish;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NonResettingMatcher;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Ping;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Repetition;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceQueryProcessor;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Single;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.StateMachineSetup;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Tree;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeClosure;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeConn;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeFrame;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.TreeInfo;
-import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.RepetitionUtils.ClosedBase;
-import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.RepetitionUtils.OpenBase;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Branch;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.BranchConn;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Cache;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.DynamicClip;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Exhaust;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Finish;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Monitor;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NonResettingMatcher;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Ping;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Repetition;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureQueryProcessor;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Single;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StateMachineSetup;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Tree;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeClosure;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeConn;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeFrame;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeInfo;
+import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.RepetitionUtils.ClosedBase;
+import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.RepetitionUtils.OpenBase;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
@@ -202,7 +202,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * This test class is one big unification of test suites for various aspects of the
- * {@link SequencePattern} state machine for IQL. Strictly speaking we should divide
+ * {@link StructurePattern} state machine for IQL. Strictly speaking we should divide
  * this instantiation of anti-patterns into a small selection of test suites (in also
  * separate files) for distinct aspects of the state machine. But currently it is just
  * simpler to keep it in one place as both the state machine processor, evaluation
@@ -211,7 +211,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  * @author Markus Gärtner
  *
  */
-class SequencePatternTest {
+class StructurePatternTest {
 
 	private static final Class<?>[] ELEMENT_TYPES = {
 		IqlNode.class,
@@ -256,13 +256,13 @@ class SequencePatternTest {
 		return node;
 	};
 
-	static Consumer<? super SequencePattern.Builder> LIMIT(int limit) {
+	static Consumer<? super StructurePattern.Builder> LIMIT(int limit) {
 		return b -> b.limit(limit);
 	}
 
-	static final Consumer<? super SequencePattern.Builder> DISJOINT = b -> b.flag(MatchFlag.DISJOINT);
-	static final Consumer<? super SequencePattern.Builder> CACHE_ALL = b -> b.cacheAll(true);
-	static final Consumer<? super SequencePattern.Builder> LIMIT_SINGLE = b -> b.limit(1);
+	static final Consumer<? super StructurePattern.Builder> DISJOINT = b -> b.flag(MatchFlag.DISJOINT);
+	static final Consumer<? super StructurePattern.Builder> CACHE_ALL = b -> b.cacheAll(true);
+	static final Consumer<? super StructurePattern.Builder> LIMIT_SINGLE = b -> b.limit(1);
 
 	static final Consumer<? super ResultConfig> UNORDERED = r -> r.ignoreOrder(true);
 
@@ -355,19 +355,19 @@ class SequencePatternTest {
 		static final boolean NO_STOP = false;
 
 		/** Match given character exactly */
-		static SequencePatternTest.CharPredicate eq(char sentinel) {
+		static StructurePatternTest.CharPredicate eq(char sentinel) {
 			return c -> c==sentinel;
 		}
 		/** Match anything but given character */
-		static SequencePatternTest.CharPredicate neq(char sentinel) {
+		static StructurePatternTest.CharPredicate neq(char sentinel) {
 			return c -> c!=sentinel;
 		}
 		/** Match given character while ignoring case */
-		static SequencePatternTest.CharPredicate ic(char sentinel) {
+		static StructurePatternTest.CharPredicate ic(char sentinel) {
 			return c -> c==Character.toLowerCase(sentinel) || c==Character.toUpperCase(sentinel);
 		}
 		/** Match no character -> always return false */
-		static SequencePatternTest.CharPredicate none() {
+		static StructurePatternTest.CharPredicate none() {
 			return c -> false;
 		}
 		static Supplier<Matcher<Item>> sup(Matcher<Item> m) { return () -> m; }
@@ -405,7 +405,7 @@ class SequencePatternTest {
 			scan.setNext(atom);
 			Tree tree = new Tree(idGen.getAsInt(), node.source, node.anchorId, scan, conn);
 			node.setNext(tree);
-			SequencePattern.last(atom).setNext(conn);
+			StructurePattern.last(atom).setNext(conn);
 			atom = node;
 			return conn;
 		}
@@ -1049,7 +1049,7 @@ class SequencePatternTest {
 		/** Map a number of new entries depending on complex consumer */
 		C results(int count, ObjIntConsumer<ResultConfig> action) {
 			for (int i = 0; i < count; i++) {
-				ResultConfig result = SequencePatternTest.result(results.size());
+				ResultConfig result = StructurePatternTest.result(results.size());
 				action.accept(result, i);
 				results.add(result);
 			}
@@ -1059,7 +1059,7 @@ class SequencePatternTest {
 		/** Map all elements of given interval to specified nodeId in separate results */
 		C results(int nodeId, Interval...regions) {
 			for(Interval region : regions) {
-				ResultConfig result = SequencePatternTest.result(results.size());
+				ResultConfig result = StructurePatternTest.result(results.size());
 				for (int i = 0; i < region.size(); i++) {
 					result.map(nodeId, region.indexAt(i));
 				}
@@ -1071,7 +1071,7 @@ class SequencePatternTest {
 		/** Map all elements of given set to specified nodeId in separate results */
 		C results(int nodeId, int...indices) {
 			for (int i = 0; i < indices.length; i++) {
-				ResultConfig result = SequencePatternTest.result(results.size());
+				ResultConfig result = StructurePatternTest.result(results.size());
 				result.map(nodeId, indices[i]);
 				results.add(result);
 			}
@@ -1221,8 +1221,8 @@ class SequencePatternTest {
 	static RawTestConfig rawTest() { return new RawTestConfig(); }
 
 	static class MatcherTestConfig extends MatchConfig<MatcherTestConfig> {
-		private SequencePattern.Builder builder;
-		private SequencePattern pattern;
+		private StructurePattern.Builder builder;
+		private StructurePattern pattern;
 		private String target;
 		private String query;
 		private IqlElement root;
@@ -1231,7 +1231,7 @@ class SequencePatternTest {
 		private QueryConfig queryConfig;
 		private Set<Option> options = EnumSet.noneOf(Option.class);
 		private int[] tree;
-		private List<Consumer<? super SequencePattern.Builder>> builderMods = new ArrayList<>();
+		private List<Consumer<? super StructurePattern.Builder>> builderMods = new ArrayList<>();
 
 		MatcherTestConfig() {
 			startPos(0);
@@ -1251,14 +1251,14 @@ class SequencePatternTest {
 			return this;
 		}
 
-		MatcherTestConfig builder(SequencePattern.Builder builder) {
+		MatcherTestConfig builder(StructurePattern.Builder builder) {
 			checkNoPattern();
 			checkState("Builder already set", this.builder==null);
 			this.builder = requireNonNull(builder);
 			return this;
 		}
 
-		MatcherTestConfig pattern(SequencePattern pattern) {
+		MatcherTestConfig pattern(StructurePattern pattern) {
 			checkNoBuilder();
 			checkState("Pattern already set", this.pattern==null);
 			this.pattern = requireNonNull(pattern);
@@ -1301,7 +1301,7 @@ class SequencePatternTest {
 			return this;
 		}
 
-		MatcherTestConfig modBuilder(Consumer<? super SequencePattern.Builder> action) {
+		MatcherTestConfig modBuilder(Consumer<? super StructurePattern.Builder> action) {
 			builderMods.add(action);
 			return this;
 		}
@@ -1341,7 +1341,7 @@ class SequencePatternTest {
 
 			Scope scope = Utils.scope();
 
-			builder = SequencePattern.builder();
+			builder = StructurePattern.builder();
 			builder.root(root);
 			builder.id(1);
 			RootContext rootContext = EvaluationContext.rootBuilder()
@@ -1361,7 +1361,7 @@ class SequencePatternTest {
 
 			String payloadString = query;
 			if(isSet(expand)) {
-				payloadString = SequencePatternTest.expand(payloadString);
+				payloadString = StructurePatternTest.expand(payloadString);
 			}
 
 			IqlPayload payload = new QueryProcessor(options).processPayload(payloadString);
@@ -1375,7 +1375,7 @@ class SequencePatternTest {
 
 			Scope scope = Utils.scope();
 
-			builder = SequencePattern.builder();
+			builder = StructurePattern.builder();
 			builder.root(root);
 			builder.id(1);
 			RootContext rootContext = EvaluationContext.rootBuilder()
@@ -1963,7 +1963,7 @@ class SequencePatternTest {
 
 	@Test
 	void testBuilder() {
-		assertThat(SequencePattern.builder()).isNotNull();
+		assertThat(StructurePattern.builder()).isNotNull();
 	}
 
 	@Nested
@@ -3009,7 +3009,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -3032,7 +3032,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, NO_STOP));
 							sms.matchers = matchers(
@@ -3090,7 +3090,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -3111,7 +3111,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3189,7 +3189,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
@@ -3273,7 +3273,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3341,7 +3341,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CMAX, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CMAX, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3424,7 +3424,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -3445,7 +3445,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3502,7 +3502,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
 							return sms;
@@ -3523,7 +3523,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3569,7 +3569,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3622,7 +3622,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X));
@@ -3706,7 +3706,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3775,7 +3775,7 @@ class SequencePatternTest {
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
 											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-											CMIN, CINF, SequencePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
+											CMIN, CINF, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -4549,7 +4549,7 @@ class SequencePatternTest {
 	}
 
 	/**
-	 * Test family for the {@link SequenceQueryProcessor}'s creation methods.
+	 * Test family for the {@link StructureQueryProcessor}'s creation methods.
 	 */
 	@Nested
 	class ForProcessor {
@@ -11792,7 +11792,7 @@ class SequencePatternTest {
 		 * {@link IqlSequence} object. The only way to "nest" other sequences
 		 * is to wrap them into {@link IqlGrouping groups} without additional
 		 * quantifiers. But this will also not directly nest sequences within
-		 * each other and also the {@link SequencePattern} will ignore groupings
+		 * each other and also the {@link StructurePattern} will ignore groupings
 		 * without quantifiers in the absence of advanced {@link NodeArrangement}
 		 * declarations.
 		 */
@@ -12159,7 +12159,7 @@ class SequencePatternTest {
 		 * </ul>
 		 *
 		 * Note that blank nodes produce no mappings, so we are using the
-		 * {@link SequencePattern.Builder#nodeTransform(Function)} method
+		 * {@link StructurePattern.Builder#nodeTransform(Function)} method
 		 * to inject artificial node labels after the query has been parsed,
 		 * causing the final matcher to actually create mappings we can verify.
 		 */

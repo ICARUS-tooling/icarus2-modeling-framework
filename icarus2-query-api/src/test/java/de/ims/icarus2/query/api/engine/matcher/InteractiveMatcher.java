@@ -107,15 +107,15 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Monitor;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Node;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Field;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.NodeInfo.Type;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.SequenceMatcher;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.Snapshot;
-import de.ims.icarus2.query.api.engine.matcher.SequencePattern.State;
-import de.ims.icarus2.query.api.engine.matcher.SequencePatternTest.Utils;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Monitor;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Field;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Snapshot;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
+import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
@@ -158,9 +158,9 @@ public class InteractiveMatcher {
 
 	public static void main(String[] args) {
 
-//		String payload = SequencePatternTest.expand(
+//		String payload = StructurePatternTest.expand(
 //				"{{[isAt(2) || isFirst, $X][]}[isNotAt(3) || isLast,$X]}");
-//		SequencePattern pattern = SequencePatternTest.builder(payload)
+//		StructurePattern pattern = StructurePatternTest.builder(payload)
 //				.allowMonitor(true)
 //				.build();
 
@@ -492,7 +492,7 @@ public class InteractiveMatcher {
 		return null;
 	}
 
-	void displayStateMachine(SequencePattern pattern) {
+	void displayStateMachine(StructurePattern pattern) {
 		model.beginUpdate();
 
 		layoutStateMachine(pattern.info());
@@ -1241,7 +1241,7 @@ public class InteractiveMatcher {
 		private final JTable tState;
 
 		private transient IqlPayload payload;
-		private transient SequencePattern pattern;
+		private transient StructurePattern pattern;
 		private transient Container target;
 		private transient int[] tree;
 		private final Vector<Step> steps = new Vector<>();
@@ -1407,7 +1407,7 @@ public class InteractiveMatcher {
 			if(encodedTree.isEmpty()) {
 				tree = null;
 			} else {
-				tree = SequencePatternTest.parseTree(encodedTree, encodedTree.contains(" "));
+				tree = StructurePatternTest.parseTree(encodedTree, encodedTree.contains(" "));
 			}
 
 			String input = tfTarget.getText();
@@ -1427,7 +1427,7 @@ public class InteractiveMatcher {
 				payload = null;
 			} else {
 				if(cbExpand.isSelected()) {
-					rawPayload = SequencePatternTest.expand(rawPayload);
+					rawPayload = StructurePatternTest.expand(rawPayload);
 				}
 
 				payload = new QueryProcessor().processPayload(rawPayload);
@@ -1449,7 +1449,7 @@ public class InteractiveMatcher {
 
 			Scope scope = Utils.scope();
 
-			SequencePattern.Builder builder = SequencePattern.builder();
+			StructurePattern.Builder builder = StructurePattern.builder();
 			builder.root(root);
 			builder.id(1);
 			RootContext rootContext = EvaluationContext.rootBuilder()
@@ -1464,7 +1464,7 @@ public class InteractiveMatcher {
 			builder.allowMonitor(true);
 
 			if(cbPromote.isSelected()) {
-				builder.nodeTransform(SequencePatternTest.PROMOTE_NODE);
+				builder.nodeTransform(StructurePatternTest.PROMOTE_NODE);
 			}
 
 			if(target!=null) {
@@ -1491,9 +1491,9 @@ public class InteractiveMatcher {
 
 				@Override
 				protected Boolean doInBackground() throws Exception {
-					SequenceMatcher matcher = pattern.matcher();
+					StructureMatcher matcher = pattern.matcher();
 					if(tree!=null) {
-						SequencePatternTest.applyTree(matcher, tree);
+						StructurePatternTest.applyTree(matcher, tree);
 					}
 					matcher.monitor(monitor);
 					matcher.resultHandler(state -> results.add(new Result(state)));
