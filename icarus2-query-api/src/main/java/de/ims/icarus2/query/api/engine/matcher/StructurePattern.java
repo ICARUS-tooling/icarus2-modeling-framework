@@ -1826,10 +1826,11 @@ public class StructurePattern {
 			}
 
 			final boolean disjoint = isFlagSet(MatchFlag.DISJOINT);
+			final boolean forward = modifier!=QueryModifier.LAST;
 
 			resetFindOnly(false);
-			//FIXME need to rework the permutation node as we stack scans here otherwise!!!
-			Node rootScan = explore(modifier!=QueryModifier.LAST, false);
+			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead
+			final Node rootScan = explore(forward, false);
 
 			// For now we don't honor the 'consumed' flag on IqlElement instances
 			final Frame frame = process(rootElement, rootScan);
@@ -2447,8 +2448,10 @@ public class StructurePattern {
 		Item[] elements;
 		/** View on the target tree as frames */
 		TreeFrame[] tree;
-		/** Indices of root nodes in the tree. {@code -1} indicates end of list */
+		/** Indices of root nodes in the tree. */
 		int[] roots;
+		/** */
+		int rootCount;
 		/** Path from a root node to current node */
 		int[] trace;
 		/** Keys for the node mapping */
@@ -2551,6 +2554,7 @@ public class StructurePattern {
 			entry = 0;
 			last = 0;
 			size = 0;
+			rootCount = 0;
 			rootFrame.reset();
 			Arrays.fill(roots, UNSET_INT);
 			frame = rootFrame;
@@ -3552,6 +3556,8 @@ public class StructurePattern {
 		public enum Type {
 			/** Special node to provide pre-match filtering. */
 			BEGIN,
+			/** Special node to scan only root nodes. */
+			ROOT,
 			/** Empty search node without internal constraints. */
 			EMPTY,
 			/** Regular search node with internal constraints. */
@@ -4116,6 +4122,95 @@ public class StructurePattern {
 		@Override
 		public String toString() {
 			return ToStringBuilder.create(this).add("minSize", minSize).build();
+		}
+	}
+
+	/** Top-level scan that only considers actual root nodes. */
+	static final class RootScan extends Node {
+		final boolean forward;
+
+		RootScan(int id, boolean forward) {
+			super(id);
+			this.forward = forward;
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.ROOT)
+					.property(Field.FORWARD, forward);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			boolean result = false;
+			if(forward) {
+				result = matchForwards(state, pos);
+			} else {
+				result = matchBackwards(state, pos);
+			}
+			return result;
+		}
+
+		/**
+		 * Implements the iterative scanning of all remaining possibilities
+		 * for matches of the nested atom, honoring the default direction defined
+		 * by the target sequence.
+		 */
+		private boolean matchForwards(State state, int pos) {
+			assert pos==0 : "Root scan must start at first position - got "+pos;
+
+			final TreeFrame frame = state.frame;
+    		final int from = frame.from();
+    		final int to = frame.to();
+			final int[] roots = state.roots;
+			final int rootCount = state.rootCount;
+
+			boolean result = false;
+
+			for (int i = 0; i < rootCount && !state.stop; i++) {
+				frame.previousIndex = UNSET_INT;
+				int scope = state.scope();
+				result |= next.match(state, roots[i]);
+				state.resetScope(scope);
+				frame.resetWindow(from, to);
+			}
+
+			return result;
+		}
+
+		/**
+		 * Implements the iterative scanning of all remaining possibilities
+		 * for matches of the nested atom, using the reverse direction as
+		 * defined by the target sequence.
+		 * The main purpose for this separate implementation is to handle the
+		 * LAST query modifier.
+		 */
+		private boolean matchBackwards(State state, int pos) {
+			assert pos==0 : "Root scan must start at first position - got "+pos;
+
+			final TreeFrame frame = state.frame;
+    		final int from = frame.from();
+    		final int to = frame.to();
+			boolean result = false;
+			final int[] roots = state.roots;
+			final int rootCount = state.rootCount;
+
+			for (int i = rootCount - 1; i >= 0 && !state.stop; i--) {
+				frame.previousIndex = UNSET_INT;
+				int scope = state.scope();
+				result |= next.match(state, roots[i]);
+				state.resetScope(scope);
+				frame.resetWindow(from, to);
+			}
+
+			return result;
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("forward", forward)
+					.build();
 		}
 	}
 
@@ -4835,7 +4930,7 @@ public class StructurePattern {
 			boolean result = false;
 
 			if(forward) {
-				result = matchForwardUncached(state, pos);
+				result = matchForwards(state, pos);
 			} else {
 				result = matchBackwards(state, pos);
 			}
@@ -4847,11 +4942,8 @@ public class StructurePattern {
 		 * Implements the iterative scanning of all remaining possibilities
 		 * for matches of the nested atom, honoring the default direction defined
 		 * by the target sequence.
-		 * This variant does not use memoization and is intended for top-level
-		 * scanning when there is no benefit from caching as every node will
-		 * only be visited once anyway.
 		 */
-		private boolean matchForwardUncached(State state, int pos) {
+		private boolean matchForwards(State state, int pos) {
 			final TreeFrame frame = state.frame;
     		final int from = frame.from();
     		final int to = frame.to();
@@ -4872,61 +4964,8 @@ public class StructurePattern {
 
 		/**
 		 * Implements the iterative scanning of all remaining possibilities
-		 * for matches of the nested atom.
-		 * We employ memoization here to prevent repeatedly checking false
-		 * leads. If a node is marked as successful hit, we still need to
-		 * continue down all further nodes in the state machine, but we can
-		 * effectively rule out unsuccessful paths.
-		 */
-		@Deprecated
-		private boolean matchForwardCached(State state, int pos) {
-			final TreeFrame frame = state.frame;
-    		final int from = frame.from();
-    		final int to = frame.to();
-			final Cache cache = state.caches[UNSET_INT];
-			final int fence = to - minSize + 1;
-
-			boolean result = false;
-
-			for (int i = pos; i <= fence && !state.stop; i++) {
-				frame.previousIndex = UNSET_INT;
-				final int scope = state.scope();
-				final int index = frame.indices[i];
-				final boolean stored = cache.isSet(index);
-				boolean matched;
-				if(stored) {
-					matched = cache.getValue(index);
-					if(matched) {
-						// Continue matching, but we know it will succeed
-						//TODO re-evaluate this in the context of complex SM graphs (subgraph could still fail?)
-						next.match(state, i);
-					} else {
-						// We know this is a dead-end, so skip
-						state.resetScope(scope);
-						continue;
-					}
-				} else {
-					// Previously unseen index, so explore and cache result
-					matched = next.match(state, i);
-					cache.setValue(index, matched);
-				}
-
-				result |= matched;
-
-				state.resetScope(scope);
-				frame.resetWindow(from, to);
-			}
-
-			return result;
-		}
-
-		/**
-		 * Implements the iterative scanning of all remaining possibilities
 		 * for matches of the nested atom, using the reverse direction as
 		 * defined by the target sequence.
-		 * This variant does not use memoization and is intended for top-level
-		 * scanning when there is no benefit from caching as every node will
-		 * only be visited once anyway.
 		 * The main purpose for this separate implementation is to handle the
 		 * LAST query modifier.
 		 */
