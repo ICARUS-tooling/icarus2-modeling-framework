@@ -71,6 +71,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.mark.GenerationMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
+import de.ims.icarus2.query.api.engine.matcher.mark.LevelMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
@@ -722,10 +723,9 @@ public class StructurePattern {
 			private void checkMarker(IqlMarker marker) {
 				Consumer<? super IqlMarkerCall> callAction = call -> {
 					String name = call.getName();
-					if(GenerationMarker.isGenerationMarker(name)) {
-						if(GenerationMarker.isLevelMarker(name)) {
-							levelMarkerCount++;
-						}
+					if(LevelMarker.isValidName(name)) {
+						levelMarkerCount++;
+					} else if(GenerationMarker.isValidName(name)) {
 						genMarkerCount++;
 					}
 					markerCount++;
@@ -752,20 +752,25 @@ public class StructurePattern {
 				return calls.size()==1 ? calls.get(0) : IqlMarkerExpression.and(calls);
 			}
 
-			void extractGenerationMarkers(IqlMarker marker) {
+			void splitMarkers(IqlMarker marker) {
 				reset();
 				checkMarker(marker);
 
 				assert markerCount>0 : "Empty marker construct";
 
-				// No generation markers
-				if(genMarkerCount==0) {
+				// No generation or level markers
+				if(genMarkerCount==0 && levelMarkerCount==0) {
 					setups.add(new MarkerSetup(null, marker, null));
 					return;
 				}
 				// Only generation markers
 				else if(markerCount==genMarkerCount && levelMarkerCount==0) {
 					setups.add(new MarkerSetup(marker, null, null));
+					return;
+				}
+				// Only level markers
+				else if(markerCount==levelMarkerCount && genMarkerCount==0) {
+					setups.add(new MarkerSetup(null, null, marker));
 					return;
 				}
 				// Fully conjunctive mix
@@ -775,9 +780,9 @@ public class StructurePattern {
 					List<IqlMarkerCall> levelMarkers = new ObjectArrayList<>();
 					traverse(marker, call -> {
 						String name = call.getName();
-						if(GenerationMarker.isLevelMarker(name)) {
+						if(LevelMarker.isValidName(name)) {
 							levelMarkers.add(call);
-						} else if(GenerationMarker.isGenerationMarker(name)) {
+						} else if(GenerationMarker.isValidName(name)) {
 							genMarkers.add(call);
 						} else {
 							horMarkers.add(call);
@@ -894,7 +899,7 @@ public class StructurePattern {
 			 * markers on multiple (nested) nodes in an ADJACENT sequence as erroneous.
 			 */
 			if(marker!=null) {
-				markerUtils.extractGenerationMarkers(marker);
+				markerUtils.splitMarkers(marker);
 
 				if(markerUtils.setups.size()>1) {
 					//TODO need a way to use the same atom node for all branches
@@ -1226,11 +1231,18 @@ public class StructurePattern {
 			// First layer of wrapping
 			if(setup.horizontalMarker!=null) {
 				addHorizontalMarker(frame, setup.horizontalMarker, scan);
+				scan = null;
 			}
 
 			// Second layer of wrapping
 			if(setup.generationMarker!=null) {
 				addGenerationMarker(frame, setup.generationMarker);
+				scan = null;
+			}
+
+			// If scan survived, we need to put it in front of atom and "inner" markers
+			if(scan!=null) {
+				frame.push(scan);
 			}
 
 			return frame;
@@ -1888,11 +1900,11 @@ public class StructurePattern {
 
 		ROOT {
 			@Override
-			boolean contains(TreeFrame frame) { return frame.index==UNSET_INT; }
+			boolean contains(TreeFrame frame) { return frame.parent==UNSET_INT; }
 		},
 		NO_ROOT {
 			@Override
-			boolean contains(TreeFrame frame) { return frame.index!=UNSET_INT; }
+			boolean contains(TreeFrame frame) { return frame.parent!=UNSET_INT; }
 		},
 		LEAF {
 			@Override
@@ -1904,7 +1916,7 @@ public class StructurePattern {
 		},
 		INTERMEDIATE {
 			@Override
-			boolean contains(TreeFrame frame) { return frame.index!=UNSET_INT && frame.length>0; }
+			boolean contains(TreeFrame frame) { return frame.parent!=UNSET_INT && frame.length>0; }
 		}
 		;
 
@@ -1912,8 +1924,8 @@ public class StructurePattern {
 		abstract boolean contains(TreeFrame frame);
 
 		static FrameFilter forMarker(IqlMarkerCall call) {
-			GenerationMarker.Type type = GenerationMarker.typeFor(call.getName());
-			switch (type) {
+			LevelMarker marker = LevelMarker.forName(call.getName());
+			switch (marker) {
 			case ROOT: return ROOT;
 			case NOT_ROOT: return NO_ROOT;
 			case LEAFT: return LEAF;
@@ -1921,7 +1933,7 @@ public class StructurePattern {
 			case INTERMEDIATE: return INTERMEDIATE;
 
 			default:
-				throw EvaluationUtils.forUnsupportedValue("generation-marker-type", type);
+				throw EvaluationUtils.forUnsupportedValue("level-marker-type", marker);
 			}
 		}
 	}
@@ -1934,8 +1946,8 @@ public class StructurePattern {
 	static abstract class LevelFilter {
 
 		static LevelFilter forMarker(IqlMarkerCall call) {
-			GenerationMarker.Type type = GenerationMarker.typeFor(call.getName());
-			switch (type) {
+			GenerationMarker marker = GenerationMarker.forName(call.getName());
+			switch (marker) {
 			case GENERATION: return new Singular(arg(call, 0));
 			case NOT_GENERATION: return new Others(arg(call, 0));
 			case GENERATION_AFTER: return new After(arg(call, 0));
@@ -1943,7 +1955,7 @@ public class StructurePattern {
 			case ANY_GENERATION: return ALL;
 
 			default:
-				throw EvaluationUtils.forUnsupportedValue("generation-marker-type", type);
+				throw EvaluationUtils.forUnsupportedValue("generation-marker-type", marker);
 			}
 		}
 
@@ -2021,6 +2033,7 @@ public class StructurePattern {
 		}
 
 		/** Consider all generations between selected levels. */
+		@Deprecated
 		static final class Ranged extends LevelFilter {
 			Ranged(int minLevel, int maxLevel) { super(minLevel, maxLevel); }
 			@Override
@@ -6018,7 +6031,7 @@ public class StructurePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			if(!filter.contains(state.frame)) {
+			if(!filter.contains(state.tree[state.frame.indices[pos]])) {
 				return false;
 			}
 			return next.match(state, pos);

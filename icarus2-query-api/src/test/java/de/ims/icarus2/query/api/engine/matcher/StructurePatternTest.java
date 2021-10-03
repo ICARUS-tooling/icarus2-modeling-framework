@@ -1370,8 +1370,9 @@ class StructurePatternTest {
 			assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
 			assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
 			IqlLane lane = payload.getLanes().get(0);
-			LaneType expectedLaneType = tree!=null ? LaneType.TREE : LaneType.SEQUENCE;
-			assertThat(lane.getLaneType()).isEqualTo(expectedLaneType);
+			if(lane.getLaneType()==LaneType.TREE) {
+				assertThat(tree).as("Must provide tree structure for tree query").isNotNull();
+			}
 			IqlElement root = lane.getElement();
 
 			Scope scope = Utils.scope();
@@ -10128,6 +10129,156 @@ class StructurePatternTest {
 					.results(matches, hits);
 		}
 
+		@Nested
+		class StandaloneNode {
+
+			private final QueryConfig QUERY_CONFIG = QueryConfig.of(IqlNode.class);
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'[]', '', 0, -",
+				"'[]', XYZ, 3, { {{0}{1}{2}} }",
+			})
+			@DisplayName("blank node")
+			void testBlank(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.promote(true)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				/* Note that "optional reluctant" nodes don't get added to a mapping
+				 * unless the context forces an expansion.
+				 */
+
+				// Pure singular reluctance
+				"'[?]', '', 1, { {{}} }",
+				"'[?]', X, 1, { {{}} }",
+
+				// Pure expanded reluctance
+				"'[*]', '', 1, { {{}} }",
+				"'[*]', X, 1, { {{}} }",
+				"'[*]', XY, 2, { {{}{}} }",
+				"'[*]', XYZ, 3, { {{}{}{}} }",
+
+				// Mandatory dummy node with reluctant expansion
+				"'[+]', '', 0, -",
+				"'[+]', X, 1, { {{0}} }",
+				"'[+]', XY, 2, { {{0}{1}} }",
+				"'[+]', XYZ, 3, { {{0}{1}{2}} }",
+			})
+			@DisplayName("dummy node")
+			void testDummyNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.promote(true)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				// Singleton markers
+				"'[isAt(2), $X]', XXX, 1, { {{1}} }",
+				"'[isNotAt(2), $X]', XXX, 2, { {{0}{2}} }",
+				"'[isAfter(2), $X]', XXX, 1, { {{2}} }",
+				"'[isBefore(2), $X]', XXX, 1, { {{0}} }",
+				"'[isInside(2,4), $X]', XXXXX, 3, { {{1}{2}{3}} }",
+				"'[isOutside(2,4), $X]', XXXXX, 2, { {{0}{4}} }",
+				// Marker intersection
+				"'[isFirst && isLast, $X]', X, 1, { {{0}} }",
+				"'[isFirst && isLast, $X]', Y, 0, -",
+				"'[isFirst && isLast, $X]', XX, 0, -",
+				"'[isNotAt(2) && isLast, $X]', XX, 0, -",
+				// Marker union
+				"'[isFirst || isLast, $X]', X, 1, { {{0}} }",
+				"'[isFirst || isLast, $X]', XX, 2, { {{0}{1}} }",
+				"'[isFirst || isLast, $X]', XXX, 2, { {{0}{2}} }",
+				"'[isAt(2) || isLast, $X]', XXX, 2, { {{1}{2}} }",
+				// Complex marker nesting
+				"'[isFirst || (isNotAt(3) && isBefore(4)), $X]', XXXX, 2, { {{0}{1}} }",
+				//TODO add some of the other markers for completeness?
+			})
+			@DisplayName("node with markers")
+			void testMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				"'[isRoot, $X]', YXX, *00, 0, -",
+				"'[isRoot, $X]', XYY, *00, 1, { {{0}} }",
+				"'[isRoot, $X]', XYX, *00, 1, { {{0}} }",
+				"'[isRoot, $X]', YXY, 1*1, 1, { {{1}} }",
+				"'[isRoot, $X]', YYX, 22*, 1, { {{2}} }",
+
+				"'[isNotRoot, $X]', XYY, *00, 0, -",
+				"'[isNotRoot, $X]', XYX, *00, 1, { {{2}} }",
+				"'[isNotRoot, $X]', XXY, *00, 1, { {{1}} }",
+				"'[isNotRoot, $X]', XYX, 1*1, 2, { {{0}{2}} }",
+				"'[isNotRoot, $X]', XXY, 22*, 2, { {{0}{1}} }",
+
+				"'[isLeaf, $X]', XYY, *00, 0, -",
+				"'[isLeaf, $X]', YXX, *00, 2, { {{1}{2}} }",
+				"'[isLeaf, $X]', YXX, *01, 1, { {{2}} }",
+
+				"'[isNoLeaf, $X]', YXX, *00, 0, -",
+				"'[isNoLeaf, $X]', XXX, *00, 1, { {{0}} }",
+				"'[isNoLeaf, $X]', XXX, *01, 2, { {{0}{1}} }",
+
+				"'[isIntermediate, $X]', XYY, *00, 0, -",
+				"'[isIntermediate, $X]', YXX, *00, 0, -",
+				"'[isIntermediate, $X]', YYX, *01, 0, -",
+				"'[isIntermediate, $X]', YXX, *01, 1, { {{1}} }",
+			})
+			@DisplayName("node with frame-based markers")
+			void testFrameMarkers(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'<3+>[$X]', XX, 0, -",
+				"'<3+>[$X]', XXX, 1, { {{0;1;2}} }",
+			})
+			@DisplayName("quantified node")
+			void testQuantifiedNodes(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'<2>[isAfter(1),]', XX, 0, -",
+				"'<2>[isAfter(1), $X]', XXX, 1, { {{1;2}} }",
+			})
+			@DisplayName("grouping of quantified node with markers")
+			void testQuantifiedNodesWithMarkers(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.assertResult();
+			}
+		}
+
 		/**
 		 * {@link IqlNode} nested inside {@link IqlGrouping}
 		 * <p>
@@ -10956,6 +11107,23 @@ class StructurePatternTest {
 			})
 			@DisplayName("child node with generation marker")
 			void testGenerationMarkerOnChild(String query, String target, String tree, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QUERY_CONFIG)
+				.tree(tree)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} [{2}] -> {3} matches")
+			@CsvSource({
+				// Fails
+				"'[$X [IsRoot,$Y]]', XY, *0, 0, -",
+
+				//TODO add tests for other frame-based markers
+			})
+			@DisplayName("child node with frame-based generation marker")
+			void testFrameMarkerOnChild(String query, String target, String tree, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
 				rawQueryTest(query, target, matches, hits)
