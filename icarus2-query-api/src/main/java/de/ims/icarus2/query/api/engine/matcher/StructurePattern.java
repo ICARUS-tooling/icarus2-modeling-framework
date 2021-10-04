@@ -22,7 +22,6 @@ package de.ims.icarus2.query.api.engine.matcher;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
-import static de.ims.icarus2.util.IcarusUtils.DO_NOTHING;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
@@ -73,6 +72,8 @@ import de.ims.icarus2.query.api.engine.matcher.mark.HorizontalMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.engine.matcher.mark.LevelMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
+import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform;
+import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
@@ -406,7 +407,7 @@ public class StructurePattern {
 		Supplier<Expression<?>> global;
 		ElementContext context;
 		ExpressionFactory expressionFactory;
-		final MarkerUtils markerUtils = new MarkerUtils();
+		final MarkerTransform markerTransform = new MarkerTransform();
 
 		boolean findOnly = false;
 
@@ -694,121 +695,6 @@ public class StructurePattern {
 			}
 		}
 
-		private static class MarkerUtils {
-			private int markerCount, genMarkerCount, levelMarkerCount;
-			private boolean hasDisjunction;
-			/** Disjunctive sections of the marker construct */
-			private final List<MarkerSetup> setups = new ObjectArrayList<>();
-
-			static void traverse(IqlMarker marker,
-					Consumer<? super IqlMarkerCall> callAction,
-					Consumer<? super IqlMarkerExpression> expAction) {
-				switch (marker.getType()) {
-				case MARKER_CALL: {
-					IqlMarkerCall call = (IqlMarkerCall) marker;
-					callAction.accept(call);
-				} break;
-
-				case MARKER_EXPRESSION: {
-					IqlMarkerExpression exp = (IqlMarkerExpression) marker;
-					expAction.accept(exp);
-					exp.getItems().forEach(m -> traverse(m, callAction, expAction));
-				} break;
-
-				default:
-					throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
-				}
-			}
-
-			private void checkMarker(IqlMarker marker) {
-				Consumer<? super IqlMarkerCall> callAction = call -> {
-					String name = call.getName();
-					if(LevelMarker.isValidName(name)) {
-						levelMarkerCount++;
-					} else if(GenerationMarker.isValidName(name)) {
-						genMarkerCount++;
-					}
-					markerCount++;
-				};
-				Consumer<? super IqlMarkerExpression> expAction = exp -> {
-					if(exp.getExpressionType()==MarkerExpressionType.DISJUNCTION) {
-						hasDisjunction = true;
-					}
-				};
-
-				traverse(marker, callAction, expAction);
-			}
-
-			void reset() {
-				markerCount = genMarkerCount = 0;
-				hasDisjunction = false;
-				setups.clear();
-			}
-
-			private static @Nullable IqlMarker _and(List<IqlMarkerCall> calls) {
-				if(calls.isEmpty()) {
-					return null;
-				}
-				return calls.size()==1 ? calls.get(0) : IqlMarkerExpression.and(calls);
-			}
-
-			void splitMarkers(IqlMarker marker) {
-				reset();
-				checkMarker(marker);
-
-				assert markerCount>0 : "Empty marker construct";
-
-				// No generation or level markers
-				if(genMarkerCount==0 && levelMarkerCount==0) {
-					setups.add(new MarkerSetup(null, marker, null));
-					return;
-				}
-				// Only generation markers
-				else if(markerCount==genMarkerCount && levelMarkerCount==0) {
-					setups.add(new MarkerSetup(marker, null, null));
-					return;
-				}
-				// Only level markers
-				else if(markerCount==levelMarkerCount && genMarkerCount==0) {
-					setups.add(new MarkerSetup(null, null, marker));
-					return;
-				}
-				// Fully conjunctive mix
-				else if(!hasDisjunction) {
-					List<IqlMarkerCall> genMarkers = new ObjectArrayList<>();
-					List<IqlMarkerCall> horMarkers = new ObjectArrayList<>();
-					List<IqlMarkerCall> levelMarkers = new ObjectArrayList<>();
-					traverse(marker, call -> {
-						String name = call.getName();
-						if(LevelMarker.isValidName(name)) {
-							levelMarkers.add(call);
-						} else if(GenerationMarker.isValidName(name)) {
-							genMarkers.add(call);
-						} else {
-							horMarkers.add(call);
-						}
-					}, DO_NOTHING());
-
-					setups.add(new MarkerSetup(_and(genMarkers), _and(horMarkers), _and(levelMarkers)));
-				}
-				//TODO split marker construct and assign horizontalMarker and generationMarker sections
-				else {
-					throw new UnsupportedOperationException("not implemented yet");
-				}
-			}
-		}
-
-		private static class MarkerSetup {
-			final IqlMarker horizontalMarker, generationMarker, levelMarker;
-
-			public MarkerSetup(IqlMarker generationMarker, IqlMarker horizontalMarker,
-					IqlMarker levelMarker) {
-				this.horizontalMarker = horizontalMarker;
-				this.generationMarker = generationMarker;
-				this.levelMarker = levelMarker;
-			}
-		}
-
 		StructureQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
 			modifier = builder.getModifier();
@@ -899,16 +785,17 @@ public class StructurePattern {
 			 * markers on multiple (nested) nodes in an ADJACENT sequence as erroneous.
 			 */
 			if(marker!=null) {
-				markerUtils.splitMarkers(marker);
+				markerTransform.apply(marker);
+				final List<MarkerSetup> setups = markerTransform.getSetups();
 
-				if(markerUtils.setups.size()>1) {
+				if(setups.size()>1) {
 					//TODO need a way to use the same atom node for all branches
 					throw new UnsupportedOperationException("not implemented yet");
 				} else {
-					frame = markerSetup(markerUtils.setups.get(0), scan, atom);
+					frame = markerSetup(setups.get(0), scan, atom);
 				}
 
-				markerUtils.reset();
+				markerTransform.reset();
 
 				// Marker construct consumes scan
 				scan = null;
@@ -1213,7 +1100,7 @@ public class StructurePattern {
 		}
 
 		/** Combine different types of markers around atom node */
-		private Frame markerSetup(MarkerSetup setup, @Nullable Node scan, Segment atom) {
+		private Frame markerSetup(MarkerTransform.MarkerSetup setup, @Nullable Node scan, Segment atom) {
 			Frame frame = new Frame();
 			// Start with atom
 			frame.push(atom);
@@ -1259,7 +1146,7 @@ public class StructurePattern {
 			case MARKER_EXPRESSION: {
 				LinkedHashSet<FrameFilter> rawFilters = new LinkedHashSet<>();
 				List<Node> nodes = new ObjectArrayList<>();
-				MarkerUtils.traverse(marker,
+				MarkerTransform.traverse(marker,
 						call -> {
 							// Filter redundant markers
 							FrameFilter filter = FrameFilter.forMarker(call);
