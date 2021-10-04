@@ -23,7 +23,6 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +50,7 @@ import com.google.common.collect.MapMaker;
 import de.ims.icarus2.util.Filter;
 import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.longs.LongCollection;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -377,7 +377,7 @@ public final class CollectionUtils {
 		List<T> result = Collections.emptyList();
 
 		if(!items.isEmpty()) {
-			result = new ArrayList<>(items);
+			result = new ObjectArrayList<>(items);
 
 			Collections.sort(result);
 		}
@@ -392,7 +392,7 @@ public final class CollectionUtils {
 		List<T> result = Collections.emptyList();
 
 		if(!items.isEmpty()) {
-			result = new ArrayList<>(items);
+			result = new ObjectArrayList<>(items);
 
 			Collections.sort(result, comparator);
 		}
@@ -491,7 +491,7 @@ public final class CollectionUtils {
 
 	@SafeVarargs
 	public static <E extends Object> List<E> list(E...items) {
-		ArrayList<E> list = new ArrayList<>(Math.max(1, items.length));
+		List<E> list = new ObjectArrayList<>(Math.max(1, items.length));
 		feedItems(list, items);
 		return list;
 	}

@@ -232,6 +232,10 @@ public final class IcarusUtils {
 	 */
 	public static final int UNSET_INT = -1;
 	/**
+	 * Value representing an unset byte variable (-1).
+	 */
+	public static final byte UNSET_BYTE = -1;
+	/**
 	 * Value representing an unset double variable (-1D).
 	 */
 	public static final double UNSET_DOUBLE = -1D;
