@@ -254,6 +254,7 @@ public class MarkerTransform {
 
 		void addFlag(int flag) { flags |= flag; }
 		void removeFlag(int flag) { flags &= ~flag; }
+		boolean isType(int type) { return this.type==type; }
 		boolean isSet(int flag) { return (flags & flag) == flag; }
 		boolean isPure() { return _pure(flags); }
 		List<Term> elements() {
@@ -415,8 +416,8 @@ public class MarkerTransform {
 				if(element.type==OR) {
 					assert term.type==AND : "redundant disjunctive nesting detected";
 					// 2. apply distributive property
-					Term inner = elements.remove(i);
-					Term outer = elements.remove(0);
+					Term inner = elements.remove(i); // The disjunctive element we found
+					Term outer = elements.remove(0); // Next best element in term
 					Term replacement = distribute(outer, inner);
 					term.add(replacement);
 					// Flatten our current structure
