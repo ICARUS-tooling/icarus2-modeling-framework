@@ -440,10 +440,11 @@ public class MarkerTransform {
 		return term.type==RAW ? 1 : term.elements.size();
 	}
 
-	private Term _binary(int type, Term left, Term right) {
+	private Term binary(int type, Term left, Term right) {
 		Term t = new Term(type);
 		t.add(left);
 		t.add(right);
+		unwrap(t, false);
 		return t;
 	}
 
@@ -459,21 +460,31 @@ public class MarkerTransform {
 			 * = ((A & D) | (B & D) | (C & D))
 			 */
 			for(Term t : inner.elements) {
-				root.add(_binary(AND, outer, t));
+				root.add(binary(AND, outer, t));
 			}
 			inner.destroy();
-		} else if(lenOut==2 && lenIn==2) {
-			// FOIL
-			root.add(_binary(AND, outer.elements.get(0), inner.elements.get(0)));
-			root.add(_binary(AND, outer.elements.get(1), inner.elements.get(0)));
-			root.add(_binary(AND, outer.elements.get(0), inner.elements.get(1)));
-			root.add(_binary(AND, outer.elements.get(1), inner.elements.get(1)));
+//		} else if(lenOut==2 && lenIn==2) {
+//			// FOIL
+//			root.add(binary(AND, outer.elements.get(0), inner.elements.get(0)));
+//			root.add(binary(AND, outer.elements.get(1), inner.elements.get(0)));
+//			root.add(binary(AND, outer.elements.get(0), inner.elements.get(1)));
+//			root.add(binary(AND, outer.elements.get(1), inner.elements.get(1)));
+//			outer.destroy();
+//			inner.destroy();
+		} else {
+			// lenOut >= 2 AND lenIn >= 2
+			List<Term> eOut = outer.elements;
+			List<Term> eIn = inner.elements;
+
+			// Generalized FOIL approach: include all binary combinations of elements from the two terms
+			for (int i = 0; i < eOut.size(); i++) {
+				for (int j = 0; j < eIn.size(); j++) {
+					root.add(binary(AND, eOut.get(i), eIn.get(j)));
+				}
+			}
+
 			outer.destroy();
 			inner.destroy();
-		} else {
-			// lenOut >= 2 AND lenIn > 2
-
-			//TODO generalize the FOIL approach
 		}
 		return root;
 	}
@@ -525,12 +536,13 @@ public class MarkerTransform {
 		for(Term term : terms) {
 			assert term.type!=OR || (!split && term==root) : "cannot create marker setup from disjunctive term";
 
+			// All the actual elements to collect
 			Collection<Term> elements = term.elements;
-
 			if(term.type==RAW) {
 				elements = Collections.singleton(term);
 			}
 
+			// Split raw elements into 3 groups
 			for (Term element : elements) {
 				assert element.type==RAW : "Nested terms m ust be pointers to actual markers";
 				assert element.isPure() : "No mixed content allowed in nested terms";
