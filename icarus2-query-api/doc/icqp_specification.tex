@@ -8,6 +8,9 @@
 \usepackage{xr-hyper}
 \externaldocument[IQL-]{iql_specification}
 
+\newcommand{\iqlType}[1]{\texttt{\iqlns#1}}
+\newcommand{\iqlBaseType}[1]{\texttt{\textless#1\textgreater}}
+
 \title{ICARUS2 Corpus Query Processor Specification}
 
 \author{Markus Gärtner}
@@ -267,7 +270,7 @@ When traversing backwards, the algorithm uses the same boundaries, but simply re
 \subsection{Region Interval}
 \label{sec:seq-region}
 
-All position markers (IQL, \cref{sec:position-markers}) that effectively declare intervals are translated into $region$ nodes.
+All position markers (IQL, \cref{IQL-sec:position-markers}) that effectively declare intervals are translated into $region$ nodes.
 Each region node manages one or more index intervals of legal values.
 Those intervals are refreshed for every \ac{uoi} at most once.
 When matching, membership of the current index $j$ to at least one interval is checked first.
@@ -335,6 +338,47 @@ Node implementation of the markers \query{IsFirst}, \query{IsLast} and \query{Is
 
 \chapter{Tree Matching}
 \label{chap:tree-matching}
+
+\chapter{Complex Markers}
+\label{chap:complex-markers}
+
+\ac{iql} defines a wide range of markers for nodes in the query (\cref{IQL-chap:utility}).
+The \ac{icqp} splits those into three main categories, depending on the way they interact with the target structure and the rest of the state machine:
+\begin{itemize}
+	\item \textbf{sequence:} The most basic group of markers operates purely on the order of target items, either globally (matching basic tokens) or inside tree structures (matching children of a given parent node). 
+	Members of this group are all the positional markers (\cref{IQL-sec:position-markers}).
+	Their evaluation can be done very efficiently, but they introduce various helper nodes into the state machine, especially in case of disjunctive marker expressions. \todo{link to node descriptions for gates, borders and clips}
+	\item \textbf{level:} The argument-less variants (minus the ``isAnyGeneration'') of tree hierarchy markers ((\cref{IQL-sec:hierarchy-markers})) form another special group.
+	They operate on the vertical position of a node inside the tree and therefore only look at either the ``leaf'' property of nodes or the ``parent'' field of the respective frame in the matcher.
+	Level-based markers are the easiest to evaluate, as they do not rely on any state from utility classes and also do not introduce additional nodes to the state machine.
+	\item \textbf{generation:} This group is comprised of all the ``xxGeneration'' variants of tree hierarchy markers ((\cref{IQL-sec:hierarchy-markers})) and represents the computationally most expensive markers.
+	To reach the actual nodes to be checked, a subtree has to be traversed in parts or fully.
+	To retain a certain level of efficiency the implementation for these markers uses a simple cache to mark unsuccessfully visited nodes.
+\end{itemize}
+
+\section{Marker Transformation}
+\label{sec:marker-transformation}
+
+Mixed expressions made up of markers of different types can only be handled by the state machine when they are provided in the following way:
+
+\begin{enumerate}
+	\item Disjunctive expressions must be ``pure'', i.e. they can only contain markers from a single type. The only exception to this rule is the top-level expression.
+	\item Conjunctive expressions must also either be pure themselves or contain only elements that are either direct marker calls or pure expressions.
+	\item The top-level expression must be in \ac{dnf} according to above specifications for conjunctive expressions.
+\end{enumerate}
+
+Note that the DNF requirement constitutes a more relaxed variant of the original DNF specification.
+We allow arbitrary sub-expressions inside the top-level conjunctions, as long as they are pure.
+Following these requirements a series of transformation rules can be formulated:
+
+\begin{enumerate}
+	\item If expressions of similar type are nested in each other, flatten them (move the elements of the nested one up to its parent).
+	\item If a nested expression is a non-pure disjunction, apply the distributive property and ``hoist'' the disjunction up one level.
+	\item If the top-level expression is in modified DNF we are done. This is the case exactly when the top-level expression is a conjunction of pure expressions or a disjunction of conjunctions and the latter only contain pure expressions.
+\end{enumerate}
+
+The rules need to be applied in multiple passes until a pass finally reaches rule 3 and the transformation stops.
+
 
 \begin{appendices}
 
