@@ -785,10 +785,10 @@ public class StructurePattern {
 			 * markers on multiple (nested) nodes in an ADJACENT sequence as erroneous.
 			 */
 			if(marker!=null) {
-				final List<MarkerSetup> setups = markerTransform.apply(marker);
+				final MarkerSetup[] setups = markerTransform.apply(marker);
 
-				if(setups.size()==1) {
-					frame = markerSetup(setups.get(0), scan, atom);
+				if(setups.length==1) {
+					frame = markerSetup(setups[0], scan, atom);
 				} else {
 					//TODO need a way to use the same atom node for all branches
 					throw new UnsupportedOperationException("not implemented yet");

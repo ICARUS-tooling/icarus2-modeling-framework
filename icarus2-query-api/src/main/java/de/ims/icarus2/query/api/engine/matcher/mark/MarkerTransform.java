@@ -3,15 +3,14 @@
  */
 package de.ims.icarus2.query.api.engine.matcher.mark;
 
-import static de.ims.icarus2.util.IcarusUtils.DO_NOTHING;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_BYTE;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
-import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static de.ims.icarus2.util.lang.Primitives._int;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
@@ -20,6 +19,7 @@ import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
+import de.ims.icarus2.query.api.iql.IqlType;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -36,6 +36,12 @@ public class MarkerTransform {
 		}
 	}
 
+	/**
+	 *
+	 * @param marker
+	 * @param callAction called for any {@link IqlMarkerCall}
+	 * @param expAction called for any {@link IqlMarkerExpression} after all children have been visited
+	 */
 	public static void traverse(IqlMarker marker,
 			Consumer<? super IqlMarkerCall> callAction,
 			Consumer<? super IqlMarkerExpression> expAction) {
@@ -47,8 +53,8 @@ public class MarkerTransform {
 
 		case MARKER_EXPRESSION: {
 			IqlMarkerExpression exp = (IqlMarkerExpression) marker;
-			expAction.accept(exp);
 			exp.getItems().forEach(m -> traverse(m, callAction, expAction));
+			expAction.accept(exp);
 		} break;
 
 		default:
@@ -56,39 +62,75 @@ public class MarkerTransform {
 		}
 	}
 
-	private final List<IqlMarkerCall> calls = new ObjectArrayList<>();
-	private final Reference2IntMap<IqlMarkerCall> callIds = new Reference2IntOpenHashMap<>();
-	private boolean hasDisjunction, hasGen, hasLvl, hasSeq;
-
-	private static @Nullable IqlMarker _and(List<IqlMarkerCall> calls) {
-		if(calls.isEmpty()) {
-			return null;
+	public static <T> T compute(IqlMarker marker,
+			Function<? super IqlMarkerCall, T> callAction,
+			Function<? super IqlMarkerExpression, T> expAction) {
+		switch (marker.getType()) {
+		case MARKER_CALL: {
+			IqlMarkerCall call = (IqlMarkerCall) marker;
+			return callAction.apply(call);
 		}
-		return calls.size()==1 ? calls.get(0) : IqlMarkerExpression.and(calls);
+
+		case MARKER_EXPRESSION: {
+			IqlMarkerExpression exp = (IqlMarkerExpression) marker;
+			exp.getItems().forEach(m -> compute(m, callAction, expAction));
+			return expAction.apply(exp);
+		}
+
+		default:
+			throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
+		}
 	}
 
-	public List<MarkerSetup> apply(IqlMarker marker) {
+	private final List<IqlMarker> raw = new ObjectArrayList<>();
+	private final Reference2IntMap<IqlMarker> ids = new Reference2IntOpenHashMap<>();
+	private final Reference2IntMap<IqlMarker> flagLut = new Reference2IntOpenHashMap<>();
+	private boolean hasDisjunction;
 
-		traverse(marker, call -> {
-			String name = call.getName();
-			if(LevelMarker.isValidName(name)) {
-				hasLvl = true;
-			} else if(GenerationMarker.isValidName(name)) {
-				hasGen = true;
-			} else {
-				hasSeq = true;
+	private static @Nullable IqlMarker _and(List<IqlMarker> elements) {
+		if(elements.isEmpty()) {
+			return null;
+		}
+		return elements.size()==1 ? elements.get(0) : IqlMarkerExpression.and(elements);
+	}
+
+	private static @Nullable IqlMarker _or(List<IqlMarker> elements) {
+		if(elements.isEmpty()) {
+			return null;
+		}
+		return elements.size()==1 ? elements.get(0) : IqlMarkerExpression.or(elements);
+	}
+
+	public MarkerSetup[] apply(IqlMarker marker) {
+
+		// Initial analysis
+		int rootFlags = compute(marker,
+		call -> {
+			int flags = _flags(call.getName());
+			flagLut.put(call, flags);
+			return _int(flags);
+		},
+		exp -> {
+			int flags = 0;
+			for (IqlMarker m : exp.getItems()) {
+				flags |= flagLut.getInt(m);
 			}
-		}, DO_NOTHING());
+			flagLut.put(exp, flags);
+			return _int(flags);
+		}).intValue() & ALL; // Filter out artifacts
 
-		final List<MarkerSetup> setups;
+		final MarkerSetup[] setups;
 
 		// Simple options
-		if(hasGen && !hasLvl && !hasSeq) {
-			setups = list(new MarkerSetup(marker, null, null));
-		} else if(hasSeq && !hasGen && !hasLvl) {
-			setups = list(new MarkerSetup(null, marker, null));
-		} else if(hasLvl && !hasGen && !hasSeq) {
-			setups = list(new MarkerSetup(null, null, marker));
+		if(_pure(rootFlags)) {
+			switch (rootFlags) {
+			case GEN: setups = new MarkerSetup[] {new MarkerSetup(marker, null, null)}; break;
+			case SEQ: setups = new MarkerSetup[] {new MarkerSetup(null, marker, null)}; break;
+			case LVL: setups = new MarkerSetup[] {new MarkerSetup(null, null, marker)}; break;
+
+			default:
+				throw new InternalError("We messed up flag calculation");
+			}
 		} else {
 
 			/*
@@ -99,79 +141,181 @@ public class MarkerTransform {
 
 			// Convert to an easier to use term hierarchy
 			Term root = toTerm(marker);
-			// If required, actually transform the expression
-			final boolean split = hasDisjunction && hasGen;
-			if(split) {
-				root = toDNF(root);
-				assert root.type==OR : "DNF conversion failed, root term is no disjunction";
+			// Make sure we start as flat as possible
+			unwrap(root, true);
+			// Now transform as much as possible (this might require a lot of passes)
+			for(;;) {
+				if(!normalize(root)) break;
 			}
-			// Finally generate a dedicated setup per disjunctive branch
-			setups = asSetups(root, split);
+
+			setups = asSetups(root, root.type==OR);
 		}
 
 		// Cleanup state
-		calls.clear();
-		callIds.clear();
+		raw.clear();
+		ids.clear();
+		flagLut.clear();
 		hasDisjunction = false;
-		hasGen = hasLvl = hasSeq = false;
 
 		return setups;
 	}
 
-	private final static byte CALL = 0;
-	private final static byte AND = 1;
-	private final static byte OR = 2;
+	/** Term is a direct pointer to a raw marker call or construct */
+	private final static int RAW = 0;
+	/** Intermediate conjunctive term */
+	private final static int AND = 1;
+	/** Intermediate disjunctive term */
+	private final static int OR = 2;
 
-	private final static byte GEN = 0;
-	private final static byte LVL = 1;
-	private final static byte SEQ = 2;
+	private final static int GEN = 1;
+	private final static int LVL = 2;
+	private final static int SEQ = 4;
+
+	private final static int ALL = GEN | LVL | SEQ;
+
+	private void append(IqlMarker marker, StringBuilder sb) {
+		if(marker.getType()==IqlType.MARKER_CALL) {
+			IqlMarkerCall call = (IqlMarkerCall)marker;
+			sb.append(call.getName());
+			if(call.getArgumentCount()>0) {
+				sb.append('(');
+				for (int i = 0; i < call.getArgumentCount(); i++) {
+					if(i>0) sb.append(',');
+					sb.append(call.getArgument(i));
+				}
+				sb.append(')');
+			}
+		} else {
+			IqlMarkerExpression exp = (IqlMarkerExpression) marker;
+			final String op = exp.getExpressionType()==MarkerExpressionType.CONJUNCTION ? " & " : " | ";
+			final List<IqlMarker> elements = exp.getItems();
+			sb.append('(');
+			for (int i = 0; i < elements.size(); i++) {
+				if(i>0) sb.append(op);
+				append(elements.get(i), sb);
+			}
+			sb.append(')');
+		}
+	}
+
+	private void append(Term term, StringBuilder sb) {
+		if(term.type==RAW) {
+			sb.append('[');
+			append(raw.get(term.id), sb);
+			sb.append(']');
+		} else {
+			final String op = term.type==AND ? " & " : " | ";
+			final List<Term> elements = term.elements;
+			sb.append('(');
+			for (int i = 0; i < elements.size(); i++) {
+				if(i>0) sb.append(op);
+				append(elements.get(i), sb);
+			}
+			sb.append(')');
+		}
+	}
+
+	public String toString(Term term) {
+		StringBuilder sb = new StringBuilder();
+		append(term, sb);
+		return sb.toString();
+	}
 
 	private static class Term {
-		private final byte type;
-		/** Actual elements to be joined by boolean connective if type is AND or OR */
-		private List<Term> elements;
-		/** Id of marker call if type==CALL */
-		private int callId = UNSET_INT;
-		/** Type of marker call, if term type is CALL */
-		private byte callType = UNSET_BYTE;
+		private final int type;
 
-		Term(byte type) { this.type = type; }
+		/** Term elements for binary operations */
+		private @Nullable List<Term> elements;
+		/** Id of marker call if type==RAW */
+		private int id = UNSET_INT;
+		/** Flags to indicate whether a term contains certain markers */
+		private int flags = 0;
 
-		private List<Term> elements () {
-			if(elements == null) elements = new ObjectArrayList<>();
+		Term(int type) { this.type = type; }
+
+		void addFlag(int flag) { flags |= flag; }
+		void removeFlag(int flag) { flags &= ~flag; }
+		boolean isSet(int flag) { return (flags & flag) == flag; }
+		boolean isPure() { return _pure(flags); }
+		List<Term> elements() {
+			if(elements==null) elements = new ObjectArrayList<>();
 			return elements;
 		}
+		void add(Term term) {
+			elements().add(term);
+			addFlag(term.flags);
+		}
+	}
+
+	/** Creates a term that points to a raw marker (call or construct) */
+	private Term createRaw(IqlMarker marker) {
+		Term term = new Term(RAW);
+		final int id = raw.size();
+		ids.put(marker, id);
+		raw.add(marker);
+		term.id = id;
+		term.addFlag(flagLut.getInt(marker));
+		return term;
+	}
+
+	/** */
+	private Term createProxy(int type, int flags, List<IqlMarker> elements) {
+		IqlMarker marker = type==AND ? _and(elements) : _or(elements);
+		flagLut.put(marker, flags);
+		return createRaw(marker);
 	}
 
 	private Term toTerm(IqlMarker marker) {
 		switch (marker.getType()) {
 		case MARKER_CALL: {
-			IqlMarkerCall call = (IqlMarkerCall) marker;
-			final int callId = calls.size();
-			callIds.put(call, callId);
-			calls.add(call);
-			Term term = new Term(CALL);
-			term.callId = callId;
-
-			String name = call.getName();
-			if(LevelMarker.isValidName(name)) {
-				term.callType = LVL;
-			} else if(GenerationMarker.isValidName(name)) {
-				term.callType = GEN;
-			} else {
-				term.callType = SEQ;
-			}
-			return term;
+			return createRaw(marker);
 		}
 
 		case MARKER_EXPRESSION: {
 			IqlMarkerExpression exp = (IqlMarkerExpression) marker;
+
+			int rootFlags = flagLut.getInt(exp);
+			// Nice, can keep it as is
+			if(_pure(rootFlags)) {
+				return createRaw(exp);
+			}
+
+			// Not a pure construct, now start splitting
+
 			boolean isDisjunction = exp.getExpressionType()==MarkerExpressionType.DISJUNCTION;
-			Term term = new Term(isDisjunction ? OR : AND);
-			exp.getItems().stream()
-					.map(this::toTerm)
-					.forEach(term.elements()::add);
 			hasDisjunction |= isDisjunction;
+			final int type = isDisjunction ? OR : AND;
+
+			List<IqlMarker> elements = exp.getItems();
+			assert elements.size()>1 : "must have at least 2 elements in expression";
+			List<IqlMarker> mixedElements = new ObjectArrayList<>();
+			List<IqlMarker> pureGen = new ObjectArrayList<>();
+			List<IqlMarker> pureLvl = new ObjectArrayList<>();
+			List<IqlMarker> pureSeq = new ObjectArrayList<>();
+
+			for (int i = 0; i < elements.size(); i++) {
+				IqlMarker element = elements.get(i);
+				int flags = flagLut.getInt(element) & ALL;
+
+				switch (flags) {
+				case GEN: pureGen.add(element); break;
+				case LVL: pureLvl.add(element); break;
+				case SEQ: pureSeq.add(element); break;
+				default:
+					mixedElements.add(element);
+				}
+			}
+
+			Term term = new Term(type);
+
+			if(!pureGen.isEmpty()) term.add(createProxy(type, GEN, pureGen));
+			if(!pureLvl.isEmpty()) term.add(createProxy(type, LVL, pureLvl));
+			if(!pureSeq.isEmpty()) term.add(createProxy(type, SEQ, pureGen));
+
+			mixedElements.stream()
+				.map(this::toTerm)
+				.forEach(term::add);
+
 			return term;
 		}
 
@@ -180,37 +324,81 @@ public class MarkerTransform {
 		}
 	}
 
-	private Term toDNF(Term term) {
-		if(term.type==CALL) {
-			return term;
+	/** Check if flags only contains 1 type of markers */
+	private static boolean _pure(int flags) { return Integer.bitCount(flags & ALL) == 1; }
+
+	private static int _flags(String callName) {
+		int flags = 0;
+		if(LevelMarker.isValidName(callName)) {
+			flags |= LVL;
+		} else if(GenerationMarker.isValidName(callName)) {
+			flags |= GEN;
+		} else if(HorizontalMarker.isValidName(callName)) {
+			flags |= SEQ;
 		}
 
-		//TODO
-
-		throw new UnsupportedOperationException();
+		return flags;
 	}
 
-	private List<MarkerSetup> asSetups(Term root, boolean split) {
+	/**
+	 * Try to convert the given term to modified DNF and return {@code true}
+	 * if at least one modification was performed.
+	 *
+	 * Preconditions:
+	 * The given term must be flattened!
+	 */
+	private boolean normalize(Term term) {
+		// 1. find a nested disjunction
+		//TODO
+		// 2. apply distributive property
+		// 3. flatten the structure again (we do this only for the part that we modified)
+
+		return true;
+	}
+
+	/** Remove any "brackets". Preserves flags from merged subtrees. */
+	private void unwrap(Term term, boolean recursive) {
+		assert term.type!=RAW : "cannot unwrap raw";
+		for (int i = 0; i < term.elements.size(); i++) {
+			Term element = term.elements.get(i);
+			if(recursive && element.type!=RAW) {
+				unwrap(element, recursive);
+			}
+			if(element.type==term.type) {
+				term.elements.remove(i);
+				term.elements.addAll(i, element.elements);
+				term.addFlag(element.flags);
+				element.elements = null;
+			}
+		}
+	}
+
+	private MarkerSetup[] asSetups(Term root, boolean split) {
 		Collection<Term> terms = split ? root.elements : Collections.singleton(root);
 
-		final List<MarkerSetup> setups = new ObjectArrayList<>();
+		final MarkerSetup[] setups = new MarkerSetup[terms.size()];
 
-		List<IqlMarkerCall> genMarkers = new ObjectArrayList<>();
-		List<IqlMarkerCall> seqMarkers = new ObjectArrayList<>();
-		List<IqlMarkerCall> lvlMarkers = new ObjectArrayList<>();
+		List<IqlMarker> genMarkers = new ObjectArrayList<>();
+		List<IqlMarker> seqMarkers = new ObjectArrayList<>();
+		List<IqlMarker> lvlMarkers = new ObjectArrayList<>();
+
+		int idx = 0;
 
 		for(Term term : terms) {
 			assert term.type!=OR || (!split && term==root) : "cannot create marker setup from disjunctive term";
 
 			Collection<Term> elements = term.elements;
 
-			if(term.type==CALL) {
+			if(term.type==RAW) {
 				elements = Collections.singleton(term);
 			}
 
 			for (Term element : elements) {
-				IqlMarkerCall call = calls.get(element.callId);
-				switch (element.callType) {
+				assert element.type==RAW : "Nested terms m ust be pointers to actual markers";
+				assert element.isPure() : "NO mixed content allowed in nested terms";
+
+				IqlMarker call = raw.get(element.id);
+				switch (element.flags & ALL) {
 				case GEN: genMarkers.add(call); break;
 				case LVL: lvlMarkers.add(call); break;
 				case SEQ: seqMarkers.add(call); break;
@@ -220,7 +408,7 @@ public class MarkerTransform {
 				}
 			}
 
-			setups.add(new MarkerSetup(_and(genMarkers), _and(seqMarkers), _and(lvlMarkers)));
+			setups[idx++] = new MarkerSetup(_and(genMarkers), _and(seqMarkers), _and(lvlMarkers));
 
 			genMarkers.clear();
 			lvlMarkers.clear();
