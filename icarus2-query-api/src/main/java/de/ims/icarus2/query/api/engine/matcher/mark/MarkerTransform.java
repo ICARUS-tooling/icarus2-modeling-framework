@@ -14,6 +14,8 @@ import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
@@ -85,7 +87,6 @@ public class MarkerTransform {
 	private final List<IqlMarker> raw = new ObjectArrayList<>();
 	private final Reference2IntMap<IqlMarker> ids = new Reference2IntOpenHashMap<>();
 	private final Reference2IntMap<IqlMarker> flagLut = new Reference2IntOpenHashMap<>();
-	private boolean hasDisjunction;
 
 	private static @Nullable IqlMarker _and(List<IqlMarker> elements) {
 		if(elements.isEmpty()) {
@@ -101,23 +102,28 @@ public class MarkerTransform {
 		return elements.size()==1 ? elements.get(0) : IqlMarkerExpression.or(elements);
 	}
 
+	@VisibleForTesting
+	int scan(IqlMarker marker) {
+		return compute(marker,
+				call -> {
+					int flags = _flags(call.getName());
+					flagLut.put(call, flags);
+					return _int(flags);
+				},
+				exp -> {
+					int flags = 0;
+					for (IqlMarker m : exp.getItems()) {
+						flags |= flagLut.getInt(m);
+					}
+					flagLut.put(exp, flags);
+					return _int(flags);
+				}).intValue() & ALL; // Filter out artifacts
+	}
+
 	public MarkerSetup[] apply(IqlMarker marker) {
 
 		// Initial analysis
-		int rootFlags = compute(marker,
-		call -> {
-			int flags = _flags(call.getName());
-			flagLut.put(call, flags);
-			return _int(flags);
-		},
-		exp -> {
-			int flags = 0;
-			for (IqlMarker m : exp.getItems()) {
-				flags |= flagLut.getInt(m);
-			}
-			flagLut.put(exp, flags);
-			return _int(flags);
-		}).intValue() & ALL; // Filter out artifacts
+		int rootFlags = scan(marker);
 
 		final MarkerSetup[] setups;
 
@@ -143,10 +149,8 @@ public class MarkerTransform {
 			Term root = toTerm(marker);
 			// Make sure we start as flat as possible
 			unwrap(root, true);
-			// Now transform as much as possible (this might require a lot of passes)
-			for(;;) {
-				if(!normalize(root)) break;
-			}
+			// Now transform as much as possible (this might require a lot of passes internally)
+			normalize(root);
 
 			setups = asSetups(root, root.type==OR);
 		}
@@ -155,23 +159,22 @@ public class MarkerTransform {
 		raw.clear();
 		ids.clear();
 		flagLut.clear();
-		hasDisjunction = false;
 
 		return setups;
 	}
 
 	/** Term is a direct pointer to a raw marker call or construct */
-	private final static int RAW = 0;
+	final static int RAW = 0;
 	/** Intermediate conjunctive term */
-	private final static int AND = 1;
+	final static int AND = 1;
 	/** Intermediate disjunctive term */
-	private final static int OR = 2;
+	final static int OR = 2;
 
-	private final static int GEN = 1;
-	private final static int LVL = 2;
-	private final static int SEQ = 4;
+	final static int GEN = 1;
+	final static int LVL = 2;
+	final static int SEQ = 4;
 
-	private final static int ALL = GEN | LVL | SEQ;
+	final static int ALL = GEN | LVL | SEQ;
 
 	private void append(IqlMarker marker, StringBuilder sb) {
 		if(marker.getType()==IqlType.MARKER_CALL) {
@@ -221,8 +224,8 @@ public class MarkerTransform {
 		return sb.toString();
 	}
 
-	private static class Term {
-		private final int type;
+	static class Term {
+		private int type;
 
 		/** Term elements for binary operations */
 		private @Nullable List<Term> elements;
@@ -245,6 +248,21 @@ public class MarkerTransform {
 			elements().add(term);
 			addFlag(term.flags);
 		}
+		void replace(Term other) {
+			flags = other.flags;
+			type = other.type;
+			id = other.id;
+			elements.clear();
+			if(other.elements!=null) {
+				elements.addAll(other.elements);
+			}
+		}
+		void destroy() {
+			flags = 0;
+			id = UNSET_INT;
+			type = UNSET_INT;
+			elements = null;
+		}
 	}
 
 	/** Creates a term that points to a raw marker (call or construct) */
@@ -255,6 +273,7 @@ public class MarkerTransform {
 		raw.add(marker);
 		term.id = id;
 		term.addFlag(flagLut.getInt(marker));
+		assert _pure(term.flags) : "RAW terms must pe pure: "+term.flags;
 		return term;
 	}
 
@@ -265,7 +284,8 @@ public class MarkerTransform {
 		return createRaw(marker);
 	}
 
-	private Term toTerm(IqlMarker marker) {
+	@VisibleForTesting
+	Term toTerm(IqlMarker marker) {
 		switch (marker.getType()) {
 		case MARKER_CALL: {
 			return createRaw(marker);
@@ -283,7 +303,6 @@ public class MarkerTransform {
 			// Not a pure construct, now start splitting
 
 			boolean isDisjunction = exp.getExpressionType()==MarkerExpressionType.DISJUNCTION;
-			hasDisjunction |= isDisjunction;
 			final int type = isDisjunction ? OR : AND;
 
 			List<IqlMarker> elements = exp.getItems();
@@ -310,7 +329,7 @@ public class MarkerTransform {
 
 			if(!pureGen.isEmpty()) term.add(createProxy(type, GEN, pureGen));
 			if(!pureLvl.isEmpty()) term.add(createProxy(type, LVL, pureLvl));
-			if(!pureSeq.isEmpty()) term.add(createProxy(type, SEQ, pureGen));
+			if(!pureSeq.isEmpty()) term.add(createProxy(type, SEQ, pureSeq));
 
 			mixedElements.stream()
 				.map(this::toTerm)
@@ -325,9 +344,11 @@ public class MarkerTransform {
 	}
 
 	/** Check if flags only contains 1 type of markers */
-	private static boolean _pure(int flags) { return Integer.bitCount(flags & ALL) == 1; }
+	@VisibleForTesting
+	static boolean _pure(int flags) { return Integer.bitCount(flags & ALL) == 1; }
 
-	private static int _flags(String callName) {
+	@VisibleForTesting
+	static int _flags(String callName) {
 		int flags = 0;
 		if(LevelMarker.isValidName(callName)) {
 			flags |= LVL;
@@ -347,18 +368,117 @@ public class MarkerTransform {
 	 * Preconditions:
 	 * The given term must be flattened!
 	 */
-	private boolean normalize(Term term) {
-		// 1. find a nested disjunction
-		//TODO
-		// 2. apply distributive property
+	@VisibleForTesting
+	boolean normalize(Term term) {
+		assert term.type!=RAW : "cannot normalize raw terms";
+		List<Term> elements = term.elements;
+
+		boolean result = false;
+		// 0. ensure nested terms are normalized
+		for (int i = 0; i < elements.size(); i++) {
+			Term element = elements.get(i);
+			if(element.type!=RAW) {
+				result |= normalize(element);
+			}
+		}
+		// Flatten structure if our direct elements changed
+		if(result) {
+			unwrap(term, false);
+		}
+
+		scan : for(;;) {
+			assert elements.size()>1 : "must have at least 2 elements in root expression";
+			for (int i = 0; i < elements.size(); i++) {
+				Term element = elements.get(i);
+				// Skip raw terms
+				if(element.type==RAW) {
+					continue;
+				}
+
+				// 1. find a nested disjunction
+				if(element.type==OR) {
+					assert term.type==AND : "redundant disjunctive nesting detected";
+					// 2. apply distributive property
+					Term inner = elements.remove(i);
+					Term outer = elements.remove(0);
+					Term replacement = distribute(outer, inner);
+					term.add(replacement);
+					// Flatten our current structure
+					unwrap(term, false);
+
+					// We modified term structure, so force another scan
+					result = true;
+					continue scan;
+				}
+			}
+			// No changes made
+			break;
+		}
 		// 3. flatten the structure again (we do this only for the part that we modified)
 
-		return true;
+		return result;
+	}
+
+	private static int len(Term term) {
+		return term.type==RAW ? 1 : term.elements.size();
+	}
+
+	private Term _binary(int type, Term left, Term right) {
+		Term t = new Term(type);
+		t.add(left);
+		t.add(right);
+		return t;
+	}
+
+	@VisibleForTesting
+	Term distribute(Term outer, Term inner) {
+		final int lenOut = len(outer), lenIn = len(inner);
+		assert lenIn>1 : "inner term must be a proper expression";
+
+		Term root = new Term(OR);
+		if(lenOut==1) {
+			/* Classic distributive situation:
+			 *   ((A | B | C) & D)
+			 * = ((A & D) | (B & D) | (C & D))
+			 */
+			for(Term t : inner.elements) {
+				root.add(_binary(AND, outer, t));
+			}
+			inner.destroy();
+		} else if(lenOut==2 && lenIn==2) {
+			// FOIL
+			root.add(_binary(AND, outer.elements.get(0), inner.elements.get(0)));
+			root.add(_binary(AND, outer.elements.get(1), inner.elements.get(0)));
+			root.add(_binary(AND, outer.elements.get(0), inner.elements.get(1)));
+			root.add(_binary(AND, outer.elements.get(1), inner.elements.get(1)));
+			outer.destroy();
+			inner.destroy();
+		} else {
+			// lenOut >= 2 AND lenIn > 2
+
+			//TODO generalize the FOIL approach
+		}
+		return root;
 	}
 
 	/** Remove any "brackets". Preserves flags from merged subtrees. */
-	private void unwrap(Term term, boolean recursive) {
+	@VisibleForTesting
+	void unwrap(Term term, boolean recursive) {
 		assert term.type!=RAW : "cannot unwrap raw";
+		// Hoist single children
+		if(term.elements.size()==1) {
+			Term child = term.elements.get(0);
+			term.replace(child);
+			child.destroy();
+
+			if(recursive && term.type!=RAW) {
+				unwrap(term, true);
+			}
+
+			return;
+		}
+
+		// Scan nested expressions of same type and move them up
 		for (int i = 0; i < term.elements.size(); i++) {
 			Term element = term.elements.get(i);
 			if(recursive && element.type!=RAW) {
@@ -368,12 +488,13 @@ public class MarkerTransform {
 				term.elements.remove(i);
 				term.elements.addAll(i, element.elements);
 				term.addFlag(element.flags);
-				element.elements = null;
+				element.destroy();
 			}
 		}
 	}
 
-	private MarkerSetup[] asSetups(Term root, boolean split) {
+	@VisibleForTesting
+	MarkerSetup[] asSetups(Term root, boolean split) {
 		Collection<Term> terms = split ? root.elements : Collections.singleton(root);
 
 		final MarkerSetup[] setups = new MarkerSetup[terms.size()];
@@ -395,7 +516,7 @@ public class MarkerTransform {
 
 			for (Term element : elements) {
 				assert element.type==RAW : "Nested terms m ust be pointers to actual markers";
-				assert element.isPure() : "NO mixed content allowed in nested terms";
+				assert element.isPure() : "No mixed content allowed in nested terms";
 
 				IqlMarker call = raw.get(element.id);
 				switch (element.flags & ALL) {

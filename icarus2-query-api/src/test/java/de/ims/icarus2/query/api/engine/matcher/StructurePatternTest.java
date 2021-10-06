@@ -11156,6 +11156,7 @@ class StructurePatternTest {
 				"'[$X [IsNotAt(3) && IsAnyGeneration,$Y]]', XYYY, *001, 2, { {{0}{0}} {{1}{3}} }",
 				//TODO complete
 				// Tree hierarchy and generation markers
+				//TODO complete
 				// All types of markers intermixed
 				"'[$X [IsAnyGeneration && IsNotAt(3) && IsChildAfter(1),$Y]]', XYYY, *000, 1, { {{0}} {{3}} }",
 				"'[$X [IsNotAt(3) && IsAnyGeneration && IsChildAfter(1),$Y]]', XYYY, *000, 1, { {{0}} {{3}} }",
