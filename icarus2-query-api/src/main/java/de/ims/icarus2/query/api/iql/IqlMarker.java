@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -89,6 +90,22 @@ public abstract class IqlMarker extends AbstractIqlQueryElement {
 			IqlMarkerExpression exp = new IqlMarkerExpression();
 			exp.setExpressionType(MarkerExpressionType.DISJUNCTION);
 			items.forEach(exp::addItem);
+			return exp;
+		}
+
+		public static IqlMarkerExpression and(IqlMarker...items) {
+			checkArgument("Need at least 2 markers to create conjunctive expression", items.length>1);
+			IqlMarkerExpression exp = new IqlMarkerExpression();
+			exp.setExpressionType(MarkerExpressionType.CONJUNCTION);
+			Stream.of(items).forEach(exp::addItem);
+			return exp;
+		}
+
+		public static IqlMarkerExpression or(IqlMarker...items) {
+			checkArgument("Need at least 2 markers to create disjunctive expression", items.length>1);
+			IqlMarkerExpression exp = new IqlMarkerExpression();
+			exp.setExpressionType(MarkerExpressionType.DISJUNCTION);
+			Stream.of(items).forEach(exp::addItem);
 			return exp;
 		}
 

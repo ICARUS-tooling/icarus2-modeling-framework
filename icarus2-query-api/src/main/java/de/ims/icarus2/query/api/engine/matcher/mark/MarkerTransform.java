@@ -459,27 +459,19 @@ public class MarkerTransform {
 			 *   ((A | B | C) & D)
 			 * = ((A & D) | (B & D) | (C & D))
 			 */
-			for(Term t : inner.elements) {
-				root.add(binary(AND, outer, t));
+			for (int i = inner.elements.size()-1; i >= 0; i--) {
+				root.add(binary(AND, inner.elements.get(i), outer));
 			}
 			inner.destroy();
-//		} else if(lenOut==2 && lenIn==2) {
-//			// FOIL
-//			root.add(binary(AND, outer.elements.get(0), inner.elements.get(0)));
-//			root.add(binary(AND, outer.elements.get(1), inner.elements.get(0)));
-//			root.add(binary(AND, outer.elements.get(0), inner.elements.get(1)));
-//			root.add(binary(AND, outer.elements.get(1), inner.elements.get(1)));
-//			outer.destroy();
-//			inner.destroy();
 		} else {
 			// lenOut >= 2 AND lenIn >= 2
 			List<Term> eOut = outer.elements;
 			List<Term> eIn = inner.elements;
 
 			// Generalized FOIL approach: include all binary combinations of elements from the two terms
-			for (int i = 0; i < eOut.size(); i++) {
-				for (int j = 0; j < eIn.size(); j++) {
-					root.add(binary(AND, eOut.get(i), eIn.get(j)));
+			for (int i = eOut.size()-1; i >= 0; i--) {
+				for (int j = eIn.size()-1; j >= 0; j--) {
+					root.add(binary(AND, eIn.get(j), eOut.get(i)));
 				}
 			}
 

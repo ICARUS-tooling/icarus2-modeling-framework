@@ -23,11 +23,14 @@ import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,10 +38,13 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.Term;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
+import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
+import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 
@@ -48,11 +54,11 @@ import de.ims.icarus2.test.random.RandomGenerator;
  */
 class MarkerTransformTest {
 
-	private static IqlMarkerCall call(String name) {
-		return call(name, 0);
+	private static IqlMarkerCall makeCall(String name) {
+		return makeCall(name, 0);
 	}
 
-	private static IqlMarkerCall call(String name, int args) {
+	private static IqlMarkerCall makeCall(String name, int args) {
 		IqlMarkerCall call = new IqlMarkerCall();
 		call.setName(name);
 		if(args>0) {
@@ -102,7 +108,7 @@ class MarkerTransformTest {
 				@ParameterizedTest
 				@EnumSource(HorizontalMarker.Type.class)
 				public void testSequenceMarkers(HorizontalMarker.Type type) throws Exception {
-					IqlMarker marker = call(type.getSequenceLabel(), type.getArgCount());
+					IqlMarker marker = makeCall(type.getSequenceLabel(), type.getArgCount());
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Unrecognized pure call")
@@ -115,7 +121,7 @@ class MarkerTransformTest {
 				@ParameterizedTest
 				@EnumSource(HorizontalMarker.Type.class)
 				public void testChildMarkers(HorizontalMarker.Type type) throws Exception {
-					IqlMarker marker = call(type.getTreeHierarchyLabel(), type.getArgCount());
+					IqlMarker marker = makeCall(type.getTreeHierarchyLabel(), type.getArgCount());
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Unrecognized pure call")
@@ -128,7 +134,7 @@ class MarkerTransformTest {
 				@ParameterizedTest
 				@EnumSource(LevelMarker.class)
 				public void testLevelMarkers(LevelMarker type) throws Exception {
-					IqlMarker marker = call(type.getLabel());
+					IqlMarker marker = makeCall(type.getLabel());
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Unrecognized pure call")
@@ -141,7 +147,7 @@ class MarkerTransformTest {
 				@ParameterizedTest
 				@EnumSource(GenerationMarker.class)
 				public void testGenerationMarkers(GenerationMarker type) throws Exception {
-					IqlMarker marker = call(type.getLabel(), type.getArgCount());
+					IqlMarker marker = makeCall(type.getLabel(), type.getArgCount());
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Unrecognized pure call")
@@ -159,9 +165,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveSequenceMarkers(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(SEQ_NAMES))
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(SEQ_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -176,9 +182,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveSequenceMarkers(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(SEQ_NAMES))
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(SEQ_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -193,9 +199,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveLevelMarkers(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(LVL_NAMES))
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(LVL_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -210,9 +216,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveLevelMarkers(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(LVL_NAMES))
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(LVL_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -227,9 +233,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveGenerationMarkers(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(GEN_NAMES))
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(GEN_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -244,9 +250,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveGenerationMarkers(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(GEN_NAMES))
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(GEN_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -265,9 +271,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveSeqLvlMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(SEQ_NAMES))
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(SEQ_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -282,9 +288,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveSeqGenMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(SEQ_NAMES))
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(SEQ_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -299,9 +305,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveLvlSeqMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(LVL_NAMES))
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(LVL_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -316,9 +322,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveLvlGenMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(LVL_NAMES))
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(LVL_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -333,9 +339,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveGenSeqMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(GEN_NAMES))
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(GEN_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -350,9 +356,9 @@ class MarkerTransformTest {
 				@Test
 				public void testConjunctiveGenLvlMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.and(list(
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(GEN_NAMES))
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(GEN_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -367,9 +373,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveSeqLvlMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(SEQ_NAMES))
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(SEQ_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -384,9 +390,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveSeqGenMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(SEQ_NAMES))
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(SEQ_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -401,9 +407,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveLvlSeqMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(LVL_NAMES))
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(LVL_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -418,9 +424,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveLvlGenMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(LVL_NAMES))
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(LVL_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -435,9 +441,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveGenSeqMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(SEQ_NAMES)),
-							call(rng.random(GEN_NAMES))
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(SEQ_NAMES)),
+							makeCall(rng.random(GEN_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -452,9 +458,9 @@ class MarkerTransformTest {
 				@Test
 				public void testDisjunctiveGenLvlMix(RandomGenerator rng) throws Exception {
 					IqlMarker marker = IqlMarkerExpression.or(list(
-							call(rng.random(GEN_NAMES)),
-							call(rng.random(LVL_NAMES)),
-							call(rng.random(GEN_NAMES))
+							makeCall(rng.random(GEN_NAMES)),
+							makeCall(rng.random(LVL_NAMES)),
+							makeCall(rng.random(GEN_NAMES))
 					));
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
@@ -475,7 +481,7 @@ class MarkerTransformTest {
 		@TestFactory
 		public Stream<DynamicTest> testRawSequenceCall() throws Exception {
 			return Stream.of(SEQ_NAMES).map(name -> dynamicTest(name, () -> {
-				IqlMarkerCall call = call(name);
+				IqlMarkerCall call = makeCall(name);
 				MarkerTransform transform = new MarkerTransform();
 				transform.scan(call);
 
@@ -489,7 +495,7 @@ class MarkerTransformTest {
 		@TestFactory
 		public Stream<DynamicTest> testRawLevelCall() throws Exception {
 			return Stream.of(LVL_NAMES).map(name -> dynamicTest(name, () -> {
-				IqlMarkerCall call = call(name);
+				IqlMarkerCall call = makeCall(name);
 				MarkerTransform transform = new MarkerTransform();
 				transform.scan(call);
 
@@ -503,7 +509,7 @@ class MarkerTransformTest {
 		@TestFactory
 		public Stream<DynamicTest> testRawGenerationCall() throws Exception {
 			return Stream.of(GEN_NAMES).map(name -> dynamicTest(name, () -> {
-				IqlMarkerCall call = call(name);
+				IqlMarkerCall call = makeCall(name);
 				MarkerTransform transform = new MarkerTransform();
 				transform.scan(call);
 
@@ -517,9 +523,101 @@ class MarkerTransformTest {
 		//TODO test conversion of actual marker expressions
 	}
 
+	static Consumer<IqlMarker> is(IqlMarker marker) {
+		return m ->  assertThat(m).isSameAs(marker);
+	}
+
+	static Consumer<IqlMarker> call(String name) {
+		return m -> {
+			assertThat(m.getType()).isSameAs(IqlType.MARKER_CALL);
+			assertThat(((IqlMarkerCall)m).getName()).isEqualTo(name);
+		};
+	}
+
+	@SafeVarargs
+	static Consumer<IqlMarker> and(Consumer<? super IqlMarker>...elementAsserters) {
+		return m -> {
+			assertThat(m.getType()).isSameAs(IqlType.MARKER_EXPRESSION);
+			IqlMarkerExpression exp = (IqlMarkerExpression)m;
+			assertThat(exp.getExpressionType()).isSameAs(MarkerExpressionType.CONJUNCTION);
+			List<IqlMarker> elements = exp.getItems();
+			assertThat(elements).hasSameSizeAs(elementAsserters);
+			for (int i = 0; i < elementAsserters.length; i++) {
+				elementAsserters[i].accept(elements.get(i));
+			}
+		};
+	}
+
+	@SafeVarargs
+	static Consumer<IqlMarker> or(Consumer<? super IqlMarker>...elementAsserters) {
+		return m -> {
+			assertThat(m.getType()).isSameAs(IqlType.MARKER_EXPRESSION);
+			IqlMarkerExpression exp = (IqlMarkerExpression)m;
+			assertThat(exp.getExpressionType()).isSameAs(MarkerExpressionType.DISJUNCTION);
+			List<IqlMarker> elements = exp.getItems();
+			assertThat(elements).hasSameSizeAs(elementAsserters);
+			for (int i = 0; i < elementAsserters.length; i++) {
+				elementAsserters[i].accept(elements.get(i));
+			}
+		};
+	}
+
 	/** Tests for actual marker transformation */
 	@Nested
 	class ForApply {
 		//TODO test mixed marker expressions that require serious transformation
+
+		@Test
+		@DisplayName("(a | b) & c")
+		public void test2v1() throws Exception {
+			IqlMarker a = makeCall(SEQ_NAMES[0]);
+			IqlMarker b = makeCall(GEN_NAMES[0]);
+			IqlMarker c = makeCall(SEQ_NAMES[0]);
+
+			IqlMarker marker = IqlMarkerExpression.and(
+					IqlMarkerExpression.or(a, b),
+					c
+			);
+
+			MarkerTransform transform = new MarkerTransform();
+
+			MarkerSetup[] setups = transform.apply(marker);
+			assertThat(setups).hasSize(2);
+			and(is(a), is(c)).accept(setups[0].horizontalMarker);
+			is(b).accept(setups[1].generationMarker);
+			is(c).accept(setups[1].horizontalMarker);
+		}
+
+		@Test
+		@DisplayName("(a | b) & (c | d)")
+		public void test2v2() throws Exception {
+			IqlMarker a = makeCall(SEQ_NAMES[0]);
+			IqlMarker b = makeCall(GEN_NAMES[0]);
+			IqlMarker c = makeCall(SEQ_NAMES[1]);
+			IqlMarker d = makeCall(LVL_NAMES[0]);
+
+			IqlMarker marker = IqlMarkerExpression.and(
+					IqlMarkerExpression.or(a, b),
+					IqlMarkerExpression.or(c, d)
+			);
+
+			MarkerTransform transform = new MarkerTransform();
+
+			// (a&c) | (b&c) | (a&d) | (b&d)
+
+			MarkerSetup[] setups = transform.apply(marker);
+			assertThat(setups).hasSize(4);
+			// a & c
+			and(is(a), is(c)).accept(setups[0].horizontalMarker);
+			// b & c
+			is(b).accept(setups[1].generationMarker);
+			is(c).accept(setups[1].horizontalMarker);
+			// a & d
+			is(a).accept(setups[2].horizontalMarker);
+			is(d).accept(setups[2].levelMarker);
+			// b & d
+			is(b).accept(setups[3].generationMarker);
+			is(d).accept(setups[3].levelMarker);
+		}
 	}
 }
