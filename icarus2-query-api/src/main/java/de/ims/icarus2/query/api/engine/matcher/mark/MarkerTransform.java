@@ -44,11 +44,11 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
 public class MarkerTransform {
 	public static class MarkerSetup {
-		public final IqlMarker horizontalMarker, generationMarker, levelMarker;
+		public final IqlMarker sequenceMarker, generationMarker, levelMarker;
 
-		public MarkerSetup(IqlMarker generationMarker, IqlMarker horizontalMarker,
+		public MarkerSetup(IqlMarker generationMarker, IqlMarker sequenceMarker,
 				IqlMarker levelMarker) {
-			this.horizontalMarker = horizontalMarker;
+			this.sequenceMarker = sequenceMarker;
 			this.generationMarker = generationMarker;
 			this.levelMarker = levelMarker;
 		}
@@ -163,10 +163,13 @@ public class MarkerTransform {
 
 			// Convert to an easier to use term hierarchy
 			Term root = toTerm(marker);
+//			System.out.println("root: "+toString(root));
 			// Make sure we start as flat as possible
 			unwrap(root, true);
+//			System.out.println("flattened: "+toString(root));
 			// Now transform as much as possible (this might require a lot of passes internally)
 			normalize(root);
+//			System.out.println("normalized: "+toString(root));
 
 			setups = asSetups(root, root.type==OR);
 		}
@@ -418,8 +421,7 @@ public class MarkerTransform {
 					// 2. apply distributive property
 					Term inner = elements.remove(i); // The disjunctive element we found
 					Term outer = elements.remove(0); // Next best element in term
-					Term replacement = distribute(outer, inner);
-					term.add(replacement);
+					term.add(distribute(inner, outer));
 					// Flatten our current structure
 					unwrap(term, false);
 
@@ -449,7 +451,7 @@ public class MarkerTransform {
 	}
 
 	@VisibleForTesting
-	Term distribute(Term outer, Term inner) {
+	Term distribute(Term inner, Term outer) {
 		final int lenOut = len(outer), lenIn = len(inner);
 		assert lenIn>1 : "inner term must be a proper expression";
 
@@ -458,6 +460,9 @@ public class MarkerTransform {
 			/* Classic distributive situation:
 			 *   ((A | B | C) & D)
 			 * = ((A & D) | (B & D) | (C & D))
+			 *
+			 * We split this case off since we don't need to
+			 * destroy the 'outer' term for this.
 			 */
 			for (int i = inner.elements.size()-1; i >= 0; i--) {
 				root.add(binary(AND, inner.elements.get(i), outer));
@@ -469,14 +474,14 @@ public class MarkerTransform {
 			List<Term> eIn = inner.elements;
 
 			// Generalized FOIL approach: include all binary combinations of elements from the two terms
-			for (int i = eOut.size()-1; i >= 0; i--) {
-				for (int j = eIn.size()-1; j >= 0; j--) {
-					root.add(binary(AND, eIn.get(j), eOut.get(i)));
+			for (int i = eIn.size()-1; i >= 0; i--) {
+				for (int j = eOut.size()-1; j >= 0; j--) {
+					root.add(binary(AND, eIn.get(i), eOut.get(j)));
 				}
 			}
 
-			outer.destroy();
 			inner.destroy();
+			outer.destroy();
 		}
 		return root;
 	}
@@ -539,11 +544,11 @@ public class MarkerTransform {
 				assert element.type==RAW : "Nested terms m ust be pointers to actual markers";
 				assert element.isPure() : "No mixed content allowed in nested terms";
 
-				IqlMarker call = raw.get(element.id);
+				IqlMarker marker = raw.get(element.id);
 				switch (element.flags & ALL) {
-				case GEN: genMarkers.add(call); break;
-				case LVL: lvlMarkers.add(call); break;
-				case SEQ: seqMarkers.add(call); break;
+				case GEN: genMarkers.add(marker); break;
+				case LVL: lvlMarkers.add(marker); break;
+				case SEQ: seqMarkers.add(marker); break;
 
 				default:
 					break;

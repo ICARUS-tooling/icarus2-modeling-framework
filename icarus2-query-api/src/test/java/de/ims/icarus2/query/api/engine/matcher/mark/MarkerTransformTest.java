@@ -20,11 +20,13 @@
 package de.ims.icarus2.query.api.engine.matcher.mark;
 
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.ObjIntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -523,23 +525,16 @@ class MarkerTransformTest {
 		//TODO test conversion of actual marker expressions
 	}
 
-	static Consumer<IqlMarker> is(IqlMarker marker) {
-		return m ->  assertThat(m).isSameAs(marker);
-	}
-
-	static Consumer<IqlMarker> call(String name) {
-		return m -> {
-			assertThat(m.getType()).isSameAs(IqlType.MARKER_CALL);
-			assertThat(((IqlMarkerCall)m).getName()).isEqualTo(name);
-		};
+	static Consumer<IqlMarker> is(String label, IqlMarker marker) {
+		return m ->  assertThat(m).as("mismatch for '%s'", label).isSameAs(marker);
 	}
 
 	@SafeVarargs
-	static Consumer<IqlMarker> and(Consumer<? super IqlMarker>...elementAsserters) {
+	static Consumer<IqlMarker> and(String label, Consumer<? super IqlMarker>...elementAsserters) {
 		return m -> {
-			assertThat(m.getType()).isSameAs(IqlType.MARKER_EXPRESSION);
+			assertThat(m.getType()).as("type mismatch in '%s'", label).isSameAs(IqlType.MARKER_EXPRESSION);
 			IqlMarkerExpression exp = (IqlMarkerExpression)m;
-			assertThat(exp.getExpressionType()).isSameAs(MarkerExpressionType.CONJUNCTION);
+			assertThat(exp.getExpressionType()).as("expression type mismatch in '%s'", label).isSameAs(MarkerExpressionType.CONJUNCTION);
 			List<IqlMarker> elements = exp.getItems();
 			assertThat(elements).hasSameSizeAs(elementAsserters);
 			for (int i = 0; i < elementAsserters.length; i++) {
@@ -549,17 +544,68 @@ class MarkerTransformTest {
 	}
 
 	@SafeVarargs
-	static Consumer<IqlMarker> or(Consumer<? super IqlMarker>...elementAsserters) {
+	static Consumer<IqlMarker> or(String label, Consumer<? super IqlMarker>...elementAsserters) {
 		return m -> {
-			assertThat(m.getType()).isSameAs(IqlType.MARKER_EXPRESSION);
+			assertThat(m.getType()).as("type mismatch in '%s'", label).isSameAs(IqlType.MARKER_EXPRESSION);
 			IqlMarkerExpression exp = (IqlMarkerExpression)m;
-			assertThat(exp.getExpressionType()).isSameAs(MarkerExpressionType.DISJUNCTION);
+			assertThat(exp.getExpressionType()).as("expression type mismatch in '%s'", label).isSameAs(MarkerExpressionType.DISJUNCTION);
 			List<IqlMarker> elements = exp.getItems();
 			assertThat(elements).hasSameSizeAs(elementAsserters);
 			for (int i = 0; i < elementAsserters.length; i++) {
 				elementAsserters[i].accept(elements.get(i));
 			}
 		};
+	}
+
+	static ObjIntConsumer<MarkerSetup> mixedSetup(Consumer<IqlMarker> genAsserter,
+			Consumer<IqlMarker> seqAsserter, Consumer<IqlMarker> lvlAsserter) {
+		return (setup, idx) -> {
+			if(genAsserter!=null) {
+				assertThat(setup.generationMarker).as("gen marker in setup %d", _int(idx)).isNotNull();
+				genAsserter.accept(setup.generationMarker);
+			}
+			if(seqAsserter!=null) {
+				assertThat(setup.sequenceMarker).as("seq marker in setup %d", _int(idx)).isNotNull();
+				seqAsserter.accept(setup.sequenceMarker);
+			}
+			if(lvlAsserter!=null) {
+				assertThat(setup.levelMarker).as("lvl marker in setup %d", _int(idx)).isNotNull();
+				lvlAsserter.accept(setup.levelMarker);
+			}
+		};
+	}
+
+	static ObjIntConsumer<MarkerSetup> genSetup(Consumer<IqlMarker> genAsserter) {
+		return (setup, idx) -> {
+			assertThat(setup.generationMarker).as("gen marker in setup %d", _int(idx)).isNotNull();
+			genAsserter.accept(setup.generationMarker);
+		};
+	}
+
+	static ObjIntConsumer<MarkerSetup> seqSetup(Consumer<IqlMarker> seqAsserter) {
+		return (setup, idx) -> {
+			assertThat(setup.sequenceMarker).as("seq marker in setup %d", _int(idx)).isNotNull();
+			seqAsserter.accept(setup.sequenceMarker);
+		};
+	}
+
+	static ObjIntConsumer<MarkerSetup> lvlSetup(Consumer<IqlMarker> lvlAsserter) {
+		return (setup, idx) -> {
+			assertThat(setup.levelMarker).as("lvl marker in setup %d", _int(idx)).isNotNull();
+			lvlAsserter.accept(setup.levelMarker);
+		};
+	}
+
+	@SafeVarargs
+	static void assertTransformation(IqlMarker input, ObjIntConsumer<MarkerSetup>...setupAsserters) {
+		MarkerTransform transform = new MarkerTransform();
+
+		MarkerSetup[] setups = transform.apply(input);
+		assertThat(setups).hasSameSizeAs(setupAsserters);
+
+		for (int i = 0; i < setups.length; i++) {
+			setupAsserters[i].accept(setups[i], i);
+		}
 	}
 
 	/** Tests for actual marker transformation */
@@ -572,20 +618,17 @@ class MarkerTransformTest {
 		public void test2v1() throws Exception {
 			IqlMarker a = makeCall(SEQ_NAMES[0]);
 			IqlMarker b = makeCall(GEN_NAMES[0]);
-			IqlMarker c = makeCall(SEQ_NAMES[0]);
+			IqlMarker c = makeCall(SEQ_NAMES[1]);
 
 			IqlMarker marker = IqlMarkerExpression.and(
 					IqlMarkerExpression.or(a, b),
 					c
 			);
 
-			MarkerTransform transform = new MarkerTransform();
-
-			MarkerSetup[] setups = transform.apply(marker);
-			assertThat(setups).hasSize(2);
-			and(is(a), is(c)).accept(setups[0].horizontalMarker);
-			is(b).accept(setups[1].generationMarker);
-			is(c).accept(setups[1].horizontalMarker);
+			assertTransformation(marker,
+					seqSetup(and("a & c", is("a", a), is("c", c))),
+					mixedSetup(is("b", b), is("c", c), null)
+			);
 		}
 
 		@Test
@@ -601,23 +644,47 @@ class MarkerTransformTest {
 					IqlMarkerExpression.or(c, d)
 			);
 
-			MarkerTransform transform = new MarkerTransform();
+			// (a&c) | (a&d) | (b&c) | (b&d)
+			assertTransformation(marker,
+					seqSetup(and("a & c", is("a", a), is("c", c))),
+					mixedSetup(null, is("a", a), is("d", d)),
+					mixedSetup(is("b", b), is("c", c), null),
+					mixedSetup(is("b", b), null, is("d", d))
+			);
+		}
 
-			// (a&c) | (b&c) | (a&d) | (b&d)
+		@Test
+		@DisplayName("(a | b | c) & (d | e)")
+		public void test3v2() throws Exception {
+			IqlMarker a = makeCall(SEQ_NAMES[0]);
+			IqlMarker b = makeCall(GEN_NAMES[0]);
+			IqlMarker c = makeCall(LVL_NAMES[0]);
 
-			MarkerSetup[] setups = transform.apply(marker);
-			assertThat(setups).hasSize(4);
-			// a & c
-			and(is(a), is(c)).accept(setups[0].horizontalMarker);
-			// b & c
-			is(b).accept(setups[1].generationMarker);
-			is(c).accept(setups[1].horizontalMarker);
-			// a & d
-			is(a).accept(setups[2].horizontalMarker);
-			is(d).accept(setups[2].levelMarker);
-			// b & d
-			is(b).accept(setups[3].generationMarker);
-			is(d).accept(setups[3].levelMarker);
+			IqlMarker d = makeCall(LVL_NAMES[1]);
+			IqlMarker e = makeCall(GEN_NAMES[1]);
+
+			IqlMarker marker = IqlMarkerExpression.and(
+					IqlMarkerExpression.or(a, b, c),
+					IqlMarkerExpression.or(d, e)
+			);
+
+			/*
+			 * Note:
+			 * The transformation process is deterministic, but depending
+			 * on the types of marker calls used in the input, the order
+			 * of expressions in the normalized output will differ greatly!
+			 */
+
+			// (a&d) | (a&e) | (c&d) | (c&e) | (b&d) | (b&e)
+
+			assertTransformation(marker,
+					mixedSetup(null, is("a", a), is("d", d)),
+					mixedSetup(is("e", e), is("a", a), null),
+					lvlSetup(and("c & d", is("c", c),is("d", d))),
+					mixedSetup(is("e", e), null, is("c", c)),
+					mixedSetup(is("b", b), null, is("d", d)),
+					genSetup(and("b & e", is("b", b), is("e", e)))
+			);
 		}
 	}
 }

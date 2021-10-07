@@ -1113,8 +1113,8 @@ public class StructurePattern {
 			}
 
 			// First layer of wrapping
-			if(setup.horizontalMarker!=null) {
-				addHorizontalMarker(frame, setup.horizontalMarker, scan);
+			if(setup.sequenceMarker!=null) {
+				addHorizontalMarker(frame, setup.sequenceMarker, scan);
 				scan = null;
 			}
 
