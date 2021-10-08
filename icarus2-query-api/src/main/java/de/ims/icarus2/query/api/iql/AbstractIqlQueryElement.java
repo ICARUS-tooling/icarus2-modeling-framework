@@ -36,6 +36,9 @@ import de.ims.icarus2.query.api.QueryErrorCode;
  */
 public abstract class AbstractIqlQueryElement implements IqlQueryElement {
 
+	@Override
+	public String toString() { return IqlUtils.toString(this); }
+
 	// Helper methods for integrity checking
 
 	/**

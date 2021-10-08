@@ -44,13 +44,16 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
 public class MarkerTransform {
 	public static class MarkerSetup {
-		public final IqlMarker sequenceMarker, generationMarker, levelMarker;
+		public final IqlMarker regularMarker, generationMarker;
 
-		public MarkerSetup(IqlMarker generationMarker, IqlMarker sequenceMarker,
-				IqlMarker levelMarker) {
-			this.sequenceMarker = sequenceMarker;
+		public MarkerSetup(IqlMarker generationMarker, IqlMarker normalMarker) {
+			this.regularMarker = normalMarker;
 			this.generationMarker = generationMarker;
-			this.levelMarker = levelMarker;
+		}
+
+		@Override
+		public String toString() {
+			return String.format("[gen=%s reg=%s]", generationMarker, regularMarker);
 		}
 	}
 
@@ -136,6 +139,39 @@ public class MarkerTransform {
 				}).intValue() & ALL; // Filter out artifacts
 	}
 
+	/**
+	 * Analyzes the given {@code marker} and transforms it if necessary.
+	 * <p>
+	 * If the marker is pure (i.e. it contains either only
+	 * {@link GenerationMarker#isValidName(String) generation} marker
+	 * instances or none of that type at all) it will be used as is and
+	 * wrapped into a single instance of {@link MarkerSetup}.
+	 * <p>
+	 * If the marker is found to be non-pure, it will undergo the following
+	 * transformation process:
+	 * <ol>
+	 * <li>Transform marker expressions in such a way that nested expressions are
+	 * split off. This reorders elements such that elements of mixed nature are
+	 * processed first and re-added, then pure generation markers and lastly pure
+	 * regular markers.</li>
+	 * <li>Find a nested disjunction that contains (directly or transitively through
+	 * a pure element) generation markers and apply the distributive law on it. This is done
+	 * back to front, so {@code (a | b | c) & (d | e)}, where {@code (a | b | c)} is the inner
+	 * (nested) expression, will result in {@code (c & e) | (c & d) | ... | (a & e) & (a & d)}.</li>
+	 * <li>Flatten any affected terms, i.e. hoist the elements of nested expressions
+	 * of the same type. In other words: remove redundant bracketing.</li>
+	 * <li>Repeat steps 2 and 3 until no nested disjunctions with generation markers remain.</li>
+	 * <li>Now transform every next-to-top-level conjunction (or the entire expression in case the
+	 * top-level connective is disjunctive) into a separate {@link MarkerSetup} instance.
+	 * This will gather all the top-level expression into two groups, one for generation markers
+	 * and one for regular types.</li>
+	 * </ol>
+	 *
+	 *
+	 * @param marker
+	 * @return a series of {@link MarkerSetup} instances that represent a normalized
+	 * equivalent of the given {@code marker}.
+	 */
 	public MarkerSetup[] apply(IqlMarker marker) {
 
 		// Initial analysis
@@ -146,9 +182,9 @@ public class MarkerTransform {
 		// Simple options
 		if(_pure(rootFlags)) {
 			switch (rootFlags) {
-			case GEN: setups = new MarkerSetup[] {new MarkerSetup(marker, null, null)}; break;
-			case SEQ: setups = new MarkerSetup[] {new MarkerSetup(null, marker, null)}; break;
-			case LVL: setups = new MarkerSetup[] {new MarkerSetup(null, null, marker)}; break;
+			case GEN: setups = new MarkerSetup[] {new MarkerSetup(marker, null)}; break;
+			case SEQ:
+			case LVL: setups = new MarkerSetup[] {new MarkerSetup(null, marker)}; break;
 
 			default:
 				throw new InternalError("We messed up flag calculation");
@@ -170,6 +206,13 @@ public class MarkerTransform {
 			// Now transform as much as possible (this might require a lot of passes internally)
 			normalize(root);
 //			System.out.println("normalized: "+toString(root));
+
+			//TODO we can end up with multiple branches that start with the same generation markers
+			/*
+			 *  e.g.: (lvl | seq1 | seq2) & gen -> (lvl & gen) | (gen & (seq1 | seq2))
+			 *
+			 *  should not get optimized at all?
+			 */
 
 			setups = asSetups(root, root.type==OR);
 		}
@@ -194,6 +237,7 @@ public class MarkerTransform {
 	final static int SEQ = 4;
 
 	final static int ALL = GEN | LVL | SEQ;
+	final static int NON_GEN = LVL | SEQ;
 
 	private void append(IqlMarker marker, StringBuilder sb) {
 		if(marker.getType()==IqlType.MARKER_CALL) {
@@ -329,31 +373,31 @@ public class MarkerTransform {
 			assert elements.size()>1 : "must have at least 2 elements in expression";
 			List<IqlMarker> mixedElements = new ObjectArrayList<>();
 			List<IqlMarker> pureGen = new ObjectArrayList<>();
-			List<IqlMarker> pureLvl = new ObjectArrayList<>();
-			List<IqlMarker> pureSeq = new ObjectArrayList<>();
+			List<IqlMarker> pureReg = new ObjectArrayList<>();
+			int regFlags = 0;
 
 			for (int i = 0; i < elements.size(); i++) {
 				IqlMarker element = elements.get(i);
 				int flags = flagLut.getInt(element) & ALL;
 
-				switch (flags) {
-				case GEN: pureGen.add(element); break;
-				case LVL: pureLvl.add(element); break;
-				case SEQ: pureSeq.add(element); break;
-				default:
+				if(flags==GEN) {
+					pureGen.add(element);
+				} else if(_pure(flags)) {
+					pureReg.add(element);
+					regFlags |= flags;
+				} else {
 					mixedElements.add(element);
 				}
 			}
 
 			Term term = new Term(type);
 
-			if(!pureGen.isEmpty()) term.add(createProxy(type, GEN, pureGen));
-			if(!pureLvl.isEmpty()) term.add(createProxy(type, LVL, pureLvl));
-			if(!pureSeq.isEmpty()) term.add(createProxy(type, SEQ, pureSeq));
-
 			mixedElements.stream()
 				.map(this::toTerm)
 				.forEach(term::add);
+
+			if(!pureGen.isEmpty()) term.add(createProxy(type, GEN, pureGen));
+			if(!pureReg.isEmpty()) term.add(createProxy(type, regFlags, pureReg));
 
 			return term;
 		}
@@ -363,9 +407,11 @@ public class MarkerTransform {
 		}
 	}
 
-	/** Check if flags only contains 1 type of markers */
+	/** Check if flags do not contain a mix of generation and other markers */
 	@VisibleForTesting
-	static boolean _pure(int flags) { return Integer.bitCount(flags & ALL) == 1; }
+	static boolean _pure(int flags) {
+		return Integer.bitCount(flags & ALL) == 1 || (flags & GEN) == 0;
+	}
 
 	@VisibleForTesting
 	static int _flags(String callName) {
@@ -415,8 +461,8 @@ public class MarkerTransform {
 					continue;
 				}
 
-				// 1. find a nested disjunction
-				if(element.type==OR) {
+				// 1. find a nested disjunction that contains a generation marker
+				if(element.type==OR && element.isSet(GEN)) {
 					assert term.type==AND : "redundant disjunctive nesting detected";
 					// 2. apply distributive property
 					Term inner = elements.remove(i); // The disjunctive element we found
@@ -525,8 +571,7 @@ public class MarkerTransform {
 		final MarkerSetup[] setups = new MarkerSetup[terms.size()];
 
 		List<IqlMarker> genMarkers = new ObjectArrayList<>();
-		List<IqlMarker> seqMarkers = new ObjectArrayList<>();
-		List<IqlMarker> lvlMarkers = new ObjectArrayList<>();
+		List<IqlMarker> regMarkers = new ObjectArrayList<>();
 
 		int idx = 0;
 
@@ -545,21 +590,17 @@ public class MarkerTransform {
 				assert element.isPure() : "No mixed content allowed in nested terms";
 
 				IqlMarker marker = raw.get(element.id);
-				switch (element.flags & ALL) {
-				case GEN: genMarkers.add(marker); break;
-				case LVL: lvlMarkers.add(marker); break;
-				case SEQ: seqMarkers.add(marker); break;
-
-				default:
-					break;
+				if(element.flags==GEN) {
+					genMarkers.add(marker);
+				} else {
+					regMarkers.add(marker);
 				}
 			}
 
-			setups[idx++] = new MarkerSetup(_and(genMarkers), _and(seqMarkers), _and(lvlMarkers));
+			setups[idx++] = new MarkerSetup(_and(genMarkers), _and(regMarkers));
 
 			genMarkers.clear();
-			lvlMarkers.clear();
-			seqMarkers.clear();
+			regMarkers.clear();
 		}
 
 		return setups;

@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -38,6 +39,8 @@ import com.fasterxml.jackson.module.jsonSchema.factories.SchemaFactoryWrapper;
 import com.fasterxml.jackson.module.jsonSchema.factories.VisitorContext;
 import com.fasterxml.jackson.module.jsonSchema.factories.WrapperFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QueryFragment;
 
 /**
@@ -133,5 +136,15 @@ public final class IqlUtils {
 		}
 		int _offset = strictToInt(offset);
 		return new QueryFragment(query, _offset, _offset);
+	}
+
+	private static final ObjectMapper mapper = IqlUtils.createMapper();
+	public static String toString(IqlQueryElement element) {
+		try {
+			return mapper.writeValueAsString(element);
+		} catch (JsonProcessingException e) {
+			throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+					"Failed to serialize element", e);
+		}
 	}
 }

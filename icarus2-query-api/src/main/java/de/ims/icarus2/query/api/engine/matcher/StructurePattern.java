@@ -43,10 +43,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,8 +58,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -105,7 +105,6 @@ import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlType;
-import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
@@ -119,6 +118,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 /**
  * Implements the state machine to match a node sequence defined in the
@@ -383,15 +384,15 @@ public class StructurePattern {
 
 	/** Utility class for generating the state machine */
 	static class StructureQueryProcessor {
-		private static final ObjectMapper mapper = IqlUtils.createMapper();
-		private static String serialize(IqlQueryElement element) {
-			try {
-				return mapper.writeValueAsString(element);
-			} catch (JsonProcessingException e) {
-				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
-						"Failed to serialize element", e);
-			}
-		}
+//		private static final ObjectMapper mapper = IqlUtils.createMapper();
+//		private static String serialize(IqlQueryElement element) {
+//			try {
+//				return mapper.writeValueAsString(element);
+//			} catch (JsonProcessingException e) {
+//				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
+//						"Failed to serialize element", e);
+//			}
+//		}
 
 		int cacheCount;
 		int bufferCount;
@@ -410,6 +411,7 @@ public class StructurePattern {
 		final MarkerTransform markerTransform = new MarkerTransform();
 
 		boolean findOnly = false;
+		boolean localGates = true;
 
 		int id;
 
@@ -790,8 +792,36 @@ public class StructurePattern {
 				if(setups.length==1) {
 					frame = markerSetup(setups[0], scan, atom);
 				} else {
-					//TODO need a way to use the same atom node for all branches
-					throw new UnsupportedOperationException("not implemented yet");
+					/*
+					 * Since nodes in the state machine only represent transition
+					 * logic, we can use direct clones here that just operate on
+					 * the same state, so that we don't need a new artificial
+					 * (de)multiplexer node to link calls after the atom segment
+					 * to the respective branch connective.
+					 */
+					CloneContext ctx = new CloneContext(this::id, this::storeClone);
+
+					// Branch for all the setups (uses global gate)
+					final boolean oldLocalGates = setLocalGates(false);
+
+					final int gateId = gate();
+					// Filter directly at the inner atom
+					atom.push(filter(false, gateId));
+
+					final Node originalAtom = atom.start();
+					final Node originalScan = scan;
+
+					frame = branch(source, setups.length, i -> {
+						Node atomClone = ctx.clone(originalAtom);
+						Node scanClone = ctx.clone(originalScan);
+						ctx.reset();
+						return markerSetup(setups[i], scanClone, segment(atomClone));
+					}).toFrame();
+
+					// We use a global gate for the marker construct
+					frame.push(filter(true, gateId));
+
+					resetLocalGates(oldLocalGates);
 				}
 
 				// Marker construct consumes scan
@@ -964,11 +994,29 @@ public class StructurePattern {
 			this.findOnly = findOnly;
 		}
 
+		private boolean setLocalGates(boolean localGates) {
+			boolean res = this.localGates;
+			this.localGates |= localGates;
+			return res;
+		}
+
+		private void resetLocalGates(boolean localGates) {
+			this.localGates = localGates;
+		}
+
 		private void discard(Node node) {
 			if(!nodes.remove(node))
 				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR,
 						"Unable to discard node from store: "+node);
 			node.detach();
+		}
+
+		private void storeClone(Node source, Node clone) {
+			assert source!=clone : "source must be different from clone";
+			assert source.getClass()==clone.getClass() : "source and clone class must be identical";
+			if(!clone.isProxy() && clone!=accept) {
+				nodes.add(clone);
+			}
 		}
 
 		private <N extends Node> N store(N node) {
@@ -1107,14 +1155,9 @@ public class StructurePattern {
 				scan = null;
 			}
 
-			// Non-closure generation markers only get prepended
-			if(setup.levelMarker!=null) {
-				frame.push(frameFilter(setup.levelMarker));
-			}
-
 			// First layer of wrapping
-			if(setup.sequenceMarker!=null) {
-				addHorizontalMarker(frame, setup.sequenceMarker, scan);
+			if(setup.regularMarker!=null) {
+				addSimpleMarker(frame, setup.regularMarker, scan);
 				scan = null;
 			}
 
@@ -1133,6 +1176,7 @@ public class StructurePattern {
 		}
 
 		/** Create potentially branching structure for frame-based tree filtering */
+		@Deprecated
 		private Segment frameFilter(IqlMarker marker) {
 			switch (marker.getType()) {
 			case MARKER_CALL: {
@@ -1195,38 +1239,48 @@ public class StructurePattern {
 		}
 
 		/** Add marker decoration around a (single node) frame. */
-		private void addHorizontalMarker(Frame frame, IqlMarker marker, @Nullable Node scan) {
+		private void addSimpleMarker(Frame frame, IqlMarker marker, @Nullable Node scan) {
 			int border = border();
 			IntList nestedMarkerIndices = new IntArrayList();
-			Segment filter = horizontalMarker(marker, scan, IcarusUtils.DO_NOTHING(), nestedMarkerIndices::add);
-			// Saves the previousIndex window
-			frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
+			IntConsumer nestedMarkerAction = nestedMarkerIndices::add;
+			MutableBoolean requiresBorder = new MutableBoolean(false);
+			Consumer<Node> nodeAction = n -> {
+				if(n instanceof Clip) {
+					requiresBorder.setBoolean(true);
+				}
+			};
+
+			Segment filter = simpleMarker(marker, scan, nodeAction, nestedMarkerAction);
+
+			if(requiresBorder.booleanValue()) {
+				// Saves the previous window
+				frame.prefix().push(borderBegin(border, nestedMarkerIndices.toIntArray()));
+			}
 			// Creates the marker window
 			frame.prefix().append(filter);
-			// Restores previousIndex window
-			frame.suffix().append(borderEnd(border));
+			if(requiresBorder.booleanValue()) {
+				// Restores previous window
+				frame.suffix().append(borderEnd(border));
+			}
 		}
 
 		/** Create graph for the marker construct. */
-		private Segment horizontalMarker(IqlMarker marker, Node scan, Consumer<? super Node> nodeAction,
+		private Segment simpleMarker(IqlMarker marker, @Nullable Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			Segment seg;
 			switch (marker.getType()) {
 			case MARKER_CALL: {
 				IqlMarkerCall call = (IqlMarkerCall) marker;
-				seg = horizontalMarkerCall(call, nodeAction, nestedMarkerAction);
-				if(scan!=null) {
-					seg.append(scan);
-				}
+				seg = simpleMarkerCall(call, scan, nodeAction, nestedMarkerAction);
 			} break;
 
 			case MARKER_EXPRESSION: {
 				IqlMarkerExpression expression = (IqlMarkerExpression) marker;
 				List<IqlMarker> items = expression.getItems();
 				if(expression.getExpressionType()==MarkerExpressionType.CONJUNCTION) {
-					seg = horizontalMarkerIntersection(items, scan, nodeAction, nestedMarkerAction);
+					seg = simpleMarkerIntersection(items, scan, nodeAction, nestedMarkerAction);
 				} else {
-					seg = horizontalMarkerUnion(items, scan, nodeAction, nestedMarkerAction);
+					seg = simpleMarkerUnion(items, scan, nodeAction, nestedMarkerAction);
 				}
 			} break;
 
@@ -1237,7 +1291,7 @@ public class StructurePattern {
 			return seg;
 		}
 
-		private Segment horizontalMarkerCall(IqlMarkerCall call, Consumer<? super Node> nodeAction,
+		private Segment simpleMarkerCall(IqlMarkerCall call, @Nullable Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			final String name = call.getName();
 
@@ -1250,6 +1304,7 @@ public class StructurePattern {
 
 				final RangeMarker marker = HorizontalMarker.of(name, markerArgs(call));
 
+				final Segment seg;
 				if(marker.isDynamic()) {
 					// Register markers only if we have to dynamically adjust their intervals
 					if(level>0 && !isSequence) {
@@ -1262,26 +1317,44 @@ public class StructurePattern {
 					marker.setIndex(intervalIndex);
 					final int count = marker.intervalCount();
 					if(count>1) {
-						return branch(call, count, i -> {
+						seg = branch(call, count, i -> {
 							final Node clip = dynamicClip(call, isSequence, intervalIndex+i);
 							nodeAction.accept(clip);
 							return frame(clip);
 						});
+					} else {
+						final Node clip = dynamicClip(call, isSequence, intervalIndex);
+						nodeAction.accept(clip);
+						seg = segment(clip);
 					}
+				} else {
+					assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
 
-					final Node clip = dynamicClip(call, isSequence, intervalIndex);
+					final Interval interval = Interval.blank();
+					marker.setIndex(0);
+					marker.adjust(new Interval[] {interval}, 1);
+					final Node clip = fixedClip(call, isSequence, interval.from, interval.to);
 					nodeAction.accept(clip);
-					return segment(clip);
+					seg = segment(clip);
 				}
 
-				assert marker.intervalCount()==1 : "static marker cannot have multiple intervals";
+				// Horizontal filter needs the scan to happen afterwards
+				if(scan!=null) {
+					seg.append(scan);
+				}
 
-				final Interval interval = Interval.blank();
-				marker.setIndex(0);
-				marker.adjust(new Interval[] {interval}, 1);
-				final Node fixed = fixedClip(call, isSequence, interval.from, interval.to);
-				nodeAction.accept(fixed);
-				return segment(fixed);
+				return seg;
+			} else if(LevelMarker.isValidName(name)) {
+				Node filter = treeFilter(call, FrameFilter.forMarker(call));
+				nodeAction.accept(filter);
+				Segment seg = segment(filter);
+
+				// For vertical scanning we need scan in front
+				if(scan!=null) {
+					seg.push(scan);
+				}
+
+				return seg;
 			}
 
 			throw EvaluationUtils.forUnsupportedValue("marker-name", name);
@@ -1317,12 +1390,12 @@ public class StructurePattern {
 		};
 
 		/** Combine sequence of intersecting markers */
-		private Segment horizontalMarkerIntersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment simpleMarkerIntersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
 			markers.stream()
-					.map(m -> horizontalMarker(m, null, nodeAction, nestedMarkerAction))
+					.map(m -> simpleMarker(m, null, nodeAction, nestedMarkerAction))
 					// For optimization reasons we 'should' sort markers, but that would violate the specification
 					//.sorted(SEGMENT_COMPLEXITY_ORDER)
 					.forEach(seg::append);
@@ -1335,7 +1408,7 @@ public class StructurePattern {
 		}
 
 		/** Create branches for disjunctive markers */
-		private Segment horizontalMarkerUnion(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment simpleMarkerUnion(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
@@ -1345,13 +1418,13 @@ public class StructurePattern {
 			Consumer<? super Node> action2 = nodeAction.andThen(node -> {
 				if(node instanceof FixedClip) {
 					fixedIntervals.add(((FixedClip) node).region);
-				} else {
+				} else if(node instanceof DynamicClip) {
 					hasDynamicInterval.setBoolean(true);
 				}
 			});
 
 			final Segment seg = branch(new IqlListProxy(markers), markers.size(),
-					i -> horizontalMarker(markers.get(i), null, action2, nestedMarkerAction).toFrame());
+					i -> simpleMarker(markers.get(i), null, action2, nestedMarkerAction).toFrame());
 			seg.setFlag(Flag.COMPLEX_MARKER);
 
 			// Append scan if available
@@ -1359,22 +1432,25 @@ public class StructurePattern {
 				seg.append(scan);
 			}
 
-			// We only need a gate in case alternative branches can produce overlapping intervals
-			boolean requiresGate = hasDynamicInterval.booleanValue();
-			if(!requiresGate && !fixedIntervals.isEmpty()) {
-				Collections.sort(fixedIntervals);
-				for (int i = 1; i < fixedIntervals.size(); i++) {
-					if(fixedIntervals.get(i-1).to >= fixedIntervals.get(i).from) {
-						requiresGate = true;
-						break;
+			// Handle optional gates
+			if(localGates) {
+				// We only need a gate in case alternative branches can produce overlapping intervals
+				boolean requiresGate = hasDynamicInterval.booleanValue();
+				if(!requiresGate && !fixedIntervals.isEmpty()) {
+					Collections.sort(fixedIntervals);
+					for (int i = 1; i < fixedIntervals.size(); i++) {
+						if(fixedIntervals.get(i-1).to >= fixedIntervals.get(i).from) {
+							requiresGate = true;
+							break;
+						}
 					}
 				}
-			}
-			// If required, finally wrap the entire segment into filter gates
-			if(requiresGate) {
-				final int gateId = gate();
-				seg.push(filter(true, gateId));
-				seg.append(filter(false, gateId));
+				// If required, finally wrap the entire segment into filter gates
+				if(requiresGate) {
+					final int gateId = gate();
+					seg.push(filter(true, gateId));
+					seg.append(filter(false, gateId));
+				}
 			}
 			return seg;
 		}
@@ -1774,6 +1850,40 @@ public class StructurePattern {
 
 			return sm;
 		}
+	}
+
+	static class CloneContext {
+		private final Reference2ObjectMap<Node, Node> cache = new Reference2ObjectOpenHashMap<>();
+		private final BiConsumer<Node, Node> cloneHandler;
+		private final IntSupplier idGen;
+
+		/** Cloen handler will be called with pair of (source, clone) nodes. */
+		CloneContext(IntSupplier idGen, BiConsumer<Node, Node> cloneHandler) {
+			this.idGen = requireNonNull(idGen);
+			this.cloneHandler = requireNonNull(cloneHandler);
+		}
+
+		/** Checks cache and calls {@link Node#clone(CloneContext)} if needed. Caches result. */
+		@SuppressWarnings("unchecked")
+		@Nullable <N extends Node> N clone(@Nullable Node source) {
+			if(source==null) {
+				return null;
+			}
+			if(source==accept) {
+				return (N) accept;
+			}
+			Node clone = cache.get(source);
+			if(clone==null) {
+				clone = source.clone(this);
+				cache.put(source, clone);
+				cloneHandler.accept(source, clone);
+			}
+			return (N) clone;
+		}
+
+		int id() { return idGen.getAsInt(); }
+
+		void reset() { cache.clear(); }
 	}
 
 	/**
@@ -3715,6 +3825,10 @@ public class StructurePattern {
 		 * or {@code null} if this node is a proxy or the generic accept node.
 		 */
 		public abstract NodeInfo info();
+
+		Node clone(CloneContext ctx) {
+			throw new UnsupportedOperationException("Node tyoe does not support cloning: "+getClass());
+		}
 	}
 
 	static final int GREEDY = QuantifierModifier.GREEDY.id();
@@ -3727,6 +3841,11 @@ public class StructurePattern {
 			super(-1);
 			checkArgument("Cannot monitor generic accept node", next!=accept);
 			setNext(next);
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			return new Track(ctx.clone(next));
 		}
 
 		@Override
@@ -3792,6 +3911,13 @@ public class StructurePattern {
 			super(id, source);
 			this.memberId = memberId;
 			this.anchorId = anchorId;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new Empty(ctx.id(), source, memberId, anchorId);
+			clone.setNext(ctx.clone(next));
+			return clone;
 		}
 
 		@Override
@@ -3871,6 +3997,13 @@ public class StructurePattern {
 			super(id, source, memberId, anchorId);
 			this.nodeId = nodeId;
 			this.cacheId = cacheId;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new Single(ctx.id(), (IqlNode)source, nodeId, cacheId, memberId, anchorId);
+			clone.setNext(ctx.clone(next));
+			return clone;
 		}
 
 		@Override
@@ -4232,6 +4365,19 @@ public class StructurePattern {
 			region = Interval.of(from, to);
 		}
 
+		/** Private copy consructor */
+		private FixedClip(int id, IqlMarkerCall source, boolean clipIndex, Interval region) {
+			super(id, source, clipIndex);
+			this.region = requireNonNull(region);
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new FixedClip(ctx.id(), (IqlMarkerCall)source, clipIndex, region);
+			clone.setNext(ctx.clone(next));
+			return clone;
+		}
+
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.CLIP_FIXED)
@@ -4273,6 +4419,13 @@ public class StructurePattern {
 		DynamicClip(int id, IqlMarkerCall source, boolean clipIndex, int intervalIndex) {
 			super(id, source, clipIndex);
 			this.intervalIndex = intervalIndex;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new DynamicClip(ctx.id(), (IqlMarkerCall)source, clipIndex, intervalIndex);
+			clone.setNext(ctx.clone(next));
+			return clone;
 		}
 
 		@Override
@@ -4326,6 +4479,21 @@ public class StructurePattern {
 			this.save = false;
 			this.nestedMarkers = null;
 			this.borderId = borderId;
+		}
+
+		/** Private copy constructor */
+		private Border(int id, int borderId, boolean save, int[] nestedMarkers) {
+			super(id);
+			this.save = save;
+			this.nestedMarkers = nestedMarkers;
+			this.borderId = borderId;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new Border(ctx.id(), borderId, save, nestedMarkers);
+			clone.setNext(ctx.clone(next));
+			return clone;
 		}
 
 		@Override
@@ -4398,6 +4566,13 @@ public class StructurePattern {
 			super(id);
 			this.reset = reset;
 			this.gateId = gateId;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new Filter(ctx.id(), reset, gateId);
+			clone.setNext(ctx.clone(next));
+			return clone;
 		}
 
 		@Override
@@ -4705,6 +4880,13 @@ public class StructurePattern {
 		Find(int id) { super(id); }
 
 		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new Find(ctx.id());
+			clone.setNext(ctx.clone(next));
+			return clone;
+		}
+
+		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.SCAN_FIRST)
 					.property(Field.MIN_SIZE, minSize)
@@ -4785,6 +4967,13 @@ public class StructurePattern {
 		Exhaust(int id, boolean forward) {
 			super(id);
 			this.forward = forward;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			Node clone = new Exhaust(ctx.id(), forward);
+			clone.setNext(ctx.clone(next));
+			return clone;
 		}
 
 		@Override
@@ -5223,54 +5412,6 @@ public class StructurePattern {
 	}
 
 	/**
-     * Guard node at the end of each branch to block the {@link #study(TreeInfo)}
-     * chain but forward the {@link #match(State, int)} call to 'next'. This implementation
-     * will only forward part of the {@link #study(TreeInfo)} call at most <b>once</b>
-     * in order to gather information it needs to pass onto preceding nodes.
-     */
-    static final class BranchConn extends Node {
-    	boolean skip = false;
-    	boolean skipSet = false;
-        BranchConn(int id) { super(id); }
-
-		@Override
-		public NodeInfo info() {
-			return new NodeInfo(this, Type.BRANCH_CONN)
-					.property(Field.SKIP, skip);
-		}
-
-        @Override
-		boolean match(State state, int pos) {
-            return next.match(state, pos);
-        }
-
-        @Override
-		boolean study(TreeInfo info) {
-        	// Check once if we need to pass the 'skip' flag up the hierarchy
-        	if(!skipSet) {
-        		TreeInfo sentinel = new TreeInfo();
-        		next.study(sentinel);
-        		skip = sentinel.skip;
-        		skipSet = true;
-        	}
-        	info.skip = skip;
-            return false;
-        }
-
-        @Override
-        boolean isConnective() { return true; }
-
-		@Override
-		public String toString() {
-			return ToStringBuilder.create(this)
-					.add("id", id)
-					.add("skip", skip)
-					.add("slot", skipSet)
-					.build();
-		}
-    }
-
-    /**
 	 * Models multiple alternative paths. Can also be used to model
 	 * {@code 0..1} (greedy) and {@code 0..1?} (reluctant) ranged
 	 * quantifiers.
@@ -5285,6 +5426,17 @@ public class StructurePattern {
 			checkArgument("Need at least 2 branch atoms", atoms.length>1);
 			this.atoms = atoms;
 			this.conn = conn;
+		}
+
+		@Override
+		Node clone(CloneContext ctx) {
+			BranchConn connClone = ctx.clone(conn);
+			Node[] atomClones = Stream.of(atoms)
+					.map(atom -> ctx.clone(atom))
+					.toArray(Node[]::new);
+			Node clone = new Branch(ctx.id(), source, connClone, atomClones);
+			clone.setNext(ctx.clone(conn.next));
+			return clone;
 		}
 
 		@Override
@@ -5333,18 +5485,18 @@ public class StructurePattern {
 		@Override
 		boolean match(State state, int pos) {
 			final TreeFrame frame = state.frame;
-    		final int from = frame.from();
-    		final int to = frame.to();
+			final int from = frame.from();
+			final int to = frame.to();
 
 			// Short-cut for zero-width assertion
 			if(optional && pos==to+1) {
 				return conn.next.match(state, pos);
 			}
 
-        	final int scope = state.scope();
-        	final int previous = frame.previousIndex;
+	    	final int scope = state.scope();
+	    	final int previous = frame.previousIndex;
 
-    		boolean result = false;
+			boolean result = false;
 	        for (int n = 0; n < atoms.length && !state.stop; n++) {
 	        	final Node atom = atoms[n];
 	        	if (atom==null) {
@@ -5356,9 +5508,9 @@ public class StructurePattern {
 	        	// Only reset range here
 	        	frame.resetWindow(from, to);
 
-                if(stopOnSuccess && result) {
-                	break;
-                }
+	            if(stopOnSuccess && result) {
+	            	break;
+	            }
 
 	        	// Only reset if we failed or are not meant to keep the first match
 	        	state.resetScope(scope);
@@ -5416,7 +5568,61 @@ public class StructurePattern {
 		}
 	}
 
-	static final class Repetition extends ProperNode {
+	/**
+     * Guard node at the end of each branch to block the {@link #study(TreeInfo)}
+     * chain but forward the {@link #match(State, int)} call to 'next'. This implementation
+     * will only forward part of the {@link #study(TreeInfo)} call at most <b>once</b>
+     * in order to gather information it needs to pass onto preceding nodes.
+     */
+    static final class BranchConn extends Node {
+    	boolean skip = false;
+    	boolean skipSet = false;
+        BranchConn(int id) { super(id); }
+
+		@Override
+		Node clone(CloneContext ctx) {
+			// Don't set a cloned 'next' here, that's the job of surrounding branch
+			return new BranchConn(ctx.id());
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.BRANCH_CONN)
+					.property(Field.SKIP, skip);
+		}
+
+        @Override
+		boolean match(State state, int pos) {
+            return next.match(state, pos);
+        }
+
+        @Override
+		boolean study(TreeInfo info) {
+        	// Check once if we need to pass the 'skip' flag up the hierarchy
+        	if(!skipSet) {
+        		TreeInfo sentinel = new TreeInfo();
+        		next.study(sentinel);
+        		skip = sentinel.skip;
+        		skipSet = true;
+        	}
+        	info.skip = skip;
+            return false;
+        }
+
+        @Override
+        boolean isConnective() { return true; }
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("id", id)
+					.add("skip", skip)
+					.add("slot", skipSet)
+					.build();
+		}
+    }
+
+    static final class Repetition extends ProperNode {
     	final int cmin;
     	final int cmax;
     	final Node atom;

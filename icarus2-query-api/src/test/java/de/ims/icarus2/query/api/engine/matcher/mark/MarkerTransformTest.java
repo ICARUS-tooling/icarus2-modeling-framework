@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -280,7 +280,7 @@ class MarkerTransformTest {
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Faulty pure mix")
-						.isFalse();
+						.isTrue();
 					assertThat(flags)
 						.as("Inconsistent name check")
 						.isEqualTo(MarkerTransform.SEQ | MarkerTransform.LVL);
@@ -314,7 +314,7 @@ class MarkerTransformTest {
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Faulty pure mix")
-						.isFalse();
+						.isTrue();
 					assertThat(flags)
 						.as("Inconsistent name check")
 						.isEqualTo(MarkerTransform.LVL | MarkerTransform.SEQ);
@@ -382,7 +382,7 @@ class MarkerTransformTest {
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Faulty pure mix")
-						.isFalse();
+						.isTrue();
 					assertThat(flags)
 						.as("Inconsistent name check")
 						.isEqualTo(MarkerTransform.SEQ | MarkerTransform.LVL);
@@ -416,7 +416,7 @@ class MarkerTransformTest {
 					int flags = transform.scan(marker);
 					assertThat(MarkerTransform._pure(flags))
 						.as("Faulty pure mix")
-						.isFalse();
+						.isTrue();
 					assertThat(flags)
 						.as("Inconsistent name check")
 						.isEqualTo(MarkerTransform.LVL | MarkerTransform.SEQ);
@@ -525,74 +525,63 @@ class MarkerTransformTest {
 		//TODO test conversion of actual marker expressions
 	}
 
-	static Consumer<IqlMarker> is(String label, IqlMarker marker) {
-		return m ->  assertThat(m).as("mismatch for '%s'", label).isSameAs(marker);
+	static BiConsumer<String,IqlMarker> is(String label, IqlMarker marker) {
+		return (msg,m) ->  assertThat(m).as("%s: mismatch for '%s'", msg, label).isSameAs(marker);
 	}
 
 	@SafeVarargs
-	static Consumer<IqlMarker> and(String label, Consumer<? super IqlMarker>...elementAsserters) {
-		return m -> {
-			assertThat(m.getType()).as("type mismatch in '%s'", label).isSameAs(IqlType.MARKER_EXPRESSION);
+	static BiConsumer<String,IqlMarker> and(String label, BiConsumer<String,? super IqlMarker>...elementAsserters) {
+		return (msg,m) -> {
+			assertThat(m.getType()).as("%s: type mismatch in '%s'", msg, label).isSameAs(IqlType.MARKER_EXPRESSION);
 			IqlMarkerExpression exp = (IqlMarkerExpression)m;
-			assertThat(exp.getExpressionType()).as("expression type mismatch in '%s'", label).isSameAs(MarkerExpressionType.CONJUNCTION);
+			assertThat(exp.getExpressionType()).as("%s: expression type mismatch in '%s'", msg, label).isSameAs(MarkerExpressionType.CONJUNCTION);
 			List<IqlMarker> elements = exp.getItems();
-			assertThat(elements).hasSameSizeAs(elementAsserters);
+			assertThat(elements).as("%s: element count mismatch", msg).hasSameSizeAs(elementAsserters);
 			for (int i = 0; i < elementAsserters.length; i++) {
-				elementAsserters[i].accept(elements.get(i));
+				elementAsserters[i].accept(msg+" <"+i+">", elements.get(i));
 			}
 		};
 	}
 
 	@SafeVarargs
-	static Consumer<IqlMarker> or(String label, Consumer<? super IqlMarker>...elementAsserters) {
-		return m -> {
-			assertThat(m.getType()).as("type mismatch in '%s'", label).isSameAs(IqlType.MARKER_EXPRESSION);
+	static BiConsumer<String,IqlMarker> or(String label, BiConsumer<String,? super IqlMarker>...elementAsserters) {
+		return (msg,m) -> {
+			assertThat(m.getType()).as("%s: type mismatch in '%s'", msg, label).isSameAs(IqlType.MARKER_EXPRESSION);
 			IqlMarkerExpression exp = (IqlMarkerExpression)m;
-			assertThat(exp.getExpressionType()).as("expression type mismatch in '%s'", label).isSameAs(MarkerExpressionType.DISJUNCTION);
+			assertThat(exp.getExpressionType()).as("%s: expression type mismatch in '%s'", msg, label).isSameAs(MarkerExpressionType.DISJUNCTION);
 			List<IqlMarker> elements = exp.getItems();
-			assertThat(elements).hasSameSizeAs(elementAsserters);
+			assertThat(elements).as("%s: element count mismatch", msg).hasSameSizeAs(elementAsserters);
 			for (int i = 0; i < elementAsserters.length; i++) {
-				elementAsserters[i].accept(elements.get(i));
+				elementAsserters[i].accept(msg+" <"+i+">", elements.get(i));
 			}
 		};
 	}
 
-	static ObjIntConsumer<MarkerSetup> mixedSetup(Consumer<IqlMarker> genAsserter,
-			Consumer<IqlMarker> seqAsserter, Consumer<IqlMarker> lvlAsserter) {
+	static ObjIntConsumer<MarkerSetup> mixedSetup(BiConsumer<String,IqlMarker> genAsserter,
+			BiConsumer<String,IqlMarker> regAsserter) {
 		return (setup, idx) -> {
 			if(genAsserter!=null) {
 				assertThat(setup.generationMarker).as("gen marker in setup %d", _int(idx)).isNotNull();
-				genAsserter.accept(setup.generationMarker);
+				genAsserter.accept("[gen "+idx+"]", setup.generationMarker);
 			}
-			if(seqAsserter!=null) {
-				assertThat(setup.sequenceMarker).as("seq marker in setup %d", _int(idx)).isNotNull();
-				seqAsserter.accept(setup.sequenceMarker);
-			}
-			if(lvlAsserter!=null) {
-				assertThat(setup.levelMarker).as("lvl marker in setup %d", _int(idx)).isNotNull();
-				lvlAsserter.accept(setup.levelMarker);
+			if(regAsserter!=null) {
+				assertThat(setup.regularMarker).as("reg marker in setup %d", _int(idx)).isNotNull();
+				regAsserter.accept("[reg "+idx+"]", setup.regularMarker);
 			}
 		};
 	}
 
-	static ObjIntConsumer<MarkerSetup> genSetup(Consumer<IqlMarker> genAsserter) {
+	static ObjIntConsumer<MarkerSetup> genSetup(BiConsumer<String,IqlMarker> genAsserter) {
 		return (setup, idx) -> {
 			assertThat(setup.generationMarker).as("gen marker in setup %d", _int(idx)).isNotNull();
-			genAsserter.accept(setup.generationMarker);
+			genAsserter.accept("[gen "+idx+"]", setup.generationMarker);
 		};
 	}
 
-	static ObjIntConsumer<MarkerSetup> seqSetup(Consumer<IqlMarker> seqAsserter) {
+	static ObjIntConsumer<MarkerSetup> regSetup(BiConsumer<String,IqlMarker> seqAsserter) {
 		return (setup, idx) -> {
-			assertThat(setup.sequenceMarker).as("seq marker in setup %d", _int(idx)).isNotNull();
-			seqAsserter.accept(setup.sequenceMarker);
-		};
-	}
-
-	static ObjIntConsumer<MarkerSetup> lvlSetup(Consumer<IqlMarker> lvlAsserter) {
-		return (setup, idx) -> {
-			assertThat(setup.levelMarker).as("lvl marker in setup %d", _int(idx)).isNotNull();
-			lvlAsserter.accept(setup.levelMarker);
+			assertThat(setup.regularMarker).as("reg marker in setup %d", _int(idx)).isNotNull();
+			seqAsserter.accept("[reg "+idx+"]", setup.regularMarker);
 		};
 	}
 
@@ -602,6 +591,10 @@ class MarkerTransformTest {
 
 		MarkerSetup[] setups = transform.apply(input);
 		assertThat(setups).hasSameSizeAs(setupAsserters);
+
+//		for (int i = 0; i < setups.length; i++) {
+//			System.out.printf("%d: %s%n", _int(i), setups[i]);
+//		}
 
 		for (int i = 0; i < setups.length; i++) {
 			setupAsserters[i].accept(setups[i], i);
@@ -626,8 +619,8 @@ class MarkerTransformTest {
 			);
 
 			assertTransformation(marker,
-					seqSetup(and("a & c", is("a", a), is("c", c))),
-					mixedSetup(is("b", b), is("c", c), null)
+					regSetup(and("a & c", is("a", a), is("c", c))),
+					mixedSetup(is("b", b), is("c", c))
 			);
 		}
 
@@ -644,12 +637,10 @@ class MarkerTransformTest {
 					IqlMarkerExpression.or(c, d)
 			);
 
-			// (a&c) | (a&d) | (b&c) | (b&d)
+			// (a & (c | d)) | (b & (c | d))
 			assertTransformation(marker,
-					seqSetup(and("a & c", is("a", a), is("c", c))),
-					mixedSetup(null, is("a", a), is("d", d)),
-					mixedSetup(is("b", b), is("c", c), null),
-					mixedSetup(is("b", b), null, is("d", d))
+					regSetup(and("a & (c | d)", is("a", a), or("c | d", is("c", c), is("d", d)))),
+					mixedSetup(is("b", b), or("c | d", is("c", c), is("d", d)))
 			);
 		}
 
@@ -675,14 +666,13 @@ class MarkerTransformTest {
 			 * of expressions in the normalized output will differ greatly!
 			 */
 
-			// (a&d) | (a&e) | (c&d) | (c&e) | (b&d) | (b&e)
+			// (b | (a | c)) & (d | e)
+			// (b&d) | ((a|c)&d) | (b&e) | ((a|c)&e)
 
 			assertTransformation(marker,
-					mixedSetup(null, is("a", a), is("d", d)),
-					mixedSetup(is("e", e), is("a", a), null),
-					lvlSetup(and("c & d", is("c", c),is("d", d))),
-					mixedSetup(is("e", e), null, is("c", c)),
-					mixedSetup(is("b", b), null, is("d", d)),
+					regSetup(and("(a | c) & d", or("a | c", is("a", a), is("c", c)),is("d", d))),
+					mixedSetup(is("e", e), or("a | c", is("a", a), is("c", c))),
+					mixedSetup(is("b", b), is("d", d)),
 					genSetup(and("b & e", is("b", b), is("e", e)))
 			);
 		}

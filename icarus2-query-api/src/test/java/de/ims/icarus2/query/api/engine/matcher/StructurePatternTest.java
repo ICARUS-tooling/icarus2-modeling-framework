@@ -774,7 +774,7 @@ class StructurePatternTest {
 		private IqlElementDisjunction makeDisjunction(int size) {
 			IqlElementDisjunction disjunction = new IqlElementDisjunction();
 			IntStream.range(0, size)
-				.mapToObj(i -> mock(IqlElement.class))
+				.mapToObj(i -> new IqlNode())
 				.forEach(disjunction::addAlternative);
 			return disjunction;
 		}
@@ -11160,6 +11160,11 @@ class StructurePatternTest {
 				// All types of markers intermixed
 				"'[$X [IsAnyGeneration && IsNotAt(3) && IsChildAfter(1),$Y]]', XYYY, *000, 1, { {{0}} {{3}} }",
 				"'[$X [IsNotAt(3) && IsAnyGeneration && IsChildAfter(1),$Y]]', XYYY, *000, 1, { {{0}} {{3}} }",
+
+				/* Complex marker expression. Note that the transformation process
+				 * reorders markers, so we also get a different order of overall results.
+				 */
+				"'[$X [(IsNotAt(3) || IsChildAfter(1)) && (IsGenerationBefore(3) || IsLeaf),$Y]]', XYYY, *000, 3, { {{0}{0}{0}} {{1}{3}{2}} }",
 
 				//TODO add tests for other generation markers once we implement the level filter
 			})
