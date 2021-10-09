@@ -150,10 +150,9 @@ public abstract class AbstractNodeStorage<N extends NodeInfo, E extends Edge> im
 		return edges.get(IcarusUtils.ensureIntegerValueRange(index));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public long indexOfEdge(Structure context, Edge edge) {
-		return edges.indexOf((E) edge);
+		return edges.indexOf(edge);
 	}
 
 	protected NodeInfo getNodeInfo(Item node) {
