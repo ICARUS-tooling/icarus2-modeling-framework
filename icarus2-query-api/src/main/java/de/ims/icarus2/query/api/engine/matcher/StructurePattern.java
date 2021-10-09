@@ -1349,7 +1349,7 @@ public class StructurePattern {
 				nodeAction.accept(filter);
 				Segment seg = segment(filter);
 
-				// For vertical scanning we need scan in front
+				// For vertical filtering we need scan in front
 				if(scan!=null) {
 					seg.push(scan);
 				}
@@ -1389,8 +1389,12 @@ public class StructurePattern {
 			return s1.size()-s2.size();
 		};
 
+		//FIXME both the intersection and union method for markers do not take into account scan placement for special marker types
+		// (frame markers need scan in front, horizontal markers AFTER them)
+
 		/** Combine sequence of intersecting markers */
-		private Segment simpleMarkerIntersection(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment simpleMarkerIntersection(List<IqlMarker> markers, @Nullable Node scan,
+				Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for intersection";
 			Segment seg = new Segment();
@@ -1408,7 +1412,8 @@ public class StructurePattern {
 		}
 
 		/** Create branches for disjunctive markers */
-		private Segment simpleMarkerUnion(List<IqlMarker> markers, Node scan, Consumer<? super Node> nodeAction,
+		private Segment simpleMarkerUnion(List<IqlMarker> markers, @Nullable Node scan,
+				Consumer<? super Node> nodeAction,
 				IntConsumer nestedMarkerAction) {
 			assert markers.size()>1 : "Need 2+ markers for union";
 
