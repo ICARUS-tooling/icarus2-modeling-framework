@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -479,7 +478,6 @@ public class StructurePattern {
 			Node end() { checkNotEmpty(); return end; }
 			int nodes() { return nodes; }
 			boolean isEmpty() { return start==accept; }
-			boolean isSingleton() { return nodes==1; }
 
 			int size() { return size; }
 
@@ -644,35 +642,6 @@ public class StructurePattern {
 				super.replace(other);
 				prefix = other.prefix;
 				suffix = other.suffix;
-			}
-
-			Segment clearPrefix() { Segment s = prefix; prefix = null; return s; }
-			Segment clearSuffix() { Segment s = suffix; suffix = null; return s; }
-
-			/**
-			 * Add other frame as head to this one (if this is empty, replace all content instead):
-			 * <p>
-			 * Append other's prefix if present.
-			 * Push other's suffix if present and this is empty.
-			 * Push other's content.
-			 */
-			@Deprecated
-			void push(Frame other) {
-				requireNonNull(other);
-				if(isEmpty()) {
-					replace(other);
-					return;
-				}
-
-				if(other.hasPrefix()) {
-					checkState("Prefix already set - no clear merge rule available", !hasPrefix());
-					prefix().push(other.prefix());
-				}
-				if(other.hasSuffix()) {
-					push(other.suffix());
-				}
-
-				super.push(other);
 			}
 
 			/**
@@ -956,32 +925,6 @@ public class StructurePattern {
 			return true;
 		}
 
-		/** Check if child element has quantification, disjunction, nesting or multiple actual nodes */
-		private boolean needsCacheForChild(IqlElement child) {
-			switch (child.getType()) {
-			case NODE:
-				return false;
-
-			case DISJUNCTION:
-			case TREE_NODE:
-				return true;
-
-			case GROUPING: {
-				IqlGrouping grouping = (IqlGrouping) child;
-				return grouping.hasQuantifiers() || needsCacheForChild(grouping.getElement());
-			}
-
-			case SEQUENCE: {
-				IqlSequence sequence = (IqlSequence) child;
-				List<IqlElement> elements = sequence.getElements();
-				return elements.size() > 1 || (!elements.isEmpty() && needsCacheForChild(elements.get(0)));
-			}
-
-			default:
-				return false;
-			}
-		}
-
 		private int id() { return id++; }
 
 		private boolean setFindOnly(boolean findOnly) {
@@ -1173,42 +1116,6 @@ public class StructurePattern {
 			}
 
 			return frame;
-		}
-
-		/** Create potentially branching structure for frame-based tree filtering */
-		@Deprecated
-		private Segment frameFilter(IqlMarker marker) {
-			switch (marker.getType()) {
-			case MARKER_CALL: {
-				IqlMarkerCall call = (IqlMarkerCall) marker;
-				return segment(treeFilter(call, FrameFilter.forMarker(call)));
-			}
-
-			case MARKER_EXPRESSION: {
-				LinkedHashSet<FrameFilter> rawFilters = new LinkedHashSet<>();
-				List<Node> nodes = new ObjectArrayList<>();
-				MarkerTransform.traverse(marker,
-						call -> {
-							// Filter redundant markers
-							FrameFilter filter = FrameFilter.forMarker(call);
-							if(rawFilters.add(filter)) {
-								nodes.add(treeFilter(call, filter));
-							}
-						},
-						exp -> {
-							// For expressions we only need to make sure that it's one big disjunction
-							if(exp.getExpressionType()==MarkerExpressionType.CONJUNCTION)
-								throw EvaluationUtils.forIncorrectUse(
-										"Cannot disjunctively combine frame-based generation markers", exp.getExpressionType());
-						});
-
-				// Finally wrap all options into a branch structure
-				return branch(marker, nodes.size(), i -> frame(nodes.get(i)));
-			}
-
-			default:
-				throw EvaluationUtils.forUnsupportedQueryFragment("marker", marker.getType());
-			}
 		}
 
 		private static LevelFilter levelFilter(IqlMarker marker) {
@@ -1466,7 +1373,6 @@ public class StructurePattern {
 			if(marker.getType()==IqlType.MARKER_EXPRESSION) {
 				IqlMarkerExpression exp = (IqlMarkerExpression) marker;
 				source = new IqlListProxy(exp.getItems());
-				//TODO extract filter expression for generations
 			} else {
 				source = marker;
 			}
@@ -1794,7 +1700,7 @@ public class StructurePattern {
 			final boolean forward = modifier!=QueryModifier.LAST;
 
 			resetFindOnly(false);
-			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead
+			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
 			final Node rootScan = explore(forward, false);
 
 			// For now we don't honor the 'consumed' flag on IqlElement instances
@@ -2169,16 +2075,6 @@ public class StructurePattern {
 		}
 
 		// tree methods
-
-		//TODO do we need those methods or is direct access preferred?
-//		/** Length (number of items) of current sequence */
-//		final int length() { return length; }
-//		/** Nesting depth of current node */
-//		final int depth() { return depth; }
-//		/** Height (distance to deepest leaf) of current node */
-//		final int height() { return height; }
-//		/** Index of parent node */
-//		final int parent() { return parent; }
 
 		/** Fetches global index for (child) node at given index */
 		final int childAt(int index) { return indices[index]; }
@@ -2823,7 +2719,6 @@ public class StructurePattern {
 		private Boolean allowMonitor;
 		private Boolean cacheAll;
 
-		//TODO add field for adjusting initial buffer sizes
 		//TODO add fields for configuring the result buffer
 
 		private Builder() { /* no-op */ }
@@ -2957,52 +2852,6 @@ public class StructurePattern {
 
 		@Override
 		protected StructurePattern create() { return new StructurePattern(this); }
-	}
-
-	//TODO add mechanics to properly collect results from multiple buffers
-	@Deprecated
-	static class ResultBuffer {
-		/** Index of the UoI that is being searched */
-		private long index = UNSET_LONG;
-
-		/** Number of mappings stored so far and also the next insertion index */
-		private int size = 0;
-
-		private static final int INITIAL_SIZE = 1<<10;
-
-		/** Position in the target sequence for mappings */
-		private int[] indices = new int[INITIAL_SIZE];
-		/** Associated node that is matched to a certain index */
-		private IqlNode[] nodes = new IqlNode[INITIAL_SIZE];
-
-		void reset(long index, int size) {
-			this.index = index;
-			this.size = 0;
-			if(size>=indices.length) {
-				int newSize = CollectionUtils.growSize(size);
-				indices = Arrays.copyOf(indices, newSize);
-				nodes = Arrays.copyOf(nodes, newSize);
-			}
-		}
-
-		int scope() {
-			return size;
-		}
-
-		void reset(int scope) {
-			size = scope;
-		}
-
-		void map(IqlNode node, int index) {
-			nodes[size] = node;
-			indices[size] = index;
-			size++;
-		}
-
-		void dispatch() {
-			//TODO create immutable and serializable object from current state and send it to subscriber
-			//TODO increment reported counter upon dispatching
-		}
 	}
 
 	/**
@@ -3311,7 +3160,6 @@ public class StructurePattern {
 		/** Flag to signal that a {@link PermConn} has been activated. Used for skipping. (indexed by atom index) */
 		final boolean[] used;
 		/** Flag to indicate whether a slot is optional */
-//		final boolean[] optional; //TODO cleanup
 		/** Flag to indicate that the {@link PermSlot} node for a given index is allowed to use scanning. (indexed by atom index) */
 		boolean scan;
 
@@ -3322,7 +3170,6 @@ public class StructurePattern {
 			next = new Node[size];
 			fences = new int[size];
 			used = new boolean[size];
-//			optional = new boolean[size];
 		}
 
 		void reset() {
@@ -4327,7 +4174,6 @@ public class StructurePattern {
 			final Interval interval = interval(state);
 			// Update search interval and bail early if we fail
 			if((clipIndex && !frame.retainIndices(interval))
-					//TODO split index-based (global) markers and positional (local) markers, refresh the latter inside a Border node that starts a marker graph
 					|| (!clipIndex && !frame.retainPos(interval))) {
 				return false;
 			}

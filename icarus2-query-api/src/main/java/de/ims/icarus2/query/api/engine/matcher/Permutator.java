@@ -52,7 +52,6 @@ public abstract class Permutator {
 
 	private static Template[] templates = new Template[MAX_SIZE];
 
-	@SuppressWarnings("incomplete-switch")
 	public static Permutator forSize(int size) {
 		checkArgument("Size must be 2 or greater", size>1);
 		if(size>MAX_SIZE)
