@@ -10286,23 +10286,37 @@ class StructurePatternTest {
 		 */
 		@Nested
 		class ForMatchModifiers {
+		}
 
-			@Nested
-			class Disjoint {
+		@Nested
+		class ForMatchFlags {
 
-				@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
-				@CsvSource({
-					"'CONSECUTIVE [$X][$Y]', XXYXY, 2, { {{0}{3}} {{2}{4}} }",
-				})
-				@DisplayName("grouping of quantified node with markers")
-				void testHorizontal(String query, String target, int matches,
-						// [node_id][match_id][hits]
-						@IntMatrixArg int[][][] hits) {
-					rawQueryTest(query, target, matches, hits)
-					.queryConfig(QueryConfig.fromQuery(query))
-					.options(Option.DEFAULT_ORDERED_SEQUENCE)
-					.assertResult();
-				}
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'CONSECUTIVE [$X][$Y]', XXYXY, 2, { {{0}{3}} {{2}{4}} }", // skip X at 1
+			})
+			@DisplayName("grouping of quantified node with markers")
+			void testConsecutiveHorizontal(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.options(Option.DEFAULT_ORDERED_SEQUENCE)
+				.assertResult();
+			}
+
+			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+			@CsvSource({
+				"'DISJOINT [$X][$Y]', XXYXY, 2, { {{0}{1}} {{2}{4}} }", // skip X at 3
+			})
+			@DisplayName("grouping of quantified node with markers")
+			void testDisjointHorizontal(String query, String target, int matches,
+					// [node_id][match_id][hits]
+					@IntMatrixArg int[][][] hits) {
+				rawQueryTest(query, target, matches, hits)
+				.queryConfig(QueryConfig.fromQuery(query))
+				.options(Option.DEFAULT_ORDERED_SEQUENCE)
+				.assertResult();
 			}
 		}
 

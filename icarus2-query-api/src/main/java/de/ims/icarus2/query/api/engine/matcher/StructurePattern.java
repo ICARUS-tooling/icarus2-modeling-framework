@@ -2302,6 +2302,10 @@ public class StructurePattern {
 
 		/** Number of mappings stored so far and also the next insertion index */
 		int entry = 0;
+		/** Lowest mapped index in the last match. */
+		int first = UNSET_INT;
+		/** Highest mapped index in the last match. */
+		int last = UNSET_INT;
 
 		/** The frame representing the overall list of items in the container */
 		final RootFrame rootFrame;
@@ -2330,13 +2334,6 @@ public class StructurePattern {
 		 * to the previously set value!
 		 */
 		final ModeTrace[] modes;
-
-		/**
-		 * End index of the last (sub)match, used by repetitions and similar nodes to keep track.
-		 * Initially {@code 0}, turned to {@code -1} for failed matches and to
-		 * the next index to be visited when a match occurred.
-		 */
-//		int last = 0;
 
 		/** Stores the number of entries in the last mapping */
 		int lastMatchSize = 0;
@@ -2441,6 +2438,13 @@ public class StructurePattern {
 			m_node[entry] = nodeId;
 			m_pos[entry] = index;
 			entry++;
+
+			if(first==UNSET_INT || index<first) {
+				first = index;
+			}
+			if(last==UNSET_INT || index>last) {
+				last = index;
+			}
 		}
 
 		final void setMode(int mode, boolean value) { modes[mode].set(value); }
@@ -5843,6 +5847,9 @@ public class StructurePattern {
 					pos++;
 					continue;
 				}
+				state.first = UNSET_INT;
+				state.last = UNSET_INT;
+
 				// Bail as soon as a new search fails
 				if(!next.match(state, pos)) {
 					break;
@@ -5852,13 +5859,13 @@ public class StructurePattern {
 				/*
 				 * We either directly skip ahead in case of consecutive matching
 				 * or check for a continuous match.
-				 * Both the 'last' field and the 'entry' pointer in the state
-				 * object point to a "+1" value, so we don't have to do any
-				 * additional adjustments when comparing here.
 				 */
-				if(consecutive || (frame.last-pos == state.lastMatchSize)) {
-					// Remove entire length of match from search space
-					pos = frame.last;
+				if(consecutive || (state.last-frame.childAt(pos)+1 == state.lastMatchSize)) {
+					/* Remove entire length of match from search space.
+					 * We don't need to do any translation from indices to positional
+					 * values, since we operate on the root frame!
+					 */
+					pos = state.last+1;
 				} else {
 					/*
 					 *  Disjoint property in the presence of vertical navigation
