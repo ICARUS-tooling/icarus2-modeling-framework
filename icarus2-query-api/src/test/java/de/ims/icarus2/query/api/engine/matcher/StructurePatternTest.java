@@ -1390,6 +1390,7 @@ class StructurePatternTest {
 					.build();
 			builder.context(context);
 			payload.getLimit().ifPresent(builder::limit);
+			payload.getFlags().forEach(builder::flag);
 			if(isSet(promote)) {
 				builder.nodeTransform(PROMOTE_NODE);
 			}
@@ -1491,8 +1492,6 @@ class StructurePatternTest {
 			TreeFrame frame = tree[i];
 			frame.parent = parentIndex;
 			frame.index = i;
-			frame.begin = i;
-			frame.end = i;
 			frame.valid = true;
 
 			if(parentIndex != UNSET_INT) {
@@ -10276,6 +10275,34 @@ class StructurePatternTest {
 				rawQueryTest(query, target, matches, hits)
 				.queryConfig(QUERY_CONFIG)
 				.assertResult();
+			}
+		}
+
+		/**
+		 * Test special matcher configurations.
+		 *
+		 * @author Markus Gärtner
+		 *
+		 */
+		@Nested
+		class ForMatchModifiers {
+
+			@Nested
+			class Disjoint {
+
+				@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
+				@CsvSource({
+					"'CONSECUTIVE [$X][$Y]', XXYXY, 2, { {{0}{3}} {{2}{4}} }",
+				})
+				@DisplayName("grouping of quantified node with markers")
+				void testHorizontal(String query, String target, int matches,
+						// [node_id][match_id][hits]
+						@IntMatrixArg int[][][] hits) {
+					rawQueryTest(query, target, matches, hits)
+					.queryConfig(QueryConfig.fromQuery(query))
+					.options(Option.DEFAULT_ORDERED_SEQUENCE)
+					.assertResult();
+				}
 			}
 		}
 
