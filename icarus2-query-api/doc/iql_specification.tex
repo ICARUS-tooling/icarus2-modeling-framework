@@ -1593,9 +1593,11 @@ In this case the only way of restricting results is by using the \iqlType{Result
 	\label{gram:payload}
 	\begin{grammar}	
 		<payload> ::= `ALL' 
-		\alt <bindingsList>? (`FILTER' `BY' <constraint>)? `FIND' <modifier>? <selection>
+		\alt <bindingsList>? (`FILTER' `BY' <constraint>)? `FIND' <modifier>? <flag>* <selection>
 		
-		<modifier> ::= (`FIRST' | `LAST' | `ANY') (<digits> `HITS')?	
+		<modifier> ::= (`FIRST' | `LAST' | `ANY') (<digits> `HITS')?
+		
+		<flag> ::= `DISJOINT' | `CONSECUTIVE' 	
 	\end{grammar}
 	\diagsep
 	\begin{samepage} %TODO need alternative to prevent pagebreak between multiple rrfrag instances
@@ -1608,7 +1610,7 @@ In this case the only way of restricting results is by using the \iqlType{Result
 		`FIND' \sst \\
 			\sst `FIRST' \\ `LAST' \\ `ANY' \est
 			\sst \\ <digits> `HITS' \est
-		\est <selection>
+		\est \sst \\ `DISJOINT' \\ `CONSECUTIVE' \est <selection>
 	\end{rrfrag}
 	\end{samepage}
 \end{gram}
@@ -1635,6 +1637,22 @@ All three available modifiers can also take an optional numerical argument that 
 This \textit{limit} must be a positive non-zero integer that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
 If a modifier is accompanied by a limit value, the \ac{icqp} will report a number of hits per \ac{uoi} no greater than this limit.
 In the absence of any explicitly set limit, the \ac{icqp} will default to 1 if either one of \keyword{FIRST}, \keyword{LAST}, \keyword{ANY} is used.
+
+\subsection{Match Flags}
+\label{sec:match-flags}
+
+In addition to match modifiers (\cref{sec:match-modifiers}) a series of flags can also be used to influence the matching process.
+Those flags are acting as binary switches to activate certain features.
+Currently only two mutually exclusive match flags are available:
+\paragraph{\keyword{CONSECUTIVE}}
+This flag will cause the search to reset the search after every successful hit, starting at the next available index \textbf{after} the end of the previous match.
+For queries that enforce continuous groups of nodes to be matched in a target sequence, this will produce the same results as the \keyword{DISJOINT} flag.
+If non-continuous target sequences can be matched, this flag may skip over content that could produce valid hits.
+\paragraph{\keyword{DISJOINT}}
+In contrast to the \keyword{CONSECUTIVE} flag, this one uses set semantics as basis.
+Successful hits from previous matches are kept and used to exclude parts of the search space from being visited further.
+This is achieved by not clearing the lock state of target elements after each match, incrementally shrinking the available search space.
+Note that search results produced from this flag can horizontally overlap, but may never share actual target elements in their respective mappings!
 
 \subsection{Bindings}
 \label{sec:bindings}

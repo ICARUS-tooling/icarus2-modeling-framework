@@ -222,8 +222,10 @@ public class IqlPayload extends IqlUnique {
 	}
 
 	public enum MatchFlag implements StringResource {
-		/** Matches must not overlap */
+		/** Matches must not share elements in their mappings */
 		DISJOINT("disjoint"),
+		/** Matches must not horizontally overlap */
+		CONSECUTIVE("consecutive"),
 		;
 
 		private final String label;

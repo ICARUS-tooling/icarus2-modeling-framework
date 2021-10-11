@@ -109,16 +109,16 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| bindingsList? (FILTER BY constraint)? FIND matchModifier? selectionStatement EOF
+	| bindingsList? (FILTER BY constraint)? FIND matchModifier? matchFlag* selectionStatement EOF
 	;
 	
-//TODO add modifier to make ICQP only report non-overlapping matches, e.g. a "DISJOINT" flag
 matchModifier
-	: (FIRST | LAST | ANY) (PureDigits HITS)? matchFlag*
+	: (FIRST | LAST | ANY) (PureDigits HITS)?
 	;
 	
 matchFlag
 	: DISJOINT
+	| CONSECUTIVE
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -591,6 +591,7 @@ ANY : 'ANY' | 'any' ;
 AS : 'AS' | 'as' ;
 ASC : 'ASC' | 'asc' ;
 BY : 'BY' | 'by' ;
+CONSECUTIVE : 'CONSECUTIVE' | 'consecutive' ;
 COUNT : 'COUNT' | 'count' ;
 DEFAULT : 'DEFAULT' | 'default' ;
 DESC : 'DESC' | 'desc' ;

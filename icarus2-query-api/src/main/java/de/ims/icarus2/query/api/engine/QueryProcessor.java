@@ -640,11 +640,12 @@ public class QueryProcessor {
 				} else if(canRestrictToOne) {
 					payload.setLimit(1L);
 				}
+			}
 
-				for (MatchFlagContext mfctx : mmctx.matchFlag()) {
-					MatchFlag flag = MatchFlag.parse(mfctx.getText());
-					payload.setFlag(flag, true);
-				}
+			// Handle match flags
+			for (MatchFlagContext mfctx : ctx.matchFlag()) {
+				MatchFlag flag = MatchFlag.parse(mfctx.getText());
+				payload.setFlag(flag, true);
 			}
 
 			// Handle actual selection statement variants
@@ -871,6 +872,9 @@ public class QueryProcessor {
 			// More than one node -> wrap into a proper sequence
 			IqlSequence structure = new IqlSequence();
 			genId(structure);
+			if(defaultOrderedSequence) {
+				structure.addArrangement(NodeArrangement.ORDERED);
+			}
 
 			//TODO rethink the tree entry call here, as it might throw of arrangement assignment in downstream parse calls
 			tree.enter(structure, false);
