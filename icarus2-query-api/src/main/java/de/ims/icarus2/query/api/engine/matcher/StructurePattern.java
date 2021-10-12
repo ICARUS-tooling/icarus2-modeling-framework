@@ -1067,10 +1067,7 @@ public class StructurePattern {
 		}
 
 		/** Free scan exploration. Depending on context it'll be exhaustive or 'findOnly'. */
-		private Node explore(boolean forward, boolean cached) {
-
-			cached |= cacheAll;
-
+		private Node explore(boolean forward) {
 			/*
 			 * No matter how complex the potentially pending marker construct is,
 			 * the attached scan will always work with the same tail (at least
@@ -1465,7 +1462,13 @@ public class StructurePattern {
 
 		private Ping ping(int pingId) { return store(new Ping(id(), pingId)); }
 
-		private Reset reset(boolean consecutive) { return store(new Reset(id(), consecutive)); }
+		private Disjoint disjoint(boolean forward) {
+			return store(new Disjoint(id(), forward));
+		}
+
+		private Consecutive consecutive(boolean forward) {
+			return store(new Consecutive(id(), forward));
+		}
 
 		private Node single(IqlNode source, @Nullable String label, IqlConstraint constraint, int anchorId) {
 			return storeTrackable(new Single(id(), source, matcher(constraint), cache(), member(label), anchorId));
@@ -1477,6 +1480,10 @@ public class StructurePattern {
 
 		private Node exhaust(boolean forward) {
 			return storeTrackable(new Exhaust(id(), forward));
+		}
+
+		private Node rootScan(boolean forward) {
+			return storeTrackable(new RootScan(id(), forward));
 		}
 
 		private Node negate(IqlQuantifier source, Node atom) {
@@ -1529,15 +1536,6 @@ public class StructurePattern {
 				int mode, boolean discontinuous) {
 			return storeTrackable(new Repetition(id(), source, atom, cmin, cmax, mode,
 					buffer(), buffer(), buffer(), discontinuous ? id() : -1));
-		}
-
-		private boolean needsCacheForScan(Node node) {
-			if(node instanceof Single) {
-				// If we have a complex structure AFTER the node, ensure caching!
-				return !node.next.isFinisher();
-			}
-			// Lone single nodes never need external caching
-			return false;
 		}
 
 		private Frame unorderedGroup(List<IqlElement> elements, boolean adjacent, @Nullable Node scan) {
@@ -1598,8 +1596,7 @@ public class StructurePattern {
 						Node head = unwrap(step.start());
 						// Any node but the first can receive an automatic scan attached to it
 						if(!head.isScanCapable() && !head.isFixed()) {
-							// Cashing will be used either for complex inner structure or intermediate nodes
-							step.push(explore(true, needsCacheForScan(head) || i<last));
+							step.push(explore(true));
 						}
 					}
 					// Ensure we don't mix up hoistable content and proactively collapse
@@ -1701,11 +1698,21 @@ public class StructurePattern {
 
 			final boolean disjoint = isFlagSet(MatchFlag.DISJOINT);
 			final boolean consecutive = isFlagSet(MatchFlag.CONSECUTIVE);
+			final boolean rooted = isFlagSet(MatchFlag.ROOTED);
 			final boolean forward = modifier!=QueryModifier.LAST;
 
 			resetFindOnly(false);
 			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
-			final Node rootScan = explore(forward, false);
+			final Node rootScan;
+			if(disjoint) {
+				rootScan = disjoint(forward);
+			} else if(consecutive) {
+				rootScan = consecutive(forward);
+			} else if(rooted) {
+				rootScan = rootScan(forward);
+			} else {
+				rootScan = explore(forward);
+			}
 
 			// For now we don't honor the 'consumed' flag on IqlElement instances
 			final Frame frame = process(rootElement, rootScan);
@@ -1721,11 +1728,6 @@ public class StructurePattern {
 				frame.append(new GlobalConstraint(id(), globalConstraint));
 			}
 
-			// If we need to reset search space after each match, add special Reset node
-			if(disjoint || consecutive) {
-				frame.push(reset(consecutive));
-			}
-
 			// Add size-based filter
 			frame.prefix().push(begin());
 
@@ -1738,7 +1740,9 @@ public class StructurePattern {
 			final Node root = frame.start();
 
 			// Force optimization
-			root.study(new TreeInfo());
+			TreeInfo info = new TreeInfo();
+			root.study(info);
+			//TODO assert tree info and make sure we can't have zero-width assertion as root?
 
 			// Fill state machine setup
 			StateMachineSetup sm = new StateMachineSetup();
@@ -2307,6 +2311,11 @@ public class StructurePattern {
 		/** Highest mapped index in the last match. */
 		int last = UNSET_INT;
 
+		/** Lowest allowed index to be matched. */
+		int min = UNSET_INT;
+		/** Highest allowed index to be matched. */
+		int max = UNSET_INT;
+
 		/** The frame representing the overall list of items in the container */
 		final RootFrame rootFrame;
 
@@ -2473,6 +2482,8 @@ public class StructurePattern {
 			entry = 0;
 			lastMatchSize = 0;
 			size = 0;
+			first = last = UNSET_INT;
+			min = max = UNSET_INT;
 			rootCount = 0;
 			rootFrame.reset();
 			Arrays.fill(roots, UNSET_INT);
@@ -3475,7 +3486,9 @@ public class StructurePattern {
 			/** Exhaustive exploration based on the universal quantifier. */
 			ALL,
 			/** Special node to enforce disjoint results. */
-			RESET,
+			DISJOINT,
+			/** Special node to enforce consecutive (horizontally non-overlapping) results. */
+			CONSECUTIVE,
 			/** Vertical navigation node to enter a child tree. */
 			STEP_INTO,
 			/** Vertical reset node to go back to a definite (outer) frame in the tree. */
@@ -4140,7 +4153,7 @@ public class StructurePattern {
 		@Override
 		boolean match(State state, int pos) {
 			state.dispatchMatch();
-			state.lastMatchSize = state.entry-1;
+			state.lastMatchSize = state.entry;
 
 			/*
 			 *  Little hack in some way: we reset the scope without cleaning
@@ -4836,6 +4849,7 @@ public class StructurePattern {
 			int segmentSize0 = info.segmentSize;
 			next.study(info);
 			minSize = info.segmentSize-segmentSize0;
+			// Use raw minSize for computing "optional" property
 			optional = minSize==0;
 
 			/* For scanning, an optional inner atom behaves similar to a single
@@ -5607,7 +5621,7 @@ public class StructurePattern {
          * @param count the index to start matching at
          * @param count the number of atoms that have matched already
          */
-        boolean matchGreedy(State state, int pos, int count) {
+        private boolean matchGreedy(State state, int pos, int count) {
         	final TreeFrame frame = state.frame;
 			int backLimit = count;
 			// Stores scope handles for reset when backing off
@@ -5665,7 +5679,7 @@ public class StructurePattern {
          * @param pos the index to start matching at
          * @param count the number of atoms that have matched already
          */
-        boolean matchReluctant(State state, int pos, int count) {
+        private boolean matchReluctant(State state, int pos, int count) {
         	final TreeFrame frame = state.frame;
 			for (;;) {
                 // Try finishing match without consuming any more
@@ -5706,7 +5720,7 @@ public class StructurePattern {
          * @param pos the index to start matching at
          * @param count the number of atoms that have matched already
          */
-        boolean matchPossessive(State state, int pos, int count) {
+        private boolean matchPossessive(State state, int pos, int count) {
         	final TreeFrame frame = state.frame;
 			for (; count < cmax;) {
 				// Try as many elements as possible
@@ -5812,63 +5826,67 @@ public class StructurePattern {
 		}
     }
 
-	/** Enforces disjoint match results */
-	static final class Reset extends Node {
-		final boolean consecutive;
+	/** Enforces consecutive match results */
+	static final class Consecutive extends Find {
+		final boolean forward;
 
-		Reset(int id, boolean consecutive) {
+		Consecutive(int id, boolean forward) {
 			super(id);
-			this.consecutive = consecutive;
+			this.forward = forward;
 		}
 
 		@Override
 		public NodeInfo info() {
-			return new NodeInfo(this, Type.RESET)
-					.property(Field.HORIZONTAL, consecutive);
+			return new NodeInfo(this, Type.CONSECUTIVE)
+					.property(Field.FORWARD, forward);
 		}
 
 		@Override
 		boolean match(State state, int pos) {
+			boolean result;
+			if(forward) {
+				result = matchForwards(state, pos);
+			} else {
+				result = matchBackwards(state, pos);
+			}
+			return result;
+		}
+
+		private boolean matchForwards(State state, int pos) {
 			final TreeFrame frame = state.frame;
 			assert frame==state.rootFrame : "Reset node can only operate on root frame!";
-			final int from = frame.from();
 			final int to = frame.to();
+			final int fence = to - minSize + 1;
 
 			boolean result = false;
 
-			while(!state.finished && frame.containsPos(pos)) {
-				/*
-				 *  Skip slots that are already locked from previous matches.
-				 *  We can use 'pos' for indexing here as the frame we're
-				 *  operating on is bound to be the root frame with identity
-				 *  mapping from positional values to actual indices.
-				 */
-				if(state.locked[pos]) {
-					pos++;
+			for (int i = pos; i <= fence && !state.finished;) {
+				if(state.locked[i]) {
+					i++;
 					continue;
 				}
+
+				frame.previousIndex = UNSET_INT;
 				state.first = UNSET_INT;
 				state.last = UNSET_INT;
 
-				// Bail as soon as a new search fails
-				if(!next.match(state, pos)) {
-					break;
-				}
-				result = true;
-				frame.resetWindow(from, to);
+				boolean matched = next.match(state, i);
+
 				/*
 				 * We either directly skip ahead in case of consecutive matching
 				 * or check for a continuous match.
 				 */
-				if(consecutive || (state.last-frame.childAt(pos)+1 == state.lastMatchSize)) {
+				if(matched) {
 					/* Remove entire length of match from search space.
 					 * We don't need to do any translation from indices to positional
 					 * values, since we operate on the root frame!
 					 */
-					pos = state.last+1;
+					i = state.last+1;
+					state.min = i;
+					frame.resetWindow(i, to);
 				} else {
 					/*
-					 *  Disjoint property in the presence of vertical navigation
+					 *  Reset property in the presence of vertical navigation
 					 *  gets a bit trickier:
 					 *  The Finish node lets as accumulate locks across matches,
 					 *  so we incrementally shrink the available search space.
@@ -5878,10 +5896,44 @@ public class StructurePattern {
 					 *  position and let subsequent nodes deal with the locked
 					 *  state of target items.
 					 */
-					pos++;
+					i++;
 				}
 				// Reset stop signal so exploration can have another try
 				state.stop = false;
+				result |= matched;
+			}
+
+			return result;
+		}
+
+		private boolean matchBackwards(State state, int pos) {
+			final TreeFrame frame = state.frame;
+			final int to = frame.to();
+			boolean result = false;
+
+			for (int i = to - minSize + 1; i >= pos && !state.finished;) {
+				if(state.locked[i]) {
+					i--;
+					continue;
+				}
+
+				frame.previousIndex = UNSET_INT;
+				state.first = UNSET_INT;
+				state.last = UNSET_INT;
+
+				boolean matched = next.match(state, i);
+
+				if(matched) {
+					state.max = i-1;
+					frame.resetWindow(pos, i-1);
+					i -= minSize;
+				} else {
+					i--;
+				}
+
+				// Reset stop signal so exploration can have another try
+				state.stop = false;
+				result |= matched;
 			}
 
 			return result;
@@ -5890,7 +5942,127 @@ public class StructurePattern {
 		@Override
 		boolean study(TreeInfo info) {
 			info.stopOnSuccess = true;
-			return next.study(info);
+			return super.study(info);
+		}
+	}
+
+	/** Enforces disjoint match results */
+	static final class Disjoint extends Find {
+		final boolean forward;
+
+		Disjoint(int id, boolean forward) {
+			super(id);
+			this.forward = forward;
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.DISJOINT)
+					.property(Field.FORWARD, forward);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			boolean result;
+			if(forward) {
+				result = matchForwards(state, pos);
+			} else {
+				result = matchBackwards(state, pos);
+			}
+			return result;
+		}
+
+		private boolean matchForwards(State state, int pos) {
+			final TreeFrame frame = state.frame;
+			assert frame==state.rootFrame : "Reset node can only operate on root frame!";
+			int from = frame.from();
+			final int to = frame.to();
+			final int fence = to - minSize + 1;
+
+			boolean result = false;
+
+			for (int i = pos; i <= fence && !state.finished;) {
+				if(state.locked[i]) {
+					i++;
+					continue;
+				}
+
+				frame.previousIndex = UNSET_INT;
+				state.first = UNSET_INT;
+				state.last = UNSET_INT;
+
+				boolean matched = next.match(state, i);
+
+				/*
+				 * We either directly skip ahead in case of consecutive matching
+				 * or check for a continuous match.
+				 */
+				if(matched && (state.last-frame.childAt(i)+1 == state.lastMatchSize)) {
+					/* Remove entire length of match from search space.
+					 * We don't need to do any translation from indices to positional
+					 * values, since we operate on the root frame!
+					 */
+					i = state.last+1;
+				} else {
+					/*
+					 *  Reset property in the presence of vertical navigation
+					 *  gets a bit trickier:
+					 *  The Finish node lets as accumulate locks across matches,
+					 *  so we incrementally shrink the available search space.
+					 *  But we have no easy way of skipping large parts of the
+					 *  input based on the items matched from previous run.
+					 *  Therefore all we can do here is try from the next available
+					 *  position and let subsequent nodes deal with the locked
+					 *  state of target items.
+					 */
+					i++;
+				}
+				// Reset stop signal so exploration can have another try
+				state.stop = false;
+				result |= matched;
+				frame.resetWindow(from, to);
+			}
+
+			return result;
+		}
+
+		private boolean matchBackwards(State state, int pos) {
+			final TreeFrame frame = state.frame;
+    		final int from = frame.from();
+    		final int to = frame.to();
+			boolean result = false;
+
+			for (int i = to - minSize + 1; i >= pos && !state.finished;) {
+				if(state.locked[i]) {
+					i--;
+					continue;
+				}
+
+				frame.previousIndex = UNSET_INT;
+				state.first = UNSET_INT;
+				state.last = UNSET_INT;
+
+				boolean matched = next.match(state, i);
+
+				if(matched && (state.last-frame.childAt(i)+1 == state.lastMatchSize)) {
+					i -= minSize;
+				} else {
+					i--;
+				}
+
+				// Reset stop signal so exploration can have another try
+				state.stop = false;
+				result |= matched;
+				frame.resetWindow(from, to);
+			}
+
+			return result;
+		}
+
+		@Override
+		boolean study(TreeInfo info) {
+			info.stopOnSuccess = true;
+			return super.study(info);
 		}
 	}
 
