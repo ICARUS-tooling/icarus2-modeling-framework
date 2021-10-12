@@ -67,9 +67,10 @@ public class TypeInfo {
 		}
 
 		boolean isMember = Item.class.isAssignableFrom(type);
-		//TODO do we want to determine 'isList' flag here as well?
+		boolean isList = type.isArray() || List.class.isAssignableFrom(type);
+		//TODO do we want to widen the supported types for the 'isList' flag?
 
-		return new TypeInfo(type, null, isMember, false);
+		return new TypeInfo(type, null, isMember, isList);
 	}
 
 	private final Class<?> type;
