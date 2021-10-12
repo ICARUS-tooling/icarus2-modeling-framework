@@ -226,6 +226,8 @@ public class IqlPayload extends IqlUnique {
 		DISJOINT("disjoint"),
 		/** Matches must not horizontally overlap */
 		CONSECUTIVE("consecutive"),
+		/** Search is meant to start at root nodes */
+		ROOTED("rooted"),
 		;
 
 		private final String label;

@@ -119,6 +119,7 @@ matchModifier
 matchFlag
 	: DISJOINT
 	| CONSECUTIVE
+	| ROOTED
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -625,6 +626,7 @@ OR : 'OR' | 'or' ;
 ORDER : 'ORDER' | 'order' ;
 ORDERED : 'ORDERED' | 'ordered';
 RANGE : 'RANGE' | 'range' ;
+ROOTED : 'ROOTED' | 'rooted' ;
 STEP : 'STEP' | 'step' ;
 TRUE : 'TRUE' | 'true' ;
 UNORDERED : 'UNORDERED' | 'unordered';
