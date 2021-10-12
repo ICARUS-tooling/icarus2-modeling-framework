@@ -73,9 +73,7 @@ import de.ims.icarus2.query.api.iql.IqlNamedReference;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
-import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
-import de.ims.icarus2.query.api.iql.IqlTags;
 import de.ims.icarus2.query.api.iql.IqlProperty;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
@@ -90,6 +88,7 @@ import de.ims.icarus2.query.api.iql.IqlScope;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
+import de.ims.icarus2.query.api.iql.IqlTags;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUnique;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
@@ -527,9 +526,6 @@ public class IqlQueryGenerator {
 		build.addNestedChange(IqlTags.CONSTRAINT, IqlType.PREDICATE, config, payload, payload::setConstraint);
 		for (int i = 0; i < config.getCount(IqlType.LANE, DEFAULT_COUNT); i++) {
 			build.addNestedChange(IqlTags.LANES, IqlType.LANE, config, payload, payload::addLane);
-		}
-		for(QueryModifier queryModifier : QueryModifier.values()) {
-			build.addEnumFieldChange(payload::setQueryModifier, IqlTags.QUERY_MODIFIER, queryModifier);
 		}
 		for(MatchFlag flag : MatchFlag.values()) {
 			build.addEnumFieldChange(f -> payload.setFlag(f, true), IqlTags.MATCH_FLAG, flag);
