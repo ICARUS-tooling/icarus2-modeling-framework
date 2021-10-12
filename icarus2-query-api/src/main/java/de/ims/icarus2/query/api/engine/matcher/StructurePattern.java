@@ -99,7 +99,6 @@ import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
-import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
@@ -183,8 +182,6 @@ public class StructurePattern {
 
 	/** The IQL source of structural constraints for this matcher. */
 	private final IqlQueryElement source;
-	/** Defines the general direction for matching. ANY is equivalent to FIRST here. */
-	private final QueryModifier modifier;
 	/** Additional flags controlling search aspects. */
 	private final Set<MatchFlag> flags;
 	/** The root context for evaluations in this pattern */
@@ -193,7 +190,6 @@ public class StructurePattern {
 	private final StateMachineSetup setup;
 
 	private StructurePattern(Builder builder) {
-		modifier = builder.getModifier();
 		flags = builder.geFlags();
 		source = builder.getRoot();
 		context = builder.geContext();
@@ -420,7 +416,6 @@ public class StructurePattern {
 
 		final List<Node> nodes = new ObjectArrayList<>();
 		final LaneContext rootContext;
-		final QueryModifier modifier;
 		final List<IqlNode> rawNodes = new ObjectArrayList<>();
 		final List<Interval> intervals = new ObjectArrayList<>();
 		final List<NodeDef> matchers = new ObjectArrayList<>();
@@ -670,7 +665,6 @@ public class StructurePattern {
 
 		StructureQueryProcessor(Builder builder) {
 			rootContext = builder.geContext();
-			modifier = builder.getModifier();
 			flags = builder.geFlags();
 			limit = builder.getLimit();
 			rootElement = builder.getRoot();
@@ -1699,7 +1693,7 @@ public class StructurePattern {
 			final boolean disjoint = isFlagSet(MatchFlag.DISJOINT);
 			final boolean consecutive = isFlagSet(MatchFlag.CONSECUTIVE);
 			final boolean rooted = isFlagSet(MatchFlag.ROOTED);
-			final boolean forward = modifier!=QueryModifier.LAST;
+			final boolean forward = !isFlagSet(MatchFlag.REVERSE);
 
 			resetFindOnly(false);
 			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
@@ -2750,7 +2744,6 @@ public class StructurePattern {
 		private IqlElement root;
 		private Integer id;
 		private Integer initialBufferSize;
-		private QueryModifier modifier = QueryModifier.ANY;
 		private Long limit;
 		private IqlConstraint filterConstraint;
 		private IqlConstraint globalConstraint;
@@ -2808,15 +2801,6 @@ public class StructurePattern {
 			checkArgument("Initial buffer size must be positive", initialBufferSize>=0);
 			checkState("Initial buffer size already set", this.initialBufferSize==null);
 			this.initialBufferSize = Integer.valueOf(initialBufferSize);
-			return this;
-		}
-
-		public QueryModifier getModifier() { return modifier; }
-
-		public Builder modifier(QueryModifier modifier) {
-			requireNonNull(modifier);
-			checkState("modifier already set", this.modifier==QueryModifier.ANY);
-			this.modifier = modifier;
 			return this;
 		}
 

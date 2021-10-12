@@ -48,10 +48,6 @@ public class IqlPayload extends IqlUnique {
 	@JsonProperty(value=IqlTags.QUERY_TYPE, required=true)
 	private QueryType queryType;
 
-	@JsonProperty(value=IqlTags.QUERY_MODIFIER)
-	@JsonInclude(Include.NON_ABSENT)
-	private Optional<QueryModifier> queryModifier = Optional.empty();
-
 	@JsonProperty(value=IqlTags.LIMIT)
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalLong limit = OptionalLong.empty();
@@ -104,17 +100,12 @@ public class IqlPayload extends IqlUnique {
 					"must either define a global 'constraint' or at least one 'lanes' entry");
 		}
 
-		checkCondition(queryModifier.isPresent() || !limit.isPresent(), "limit/modifier",
-				"cannot define limit without modifier");
-
 		checkCollection(bindings);
 		checkOptionalNested(constraint);
 		checkCollection(lanes);
 	}
 
 	public QueryType getQueryType() { return queryType; }
-
-	public Optional<QueryModifier> getQueryModifier() { return queryModifier; }
 
 	public OptionalLong getLimit() { return limit; }
 
@@ -134,8 +125,6 @@ public class IqlPayload extends IqlUnique {
 
 
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
-
-	public void setQueryModifier(QueryModifier queryModifier) { this.queryModifier = Optional.of(queryModifier); }
 
 	public void setLimit(long limit) {
 		checkArgument("Limit must be positive", limit>0);
@@ -194,33 +183,6 @@ public class IqlPayload extends IqlUnique {
 		public boolean isAllowElements() { return allowElements; }
 	}
 
-	public enum QueryModifier implements StringResource {
-		/** Only the first match is to be reported for every unit-of-interest */
-		FIRST("first"),
-		/** Only the last match is to be reported for every unit-of-interest */
-		LAST("last"),
-		/** Up to one random match is to be reported for every unit-of-interest */
-		ANY("any"),
-		;
-
-		private final String label;
-
-		private QueryModifier(String label) { this.label = label; }
-
-		@Override
-		public String getStringValue() { return label; }
-
-		@JsonValue
-		public String getLabel() { return label; }
-
-		private static final LazyStore<QueryModifier, String> store =
-				LazyStore.forStringResource(QueryModifier.class, true);
-
-		public static QueryModifier parse(String s) {
-			return store.lookup(s);
-		}
-	}
-
 	public enum MatchFlag implements StringResource {
 		/** Matches must not share elements in their mappings */
 		DISJOINT("disjoint"),
@@ -228,6 +190,8 @@ public class IqlPayload extends IqlUnique {
 		CONSECUTIVE("consecutive"),
 		/** Search is meant to start at root nodes */
 		ROOTED("rooted"),
+		/** Set top-level scan direction to reverse */
+		REVERSE("reverse"),
 		;
 
 		private final String label;

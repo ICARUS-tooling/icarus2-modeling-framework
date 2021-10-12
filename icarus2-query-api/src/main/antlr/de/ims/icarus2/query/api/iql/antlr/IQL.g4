@@ -109,16 +109,17 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| bindingsList? (FILTER BY constraint)? FIND matchModifier? matchFlag* selectionStatement EOF
+	| bindingsList? (FILTER BY constraint)? FIND hitsLimit? matchFlag* selectionStatement EOF
 	;
 	
-matchModifier
-	: (FIRST | LAST | ANY) (PureDigits HITS)?
+hitsLimit
+	: PureDigits HITS
 	;
 	
 matchFlag
 	: DISJOINT
 	| CONSECUTIVE
+	| REVERSE
 	| ROOTED
 	;
 	
@@ -588,7 +589,6 @@ sign
 ADJACENT : 'ADJACENT' | 'adjacent';
 ALL : 'ALL' | 'all' ;
 AND : 'AND' | 'and' ;
-ANY : 'ANY' | 'any' ;
 AS : 'AS' | 'as' ;
 ASC : 'ASC' | 'asc' ;
 BY : 'BY' | 'by' ;
@@ -605,7 +605,6 @@ EVEN : 'EVEN' | 'even' ;
 FALSE : 'FALSE' | 'false' ;
 FILTER : 'FILTER' | 'filter' ;
 FIND : 'FIND' | 'find' ;
-FIRST : 'FIRST' | 'first' ;
 FOREACH : 'FOREACH' | 'foreach' ;
 FROM : 'FROM' | 'from' ;
 GROUP : 'GROUP' | 'group' ;
@@ -614,7 +613,6 @@ HITS : 'HITS' | 'hits' ;
 IN : 'IN' | 'in' ;
 LABEL : 'LABEL' | 'label' ;
 LANE : 'LANE' | 'lane' ;
-LAST : 'LAST' | 'last' ;
 LIMIT : 'LIMIT' | 'limit' ;
 NOT : 'NOT' | 'not' ;
 NULL : 'NULL' | 'null' ;
@@ -626,6 +624,7 @@ OR : 'OR' | 'or' ;
 ORDER : 'ORDER' | 'order' ;
 ORDERED : 'ORDERED' | 'ordered';
 RANGE : 'RANGE' | 'range' ;
+REVERSE : 'REVERSE' | 'reverse' ;
 ROOTED : 'ROOTED' | 'rooted' ;
 STEP : 'STEP' | 'step' ;
 TRUE : 'TRUE' | 'true' ;

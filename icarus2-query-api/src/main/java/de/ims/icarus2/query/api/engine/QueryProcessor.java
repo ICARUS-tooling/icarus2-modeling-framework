@@ -77,7 +77,6 @@ import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
-import de.ims.icarus2.query.api.iql.IqlPayload.QueryModifier;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.Quantifiable;
@@ -111,6 +110,7 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.FilledEdgeContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GraphFragmentContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupExpressionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.GroupStatementContext;
+import de.ims.icarus2.query.api.iql.antlr.IQLParser.HitsLimitContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LaneStatementContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.LeftEdgePartContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerCallContext;
@@ -118,7 +118,6 @@ import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerConjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerDisjunctionContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MarkerWrappingContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchFlagContext;
-import de.ims.icarus2.query.api.iql.antlr.IQLParser.MatchModifierContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.MemberLabelContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.NodeArrangementContext;
@@ -621,25 +620,9 @@ public class QueryProcessor {
 			}
 
 			// Handle modifiers
-			MatchModifierContext mmctx = ctx.matchModifier();
-			if(mmctx!=null) {
-				boolean canRestrictToOne = false;
-				if(mmctx.FIRST()!=null) {
-					payload.setQueryModifier(QueryModifier.FIRST);
-					canRestrictToOne = true;
-				} else if(mmctx.LAST()!=null) {
-					payload.setQueryModifier(QueryModifier.LAST);
-					canRestrictToOne = true;
-				} else if(mmctx.ANY()!=null) {
-					payload.setQueryModifier(QueryModifier.ANY);
-					canRestrictToOne = true;
-				}
-
-				if(mmctx.PureDigits()!=null) {
-					payload.setLimit(pureDigits(mmctx.PureDigits().getSymbol()));
-				} else if(canRestrictToOne) {
-					payload.setLimit(1L);
-				}
+			HitsLimitContext hlctx = ctx.hitsLimit();
+			if(hlctx!=null) {
+				payload.setLimit(pureDigits(hlctx.PureDigits().getSymbol()));
 			}
 
 			// Handle match flags

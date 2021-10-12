@@ -10279,15 +10279,8 @@ class StructurePatternTest {
 		}
 
 		/**
-		 * Test special matcher configurations.
-		 *
-		 * @author Markus Gärtner
-		 *
+		 * Test special combinations of {@link MatchFlag} on queries.
 		 */
-		@Nested
-		class ForMatchModifiers {
-		}
-
 		@Nested
 		class ForMatchFlags {
 
@@ -10308,6 +10301,7 @@ class StructurePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'DISJOINT [$X][$Y]', XXYXY, 2, { {{0}{1}} {{2}{4}} }", // skip X at 3
+				"'REVERSE DISJOINT [$X][$Y]', XXYXY, 2, { {{3}{1}} {{4}{2}} }",
 			})
 			@DisplayName("grouping of quantified node with markers")
 			void testDisjointHorizontal(String query, String target, int matches,
@@ -11433,7 +11427,7 @@ class StructurePatternTest {
 				"'{[][]} []', XX, 0, -",
 				"'{[][]} []', XXX, 4, { {{0}{1}{1}{2}} {{1}{0}{2}{1}} {{2}{2}{0}{0}} }",
 				"'{{[]} []} []', XXX, 4, { {{0}{1}{1}{2}} {{1}{0}{2}{1}} {{2}{2}{0}{0}} }",
-				"'FIRST 4 HITS {[][]} [] {[][]}', XXXXX, 4, { {{0}{0}{1}{1}} {{1}{1}{0}{0}} {{2}{2}{2}{2}} {{3}{4}{3}{4}} {{4}{3}{4}{3}} }",
+				"'4 HITS {[][]} [] {[][]}', XXXXX, 4, { {{0}{0}{1}{1}} {{1}{1}{0}{0}} {{2}{2}{2}{2}} {{3}{4}{3}{4}} {{4}{3}{4}{3}} }",
 			})
 			@DisplayName("nested groups of blank nodes")
 			void testBlank(String query, String target, int matches,
@@ -11491,7 +11485,7 @@ class StructurePatternTest {
 				"'ORDERED {[isBefore(2), $X][]}[]', XXX, 1, { {{0}} {{1}} {{2}} }",
 				"'{[isBefore(2), $X][]}[]', XXX, 1, { {{0}} {{1}} {{2}} }",
 				"'ORDERED {[isInside(2,4), $X][]}[]', XXXX, 5, { {{1}{1}{2}{1}{2}} {{0}{0}{0}{2}{1}} {{2}{3}{3}{3}{3}} }",
-				"'FIRST 7 HITS {[isInside(2,4), $X][]}[]', XXXXX, 7, { {{1}{1}{1}{2}{2}{3}{1}} {{0}{0}{0}{0}{0}{0}{2}} {{2}{3}{4}{3}{4}{4}{0}} }",
+				"'7 HITS {[isInside(2,4), $X][]}[]', XXXXX, 7, { {{1}{1}{1}{2}{2}{3}{1}} {{0}{0}{0}{0}{0}{0}{2}} {{2}{3}{4}{3}{4}{4}{0}} }",
 				"'ORDERED []{[isOutside(3,4), $X][$Y]}', XXYXXY, 8, { {{0}{0}{0}{0}{1}{1}{2}{3}} {{1}{1}{4}{4}{4}{4}{4}{4}} {{2}{5}{2}{5}{2}{5}{5}{5}} }",
 				"'[]{[isOutside(3,4), $X][$Y]}', XXYXX, 7, { {{0}{0}{3}{4}{1}{3}{4}} {{1}{4}{0}{0}{4}{1}{1}} {{2}{2}{2}{2}{2}{2}{2}} }",
 				// Marker intersection
@@ -12477,7 +12471,7 @@ class StructurePatternTest {
 			"'<1+>{ORDERED [$X][$Y]}', X-Y, 1, {{{0}}{{2}}}",
 
 			// Multiple matches - ordered
-			"'FIRST <1+>{ORDERED [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
+			"'1 HITS <1+>{ORDERED [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
 			"'<1+>{ORDERED [$X][$Y]}', XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
 
 			// Mismatches - adjacent
@@ -12489,7 +12483,7 @@ class StructurePatternTest {
 			"'<1+>{ADJACENT [$X][$Y]}', XY, 1, {{{0}}{{1}}}",
 
 			// Multiple matches - adjacent
-			"'FIRST <1+>{ADJACENT [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
+			"'1 HITS <1+>{ADJACENT [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
 			// separate matches
 			"'<1+>{ADJACENT [$X][$Y]}', XYXY, 3, {{{0;2}{2}{2}}{{1;3}{1}{3}}}",
 			"'<1+>{ADJACENT [$X][$Y]}', XY-XY, 2, {{{0}{3}}{{1}{4}}}",

@@ -1593,9 +1593,9 @@ In this case the only way of restricting results is by using the \iqlType{Result
 	\label{gram:payload}
 	\begin{grammar}	
 		<payload> ::= `ALL' 
-		\alt <bindingsList>? (`FILTER' `BY' <constraint>)? `FIND' <modifier>? <flag>* <selection>
+		\alt <bindingsList>? (`FILTER' `BY' <constraint>)? `FIND' <hitsLimit>? <flag>* <selection>
 		
-		<modifier> ::= (`FIRST' | `LAST' | `ANY') (<digits> `HITS')?
+		<hitsLimit> ::= <digits> `HITS'
 		
 		<flag> ::= `DISJOINT' | `CONSECUTIVE' 	
 	\end{grammar}
@@ -1607,10 +1607,9 @@ In this case the only way of restricting results is by using the \iqlType{Result
 	\end{rrfrag}
 	\newline
 	\begin{rrfrag}{...}{->}
-		`FIND' \sst \\
-			\sst `FIRST' \\ `LAST' \\ `ANY' \est
+		`FIND'
 			\sst \\ <digits> `HITS' \est
-		\est \sst \\ `DISJOINT' \\ `CONSECUTIVE' \est <selection>
+			\sst \\ `DISJOINT' \\ `CONSECUTIVE' \\ `ROOTED' \\ `REVERSE' \est <selection>
 	\end{rrfrag}
 	\end{samepage}
 \end{gram}
@@ -1623,36 +1622,34 @@ Constraints within a filtering rules have only access to general properties of t
 The do \textbf{not} have access to bound member variables, apart from those defined for the top-level members of lanes (\ref{sec:lanes})!
 Note that filter constraints are \textbf{not} compatible with flat constraints (\ref{sec:flat-constraints}) as they both essentially fill the same function and flat constraints take precedence.
 
-\subsection{Match Modifiers}
-\label{sec:match-modifiers}
+\subsection{Hits Limit}
+\label{sec:hits-limit}
 Per default, the search in \ac{iql} is expected to be exhaustive, i.e. the evaluation engine will attempt to find all of the instances in a target corpus that match the query constraints, potentially reporting individual \acp{uoi} (such as sentences) multiple times  if they contain several occurrences.
 For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as three entries in the result if the query was only meant to find instances of the lemma ``the''.
-This default behavior can be adjusted to only return each \ac{uoi} no more than once by using one of the modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) listed in \cref{gram:payload}.
-The semantics of the \keyword{ANY} modifier are such that the engine may freely pick any one match within a \ac{uoi}.
-Note however, that to support reproducible search results, repeated evaluations of the same query on a corpus are still required to yield the same instances here.
-The exact semantics of \keyword{FIRST} and \keyword{LAST} are depending on the type of structural constraints used in the payload, but generally are based on the natural order of items within the corpus (typically this is the flow of words in a text).
-The evaluation behavior for them is subsequently covered in \cref{sec:sequence-constraints,sec:tree-constraints,sec:graph-constraints}.
-
-All three available modifiers can also take an optional numerical argument that defines the upper bound for the number of hits to be reported, followed by the \keyword{HITS} keyword.
-This \textit{limit} must be a positive non-zero integer that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
-If a modifier is accompanied by a limit value, the \ac{icqp} will report a number of hits per \ac{uoi} no greater than this limit.
-In the absence of any explicitly set limit, the \ac{icqp} will default to 1 if either one of \keyword{FIRST}, \keyword{LAST}, \keyword{ANY} is used.
+This default behavior can be adjusted to return each \ac{uoi} only up to a certain time, via the \keyword{HITS} keyword with a positive non-zero integer in front that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
 
 \subsection{Match Flags}
 \label{sec:match-flags}
 
-In addition to match modifiers (\cref{sec:match-modifiers}) a series of flags can also be used to influence the matching process.
+In addition to the hits limit (\cref{sec:hits-limit}) a series of flags can also be used to influence the matching process.
 Those flags are acting as binary switches to activate certain features.
-Currently only two mutually exclusive match flags are available:
-\paragraph{\keyword{CONSECUTIVE}}
+Currently the following match flags are available, with mutually exclusive flags marked by an asterisk (*):
+\paragraph{\keyword{CONSECUTIVE} *}
 This flag will cause the search to reset the search after every successful hit, starting at the next available index \textbf{after} the end of the previous match.
 For queries that enforce continuous groups of nodes to be matched in a target sequence, this will produce the same results as the \keyword{DISJOINT} flag.
 If non-continuous target sequences can be matched, this flag may skip over content that could produce valid hits.
-\paragraph{\keyword{DISJOINT}}
+\paragraph{\keyword{DISJOINT} *}
 In contrast to the \keyword{CONSECUTIVE} flag, this one uses set semantics as basis.
 Successful hits from previous matches are kept and used to exclude parts of the search space from being visited further.
 This is achieved by not clearing the lock state of target elements after each match, incrementally shrinking the available search space.
 Note that search results produced from this flag can horizontally overlap, but may never share actual target elements in their respective mappings!
+\paragraph{\keyword{ROOTED} *}
+Per default the search engine uses the natural order of elements in a target structure as basis for the top-level scan. 
+When the first node in the structural constraint is a \iqlType{TreeNode} (\cref{sec:json-ld-tree-node}) the special \keyword{ROOTED} flag can be used.
+This will turn the scan to be performed on all the root nodes instead, turning it into a pure top-down search instead.
+\paragraph{\keyword{REVERSE}}
+This flag simply causes the top-level scan to be performed back to front in relation to the natural order of elements in the target structure.
+Note however that this does \textbf{not} affect the direction of nested scans!
 
 \subsection{Bindings}
 \label{sec:bindings}
