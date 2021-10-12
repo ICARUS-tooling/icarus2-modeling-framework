@@ -51,5 +51,5 @@ public interface EngineConfigurator {
 	 *
 	 * @param environments non-empty set of new environments to add
 	 */
-	EngineConfigurator environment(Environment...environments);
+	EngineConfigurator addEnvironment(Environment...environments);
 }

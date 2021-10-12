@@ -1348,7 +1348,7 @@ class StructurePatternTest {
 			RootContext rootContext = EvaluationContext.rootBuilder()
 					.corpus(scope.getCorpus())
 					.scope(scope)
-					.environment(SharedUtilityEnvironments.all())
+					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
 					.lane(Utils.lane())
@@ -1383,7 +1383,7 @@ class StructurePatternTest {
 			RootContext rootContext = EvaluationContext.rootBuilder()
 					.corpus(scope.getCorpus())
 					.scope(scope)
-					.environment(SharedUtilityEnvironments.all())
+					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
 					.lane(lane)

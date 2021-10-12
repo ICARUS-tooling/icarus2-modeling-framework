@@ -246,7 +246,7 @@ public class QueryEngine {
 				return;
 			}
 
-			builder.environment(ConstantsEnvironment.forMapping(data));
+			builder.addEnvironment(ConstantsEnvironment.forMapping(data));
 		}
 
 		private void applyExtensions(RootContextBuilder builder, List<EngineExtension> extensions) {

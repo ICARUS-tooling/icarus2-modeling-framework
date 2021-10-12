@@ -1074,7 +1074,7 @@ public abstract class EvaluationContext {
 
 		private final Set<Environment> environments = new ReferenceOpenHashSet<>();
 
-		public B environment(Environment...environments) {
+		public B addEnvironment(Environment...environments) {
 			requireNonNull(environments);
 			checkArgument("Must provide at least 1 environment to add", environments.length>0);
 			for (Environment environment : environments) {
