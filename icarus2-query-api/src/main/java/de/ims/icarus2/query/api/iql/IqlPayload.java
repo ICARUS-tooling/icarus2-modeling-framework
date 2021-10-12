@@ -24,6 +24,7 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.StringResource;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -103,6 +105,13 @@ public class IqlPayload extends IqlUnique {
 		checkCollection(bindings);
 		checkOptionalNested(constraint);
 		checkCollection(lanes);
+
+		for(MatchFlag flag : flags) {
+			for(MatchFlag excluded : flag.getExcluded()) {
+				checkCondition(!flags.contains(excluded), IqlTags.MATCH_FLAG,
+						String.format("Flag %s excluded by %s", excluded, flag));
+			}
+		}
 	}
 
 	public QueryType getQueryType() { return queryType; }
@@ -196,7 +205,15 @@ public class IqlPayload extends IqlUnique {
 
 		private final String label;
 
+		private Set<MatchFlag> excluded = Collections.emptySet();
+
 		private MatchFlag(String label) { this.label = label; }
+
+		private void exclude(MatchFlag...flags) {
+			Set<MatchFlag> set = new ObjectOpenHashSet<>(flags.length);
+			CollectionUtils.feedItems(set, flags);
+			excluded = Collections.unmodifiableSet(set);
+		}
 
 		@Override
 		public String getStringValue() { return label; }
@@ -204,11 +221,19 @@ public class IqlPayload extends IqlUnique {
 		@JsonValue
 		public String getLabel() { return label; }
 
+		public Set<MatchFlag> getExcluded() { return excluded; }
+
 		private static final LazyStore<MatchFlag, String> store =
 				LazyStore.forStringResource(MatchFlag.class, true);
 
 		public static MatchFlag parse(String s) {
 			return store.lookup(s);
+		}
+
+		static {
+			DISJOINT.exclude(CONSECUTIVE, ROOTED);
+			CONSECUTIVE.exclude(ROOTED, DISJOINT);
+			ROOTED.exclude(DISJOINT, CONSECUTIVE);
 		}
 	}
 }

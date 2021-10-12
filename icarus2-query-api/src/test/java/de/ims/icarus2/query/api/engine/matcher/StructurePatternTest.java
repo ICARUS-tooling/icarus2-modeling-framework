@@ -10287,8 +10287,9 @@ class StructurePatternTest {
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
 				"'CONSECUTIVE [$X][$Y]', XXYXY, 2, { {{0}{3}} {{2}{4}} }", // skip X at 1
+				"'REVERSE CONSECUTIVE [$X][$Y]', XXYXY, 2, { {{3}{1}} {{4}{2}} }",
 			})
-			@DisplayName("grouping of quantified node with markers")
+			@DisplayName("consecutive matches")
 			void testConsecutiveHorizontal(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {
@@ -10303,7 +10304,7 @@ class StructurePatternTest {
 				"'DISJOINT [$X][$Y]', XXYXY, 2, { {{0}{1}} {{2}{4}} }", // skip X at 3
 				"'REVERSE DISJOINT [$X][$Y]', XXYXY, 2, { {{3}{1}} {{4}{2}} }",
 			})
-			@DisplayName("grouping of quantified node with markers")
+			@DisplayName("disjoint matches")
 			void testDisjointHorizontal(String query, String target, int matches,
 					// [node_id][match_id][hits]
 					@IntMatrixArg int[][][] hits) {

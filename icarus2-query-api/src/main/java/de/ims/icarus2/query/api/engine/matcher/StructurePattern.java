@@ -736,7 +736,11 @@ public class StructurePattern {
 				atom = quantify(atom, quantifiers);
 			}
 
-			// Ignore outer scan if our atom is actually capable of scanning
+			/*
+			 *  Ignore outer scan if our atom is actually capable of scanning.
+			 *  This will happen in case of existential negation or universal
+			 *  quantifier being used.
+			 */
 			if(scan!=null && unwrap(atom.start()).isScanCapable()) {
 				scan = null;
 			}
@@ -1690,19 +1694,19 @@ public class StructurePattern {
 				expressionFactory = null;
 			}
 
-			final boolean disjoint = isFlagSet(MatchFlag.DISJOINT);
-			final boolean consecutive = isFlagSet(MatchFlag.CONSECUTIVE);
-			final boolean rooted = isFlagSet(MatchFlag.ROOTED);
 			final boolean forward = !isFlagSet(MatchFlag.REVERSE);
 
 			resetFindOnly(false);
 			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
 			final Node rootScan;
-			if(disjoint) {
+			boolean stopAfterMatch = false;
+			if(isFlagSet(MatchFlag.DISJOINT)) {
 				rootScan = disjoint(forward);
-			} else if(consecutive) {
+				stopAfterMatch = true;
+			} else if(isFlagSet(MatchFlag.CONSECUTIVE)) {
 				rootScan = consecutive(forward);
-			} else if(rooted) {
+				stopAfterMatch = true;
+			} else if(isFlagSet(MatchFlag.ROOTED)) {
 				rootScan = rootScan(forward);
 			} else {
 				rootScan = explore(forward);
@@ -1726,7 +1730,7 @@ public class StructurePattern {
 			frame.prefix().push(begin());
 
 			// Add final dispatch bridge
-			frame.suffix().append(finish(limit, disjoint | consecutive));
+			frame.suffix().append(finish(limit, stopAfterMatch));
 
 			// Now collapse everything again
 			frame.collapse();
@@ -1770,7 +1774,7 @@ public class StructurePattern {
 		private final BiConsumer<Node, Node> cloneHandler;
 		private final IntSupplier idGen;
 
-		/** Cloen handler will be called with pair of (source, clone) nodes. */
+		/** Clone handler will be called with pair of (source, clone) nodes. */
 		CloneContext(IntSupplier idGen, BiConsumer<Node, Node> cloneHandler) {
 			this.idGen = requireNonNull(idGen);
 			this.cloneHandler = requireNonNull(cloneHandler);
