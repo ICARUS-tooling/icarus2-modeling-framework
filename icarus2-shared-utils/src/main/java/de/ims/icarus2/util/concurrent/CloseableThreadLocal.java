@@ -112,6 +112,15 @@ public class CloseableThreadLocal<T> implements Closeable {
 		}
 	}
 
+	/**
+	 * Attempts to close all individual instances for different threads and
+	 * then erases the internal lookup for thread-local instances.
+	 * This effectively renders this {@link CloseableThreadLocal} unusable
+	 * for further calls to {@link #get()} and {@link #set(Object)} as all
+	 * internal storages and reference objects will be {@code null}!
+	 *
+	 * @see java.io.Closeable#close()
+	 */
 	@Override
 	public void close() {
 		// Try to close individual instances first

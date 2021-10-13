@@ -230,6 +230,12 @@ public abstract class EvaluationContext {
 			}
 		}
 
+		@Override
+		protected void cleanup() {
+			variables.values().forEach(CloseableThreadLocal::close);
+			members.values().forEach(CloseableThreadLocal::close);
+		}
+
 		private TypeInfo resolveMemberType(BindingInfo info) {
 			// Easy mode: specifically declared edge type means we don't need to run further checks
 			if(info.isEdges()) {
@@ -552,6 +558,13 @@ public abstract class EvaluationContext {
 			containerStore = lane==null ? null: CloseableThreadLocal.withInitial(this::createStore);
 		}
 
+		@Override
+		protected void cleanup() {
+			if(containerStore!=null) {
+				containerStore.close();
+			}
+		}
+
 		private ContainerStore createStore() {
 			return ContainerStore.from(lane);
 		}
@@ -623,6 +636,13 @@ public abstract class EvaluationContext {
 			element = resolve(builder.element);
 
 			itemStore = element==null ? null : CloseableThreadLocal.withInitial(this::createStore);
+		}
+
+		@Override
+		protected void cleanup() {
+			if(itemStore!=null) {
+				itemStore.close();
+			}
 		}
 
 		private ItemStore createStore() {
@@ -830,7 +850,7 @@ public abstract class EvaluationContext {
 						.map(ModelUtils::getName)
 						.toArray(String[]::new);
 				throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE,
-						String.format("Key '%s' can be handled by multiple cath-all layers: %s",
+						String.format("Key '%s' can be handled by multiple catch-all layers: %s",
 								rawKey, Arrays.toString(names)));
 			}
 
