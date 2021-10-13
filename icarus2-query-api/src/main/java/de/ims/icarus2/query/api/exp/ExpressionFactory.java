@@ -33,7 +33,6 @@ import static de.ims.icarus2.query.api.exp.EvaluationUtils.decideType;
 import static de.ims.icarus2.query.api.exp.EvaluationUtils.unescape;
 import static de.ims.icarus2.query.api.exp.EvaluationUtils.unquote;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.asFragment;
-import static de.ims.icarus2.query.api.iql.AntlrUtils.asSyntaxException;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.cleanNumberLiteral;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.createParser;
 import static de.ims.icarus2.query.api.iql.AntlrUtils.isContinuous;
@@ -71,6 +70,7 @@ import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.exp.Expression.ListExpression;
 import de.ims.icarus2.query.api.exp.Expressions.PathProxy;
+import de.ims.icarus2.query.api.iql.AntlrUtils;
 import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
@@ -179,7 +179,7 @@ public class ExpressionFactory {
 
 			return processExpression(ctx.expression());
 		} catch(RecognitionException e) {
-			throw asSyntaxException(e, "Failed to parse 'expression'");
+			throw AntlrUtils.asSyntaxException(e, "Failed to parse 'expression'");
 		}
 	}
 

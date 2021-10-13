@@ -221,6 +221,8 @@ public class QueryEngine {
 			ExpressionFactory expressionFactory = new ExpressionFactory(rootContext);
 			//TODO build the structural matchers and parse all the expressions
 
+
+
 			throw new UnsupportedOperationException();
 		}
 

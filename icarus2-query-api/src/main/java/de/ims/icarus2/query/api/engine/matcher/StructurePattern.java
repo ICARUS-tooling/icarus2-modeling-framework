@@ -2608,10 +2608,9 @@ public class StructurePattern {
 		public int id() { return id; }
 
 		/**
-		 * @see de.ims.icarus2.query.api.engine.matcher.Matcher#matches(long, de.ims.icarus2.model.api.members.item.Item)
+		 * Performs a full matching run, but does not reset state.
 		 */
-		@Override
-		public boolean matches(long index, Container target) {
+		protected boolean matchesImpl(long index, Container target) {
 			// Sanity check to make sure we operate on the correct thread
 			checkState("Illegal access from foreign thread", thread==Thread.currentThread());
 
@@ -2646,7 +2645,16 @@ public class StructurePattern {
 			}
 
 			// Let the state machine do its work
-			boolean matched = root.match(this, 0);
+			return root.match(this, 0);
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.matcher.Matcher#matches(long, de.ims.icarus2.model.api.members.item.Item)
+		 */
+		@Override
+		public boolean matches(long index, Container target) {
+			boolean matched = matchesImpl(index, target);
+
 			/*
 			 * Stable predicates at this point:
 			 *  - All hits reported.
@@ -2924,7 +2932,10 @@ public class StructurePattern {
 
 		@Override
 		public Expression<?> get() {
-			return context.duplicate(constraint);
+			synchronized (context.getLock()) {
+				return context.duplicate(constraint);
+
+			}
 		}
 	}
 
@@ -2948,9 +2959,11 @@ public class StructurePattern {
 
 		@Override
 		public Matcher<Item> get() {
-			Assignable<? extends Item> element = context.duplicate(this.element);
-			Expression<?> constraint = constraints.get();
-			return new NodeMatcher(id, element, constraint);
+			synchronized (context.getLock()) {
+				Assignable<? extends Item> element = context.duplicate(this.element);
+				Expression<?> constraint = constraints.get();
+				return new NodeMatcher(id, element, constraint);
+			}
 		}
 	}
 
@@ -2972,9 +2985,11 @@ public class StructurePattern {
 
 		@Override
 		public Matcher<Container> get() {
-			Assignable<? extends Container> lane = context.duplicate(this.element);
-			Expression<?> constraint = constraints.get();
-			return new ContainerMatcher(lane, constraint);
+			synchronized (context.getLock()) {
+				Assignable<? extends Container> lane = context.duplicate(this.element);
+				Expression<?> constraint = constraints.get();
+				return new ContainerMatcher(lane, constraint);
+			}
 		}
 	}
 

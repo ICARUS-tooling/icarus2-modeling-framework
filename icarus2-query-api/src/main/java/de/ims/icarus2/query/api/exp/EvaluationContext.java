@@ -171,6 +171,8 @@ public abstract class EvaluationContext {
 		//TODO make sure that any implementation properly duplicates on the target context
 		private final Map<String, CloseableThreadLocal<Assignable<? extends Item>>> members;
 
+		private final Object lock = "<ROOTLOCK>";
+
 		private RootContext(RootContextBuilder builder) {
 			super(builder);
 
@@ -235,6 +237,9 @@ public abstract class EvaluationContext {
 			variables.values().forEach(CloseableThreadLocal::close);
 			members.values().forEach(CloseableThreadLocal::close);
 		}
+
+		@Override
+		public Object getLock() { return lock; }
 
 		private TypeInfo resolveMemberType(BindingInfo info) {
 			// Easy mode: specifically declared edge type means we don't need to run further checks
@@ -555,14 +560,12 @@ public abstract class EvaluationContext {
 			parent = builder.parent;
 
 			lane = resolve(builder.lane);
-			containerStore = lane==null ? null: CloseableThreadLocal.withInitial(this::createStore);
+			containerStore = CloseableThreadLocal.withInitial(this::createStore);
 		}
 
 		@Override
 		protected void cleanup() {
-			if(containerStore!=null) {
-				containerStore.close();
-			}
+			containerStore.close();
 		}
 
 		private ContainerStore createStore() {
@@ -587,7 +590,7 @@ public abstract class EvaluationContext {
 				return new LaneInfo(lane, getScope().getPrimaryLayer());
 			}
 
-			// Non-proxy lane means we need  to resolve the names layer
+			// Non-proxy lane means we need to resolve the named layer
 			Layer layer = requireLayer(lane.getName());
 
 			return new LaneInfo(lane, ensureItemLayer(layer));
@@ -600,7 +603,7 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Optional<Assignable<Container>> getContainerStore() {
-			return Optional.ofNullable(containerStore==null ? null : containerStore.get());
+			return Optional.ofNullable(containerStore.get());
 		}
 	}
 
@@ -635,14 +638,12 @@ public abstract class EvaluationContext {
 
 			element = resolve(builder.element);
 
-			itemStore = element==null ? null : CloseableThreadLocal.withInitial(this::createStore);
+			itemStore = CloseableThreadLocal.withInitial(this::createStore);
 		}
 
 		@Override
 		protected void cleanup() {
-			if(itemStore!=null) {
-				itemStore.close();
-			}
+			itemStore.close();
 		}
 
 		private ItemStore createStore() {
@@ -769,7 +770,7 @@ public abstract class EvaluationContext {
 
 		@Override
 		public Optional<Assignable<Item>> getElementStore() {
-			return Optional.ofNullable(itemStore==null ? null : itemStore.get());
+			return Optional.ofNullable(itemStore.get());
 		}
 
 		@Override
@@ -1023,10 +1024,16 @@ public abstract class EvaluationContext {
 
 	// BEGIN
 
+	/**
+	 * @see #getLock()
+	 */
 	public <T> Expression<T> duplicate(Expression<T> source) {
 		return source.duplicate(this);
 	}
 
+	/**
+	 * @see #getLock()
+	 */
 	public <T> Assignable<T> duplicate(Assignable<T> source) {
 		return source.duplicate(this);
 	}
@@ -1034,6 +1041,16 @@ public abstract class EvaluationContext {
 	public <T> Expression<T> optimize(Expression<T> source) {
 		return source.optimize(this);
 	}
+
+	/**
+	 * Returns an object that can be used to synchronize client calls
+	 * after the setup phase. Note that {@link Expression} implementations
+	 * need not use this lock for synchronization in their {@link Expression#duplicate(EvaluationContext)}
+	 * method. The same is true for other members of the expression framework,
+	 * such as {@link Assignable}. Instead client code should synchronize the
+	 * top-most code section that invokes the duplication process.
+	 */
+	public Object getLock() { return getRootContext().getLock(); }
 
 	private static final TypeInfo[] NO_ARGS = {};
 
