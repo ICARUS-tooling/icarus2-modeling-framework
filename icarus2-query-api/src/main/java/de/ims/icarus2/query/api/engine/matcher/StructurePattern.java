@@ -2369,7 +2369,7 @@ public class StructurePattern {
 		/** Keys for the node mapping */
 		int[] m_node;
 		/** Values for the node mapping, i.e. the associated indices */
-		int[] m_pos;
+		int[] m_index;
 		/** Marks individual nodes as excluded from further matching */
 		boolean[] locked;
 
@@ -2380,7 +2380,7 @@ public class StructurePattern {
 			roots = new int[initialSize];
 			trace = new int[initialSize];
 			m_node = new int[initialSize];
-			m_pos = new int[initialSize];
+			m_index = new int[initialSize];
 			locked = new boolean[initialSize];
 
 			globalMarkers = setup.getGlobalMarkers();
@@ -2430,7 +2430,7 @@ public class StructurePattern {
 		final void resetScope(int scope) {
 			while(entry>scope) {
 				entry--;
-				locked[m_pos[entry]] = false;
+				locked[m_index[entry]] = false;
 			}
 		}
 
@@ -2443,7 +2443,7 @@ public class StructurePattern {
 			locked[index] = true;
 
 			m_node[entry] = nodeId;
-			m_pos[entry] = index;
+			m_index[entry] = index;
 			entry++;
 
 			if(first==UNSET_INT || index<first) {
@@ -2565,7 +2565,7 @@ public class StructurePattern {
 					.toArray(int[][]::new);
 			borders = source.borders.clone();
 			mapping = IntStream.range(0, source.entry)
-					.mapToObj(i -> new Mapping(source.m_node[i], source.m_pos[i]))
+					.mapToObj(i -> new Mapping(source.m_node[i], source.m_index[i]))
 					.collect(Collectors.toList());
 			anchors = Stream.of(source.anchors)
 					.mapToInt(a -> a.index)
@@ -2670,7 +2670,7 @@ public class StructurePattern {
 			final int newSize = CollectionUtils.growSize(oldSize, minCapacity);
 			elements = new Item[newSize];
 			m_node = new int[newSize];
-			m_pos = new int[newSize];
+			m_index = new int[newSize];
 			locked = new boolean[newSize];
 			trace = new int[newSize];
 			roots = new int[newSize];

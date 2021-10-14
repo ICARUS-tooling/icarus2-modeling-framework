@@ -1165,7 +1165,7 @@ public class InteractiveMatcher {
 			int count = state.entry;
 			mapping = new ArrayList<>(count);
 			for (int i = 0; i < count; i++) {
-				mapping.add(Pair.pair(state.m_node[i], state.m_pos[i]));
+				mapping.add(Pair.pair(state.m_node[i], state.m_index[i]));
 			}
 
 			Collections.sort(mapping, (m1, m2) -> {

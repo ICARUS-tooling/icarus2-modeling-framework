@@ -294,7 +294,7 @@ class StructurePatternTest {
 					if(i>0) {
 						System.out.print(", ");
 					}
-					System.out.printf("%d->%d",_int(state.m_node[i]), _int(state.m_pos[i]));
+					System.out.printf("%d->%d",_int(state.m_node[i]), _int(state.m_index[i]));
 				}
 				System.out.println("]");
 			}
@@ -1544,7 +1544,7 @@ class StructurePatternTest {
 					}
 					sb.append(state.m_node[i])
 						.append("->")
-						.append(state.m_pos[i]);
+						.append(state.m_index[i]);
 				}
 				sb.append('}');
 				text = sb.toString();
@@ -1785,7 +1785,7 @@ class StructurePatternTest {
 		private void assertUnordered(State state, StateProxy proxy) {
 			Set<Pair<Integer, Integer>> entries = new LinkedHashSet<>(mapping);
 			for (int i = 0; i < mapping.size(); i++) {
-				Pair<Integer, Integer> m = Pair.pair(state.m_node[i], state.m_pos[i]);
+				Pair<Integer, Integer> m = Pair.pair(state.m_node[i], state.m_index[i]);
 				if(!entries.remove(m))
 					throw new AssertionError(String.format("Unexpected mapping at index %d in result #%d:\ngiven: %s\nexpected: %s]",
 							_int(index), _int(i), proxy, mapping));
@@ -1802,7 +1802,7 @@ class StructurePatternTest {
 					.as("Node id mismatch in mapping at index %d in result #%d:\n%s",
 							_int(i), _int(index), proxy)
 					.isEqualTo(m.first.intValue());
-				assertThat(state.m_pos[i])
+				assertThat(state.m_index[i])
 					.as("Position mismatch in mapping at index %d in result #%d for node %d:\n%s",
 							_int(i), _int(index), _int(state.m_node[i]), proxy)
 					.isEqualTo(m.second.intValue());
