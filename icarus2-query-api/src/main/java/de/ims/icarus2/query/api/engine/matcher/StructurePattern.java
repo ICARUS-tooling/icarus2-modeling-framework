@@ -3847,12 +3847,24 @@ public class StructurePattern {
 				return false;
 			}
 
+			// Ensure we adhere to global boundaries
+			if(state.min!=UNSET_INT &&  index<state.min) {
+				return false;
+			}
+			if(state.max!=UNSET_INT && index>state.max) {
+				return false;
+			}
+
+			return matchContent(state, frame, pos, index);
+		}
+
+		protected boolean matchContent(State state, TreeFrame frame, int pos, int index) {
 			// We match every node, so no extra check needed to refresh 'previousIndex'
 			frame.previousIndex = index;
 
 			// Store member mapping so that other constraints can reference it
 			if(memberId!=UNSET_INT) {
-				state.members[memberId].assign(state.elements[pos]);
+				state.members[memberId].assign(state.elements[index]);
 			}
 			// Store tree anchor
 			if(anchorId!=UNSET_INT) {
@@ -3916,24 +3928,7 @@ public class StructurePattern {
 		}
 
 		@Override
-		boolean match(State state, int pos) {
-			final TreeFrame frame = state.frame;
-
-			if(!frame.containsPos(pos)) {
-				return false;
-			}
-
-			final int index = frame.childAt(pos);
-
-			// Bail on locked index
-			if(state.locked[index]) {
-				return false;
-			}
-
-			// Ensure adjacent matching if desired
-			if(frame.previousIndex!=UNSET_INT && frame.previousIndex!=index-1) {
-				return false;
-			}
+		protected boolean matchContent(State state, TreeFrame frame, int pos, int index) {
 
 			final Cache cache = state.caches[cacheId];
 
