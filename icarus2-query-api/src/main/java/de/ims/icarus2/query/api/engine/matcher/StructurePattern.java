@@ -40,6 +40,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -114,8 +115,12 @@ import de.ims.icarus2.util.tree.IntTree;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -248,8 +253,9 @@ public class StructurePattern {
 		/** Hint for the starting size of all buffer structures */
 		int initialSize = INITIAL_SIZE;
 
-		/** Stores all the raw node definitions from the query extracted from {@link #source} */
-		IqlNode[] rawNodes = {};
+		/** All the nodes in the query that can occur in result mappings. The
+		 * position in this array equals their respective {@code mappingId} value. */
+		IqlNode[] mappedNodes = {};
 		/** Constraint from the 'FILTER BY' section */
 		Supplier<Matcher<Container>> filterConstraint;
 		/** Constraint from the 'HAVING' section */
@@ -299,8 +305,8 @@ public class StructurePattern {
 		Node[] getNodes() { return nodes; }
 		RangeMarker[] getGlobalMarkers() { return globalMarkers; }
 		RangeMarker[] getNestedMarkers() { return nestedMarkers; }
-		IqlNode[] getRawNodes() { return rawNodes; }
-		int[] getHits() { return new int[rawNodes.length]; }
+		IqlNode[] getMappedNodes() { return mappedNodes; }
+		int[] getHits() { return new int[mappedNodes.length]; }
 		int[] getBorders() { return new int[borderCount]; }
 		boolean[] getPings() { return new boolean[pingCount]; }
 		Matcher<Container> makeFilterConstraint() {
@@ -416,7 +422,7 @@ public class StructurePattern {
 
 		final List<Node> nodes = new ObjectArrayList<>();
 		final LaneContext rootContext;
-		final List<IqlNode> rawNodes = new ObjectArrayList<>();
+		final List<IqlNode> mappedNodes = new ObjectArrayList<>();
 		final List<Interval> intervals = new ObjectArrayList<>();
 		final List<NodeDef> matchers = new ObjectArrayList<>();
 		final List<MemberDef> members = new ObjectArrayList<>();
@@ -709,23 +715,29 @@ public class StructurePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 			final int anchorId = isTree && ((IqlTreeNode)source).getChildren().isPresent() ? anchor() : UNSET_INT;
+			final int mappingId = (label!=null || constraint!=null) ? mappedNodes.size() : UNSET_INT;
+
+			if(mappingId!=UNSET_INT) {
+				mappedNodes.add(source);
+			}
 
 			Segment atom;
 
 			// Process actual node content
 			if(constraint==null) {
 				// Dummy nodes don't get added to the "proper nodes" list
-				atom = segment(empty(source, label, anchorId));
+				Empty node = empty(source, mappingId, label, anchorId);
+				atom = segment(node);
 			} else {
 				// Full fledged node with local constraints and potentially a member label
 
-				rawNodes.add(source);
 				// Prepare context and expression processing
 				context = rootContext.derive()
 						.element(source)
 						.build();
 				expressionFactory = new ExpressionFactory(context);
-				atom = segment(single(source, label, constraint, anchorId));
+				Single node = single(source, mappingId, label, constraint, anchorId);
+				atom = segment(node);
 				// Reset context
 				expressionFactory = null;
 				context = null;
@@ -973,13 +985,14 @@ public class StructurePattern {
 			return node;
 		}
 
-		private Node storeTrackable(Node node) {
+		@SuppressWarnings("unchecked")
+		private <N extends Node> N storeTrackable(Node node) {
 			store(node);
 			if(monitor) {
 				trackedNodes.add(node);
 				node = new Track(node);
 			}
-			return node;
+			return (N) node;
 		}
 
 		private Frame frame(Node node) {
@@ -1414,8 +1427,8 @@ public class StructurePattern {
 			return intervalIndex;
 		}
 
-		private Node empty(IqlQueryElement source, @Nullable String label, int anchorId) {
-			return storeTrackable(new Empty(id(), source, member(label), anchorId));
+		private Empty empty(IqlQueryElement source, int mappingId, @Nullable String label, int anchorId) {
+			return storeTrackable(new Empty(id(), source, mappingId, member(label), anchorId));
 		}
 
 		private Begin begin() { return store(new Begin(id())); }
@@ -1430,19 +1443,19 @@ public class StructurePattern {
 
 		private Filter filter(boolean reset, int gateId) { return store(new Filter(id(), reset, gateId)); }
 
-		private Node finish(long limit, boolean stopAfterMatch) {
+		private Finish finish(long limit, boolean stopAfterMatch) {
 			return storeTrackable(new Finish(id(), limit, stopAfterMatch));
 		}
 
-		private Node permutate(IqlQueryElement source, int permId, boolean adjacent, Node[] atoms) {
+		private PermInit permutate(IqlQueryElement source, int permId, boolean adjacent, Node[] atoms) {
 			return storeTrackable(new PermInit(id(), source, permId, !adjacent, atoms));
 		}
 
-		private Node permutationElement(int permId, int slot) {
+		private PermSlot permutationElement(int permId, int slot) {
 			return storeTrackable(new PermSlot(id(), permId, slot));
 		}
 
-		private Node tree(IqlTreeNode source, int anchorId, Node child, TreeConn conn) {
+		private Tree tree(IqlTreeNode source, int anchorId, Node child, TreeConn conn) {
 			return storeTrackable(new Tree(id(), source, anchorId, child, conn));
 		}
 
@@ -1450,11 +1463,11 @@ public class StructurePattern {
 			return store(new TreeConn(id(), source, anchorId));
 		}
 
-		private Node closure(IqlQueryElement source, LevelFilter levelFilter, int pingId) {
+		private TreeClosure closure(IqlQueryElement source, LevelFilter levelFilter, int pingId) {
 			return storeTrackable(new TreeClosure(id(), source, closure(), levelFilter, cache(), pingId));
 		}
 
-		private Node treeFilter(IqlQueryElement source, FrameFilter filter) {
+		private TreeFilter treeFilter(IqlQueryElement source, FrameFilter filter) {
 			return storeTrackable(new TreeFilter(id(), source, filter));
 		}
 
@@ -1468,27 +1481,27 @@ public class StructurePattern {
 			return store(new Consecutive(id(), forward));
 		}
 
-		private Node single(IqlNode source, @Nullable String label, IqlConstraint constraint, int anchorId) {
-			return storeTrackable(new Single(id(), source, matcher(constraint), cache(), member(label), anchorId));
+		private Single single(IqlNode source, int mappingId, @Nullable String label, IqlConstraint constraint, int anchorId) {
+			return storeTrackable(new Single(id(), source, mappingId, matcher(constraint), cache(), member(label), anchorId));
 		}
 
-		private Node find() {
+		private Find find() {
 			return storeTrackable(new Find(id()));
 		}
 
-		private Node exhaust(boolean forward) {
+		private Exhaust exhaust(boolean forward) {
 			return storeTrackable(new Exhaust(id(), forward));
 		}
 
-		private Node rootScan(boolean forward) {
+		private RootScan rootScan(boolean forward) {
 			return storeTrackable(new RootScan(id(), forward));
 		}
 
-		private Node negate(IqlQuantifier source, Node atom) {
+		private Negation negate(IqlQuantifier source, Node atom) {
 			return storeTrackable(new Negation(id(), source, cache(), atom));
 		}
 
-		private Node all(IqlQuantifier source, Node atom) {
+		private All all(IqlQuantifier source, Node atom) {
 			return storeTrackable(new All(id(), source, atom));
 		}
 
@@ -1530,7 +1543,7 @@ public class StructurePattern {
 					atoms.toArray(new Node[atoms.size()]))));
 		}
 
-		private Node repetition(IqlQuantifier source, Node atom, int cmin, int cmax,
+		private Repetition repetition(IqlQuantifier source, Node atom, int cmin, int cmax,
 				int mode, boolean discontinuous) {
 			return storeTrackable(new Repetition(id(), source, atom, cmin, cmax, mode,
 					buffer(), buffer(), buffer(), discontinuous ? id() : -1));
@@ -1748,7 +1761,7 @@ public class StructurePattern {
 			sm.trackedNodes = trackedNodes.toArray(new Node[0]);
 			sm.filterConstraint = filter;
 			sm.globalConstraint = global;
-			sm.rawNodes = rawNodes.toArray(new IqlNode[0]);
+			sm.mappedNodes = mappedNodes.toArray(new IqlNode[0]);
 			sm.limit = limit;
 			sm.root = root;
 			sm.cacheCount = cacheCount;
@@ -2267,8 +2280,10 @@ public class StructurePattern {
 		/** Total number of items in container */
 		int size = UNSET_INT;
 
-		/** Raw nodes from the query, order matches the items in 'matchers' */
-		final IqlNode[] nodes;
+		final IqlNode[] mappedNodes;
+		final Reference2IntMap<IqlNode> mappedIds;
+		final Object2IntMap<String> mappedLabels;
+
 		/** All the atomic nodes defined in the query */
 		final Matcher<Item>[] matchers;
 		/** Storage end points for mapping member labels to matched instances */
@@ -2386,7 +2401,21 @@ public class StructurePattern {
 			globalMarkers = setup.getGlobalMarkers();
 			nestedMarkers = setup.getNestedMarkers();
 
-			nodes = setup.getRawNodes();
+			mappedNodes = setup.getMappedNodes();
+			mappedIds = new Reference2IntOpenHashMap<>(mappedNodes.length);
+			mappedIds.defaultReturnValue(UNSET_INT);
+			for (int i = 0; i < mappedNodes.length; i++) {
+				mappedIds.put(mappedNodes[i], i);
+			}
+			mappedLabels = new Object2IntOpenHashMap<>();
+			mappedIds.reference2IntEntrySet().forEach(e -> {
+				IqlNode node = e.getKey();
+				Optional<String> label = node.getLabel();
+				if(label!=null && label.isPresent()) {
+					mappedLabels.put(label.get(), e.getIntValue());
+				}
+			});
+
 			hits = setup.getHits();
 			borders = setup.getBorders();
 			pings = setup.getPings();
@@ -2418,6 +2447,10 @@ public class StructurePattern {
 		}
 
 		public Snapshot snapshot() { return new Snapshot(this); }
+
+		public IqlNode nodeForId(int mappingId) { return mappedNodes[mappingId]; }
+		public int idForNode(IqlNode node) { return mappedIds.getInt(node); }
+		public int idForLabel(String label) { return mappedLabels.getInt(label); }
 
 		/** Fetch current scope id, i.e. a marker for resetting.  */
 		final int scope() {
@@ -3382,7 +3415,10 @@ public class StructurePattern {
 		/** Keys for properties in {@link NodeInfo}. */
 		public enum Field {
 			MEMBER(Integer.class),
+			@Deprecated
 			NODE(Integer.class),
+			MAPPING(Integer.class),
+			MATCHER(Integer.class),
 			CACHE(Integer.class),
 			SCOPE_BUFFER(Integer.class),
 			POSITION_BUFFER(Integer.class),
@@ -3456,6 +3492,8 @@ public class StructurePattern {
 			EMPTY,
 			/** Regular search node with internal constraints. */
 			SINGLE,
+			/** Transferred mapping from another lane. */
+			ALLOCATE,
 			/** Scan that searches the remaining space exhaustively. */
 			SCAN_EXHAUSTIVE,
 			/** Scan that stops after first match. */
@@ -3804,18 +3842,20 @@ public class StructurePattern {
 
 	/** Helper for "empty" nodes that are only existentially quantified. */
 	static class Empty extends ProperNode {
+		final int mappingId;
 		final int memberId;
 		final int anchorId;
 
-		Empty(int id, IqlQueryElement source, int memberId, int anchorId) {
+		Empty(int id, IqlQueryElement source, int mappingId, int memberId, int anchorId) {
 			super(id, source);
+			this.mappingId = mappingId;
 			this.memberId = memberId;
 			this.anchorId = anchorId;
 		}
 
 		@Override
 		Node clone(CloneContext ctx) {
-			Node clone = new Empty(ctx.id(), source, memberId, anchorId);
+			Node clone = new Empty(ctx.id(), source, mappingId, memberId, anchorId);
 			clone.setNext(ctx.clone(next));
 			return clone;
 		}
@@ -3823,6 +3863,7 @@ public class StructurePattern {
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.EMPTY)
+					.property(Field.MAPPING, mappingId)
 					.property(Field.MEMBER, memberId)
 					.property(Field.ANCHOR, anchorId);
 		}
@@ -3859,6 +3900,10 @@ public class StructurePattern {
 		}
 
 		protected boolean matchContent(State state, TreeFrame frame, int pos, int index) {
+			if(mappingId!=UNSET_INT) {
+				// Keep track of preliminary match
+				state.map(mappingId, index);
+			}
 			// We match every node, so no extra check needed to refresh 'previousIndex'
 			frame.previousIndex = index;
 
@@ -3902,18 +3947,18 @@ public class StructurePattern {
 
 	/** Matches an inner constraint to a specific node, employing memoization. */
 	static final class Single extends Empty {
-		final int nodeId;
+		final int matcherId;
 		final int cacheId;
 
-		Single(int id, IqlNode source, int nodeId, int cacheId, int memberId, int anchorId) {
-			super(id, source, memberId, anchorId);
-			this.nodeId = nodeId;
+		Single(int id, IqlNode source, int mappingId, int nodeId, int cacheId, int memberId, int anchorId) {
+			super(id, source, mappingId, memberId, anchorId);
+			this.matcherId = nodeId;
 			this.cacheId = cacheId;
 		}
 
 		@Override
 		Node clone(CloneContext ctx) {
-			Node clone = new Single(ctx.id(), (IqlNode)source, nodeId, cacheId, memberId, anchorId);
+			Node clone = new Single(ctx.id(), (IqlNode)source, mappingId, matcherId, cacheId, memberId, anchorId);
 			clone.setNext(ctx.clone(next));
 			return clone;
 		}
@@ -3921,8 +3966,9 @@ public class StructurePattern {
 		@Override
 		public NodeInfo info() {
 			return new NodeInfo(this, Type.SINGLE)
-					.property(Field.NODE, nodeId)
+					.property(Field.MATCHER, matcherId)
 					.property(Field.CACHE, cacheId)
+					.property(Field.MAPPING, mappingId)
 					.property(Field.MEMBER, memberId)
 					.property(Field.ANCHOR, anchorId);
 		}
@@ -3938,8 +3984,8 @@ public class StructurePattern {
 				value = cache.getValue(index);
 			} else {
 				// Unknown index -> compute local constraints once and cache result
-				final Matcher<Item> m = state.matchers[nodeId];
-				assert m!=null : "Null matcher at node-id "+nodeId;
+				final Matcher<Item> m = state.matchers[matcherId];
+				assert m!=null : "Null matcher at matcher-id "+matcherId;
 				final Item item = state.elements[index];
 				assert item!=null : "Null item at index "+index;
 				value = m.matches(index, item);
@@ -3948,7 +3994,7 @@ public class StructurePattern {
 
 			if(value) {
 				// Keep track of preliminary match
-				state.map(nodeId, index);
+				state.map(mappingId, index);
 
 				// Store member mapping so that other constraints can reference it
 				if(memberId!=UNSET_INT) {
@@ -3973,7 +4019,7 @@ public class StructurePattern {
 
 				if(value) {
 					// Store last successful match
-					state.hits[nodeId] = index;
+					state.hits[mappingId] = index;
 				}
 			}
 
@@ -3994,7 +4040,7 @@ public class StructurePattern {
 		public String toString() {
 			return ToStringBuilder.create(this)
 					.add("id", id)
-					.add("nodeId", nodeId)
+					.add("matcherId", matcherId)
 					.add("cacheId", cacheId)
 					.add("memberId", memberId)
 					.add("anchorId", anchorId)
@@ -4212,6 +4258,35 @@ public class StructurePattern {
 
 		@Override
 		boolean isFinisher() { return true; }
+	}
+
+	/** Basic "link" node for joining multiple {@link StructurePattern} through pre-allocated mappings. */
+	static final class Allocate extends ProperNode {
+		final int memberId;
+
+		Allocate(int id, IqlQueryElement source, int memberId) {
+			super(id, source);
+			this.memberId = memberId;
+		}
+
+		@Override
+		public NodeInfo info() {
+			return new NodeInfo(this, Type.ALLOCATE)
+					.property(Field.MEMBER, memberId);
+		}
+
+		@Override
+		boolean match(State state, int pos) {
+			// TODO fetch pre-allocated position(s) from buffer and check against current index
+			return super.match(state, pos);
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.create(this)
+					.add("memberId", memberId)
+					.build();
+		}
 	}
 
 	static abstract class Clip extends ProperNode {

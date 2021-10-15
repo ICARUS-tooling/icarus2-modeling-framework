@@ -40,6 +40,8 @@ import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_X;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_X_IC;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.EQUALS_Y;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.MAP_0;
+import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.MAP_1;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NODE_0;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NODE_1;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.NODE_2;
@@ -323,6 +325,9 @@ class StructurePatternTest {
 		static final int NODE_0 = 0;
 		static final int NODE_1 = 1;
 		static final int NODE_2 = 2;
+		static final int MAP_0 = 0;
+		static final int MAP_1 = 1;
+		static final int MAP_2 = 2;
 		static final int CACHE_0 = 0;
 		static final int CACHE_1 = 1;
 		static final int CACHE_2 = 2;
@@ -505,6 +510,12 @@ class StructurePatternTest {
 		}
 		sb.append(rawQuery, lastAppend, rawQuery.length());
 		return sb.toString();
+	}
+
+	static IqlNode[] mockMappedNodes(int size) {
+		return IntStream.range(0, size)
+				.mapToObj(i -> mock(IqlNode.class))
+				.toArray(IqlNode[]::new);
 	}
 
 	/** Expected query structure (only applies to inner {@link IqlElement} instances!) */
@@ -2077,11 +2088,11 @@ class StructurePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[1];
+					sms.mappedNodes = mockMappedNodes(1);
 					sms.cacheCount = 1;
 					sms.initialSize = 10;
 					sms.root = seq(
-							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+							new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 							new Finish(id(), NO_LIMIT, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X));
 					return sms;
@@ -2116,12 +2127,12 @@ class StructurePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[2];
+					sms.mappedNodes = mockMappedNodes(2);
 					sms.cacheCount = 2;
 					sms.initialSize = 10;
 					sms.root = seq(
-							new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+							new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+							new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 							new Finish(id(), NO_LIMIT, false));
 					sms.matchers = matchers(matcher(0, EQUALS_X), matcher(1, EQUALS_Y));
 					return sms;
@@ -2175,13 +2186,13 @@ class StructurePatternTest {
 
 					StateMachineSetup setup(int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.rawNodes = new IqlNode[1];
+						sms.mappedNodes = mockMappedNodes(1);
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.initialSize = 10;
 						sms.root = seq(
 								new Exhaust(id(), true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+								new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2298,13 +2309,13 @@ class StructurePatternTest {
 
 					StateMachineSetup setup(int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.rawNodes = new IqlNode[1];
+						sms.mappedNodes = mockMappedNodes(1);
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.initialSize = 10;
 						sms.root = seq(
 								new Exhaust(id(), true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+								new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2420,13 +2431,13 @@ class StructurePatternTest {
 
 					StateMachineSetup setup(int  limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.rawNodes = new IqlNode[1];
+						sms.mappedNodes = mockMappedNodes(1);
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.initialSize = 10;
 						sms.root = seq(
 								new Exhaust(id(), false),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+								new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2547,7 +2558,7 @@ class StructurePatternTest {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.rawNodes = new IqlNode[1];
+						sms.mappedNodes = mockMappedNodes(1);
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.initialSize = 10;
@@ -2555,7 +2566,7 @@ class StructurePatternTest {
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
 								new Exhaust(id(), true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+								new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2699,7 +2710,7 @@ class StructurePatternTest {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.rawNodes = new IqlNode[1];
+						sms.mappedNodes = mockMappedNodes(1);
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.initialSize = 10;
@@ -2707,7 +2718,7 @@ class StructurePatternTest {
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
 								new Exhaust(id(), true),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+								new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -2850,7 +2861,7 @@ class StructurePatternTest {
 
 					StateMachineSetup setup(Interval region, int limit) {
 						StateMachineSetup sms = new StateMachineSetup();
-						sms.rawNodes = new IqlNode[1];
+						sms.mappedNodes = mockMappedNodes(1);
 						sms.cacheCount = 1;
 						sms.limit = limit;
 						sms.initialSize = 10;
@@ -2858,7 +2869,7 @@ class StructurePatternTest {
 						sms.root = seq(
 								new DynamicClip(id(), mock(IqlMarkerCall.class), true, REGION_0),
 								new Exhaust(id(), false),
-								new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+								new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 								new Finish(id(), limit, false));
 						sms.matchers = matchers(matcher(0, EQUALS_X));
 						return sms;
@@ -3012,13 +3023,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -3035,15 +3046,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, NO_STOP));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3093,13 +3104,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -3114,15 +3125,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3192,13 +3203,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3276,13 +3287,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), NO_LIMIT, false));
@@ -3344,15 +3355,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CMAX, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3427,13 +3438,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -3448,15 +3459,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.GREEDY, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3505,13 +3516,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(matcher(0, EQUALS_X));
@@ -3526,15 +3537,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3572,15 +3583,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.POSSESSIVE, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X),
@@ -3625,13 +3636,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
@@ -3709,13 +3720,13 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[1];
+							sms.mappedNodes = mockMappedNodes(1);
 							sms.cacheCount = 1;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
 									new Proxy(NODE_1), // we need this to motivate the reluctant expansion
 									new Finish(id(), NO_LIMIT, false));
@@ -3778,15 +3789,15 @@ class StructurePatternTest {
 						@Override
 						public StateMachineSetup setup() {
 							StateMachineSetup sms = new StateMachineSetup();
-							sms.rawNodes = new IqlNode[2];
+							sms.mappedNodes = mockMappedNodes(2);
 							sms.cacheCount = 2;
 							sms.bufferCount = 3;
 							sms.initialSize = 10;
 							sms.root = seq(
 									new Repetition(id(), mock(IqlQuantifier.class),
-											new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+											new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 											CMIN, CINF, StructurePattern.RELUCTANT, BUFFER_0, BUFFER_1, BUFFER_2, -1),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR),
 									new Finish(id(), NO_LIMIT, false));
 							sms.matchers = matchers(
 									matcher(0, EQUALS_X_IC),
@@ -3857,13 +3868,13 @@ class StructurePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[2];
+					sms.mappedNodes = mockMappedNodes(2);
 					sms.cacheCount = 2;
 					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0,
-									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
-									new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR)),
+									new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR)),
 							new Finish(id(), NO_LIMIT, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
@@ -3937,13 +3948,13 @@ class StructurePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[1];
+					sms.mappedNodes = mockMappedNodes(1);
 					sms.cacheCount = 1;
 					sms.limit = 1;
 					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0,
-									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
+									new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR),
 									null),
 							new Finish(id(), 1, false));
 					sms.matchers = matchers(
@@ -3995,14 +4006,14 @@ class StructurePatternTest {
 				@Override
 				public StateMachineSetup setup() {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[2];
+					sms.mappedNodes = mockMappedNodes(2);
 					sms.cacheCount = 2;
 					sms.initialSize = 10;
 					sms.root = seq(
 							branch(0,
 									null,
-									new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR)),
-							new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR), // needed to force reluctant expansion
+									new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, NO_ANCHOR)),
+							new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, NO_ANCHOR), // needed to force reluctant expansion
 							new Finish(id(), NO_LIMIT, false));
 					sms.matchers = matchers(
 							matcher(0, EQUALS_A),
@@ -4085,7 +4096,7 @@ class StructurePatternTest {
 						boolean hasChild = i<preds.length-1;
 						matchers[i] = matcher(i, preds[i]);
 						IqlTreeNode treeNode = mock(IqlTreeNode.class);
-						atoms[i] = new Single(id(), treeNode, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
+						atoms[i] = new Single(id(), treeNode, i, i, i, NO_MEMBER, hasChild ? i : UNSET_INT);
 					}
 
 					Node atom = atoms[atoms.length-1];
@@ -4108,7 +4119,7 @@ class StructurePatternTest {
 					scan.study(new TreeInfo());
 
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[preds.length];
+					sms.mappedNodes = mockMappedNodes(preds.length);
 					sms.cacheCount = preds.length;
 					sms.anchorCount = preds.length-1;
 					sms.initialSize = 10;
@@ -4243,7 +4254,7 @@ class StructurePatternTest {
 
 				Node atom = seq(
 						new TreeClosure(id(), mock(IqlMarkerCall.class), CLOSURE_0, levelFilter, CACHE_2, PING_0),
-						new Single(id(), mock(IqlNode.class), NODE_1, CACHE_1, NO_MEMBER, UNSET_INT),
+						new Single(id(), mock(IqlNode.class), MAP_1, NODE_1, CACHE_1, NO_MEMBER, UNSET_INT),
 						new Ping(id(), PING_0)
 				);
 
@@ -4253,7 +4264,7 @@ class StructurePatternTest {
 				last(atom).setNext(conn);
 
 				StateMachineSetup sms = new StateMachineSetup();
-				sms.rawNodes = new IqlNode[2];
+				sms.mappedNodes = mockMappedNodes(2);
 				sms.cacheCount = 3; // 0 = first node, 1 = closure, 2 = second node
 				sms.anchorCount = 1;
 				sms.closureCount = 1;
@@ -4261,7 +4272,7 @@ class StructurePatternTest {
 				sms.initialSize = 10;
 				sms.root = seq(
 						new Exhaust(id(), true),
-						new Single(id(), mock(IqlNode.class), NODE_0, CACHE_0, NO_MEMBER, ANCHOR_0),
+						new Single(id(), mock(IqlNode.class), MAP_0, NODE_0, CACHE_0, NO_MEMBER, ANCHOR_0),
 						tree,
 						new Finish(id(), NO_LIMIT, NO_STOP)
 				);
@@ -4359,7 +4370,7 @@ class StructurePatternTest {
 					List<Node> nodes = new ArrayList<>();
 					for (int i = 0; i < predicates.length; i++) {
 						nodes.add(new Exhaust(id(), true));
-						nodes.add(new Single(id++, mock(IqlNode.class), i, i, NO_MEMBER, NO_ANCHOR));
+						nodes.add(new Single(id++, mock(IqlNode.class), i, i, i, NO_MEMBER, NO_ANCHOR));
 					}
 					nodes.add(new Finish(id(), limit, false));
 					return nodes.toArray(new Node[0]);
@@ -4369,7 +4380,7 @@ class StructurePatternTest {
 				private StateMachineSetup setup(int limit, CharPredicate...predicates) {
 					int nodeCount = predicates.length;
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[nodeCount];
+					sms.mappedNodes = mockMappedNodes(nodeCount);
 					sms.cacheCount = nodeCount;
 					sms.limit = limit;
 					sms.initialSize = 10;
@@ -4539,7 +4550,7 @@ class StructurePatternTest {
 			class BranchAndRepetition {
 				private StateMachineSetup setup(Node...options) {
 					StateMachineSetup sms = new StateMachineSetup();
-					sms.rawNodes = new IqlNode[2];
+					sms.mappedNodes = mockMappedNodes(2);
 					sms.cacheCount = 2;
 					sms.initialSize = 10;
 					sms.root = seq(
