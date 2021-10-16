@@ -54,6 +54,10 @@ public class IqlResult extends AbstractIqlQueryElement {
 
 	@JsonProperty(IqlTags.PERCENT)
 	@JsonInclude(Include.NON_DEFAULT)
+	private boolean first = false;
+
+	@JsonProperty(IqlTags.PERCENT)
+	@JsonInclude(Include.NON_DEFAULT)
 	private boolean percent = false;
 
 	@JsonProperty(IqlTags.SORTINGS)
@@ -82,11 +86,15 @@ public class IqlResult extends AbstractIqlQueryElement {
 
 	public boolean isPercent() { return percent; }
 
+	public boolean isFirst() { return first; }
+
 	public List<IqlSorting> getSortings() { return CollectionUtils.unmodifiableListProxy(sortings); }
 
 	public void setLimit(long limit) { checkArgument(limit>0); this.limit = OptionalLong.of(limit); }
 
 	public void setPercent(boolean percent) { this.percent = percent; }
+
+	public void setFirst(boolean first) { this.first = first; }
 
 	public void addResultInstruction(IqlResultInstruction instruction) { resultInstructions.add(requireNonNull(instruction)); }
 

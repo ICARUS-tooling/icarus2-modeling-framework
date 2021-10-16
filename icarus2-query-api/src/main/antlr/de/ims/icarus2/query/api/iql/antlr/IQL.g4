@@ -156,6 +156,7 @@ structuralConstraint
 	
 hitsLimit
 	: PureDigits HITS
+	| SINGLE
 	;
 	
 matchFlag
@@ -328,7 +329,7 @@ groupExpression
  * engine will pick.
  */
 resultStatement
-	: (LIMIT limit=unsignedIntegerLiteral PERCENT?)? orderExpressionList? EOF
+	: (LIMIT FIRST? limit=unsignedIntegerLiteral PERCENT?)? orderExpressionList? EOF
 	;
 	
 orderExpressionList
@@ -605,6 +606,7 @@ EVEN : 'EVEN' | 'even' ;
 FALSE : 'FALSE' | 'false' ;
 FILTER : 'FILTER' | 'filter' ;
 FIND : 'FIND' | 'find' ;
+FIRST : 'FIRST' | 'first' ;
 FOREACH : 'FOREACH' | 'foreach' ;
 FROM : 'FROM' | 'from' ;
 GROUP : 'GROUP' | 'group' ;
@@ -626,6 +628,7 @@ ORDERED : 'ORDERED' | 'ordered';
 RANGE : 'RANGE' | 'range' ;
 REVERSE : 'REVERSE' | 'reverse' ;
 ROOTED : 'ROOTED' | 'rooted' ;
+SINGLE : 'SINGLE' | 'single' ;
 STEP : 'STEP' | 'step' ;
 TRUE : 'TRUE' | 'true' ;
 UNORDERED : 'UNORDERED' | 'unordered';

@@ -171,6 +171,8 @@ public final class IqlTags {
 
 	public static final String PERCENT = IQL_NS_PREFIX+"percent";
 
+	public static final String FIRST = IQL_NS_PREFIX+"first";
+
 	public static final String START = IQL_NS_PREFIX+"start";
 
 	public static final String STOP = IQL_NS_PREFIX+"stop";

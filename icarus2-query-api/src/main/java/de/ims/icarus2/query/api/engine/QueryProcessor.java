@@ -339,6 +339,8 @@ public class QueryProcessor {
 				.ifPresent(result::setLimit);
 			// Optional percentage flag
 			result.setPercent(ctx.PERCENT()!=null);
+			// Optional 'first' flag
+			result.setFirst(ctx.FIRST()!=null);
 			// Optional order instructions
 			if(ctx.orderExpressionList()!=null) {
 				List<IqlSorting> sortings = new ArrayList<>();
@@ -348,7 +350,9 @@ public class QueryProcessor {
 				sortings.forEach(result::addSorting);
 			}
 
-			if(!primary && (result.isPercent() || result.getLimit().isPresent()
+			if(!primary && (result.isPercent()
+					|| result.isFirst()
+					|| result.getLimit().isPresent()
 					|| !result.getSortings().isEmpty())) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
 						"Non-primary result statement contains sorting/percent/limit declarations: {}",
@@ -705,7 +709,11 @@ public class QueryProcessor {
 				// Handle modifiers
 				HitsLimitContext hlctx = ctx.hitsLimit();
 				if(hlctx!=null) {
-					lane.setLimit(pureDigits(hlctx.PureDigits().getSymbol()));
+					if(hlctx.SINGLE()!=null) {
+						lane.setLimit(1L);
+					} else {
+						lane.setLimit(pureDigits(hlctx.PureDigits().getSymbol()));
+					}
 				}
 
 				// Handle match flags

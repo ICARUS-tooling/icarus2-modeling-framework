@@ -629,6 +629,8 @@ public class IqlQueryGenerator {
 		result.addResultType(rng.random(ResultType.class));
 
 		build.addFieldChange(result::setLimit, IqlTags.LIMIT, Long.MAX_VALUE);
+		build.addFieldChange(result::setPercent, IqlTags.PERCENT, true);
+		build.addFieldChange(result::setFirst, IqlTags.FIRST, true);
 		for(ResultType resultType : ResultType.values()) {
 			build.addEnumFieldChange(result::addResultType, IqlTags.RESULT_TYPES, resultType);
 		}
