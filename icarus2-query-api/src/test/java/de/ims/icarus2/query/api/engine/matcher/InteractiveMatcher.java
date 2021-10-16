@@ -112,9 +112,9 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
-import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Snapshot;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
@@ -1491,12 +1491,12 @@ public class InteractiveMatcher {
 
 				@Override
 				protected Boolean doInBackground() throws Exception {
-					StructureMatcher matcher = pattern.matcher();
+					StructureMatcher matcher = pattern.matcherBuilder().build();
 					if(tree!=null) {
 						StructurePatternTest.applyTree(matcher, tree);
 					}
 					matcher.monitor(monitor);
-					matcher.resultHandler(state -> results.add(new Result(state)));
+					matcher.resultConsumer(state -> results.add(new Result(state)));
 					return _boolean(matcher.matches(0, target));
 				}
 

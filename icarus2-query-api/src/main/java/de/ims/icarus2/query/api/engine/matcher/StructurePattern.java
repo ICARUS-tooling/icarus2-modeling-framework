@@ -95,11 +95,11 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
+import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
-import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierModifier;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
@@ -188,7 +188,7 @@ public class StructurePattern {
 	/** The IQL source of structural constraints for this matcher. */
 	private final IqlQueryElement source;
 	/** Additional flags controlling search aspects. */
-	private final Set<MatchFlag> flags;
+	private final Set<IqlLane.MatchFlag> flags;
 	/** The root context for evaluations in this pattern */
 	private final LaneContext context;
 	/** Blueprint for instantiating a new {@link StructureMatcher} */
@@ -210,19 +210,15 @@ public class StructurePattern {
 	public IqlQueryElement getSource() { return source; }
 
 	/**
-	 * Crates a new matcher that uses this state machine and that can be safely used from
-	 * within a single thread.
+	 * Returns a builder to configure and instantiate a new {@link StructureMatcher}.
 	 * <p>
 	 * Important Note:<br>
 	 * This method <b>MUST</b> be called from the thread that is intended to
 	 * be used for the actual matching, as the underlying {@link EvaluationContext}
-	 * instances use {@link ThreadLocal} to fetch expressions and assignables.
+	 * instances use {@link ThreadLocal} buffers to fetch expressions and assignables.
 	 */
-	//TODO add arguments to delegate result buffer, dispatch output and attach monitoring
-	public StructureMatcher matcher() {
-		final int id = matcherIdGen.getAndIncrement();
-
-		return new StructureMatcher(setup, id);
+	public MatcherBuilder matcherBuilder() {
+		return new MatcherBuilder(this, matcherIdGen.getAndIncrement());
 	}
 
 	public NodeInfo[] info() {
@@ -252,6 +248,9 @@ public class StructurePattern {
 
 		/** Hint for the starting size of all buffer structures */
 		int initialSize = INITIAL_SIZE;
+
+		/** Flag to indicate whether monitoring of the state machine is supported. */
+		boolean allowMonitor = false;
 
 		/** All the nodes in the query that can occur in result mappings. The
 		 * position in this array equals their respective {@code mappingId} value. */
@@ -433,9 +432,9 @@ public class StructurePattern {
 		final IqlElement rootElement;
 		final IqlConstraint filterConstraint;
 		final IqlConstraint globalConstraint;
-		final Set<MatchFlag> flags;
+		final Set<IqlLane.MatchFlag> flags;
 
-		final boolean monitor;
+		final boolean allowMonitor;
 		final Function<IqlNode, IqlNode> nodeTransform;
 		final boolean cacheAll;
 
@@ -677,13 +676,13 @@ public class StructurePattern {
 			filterConstraint = builder.getFilterConstraint();
 			globalConstraint = builder.getGlobalConstraint();
 
-			monitor = builder.isAllowMonitor();
+			allowMonitor = builder.isAllowMonitor();
 			nodeTransform = builder.getNodeTransform();
 			cacheAll = builder.isCacheAll();
 		}
 
 		/** Check whether given flag is set in current query context. */
-		private boolean isFlagSet(MatchFlag flag) { return flags.contains(flag); }
+		private boolean isFlagSet(IqlLane.MatchFlag flag) { return flags.contains(flag); }
 
 		/** Process element as independent frame */
 		private Frame process(IqlElement source, @Nullable Node scan) {
@@ -988,7 +987,7 @@ public class StructurePattern {
 		@SuppressWarnings("unchecked")
 		private <N extends Node> N storeTrackable(Node node) {
 			store(node);
-			if(monitor) {
+			if(allowMonitor) {
 				trackedNodes.add(node);
 				node = new Track(node);
 			}
@@ -1707,19 +1706,19 @@ public class StructurePattern {
 				expressionFactory = null;
 			}
 
-			final boolean forward = !isFlagSet(MatchFlag.REVERSE);
+			final boolean forward = !isFlagSet(IqlLane.MatchFlag.REVERSE);
 
 			resetFindOnly(false);
 			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
 			final Node rootScan;
 			boolean stopAfterMatch = false;
-			if(isFlagSet(MatchFlag.DISJOINT)) {
+			if(isFlagSet(IqlLane.MatchFlag.DISJOINT)) {
 				rootScan = disjoint(forward);
 				stopAfterMatch = true;
-			} else if(isFlagSet(MatchFlag.CONSECUTIVE)) {
+			} else if(isFlagSet(IqlLane.MatchFlag.CONSECUTIVE)) {
 				rootScan = consecutive(forward);
 				stopAfterMatch = true;
-			} else if(isFlagSet(MatchFlag.ROOTED)) {
+			} else if(isFlagSet(IqlLane.MatchFlag.ROOTED)) {
 				rootScan = rootScan(forward);
 			} else {
 				rootScan = explore(forward);
@@ -1757,6 +1756,7 @@ public class StructurePattern {
 
 			// Fill state machine setup
 			StateMachineSetup sm = new StateMachineSetup();
+			sm.allowMonitor = allowMonitor;
 			sm.nodes = nodes.toArray(new Node[0]);
 			sm.trackedNodes = trackedNodes.toArray(new Node[0]);
 			sm.filterConstraint = filter;
@@ -2279,10 +2279,13 @@ public class StructurePattern {
 		Container target;
 		/** Total number of items in container */
 		int size = UNSET_INT;
+		/** Index of the target container */
+		long index = UNSET_INT;
 
 		final IqlNode[] mappedNodes;
 		final Reference2IntMap<IqlNode> mappedIds;
 		final Object2IntMap<String> mappedLabels;
+		final boolean allowMonitor;
 
 		/** All the atomic nodes defined in the query */
 		final Matcher<Item>[] matchers;
@@ -2367,7 +2370,7 @@ public class StructurePattern {
 		 */
 		TreeFrame frame;
 
-		Consumer<State> resultHandler;
+		Consumer<State> resultConsumer;
 
 		// Growing Buffers
 
@@ -2397,6 +2400,8 @@ public class StructurePattern {
 			m_node = new int[initialSize];
 			m_index = new int[initialSize];
 			locked = new boolean[initialSize];
+
+			allowMonitor = setup.allowMonitor;
 
 			globalMarkers = setup.getGlobalMarkers();
 			nestedMarkers = setup.getNestedMarkers();
@@ -2513,6 +2518,7 @@ public class StructurePattern {
 			entry = 0;
 			lastMatchSize = 0;
 			size = 0;
+			index = UNSET_LONG;
 			first = last = UNSET_INT;
 			min = max = UNSET_INT;
 			rootCount = 0;
@@ -2521,20 +2527,22 @@ public class StructurePattern {
 			frame = rootFrame;
 		}
 
-		final void dispatchMatch() {
-			if(resultHandler!=null) {
-				resultHandler.accept(this);
+		void dispatchMatch() {
+			if(resultConsumer!=null) {
+				resultConsumer.accept(this);
 			}
 		}
 
 		final void monitor(Monitor monitor) {
+			requireNonNull(monitor);
 			checkState("Monitor already set", this.monitor==null);
+			checkState("Monitoring not allowed", allowMonitor);
 			this.monitor = monitor;
 		}
 
-		final void resultHandler(Consumer<State> resultHandler) {
-			checkState("Result handler already set", this.resultHandler==null);
-			this.resultHandler = resultHandler;
+		final void resultConsumer(Consumer<State> resultConsumer) {
+			checkState("Result cnosumer already set", this.resultConsumer==null);
+			this.resultConsumer = resultConsumer;
 		}
 
 		// tree interface
@@ -2629,12 +2637,30 @@ public class StructurePattern {
 		/** The node of the state machine to start matching with. */
 		final Node root;
 
-		StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
-			super(stateMachineSetup);
+		final ResultHandler resultHandler;
 
+		/** SPecial constructor for {@link NonResettingMatcher} subclass. */
+		private StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
+			super(stateMachineSetup);
 			this.id = id;
 			thread = Thread.currentThread();
 			this.root = stateMachineSetup.getRoot();
+			resultHandler = null;
+		}
+
+		/** Create and populate matcher from builder data. */
+		StructureMatcher(MatcherBuilder builder) {
+			super(builder.setup());
+
+			this.id = builder.id();
+			thread = Thread.currentThread();
+
+			if(builder.monitor()!=null) {
+				monitor(builder.monitor());
+			}
+
+			root = builder.setup().getRoot();
+			resultHandler = builder.resultHandler();
 		}
 
 		@Override
@@ -2651,6 +2677,8 @@ public class StructurePattern {
 			if(filterConstraint!=null && !filterConstraint.matches(index, target)) {
 				return false;
 			}
+
+			this.index = index;
 
 			size = strictToInt(target.getItemCount());
 			int requiredBufferSize = size + 1;
@@ -2698,6 +2726,15 @@ public class StructurePattern {
 			return matched;
 		}
 
+		@Override
+		final void dispatchMatch() {
+			if(resultHandler==null) {
+				super.dispatchMatch();
+			} else {
+				resultHandler.accept(this);
+			}
+		}
+
 		private void growBuffers(int minCapacity) {
 			final int oldSize = elements.length;
 			final int newSize = CollectionUtils.growSize(oldSize, minCapacity);
@@ -2736,6 +2773,50 @@ public class StructurePattern {
 				tree[i] = new TreeFrame(newSize);
 			}
 		}
+	}
+
+	public static class MatcherBuilder extends AbstractBuilder<MatcherBuilder, StructureMatcher> {
+
+		private final StructurePattern source;
+		private final int id;
+
+		private ResultHandler resultHandler;
+		private Monitor monitor;
+
+		private MatcherBuilder(StructurePattern source, int id) {
+			this.source = requireNonNull(source);
+			this.id = id;
+		}
+
+		ResultHandler resultHandler() { return resultHandler; }
+
+		public MatcherBuilder resultHandler(ResultHandler resultHandler) {
+			requireNonNull(resultHandler);
+			checkState("Result handler already set", this.resultHandler==null);
+			this.resultHandler = resultHandler;
+			return this;
+		}
+
+		Monitor monitor() { return monitor; }
+
+		public MatcherBuilder monitor(Monitor monitor) {
+			requireNonNull(monitor);
+			checkState("Monitor already set", this.monitor==null);
+			this.monitor = monitor;
+			return this;
+		}
+
+		StateMachineSetup setup() { return source.setup; }
+		int id() { return id; }
+
+		@Override
+		protected void validate() {
+			checkState("Result handler not set", resultHandler!=null);
+		}
+
+		@Override
+		protected StructureMatcher create() { return new StructureMatcher(this); }
+
 	}
 
 	/**
@@ -2793,7 +2874,7 @@ public class StructurePattern {
 		private IqlConstraint filterConstraint;
 		private IqlConstraint globalConstraint;
 		private LaneContext context;
-		private final Set<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
+		private final Set<IqlLane.MatchFlag> flags = EnumSet.noneOf(IqlLane.MatchFlag.class);
 		private Function<IqlNode, IqlNode> nodeTransform;
 		private Boolean allowMonitor;
 		private Boolean cacheAll;
@@ -2894,16 +2975,16 @@ public class StructurePattern {
 			return this;
 		}
 
-		public Set<MatchFlag> geFlags() { return EnumSet.copyOf(flags); }
+		public Set<IqlLane.MatchFlag> geFlags() { return EnumSet.copyOf(flags); }
 
-		public Builder flag(MatchFlag flag) {
+		public Builder flag(IqlLane.MatchFlag flag) {
 			requireNonNull(flag);
 			checkState("flag already set", !flags.contains(flag));
 			flags.add(flag);
 			return this;
 		}
 
-		public Builder flags(Collection<MatchFlag> flags) {
+		public Builder flags(Collection<IqlLane.MatchFlag> flags) {
 			requireNonNull(flags);
 			checkArgument("set of flags must not be empty", !flags.isEmpty());
 			this.flags.addAll(flags);

@@ -182,7 +182,6 @@ import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
-import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
@@ -263,7 +262,7 @@ class StructurePatternTest {
 		return b -> b.limit(limit);
 	}
 
-	static final Consumer<? super StructurePattern.Builder> DISJOINT = b -> b.flag(MatchFlag.DISJOINT);
+	static final Consumer<? super StructurePattern.Builder> DISJOINT = b -> b.flag(IqlLane.MatchFlag.DISJOINT);
 	static final Consumer<? super StructurePattern.Builder> CACHE_ALL = b -> b.cacheAll(true);
 	static final Consumer<? super StructurePattern.Builder> LIMIT_SINGLE = b -> b.limit(1);
 
@@ -1150,7 +1149,7 @@ class StructurePatternTest {
 		void prepareState(State state) {
 
 			if(!results.isEmpty()) {
-				state.resultHandler(this);
+				state.resultConsumer(this);
 			}
 
 			if(monitor!=null) {
@@ -1400,8 +1399,8 @@ class StructurePatternTest {
 					.lane(lane)
 					.build();
 			builder.context(context);
-			payload.getLimit().ifPresent(builder::limit);
-			payload.getFlags().forEach(builder::flag);
+			lane.getLimit().ifPresent(builder::limit);
+			lane.getFlags().forEach(builder::flag);
 			if(isSet(promote)) {
 				builder.nodeTransform(PROMOTE_NODE);
 			}
@@ -10290,7 +10289,7 @@ class StructurePatternTest {
 		}
 
 		/**
-		 * Test special combinations of {@link MatchFlag} on queries.
+		 * Test special combinations of {@link IqlLane.MatchFlag} on queries.
 		 */
 		@Nested
 		class ForMatchFlags {

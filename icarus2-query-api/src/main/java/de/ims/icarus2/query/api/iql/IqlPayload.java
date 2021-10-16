@@ -19,27 +19,19 @@
  */
 package de.ims.icarus2.query.api.iql;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.collections.CollectionUtils;
-import de.ims.icarus2.util.strings.StringResource;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -50,17 +42,9 @@ public class IqlPayload extends IqlUnique {
 	@JsonProperty(value=IqlTags.QUERY_TYPE, required=true)
 	private QueryType queryType;
 
-	@JsonProperty(value=IqlTags.LIMIT)
-	@JsonInclude(Include.NON_ABSENT)
-	private OptionalLong limit = OptionalLong.empty();
-
 	@JsonProperty(IqlTags.NAME)
 	@JsonInclude(Include.NON_ABSENT)
 	private Optional<String> name = Optional.empty();
-
-	@JsonProperty(value=IqlTags.MATCH_FLAG)
-	@JsonInclude(Include.NON_EMPTY)
-	private final EnumSet<MatchFlag> flags = EnumSet.noneOf(MatchFlag.class);
 
 	/**
 	 * All the bindings to be usable for this query, if defined.
@@ -105,18 +89,9 @@ public class IqlPayload extends IqlUnique {
 		checkCollection(bindings);
 		checkOptionalNested(constraint);
 		checkCollection(lanes);
-
-		for(MatchFlag flag : flags) {
-			for(MatchFlag excluded : flag.getExcluded()) {
-				checkCondition(!flags.contains(excluded), IqlTags.MATCH_FLAG,
-						String.format("Flag %s excluded by %s", excluded, flag));
-			}
-		}
 	}
 
 	public QueryType getQueryType() { return queryType; }
-
-	public OptionalLong getLimit() { return limit; }
 
 	public Optional<String> getName() { return name; }
 
@@ -128,17 +103,8 @@ public class IqlPayload extends IqlUnique {
 
 	public Optional<IqlConstraint> getConstraint() { return constraint; }
 
-	public Set<MatchFlag> getFlags() { return CollectionUtils.unmodifiableSetProxy(flags); }
-
-	public boolean isFlagSet(MatchFlag flag) { return flags.contains(requireNonNull(flag)); }
-
 
 	public void setQueryType(QueryType queryType) { this.queryType = requireNonNull(queryType); }
-
-	public void setLimit(long limit) {
-		checkArgument("Limit must be positive", limit>0);
-		this.limit = OptionalLong.of(limit);
-	}
 
 	public void setName(String name) { this.name = Optional.of(checkNotEmpty(name)); }
 
@@ -149,14 +115,6 @@ public class IqlPayload extends IqlUnique {
 	public void setFilter(IqlConstraint filter) { this.filter = Optional.of(filter); }
 
 	public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
-
-	public void setFlag(MatchFlag flag, boolean active) {
-		if(active) {
-			flags.add(flag);
-		} else {
-			flags.remove(flag);
-		}
-	}
 
 	public enum QueryType {
 		/**
@@ -190,50 +148,5 @@ public class IqlPayload extends IqlUnique {
 		public boolean isAllowConstraints() { return allowConstraints; }
 
 		public boolean isAllowElements() { return allowElements; }
-	}
-
-	public enum MatchFlag implements StringResource {
-		/** Matches must not share elements in their mappings */
-		DISJOINT("disjoint"),
-		/** Matches must not horizontally overlap */
-		CONSECUTIVE("consecutive"),
-		/** Search is meant to start at root nodes */
-		ROOTED("rooted"),
-		/** Set top-level scan direction to reverse */
-		REVERSE("reverse"),
-		;
-
-		private final String label;
-
-		private Set<MatchFlag> excluded = Collections.emptySet();
-
-		private MatchFlag(String label) { this.label = label; }
-
-		private void exclude(MatchFlag...flags) {
-			Set<MatchFlag> set = new ObjectOpenHashSet<>(flags.length);
-			CollectionUtils.feedItems(set, flags);
-			excluded = Collections.unmodifiableSet(set);
-		}
-
-		@Override
-		public String getStringValue() { return label; }
-
-		@JsonValue
-		public String getLabel() { return label; }
-
-		public Set<MatchFlag> getExcluded() { return excluded; }
-
-		private static final LazyStore<MatchFlag, String> store =
-				LazyStore.forStringResource(MatchFlag.class, true);
-
-		public static MatchFlag parse(String s) {
-			return store.lookup(s);
-		}
-
-		static {
-			DISJOINT.exclude(CONSECUTIVE, ROOTED);
-			CONSECUTIVE.exclude(ROOTED, DISJOINT);
-			ROOTED.exclude(DISJOINT, CONSECUTIVE);
-		}
 	}
 }

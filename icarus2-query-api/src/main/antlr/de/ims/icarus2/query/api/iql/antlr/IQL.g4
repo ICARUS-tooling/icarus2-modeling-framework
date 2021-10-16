@@ -109,18 +109,7 @@ standaloneExpression : expression EOF ;
  */
 payloadStatement
 	: ALL EOF// special marker to return the entire corpus, with only the query scope as vertical filter
-	| bindingsList? (FILTER BY constraint)? FIND hitsLimit? matchFlag* selectionStatement EOF
-	;
-	
-hitsLimit
-	: PureDigits HITS
-	;
-	
-matchFlag
-	: DISJOINT
-	| CONSECUTIVE
-	| REVERSE
-	| ROOTED
+	| bindingsList? (FILTER BY constraint)? FIND selectionStatement EOF
 	;
 	
 /** Groups a non-empty sequence of member bindings */
@@ -162,7 +151,18 @@ laneStatement
  * multiple trees, graph fragment, sequences or node groups. 
  */
 structuralConstraint
-	: nodeStatement+
+	: hitsLimit? matchFlag* nodeStatement+
+	;
+	
+hitsLimit
+	: PureDigits HITS
+	;
+	
+matchFlag
+	: DISJOINT
+	| CONSECUTIVE
+	| REVERSE
+	| ROOTED
 	;
 	
 /**

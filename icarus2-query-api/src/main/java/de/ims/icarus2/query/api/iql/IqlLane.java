@@ -19,10 +19,23 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.OptionalLong;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+
+import de.ims.icarus2.util.LazyStore;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.strings.StringResource;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -46,11 +59,26 @@ public class IqlLane extends IqlAliasedReference {
 	@JsonProperty(value=IqlTags.ELEMENT, required=true)
 	private IqlElement element;
 
+	@JsonProperty(value=IqlTags.LIMIT)
+	@JsonInclude(Include.NON_ABSENT)
+	private OptionalLong limit = OptionalLong.empty();
+
+	@JsonProperty(value=IqlTags.MATCH_FLAG)
+	@JsonInclude(Include.NON_EMPTY)
+	private final EnumSet<IqlLane.MatchFlag> flags = EnumSet.noneOf(IqlLane.MatchFlag.class);
+
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
 		checkNotNull(laneType, IqlTags.LANE_TYPE);
 		checkNestedNotNull(element, IqlTags.ELEMENT);
+
+		for(IqlLane.MatchFlag flag : flags) {
+			for(IqlLane.MatchFlag excluded : flag.getExcluded()) {
+				checkCondition(!flags.contains(excluded), IqlTags.MATCH_FLAG,
+						String.format("Flag %s excluded by %s", excluded, flag));
+			}
+		}
 	}
 
 	@Override
@@ -60,10 +88,29 @@ public class IqlLane extends IqlAliasedReference {
 
 	public IqlElement getElement() { return element; }
 
+	public OptionalLong getLimit() { return limit; }
+
+	public Set<IqlLane.MatchFlag> getFlags() { return CollectionUtils.unmodifiableSetProxy(flags); }
+
+	public boolean isFlagSet(IqlLane.MatchFlag flag) { return flags.contains(requireNonNull(flag)); }
+
 
 	public void setLaneType(LaneType laneType) { this.laneType = requireNonNull(laneType); }
 
 	public void setElement(IqlElement element) { this.element = requireNonNull(element); }
+
+	public void setFlag(IqlLane.MatchFlag flag, boolean active) {
+		if(active) {
+			flags.add(flag);
+		} else {
+			flags.remove(flag);
+		}
+	}
+
+	public void setLimit(long limit) {
+		checkArgument("Limit must be positive", limit>0);
+		this.limit = OptionalLong.of(limit);
+	}
 
 	/** Returns {@code true} iff this lane has been assigned the {@link #PROXY_NAME proxy name} */
 	public boolean isProxy() {
@@ -102,5 +149,50 @@ public class IqlLane extends IqlAliasedReference {
 		public boolean isAllowChildren() { return allowChildren; }
 
 		public boolean isAllowEdges() { return allowEdges; }
+	}
+
+	public enum MatchFlag implements StringResource {
+		/** Matches must not share elements in their mappings */
+		DISJOINT("disjoint"),
+		/** Matches must not horizontally overlap */
+		CONSECUTIVE("consecutive"),
+		/** Search is meant to start at root nodes */
+		ROOTED("rooted"),
+		/** Set top-level scan direction to reverse */
+		REVERSE("reverse"),
+		;
+
+		private final String label;
+
+		private Set<MatchFlag> excluded = Collections.emptySet();
+
+		private MatchFlag(String label) { this.label = label; }
+
+		private void exclude(MatchFlag...flags) {
+			Set<MatchFlag> set = new ObjectOpenHashSet<>(flags.length);
+			CollectionUtils.feedItems(set, flags);
+			excluded = Collections.unmodifiableSet(set);
+		}
+
+		@Override
+		public String getStringValue() { return label; }
+
+		@JsonValue
+		public String getLabel() { return label; }
+
+		public Set<MatchFlag> getExcluded() { return excluded; }
+
+		private static final LazyStore<MatchFlag, String> store =
+				LazyStore.forStringResource(MatchFlag.class, true);
+
+		public static MatchFlag parse(String s) {
+			return store.lookup(s);
+		}
+
+		static {
+			DISJOINT.exclude(CONSECUTIVE, ROOTED);
+			CONSECUTIVE.exclude(ROOTED, DISJOINT);
+			ROOTED.exclude(DISJOINT, CONSECUTIVE);
+		}
 	}
 }

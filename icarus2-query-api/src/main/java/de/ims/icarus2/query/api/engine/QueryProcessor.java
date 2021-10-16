@@ -76,7 +76,6 @@ import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
 import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
 import de.ims.icarus2.query.api.iql.IqlPayload;
-import de.ims.icarus2.query.api.iql.IqlPayload.MatchFlag;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.Quantifiable;
@@ -619,18 +618,6 @@ public class QueryProcessor {
 				payload.setConstraint(processConstraint(ctx.constraint()));
 			}
 
-			// Handle modifiers
-			HitsLimitContext hlctx = ctx.hitsLimit();
-			if(hlctx!=null) {
-				payload.setLimit(pureDigits(hlctx.PureDigits().getSymbol()));
-			}
-
-			// Handle match flags
-			for (MatchFlagContext mfctx : ctx.matchFlag()) {
-				MatchFlag flag = MatchFlag.parse(mfctx.getText());
-				payload.setFlag(flag, true);
-			}
-
 			// Handle actual selection statement variants
 			SelectionStatementContext sctx = ctx.selectionStatement();
 			// Plain constraints or global constraints section of structure statement
@@ -712,7 +699,20 @@ public class QueryProcessor {
 		private void processLaneContent(IqlLane lane, StructuralConstraintContext ctx) {
 
 			try {
+				// Handle actual structural constraints
 				lane.setElement(processStructuralConstraint(ctx, new TreeInfo()));
+
+				// Handle modifiers
+				HitsLimitContext hlctx = ctx.hitsLimit();
+				if(hlctx!=null) {
+					lane.setLimit(pureDigits(hlctx.PureDigits().getSymbol()));
+				}
+
+				// Handle match flags
+				for (MatchFlagContext mfctx : ctx.matchFlag()) {
+					IqlLane.MatchFlag flag = IqlLane.MatchFlag.parse(mfctx.getText());
+					lane.setFlag(flag, true);
+				}
 
 				LaneType laneType;
 				if(treeFeaturesUsed) {
@@ -833,16 +833,6 @@ public class QueryProcessor {
 			// Now add the final dangling expression
 			term.addItem(processBooleanExpression(tail));
 			return term;
-		}
-
-		/** Instantiate {@link IqlSequence} and set arrangement to ORDERED unless inside a tree node */
-		private IqlSequence sequence(TreeInfo tree) {
-			IqlSequence structure = new IqlSequence();
-			if(!tree.hasParent()) {
-				structure.addArrangement(NodeArrangement.ORDERED);
-			}
-			genId(structure);
-			return structure;
 		}
 
 		private IqlElement processStructuralConstraint(StructuralConstraintContext ctx, TreeInfo tree) {
