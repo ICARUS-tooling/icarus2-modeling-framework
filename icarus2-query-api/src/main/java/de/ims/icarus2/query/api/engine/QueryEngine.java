@@ -48,15 +48,19 @@ import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.ext.EngineExtension;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
+import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContextBuilder;
 import de.ims.icarus2.query.api.exp.EvaluationUtils;
-import de.ims.icarus2.query.api.exp.ExpressionFactory;
 import de.ims.icarus2.query.api.exp.env.ConstantsEnvironment;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlData;
 import de.ims.icarus2.query.api.iql.IqlImport;
+import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLayer;
+import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlProperty;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
@@ -64,6 +68,7 @@ import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
@@ -204,7 +209,7 @@ public class QueryEngine {
 			stream.checkIntegrity();
 
 			CorpusManifest corpusManifest = resolveCorpus(stream.getCorpus());
-			//TODO do we actually need to perform the corpus connection here already?
+			// We need fully connected corpus for the context builder below
 			Corpus corpus = corpusManager.connect(corpusManifest);
 
 			// Now build context for our single stream
@@ -217,11 +222,56 @@ public class QueryEngine {
 			applyEmbeddedData(contextBuilder, queryContext.getEmbeddedData());
 			applyExtensions(contextBuilder, queryContext.getExtensions()); // partly outside our control
 
-			EvaluationContext rootContext = contextBuilder.build();
-			ExpressionFactory expressionFactory = new ExpressionFactory(rootContext);
-			//TODO build the structural matchers and parse all the expressions
+			RootContext rootContext = contextBuilder.build();
 
+			IqlPayload payload = stream.getPayload().orElseThrow(
+					() -> EvaluationUtils.forInternalError("Failed to construct payload"));
 
+			List<IqlLane> lanes = payload.getLanes();
+
+			if(lanes.isEmpty()) {
+				// Plain query without any lanes or structural constraints
+
+				//TODO wrap filter and global constraint into a simple matcher
+			} else {
+				// At least one proper (proxy) lane definition available
+				List<LaneConfig> laneConfigs = new ObjectArrayList<>();
+
+				for (int i = 0; i < lanes.size(); i++) {
+					final IqlLane lane = lanes.get(i);
+
+					final LaneContext laneContext = rootContext.derive()
+							.lane(lane)
+							.build();
+
+					StructurePattern.Builder builder = StructurePattern.builder()
+							// Use lane index as id for new pattern
+							.id(i)
+							// Environment for creating expressions etc...
+							.context(laneContext)
+							// Actual structural root element
+							.root(lane.getElement());
+
+					// Local hit limit and match flags
+					lane.getFlags().forEach(builder::flag);
+					lane.getLimit().ifPresent(builder::limit);
+
+					// If this is the first lane, try to apply filter constraints
+					if(i==0) {
+						payload.getFilter().ifPresent(builder::filterConstraint);
+					}
+					// If this is the last lane, try to apply global constraints
+					if(i==lanes.size()-1) {
+						payload.getConstraint().ifPresent(builder::globalConstraint);
+					}
+
+					final StructurePattern pattern = builder.build();
+
+					laneConfigs.add(new LaneConfig(lane, laneContext, pattern));
+				}
+
+				//TODO now decide on QueryJob implementation based on number of lanes
+			}
 
 			throw new UnsupportedOperationException();
 		}
@@ -341,6 +391,19 @@ public class QueryEngine {
 			String name = source.getName();
 			return corpus.getLayer(name, true);
 		}
+	}
+
+	static class LaneConfig {
+		final IqlLane lane;
+		final LaneContext laneContext;
+		final StructurePattern pattern;
+
+		LaneConfig(IqlLane lane, LaneContext laneContext, StructurePattern pattern) {
+			this.lane = requireNonNull(lane);
+			this.laneContext = requireNonNull(laneContext);
+			this.pattern = requireNonNull(pattern);
+		}
+
 	}
 
 	/**

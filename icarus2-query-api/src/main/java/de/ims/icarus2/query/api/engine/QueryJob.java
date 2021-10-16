@@ -19,10 +19,27 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import java.util.concurrent.ExecutorService;
+
+import de.ims.icarus2.query.api.iql.IqlQuery;
+
 /**
  * @author Markus Gärtner
  *
  */
 public interface QueryJob {
 
+	IqlQuery getSource();
+
+	JobMonitor execute(ExecutorService executorService);
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	interface JobMonitor {
+
+		QueryJob getJob();
+	}
 }
