@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.standard.view.streamed;
 
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -126,7 +125,7 @@ public class ItemStreamBuffer {
 		if(end-begin+1 <=0) {
 			return null;
 		}
-		return span(begin, end);
+		return IndexUtils.span(begin, end);
 	}
 
 	/**
@@ -163,7 +162,8 @@ public class ItemStreamBuffer {
 	 * @param chunkInfo
 	 */
 	private void addItems(ChunkInfo chunkInfo) {
-		for(int i=0; i<chunkInfo.chunkCount(); i++) {
+		final int size = chunkInfo.chunkCount();
+		for(int i=0; i<size; i++) {
 			if(chunkInfo.getState(i)!=ChunkState.CORRUPTED) {
 				buffer.add(chunkInfo.getItem(i));
 			}
