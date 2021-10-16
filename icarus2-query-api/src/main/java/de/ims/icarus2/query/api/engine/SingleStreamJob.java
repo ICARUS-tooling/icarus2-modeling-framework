@@ -23,6 +23,6 @@ package de.ims.icarus2.query.api.engine;
  * @author Markus Gärtner
  *
  */
-public class SingleStreamJob implements QueryJob {
+public abstract class SingleStreamJob implements QueryJob {
 
 }
