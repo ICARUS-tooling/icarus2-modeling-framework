@@ -26,6 +26,7 @@ import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.Report;
+import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 
@@ -169,6 +170,18 @@ public enum QueryErrorCode implements ErrorCode {
 	 * query processor not yet supporting all features.
 	 */
 	UNSUPPORTED_QUERY_FRAGMENT(305),
+
+	/**
+	 * An element of the ICQP framework is being accessed by a foreign thread.
+	 * <p>
+	 * Note that most classes in the ICQP are intentionally designed to be not
+	 * thread-safe and to be isolated from each other so that synchronization
+	 * overhead can be kept to a minimum. Therefore many of them make use of
+	 * the {@link ThreadVerifier} utility class to check that their critical
+	 * sections are not being accessed by a thread other than the one they
+	 * were initialized for.
+	 */
+	FOREIGN_THREAD_ACCESS(306),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;

@@ -65,6 +65,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.mark.GenerationMarker;
@@ -2630,7 +2631,7 @@ public class StructurePattern {
 	public static class StructureMatcher extends State implements Matcher<Container> {
 
 		/** The only thread allowed to call {@link #matches(long, Container)} on this instance */
-		final Thread thread;
+		final ThreadVerifier threadVerifier;
 
 		final int id;
 
@@ -2643,7 +2644,7 @@ public class StructurePattern {
 		private StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup);
 			this.id = id;
-			thread = Thread.currentThread();
+			threadVerifier = new ThreadVerifier(getClass().getSimpleName()+"_"+id);
 			this.root = stateMachineSetup.getRoot();
 			resultHandler = null;
 		}
@@ -2653,7 +2654,7 @@ public class StructurePattern {
 			super(builder.setup());
 
 			this.id = builder.id();
-			thread = Thread.currentThread();
+			threadVerifier = new ThreadVerifier(getClass().getSimpleName()+"_"+id);
 
 			if(builder.monitor()!=null) {
 				monitor(builder.monitor());
@@ -2671,7 +2672,7 @@ public class StructurePattern {
 		 */
 		protected boolean matchesImpl(long index, Container target) {
 			// Sanity check to make sure we operate on the correct thread
-			checkState("Illegal access from foreign thread", thread==Thread.currentThread());
+			threadVerifier.checkThread();
 
 			// Apply pre-filtering if available to reduce matcher overhead
 			if(filterConstraint!=null && !filterConstraint.matches(index, target)) {
