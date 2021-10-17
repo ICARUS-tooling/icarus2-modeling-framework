@@ -156,7 +156,7 @@ structuralConstraint
 	
 hitsLimit
 	: PureDigits HITS
-	| SINGLE
+	| FIRST
 	;
 	
 matchFlag
@@ -628,7 +628,6 @@ ORDERED : 'ORDERED' | 'ordered';
 RANGE : 'RANGE' | 'range' ;
 REVERSE : 'REVERSE' | 'reverse' ;
 ROOTED : 'ROOTED' | 'rooted' ;
-SINGLE : 'SINGLE' | 'single' ;
 STEP : 'STEP' | 'step' ;
 TRUE : 'TRUE' | 'true' ;
 UNORDERED : 'UNORDERED' | 'unordered';

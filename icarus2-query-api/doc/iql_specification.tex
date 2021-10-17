@@ -1628,6 +1628,8 @@ Per default, the search in \ac{iql} is expected to be exhaustive, i.e. the evalu
 For instance, the sentence ``The dog chased the rabbit down the hill.'' will be treated as three entries in the result if the query was only meant to find instances of the lemma ``the''.
 This default behavior can be adjusted to return each \ac{uoi} only up to a certain time, via the \keyword{HITS} keyword with a positive non-zero integer in front that follows the syntax of ``pure integers'' as described in \cref{sec:integer-literals}.
 
+In case that only a single match needs to be reported, the \keyword{FIRST} keyword will achieve the same result as \query{1 HITS}. The latter
+
 \subsection{Match Flags}
 \label{sec:match-flags}
 
@@ -2187,7 +2189,6 @@ ADJACENT [$x:][$y:] // node y directly following node x
 \noindent Sequence constraints only provide a single dimension for \textit{moving} the query sequence through the search space of the target corpus.
 Matching is performed greedily by default in order of node appearance in the query, following the direction specified by the corpus itself.
 That is, in a node sequence \verb|[$x:][$y:]| the node matched by \member{x} will \textbf{always} be before the node matched by \member{y} according to the original direction of items in the corpus.
-This also leads to a very simple and intuitive semantic for the \keyword{FIRST} and \keyword{LAST} modifier keywords: They stay true to their names and limit the returned matches to either the first or last ones, with respect to the current direction.
 
 Empty nodes with quantifiers can be used as proxies to model distance constraints, as seen in above examples.
 Since the \keyword{ADJACENT} directive changes the behavior of an entire node sequence, some creativity can be necessary to achieve mixed cases, such as \textit{``find an adjacent pair a+b that is later followed by another adjacent pair c+d''}.
@@ -2226,7 +2227,6 @@ They can be individually quantified or existentially negated, as well as grouped
 
 \noindent As opposed to sequences (\ref{sec:sequence-constraints}), trees (and subsequently also graphs, cf.~\ref{sec:graph-constraints}) offer an additional dimension of matching freedom over the bare iteration of items in a container or structure to be matched.
 This requires further specification of the matching process to guarantee consistent results and define basic expectations.
-Below explanations are primarily intended to specify the behavior in the presence of limiting modifiers (\keyword{FIRST}, \keyword{LAST}, \keyword{ANY}) in the payload, but are also of interest for the expected order of returned matches if no limiting modifiers are defined.
 
 \begin{wrapfigure}[12]{L}{0pt} %not sure what produced the 
 	\centering
