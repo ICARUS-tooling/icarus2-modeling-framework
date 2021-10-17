@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.engine.matcher;
+package de.ims.icarus2.query.api.engine.result;
 
 /**
  * @author Markus Gärtner
@@ -39,7 +39,7 @@ public class Match {
 	private final int[] m_node;
 	private final int[] m_index;
 
-	Match(long index, int[] m_node, int[] m_index) {
+	private Match(long index, int[] m_node, int[] m_index) {
 		this.index = index;
 		this.m_node = m_node;
 		this.m_index = m_index;
