@@ -709,10 +709,16 @@ public class QueryProcessor {
 				// Handle modifiers
 				HitsLimitContext hlctx = ctx.hitsLimit();
 				if(hlctx!=null) {
-					if(hlctx.SINGLE()!=null) {
+					if(hlctx.FIRST()!=null) {
 						lane.setLimit(1L);
 					} else {
-						lane.setLimit(pureDigits(hlctx.PureDigits().getSymbol()));
+						int limit = pureDigits(hlctx.PureDigits().getSymbol());
+						if(limit==1) {
+							reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+									"The <n HITS> limit declration should not be used to restrict "
+									+ "the result limit to 1. Simply use <FIRST> for that");
+						}
+						lane.setLimit(limit);
 					}
 				}
 
