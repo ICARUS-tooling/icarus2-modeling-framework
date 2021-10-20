@@ -12482,7 +12482,7 @@ class StructurePatternTest {
 			"'<1+>{ORDERED [$X][$Y]}', X-Y, 1, {{{0}}{{2}}}",
 
 			// Multiple matches - ordered
-			"'SINGLE <1+>{ORDERED [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
+			"'FIRST <1+>{ORDERED [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
 			"'<1+>{ORDERED [$X][$Y]}', XYXY, 2, {{{0;2}{2}}{{1;3}{3}}}",
 
 			// Mismatches - adjacent
@@ -12494,7 +12494,7 @@ class StructurePatternTest {
 			"'<1+>{ADJACENT [$X][$Y]}', XY, 1, {{{0}}{{1}}}",
 
 			// Multiple matches - adjacent
-			"'SINGLE <1+>{ADJACENT [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
+			"'FIRST <1+>{ADJACENT [$X][$Y]}', XYXY, 1, {{{0;2}}{{1;3}}}",
 			// separate matches
 			"'<1+>{ADJACENT [$X][$Y]}', XYXY, 3, {{{0;2}{2}{2}}{{1;3}{1}{3}}}",
 			"'<1+>{ADJACENT [$X][$Y]}', XY-XY, 2, {{{0}{3}}{{1}{4}}}",
