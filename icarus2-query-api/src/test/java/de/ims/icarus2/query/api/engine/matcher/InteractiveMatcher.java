@@ -107,6 +107,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
+import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
@@ -1491,7 +1492,10 @@ public class InteractiveMatcher {
 
 				@Override
 				protected Boolean doInBackground() throws Exception {
-					StructureMatcher matcher = pattern.matcherBuilder().build();
+					StructureMatcher matcher = pattern.matcherBuilder()
+							.threadVerifier(new ThreadVerifier("interactive-matcher"))
+							.build();
+
 					if(tree!=null) {
 						StructurePatternTest.applyTree(matcher, tree);
 					}

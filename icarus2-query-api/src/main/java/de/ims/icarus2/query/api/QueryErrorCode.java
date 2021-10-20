@@ -26,6 +26,7 @@ import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.Report;
+import de.ims.icarus2.query.api.engine.QueryJob;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
@@ -182,6 +183,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 * were initialized for.
 	 */
 	FOREIGN_THREAD_ACCESS(306),
+
+	/**
+	 * A {@link QueryJob} has been attempted to be started multiple times through
+	 * its associated {@link QueryJob.JobController}.
+	 */
+	RECYCLED_JOB(307),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;

@@ -49,7 +49,6 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -78,6 +77,7 @@ import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
 import de.ims.icarus2.query.api.engine.result.Match;
+import de.ims.icarus2.query.api.engine.result.MatchCollector;
 import de.ims.icarus2.query.api.engine.result.MatchSink;
 import de.ims.icarus2.query.api.engine.result.MatchSource;
 import de.ims.icarus2.query.api.exp.Assignable;
@@ -2393,7 +2393,7 @@ public class StructurePattern {
 		TreeFrame frame;
 
 		Consumer<State> resultConsumer;
-		final Predicate<MatchSource> resultHandler;
+		final MatchCollector matchCollector;
 
 		// Growing Buffers
 
@@ -2414,8 +2414,8 @@ public class StructurePattern {
 		/** Marks individual nodes as excluded from further matching */
 		boolean[] locked;
 
-		private State(StateMachineSetup setup, @Nullable Predicate<MatchSource> resultHandler) {
-			this.resultHandler = resultHandler;
+		private State(StateMachineSetup setup, @Nullable MatchCollector matchCollector) {
+			this.matchCollector = matchCollector;
 
 			final int initialSize = setup.initialSize == UNSET_INT ?
 					QueryUtils.BUFFER_STARTSIZE : setup.initialSize;
@@ -2544,8 +2544,8 @@ public class StructurePattern {
 			if(resultConsumer!=null) {
 				resultConsumer.accept(this);
 			}
-			if(resultHandler!=null) {
-				return resultHandler.test(this);
+			if(matchCollector!=null) {
+				return matchCollector.collect(this);
 			}
 			return true;
 		}
@@ -2678,7 +2678,7 @@ public class StructurePattern {
 
 		/** Create and populate matcher from builder data. */
 		StructureMatcher(MatcherBuilder builder) {
-			super(builder.setup(), builder.resultHandler());
+			super(builder.setup(), builder.matchCollector());
 
 			this.id = builder.id();
 			threadVerifier = builder.threadVerifier();
@@ -2795,7 +2795,7 @@ public class StructurePattern {
 		private final StructurePattern source;
 		private final int id;
 
-		private Predicate<MatchSource> resultHandler;
+		private MatchCollector matchCollector;
 		private Monitor monitor;
 		private ThreadVerifier threadVerifier;
 
@@ -2804,12 +2804,12 @@ public class StructurePattern {
 			this.id = id;
 		}
 
-		Predicate<MatchSource> resultHandler() { return resultHandler; }
+		MatchCollector matchCollector() { return matchCollector; }
 
-		public MatcherBuilder resultHandler(Predicate<MatchSource> resultHandler) {
-			requireNonNull(resultHandler);
-			checkState("Result handler already set", this.resultHandler==null);
-			this.resultHandler = resultHandler;
+		public MatcherBuilder matchCollector(MatchCollector matchCollector) {
+			requireNonNull(matchCollector);
+			checkState("Match collector already set", this.matchCollector==null);
+			this.matchCollector = matchCollector;
 			return this;
 		}
 

@@ -235,10 +235,13 @@ public class QueryEngine {
 				//TODO wrap filter and global constraint into a simple matcher
 			} else {
 				// At least one proper (proxy) lane definition available
-				List<LaneConfig> laneConfigs = new ObjectArrayList<>();
+				List<LaneSetup> setups = new ObjectArrayList<>();
 
-				for (int i = 0; i < lanes.size(); i++) {
+				final int last = lanes.size()-1;
+				for (int i = 0; i <= last; i++) {
 					final IqlLane lane = lanes.get(i);
+					final boolean isFirst = i==0;
+					final boolean isLast = i==last;
 
 					final LaneContext laneContext = rootContext.derive()
 							.lane(lane)
@@ -257,17 +260,17 @@ public class QueryEngine {
 					lane.getLimit().ifPresent(builder::limit);
 
 					// If this is the first lane, try to apply filter constraints
-					if(i==0) {
+					if(isFirst) {
 						payload.getFilter().ifPresent(builder::filterConstraint);
 					}
 					// If this is the last lane, try to apply global constraints
-					if(i==lanes.size()-1) {
+					if(isLast) {
 						payload.getConstraint().ifPresent(builder::globalConstraint);
 					}
 
 					final StructurePattern pattern = builder.build();
 
-					laneConfigs.add(new LaneConfig(lane, laneContext, pattern));
+					setups.add(new LaneSetup(i, lane, laneContext, pattern, isFirst, isLast));
 				}
 
 				//TODO now decide on QueryJob implementation based on number of lanes
@@ -391,19 +394,6 @@ public class QueryEngine {
 			String name = source.getName();
 			return corpus.getLayer(name, true);
 		}
-	}
-
-	static class LaneConfig {
-		final IqlLane lane;
-		final LaneContext laneContext;
-		final StructurePattern pattern;
-
-		LaneConfig(IqlLane lane, LaneContext laneContext, StructurePattern pattern) {
-			this.lane = requireNonNull(lane);
-			this.laneContext = requireNonNull(laneContext);
-			this.pattern = requireNonNull(pattern);
-		}
-
 	}
 
 	/**

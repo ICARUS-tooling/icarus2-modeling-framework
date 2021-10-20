@@ -35,6 +35,11 @@ public final class ThreadVerifier {
 
 	public ThreadVerifier(String id) { this.id = requireNonNull(id); }
 
+
+	public String getId() { return id; }
+
+	public Thread getThread() { return thread; }
+
 	public final void checkThread() {
 		if(Thread.currentThread()!=thread)
 			throw new QueryException(QueryErrorCode.FOREIGN_THREAD_ACCESS,

@@ -19,26 +19,13 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
-import de.ims.icarus2.query.api.engine.LaneSetup;
-
 /**
- * Models the transmission of a single-stream match result that can stretch
- * across multiple lanes.
- *
  * @author Markus Gärtner
  *
  */
-public interface MultiMatchConsumer {
+public interface MatchSource {
 
-	/** Called at the beginning of an entire match */
-	void resultBegin();
-	/** Called at the end of an entire match */
-	void resultEnd();
+	Match toMatch();
 
-	/** Called at the beginning of a single-lane match */
-	void matchBegin(LaneSetup lane, int size);
-	/** Called at the end of a single-lane match */
-	void matchEnd(LaneSetup lane);
-	/** Called for actual mapping content inside a single-lane match */
-	void matchContent(LaneSetup lane, MatchSource source);
+	void drainTo(MatchSink sink);
 }

@@ -234,7 +234,7 @@ public abstract class Permutator {
 		@Override
 		public boolean skip(int index) {
 			// TODO Auto-generated method stub
-			return false;
+			throw new UnsupportedOperationException("not implemented");
 		}
 
 		@Override

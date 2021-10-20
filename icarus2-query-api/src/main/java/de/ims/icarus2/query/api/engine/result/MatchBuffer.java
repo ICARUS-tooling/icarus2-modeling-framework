@@ -19,46 +19,55 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+
+import de.ims.icarus2.util.collections.CollectionUtils;
+
 /**
  * @author Markus Gärtner
  *
  */
-public class Match implements MatchSource {
+public class MatchBuffer {
 
-	private static final int[] EMPTY = {};
+	private long index = UNSET_LONG;
+	private int[] m_node;
+	private int[] m_index;
+	private int size = 0;
 
-	public static Match empty(long index) {
-		return new Match(index, EMPTY, EMPTY);
+	public MatchBuffer(int initialSize) {
+		m_node = new int[initialSize];
+		m_index = new int[initialSize];
 	}
 
-	public static Match of(long index, int[] m_node, int[] m_index) {
-		return new Match(index, m_node, m_index);
+	/** Reset size back to {@code 0}. */
+	public void clear() { size = 0; }
+	/** */
+	public void prepare(int size) {
+		if(size>m_node.length) {
+			int newSize = CollectionUtils.growSize(m_node.length, size);
+			m_node = new int[newSize];
+			m_index = new int[newSize];
+		}
+		this.size = 0;
 	}
-
-	private final long index;
-	private final int[] m_node;
-	private final int[] m_index;
-
-	private Match(long index, int[] m_node, int[] m_index) {
-		this.index = index;
-		this.m_node = m_node;
-		this.m_index = m_index;
+	public void map(int mappingId, int index) {
+		m_node[size] = mappingId;
+		m_index[size] = index;
+		size++;
+	}
+	public void map(int size, int[] m_node, int[] m_index) {
+		System.arraycopy(m_node, 0, this.m_node, 0, size);
+		System.arraycopy(m_index, 0, this.m_index, 0, size);
+		this.size = size;
 	}
 
 	/** Get the global index of the container this match refers to. */
 	public long getIndex() { return index; }
 	/** Returns the number of mappings inside this match */
-	public int getMapCount() { return m_node.length; }
+	public int getMapCount() { return size; }
 	/** Fetch the node id for the mapping at given index */
 	public int getNode(int index) { return m_node[index]; }
 	/** Fetch the positional index for the mapping at given index */
 	public int getIndex(int index) { return m_index[index]; }
 
-	@Override
-	public Match toMatch() { return this; }
-
-	@Override
-	public void drainTo(MatchSink sink) {
-		sink.consume(index, m_node.length, m_node, m_index);
-	}
 }

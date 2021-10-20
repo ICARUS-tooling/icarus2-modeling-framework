@@ -17,28 +17,18 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.engine.result;
+package de.ims.icarus2.query.api.engine;
 
-import de.ims.icarus2.query.api.engine.LaneSetup;
+import org.junit.jupiter.api.Nested;
 
 /**
- * Models the transmission of a single-stream match result that can stretch
- * across multiple lanes.
- *
  * @author Markus Gärtner
  *
  */
-public interface MultiMatchConsumer {
+class SingleStreamJobTest {
 
-	/** Called at the beginning of an entire match */
-	void resultBegin();
-	/** Called at the end of an entire match */
-	void resultEnd();
+	@Nested
+	class ForSingleLane {
+	}
 
-	/** Called at the beginning of a single-lane match */
-	void matchBegin(LaneSetup lane, int size);
-	/** Called at the end of a single-lane match */
-	void matchEnd(LaneSetup lane);
-	/** Called for actual mapping content inside a single-lane match */
-	void matchContent(LaneSetup lane, MatchSource source);
 }
