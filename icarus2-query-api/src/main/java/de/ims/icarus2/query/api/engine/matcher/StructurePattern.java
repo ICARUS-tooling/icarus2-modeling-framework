@@ -49,6 +49,7 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -65,6 +66,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.engine.QueryUtils;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
@@ -75,6 +77,9 @@ import de.ims.icarus2.query.api.engine.matcher.mark.LevelMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
+import de.ims.icarus2.query.api.engine.result.Match;
+import de.ims.icarus2.query.api.engine.result.MatchSink;
+import de.ims.icarus2.query.api.engine.result.MatchSource;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
@@ -195,6 +200,10 @@ public class StructurePattern {
 	/** Blueprint for instantiating a new {@link StructureMatcher} */
 	private final StateMachineSetup setup;
 
+	private final IqlNode[] mappedNodes;
+	private final Reference2IntMap<IqlNode> mappedIds;
+	private final Object2IntMap<String> mappedLabels;
+
 	private StructurePattern(Builder builder) {
 		flags = builder.geFlags();
 		source = builder.getRoot();
@@ -205,10 +214,28 @@ public class StructurePattern {
 
 		setup.initialSize = builder.getInitialBufferSize();
 
+		mappedNodes = setup.getMappedNodes();
+		mappedIds = new Reference2IntOpenHashMap<>(mappedNodes.length);
+		mappedIds.defaultReturnValue(UNSET_INT);
+		for (int i = 0; i < mappedNodes.length; i++) {
+			mappedIds.put(mappedNodes[i], i);
+		}
+		mappedLabels = new Object2IntOpenHashMap<>();
+		mappedIds.reference2IntEntrySet().forEach(e -> {
+			IqlNode node = e.getKey();
+			Optional<String> label = node.getLabel();
+			if(label!=null && label.isPresent()) {
+				mappedLabels.put(label.get(), e.getIntValue());
+			}
+		});
 		//TODO
 	}
 
 	public IqlQueryElement getSource() { return source; }
+
+	public IqlNode nodeForId(int mappingId) { return mappedNodes[mappingId]; }
+	public int idForNode(IqlNode node) { return mappedIds.getInt(node); }
+	public int idForLabel(String label) { return mappedLabels.getInt(label); }
 
 	/**
 	 * Returns a builder to configure and instantiate a new {@link StructureMatcher}.
@@ -235,9 +262,6 @@ public class StructurePattern {
 		return new NonResettingMatcher(setup, id);
 	}
 
-	@VisibleForTesting
-	static final int INITIAL_SIZE = 1<<10;
-
 	/**
 	 * Encapsulates all the information needed to instantiate a matcher for
 	 * the sequence matching state machine.
@@ -248,7 +272,7 @@ public class StructurePattern {
 	static class StateMachineSetup {
 
 		/** Hint for the starting size of all buffer structures */
-		int initialSize = INITIAL_SIZE;
+		int initialSize = QueryUtils.BUFFER_STARTSIZE;
 
 		/** Flag to indicate whether monitoring of the state machine is supported. */
 		boolean allowMonitor = false;
@@ -2275,7 +2299,7 @@ public class StructurePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class State implements IntTree {
+	static class State implements IntTree, MatchSource {
 		/** Raw target container or structure */
 		Container target;
 		/** Total number of items in container */
@@ -2283,9 +2307,6 @@ public class StructurePattern {
 		/** Index of the target container */
 		long index = UNSET_INT;
 
-		final IqlNode[] mappedNodes;
-		final Reference2IntMap<IqlNode> mappedIds;
-		final Object2IntMap<String> mappedLabels;
 		final boolean allowMonitor;
 
 		/** All the atomic nodes defined in the query */
@@ -2372,6 +2393,7 @@ public class StructurePattern {
 		TreeFrame frame;
 
 		Consumer<State> resultConsumer;
+		final Predicate<MatchSource> resultHandler;
 
 		// Growing Buffers
 
@@ -2392,8 +2414,11 @@ public class StructurePattern {
 		/** Marks individual nodes as excluded from further matching */
 		boolean[] locked;
 
-		State(StateMachineSetup setup) {
-			final int initialSize = setup.initialSize == UNSET_INT ? INITIAL_SIZE : setup.initialSize;
+		private State(StateMachineSetup setup, @Nullable Predicate<MatchSource> resultHandler) {
+			this.resultHandler = resultHandler;
+
+			final int initialSize = setup.initialSize == UNSET_INT ?
+					QueryUtils.BUFFER_STARTSIZE : setup.initialSize;
 			elements = new Item[initialSize];
 			tree = new TreeFrame[initialSize];
 			roots = new int[initialSize];
@@ -2406,21 +2431,6 @@ public class StructurePattern {
 
 			globalMarkers = setup.getGlobalMarkers();
 			nestedMarkers = setup.getNestedMarkers();
-
-			mappedNodes = setup.getMappedNodes();
-			mappedIds = new Reference2IntOpenHashMap<>(mappedNodes.length);
-			mappedIds.defaultReturnValue(UNSET_INT);
-			for (int i = 0; i < mappedNodes.length; i++) {
-				mappedIds.put(mappedNodes[i], i);
-			}
-			mappedLabels = new Object2IntOpenHashMap<>();
-			mappedIds.reference2IntEntrySet().forEach(e -> {
-				IqlNode node = e.getKey();
-				Optional<String> label = node.getLabel();
-				if(label!=null && label.isPresent()) {
-					mappedLabels.put(label.get(), e.getIntValue());
-				}
-			});
 
 			hits = setup.getHits();
 			borders = setup.getBorders();
@@ -2452,11 +2462,11 @@ public class StructurePattern {
 			}
 		}
 
-		public Snapshot snapshot() { return new Snapshot(this); }
+		State(StateMachineSetup setup) {
+			this(setup, null);
+		}
 
-		public IqlNode nodeForId(int mappingId) { return mappedNodes[mappingId]; }
-		public int idForNode(IqlNode node) { return mappedIds.getInt(node); }
-		public int idForLabel(String label) { return mappedLabels.getInt(label); }
+		public Snapshot snapshot() { return new Snapshot(this); }
 
 		/** Fetch current scope id, i.e. a marker for resetting.  */
 		final int scope() {
@@ -2477,11 +2487,11 @@ public class StructurePattern {
 		final void flushScope() { entry = 0; }
 
 		/** Resolve raw node for 'nodeId' and map to 'index' in result buffer. */
-		final void map(int nodeId, int index) {
+		final void map(int mappingId, int index) {
 			assert !locked[index] : "index "+index+" already locked";
 			locked[index] = true;
 
-			m_node[entry] = nodeId;
+			m_node[entry] = mappingId;
 			m_index[entry] = index;
 			entry++;
 
@@ -2497,7 +2507,7 @@ public class StructurePattern {
 		final boolean isSet(int mode) { return modes[mode].value; }
 		final void resetMode(int mode) { modes[mode].back(); }
 
-		public void reset() {
+		public final void reset() {
 			// Cleanup duty -> we must erase all references to target and its elements
 			target = null;
 			// For all the buffers that depend on target size we try to minimize the overhead
@@ -2528,10 +2538,16 @@ public class StructurePattern {
 			frame = rootFrame;
 		}
 
-		void dispatchMatch() {
+		/** Send current match state to consumers. Return {@code true} in case no
+		 * result handler is set or the result handler was still able to consume the match. */
+		final boolean dispatchMatch() {
 			if(resultConsumer!=null) {
 				resultConsumer.accept(this);
 			}
+			if(resultHandler!=null) {
+				return resultHandler.test(this);
+			}
+			return true;
 		}
 
 		final void monitor(Monitor monitor) {
@@ -2544,6 +2560,19 @@ public class StructurePattern {
 		final void resultConsumer(Consumer<State> resultConsumer) {
 			checkState("Result cnosumer already set", this.resultConsumer==null);
 			this.resultConsumer = resultConsumer;
+		}
+
+		@Override
+		public Match toMatch() {
+			int size = entry;
+			return Match.of(index,
+					Arrays.copyOf(m_node, size),
+					Arrays.copyOf(m_index, size));
+		}
+
+		@Override
+		public void drainTo(MatchSink sink) {
+			sink.consume(index, entry, m_node, m_index);
 		}
 
 		// tree interface
@@ -2628,7 +2657,8 @@ public class StructurePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class StructureMatcher extends State implements Matcher<Container> {
+	public static class StructureMatcher extends State
+			implements Matcher<Container> {
 
 		/** The only thread allowed to call {@link #matches(long, Container)} on this instance */
 		final ThreadVerifier threadVerifier;
@@ -2638,30 +2668,26 @@ public class StructurePattern {
 		/** The node of the state machine to start matching with. */
 		final Node root;
 
-		final ResultHandler resultHandler;
-
 		/** SPecial constructor for {@link NonResettingMatcher} subclass. */
 		private StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup);
 			this.id = id;
 			threadVerifier = new ThreadVerifier(getClass().getSimpleName()+"_"+id);
 			this.root = stateMachineSetup.getRoot();
-			resultHandler = null;
 		}
 
 		/** Create and populate matcher from builder data. */
 		StructureMatcher(MatcherBuilder builder) {
-			super(builder.setup());
+			super(builder.setup(), builder.resultHandler());
 
 			this.id = builder.id();
-			threadVerifier = new ThreadVerifier(getClass().getSimpleName()+"_"+id);
+			threadVerifier = builder.threadVerifier();
 
 			if(builder.monitor()!=null) {
 				monitor(builder.monitor());
 			}
 
 			root = builder.setup().getRoot();
-			resultHandler = builder.resultHandler();
 		}
 
 		@Override
@@ -2710,9 +2736,6 @@ public class StructurePattern {
 			return root.match(this, 0);
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.matcher.Matcher#matches(long, de.ims.icarus2.model.api.members.item.Item)
-		 */
 		@Override
 		public boolean matches(long index, Container target) {
 			boolean matched = matchesImpl(index, target);
@@ -2725,15 +2748,6 @@ public class StructurePattern {
 			reset();
 
 			return matched;
-		}
-
-		@Override
-		final void dispatchMatch() {
-			if(resultHandler==null) {
-				super.dispatchMatch();
-			} else {
-				resultHandler.accept(this);
-			}
 		}
 
 		private void growBuffers(int minCapacity) {
@@ -2781,17 +2795,18 @@ public class StructurePattern {
 		private final StructurePattern source;
 		private final int id;
 
-		private ResultHandler resultHandler;
+		private Predicate<MatchSource> resultHandler;
 		private Monitor monitor;
+		private ThreadVerifier threadVerifier;
 
 		private MatcherBuilder(StructurePattern source, int id) {
 			this.source = requireNonNull(source);
 			this.id = id;
 		}
 
-		ResultHandler resultHandler() { return resultHandler; }
+		Predicate<MatchSource> resultHandler() { return resultHandler; }
 
-		public MatcherBuilder resultHandler(ResultHandler resultHandler) {
+		public MatcherBuilder resultHandler(Predicate<MatchSource> resultHandler) {
 			requireNonNull(resultHandler);
 			checkState("Result handler already set", this.resultHandler==null);
 			this.resultHandler = resultHandler;
@@ -2807,12 +2822,21 @@ public class StructurePattern {
 			return this;
 		}
 
+		ThreadVerifier threadVerifier() { return threadVerifier; }
+
+		public MatcherBuilder threadVerifier(ThreadVerifier threadVerifier) {
+			requireNonNull(threadVerifier);
+			checkState("Thread verifier already set", this.threadVerifier==null);
+			this.threadVerifier = threadVerifier;
+			return this;
+		}
+
 		StateMachineSetup setup() { return source.setup; }
 		int id() { return id; }
 
 		@Override
 		protected void validate() {
-			checkState("Result handler not set", resultHandler!=null);
+			checkState("Thread verifier not set", threadVerifier!=null);
 		}
 
 		@Override
@@ -2842,19 +2866,10 @@ public class StructurePattern {
 			super(stateMachineSetup, id);
 		}
 
-		/**
-		 * Does nothing, so that we can properly assert the state machine's internal
-		 * state after matching.
-		 */
 		@Override
-		public void reset() { /* no-op */ }
-
-		/**
-		 * Replacement for the original {@link StructureMatcher#reset()} method so
-		 * that test code can decide to reset matcher state if needed.
-		 */
-		@VisibleForTesting
-		void fullReset() { super.reset(); }
+		public boolean matches(long index, Container target) {
+			return matchesImpl(index, target);
+		}
 
 		/** Only resets external references and the temporary result buffer. */
 		@VisibleForTesting
@@ -4278,7 +4293,16 @@ public class StructurePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			state.dispatchMatch();
+			state.reported++;
+
+			if(state.dispatchMatch()) {
+				if(limit!=UNSET_LONG && state.reported>=limit) {
+					state.finished = true;
+				}
+			} else {
+				state.finished = false;
+			}
+
 			state.lastMatchSize = state.entry;
 
 			/*
@@ -4290,10 +4314,6 @@ public class StructurePattern {
 				state.flushScope();
 			}
 
-			state.reported++;
-			if(limit!=UNSET_LONG && state.reported>=limit) {
-				state.finished = true;
-			}
 			state.stop = stopAfterMatch || state.finished;
 			state.frame.last = pos;
 
