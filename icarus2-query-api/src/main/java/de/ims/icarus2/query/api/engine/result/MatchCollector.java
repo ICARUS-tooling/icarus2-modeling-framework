@@ -20,10 +20,17 @@
 package de.ims.icarus2.query.api.engine.result;
 
 /**
+ * Models a simple sink for matches with a possible limit on
+ * how many matches can be collected.
+ *
  * @author Markus Gärtner
  *
  */
 public interface MatchCollector {
 
+	/**
+	 * Collect the match from the given source and return
+	 * whether more matches can still be collected.
+	 */
 	boolean collect(MatchSource source);
 }

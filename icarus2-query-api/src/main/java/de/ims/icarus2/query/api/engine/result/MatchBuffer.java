@@ -27,7 +27,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class MatchBuffer {
+public class MatchBuffer implements MatchSource, MatchSink {
 
 	private long index = UNSET_LONG;
 	private int[] m_node;
@@ -41,7 +41,7 @@ public class MatchBuffer {
 
 	/** Reset size back to {@code 0}. */
 	public void clear() { size = 0; }
-	/** */
+	/** Ensure we have sufficient capacity to store {@code size} mappings and reset cursor to {@code 0}. */
 	public void prepare(int size) {
 		if(size>m_node.length) {
 			int newSize = CollectionUtils.growSize(m_node.length, size);
@@ -69,5 +69,22 @@ public class MatchBuffer {
 	public int getNode(int index) { return m_node[index]; }
 	/** Fetch the positional index for the mapping at given index */
 	public int getIndex(int index) { return m_index[index]; }
+
+	@Override
+	public void consume(long index, int size, int[] m_node, int[] m_index) {
+		prepare(size);
+		this.index = index;
+		map(size, m_node, m_index);
+	}
+
+	@Override
+	public Match toMatch() {
+		return Match.of(index, size, m_node, m_index);
+	}
+
+	@Override
+	public void drainTo(MatchSink sink) {
+		sink.consume(index, size, m_node, m_index);
+	}
 
 }

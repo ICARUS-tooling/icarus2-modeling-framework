@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -27,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -36,7 +38,6 @@ import de.ims.icarus2.query.api.engine.QueryJob.JobStats;
 import de.ims.icarus2.query.api.engine.QueryJob.JobStatus;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.AccumulatingException;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 
@@ -56,29 +57,25 @@ public class DefaultJobController implements JobController {
 
 	public static Builder builder() { return new Builder(); }
 
-	private final QueryJob job;
+	private final IqlQuery query;
 	private final ExecutorService executorService;
-	private final QueryOutput resultProcessor;
 
 	private final AtomicInteger total = new AtomicInteger();
 	private final AtomicInteger active = new AtomicInteger();
+	private final BiConsumer<QueryWorker, Throwable> exceptionHandler;
 	private final AtomicReference<JobStatus> status = new AtomicReference<>(JobStatus.WAITING);
-	private final AccumulatingException.Buffer exceptionBuffer = new AccumulatingException.Buffer();
 
 	private final ReferenceSet<QueryWorker> workers = new ReferenceOpenHashSet<>();
 	private final Object lock = new Object();
 
 	private DefaultJobController(Builder builder) {
-		//TODO
+		query = builder.getQuery();
+		executorService = builder.getExecutorService();
+		exceptionHandler = builder.getExceptionHandler();
 	}
 
-	public QueryJob getJob() { return job; }
-
 	@Override
-	public IqlQuery getSource() { return job.getSource(); }
-
-	@Override
-	public QueryOutput getResultProcessor() { return resultProcessor; }
+	public IqlQuery getSource() { return query; }
 
 	@Override
 	public int getActive() { return active.get(); }
@@ -121,6 +118,18 @@ public class DefaultJobController implements JobController {
 	}
 
 	@Override
+	public boolean awaitFinish(long timeout, TimeUnit unit) throws InterruptedException {
+		final long limit = System.nanoTime() + unit.toNanos(timeout);
+		while(!isFinished()) {
+			if(System.nanoTime() > limit) {
+				return false;
+			}
+			Thread.sleep(100);
+		}
+		return true;
+	}
+
+	@Override
 	public JobStats getStats() {
 		// TODO when JobStats class is finished, actually create a result here
 		throw new UnsupportedOperationException("not implemented");
@@ -133,7 +142,9 @@ public class DefaultJobController implements JobController {
 	 * and no jobs are active anymore. */
 	@Override
 	public boolean isFinished() {
-		return getStatus().isFinished() && getActive()==0;
+		synchronized (lock) {
+			return getStatus().isFinished() && getActive()==0;
+		}
 	}
 
 	/**
@@ -159,7 +170,7 @@ public class DefaultJobController implements JobController {
 	public void start() {
 		// Make sure we only ever get executed once
 		if(!status.compareAndSet(JobStatus.WAITING, JobStatus.ACTIVE))
-			throw new QueryException(QueryErrorCode.RECYCLED_JOB, "Query job already started");
+			throw new QueryException(QueryErrorCode.RECYCLED_JOB, "Query job already started or terminated");
 
 		// Submit all workers for execution and then return
 		for(QueryWorker worker : workers) {
@@ -177,22 +188,26 @@ public class DefaultJobController implements JobController {
 			total.incrementAndGet();
 		}
 	}
-	void workerStarted() { active.incrementAndGet(); }
+	void workerStarted(QueryWorker worker) { active.incrementAndGet(); }
 	void workerCanceled() {
 		if(active.decrementAndGet() == 0) {
 			status.compareAndSet(JobStatus.ACTIVE, JobStatus.CANCELED);
 		}
 	}
-	void workerFailed(Exception e) {
+	void workerFailed(QueryWorker worker, Throwable t) {
 		// Unconditionally set status to FAILED (this way subsequent cancellations won't overwrite it)
 		status.set(JobStatus.FAILED);
 		synchronized (lock) {
 			active.decrementAndGet();
-			exceptionBuffer.addException(e);
-			workers.forEach(QueryWorker::cancel);
+			try {
+				exceptionHandler.accept(worker, t);
+			} finally {
+				// Make sure all other workers get canceled
+				workers.forEach(QueryWorker::cancel);
+			}
 		}
 	}
-	void workerDone() {
+	void workerDone(QueryWorker worker) {
 		if(active.decrementAndGet() == 0) {
 			status.compareAndSet(JobStatus.ACTIVE, JobStatus.DONE);
 		}
@@ -200,13 +215,47 @@ public class DefaultJobController implements JobController {
 
 	public static class Builder extends AbstractBuilder<Builder, DefaultJobController> {
 
+		private IqlQuery query;
+		private ExecutorService executorService;
+		private BiConsumer<QueryWorker, Throwable> exceptionHandler;
+
 		private Builder() { /* no-op */ }
 
-		@Override
-		protected DefaultJobController create() {
-			// TODO Auto-generated method stub
-			return null;
+		public IqlQuery getQuery() { return query; }
+
+		public Builder query(IqlQuery query) {
+			requireNonNull(query);
+			checkArgument("Query already set", this.query==null);
+			this.query = query;
+			return this;
 		}
 
+		public ExecutorService getExecutorService() { return executorService; }
+
+		public Builder executorService(ExecutorService executorService) {
+			requireNonNull(executorService);
+			checkArgument("Executor service already set", this.executorService==null);
+			this.executorService = executorService;
+			return this;
+		}
+
+		public BiConsumer<QueryWorker, Throwable> getExceptionHandler() { return exceptionHandler; }
+
+		public Builder exceptionHandler(BiConsumer<QueryWorker, Throwable> exceptionHandler) {
+			requireNonNull(executorService);
+			checkArgument("Exception handler already set", this.exceptionHandler==null);
+			this.exceptionHandler = exceptionHandler;
+			return this;
+		}
+
+		@Override
+		protected void validate() {
+			checkArgument("Query not set", query!=null);
+			checkArgument("Executor service not set", executorService!=null);
+			checkArgument("Exception handler not set", exceptionHandler!=null);
+		}
+
+		@Override
+		protected DefaultJobController create() { return new DefaultJobController(this); }
 	}
 }

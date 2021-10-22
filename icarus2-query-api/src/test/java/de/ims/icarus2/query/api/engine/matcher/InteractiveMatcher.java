@@ -107,6 +107,7 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
+import de.ims.icarus2.query.api.engine.QueryTestUtils;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Monitor;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
@@ -116,7 +117,6 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Snapshot;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
-import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
@@ -125,7 +125,6 @@ import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
-import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
@@ -1428,7 +1427,7 @@ public class InteractiveMatcher {
 				payload = null;
 			} else {
 				if(cbExpand.isSelected()) {
-					rawPayload = StructurePatternTest.expand(rawPayload);
+					rawPayload = QueryTestUtils.expand(rawPayload);
 				}
 
 				payload = new QueryProcessor().processPayload(rawPayload);
@@ -1446,12 +1445,12 @@ public class InteractiveMatcher {
 
 			pattern = null;
 
-			IqlElement root = payload.getLanes().get(0).getElement();
+			IqlLane lane = payload.getLanes().get(0);
 
-			Scope scope = Utils.scope();
+			Scope scope = QueryTestUtils.scope();
 
 			StructurePattern.Builder builder = StructurePattern.builder();
-			builder.root(root);
+			builder.source(lane);
 			builder.id(1);
 			RootContext rootContext = EvaluationContext.rootBuilder()
 					.corpus(scope.getCorpus())
@@ -1459,7 +1458,7 @@ public class InteractiveMatcher {
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
-					.lane(Utils.lane())
+					.lane(QueryTestUtils.lane())
 					.build();
 			builder.context(context);
 			builder.allowMonitor(true);

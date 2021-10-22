@@ -29,11 +29,11 @@ public interface QueryOutput {
 
 	/** Creates a new handler that collects results for the current thread in the given lane,
 	 * verified by the given {@link ThreadVerifier}. */
-	MatchCollector createCollector(LaneSetup lane, ThreadVerifier threadVerifier);
+	MatchCollector createCollector(int id, ThreadVerifier threadVerifier);
 
 	/** Makes sure the result handler for the specified lane that was used in the current
 	 * thread is closed down and buffer resources are freed up. */
-	void closeCollector(LaneSetup lane);
+	void closeCollector(int id);
 
 	/** Estimates the number of matches so far. The returned value is a best-effort guess
 	 * as long as the associated search is still in progress. Only when it is completed

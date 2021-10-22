@@ -26,13 +26,17 @@ import static java.util.Objects.requireNonNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
 
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
@@ -51,13 +55,18 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 	private static final String KEY_MATCHER = "matcher";
 
 	protected final IqlQuery query;
-	protected final int batchSize;
 	protected final QueryInput input;
 	protected final QueryOutput output;
+	protected final BiConsumer<Thread, Throwable> exceptionHandler;
+	protected final int batchSize;
 	//TODO
 
 	protected SingleStreamJob(Builder builder) {
-
+		query = builder.getQuery();
+		input = builder.getInput();
+		output = builder.getOutput();
+		exceptionHandler = builder.getExceptionHandler();
+		batchSize = builder.getBatchSize();
 	}
 
 	@Override
@@ -71,7 +80,9 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		checkArgument("worker limit must be positive", workerLimit>0);
 
 		DefaultJobController controller = DefaultJobController.builder()
-				//TODO configure builder
+				.executorService(executorService)
+				.query(query)
+				.exceptionHandler((worker, t) -> exceptionHandler.accept(worker.getThread(), t))
 				.build();
 
 		for (int i = 0; i < workerLimit; i++) {
@@ -83,12 +94,13 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 	static class SingleLaneJob extends SingleStreamJob {
 
-		private final LaneSetup lane;
+		private final StructurePattern pattern;
 
 		SingleLaneJob(Builder builder) {
 			super(builder);
 
-			//TODO
+			pattern = builder.getPattern();
+			checkState("Single pattern must have role 'SINGLETON'", pattern.getRole()==Role.SINGLETON);
 		}
 
 		/**
@@ -103,11 +115,11 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			final Container[] buffer = new Container[batchSize];
 			worker.putClientData(KEY_BUFFER, buffer);
 
-			final StructureMatcher matcher = lane.getPattern().matcherBuilder()
-					// Use same thread verifier as all components of the pipeline
+			final StructureMatcher matcher = pattern.matcherBuilder()
+					// Use same thread verifier for all components of the pipeline
 					.threadVerifier(threadVerifier)
 					// Instantiate result handler for this thread
-					.matchCollector(output.createCollector(lane, threadVerifier))
+					.matchCollector(output.createCollector(pattern.getId(), threadVerifier))
 					.build();
 			worker.putClientData(KEY_MATCHER, matcher);
 
@@ -115,6 +127,11 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			int length;
 			scan : while((length = input.load(buffer)) > 0) {
 				for (int i = 0; i < length; i++) {
+					// Abort search when canceled
+					if(worker.isCanceled()) {
+						break scan;
+					}
+
 					Container target = buffer[i];
 					// We rely on the original index values assigned to each container
 					long index = target.getIndex();
@@ -127,6 +144,11 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 					}
 				}
 			}
+
+			/* No cleanup needed here. We do that in cleanup(worker) method!
+			 * That way we can be sure that cleanup is being done even if errors
+			 * occurred or the process got canceled.
+			 */
 		}
 
 		@Override
@@ -138,21 +160,25 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			 *  thread verifier assigned to it and so will throw an exception
 			 *  if this method is called from another thread!
 			 */
-			output.closeCollector(lane);
+			output.closeCollector(pattern.getId());
+
+			// The following cleanup steps are not thread-related
 
 			// Cleanup all our previously stored container references
-			Container[] buffer = worker.getClientData(KEY_BUFFER);
+			Container[] buffer = worker.removeClientData(KEY_BUFFER);
 			Arrays.fill(buffer, null);
 
 			// Force a reset of the matcher just to be sure
-			StructureMatcher matcher = worker.getClientData(KEY_MATCHER);
+			StructureMatcher matcher = worker.removeClientData(KEY_MATCHER);
 			matcher.reset();
+
+			// At this point the worker should not hold any more references to our data
 		}
 	}
 
 	static class MultiLaneJob extends SingleStreamJob {
 
-		private final LaneSetup[] lanes;
+		private final StructurePattern[] patterns;
 
 		MultiLaneJob(Builder builder) {
 			super(builder);
@@ -176,21 +202,85 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 	public static class Builder extends AbstractBuilder<Builder, SingleStreamJob> {
 
-		private final List<LaneSetup> lanes = new ObjectArrayList<>();
-		private IqlStream stream;
+		private final List<StructurePattern> patterns = new ObjectArrayList<>();
+		private IqlQuery query;
+		private QueryInput input;
+		private QueryOutput output;
+		private BiConsumer<Thread, Throwable> exceptionHandler;
+		private Integer batchSize;
 
 		private Builder() { /* no-op */ }
+
+		public IqlQuery getQuery() { return query; }
+
+		public Builder query(IqlQuery query) {
+			requireNonNull(query);
+			checkArgument("Query already set", this.query==null);
+			this.query = query;
+			return this;
+		}
+
+		public List<StructurePattern> getPatterns() { return CollectionUtils.unmodifiableListProxy(patterns); }
+		public StructurePattern getPattern() {
+			checkState("Must have exactly 1 pattern registered", patterns.size()==1);
+			return patterns.get(0);
+		}
+
+		public Builder addPattern(StructurePattern pattern) {
+			requireNonNull(pattern);
+			patterns.add(pattern);
+			return this;
+		}
+
+		public QueryInput getInput() { return input; }
+
+		public Builder input(QueryInput input) {
+			requireNonNull(input);
+			checkArgument("Input already set", this.input==null);
+			this.input = input;
+			return this;
+		}
+
+		public QueryOutput getOutput() { return output; }
+
+		public Builder output(QueryOutput output) {
+			requireNonNull(output);
+			checkArgument("Output already set", this.output==null);
+			this.output = output;
+			return this;
+		}
+
+		public BiConsumer<Thread, Throwable> getExceptionHandler() { return exceptionHandler; }
+
+		public Builder exceptionHandler(BiConsumer<Thread, Throwable> exceptionHandler) {
+			requireNonNull(exceptionHandler);
+			checkArgument("Exception handler already set", this.exceptionHandler==null);
+			this.exceptionHandler = exceptionHandler;
+			return this;
+		}
+
+		public int getBatchSize() { return batchSize==null ? QueryUtils.DEFAULT_BATCH_SIZE : batchSize.intValue(); }
+
+		public Builder batchSize(int batchSize) {
+			checkArgument("Batch size must be positive", batchSize>0);
+			checkArgument("Batch size already set", this.batchSize==null);
+			this.batchSize = Integer.valueOf(batchSize);
+			return this;
+		}
 
 		//TODO
 
 		@Override
 		protected void validate() {
-			checkState("No lane setups defined", !lanes.isEmpty());
+			checkState("No patterns defined", !patterns.isEmpty());
+			checkState("No input defined", input!=null);
+			checkState("No output defined", output!=null);
+			checkState("No exception handler defined", exceptionHandler!=null);
 		}
 
 		@Override
 		protected SingleStreamJob create() {
-			if(lanes.size()==1) {
+			if(patterns.size()==1) {
 				return new SingleLaneJob(this);
 			}
 

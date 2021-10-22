@@ -17,11 +17,7 @@
 package de.ims.icarus2.query.api.engine.matcher;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockContainer;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockContext;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockCorpus;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePattern.last;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.ANCHOR_0;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.BUFFER_0;
@@ -110,7 +106,6 @@ import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -126,17 +121,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.model.api.corpus.Context;
-import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.view.Scope;
-import de.ims.icarus2.model.api.view.ScopeBuilder;
-import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
-import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
+import de.ims.icarus2.query.api.engine.QueryTestUtils;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArg;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArrayArg;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Branch;
@@ -152,6 +142,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NonResettingMatcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Ping;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Repetition;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StateMachineSetup;
@@ -192,8 +183,6 @@ import de.ims.icarus2.test.annotations.IntMatrixArg;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
-import de.ims.icarus2.util.collections.set.ArraySet;
-import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -213,7 +202,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  * @author Markus Gärtner
  *
  */
-class StructurePatternTest {
+public class StructurePatternTest {
 
 	private static final Class<?>[] ELEMENT_TYPES = {
 		IqlNode.class,
@@ -414,38 +403,6 @@ class StructurePatternTest {
 			atom = node;
 			return conn;
 		}
-
-		static final String LANE_NAME = "test_lane";
-		static final String ITEMS_NAME = "test_items";
-
-		static ItemLayer layer(Context context, String name, ItemLayer...baseLayers) {
-			ItemLayer layer = mockLayer(ItemLayer.class, context);
-			ItemLayerManifest manifest = mockTypedManifest(ManifestType.ITEM_LAYER_MANIFEST, name);
-			when(layer.getManifest()).thenAnswer(invoc -> manifest);
-			final DataSet<ItemLayer> bl = new ArraySet<>(baseLayers);
-			when(layer.getBaseLayers()).thenReturn(bl);
-			return layer;
-		}
-
-		static Scope scope() {
-			Corpus corpus = mockCorpus();
-			Context context = mockContext(corpus);
-			ItemLayer items = layer(context, ITEMS_NAME);
-			ItemLayer lane = layer(context, LANE_NAME, items);
-			Scope scope = ScopeBuilder.of(corpus)
-					.addContext(context)
-					.addLayer(items)
-					.addLayer(lane)
-					.setPrimaryLayer(lane)
-					.build();
-			return scope;
-		}
-
-		static IqlLane lane() {
-			IqlLane lane = new IqlLane();
-			lane.setName(LANE_NAME);
-			return lane;
-		}
 	}
 
 	/** Matches an inner constraint, but neither caches nor maps the result. */
@@ -486,29 +443,6 @@ class StructurePatternTest {
 
 		@Override
 		boolean isProxy() { return true; }
-	}
-
-	private static final Pattern NODE = Pattern.compile("\\$([A-Za-z])");
-
-	/** Expand {@code $X} expressions to proper constraints */
-	static String expand(String rawQuery) {
-		int lastAppend = 0;
-		java.util.regex.Matcher m = NODE.matcher(rawQuery);
-		StringBuilder sb = new StringBuilder();
-		if(!rawQuery.startsWith("FIND ")) {
-			sb.append("FIND ");
-		}
-		while(m.find()) {
-			String content = m.group(1);
-			assertThat(content).as("node content not a single character").hasSize(1);
-			char c = content.charAt(0);
-			// Can't use Matcher.appendReplacement, as we use $ in the expression
-			sb.append(rawQuery, lastAppend, m.start())
-				.append(eq_exp(c));
-			lastAppend = m.end();
-		}
-		sb.append(rawQuery, lastAppend, rawQuery.length());
-		return sb.toString();
 	}
 
 	static IqlNode[] mockMappedNodes(int size) {
@@ -1350,10 +1284,13 @@ class StructurePatternTest {
 		private void makeBuilderFromQueryElement(int size) {
 			checkState("Root element not set", root!=null);
 
-			Scope scope = Utils.scope();
+			Scope scope = QueryTestUtils.scope();
+
+			IqlLane lane = mock(IqlLane.class);
+			when(lane.getElement()).thenReturn(root);
 
 			builder = StructurePattern.builder();
-			builder.root(root);
+			builder.source(lane);
 			builder.id(1);
 			RootContext rootContext = EvaluationContext.rootBuilder()
 					.corpus(scope.getCorpus())
@@ -1361,7 +1298,7 @@ class StructurePatternTest {
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
-					.lane(Utils.lane())
+					.lane(QueryTestUtils.lane())
 					.build();
 			builder.context(context);
 			builder.initialBufferSize(size*2);
@@ -1372,7 +1309,7 @@ class StructurePatternTest {
 
 			String payloadString = query;
 			if(isSet(expand)) {
-				payloadString = StructurePatternTest.expand(payloadString);
+				payloadString = QueryTestUtils.expand(payloadString);
 			}
 
 			IqlPayload payload = new QueryProcessor(options).processPayload(payloadString);
@@ -1383,12 +1320,11 @@ class StructurePatternTest {
 			if(lane.getLaneType()==LaneType.TREE) {
 				assertThat(tree).as("Must provide tree structure for tree query").isNotNull();
 			}
-			IqlElement root = lane.getElement();
 
-			Scope scope = Utils.scope();
+			Scope scope = QueryTestUtils.scope();
 
 			builder = StructurePattern.builder();
-			builder.root(root);
+			builder.source(lane);
 			builder.id(1);
 			RootContext rootContext = EvaluationContext.rootBuilder()
 					.corpus(scope.getCorpus())
@@ -1435,13 +1371,17 @@ class StructurePatternTest {
 					builderMods.forEach(action -> action.accept(builder));
 				}
 
+				if(builder.geRole()==null) {
+					builder.role(Role.SINGLETON);
+				}
+
 				pattern = builder.build();
 			}
 
 			checkState("Pattern not set", pattern!=null);
 
 			if(queryConfig!=null) {
-				queryConfig.assertQuery((IqlElement) pattern.getSource());
+				queryConfig.assertQuery(pattern.getSource().getElement());
 			}
 
 			NonResettingMatcher matcher = pattern.matcherForTesting();

@@ -26,7 +26,7 @@ import de.ims.icarus2.query.api.QueryException;
 
 /**
  * Exception to signal one or more issues found during the processing of a
- * raw query payload, result instructions or groouping.
+ * raw query payload, result instructions or grouping.
  *
  * @author Markus Gärtner
  *

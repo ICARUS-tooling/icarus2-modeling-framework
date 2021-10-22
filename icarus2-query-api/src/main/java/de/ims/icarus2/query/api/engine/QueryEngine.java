@@ -49,6 +49,7 @@ import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.ext.EngineExtension;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
@@ -235,7 +236,7 @@ public class QueryEngine {
 				//TODO wrap filter and global constraint into a simple matcher
 			} else {
 				// At least one proper (proxy) lane definition available
-				List<LaneSetup> setups = new ObjectArrayList<>();
+				List<StructurePattern> elements = new ObjectArrayList<>();
 
 				final int last = lanes.size()-1;
 				for (int i = 0; i <= last; i++) {
@@ -252,8 +253,10 @@ public class QueryEngine {
 							.id(i)
 							// Environment for creating expressions etc...
 							.context(laneContext)
-							// Actual structural root element
-							.root(lane.getElement());
+							// Actual structural root element (lane)
+							.source(lane)
+							// Role/Position of the lane
+							.role(Role.of(isFirst, isLast));
 
 					// Local hit limit and match flags
 					lane.getFlags().forEach(builder::flag);
@@ -270,7 +273,7 @@ public class QueryEngine {
 
 					final StructurePattern pattern = builder.build();
 
-					setups.add(new LaneSetup(i, lane, laneContext, pattern, isFirst, isLast));
+					elements.add(pattern);
 				}
 
 				//TODO now decide on QueryJob implementation based on number of lanes

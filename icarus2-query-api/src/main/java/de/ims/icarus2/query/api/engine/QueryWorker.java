@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
@@ -29,7 +30,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * Skeleton class for implementing a worker that is associated with a
  * {@link DefaultJobController} instance for monitoring. This implementation
  * does all the bookkeeping work and uses an instance of {@link Task} to
- * delegate the actual matcher work. This task method and occasionally call
+ * delegate the actual matcher work. This task should occasionally call
  * {@link QueryWorker#isCanceled()} to see if they need to bail, preferably
  * on the beginning of a new iteration pass, the start of a processing batch
  * or similar "clean" point during operation.
@@ -46,7 +47,7 @@ public final class QueryWorker implements Runnable {
 	 *
 	 */
 	public interface Task {
-		/** Called once during a task lifecycle to perform thhe actual matcher work. */
+		/** Called once during a task lifecycle to perform the actual matcher work. */
 		void execute(QueryWorker worker) throws InterruptedException;
 
 		/** Method called when the worker is shutting down, either due to natural causes,
@@ -56,15 +57,18 @@ public final class QueryWorker implements Runnable {
 	}
 
 	private final DefaultJobController controller;
-	private final ThreadVerifier threadVerifier;
+	private ThreadVerifier threadVerifier;
 
+	private final String id;
 	private final Task task;
 	private final Map<String, Object> clientData = new Object2ObjectOpenHashMap<>();
 
 	private volatile boolean canceled = false;
 
+	/** Package-private constructor so that only tests or the {@link DefaultJobController}
+	 * can instantiate. */
 	QueryWorker(String id, DefaultJobController controller, Task task) {
-		this.threadVerifier = new ThreadVerifier(id);
+		this.id = requireNonNull(id);
 		this.controller = requireNonNull(controller);
 		this.task = requireNonNull(task);
 	}
@@ -80,12 +84,22 @@ public final class QueryWorker implements Runnable {
 	/** Returns the 'canceled' flag. */
 	public boolean isCanceled() { return canceled; }
 
-	public ThreadVerifier getThreadVerifier() { return threadVerifier; }
+	public ThreadVerifier getThreadVerifier() {
+		checkState("No thread verifier assigned", threadVerifier!=null);
+		return threadVerifier;
+	}
 
 	public DefaultJobController getController() { return controller; }
 
+	public Thread getThread() { return threadVerifier.getThread(); }
+
 	public void putClientData(String key, Object value) {
 		clientData.put(key, value);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T removeClientData(String key) {
+		return (T) clientData.remove(key);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -95,22 +109,30 @@ public final class QueryWorker implements Runnable {
 
 	@Override
 	public final void run() {
-		controller.workerStarted();
+		// Mark this thread as the only one we are allowed to operate on
+		threadVerifier = new ThreadVerifier(id);
+
+		controller.workerStarted(this);
 
 		try {
 			task.execute(this);
 
 			if(!canceled) {
-				controller.workerDone();
+				controller.workerDone(this);
 			}
 		} catch(InterruptedException e) {
+			// Possible through hard cancellation from the executor service
 			cancel();
-		} catch(Exception e) {
-			controller.workerFailed(e);
+		} catch(Throwable e) {
+			controller.workerFailed(this, e);
 		} finally {
-			task.cleanup(this);
-			//TODO we could run into the situation that cleanup() throws an exception and clientData is not cleared afterwards
-			clientData.clear();
+			try {
+				// Let task perform internal cleanup
+				task.cleanup(this);
+			} finally {
+				// Ensure we do NOT hold any references to external data
+				clientData.clear();
+			}
 		}
 	}
 }

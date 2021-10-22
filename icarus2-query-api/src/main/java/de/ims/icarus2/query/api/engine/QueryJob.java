@@ -78,6 +78,9 @@ public interface QueryJob {
 		 * for an amount of time up the specified timeout. */
 		boolean cancel(long timeout, TimeUnit unit) throws InterruptedException;
 
+		/** Wait for completion of the underlying workers */
+		boolean awaitFinish(long timeout, TimeUnit unit) throws InterruptedException;
+
 		/** Fetches a snapshot of the current search statistics. */
 		JobStats getStats();
 

@@ -192,22 +192,24 @@ public class StructurePattern {
 	private final AtomicInteger matcherIdGen = new AtomicInteger(0);
 
 	/** The IQL source of structural constraints for this matcher. */
-	private final IqlQueryElement source;
-	/** Additional flags controlling search aspects. */
-	private final Set<IqlLane.MatchFlag> flags;
+	private final IqlLane source;
 	/** The root context for evaluations in this pattern */
 	private final LaneContext context;
 	/** Blueprint for instantiating a new {@link StructureMatcher} */
 	private final StateMachineSetup setup;
+	/** Position of this pattern in the greater context */
+	private final Role role;
+	private final int id;
 
 	private final IqlNode[] mappedNodes;
 	private final Reference2IntMap<IqlNode> mappedIds;
 	private final Object2IntMap<String> mappedLabels;
 
 	private StructurePattern(Builder builder) {
-		flags = builder.geFlags();
-		source = builder.getRoot();
+		source = builder.getSource();
 		context = builder.geContext();
+		role = builder.geRole();
+		id = builder.getId();
 
 		StructureQueryProcessor proc = new StructureQueryProcessor(builder);
 		setup = proc.createStateMachine();
@@ -228,10 +230,12 @@ public class StructurePattern {
 				mappedLabels.put(label.get(), e.getIntValue());
 			}
 		});
-		//TODO
 	}
 
-	public IqlQueryElement getSource() { return source; }
+	public IqlLane getSource() { return source; }
+	public LaneContext getContext() { return context; }
+	public Role getRole() { return role; }
+	public int getId() { return id; }
 
 	public IqlNode nodeForId(int mappingId) { return mappedNodes[mappingId]; }
 	public int idForNode(IqlNode node) { return mappedIds.getInt(node); }
@@ -260,6 +264,37 @@ public class StructurePattern {
 	NonResettingMatcher matcherForTesting() {
 		int id = matcherIdGen.getAndIncrement();
 		return new NonResettingMatcher(setup, id);
+	}
+
+	public static enum Role {
+
+		FIRST(true, false),
+		LAST(false, true),
+		INTERMEDIATE(false, false),
+		SINGLETON(true, true),
+		;
+
+		private final boolean isFirst, isLast;
+
+		private Role(boolean isFirst, boolean isLast) {
+			this.isFirst = isFirst;
+			this.isLast = isLast;
+		}
+
+		public boolean isFirst() { return isFirst; }
+		public boolean isLast() { return isLast; }
+
+		public static Role of(boolean isFirst, boolean isLast) {
+			if(isFirst && isLast) {
+				return SINGLETON;
+			} else if(isFirst) {
+				return FIRST;
+			} else if(isLast) {
+				return LAST;
+			}
+
+			return INTERMEDIATE;
+		}
 	}
 
 	/**
@@ -697,7 +732,7 @@ public class StructurePattern {
 			rootContext = builder.geContext();
 			flags = builder.geFlags();
 			limit = builder.getLimit();
-			rootElement = builder.getRoot();
+			rootElement = builder.getSource().getElement();
 			filterConstraint = builder.getFilterConstraint();
 			globalConstraint = builder.getGlobalConstraint();
 
@@ -2436,7 +2471,7 @@ public class StructurePattern {
 			borders = setup.getBorders();
 			pings = setup.getPings();
 
-			modes = new ModeTrace[2];
+			modes = new ModeTrace[1];
 
 			modes[MODE_SKIP] = new ModeTrace(setup.skipControlCount, true);
 
@@ -2508,6 +2543,10 @@ public class StructurePattern {
 		final void resetMode(int mode) { modes[mode].back(); }
 
 		public final void reset() {
+			if(size==UNSET_INT) {
+				return;
+			}
+
 			// Cleanup duty -> we must erase all references to target and its elements
 			target = null;
 			// For all the buffers that depend on target size we try to minimize the overhead
@@ -2564,10 +2603,7 @@ public class StructurePattern {
 
 		@Override
 		public Match toMatch() {
-			int size = entry;
-			return Match.of(index,
-					Arrays.copyOf(m_node, size),
-					Arrays.copyOf(m_index, size));
+			return Match.of(index, entry, m_node, m_index);
 		}
 
 		@Override
@@ -2883,7 +2919,7 @@ public class StructurePattern {
 
 	public static class Builder extends AbstractBuilder<Builder, StructurePattern> {
 
-		private IqlElement root;
+		private IqlLane source;
 		private Integer id;
 		private Integer initialBufferSize;
 		private Long limit;
@@ -2894,8 +2930,7 @@ public class StructurePattern {
 		private Function<IqlNode, IqlNode> nodeTransform;
 		private Boolean allowMonitor;
 		private Boolean cacheAll;
-
-		//TODO add fields for configuring the result buffer
+		private Role role;
 
 		private Builder() { /* no-op */ }
 
@@ -2955,12 +2990,12 @@ public class StructurePattern {
 			return this;
 		}
 
-		public IqlElement getRoot() { return root; }
+		public IqlLane getSource() { return source; }
 
-		public Builder root(IqlElement root) {
-			requireNonNull(root);
-			checkState("root already set", this.root==null);
-			this.root = root;
+		public Builder source(IqlLane source) {
+			requireNonNull(source);
+			checkState("root already set", this.source==null);
+			this.source = source;
 			return this;
 		}
 
@@ -2991,6 +3026,15 @@ public class StructurePattern {
 			return this;
 		}
 
+		public Role geRole() { return role; }
+
+		public Builder role(Role role) {
+			requireNonNull(role);
+			checkState("role already set", this.role==null);
+			this.role = role;
+			return this;
+		}
+
 		public Set<IqlLane.MatchFlag> geFlags() { return EnumSet.copyOf(flags); }
 
 		public Builder flag(IqlLane.MatchFlag flag) {
@@ -3011,8 +3055,9 @@ public class StructurePattern {
 		protected void validate() {
 			super.validate();
 
-			checkState("No root element defined", root!=null);
+			checkState("No source lane defined", source!=null);
 			checkState("Id not defined", id!=null);
+			checkState("Role not defined", role!=null);
 			checkState("Context not defined", context!=null);
 			checkState("Context is not a lane context", context.isLane());
 		}

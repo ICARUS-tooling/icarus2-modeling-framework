@@ -44,6 +44,8 @@ public class QueryUtils {
 
 	public static final int BUFFER_STARTSIZE = 1<<10;
 
+	public static final int DEFAULT_BATCH_SIZE = 1<<10;
+
 	private static class WorkerThreadFactory implements ThreadFactory {
 
 	    private final AtomicInteger counter;
@@ -93,12 +95,12 @@ public class QueryUtils {
 		}
 
 		@Override
-		public int load(Container[] buffer) {
+		public synchronized int load(Container[] buffer) {
 			if(cursor>=items.length) {
 				return 0;
 			}
 
-			final int len = Math.min(buffer.length, items.length-cursor+1);
+			final int len = Math.min(buffer.length, items.length-cursor);
 			System.arraycopy(items, cursor, buffer, 0, len);
 			cursor += len;
 
@@ -106,44 +108,45 @@ public class QueryUtils {
 		}
 	}
 
-	public static QueryOutput bufferedOutput(LaneSetup lane, int limit) {
-		return new BufferedSingleLaneQueryOutput(lane, limit);
+	public static BufferedSingleLaneQueryOutput bufferedOutput(int id, int limit) {
+		return new BufferedSingleLaneQueryOutput(id, limit);
 	}
 
-	public static QueryOutput bufferedOutput(LaneSetup lane) {
-		return bufferedOutput(lane, UNSET_INT);
+	public static BufferedSingleLaneQueryOutput bufferedOutput(int id) {
+		return bufferedOutput(id, UNSET_INT);
 	}
 
-	static class BufferedSingleLaneQueryOutput implements QueryOutput, MatchCollector {
+	public static class BufferedSingleLaneQueryOutput implements QueryOutput, MatchCollector {
 
-		private final LaneSetup lane;
+		private final int id;
 		private final int limit;
 		private final List<Match> buffer = new ObjectArrayList<>();
 
-		BufferedSingleLaneQueryOutput(LaneSetup lane, int limit) {
-			this.lane = requireNonNull(lane);
+		public BufferedSingleLaneQueryOutput(int id, int limit) {
+			this.id = id;
 			this.limit = limit;
 		}
 
 		@Override
-		public MatchCollector createCollector(LaneSetup lane, ThreadVerifier threadVerifier) {
-			checkArgument("Foreign lane", lane==this.lane);
+		public MatchCollector createCollector(int id, ThreadVerifier threadVerifier) {
+			checkArgument("Foreign lane", id==this.id);
 			return this;
 		}
 
 		@Override
 		public boolean collect(MatchSource source) {
-			if(isFull()) {
-				return false;
+			if(!isFull()) {
+				buffer.add(source.toMatch());
 			}
 
-			buffer.add(source.toMatch());
 
 			return !isFull();
 		}
 
 		@Override
-		public void closeCollector(LaneSetup lane) { /* no -op*/ }
+		public void closeCollector(int id) {
+			checkArgument("Foreign lane", id==this.id);
+		}
 
 		@Override
 		public long countMatches() { return buffer.size(); }
@@ -155,7 +158,7 @@ public class QueryUtils {
 
 		public int getLimit() { return limit; }
 
-		public LaneSetup getLane() { return lane; }
+		public int getId() { return id; }
 
 		public List<Match> getMatches() { return CollectionUtils.unmodifiableListProxy(buffer); }
 	}
