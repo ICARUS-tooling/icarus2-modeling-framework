@@ -20,105 +20,162 @@
 package de.ims.icarus2.query.api.engine.result;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.lang.reflect.Array;
-import java.util.AbstractList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
-import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.query.api.engine.result.ResultBuffer.SortableBase.SortableBuilderBase;
+import de.ims.icarus2.util.AbstractBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
 /**
  * Models the storage part of result handling.
+ * <p>
+ * Implementation note:<br>
+ * We use {@link ObjectArrays} here in certain situations over {@link Arrays}. This
+ * is the case mostly for sorting (via {@link ObjectArrays#quickSort(Object[], int, int, Comparator)}
+ * as this implementation does not create object overhead from creating additional temporary
+ * arrays during recursion.
  *
  * @author Markus Gärtner
  *
  */
 public abstract class ResultBuffer<T> {
 
-	protected final int collectorBufferSize;
+	private final int initialGlobalSize;
+	private final int collectorBufferSize;
 	private final List<Collector<T>> collectors = new ObjectArrayList<>();
 
-	protected final List<T> items;
-	private final ListProxy<T> proxy = new ListProxy<>();
+	private T[] items;
+	private int size;
+	private final IntFunction<T[]> bufferGen;
 
-	protected ResultBuffer(int initialGlobalSize, int collectorBufferSize) {
-		checkArgument("Initial global buffer size must be positive", initialGlobalSize>0);
-		checkArgument("Collector buffer size must be positive", collectorBufferSize>0);
-		items = new ObjectArrayList<>(initialGlobalSize);
-		this.collectorBufferSize = collectorBufferSize;
+	private final Object collectorLock = new Object();
+
+	protected ResultBuffer(BuilderBase<?, T, ?> builder) {
+		initialGlobalSize = builder.initialGlobalSize();
+		collectorBufferSize = builder.collectorBufferSize();
+		bufferGen = builder.bufferGen();
 	}
 
-	protected ResultBuffer(int initialGlobalSize) {
-		checkArgument("Initial global buffer size must be positive", initialGlobalSize>0);
-		items = new ObjectArrayList<>(initialGlobalSize);
-		this.collectorBufferSize = UNSET_INT;
+	@VisibleForTesting
+	List<T> items() {
+		checkState("result empty", size > 0);
+		return Arrays.asList(items).subList(0, size);
 	}
 
+	/** Creates a new collector for the given thread. Uses {@code collectorLock}. */
 	public final Predicate<T> createCollector(ThreadVerifier threadVerifier) {
 		requireNonNull(threadVerifier);
-		Collector<T> collector = newCollector(threadVerifier);
-		collectors.add(collector);
-		return collector;
+		synchronized (collectorLock) {
+			Collector<T> collector = requireNonNull(newCollector(threadVerifier));
+			collectors.add(collector);
+			return collector;
+		}
 	}
 
 	protected abstract Collector<T> newCollector(ThreadVerifier threadVerifier);
 
+	public final int size() { return size; }
+
+	public final T get(int index) {
+		rangeCheck(index);
+		return items[index];
+	}
+
+	/** Performs final maintenance work. Uses {@code collectorLock}. */
 	public final void finish() {
-		for (int i = collectors.size()-1; i >= 0; i--) {
-			collectors.get(i).finish();
+		synchronized (collectorLock) {
+			for (int i = collectors.size()-1; i >= 0; i--) {
+				assert collectors.get(i)!=null;
+				collectors.get(i).finish();
+			}
+			doFinish();
 		}
-		doFinish();
 	}
 
 	/** Finalize state after all pending collectors have been merged. */
 	protected void doFinish() { /* no-op */ }
 
-	protected void add(int index, T[] elements, int length) {
-		if(index==UNSET_INT) {
-			index = items.size();
-		}
-		proxy.reset(elements, length);
-		items.addAll(index, proxy);
-		proxy.reset();
+	protected final T[] createBuffer(int size) { return bufferGen.apply(size); }
+	protected final T[] createCollectorBuffer() { return bufferGen.apply(collectorBufferSize); }
+
+	private void rangeCheck(int index) {
+		if(index<0 || index>=size)
+			throw new ArrayIndexOutOfBoundsException();
 	}
+
+	private void rangeCheckForAdd(int index) {
+		if(index<0 || index>size)
+			throw new ArrayIndexOutOfBoundsException();
+	}
+
+	private void ensureCapacity(int capacity) {
+		if(items==null) {
+			items = createBuffer(Math.max(initialGlobalSize, capacity));
+		} else {
+			items = ObjectArrays.grow(items, capacity, size);
+		}
+	}
+
+	protected final void add(T[] elements, int offset, int length) {
+		ensureCapacity(size + length);
+		System.arraycopy(elements, offset, items, size, length);
+		size += length;
+	}
+
+	protected final void add(T element) {
+		ensureCapacity(size + 1);
+		items[size++] = element;
+	}
+
+	protected final void insert(int index, T[] elements, int offset, int length) {
+		rangeCheckForAdd(index);
+		ensureCapacity(size + length);
+		System.arraycopy(items, index, items, index + length, size - index);
+		System.arraycopy(elements, offset, items, index, length);
+		size += length;
+	}
+
+	protected final int find(T key, int from, int to, Comparator<? super T> c) {
+		return ObjectArrays.binarySearch(items, from, to, key, c);
+	}
+
+	protected final void copyTo(int srcPos, T[] dest, int destPos, int length) {
+		System.arraycopy(items, srcPos, dest, destPos, length);
+	}
+
+	protected final void copyFrom(int destPos, T[] source, int srcPos, int length) {
+		System.arraycopy(source, srcPos, items, destPos, length);
+	}
+
+	protected final void sortResult(Comparator<? super T> c) {
+		ObjectArrays.quickSort(items, 0, size, c);
+	}
+
+	protected final void trim(int limit) {
+		if(size >= limit) {
+			Arrays.fill(items, limit, size, null);
+		}
+	}
+
+	protected final Object collectorLock() { return collectorLock; }
+	protected final int collectorBufferSize() { return collectorBufferSize; }
 
 	protected interface Collector<T> extends Predicate<T> {
 		/** Callback for subclasses to perform final maintenance work.
 		 * In contrast to {@link #test(Object)} this method can be called
 		 * from different threads and must! */
 		default void finish() { /* no-op */ }
-	}
-
-	private static final class ListProxy<E> extends AbstractList<E> {
-
-		private E[] elements;
-		private int length;
-
-		void reset(E[] elements, int length) {
-			this.elements = elements;
-			this.length = length;
-		}
-
-		void reset() {
-			elements = null;
-			length = 0;
-		}
-
-		// TODO should we do a range check here for index?
-		@Override
-		public E get(int index) { return elements[index]; }
-
-		@Override
-		public int size() { return length; }
-
 	}
 
 	/**
@@ -133,13 +190,12 @@ public abstract class ResultBuffer<T> {
 	 * @param <T> type of items to be buffered
 	 */
 	private static abstract class BufferedCollector<T> implements Collector<T> {
-		protected final ThreadVerifier threadVerifier;
-		protected final T[] buffer;
+		private final ThreadVerifier threadVerifier;
+		private final T[] buffer;
 		private int cursor = 0;
 
-		@SuppressWarnings("unchecked")
-		protected BufferedCollector(Class<T> clazz, int bufferSize, ThreadVerifier threadVerifier) {
-			buffer = (T[]) Array.newInstance(clazz, bufferSize);
+		protected BufferedCollector(T[] buffer, ThreadVerifier threadVerifier) {
+			this.buffer = requireNonNull(buffer);
 			this.threadVerifier = requireNonNull(threadVerifier);
 		}
 
@@ -150,97 +206,478 @@ public abstract class ResultBuffer<T> {
 				threadVerifier.checkThread();
 			}
 			buffer[cursor++] = item;
+			boolean result = true;
 			if(cursor>=buffer.length) {
-				merge(buffer.length);
+				result = merge(buffer, buffer.length);
 				cursor = 0;
 			}
-			return true;
+			return result;
 		}
 
 		/** Merge any leftover items in buffer */
 		@Override
 		public void finish() {
 			if(cursor>0) {
-				merge(cursor);
+				merge(buffer, cursor);
+				Arrays.fill(buffer, 0, cursor, null);
 				cursor = 0;
 			}
 		}
 
 		/** Integrate the current buffer into the host result */
-		protected abstract void merge(int length);
+		protected abstract boolean merge(T[] buffer, int length);
 	}
 
+	/**
+	 * Collects unordered elements without limit.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
 	public static final class Unlimited extends ResultBuffer<Match> {
 
-		public Unlimited(int initialGlobalSize, int collectorBufferSize) {
-			super(initialGlobalSize, collectorBufferSize);
+		public static Builder builder() { return new Builder(); }
+
+		private Unlimited(Builder builder) { super(builder); }
+
+		@Override
+		protected Collector<Match> newCollector(ThreadVerifier threadVerifier) {
+			return new CollectorImp(createCollectorBuffer(), threadVerifier);
+		}
+
+		private final class CollectorImp extends BufferedCollector<Match> {
+			private CollectorImp(Match[] buffer, ThreadVerifier threadVerifier) {
+				super(buffer, threadVerifier);
+			}
+
+			@Override
+			protected boolean merge(Match[] buffer, int length) {
+				synchronized (collectorLock()) {
+					add(buffer, 0, length);
+				}
+				return true;
+			}
+		}
+
+		public static class Builder extends BuilderBase<Builder, Match, Unlimited> {
+			private Builder() {
+				super(true);
+				bufferGen(Match[]::new);
+			}
+			@Override
+			protected Unlimited create() { return new Unlimited(this); }
+		}
+	}
+
+	/**
+	 * Collects unordered elements with a hard limit. This implementation makes weaker
+	 * guarantees than {@link FirstN} when it comes to concurrent attempts of adding
+	 * items to the result:
+	 * <p>
+	 * We use {@link BufferedCollector}s here and only check at merge time whether or
+	 * not there's still capacity left for adding items to the result. In the context
+	 * of concurrent access this means that we can make no estimates on the time an
+	 * element gets added in relation to when it gets first processed.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static final class Limited extends ResultBuffer<Match> {
+
+		public static Builder builder() { return new Builder(); }
+
+		private final int limit;
+
+		private Limited(Builder builder) {
+			super(builder);
+			limit = builder.limit();
 		}
 
 		@Override
 		protected Collector<Match> newCollector(ThreadVerifier threadVerifier) {
-			return new CollectorImp(collectorBufferSize, threadVerifier);
+			return new CollectorImp(createCollectorBuffer(), threadVerifier);
 		}
 
-		private class CollectorImp extends BufferedCollector<Match> {
-			private CollectorImp(int bufferSize, ThreadVerifier threadVerifier) {
-				super(Match.class, bufferSize, threadVerifier);
+		private final class CollectorImp extends BufferedCollector<Match> {
+			private CollectorImp(Match[] buffer, ThreadVerifier threadVerifier) {
+				super(buffer, threadVerifier);
 			}
 
 			@Override
-			protected void merge(int length) {
-				synchronized (items) {
-					add(UNSET_INT, buffer, length);
+			protected boolean merge(Match[] buffer, int length) {
+				synchronized (collectorLock()) {
+					int remaining = limit - size();
+					if(remaining>0) {
+						add(buffer, 0, Math.min(length, remaining));
+						return size()<limit;
+					}
+					return false;
 				}
 			}
 		}
+
+		public static class Builder extends BuilderBase<Builder, Match, Limited> {
+
+			private Integer limit;
+
+			private Builder() {
+				super(true);
+				bufferGen(Match[]::new);
+			}
+
+			public Builder limit(int limit) {
+				checkArgument("limit must be positive", limit>0);
+				checkState("limit already set", this.limit==null);
+				this.limit = Integer.valueOf(limit);
+				return thisAsCast();
+			}
+
+			int limit() { return limit.intValue(); }
+
+			@Override
+			protected void validate() {
+				super.validate();
+				checkState("limit not set", limit!=null);
+			}
+
+			@Override
+			protected Limited create() { return new Limited(this); }
+		}
 	}
 
-	static abstract class SortedBase extends ResultBuffer<ResultEntry> {
+	static abstract class SortableBase extends ResultBuffer<ResultEntry> {
 
 		private final Comparator<ResultEntry> sorter;
+		private final int initialTmpSize;
 		private ResultEntry[] tmp;
 
-		public SortedBase(int initialGlobalSize, int collectorBufferSize,
-				Comparator<ResultEntry> sorter) {
-			super(initialGlobalSize, collectorBufferSize);
-			this.sorter = requireNonNull(sorter);
+		public SortableBase(SortableBuilderBase<?,?> builder) {
+			super(builder);
+			sorter = builder.sorter();
+			initialTmpSize = builder.initialTmpSize();
 		}
 
-		protected final void doMerge(ResultEntry[] buffer, int length) {
-			// Sort the original data
-			Arrays.sort(buffer, 0, length, sorter);
-			synchronized (items) {
-				// Easy mode for first insertion
-				if(items.isEmpty()) {
-					CollectionUtils.feedItems(items, buffer);
-					return;
-				}
+		protected final Comparator<ResultEntry> sorter() { return sorter; }
 
-				// Find left and right insertion points for first and last item in buffer
-				int left = Collections.binarySearch(items, buffer[0], sorter);
-				if(left < 0) {
-					left = -left - 1;
+		protected final void sortResult() {
+			if(sorter!=null) {
+				sortResult(sorter);
+			}
+		}
+
+		private void ensureTmpCapacity(int capacity) {
+			if(tmp==null) {
+				tmp = createBuffer(Math.max(initialTmpSize, capacity));
+			} else {
+				tmp = ObjectArrays.grow(tmp, capacity);
+			}
+		}
+
+		/**
+		 * Merges the given {@code buffer} into the underlying array of entries.
+		 * The {@code buffer} array is expected to be sorted already.
+		 *
+		 * @param buffer
+		 * @param length
+		 */
+		protected final void mergeSorted(ResultEntry[] buffer, int length) {
+			// Easy mode for first insertion
+			if(size()==0) {
+				add(buffer, 0, length);
+				return;
+			}
+
+			// Find left and right insertion points for first and last item in buffer
+			int right = find(buffer[length-1], 0, size(), sorter);
+			if(right < 0) {
+				right = -right - 1;
+			}
+			// If new set of results is completely before the old section, just prepend
+			if(right==0) {
+				insert(0, buffer, 0, length);
+				return;
+			}
+			int left = find(buffer[0], 0, right, sorter);
+			if(left < 0) {
+				left = -left - 1;
+			}
+			// If new set of results is completely after the old section, just append
+			if(left>=size()) {
+				add(buffer, 0, length);
+				return;
+			}
+			// Copy section [n..m] from items list, combine with buffer and sort
+			int secLen = right - left;
+			ensureTmpCapacity(length + secLen);
+			copyTo(left, tmp, 0, secLen);
+			System.arraycopy(buffer, 0, tmp, secLen, length);
+			ObjectArrays.quickSort(tmp, 0, length + secLen, sorter);
+			// Copy chunk of sorted tmp array back to [n..m] in items list
+			copyFrom(left, tmp, 0, secLen);
+			// Insert remaining items at right insertion point into items list
+			insert(right, tmp, secLen, length);
+		}
+
+		static abstract class SortableBuilderBase<B extends SortableBuilderBase<B, R>, R extends ResultBuffer<ResultEntry>>
+				extends BuilderBase<B, ResultEntry, R> {
+
+			private Comparator<ResultEntry> sorter;
+			private Integer initialTmpSize;
+
+			private final boolean requiresSorter;
+
+			protected SortableBuilderBase(boolean requiresCollectorBuffer, boolean requiresSorter) {
+				super(requiresCollectorBuffer);
+				this.requiresSorter = requiresSorter;
+				bufferGen(ResultEntry[]::new);
+			}
+
+			public B initialTmpSize(int initialTmpSize) {
+				checkArgument("initial temp size must be positive", initialTmpSize>0);
+				checkState("initial temp size already set", this.initialTmpSize==null);
+				this.initialTmpSize = Integer.valueOf(initialTmpSize);
+				return thisAsCast();
+			}
+
+			int initialTmpSize() { return initialTmpSize.intValue(); }
+
+			public B sorter(Comparator<ResultEntry> sorter) {
+				checkState("sorter already set", this.sorter==null);
+				this.sorter = requireNonNull(sorter);
+				return thisAsCast();
+			}
+
+			Comparator<ResultEntry> sorter() { return sorter; }
+
+			@Override
+			protected void validate() {
+				super.validate();
+				if(requiresSorter) {
+					checkState("initial temp size not set", initialTmpSize!=null);
+					checkState("sorter not set", sorter!=null);
 				}
-				int right = Collections.binarySearch(items, buffer[length-1], sorter);
-				if(right < 0) {
-					right = -right - 1;
-				}
-				// Copy section [n..m] from items list, combine with buffer and sort
-				// Copy chunk of sorted tmp array back to [n..m] in items list
-				// Insert remaining items at right insertion point into items list
 			}
 		}
 	}
 
-	public static final class Sorted extends SortedBase {
+	/**
+	 * Inserts pre-sorted chunks to keep the total amount of sorting overhead small.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static final class Sorted extends SortableBase {
+
+		public static Builder builder() { return new Builder(); }
+
+		private Sorted(Builder builder) {
+			super(builder);
+		}
+
+		@Override
+		protected Collector<ResultEntry> newCollector(ThreadVerifier threadVerifier) {
+			return new CollectorImp(createCollectorBuffer(), threadVerifier);
+		}
+
+		private final class CollectorImp extends BufferedCollector<ResultEntry> {
+			private CollectorImp(ResultEntry[] buffer, ThreadVerifier threadVerifier) {
+				super(buffer, threadVerifier);
+			}
+
+			@Override
+			protected boolean merge(ResultEntry[] buffer, int length) {
+				// Sort the original data (outside of lock)
+				ObjectArrays.quickSort(buffer, 0, length, sorter());
+				// Now merge the sorted data
+				synchronized (collectorLock()) {
+					mergeSorted(buffer, length);
+				}
+				return true;
+			}
+		}
+
+		public static class Builder extends SortableBuilderBase<Builder, Sorted> {
+			private Builder() { super(true, true); }
+			@Override
+			protected Sorted create() { return new Sorted(this); }
+		}
 
 	}
 
-	public static final class FirstN extends SortedBase {
+	public abstract static class LimitedBuilderBase<B extends LimitedBuilderBase<B,R>, R extends SortableBase>
+		extends SortableBuilderBase<B, R> {
 
+		private Integer limit;
+
+		protected LimitedBuilderBase(boolean requiresCollectorBuffer, boolean requiresSorter) {
+			super(requiresCollectorBuffer, requiresSorter);
+		}
+
+		public B limit(int limit) {
+			checkArgument("limit must be positive", limit>0);
+			checkState("limit already set", this.limit==null);
+			this.limit = Integer.valueOf(limit);
+			return thisAsCast();
+		}
+
+		int limit() { return limit.intValue(); }
+
+		@Override
+		protected void validate() {
+			super.validate();
+			checkState("limit not set", limit!=null);
+		}
 	}
 
-	public static final class BestN extends SortedBase {
+	/**
+	 * Stops after a set amount of results has been reached and then sorts them.
+	 * This implementation makes more concrete promises on the composition of
+	 * the result list compared to {@link Limited}:
+	 * <p>
+	 * Individual matches are added the instant they have been processed. This way
+	 * the granularity of mixups is kept a lot smaller, but we still cannot
+	 * guarantee that only the <i>actual</i> first N matches are added.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static final class FirstN extends SortableBase {
 
+		public static Builder builder() { return new Builder(); }
+
+		private final int limit;
+
+		private FirstN(Builder builder) {
+			super(builder);
+			limit = builder.limit();
+		}
+
+		@Override
+		protected Collector<ResultEntry> newCollector(ThreadVerifier threadVerifier) {
+			return new CollectorImpl();
+		}
+
+		@Override
+		protected void doFinish() {
+			// Make sure actually only have the first N elements
+			trim(limit);
+			// Sort results if a sorter is present
+			sortResult();
+		}
+
+		private final class CollectorImpl implements Collector<ResultEntry> {
+			@Override
+			public boolean test(ResultEntry entry) {
+				synchronized (collectorLock()) {
+					if(size()>=limit) {
+						return false;
+					}
+					add(entry);
+					return size()<limit;
+				}
+			}
+		}
+
+		public static class Builder extends LimitedBuilderBase<Builder, FirstN> {
+			private Builder() { super(false, false); }
+			@Override
+			protected FirstN create() { return new FirstN(this); }
+		}
+	}
+
+	/**
+	 * Collects ordered results and keeps only a limited ordered subset.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public static final class BestN extends SortableBase {
+
+		public static Builder builder() { return new Builder(); }
+
+		private final int limit;
+
+		private BestN(Builder builder) {
+			super(builder);
+			limit = builder.limit();
+		}
+
+		@Override
+		protected Collector<ResultEntry> newCollector(ThreadVerifier threadVerifier) {
+			return new CollectorImpl(createCollectorBuffer(), threadVerifier);
+		}
+
+		private final class CollectorImpl extends BufferedCollector<ResultEntry> {
+			protected CollectorImpl(ResultEntry[] buffer, ThreadVerifier threadVerifier) {
+				super(buffer, threadVerifier);
+			}
+
+			@Override
+			protected boolean merge(ResultEntry[] buffer, int length) {
+				// Sort the original data (outside of lock)
+				ObjectArrays.quickSort(buffer, 0, length, sorter());
+				// Now merge the sorted data and then trim the result again
+				synchronized (collectorLock()) {
+					mergeSorted(buffer, length);
+					trim(limit);
+				}
+				return true;
+			}
+		}
+
+		public static class Builder extends LimitedBuilderBase<Builder, BestN> {
+			private Builder() { super(true, true); }
+			@Override
+			protected BestN create() { return new BestN(this); }
+		}
+	}
+
+	static abstract class BuilderBase<B extends BuilderBase<B, T,R>, T, R extends ResultBuffer<T>>
+		extends AbstractBuilder<B, R> {
+
+		private final boolean requiresCollectorBuffer;
+
+		private Integer initialGlobalSize;
+		private Integer collectorBufferSize;
+		private IntFunction<T[]> bufferGen;
+
+		protected BuilderBase(boolean requiresCollectorBuffer) {
+			this.requiresCollectorBuffer = requiresCollectorBuffer;
+		}
+
+		public B initialGlobalSize(int initialGlobalSize) {
+			checkArgument("initial global size must be positive", initialGlobalSize>0);
+			checkState("initial global size already set", this.initialGlobalSize==null);
+			this.initialGlobalSize = Integer.valueOf(initialGlobalSize);
+			return thisAsCast();
+		}
+
+		int initialGlobalSize() { return initialGlobalSize.intValue(); }
+
+		public B collectorBufferSize(int collectorBufferSize) {
+			checkArgument("collector buffer size must be positive", collectorBufferSize>0);
+			checkState("collector buffer size already set", this.collectorBufferSize==null);
+			this.collectorBufferSize = Integer.valueOf(collectorBufferSize);
+			return thisAsCast();
+		}
+
+		int collectorBufferSize() { return collectorBufferSize.intValue(); }
+
+		protected B bufferGen(IntFunction<T[]> bufferGen) {
+			checkState("initial global size already set", this.bufferGen==null);
+			this.bufferGen = requireNonNull(bufferGen);
+			return thisAsCast();
+		}
+
+		IntFunction<T[]> bufferGen() { return bufferGen; }
+
+		@Override
+		protected void validate() {
+			checkState("initial global size not set", initialGlobalSize!=null);
+			if(requiresCollectorBuffer) {
+				checkState("collector buffer size not set", collectorBufferSize!=null);
+			}
+			checkState("buffer generator not set", bufferGen!=null);
+		}
 	}
 }
