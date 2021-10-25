@@ -34,4 +34,6 @@ public interface Match extends MatchSource {
 	/** Fetch the positional index for the mapping at given index */
 	int getIndex(int index);
 
+	@Override
+	default Match toMatch() { return this; }
 }

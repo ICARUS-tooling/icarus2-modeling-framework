@@ -69,11 +69,8 @@ public class SimpleMatch implements Match {
 	public int getIndex(int index) { return m_index[index]; }
 
 	@Override
-	public Match toMatch() { return this; }
-
-	@Override
 	public void drainTo(MatchSink sink) {
-		sink.consume(index, m_node.length, m_node, m_index);
+		sink.consume(index, 0, m_node.length, m_node, m_index);
 	}
 
 	@Override

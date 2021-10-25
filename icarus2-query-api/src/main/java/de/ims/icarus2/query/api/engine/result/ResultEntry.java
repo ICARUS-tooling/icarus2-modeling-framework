@@ -21,6 +21,8 @@ package de.ims.icarus2.query.api.engine.result;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
+
 /**
  * @author Markus Gärtner
  *
@@ -35,4 +37,7 @@ public class ResultEntry {
 		this.match = requireNonNull(match);
 		this.payload = new long[payloadSize];
 	}
+
+	@Override
+	public String toString() { return String.format("Result@[%s, %s]", match, Arrays.toString(payload)); }
 }

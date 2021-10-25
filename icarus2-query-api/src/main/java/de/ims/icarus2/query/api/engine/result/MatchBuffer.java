@@ -55,9 +55,10 @@ public class MatchBuffer implements MatchSource, MatchSink {
 		m_index[size] = index;
 		size++;
 	}
-	public void map(int size, int[] m_node, int[] m_index) {
-		System.arraycopy(m_node, 0, this.m_node, 0, size);
-		System.arraycopy(m_index, 0, this.m_index, 0, size);
+	public void map(int offset, int size, int[] m_node, int[] m_index) {
+		prepare(size);
+		System.arraycopy(m_node, offset, this.m_node, 0, size);
+		System.arraycopy(m_index, offset, this.m_index, 0, size);
 		this.size = size;
 	}
 
@@ -71,10 +72,9 @@ public class MatchBuffer implements MatchSource, MatchSink {
 	public int getIndex(int index) { return m_index[index]; }
 
 	@Override
-	public void consume(long index, int size, int[] m_node, int[] m_index) {
-		prepare(size);
+	public void consume(long index, int offset, int size, int[] m_node, int[] m_index) {
 		this.index = index;
-		map(size, m_node, m_index);
+		map(offset, size, m_node, m_index);
 	}
 
 	@Override
@@ -84,7 +84,7 @@ public class MatchBuffer implements MatchSource, MatchSink {
 
 	@Override
 	public void drainTo(MatchSink sink) {
-		sink.consume(index, size, m_node, m_index);
+		sink.consume(index, 0, size, m_node, m_index);
 	}
 
 }

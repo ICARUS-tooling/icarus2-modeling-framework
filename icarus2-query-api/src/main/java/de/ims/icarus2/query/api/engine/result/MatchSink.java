@@ -25,8 +25,9 @@ package de.ims.icarus2.query.api.engine.result;
  */
 public interface MatchSink {
 
-	/** Consume mapping for target at given index of specified size. */
-	void consume(long index, int size, int[] m_node, int[] m_index);
+	/** Consume mapping for target at given index of specified size. 
+	 * @param offset TODO*/
+	void consume(long index, int offset, int size, int[] m_node, int[] m_index);
 
 	interface MultiMatchSink extends MatchSink {
 
