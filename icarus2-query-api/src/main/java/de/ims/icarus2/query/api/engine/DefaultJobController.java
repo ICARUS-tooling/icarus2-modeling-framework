@@ -24,6 +24,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,6 +68,7 @@ public class DefaultJobController implements JobController {
 
 	private final ReferenceSet<QueryWorker> workers = new ReferenceOpenHashSet<>();
 	private final Object lock = new Object();
+	private CountDownLatch latch;
 
 	private DefaultJobController(Builder builder) {
 		query = builder.getQuery();
@@ -119,14 +121,8 @@ public class DefaultJobController implements JobController {
 
 	@Override
 	public boolean awaitFinish(long timeout, TimeUnit unit) throws InterruptedException {
-		final long limit = System.nanoTime() + unit.toNanos(timeout);
-		while(!isFinished()) {
-			if(System.nanoTime() > limit) {
-				return false;
-			}
-			Thread.sleep(100);
-		}
-		return true;
+		checkState("No workers in progress or start failed", latch!=null);
+		return latch.await(timeout, unit);
 	}
 
 	@Override
@@ -172,10 +168,16 @@ public class DefaultJobController implements JobController {
 		if(!status.compareAndSet(JobStatus.WAITING, JobStatus.ACTIVE))
 			throw new QueryException(QueryErrorCode.RECYCLED_JOB, "Query job already started or terminated");
 
+		latch = new CountDownLatch(workers.size());
+
 		// Submit all workers for execution and then return
 		for(QueryWorker worker : workers) {
 			executorService.execute(worker);
 		}
+	}
+
+	private void markDone(QueryWorker worker) {
+		latch.countDown();
 	}
 
 	// methods called by the worker threads
@@ -189,10 +191,11 @@ public class DefaultJobController implements JobController {
 		}
 	}
 	void workerStarted(QueryWorker worker) { active.incrementAndGet(); }
-	void workerCanceled() {
+	void workerCanceled(QueryWorker worker) {
 		if(active.decrementAndGet() == 0) {
 			status.compareAndSet(JobStatus.ACTIVE, JobStatus.CANCELED);
 		}
+		markDone(worker);
 	}
 	void workerFailed(QueryWorker worker, Throwable t) {
 		// Unconditionally set status to FAILED (this way subsequent cancellations won't overwrite it)
@@ -206,11 +209,13 @@ public class DefaultJobController implements JobController {
 				workers.forEach(QueryWorker::cancel);
 			}
 		}
+		markDone(worker);
 	}
 	void workerDone(QueryWorker worker) {
 		if(active.decrementAndGet() == 0) {
 			status.compareAndSet(JobStatus.ACTIVE, JobStatus.DONE);
 		}
+		markDone(worker);
 	}
 
 	public static class Builder extends AbstractBuilder<Builder, DefaultJobController> {
