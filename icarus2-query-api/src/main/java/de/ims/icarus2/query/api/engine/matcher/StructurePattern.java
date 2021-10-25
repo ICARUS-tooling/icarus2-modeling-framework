@@ -2610,7 +2610,7 @@ public class StructurePattern {
 
 		@Override
 		public void drainTo(MatchSink sink) {
-			sink.consume(index, entry, m_node, m_index);
+			sink.consume(index, 0, entry, m_node, m_index);
 		}
 
 		// tree interface
@@ -2710,7 +2710,7 @@ public class StructurePattern {
 		private StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup);
 			this.id = id;
-			threadVerifier = new ThreadVerifier(getClass().getSimpleName()+"_"+id);
+			threadVerifier = ThreadVerifier.forCurrentThread(getClass().getSimpleName()+"_"+id);
 			this.root = stateMachineSetup.getRoot();
 		}
 

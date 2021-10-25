@@ -1492,7 +1492,7 @@ public class InteractiveMatcher {
 				@Override
 				protected Boolean doInBackground() throws Exception {
 					StructureMatcher matcher = pattern.matcherBuilder()
-							.threadVerifier(new ThreadVerifier("interactive-matcher"))
+							.threadVerifier(ThreadVerifier.forCurrentThread("interactive-matcher"))
 							.build();
 
 					if(tree!=null) {

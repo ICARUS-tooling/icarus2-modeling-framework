@@ -45,10 +45,21 @@ import de.ims.icarus2.query.api.engine.result.Tripwire;
  */
 public final class ThreadVerifier {
 
-	private final Thread thread = Thread.currentThread();
+	public static ThreadVerifier forCurrentThread(String id) {
+		return new ThreadVerifier(Thread.currentThread(), id);
+	}
+
+	public static ThreadVerifier forThread(Thread thread, String id) {
+		return new ThreadVerifier(thread, id);
+	}
+
+	private final Thread thread;
 	private final String id;
 
-	public ThreadVerifier(String id) { this.id = requireNonNull(id); }
+	private ThreadVerifier(Thread thread, String id) {
+		this.thread = requireNonNull(thread);
+		this.id = requireNonNull(id);
+	}
 
 
 	public String getId() { return id; }

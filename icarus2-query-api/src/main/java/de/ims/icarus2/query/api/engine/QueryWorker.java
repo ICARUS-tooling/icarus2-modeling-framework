@@ -77,7 +77,7 @@ public final class QueryWorker implements Runnable {
 	public final void cancel() {
 		if(!canceled) {
 			canceled = true;
-			controller.workerCanceled();
+			controller.workerCanceled(this);
 		}
 	}
 
@@ -110,7 +110,7 @@ public final class QueryWorker implements Runnable {
 	@Override
 	public final void run() {
 		// Mark this thread as the only one we are allowed to operate on
-		threadVerifier = new ThreadVerifier(id);
+		threadVerifier = ThreadVerifier.forCurrentThread(id);
 
 		controller.workerStarted(this);
 
