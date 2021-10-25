@@ -32,6 +32,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
+import de.ims.icarus2.query.api.engine.result.Tripwire;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
@@ -110,7 +111,9 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		public void execute(QueryWorker worker) throws InterruptedException {
 			final ThreadVerifier threadVerifier = worker.getThreadVerifier();
 			// make sure we're on the right thread to begin with!
-			threadVerifier.checkThread();
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
 
 			final Container[] buffer = new Container[batchSize];
 			worker.putClientData(KEY_BUFFER, buffer);
