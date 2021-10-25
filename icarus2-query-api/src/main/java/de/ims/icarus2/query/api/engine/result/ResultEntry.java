@@ -19,16 +19,20 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * @author Markus Gärtner
  *
  */
-public interface MatchSink {
+public class ResultEntry {
+	/** The match or MultiMatch assigned to this entry */
+	public final Match match;
+	/** Computed values for sorting, grouping and other forms of result processing */
+	public final long[] payload;
 
-	/** Consume mapping for target at given index of specified size. */
-	void consume(long index, int size, int[] m_node, int[] m_index);
-
-	interface MultiMatchSink extends MatchSink {
-
+	public ResultEntry(Match match, int payloadSize) {
+		this.match = requireNonNull(match);
+		this.payload = new long[payloadSize];
 	}
 }

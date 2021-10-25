@@ -30,9 +30,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.query.api.engine.QueryOutput.BufferedQueryOutput;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
-import de.ims.icarus2.query.api.engine.result.MatchSource;
+import de.ims.icarus2.query.api.engine.result.Tripwire;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -116,11 +117,12 @@ public class QueryUtils {
 		return bufferedOutput(id, UNSET_INT);
 	}
 
-	public static class BufferedSingleLaneQueryOutput implements QueryOutput, MatchCollector {
+	public static class BufferedSingleLaneQueryOutput implements BufferedQueryOutput {
 
 		private final int id;
 		private final int limit;
 		private final List<Match> buffer = new ObjectArrayList<>();
+		private final Object lock = new Object();
 
 		public BufferedSingleLaneQueryOutput(int id, int limit) {
 			this.id = id;
@@ -130,17 +132,17 @@ public class QueryUtils {
 		@Override
 		public MatchCollector createCollector(int id, ThreadVerifier threadVerifier) {
 			checkArgument("Foreign lane", id==this.id);
-			return this;
-		}
-
-		@Override
-		public boolean collect(MatchSource source) {
-			if(!isFull()) {
-				buffer.add(source.toMatch());
-			}
-
-
-			return !isFull();
+			return source -> {
+				if(Tripwire.ACTIVE) {
+					threadVerifier.checkThread();
+				}
+				synchronized (lock) {
+					if(!isFull()) {
+						buffer.add(source.toMatch());
+					}
+					return !isFull();
+				}
+			};
 		}
 
 		@Override
@@ -154,12 +156,17 @@ public class QueryUtils {
 		@Override
 		public boolean isFull() { return limit!=UNSET_INT && buffer.size()>=limit; }
 
-		public void reset() { buffer.clear(); }
+		public void reset() {
+			synchronized (lock) {
+				buffer.clear();
+			}
+		}
 
 		public int getLimit() { return limit; }
 
 		public int getId() { return id; }
 
+		@Override
 		public List<Match> getMatches() { return CollectionUtils.unmodifiableListProxy(buffer); }
 	}
 }

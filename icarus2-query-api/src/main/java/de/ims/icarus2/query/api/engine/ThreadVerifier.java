@@ -23,8 +23,23 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.engine.result.Tripwire;
 
 /**
+ * Allows to catch a thread and save it as the solely allowed point of
+ * access for a resource or module. Any attempt to access a method that
+ * uses a {@link ThreadVerifier} from any thread but the saved one will
+ * throw a {@link QueryException} with code {@link QueryErrorCode#FOREIGN_THREAD_ACCESS}
+ * if {@link Tripwire} is {@link Tripwire#ACTIVE active}.
+ * <p>
+ * Client code that uses {@link ThreadVerifier} should wrap any calls to
+ * {@link #checkThread()} into a check on the activity status of {@link Tripwire}:<br>
+ * <pre>
+ * if(Tripwire.ACTIVE) {
+ *     threadVerifier.checkThread();
+ * }
+ * </pre>
+ *
  * @author Markus Gärtner
  *
  */

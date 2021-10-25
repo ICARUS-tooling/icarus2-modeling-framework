@@ -183,6 +183,7 @@ public class TypeInfo {
 	public static final TypeInfo TEXT = new TypeInfo(CharSequence.class, null, false, false);
 	/** String offers both CharSequence and Comparable features, so warrants an extra type */
 	//TODO unify with TEXT, once we added Comparator ops for TEXT in BinaryOperations
+	@Deprecated
 	public static final TypeInfo STRING = new TypeInfo(String.class, null, false, false);
 
 	// Low-level members

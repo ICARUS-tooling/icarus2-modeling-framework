@@ -19,6 +19,9 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import java.util.List;
+
+import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 
 /**
@@ -46,4 +49,8 @@ public interface QueryOutput {
 	/** Returns {@code true} if the query output was limited and that limit has already
 	 * been reached with the results collected so far. */
 	boolean isFull();
+
+	public interface BufferedQueryOutput extends QueryOutput {
+		List<Match> getMatches();
+	}
 }

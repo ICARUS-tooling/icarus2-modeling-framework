@@ -80,6 +80,8 @@ import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 import de.ims.icarus2.query.api.engine.result.MatchSink;
 import de.ims.icarus2.query.api.engine.result.MatchSource;
+import de.ims.icarus2.query.api.engine.result.SimpleMatch;
+import de.ims.icarus2.query.api.engine.result.Tripwire;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
@@ -2603,7 +2605,7 @@ public class StructurePattern {
 
 		@Override
 		public Match toMatch() {
-			return Match.of(index, entry, m_node, m_index);
+			return SimpleMatch.of(index, entry, m_node, m_index);
 		}
 
 		@Override
@@ -2734,7 +2736,9 @@ public class StructurePattern {
 		 */
 		protected boolean matchesImpl(long index, Container target) {
 			// Sanity check to make sure we operate on the correct thread
-			threadVerifier.checkThread();
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
 
 			// Apply pre-filtering if available to reduce matcher overhead
 			if(filterConstraint!=null && !filterConstraint.matches(index, target)) {

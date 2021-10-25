@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- */
 package de.ims.icarus2.query.api.engine.result;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class MultiMatch {
+public interface MultiMatch extends Match {
 
-	//TODO provide a lane-id to match mapping
+	int getCurrentLane();
+
+	int getLaneCount();
+
+	void moveToLane(int id);
 }
