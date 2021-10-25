@@ -16,13 +16,7 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.packed;
 
-import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
-import static java.util.Objects.requireNonNull;
-
-import java.io.Closeable;
 import java.util.Set;
-import java.util.function.IntFunction;
-import java.util.function.ToIntFunction;
 
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.AnnotationManifest;
@@ -33,6 +27,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.collections.Substitutor;
 
 /**
  * @author Markus Gärtner
@@ -100,70 +95,5 @@ public class PackedDataUtils {
 				manifest.getValueType(), 4, substitutor, substitutor);
 
 		return new PackageHandle(manifest, manifest.getNoEntryValue().orElse(null), converter);
-	}
-
-	/**
-	 * Sentinel value to signal an empty or {@code null} value.
-	 * Chosen to be {@code 0} so that empty storage doesn't need
-	 * any pre-processing.
-	 */
-	private static final int EMPTY_VALUE = 0;
-
-	/**
-	 * Implements (re)substitution of arbitrary types via a backing {@link LookupList}.
-	 * Note that the back-end storage only ever grows through the lifetime of any instance
-	 * of this class!
-	 *
-	 * @author Markus Gärtner
-	 *
-	 * @param <T> type of values to be substituted (must be immutable
-	 * wrt {@link Object#equals(Object)})
-	 */
-	public static class Substitutor<T> implements Closeable, ToIntFunction<T>, IntFunction<T> {
-		private final LookupList<T> buffer;
-		private final boolean clearOnClose;
-
-		public Substitutor(LookupList<T> buffer, boolean clearOnClose) {
-			this.buffer = requireNonNull(buffer);
-			this.clearOnClose = clearOnClose;
-		}
-
-		public Substitutor(int capacity) {
-			buffer = new LookupList<>(capacity);
-			clearOnClose = true;
-		}
-
-		public Substitutor() {
-			buffer = new LookupList<>();
-			clearOnClose = true;
-		}
-
-		@Override
-		public int applyAsInt(T value) {
-			if(value==null) {
-				return EMPTY_VALUE;
-			}
-
-			int index = buffer.indexOf(value);
-			if(index==UNSET_INT) {
-				synchronized (buffer) {
-					index = buffer.size();
-					buffer.add(index, value);
-				}
-			}
-			return index+1;
-		}
-
-		@Override
-		public T apply(int value) {
-			return value==EMPTY_VALUE ? null : buffer.get(value-1);
-		}
-
-		@Override
-		public void close() {
-			if(clearOnClose) {
-				buffer.clear();
-			}
-		}
 	}
 }
