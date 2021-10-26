@@ -38,7 +38,6 @@ import de.ims.icarus2.query.api.exp.TypeInfo;
  * <li>{@link TypeInfo#FLOATING_POINT}</li>
  * <li>{@link TypeInfo#TEXT}</li>
  * <li>{@link TypeInfo#BOOLEAN}</li>
- * <li>{@link TypeInfo#TEXT}</li>
  * </ul>
  * In addition {@link TypeInfo#ARRAY} instances of all the types above are
  * also allowed.
@@ -89,8 +88,8 @@ public abstract class Extractor {
 
 	public static final class BooleanExtractor extends Extractor {
 
-		private static final long FALSE = 0L;
-		private static final long TRUE = 1L;
+		static final long FALSE = 0L;
+		static final long TRUE = 1L;
 
 		public BooleanExtractor(int offset, Expression<?> expression) {
 			super(offset, expression);
@@ -109,8 +108,8 @@ public abstract class Extractor {
 
 		public TextExtractor(int offset, Expression<?> expression, ToIntFunction<CharSequence> encoder) {
 			super(offset, expression);
-			checkArgument("Expression must evaluate to text result", expression.isText());
 			this.encoder = requireNonNull(encoder);
+			checkArgument("Expression must evaluate to text result", expression.isText());
 		}
 
 		@Override
