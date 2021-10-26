@@ -22,6 +22,7 @@ package de.ims.icarus2.query.api.engine.result;
 import java.util.function.Predicate;
 
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
+import de.ims.icarus2.query.api.engine.Tripwire;
 
 /**
  * Manages the collection of matches into {@link ResultEntry} instances

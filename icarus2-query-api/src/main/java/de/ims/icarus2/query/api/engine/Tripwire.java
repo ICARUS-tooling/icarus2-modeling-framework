@@ -17,9 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.query.api.engine.result;
-
-import de.ims.icarus2.query.api.engine.ThreadVerifier;
+package de.ims.icarus2.query.api.engine;
 
 /**
  * @author Markus Gärtner

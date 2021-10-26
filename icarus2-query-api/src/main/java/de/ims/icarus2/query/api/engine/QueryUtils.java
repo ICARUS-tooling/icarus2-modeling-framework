@@ -33,7 +33,6 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.engine.QueryOutput.BufferedQueryOutput;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
-import de.ims.icarus2.query.api.engine.result.Tripwire;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 

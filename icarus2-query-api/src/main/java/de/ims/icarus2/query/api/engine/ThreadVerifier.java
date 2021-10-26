@@ -23,7 +23,6 @@ import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.engine.result.Tripwire;
 
 /**
  * Allows to catch a thread and save it as the solely allowed point of
