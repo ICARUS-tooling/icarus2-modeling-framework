@@ -65,7 +65,7 @@ class ExtractorTest {
 		@Test
 		default void testIllegalOffset() throws Exception {
 			assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-					() -> create(-1, wrap(defaultValue())));
+					() -> create(-1, wrap(defaultValue()))).withMessageContaining("Offset");;
 		}
 
 		@TestFactory

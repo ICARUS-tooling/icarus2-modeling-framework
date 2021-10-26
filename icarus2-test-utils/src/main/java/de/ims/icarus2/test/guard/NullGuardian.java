@@ -56,6 +56,15 @@ public class NullGuardian<T> extends Guardian<T> {
 		Collections.addAll(methodBlacklist, "equals");
 	}
 
+	private static final String[] packageBlacklist = {
+			"com.oracle.",
+			"com.sun.",
+			"java.",
+			"jdk",
+			"sun.",
+			"javax."
+	};
+
 	static Predicate<? super Method> createMethodFilter(boolean includeNonPublic) {
 		return (m) -> {
 			boolean isStatic = Modifier.isStatic(m.getModifiers()); // must not be static
@@ -77,6 +86,13 @@ public class NullGuardian<T> extends Guardian<T> {
 
 			if(methodBlacklist.contains(m.getName())) {
 				return false;
+			}
+
+			String pck = m.getDeclaringClass().getName();
+			for(String prefix : packageBlacklist) {
+				if(pck.startsWith(prefix)) {
+					return false;
+				}
 			}
 
 			// Check if we have at least 1 non.primitive parameter

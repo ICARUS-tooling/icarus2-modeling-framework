@@ -62,7 +62,9 @@ public class RefUtils {
 	public static String toSimpleString(Executable executable) {
 		StringBuilder sb = new StringBuilder();
 		if(executable instanceof Method) {
-			sb.append(((Method)executable).getReturnType().getSimpleName()).append(" ");
+			Method m = (Method)executable;
+			sb.append(m.getReturnType().getSimpleName()).append(" ");
+//			sb.append(m.getDeclaringClass().getName()).append(" ");
 		}
 
 		String name = executable.getName();
