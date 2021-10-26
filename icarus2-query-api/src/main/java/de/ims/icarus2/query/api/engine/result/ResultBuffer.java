@@ -96,7 +96,7 @@ public abstract class ResultBuffer<T> {
 	public final void finish() {
 		synchronized (collectorLock) {
 			for (int i = collectors.size()-1; i >= 0; i--) {
-				assert collectors.get(i)!=null;
+//				assert collectors.get(i)!=null;
 				collectors.get(i).finish();
 			}
 			doFinish();
@@ -151,10 +151,12 @@ public abstract class ResultBuffer<T> {
 	}
 
 	protected final void copyTo(int srcPos, T[] dest, int destPos, int length) {
+		rangeCheck(srcPos+length-1);
 		System.arraycopy(items, srcPos, dest, destPos, length);
 	}
 
 	protected final void copyFrom(int destPos, T[] source, int srcPos, int length) {
+		rangeCheck(destPos+length-1);
 		System.arraycopy(source, srcPos, items, destPos, length);
 	}
 
@@ -163,13 +165,13 @@ public abstract class ResultBuffer<T> {
 	}
 
 	protected final void trim(int limit) {
-		if(size >= limit) {
+		if(size > limit) {
 			Arrays.fill(items, limit, size, null);
+			size = limit;
 		}
 	}
 
 	protected final Object collectorLock() { return collectorLock; }
-	protected final int collectorBufferSize() { return collectorBufferSize; }
 
 	protected interface Collector<T> extends Predicate<T> {
 		/** Callback for subclasses to perform final maintenance work.
@@ -404,6 +406,11 @@ public abstract class ResultBuffer<T> {
 			// If new set of results is completely after the old section, just append
 			if(left>=size()) {
 				add(buffer, 0, length);
+				return;
+			}
+			// Just insert new block if we have no overlap
+			if(left==right) {
+				insert(left, buffer, 0, length);
 				return;
 			}
 			// Copy section [n..m] from items list, combine with buffer and sort
