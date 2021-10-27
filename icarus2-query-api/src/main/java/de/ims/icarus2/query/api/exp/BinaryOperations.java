@@ -762,7 +762,9 @@ public class BinaryOperations {
 	}
 
 	public enum StringMode {
+		/** Basic case-sensitive mode */
 		DEFAULT((cp1, cp2) -> cp1==cp2, (c1, c2) -> c1==c2),
+		/** Case-insensitive mode */
 		IGNORE_CASE((cp1, cp2) -> cp1==cp2 || toLowerCase(cp1)==toLowerCase(cp2)
 					|| toUpperCase(cp1)==toUpperCase(cp2),
 				(c1, c2) -> c1==c2 || toLowerCase(c1)==toLowerCase(c2)
