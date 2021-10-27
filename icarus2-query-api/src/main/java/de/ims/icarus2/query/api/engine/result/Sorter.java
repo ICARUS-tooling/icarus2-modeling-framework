@@ -26,6 +26,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.Comparator;
 import java.util.function.IntFunction;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.exp.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.exp.CodePointUtils;
@@ -51,8 +53,8 @@ import de.ims.icarus2.util.function.IntBiPredicate;
  */
 public abstract class Sorter implements Comparator<ResultEntry> {
 
-	public static final int SIGN_ASC = -1;
-	public static final int SIGN_DESC = 1;
+	public static final int SIGN_ASC = 1;
+	public static final int SIGN_DESC = -1;
 
 	/** Pointer into payload */
 	private final int offset;
@@ -61,7 +63,7 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 	/** Subsequent sorter in case 2 entries are considered equal by this one */
 	private final Sorter next;
 
-	protected Sorter(int offset, int sign, Sorter next) {
+	protected Sorter(int offset, int sign, @Nullable Sorter next) {
 		checkArgument("Offset must not be negative", offset>=0);
 		checkArgument("Sign must be either 1 or -1", Math.abs(sign)==1);
 		this.offset = offset;
@@ -81,7 +83,7 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 	}
 
 	public static final class IntegerSorter extends Sorter {
-		public IntegerSorter(int offset, int sign, Sorter next) {
+		public IntegerSorter(int offset, int sign, @Nullable Sorter next) {
 			super(offset, sign, next);
 		}
 
@@ -92,7 +94,7 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 	}
 
 	public final static class FloatingPointSorter extends Sorter {
-		public FloatingPointSorter(int offset, int sign, Sorter next) {
+		public FloatingPointSorter(int offset, int sign, @Nullable Sorter next) {
 			super(offset, sign, next);
 		}
 
@@ -109,7 +111,7 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 		private final CharBiPredicate comparator;
 
 		public AsciiSorter(int offset, int sign, IntFunction<CharSequence> decoder,
-				CharBiPredicate comparator, Sorter next) {
+				CharBiPredicate comparator, @Nullable Sorter next) {
 			super(offset, sign, next);
 
 			this.decoder = requireNonNull(decoder);
@@ -130,12 +132,12 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 	 * @see QuerySwitch#STRING_CASE_OFF
 	 * @see QuerySwitch#STRING_UNICODE_OFF
 	 */
-	static class UnicodeSorter extends Sorter {
+	public static final class UnicodeSorter extends Sorter {
 		private final IntFunction<CharSequence> decoder;
 		private final IntBiPredicate comparator;
 
 		public UnicodeSorter(int offset, int sign, IntFunction<CharSequence> decoder,
-				IntBiPredicate comparator, Sorter next) {
+				IntBiPredicate comparator, @Nullable Sorter next) {
 			super(offset, sign, next);
 
 			this.decoder = requireNonNull(decoder);

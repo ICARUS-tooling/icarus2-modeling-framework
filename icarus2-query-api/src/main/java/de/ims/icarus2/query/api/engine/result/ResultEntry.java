@@ -39,5 +39,22 @@ public class ResultEntry {
 	}
 
 	@Override
+	public boolean equals(Object obj) {
+		if(obj==this) {
+			 return true;
+		} else if(obj instanceof ResultEntry) {
+			ResultEntry other = (ResultEntry) obj;
+			return Arrays.equals(payload, other.payload)
+					&& match.equals(other.match);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return match.hashCode() ^ Arrays.hashCode(payload);
+	}
+
+	@Override
 	public String toString() { return String.format("Result@[%s, %s]", match, Arrays.toString(payload)); }
 }
