@@ -768,6 +768,44 @@ public class MutablePrimitives {
 			this.value = value;
 		}
 
+		public double incrementAndGet() {
+			return incrementAndGet(1);
+		}
+
+		public double incrementAndGet(double delta) {
+			value += delta;
+			return value;
+		}
+
+		public double decrementAndGet() {
+			return decrementAndGet(1);
+		}
+
+		public double decrementAndGet(double delta) {
+			value -= delta;
+			return value;
+		}
+
+		public double getAndIncrement() {
+			return getAndIncrement(1);
+		}
+
+		public double getAndIncrement(double delta) {
+			double result = value;
+			value += delta;
+			return result;
+		}
+
+		public double getAndDecrement() {
+			return getAndDecrement(1);
+		}
+
+		public double getAndDecrement(double delta) {
+			double result = value;
+			value -= delta;
+			return result;
+		}
+
 		/**
 		 * @see de.ims.icarus2.util.MutablePrimitives.Primitive#intValue()
 		 */
