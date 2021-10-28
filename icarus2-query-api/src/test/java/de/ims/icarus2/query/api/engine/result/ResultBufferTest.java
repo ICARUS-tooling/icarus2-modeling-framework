@@ -271,7 +271,7 @@ class ResultBufferTest {
 		@ParameterizedTest(name="{0} matches")
 		@ValueSource(ints = {10, 100, 1000})
 		public void testSingleThreaded(int matchCount) throws Exception {
-			Unlimited buffer = Unlimited.builder()
+			Unlimited<Match> buffer = Unlimited.builder(Match.class)
 					.initialGlobalSize(10)
 					.collectorBufferSize(2)
 					.build();
@@ -301,7 +301,7 @@ class ResultBufferTest {
 			"10, 10000",
 		})
 		public void testMultiThreaded(int threadCount, int matchCount) throws Exception {
-			Unlimited buffer = Unlimited.builder()
+			Unlimited<Match> buffer = Unlimited.builder(Match.class)
 					.initialGlobalSize(10)
 					.collectorBufferSize(2)
 					.build();
@@ -333,7 +333,7 @@ class ResultBufferTest {
 			"1000, 25",
 		})
 		public void testSingleThreaded(int matchCount, int limit) throws Exception {
-			Limited buffer = Limited.builder()
+			Limited<Match> buffer = Limited.builder(Match.class)
 					.initialGlobalSize(10)
 					.collectorBufferSize(2)
 					.limit(limit)
@@ -383,7 +383,7 @@ class ResultBufferTest {
 			"10, 10000, 1000",
 		})
 		public void testMultiThreaded(int threadCount, int matchCount, int limit) throws Exception {
-			Limited buffer = Limited.builder()
+			Limited<Match> buffer = Limited.builder(Match.class)
 					.initialGlobalSize(10)
 					.collectorBufferSize(2)
 					.limit(limit)

@@ -23,6 +23,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -237,24 +238,26 @@ public abstract class ResultBuffer<T> {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class Unlimited extends ResultBuffer<Match> {
+	public static final class Unlimited<T> extends ResultBuffer<T> {
 
-		public static Builder builder() { return new Builder(); }
+		public static <T> Builder<T> builder(Class<T> elementClass) {
+			return new Builder<>(elementClass);
+		}
 
-		private Unlimited(Builder builder) { super(builder); }
+		private Unlimited(Builder<T> builder) { super(builder); }
 
 		@Override
-		protected Collector<Match> newCollector(ThreadVerifier threadVerifier) {
+		protected Collector<T> newCollector(ThreadVerifier threadVerifier) {
 			return new CollectorImp(createCollectorBuffer(), threadVerifier);
 		}
 
-		private final class CollectorImp extends BufferedCollector<Match> {
-			private CollectorImp(Match[] buffer, ThreadVerifier threadVerifier) {
+		private final class CollectorImp extends BufferedCollector<T> {
+			private CollectorImp(T[] buffer, ThreadVerifier threadVerifier) {
 				super(buffer, threadVerifier);
 			}
 
 			@Override
-			protected boolean merge(Match[] buffer, int length) {
+			protected boolean merge(T[] buffer, int length) {
 				synchronized (collectorLock()) {
 					add(buffer, 0, length);
 				}
@@ -262,13 +265,15 @@ public abstract class ResultBuffer<T> {
 			}
 		}
 
-		public static class Builder extends BuilderBase<Builder, Match, Unlimited> {
-			private Builder() {
+		public static class Builder<T> extends BuilderBase<Builder<T>, T, Unlimited<T>> {
+			@SuppressWarnings("unchecked")
+			private Builder(Class<T> elementClass) {
 				super(true);
-				bufferGen(Match[]::new);
+				requireNonNull(elementClass);
+				bufferGen(size -> (T[])Array.newInstance(elementClass, size));
 			}
 			@Override
-			protected Unlimited create() { return new Unlimited(this); }
+			protected Unlimited<T> create() { return new Unlimited<>(this); }
 		}
 	}
 
@@ -285,29 +290,31 @@ public abstract class ResultBuffer<T> {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static final class Limited extends ResultBuffer<Match> {
+	public static final class Limited<T> extends ResultBuffer<T> {
 
-		public static Builder builder() { return new Builder(); }
+		public static <T> Builder<T> builder(Class<T> elementClass) {
+			return new Builder<>(elementClass);
+		}
 
 		private final int limit;
 
-		private Limited(Builder builder) {
+		private Limited(Builder<T> builder) {
 			super(builder);
 			limit = builder.limit();
 		}
 
 		@Override
-		protected Collector<Match> newCollector(ThreadVerifier threadVerifier) {
+		protected Collector<T> newCollector(ThreadVerifier threadVerifier) {
 			return new CollectorImp(createCollectorBuffer(), threadVerifier);
 		}
 
-		private final class CollectorImp extends BufferedCollector<Match> {
-			private CollectorImp(Match[] buffer, ThreadVerifier threadVerifier) {
+		private final class CollectorImp extends BufferedCollector<T> {
+			private CollectorImp(T[] buffer, ThreadVerifier threadVerifier) {
 				super(buffer, threadVerifier);
 			}
 
 			@Override
-			protected boolean merge(Match[] buffer, int length) {
+			protected boolean merge(T[] buffer, int length) {
 				synchronized (collectorLock()) {
 					int remaining = limit - size();
 					if(remaining>0) {
@@ -319,16 +326,17 @@ public abstract class ResultBuffer<T> {
 			}
 		}
 
-		public static class Builder extends BuilderBase<Builder, Match, Limited> {
+		public static class Builder<T> extends BuilderBase<Builder<T>, T, Limited<T>> {
 
 			private Integer limit;
-
-			private Builder() {
+			@SuppressWarnings("unchecked")
+			private Builder(Class<T> elementClass) {
 				super(true);
-				bufferGen(Match[]::new);
+				requireNonNull(elementClass);
+				bufferGen(size -> (T[])Array.newInstance(elementClass, size));
 			}
 
-			public Builder limit(int limit) {
+			public Builder<T> limit(int limit) {
 				checkArgument("limit must be positive", limit>0);
 				checkState("limit already set", this.limit==null);
 				this.limit = Integer.valueOf(limit);
@@ -344,7 +352,7 @@ public abstract class ResultBuffer<T> {
 			}
 
 			@Override
-			protected Limited create() { return new Limited(this); }
+			protected Limited<T> create() { return new Limited<>(this); }
 		}
 	}
 
