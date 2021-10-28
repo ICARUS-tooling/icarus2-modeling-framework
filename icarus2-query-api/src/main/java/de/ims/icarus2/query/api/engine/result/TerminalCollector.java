@@ -19,10 +19,18 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkState;
+import static java.util.Objects.requireNonNull;
+
+import java.util.List;
 import java.util.function.Predicate;
 
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.engine.Tripwire;
+import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * Manages the collection of matches into {@link ResultEntry} instances
@@ -34,10 +42,19 @@ import de.ims.icarus2.query.api.engine.Tripwire;
  */
 public class TerminalCollector implements MatchCollector {
 
+	public static Builder builder() { return new Builder(); }
+
 	private final ThreadVerifier threadVerifier;
 	private final Extractor[] extractors;
 	private final int payloadSize;
 	private final Predicate<ResultEntry> sink;
+
+	private TerminalCollector(Builder builder) {
+		threadVerifier = builder.threadVerifier();
+		extractors = builder.extractors();
+		payloadSize = builder.payloadSize();
+		sink = builder.sink();
+	}
 
 	@Override
 	public boolean collect(MatchSource source) {
@@ -47,10 +64,61 @@ public class TerminalCollector implements MatchCollector {
 
 		final ResultEntry entry = new ResultEntry(source.toMatch(), payloadSize);
 		final long[] payload = entry.payload;
-		for (int i = 0; i < extractors.length; i++) {
+		for (int i = extractors.length-1; i >= 0; i--) {
 			extractors[i].extract(payload);
 		}
 
 		return sink.test(entry);
+	}
+
+	public static class Builder extends AbstractBuilder<Builder, TerminalCollector> {
+
+		private ThreadVerifier threadVerifier;
+		private final List<Extractor> extractors = new ObjectArrayList<>();
+		private Integer payloadSize;
+		private Predicate<ResultEntry> sink;
+
+		private Builder() { /* no-op */ }
+
+		public Builder threadVerifier(ThreadVerifier threadVerifier) {
+			checkState("thread verifier already set", this.threadVerifier==null);
+			this.threadVerifier = requireNonNull(threadVerifier);
+			return this;
+		}
+
+		public Builder extractors(Extractor...extractors) {
+			CollectionUtils.feedItems(this.extractors, extractors);
+			return this;
+		}
+
+		public Builder payloadSize(int payloadSize) {
+			checkState("payload size already set", this.payloadSize==null);
+			checkArgument("payload size must be positive", payloadSize>0);
+			this.payloadSize = Integer.valueOf(payloadSize);
+			return this;
+		}
+
+		public Builder sink(Predicate<ResultEntry> sink) {
+			checkState("sink already set", this.sink==null);
+			this.sink = requireNonNull(sink);
+			return this;
+		}
+
+		ThreadVerifier threadVerifier() { return threadVerifier; }
+		Extractor[] extractors() { return extractors.toArray(new Extractor[extractors.size()]); }
+		int payloadSize() { return payloadSize.intValue(); }
+		Predicate<ResultEntry> sink() { return sink; }
+
+		@Override
+		protected void validate() {
+			checkState("thread verifier not set", threadVerifier!=null);
+			checkState("no extractors added", !extractors.isEmpty());
+			checkState("payload size not set", payloadSize!=null);
+			checkState("sink not set", sink!=null);
+		}
+
+		@Override
+		protected TerminalCollector create() { return new TerminalCollector(this); }
+
 	}
 }
