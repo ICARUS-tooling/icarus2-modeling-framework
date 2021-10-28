@@ -16,6 +16,9 @@
  */
 package de.ims.icarus2.util;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.lang.Primitives;
@@ -101,7 +104,8 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 		}
 	};
 
-	public static class MutableObject<O extends Object> implements Mutable<O> {
+	public static class MutableObject<O extends Object>
+			implements Mutable<O>, Supplier<O>, Consumer<O> {
 
 		public static final Object DEFAULT_EMPTY_VALUE = null;
 
@@ -115,9 +119,11 @@ public interface Mutable<O extends Object> extends Wrapper<O>, Cloneable {
 			set(value);
 		}
 
-		/**
-		 * @see de.ims.icarus2.util.Wrapper#get()
-		 */
+		@Override
+		public void accept(O value) {
+			this.value = value;
+		}
+
 		@Override
 		public O get() {
 			return value;

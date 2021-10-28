@@ -89,6 +89,8 @@ public final class IcarusUtils {
 	 * Maximum value for use in arrays.
 	 * Some VMs reserve a couple bytes as array headers and as such
 	 * {@link Integer#MAX_VALUE} would result in an exception.
+	 *
+	 * @see it.unimi.dsi.fastutil.Arrays#MAX_ARRAY_SIZE
 	 */
 	public static final int MAX_INTEGER_INDEX = Integer.MAX_VALUE-8;
 
