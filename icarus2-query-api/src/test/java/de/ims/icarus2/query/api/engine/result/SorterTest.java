@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.engine.result.Sorter.AsciiSorter;
@@ -247,7 +248,20 @@ class SorterTest {
 					.toArray();
 		}
 
-		//TODO add tests for case-insensitive mode
+		@ParameterizedTest
+		@CsvSource({
+			"X, x",
+			"123, 123",
+			"Water, water",
+			"test, TeSt",
+		})
+		public void testCaseInsensitiveMatching(String a, String b) throws Exception {
+			ResultEntry entryA = entry((long)substitutor.applyAsInt(a));
+			ResultEntry entryB = entry((long)substitutor.applyAsInt(b));
+			AsciiSorter sorter = new AsciiSorter(0, Sorter.SIGN_ASC, substitutor,
+					StringMode.IGNORE_CASE.getCharComparator(), null);
+			assertThat(entryA).usingComparator(sorter).isEqualTo(entryB);
+		}
 	}
 
 	@Nested
@@ -284,7 +298,28 @@ class SorterTest {
 					.toArray();
 		}
 
-		//TODO add tests for case-insensitive mode
+		@ParameterizedTest
+		@CsvSource({
+			// ASCII values
+			"X, x",
+			"123, 123",
+			"Water, water",
+			"test, TeSt",
+			/*
+			 *  Unicode values (taken from https://www.utf8-chartable.de/unicode-utf8-table.pl)
+			 *  using page with code points U+10280 to U+1067F to enforce multi-char codepoints
+			 *  in the Java strings.
+			 */
+			"𐐁, 𐐩", // U+10401 -> U+10429
+			"T𐐁sT, t𐐩ST",
+		})
+		public void testCaseInsensitiveMatching(String a, String b) throws Exception {
+			ResultEntry entryA = entry((long)substitutor.applyAsInt(a));
+			ResultEntry entryB = entry((long)substitutor.applyAsInt(b));
+			UnicodeSorter sorter = new UnicodeSorter(0, Sorter.SIGN_ASC, substitutor,
+					StringMode.IGNORE_CASE.getCodePointComparator(), null);
+			assertThat(entryA).usingComparator(sorter).isEqualTo(entryB);
+		}
 	}
 
 	@Nested
