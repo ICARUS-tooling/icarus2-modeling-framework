@@ -35,10 +35,7 @@ import static org.mockito.Mockito.mock;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToLongFunction;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Nested;
@@ -46,13 +43,6 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
-import de.ims.icarus2.query.api.exp.AnnotationAccess;
-import de.ims.icarus2.query.api.exp.ArrayLiterals;
-import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.Expression;
-import de.ims.icarus2.query.api.exp.Literals;
-import de.ims.icarus2.query.api.exp.QualifiedIdentifier;
-import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.exp.AnnotationAccess.MultiKeyBoolean;
 import de.ims.icarus2.query.api.exp.AnnotationAccess.MultiKeyFloatingPoint;
 import de.ims.icarus2.query.api.exp.AnnotationAccess.MultiKeyInteger;
@@ -61,7 +51,6 @@ import de.ims.icarus2.query.api.exp.AnnotationAccess.SingleKeyBoolean;
 import de.ims.icarus2.query.api.exp.AnnotationAccess.SingleKeyFloatingPoint;
 import de.ims.icarus2.query.api.exp.AnnotationAccess.SingleKeyInteger;
 import de.ims.icarus2.query.api.exp.AnnotationAccess.SingleKeyObject;
-import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
@@ -92,12 +81,26 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 class AnnotationAccessTest {
 
-	private static AnnotationInfo info(String key, ValueType valueType, TypeInfo type) {
-		return new AnnotationInfo(key, key, valueType, type);
+	private static AnnotationInfo info(String key, ValueType valueType, TypeInfo type,
+			Consumer<? super AnnotationInfo.Builder> sourceSetter) {
+		AnnotationInfo.Builder builder = AnnotationInfo.builer()
+				.rawKey(key)
+				.key(key)
+				.valueType(valueType)
+				.type(type);
+		sourceSetter.accept(builder);
+		return builder.build();
 	}
 
-	private static AnnotationInfo info(String rawKey, String key, ValueType valueType, TypeInfo type) {
-		return new AnnotationInfo(rawKey, key, valueType, type);
+	private static AnnotationInfo info(String rawKey, String key, ValueType valueType, TypeInfo type,
+			Consumer<? super AnnotationInfo.Builder> sourceSetter) {
+		AnnotationInfo.Builder builder = AnnotationInfo.builer()
+				.rawKey(rawKey)
+				.key(key)
+				.valueType(valueType)
+				.type(type);
+		sourceSetter.accept(builder);
+		return builder.build();
 	}
 
 	private static EvaluationContext makeContext(AnnotationInfo...infos) {
@@ -119,41 +122,41 @@ class AnnotationAccessTest {
 	}
 
 	@SafeVarargs
-	private final static Function<Item, Object> objSource(Pair<Item, Object>...entries) {
+	private final static Consumer<AnnotationInfo.Builder> objSource(Pair<Item, Object>...entries) {
 		Map<Item, Object> map = new Reference2ObjectOpenHashMap<>();
 		for(Pair<Item, Object> entry : entries) {
 			map.put(entry.first, entry.second);
 		}
 
-		return map::get;
+		return builder -> builder.objectSource(map::get);
 	}
 
 	@SafeVarargs
-	private final static ToLongFunction<Item> intSource(Pair<Item, ? extends Number>...entries) {
+	private final static Consumer<AnnotationInfo.Builder> intSource(Pair<Item, ? extends Number>...entries) {
 		Object2LongMap<Item> map = new Object2LongOpenHashMap<>();
 		for(Pair<Item, ? extends Number> entry : entries) {
 			map.put(entry.first, entry.second.longValue());
 		}
 
-		return map::getLong;
+		return builder -> builder.integerSource(map::getLong);
 	}
 
 	@SafeVarargs
-	private final static ToDoubleFunction<Item> fpSource(Pair<Item, ? extends Number>...entries) {
+	private final static Consumer<AnnotationInfo.Builder> fpSource(Pair<Item, ? extends Number>...entries) {
 		Object2DoubleMap<Item> map = new Object2DoubleOpenHashMap<>();
 		for(Pair<Item, ? extends Number> entry : entries) {
 			map.put(entry.first, entry.second.doubleValue());
 		}
 
-		return map::getDouble;
+		return builder -> builder.floatingPointSource(map::getDouble);
 	}
 
 	@SafeVarargs
-	private final static Predicate<Item> boolSource(Item...entries) {
+	private final static Consumer<AnnotationInfo.Builder> boolSource(Item...entries) {
 		Set<Item> lookup = new ReferenceOpenHashSet<>();
 		feedItems(lookup, entries);
 
-		return lookup::contains;
+		return builder -> builder.booleanSource(lookup::contains);
 	}
 
 	@Nested
@@ -185,8 +188,7 @@ class AnnotationAccessTest {
 				String key = "key";
 				Item item = mockItem();
 				Expression<Item> itemSource = raw(item);
-				AnnotationInfo info = info(key, ValueType.STRING, TypeInfo.TEXT);
-				info.objectSource = objSource(pair(item, value));
+				AnnotationInfo info = info(key, ValueType.STRING, TypeInfo.TEXT, objSource(pair(item, value)));
 				EvaluationContext context = makeContext(info);
 
 				return AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -199,11 +201,11 @@ class AnnotationAccessTest {
 				Item item2 = mockItem();
 				Mutable<Item> item = new MutableObject<>(item1);
 				Expression<Item> itemSource = dynamicGeneric(item::get);
-				AnnotationInfo info = info(key, ValueType.STRING, TypeInfo.TEXT);
 
 				String value1 = "value1";
 				String value2 = "value2";
-				info.objectSource = objSource(pair(item1, value1), pair(item2, value2));
+				AnnotationInfo info = info(key, ValueType.STRING, TypeInfo.TEXT,
+						objSource(pair(item1, value1), pair(item2, value2)));
 				EvaluationContext context = makeContext(info);
 
 				Expression<?> exp = AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -232,8 +234,8 @@ class AnnotationAccessTest {
 				String key = "key";
 				Item item = mockItem();
 				Expression<Item> itemSource = raw(item);
-				AnnotationInfo info = info(key, ValueType.LONG, TypeInfo.INTEGER);
-				info.integerSource = intSource(pair(item, value.get()));
+				AnnotationInfo info = info(key, ValueType.LONG, TypeInfo.INTEGER,
+						intSource(pair(item, value.get())));
 				EvaluationContext context = makeContext(info);
 
 				return AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -246,11 +248,11 @@ class AnnotationAccessTest {
 				Item item2 = mockItem();
 				Mutable<Item> item = new MutableObject<>(item1);
 				Expression<Item> itemSource = dynamicGeneric(item::get);
-				AnnotationInfo info = info(key, ValueType.LONG, TypeInfo.INTEGER);
 
 				long value1 = 123;
 				long value2 = 456;
-				info.integerSource = intSource(pair(item1, _long(value1)), pair(item2, _long(value2)));
+				AnnotationInfo info = info(key, ValueType.LONG, TypeInfo.INTEGER,
+						intSource(pair(item1, _long(value1)), pair(item2, _long(value2))));
 				EvaluationContext context = makeContext(info);
 
 				Expression<?> exp = AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -280,8 +282,8 @@ class AnnotationAccessTest {
 				String key = "key";
 				Item item = mockItem();
 				Expression<Item> itemSource = raw(item);
-				AnnotationInfo info = info(key, ValueType.DOUBLE, TypeInfo.FLOATING_POINT);
-				info.floatingPointSource = fpSource(pair(item, value.get()));
+				AnnotationInfo info = info(key, ValueType.DOUBLE, TypeInfo.FLOATING_POINT,
+						fpSource(pair(item, value.get())));
 				EvaluationContext context = makeContext(info);
 
 				return AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -294,11 +296,11 @@ class AnnotationAccessTest {
 				Item item2 = mockItem();
 				Mutable<Item> item = new MutableObject<>(item1);
 				Expression<Item> itemSource = dynamicGeneric(item::get);
-				AnnotationInfo info = info(key, ValueType.DOUBLE, TypeInfo.FLOATING_POINT);
 
 				double value1 = 123.456;
 				double value2 = Double.MAX_VALUE;
-				info.floatingPointSource = fpSource(pair(item1, _double(value1)), pair(item2, _double(value2)));
+				AnnotationInfo info = info(key, ValueType.DOUBLE, TypeInfo.FLOATING_POINT,
+						fpSource(pair(item1, _double(value1)), pair(item2, _double(value2))));
 				EvaluationContext context = makeContext(info);
 
 				Expression<?> exp = AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -328,8 +330,8 @@ class AnnotationAccessTest {
 				String key = "key";
 				Item item = mockItem();
 				Expression<Item> itemSource = raw(item);
-				AnnotationInfo info = info(key, ValueType.BOOLEAN, TypeInfo.BOOLEAN);
-				info.booleanSource = boolSource(value.booleanValue() ? item : null);
+				AnnotationInfo info = info(key, ValueType.BOOLEAN, TypeInfo.BOOLEAN,
+						boolSource(value.booleanValue() ? item : null));
 				EvaluationContext context = makeContext(info);
 
 				return AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -342,11 +344,10 @@ class AnnotationAccessTest {
 				Item item2 = mockItem();
 				Mutable<Item> item = new MutableObject<>(item1);
 				Expression<Item> itemSource = dynamicGeneric(item::get);
-				AnnotationInfo info = info(key, ValueType.BOOLEAN, TypeInfo.BOOLEAN);
 
 				boolean value1 = false;
 				boolean value2 = true;
-				info.booleanSource = boolSource(item2);
+				AnnotationInfo info = info(key, ValueType.BOOLEAN, TypeInfo.BOOLEAN, boolSource(item2));
 				EvaluationContext context = makeContext(info);
 
 				Expression<?> exp = AnnotationAccess.of(itemSource, context, Literals.of(key));
@@ -386,8 +387,8 @@ class AnnotationAccessTest {
 				Expression<Item> itemSource = raw(item);
 				AnnotationInfo[] infos = IntStream.range(0, keys.length)
 						.mapToObj(i -> {
-							AnnotationInfo info = info(keys[i], ValueType.STRING, TypeInfo.TEXT);
-							info.objectSource = objSource(pair(item, value[i]));
+							AnnotationInfo info = info(keys[i], ValueType.STRING, TypeInfo.TEXT,
+									objSource(pair(item, value[i])));
 							return info;
 						})
 						.toArray(AnnotationInfo[]::new);
@@ -420,8 +421,8 @@ class AnnotationAccessTest {
 				Expression<Item> itemSource = raw(item);
 				AnnotationInfo[] infos = IntStream.range(0, keys.length)
 						.mapToObj(i -> {
-							AnnotationInfo info = info(keys[i], ValueType.LONG, TypeInfo.INTEGER);
-							info.integerSource = intSource(pair(item, _long(value[i])));
+							AnnotationInfo info = info(keys[i], ValueType.LONG, TypeInfo.INTEGER,
+									intSource(pair(item, _long(value[i]))));
 							return info;
 						})
 						.toArray(AnnotationInfo[]::new);
@@ -455,8 +456,8 @@ class AnnotationAccessTest {
 				Expression<Item> itemSource = raw(item);
 				AnnotationInfo[] infos = IntStream.range(0, keys.length)
 						.mapToObj(i -> {
-							AnnotationInfo info = info(keys[i], ValueType.DOUBLE, TypeInfo.FLOATING_POINT);
-							info.floatingPointSource = fpSource(pair(item, _double(value[i])));
+							AnnotationInfo info = info(keys[i], ValueType.DOUBLE, TypeInfo.FLOATING_POINT,
+									fpSource(pair(item, _double(value[i]))));
 							return info;
 						})
 						.toArray(AnnotationInfo[]::new);
@@ -490,8 +491,8 @@ class AnnotationAccessTest {
 				Expression<Item> itemSource = raw(item);
 				AnnotationInfo[] infos = IntStream.range(0, keys.length)
 						.mapToObj(i -> {
-							AnnotationInfo info = info(keys[i], ValueType.BOOLEAN, TypeInfo.BOOLEAN);
-							info.booleanSource = boolSource(value[i] ? item : null);
+							AnnotationInfo info = info(keys[i], ValueType.BOOLEAN, TypeInfo.BOOLEAN,
+									boolSource(value[i] ? item : null));
 							return info;
 						})
 						.toArray(AnnotationInfo[]::new);

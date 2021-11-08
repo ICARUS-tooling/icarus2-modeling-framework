@@ -25,7 +25,14 @@ package de.ims.icarus2.query.api.engine.result;
  */
 public interface MatchSource {
 
+	/** Converts the data in this {@link MatchSource} into a ready to use
+	 * and decoupled {@link Match} instance. Can return {@code this} object
+	 * if the implementation also implements {@link Match} directly. */
 	Match toMatch();
 
+	/** Send the match data currently stored in this {@link MatchSource} to
+	 *  the specified {@link MatchSink sink}. This is usually more efficient
+	 *  for intermediate match handling compared to {@link #toMatch() creating}
+	 *  a new {@link Match} instance and sending it to a consumer. */
 	void drainTo(MatchSink sink);
 }

@@ -104,7 +104,6 @@ import com.mxgraph.view.mxStylesheet;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.QueryTestUtils;
@@ -114,6 +113,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Node;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Field;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NodeInfo.Type;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Snapshot;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
@@ -563,7 +563,7 @@ public class InteractiveMatcher {
 		} break;
 		case SINGLE: {
 			style = Styles.SM_NODE;
-			label = "Node "+info.getProperty(Field.NODE);
+			label = "Node "+info.getProperty(Field.MAPPING);
 		} break;
 
 		default:
@@ -701,7 +701,7 @@ public class InteractiveMatcher {
 		for(NodeInfo info : nodes) {
 			id2info.put(info.getId(), info);
 			if(info.getType()==Type.SINGLE) {
-				int nodeId = ((Number)info.getProperty(Field.NODE)).intValue();
+				int nodeId = ((Number)info.getProperty(Field.MAPPING)).intValue();
 				node2info.put(nodeId, info);
 			}
 			if(info.getType()==Type.BEGIN) {
@@ -1447,14 +1447,11 @@ public class InteractiveMatcher {
 
 			IqlLane lane = payload.getLanes().get(0);
 
-			Scope scope = QueryTestUtils.scope();
-
 			StructurePattern.Builder builder = StructurePattern.builder();
 			builder.source(lane);
 			builder.id(1);
-			RootContext rootContext = EvaluationContext.rootBuilder()
-					.corpus(scope.getCorpus())
-					.scope(scope)
+			builder.role(Role.SINGLETON);
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()

@@ -36,6 +36,8 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
@@ -58,8 +60,12 @@ import de.ims.icarus2.util.collections.ArrayUtils;
  * @author Markus Gärtner
  *
  */
+@NotThreadSafe
 public class IndexBuffer implements IndexSet, IndexCollector {
 
+	/** Creates a copy of the given {@code source} buffer that has the
+	 * specified {@code newSize} and retains all the indices stored in
+	 * {@code source} that fit into the new buffer. */
 	public static IndexBuffer copyOf(IndexBuffer source, int newSize) {
 		IndexBuffer target = new IndexBuffer(source.valueType, newSize);
 		int retain = Math.min(newSize, source.size);

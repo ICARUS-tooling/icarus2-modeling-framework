@@ -27,12 +27,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -40,6 +46,7 @@ import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.query.api.Query;
@@ -62,11 +69,14 @@ import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlPayload;
+import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlProperty;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.Options;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -80,19 +90,31 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 public class QueryEngine {
 
+	private static final Logger log = LoggerFactory.getLogger(QueryEngine.class);
+
 	public static Builder builder() {
 		return new Builder();
 	}
 
+	/** Query parser for deserializing textual queries */
 	private final ObjectMapper mapper;
-
+	/** Source of physical corpora */
 	private final CorpusManager corpusManager;
+	/** Performance-related settings for the engine */
+	private final EngineSettings settings;
+	/** Exception handler that simply logs unexpected errors */
+	private final BiConsumer<Thread, Throwable> fallbackExceptionHandler;
 
 	private QueryEngine(Builder builder) {
 		builder.validate();
 
 		mapper = builder.getMapper();
 		corpusManager = builder.getCorpusManager();
+		settings = builder.getSettings().clone();
+
+		fallbackExceptionHandler = (thread, exception) -> {
+			log.error("Unexpected error in thread %s", thread.getName(), exception);
+		};
 	}
 
 	public QueryJob evaluateQuery(Query rawQuery) throws InterruptedException {
@@ -209,12 +231,60 @@ public class QueryEngine {
 			// Intermediate sanity check against missed settings
 			stream.checkIntegrity();
 
-			CorpusManifest corpusManifest = resolveCorpus(stream.getCorpus());
+			final CorpusManifest corpusManifest = resolveCorpus(stream.getCorpus());
+			final String corpusId = ManifestUtils.requireId(corpusManifest);
 			// We need fully connected corpus for the context builder below
 			Corpus corpus = corpusManager.connect(corpusManifest);
+			if(corpus==null)
+				throw new QueryException(QueryErrorCode.CORPUS_UNREACHABLE,
+						String.format("Failed to conenct to corpus: %s", corpusId));
 
+			final RootContext rootContext = createContext(corpus);
+
+			final IqlPayload payload = stream.getPayload().orElseThrow(
+					() -> EvaluationUtils.forInternalError("Failed to construct payload"));
+
+			if(payload.getQueryType()==QueryType.ALL) {
+				//TODO provide a simple job implementation that just forwards all the corpus data
+				throw new UnsupportedOperationException("query type 'ALL' not implemented");
+			}
+
+			final List<IqlLane> lanes = payload.getLanes();
+			final List<StructurePattern> patterns = new ObjectArrayList<>();
+
+			if(lanes.isEmpty()) {
+				// Plain query without any lanes or structural constraints
+				patterns.add(createPlainPattern(payload, rootContext));
+			} else {
+				// At least one proper (proxy) lane definition available
+				createLanePatterns(payload, rootContext, patterns::add);
+			}
+
+			assert !patterns.isEmpty();
+			assert patterns.size()>=lanes.size();
+
+			try {
+				QueryInput input = QueryUtils.streamedInput(corpus.createStream(
+						rootContext.getScope(), AccessMode.READ, Options.none()));
+			} catch (IcarusApiException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return SingleStreamJob.builder()
+					.addPatterns(patterns)
+					.batchSize(settings.getBatchSize())
+					.exceptionHandler(fallbackExceptionHandler)
+					.query(queryContext.getQuery())
+					.input(null)
+					.output(null)
+					.build();
+		}
+
+		private RootContext createContext(Corpus corpus) {
 			// Now build context for our single stream
 			RootContextBuilder contextBuilder = EvaluationContext.rootBuilder();
+			// Live corpus required here
 			contextBuilder.corpus(corpus);
 
 			// Apply various aspects of configuration
@@ -223,63 +293,69 @@ public class QueryEngine {
 			applyEmbeddedData(contextBuilder, queryContext.getEmbeddedData());
 			applyExtensions(contextBuilder, queryContext.getExtensions()); // partly outside our control
 
-			RootContext rootContext = contextBuilder.build();
+			return contextBuilder.build();
+		}
 
-			IqlPayload payload = stream.getPayload().orElseThrow(
-					() -> EvaluationUtils.forInternalError("Failed to construct payload"));
+		private StructurePattern createPlainPattern(IqlPayload payload, EvaluationContext context) {
 
-			List<IqlLane> lanes = payload.getLanes();
+			StructurePattern.Builder builder = StructurePattern.builder()
+					// Use lane index as id for new pattern
+					.id(0)
+					// Environment for creating expressions etc...
+					.context(context)
+					// We provide an empty lane as proxy
+					.source(new IqlLane())
+					// For simplicity the SINGLETON role can be used here (instea dof defining a NONE proxy)
+					.role(Role.SINGLETON);
 
-			if(lanes.isEmpty()) {
-				// Plain query without any lanes or structural constraints
+			payload.getFilter().ifPresent(builder::filterConstraint);
+			payload.getConstraint().ifPresent(builder::globalConstraint);
 
-				//TODO wrap filter and global constraint into a simple matcher
-			} else {
-				// At least one proper (proxy) lane definition available
-				List<StructurePattern> elements = new ObjectArrayList<>();
+			final StructurePattern pattern = builder.build();
+			assert pattern.getId()==0;
+			return pattern;
+		}
 
-				final int last = lanes.size()-1;
-				for (int i = 0; i <= last; i++) {
-					final IqlLane lane = lanes.get(i);
-					final boolean isFirst = i==0;
-					final boolean isLast = i==last;
+		private void createLanePatterns(IqlPayload payload, RootContext rootContext,
+				Consumer<? super StructurePattern> action) {
+			final List<IqlLane> lanes = payload.getLanes();
+			final int last = lanes.size()-1;
+			for (int i = 0; i <= last; i++) {
+				final IqlLane lane = lanes.get(i);
+				final boolean isFirst = i==0;
+				final boolean isLast = i==last;
 
-					final LaneContext laneContext = rootContext.derive()
-							.lane(lane)
-							.build();
+				final LaneContext laneContext = rootContext.derive()
+						.lane(lane)
+						.build();
 
-					StructurePattern.Builder builder = StructurePattern.builder()
-							// Use lane index as id for new pattern
-							.id(i)
-							// Environment for creating expressions etc...
-							.context(laneContext)
-							// Actual structural root element (lane)
-							.source(lane)
-							// Role/Position of the lane
-							.role(Role.of(isFirst, isLast));
+				StructurePattern.Builder builder = StructurePattern.builder()
+						// Use lane index as id for new pattern
+						.id(i)
+						// Environment for creating expressions etc...
+						.context(laneContext)
+						// Actual structural root element (lane)
+						.source(lane)
+						// Role/Position of the lane
+						.role(Role.of(isFirst, isLast));
 
-					// Local hit limit and match flags
-					lane.getFlags().forEach(builder::flag);
-					lane.getLimit().ifPresent(builder::limit);
+				// Local hit limit and match flags
+				lane.getFlags().forEach(builder::flag);
+				lane.getLimit().ifPresent(builder::limit);
 
-					// If this is the first lane, try to apply filter constraints
-					if(isFirst) {
-						payload.getFilter().ifPresent(builder::filterConstraint);
-					}
-					// If this is the last lane, try to apply global constraints
-					if(isLast) {
-						payload.getConstraint().ifPresent(builder::globalConstraint);
-					}
-
-					final StructurePattern pattern = builder.build();
-
-					elements.add(pattern);
+				// If this is the first lane, try to apply filter constraints
+				if(isFirst) {
+					payload.getFilter().ifPresent(builder::filterConstraint);
+				}
+				// If this is the last lane, try to apply global constraints
+				if(isLast) {
+					payload.getConstraint().ifPresent(builder::globalConstraint);
 				}
 
-				//TODO now decide on QueryJob implementation based on number of lanes
+				final StructurePattern pattern = builder.build();
+				assert pattern.getId()==i;
+				action.accept(pattern);
 			}
-
-			throw new UnsupportedOperationException();
 		}
 
 		private CorpusManifest resolveCorpus(IqlCorpus source) {
@@ -419,6 +495,8 @@ public class QueryEngine {
 
 		private CorpusManager corpusManager;
 
+		private EngineSettings settings;
+
 		private final ExtensionRegistry extensionRegistry = new ExtensionRegistry();
 
 		private Builder() {
@@ -439,17 +517,18 @@ public class QueryEngine {
 			return this;
 		}
 
-		public Builder useDefaultMapper() {
-			return mapper(IqlUtils.createMapper());
+		public Builder useDefaultMapper() { return mapper(IqlUtils.createMapper()); }
+
+		public Builder settings(EngineSettings settings) {
+			requireNonNull(settings);
+			checkState("Settings already set", this.settings==null);
+			this.settings = settings;
+			return this;
 		}
 
-		public ObjectMapper getMapper() {
-			return mapper;
-		}
-
-		public CorpusManager getCorpusManager() {
-			return corpusManager;
-		}
+		public ObjectMapper getMapper() { return mapper; }
+		public CorpusManager getCorpusManager() { return corpusManager; }
+		public EngineSettings getSettings() { return settings; }
 
 		/**
 		 * @see de.ims.icarus2.util.AbstractBuilder#validate()
@@ -458,6 +537,7 @@ public class QueryEngine {
 		protected void validate() {
 			checkState("Mapper not set", mapper!=null);
 			checkState("Corpus manager not set", corpusManager!=null);
+			checkState("Settings not set", settings!=null);
 		}
 
 		/**

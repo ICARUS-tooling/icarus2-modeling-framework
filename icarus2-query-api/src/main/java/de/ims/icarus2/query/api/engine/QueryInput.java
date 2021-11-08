@@ -25,11 +25,14 @@ import de.ims.icarus2.model.api.members.container.Container;
  * @author Markus Gärtner
  *
  */
-public interface QueryInput {
+public interface QueryInput extends AutoCloseable {
 
 	/**
 	 * Loads items into the given {@code buffer} if available, and returns the total number
 	 * of items copied, or {@code 0} if this source is empty.
 	 */
 	int load(Container[] buffer);
+
+	@Override
+	void close();
 }

@@ -67,6 +67,8 @@ public class AccumulatingException extends Exception {
 		return exceptions[index];
 	}
 
+	//TODO think about overriding the printStackTrace methods to output all accumulated exceptions
+
 	public void forEachException(Consumer<? super Throwable> action) {
 
 		for(Throwable t : exceptions) {

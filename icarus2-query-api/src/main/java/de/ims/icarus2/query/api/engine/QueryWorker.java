@@ -73,12 +73,18 @@ public final class QueryWorker implements Runnable {
 		this.task = requireNonNull(task);
 	}
 
-	/** Set the 'canceled' flag to true and informa the controller on the first call of this method. */
+	/** Set the 'canceled' flag to true and inform the controller on the first call of this method. */
 	public final void cancel() {
+		cancelImpl();
+	}
+
+	private boolean cancelImpl() {
+		boolean result = false;
 		if(!canceled) {
 			canceled = true;
-			controller.workerCanceled(this);
+			result = controller.workerCanceled(this);
 		}
+		return result;
 	}
 
 	/** Returns the 'canceled' flag. */
@@ -114,21 +120,25 @@ public final class QueryWorker implements Runnable {
 
 		controller.workerStarted(this);
 
+		boolean needsShutdown = false;
 		try {
 			task.execute(this);
 
 			if(!canceled) {
-				controller.workerDone(this);
+				needsShutdown = controller.workerDone(this);
 			}
 		} catch(InterruptedException e) {
 			// Possible through hard cancellation from the executor service
-			cancel();
+			needsShutdown = cancelImpl();
 		} catch(Throwable e) {
-			controller.workerFailed(this, e);
+			needsShutdown = controller.workerFailed(this, e);
 		} finally {
 			try {
 				// Let task perform internal cleanup
 				task.cleanup(this);
+				if(needsShutdown) {
+					controller.invokeShutdown();
+				}
 			} finally {
 				// Ensure we do NOT hold any references to external data
 				clientData.clear();

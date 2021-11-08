@@ -28,15 +28,15 @@ import de.ims.icarus2.query.api.engine.result.MatchCollector;
  * @author Markus Gärtner
  *
  */
-public interface QueryOutput {
+public interface QueryOutput extends AutoCloseable {
 
-	/** Creates a new handler that collects results for the current thread in the given lane,
+	/** Creates a new handler that collects results for the specified thread,
 	 * verified by the given {@link ThreadVerifier}. */
-	MatchCollector createCollector(int id, ThreadVerifier threadVerifier);
+	MatchCollector createTerminalCollector(ThreadVerifier threadVerifier);
 
-	/** Makes sure the result handler for the specified lane that was used in the current
-	 * thread is closed down and buffer resources are freed up. */
-	void closeCollector(int id);
+	/** Makes sure the result handler for the specified thread
+	 *  is closed down and buffer resources are freed up. */
+	void closeTerminalCollector(ThreadVerifier threadVerifier);
 
 	/** Estimates the number of matches so far. The returned value is a best-effort guess
 	 * as long as the associated search is still in progress. Only when it is completed
@@ -50,7 +50,10 @@ public interface QueryOutput {
 	 * been reached with the results collected so far. */
 	boolean isFull();
 
-	public interface BufferedQueryOutput extends QueryOutput {
+	@Override
+	void close();
+
+	public interface BufferedMatchOutput extends QueryOutput {
 		List<Match> getMatches();
 	}
 }

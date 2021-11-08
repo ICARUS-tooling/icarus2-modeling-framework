@@ -38,9 +38,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.query.api.engine.QueryJob.JobController;
-import de.ims.icarus2.query.api.engine.QueryOutput.BufferedQueryOutput;
+import de.ims.icarus2.query.api.engine.QueryOutput.BufferedMatchOutput;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.result.Match;
@@ -167,11 +166,7 @@ class SingleStreamJobTest {
 			assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
 			IqlLane lane = payload.getLanes().get(0);
 
-			Scope scope = QueryTestUtils.scope();
-
-			RootContext rootContext = EvaluationContext.rootBuilder()
-					.corpus(scope.getCorpus())
-					.scope(scope)
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
@@ -241,8 +236,8 @@ class SingleStreamJobTest {
 			if(outputAsserter!=null) {
 				assertThat(matches).as("Superfluous match listing").isEmpty();
 				outputAsserter.accept(output);
-			} else if(output instanceof BufferedQueryOutput) {
-				BufferedQueryOutput bo = (BufferedQueryOutput) output;
+			} else if(output instanceof BufferedMatchOutput) {
+				BufferedMatchOutput bo = (BufferedMatchOutput) output;
 				List<Match> ml = bo.getMatches();
 				assertThat(ml).hasSameSizeAs(matches);
 

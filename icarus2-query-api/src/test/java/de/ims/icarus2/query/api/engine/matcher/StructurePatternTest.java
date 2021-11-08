@@ -123,7 +123,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.QueryTestUtils;
@@ -1284,17 +1283,13 @@ public class StructurePatternTest {
 		private void makeBuilderFromQueryElement(int size) {
 			checkState("Root element not set", root!=null);
 
-			Scope scope = QueryTestUtils.scope();
-
 			IqlLane lane = mock(IqlLane.class);
 			when(lane.getElement()).thenReturn(root);
 
 			builder = StructurePattern.builder();
 			builder.source(lane);
 			builder.id(1);
-			RootContext rootContext = EvaluationContext.rootBuilder()
-					.corpus(scope.getCorpus())
-					.scope(scope)
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
@@ -1321,14 +1316,10 @@ public class StructurePatternTest {
 				assertThat(tree).as("Must provide tree structure for tree query").isNotNull();
 			}
 
-			Scope scope = QueryTestUtils.scope();
-
 			builder = StructurePattern.builder();
 			builder.source(lane);
 			builder.id(1);
-			RootContext rootContext = EvaluationContext.rootBuilder()
-					.corpus(scope.getCorpus())
-					.scope(scope)
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()

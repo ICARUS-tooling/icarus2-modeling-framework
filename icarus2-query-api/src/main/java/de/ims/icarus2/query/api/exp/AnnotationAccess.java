@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;

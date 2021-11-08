@@ -104,7 +104,7 @@ public class TerminalCollectorFactory extends AbstractBuilder<TerminalCollectorF
 		return resultEntrySink!=null ? new Extracting(this) : new NonExtracting(this);
 	}
 
-	static class NonExtracting implements MatchCollector {
+	static class NonExtracting implements MatchCollector, Predicate<MultiMatch> {
 		private final ThreadVerifier threadVerifier;
 		private final Predicate<Match> sink;
 
@@ -121,9 +121,18 @@ public class TerminalCollectorFactory extends AbstractBuilder<TerminalCollectorF
 
 			return sink.test(source.toMatch());
 		}
+
+		@Override
+		public boolean test(MultiMatch match) {
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
+
+			return sink.test(match);
+		}
 	}
 
-	static class Extracting implements MatchCollector {
+	static class Extracting implements MatchCollector, Predicate<MultiMatch> {
 
 		private final ThreadVerifier threadVerifier;
 		private final Extractor[] extractors;
@@ -137,19 +146,32 @@ public class TerminalCollectorFactory extends AbstractBuilder<TerminalCollectorF
 			sink = factory.resultEntrySink();
 		}
 
-		@Override
-		public boolean collect(MatchSource source) {
-			if(Tripwire.ACTIVE) {
-				threadVerifier.checkThread();
-			}
-
-			final ResultEntry entry = new ResultEntry(source.toMatch(), payloadSize);
+		private boolean process(Match match) {
+			final ResultEntry entry = new ResultEntry(match, payloadSize);
 			final long[] payload = entry.payload;
 			for (int i = extractors.length-1; i >= 0; i--) {
 				extractors[i].extract(payload);
 			}
 
 			return sink.test(entry);
+		}
+
+		@Override
+		public boolean collect(MatchSource source) {
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
+
+			return process(source.toMatch());
+		}
+
+		@Override
+		public boolean test(MultiMatch match) {
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
+
+			return process(match);
 		}
 	}
 }

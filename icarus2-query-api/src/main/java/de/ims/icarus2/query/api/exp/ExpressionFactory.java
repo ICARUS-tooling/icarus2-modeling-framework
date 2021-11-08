@@ -66,7 +66,6 @@ import de.ims.icarus2.query.api.exp.BinaryOperations.EqualityPred;
 import de.ims.icarus2.query.api.exp.BinaryOperations.NumericalComparator;
 import de.ims.icarus2.query.api.exp.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.exp.BinaryOperations.StringOp;
-import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.exp.Expression.ListExpression;
 import de.ims.icarus2.query.api.exp.Expressions.PathProxy;

@@ -17,14 +17,33 @@
 package de.ims.icarus2.query.api.engine.result;
 
 /**
+ * Implements an aggregated match that represents multiple matches from
+ * different lanes.
+ * To navigate the multiple matches contained a cursor-style mechanic is
+ * provided via {@link #moveToLane(int)}.
+ * The basic {@link Match} methods (e.g {@link Match#getIndex()},
+ * {@link Match#drainTo(MatchSink)}, etc..) always refer to the match that
+ * the cursor currently points to with {@link #getCurrentLane()}.
+ * Initially the cursor will always positioned at the lane that has the
+ * index of {@code 0}.
+ *
  * @author Markus Gärtner
  *
  */
 public interface MultiMatch extends Match {
 
+	/** Returns the index of the current lane */
 	int getCurrentLane();
 
+	/** Returns the total number of lanes present in this match.
+	 * Note that this number is <b>always</b> equal to the number of
+	 * lanes involved in the original matching process, even if for
+	 * individual lanes the multi-match does not contain any mappings! */
 	int getLaneCount();
 
-	void moveToLane(int id);
+	/** Moves the read cursor to the match for the specified lane. */
+	void moveToLane(int index);
+
+	/** Moves the read cursor back to the first lane. */
+	default void reset() { moveToLane(0); }
 }

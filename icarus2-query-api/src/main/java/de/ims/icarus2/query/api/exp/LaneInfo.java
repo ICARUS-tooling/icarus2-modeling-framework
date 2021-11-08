@@ -17,35 +17,33 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.exp;
 
-import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
-import de.ims.icarus2.query.api.iql.IqlConstants;
+import de.ims.icarus2.query.api.engine.CorpusData.LayerRef;
+import de.ims.icarus2.query.api.iql.IqlLane;
 
 /**
+ *
  * @author Markus Gärtner
  *
  */
-public enum QueryProperty {
+public class LaneInfo {
+	private final IqlLane lane;
+	private final LayerRef layer;
+	private final TypeInfo type;
 
-	DEFAULT_NODE_ARRANGEMENT("default.arrangement", "Defines a default arrangement for node sequences to be used in the query"),
-	;
-
-	private final String key, description;
-
-	private QueryProperty(String key, String description) {
-		this.key = IqlConstants.IQL_PREFIX+'.'+checkNotEmpty(key);
-		this.description = requireNonNull(description);
+	public LaneInfo(IqlLane lane, TypeInfo type, LayerRef layer) {
+		this.lane = requireNonNull(lane);
+		this.type = requireNonNull(type);
+		this.layer = requireNonNull(layer);
 	}
 
-	public String getKey() {
-		return key;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-	//TODO property for defining default node arrangement for a query
+	/** The original lane declaration inside the query */
+	public IqlLane getLane() { return lane; }
+	/** Pointer to the raw layer in the corpus data */
+	public LayerRef getLayer() { return layer; }
+	/** Type of the layer, e.g. {@link TypeInfo#ITEM_LAYER} */
+	public TypeInfo getType() { return type; }
 }

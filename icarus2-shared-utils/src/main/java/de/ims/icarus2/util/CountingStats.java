@@ -23,12 +23,17 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 
 import java.util.Set;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import de.ims.icarus2.util.strings.ToStringBuilder;
 
 /**
  * @author Markus Gärtner
  *
+ * @param <T> the enum used to identify fields
+ * @param <K> type of values to be counted
  */
+@ThreadSafe
 public class CountingStats<T extends Enum<T>, K> implements Cloneable {
 
 	private final Counter<K>[] counts;

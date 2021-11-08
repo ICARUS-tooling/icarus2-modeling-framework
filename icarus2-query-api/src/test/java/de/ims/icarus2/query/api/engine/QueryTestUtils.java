@@ -25,10 +25,15 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockLayer;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.eq_exp;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -42,6 +47,14 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifest;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.query.api.exp.AnnotationInfo;
+import de.ims.icarus2.query.api.exp.BindingInfo;
+import de.ims.icarus2.query.api.exp.ElementInfo;
+import de.ims.icarus2.query.api.exp.LaneInfo;
+import de.ims.icarus2.query.api.exp.QualifiedIdentifier;
+import de.ims.icarus2.query.api.exp.TypeInfo;
+import de.ims.icarus2.query.api.iql.IqlBinding;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.util.collections.set.ArraySet;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -114,17 +127,51 @@ public class QueryTestUtils {
 		return item;
 	}
 
+	public static Container sentence(long index, String sentence) {
+		Item[] items = IntStream.range(0, sentence.length())
+				.mapToObj(j -> item(j, sentence.charAt(j)))
+				.toArray(Item[]::new);
+		Container c = ModelTestUtils.mockContainer(items);
+		ModelTestUtils.stubIndex(c, index);
+		return c;
+	}
+
 	public static Container[] sentences(String...sentences) {
 		return IntStream.range(0, sentences.length)
 				.mapToObj(i -> {
 					String sentence = sentences[i];
-					Item[] items = IntStream.range(0, sentence.length())
-							.mapToObj(j -> item(j, sentence.charAt(j)))
-							.toArray(Item[]::new);
-					Container c = ModelTestUtils.mockContainer(items);
-					ModelTestUtils.stubIndex(c, i);
-					return c;
+					return sentence(i, sentence);
 				})
 				.toArray(Container[]::new);
+	}
+
+	public static CorpusData corpusData() { return new DummyCorpusData(); }
+
+	private static class DummyCorpusData extends CorpusData {
+
+		@Override
+		public LaneInfo resolveLane(IqlLane lane) {
+			return new LaneInfo(lane, TypeInfo.ITEM_LAYER, mock(LayerRef.class));
+		}
+
+		@Override
+		public ElementInfo resolveElement(LaneInfo lane, IqlProperElement element) {
+			return new ElementInfo(element, TypeInfo.ITEM, list(mock(LayerRef.class)));
+		}
+
+		@Override
+		public Map<String, BindingInfo> bind(IqlBinding binding) {
+			return Collections.emptyMap();
+		}
+
+		@Override
+		public Optional<AnnotationInfo> findAnnotation(ElementInfo element, QualifiedIdentifier identifier) {
+			return Optional.empty();
+		}
+
+		@Override
+		public Optional<LayerRef> findLayer(String name) {
+			return Optional.empty();
+		}
 	}
 }

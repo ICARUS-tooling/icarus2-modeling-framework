@@ -64,6 +64,7 @@ public class DefaultJobController implements JobController {
 	private final AtomicInteger total = new AtomicInteger();
 	private final AtomicInteger active = new AtomicInteger();
 	private final BiConsumer<QueryWorker, Throwable> exceptionHandler;
+	private final Runnable shutdownHook;
 	private final AtomicReference<JobStatus> status = new AtomicReference<>(JobStatus.WAITING);
 
 	private final ReferenceSet<QueryWorker> workers = new ReferenceOpenHashSet<>();
@@ -74,6 +75,7 @@ public class DefaultJobController implements JobController {
 		query = builder.getQuery();
 		executorService = builder.getExecutorService();
 		exceptionHandler = builder.getExceptionHandler();
+		shutdownHook = builder.getShutdownHook();
 	}
 
 	@Override
@@ -180,6 +182,12 @@ public class DefaultJobController implements JobController {
 		latch.countDown();
 	}
 
+	void invokeShutdown() {
+		if(shutdownHook!=null) {
+			shutdownHook.run();
+		}
+	}
+
 	// methods called by the worker threads
 
 	void workerCreated(QueryWorker worker) {
@@ -191,17 +199,21 @@ public class DefaultJobController implements JobController {
 		}
 	}
 	void workerStarted(QueryWorker worker) { active.incrementAndGet(); }
-	void workerCanceled(QueryWorker worker) {
+	boolean workerCanceled(QueryWorker worker) {
+		boolean result = false;
 		if(active.decrementAndGet() == 0) {
 			status.compareAndSet(JobStatus.ACTIVE, JobStatus.CANCELED);
+			result = true;
 		}
 		markDone(worker);
+		return result;
 	}
-	void workerFailed(QueryWorker worker, Throwable t) {
+	boolean workerFailed(QueryWorker worker, Throwable t) {
+		boolean result = false;
 		// Unconditionally set status to FAILED (this way subsequent cancellations won't overwrite it)
 		status.set(JobStatus.FAILED);
 		synchronized (lock) {
-			active.decrementAndGet();
+			result = active.decrementAndGet() == 0;
 			try {
 				exceptionHandler.accept(worker, t);
 			} finally {
@@ -210,12 +222,16 @@ public class DefaultJobController implements JobController {
 			}
 		}
 		markDone(worker);
+		return result;
 	}
-	void workerDone(QueryWorker worker) {
+	boolean workerDone(QueryWorker worker) {
+		boolean result = false;
 		if(active.decrementAndGet() == 0) {
 			status.compareAndSet(JobStatus.ACTIVE, JobStatus.DONE);
+			result = true;
 		}
 		markDone(worker);
+		return result;
 	}
 
 	public static class Builder extends AbstractBuilder<Builder, DefaultJobController> {
@@ -223,6 +239,7 @@ public class DefaultJobController implements JobController {
 		private IqlQuery query;
 		private ExecutorService executorService;
 		private BiConsumer<QueryWorker, Throwable> exceptionHandler;
+		private Runnable shutdownHook;
 
 		private Builder() { /* no-op */ }
 
@@ -241,6 +258,15 @@ public class DefaultJobController implements JobController {
 			requireNonNull(executorService);
 			checkArgument("Executor service already set", this.executorService==null);
 			this.executorService = executorService;
+			return this;
+		}
+
+		public Runnable getShutdownHook() { return shutdownHook; }
+
+		public Builder shutdownHook(Runnable shutdownHook) {
+			requireNonNull(shutdownHook);
+			checkArgument("Shutdown hook already set", this.shutdownHook==null);
+			this.shutdownHook = shutdownHook;
 			return this;
 		}
 

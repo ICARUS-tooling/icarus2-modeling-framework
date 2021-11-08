@@ -43,7 +43,12 @@ public interface QueryJob {
 	 * and returns a controller instance that can be used to monitor progress and interact
 	 * with the underlying workers.
 	 * <p>
-	 * A number of workers up the specified limit will be created and scheduled.
+	 * A number of workers up the specified limit will be created.
+	 * <p>
+	 * Note that this method does not actually start the worker threads themselves, but
+	 * merely prepares them and initializes the required buffer structures and result
+	 * handlers. Only by calling {@link JobController#start()} on the returned controller
+	 * will the actual search be started.
 	 */
 	JobController execute(ExecutorService executorService, int workerLimit);
 

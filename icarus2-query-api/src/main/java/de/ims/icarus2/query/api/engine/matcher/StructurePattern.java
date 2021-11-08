@@ -77,11 +77,11 @@ import de.ims.icarus2.query.api.engine.matcher.mark.LevelMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
+import de.ims.icarus2.query.api.engine.result.DefaultMatch;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 import de.ims.icarus2.query.api.engine.result.MatchSink;
 import de.ims.icarus2.query.api.engine.result.MatchSource;
-import de.ims.icarus2.query.api.engine.result.SimpleMatch;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
@@ -89,6 +89,7 @@ import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.Expression;
 import de.ims.icarus2.query.api.exp.ExpressionFactory;
+import de.ims.icarus2.query.api.exp.ExpressionFactory.StatsField;
 import de.ims.icarus2.query.api.exp.Literals;
 import de.ims.icarus2.query.api.exp.LogicalOperators;
 import de.ims.icarus2.query.api.iql.AbstractIqlQueryElement;
@@ -114,6 +115,7 @@ import de.ims.icarus2.query.api.iql.IqlQueryElement;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.CountingStats;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.ArrayUtils;
@@ -126,7 +128,9 @@ import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
@@ -196,7 +200,7 @@ public class StructurePattern {
 	/** The IQL source of structural constraints for this matcher. */
 	private final IqlLane source;
 	/** The root context for evaluations in this pattern */
-	private final LaneContext context;
+	private final EvaluationContext context;
 	/** Blueprint for instantiating a new {@link StructureMatcher} */
 	private final StateMachineSetup setup;
 	/** Position of this pattern in the greater context */
@@ -235,13 +239,15 @@ public class StructurePattern {
 	}
 
 	public IqlLane getSource() { return source; }
-	public LaneContext getContext() { return context; }
+	public EvaluationContext getContext() { return context; }
 	public Role getRole() { return role; }
 	public int getId() { return id; }
 
 	public IqlNode nodeForId(int mappingId) { return mappedNodes[mappingId]; }
 	public int idForNode(IqlNode node) { return mappedIds.getInt(node); }
 	public int idForLabel(String label) { return mappedLabels.getInt(label); }
+	public Set<String> getDeclaredMembers() { return Collections.unmodifiableSet(setup.declaredMembers); }
+	public Set<String> getReferencedMembers() { return Collections.unmodifiableSet(setup.referencedMembers); }
 
 	/**
 	 * Returns a builder to configure and instantiate a new {@link StructureMatcher}.
@@ -359,6 +365,10 @@ public class StructurePattern {
 		/** Blueprints for creating member storages per thread */
 		@SuppressWarnings("unchecked")
 		Supplier<Assignable<? extends Item>>[] members = new Supplier[0];
+		/** Member labels declared in the pattern for this state machine */
+		Set<String> declaredMembers = new ObjectOpenHashSet<>();
+		/** member labels used inside expressions */
+		Set<String> referencedMembers = new ObjectOpenHashSet<>();
 
 
 		// Access methods for the matcher/state
@@ -472,6 +482,9 @@ public class StructurePattern {
 		ExpressionFactory expressionFactory;
 		final MarkerTransform markerTransform = new MarkerTransform();
 
+		final Set<String> declaredMembers = new ObjectOpenHashSet<>();
+		final Set<String> referencedMembers = new ObjectOpenHashSet<>();
+
 		boolean findOnly = false;
 		boolean localGates = true;
 
@@ -482,7 +495,7 @@ public class StructurePattern {
 		int level = 0;
 
 		final List<Node> nodes = new ObjectArrayList<>();
-		final LaneContext rootContext;
+		final EvaluationContext rootContext;
 		final List<IqlNode> mappedNodes = new ObjectArrayList<>();
 		final List<Interval> intervals = new ObjectArrayList<>();
 		final List<NodeDef> matchers = new ObjectArrayList<>();
@@ -741,6 +754,8 @@ public class StructurePattern {
 			allowMonitor = builder.isAllowMonitor();
 			nodeTransform = builder.getNodeTransform();
 			cacheAll = builder.isCacheAll();
+
+			declaredMembers.addAll(builder.getDeclaredMembers());
 		}
 
 		/** Check whether given flag is set in current query context. */
@@ -782,23 +797,53 @@ public class StructurePattern {
 				mappedNodes.add(source);
 			}
 
+			if(label!=null) {
+				/*
+				 * We could add a check here whether or not there already
+				 * is a member label registered that equals 'label'. But we
+				 * also lack the capacity currently to verify whether that
+				 * 'duplicate' is inside another disjunctive branch and
+				 * therefore would be considered valid.
+				 * Therefore we simply omit that check and follow the general
+				 * IQL specification which states that any member reference
+				 * will evaluate to the last assigned target.
+				 */
+				declaredMembers.add(label);
+			}
+
 			Segment atom;
 
 			// Process actual node content
 			if(constraint==null) {
 				// Dummy nodes don't get added to the "proper nodes" list
-				Empty node = empty(source, mappingId, label, anchorId);
+				Node node = empty(source, mappingId, label, anchorId);
 				atom = segment(node);
 			} else {
 				// Full fledged node with local constraints and potentially a member label
 
 				// Prepare context and expression processing
-				context = rootContext.derive()
+				context = ((LaneContext)rootContext).derive()
 						.element(source)
 						.build();
 				expressionFactory = new ExpressionFactory(context);
-				Single node = single(source, mappingId, label, constraint, anchorId);
+				Node node = single(source, mappingId, label, constraint, anchorId);
 				atom = segment(node);
+				// Verify expression content
+				CountingStats<StatsField, String> stats = expressionFactory.getStats();
+				/* Check that we only use already known member labels,
+				 * so no "forward" references to yet-to-be declared members.
+				 */
+				Set<String> usedMembers = stats.getKeys(StatsField.MEMBER);
+				for(String member : usedMembers) {
+					// Ignore the generic 'this' label
+					if(EvaluationUtils.THIS.equals(member)) {
+						continue;
+					}
+					if(!declaredMembers.contains(member))
+						throw EvaluationUtils.forUnknownMember(member);
+				}
+				// Make sure we collect all the member labels used in expressions
+				referencedMembers.addAll(usedMembers);
 				// Reset context
 				expressionFactory = null;
 				context = null;
@@ -1046,14 +1091,13 @@ public class StructurePattern {
 			return node;
 		}
 
-		@SuppressWarnings("unchecked")
-		private <N extends Node> N storeTrackable(Node node) {
+		private Node storeTrackable(Node node) {
 			store(node);
 			if(allowMonitor) {
 				trackedNodes.add(node);
 				node = new Track(node);
 			}
-			return (N) node;
+			return node;
 		}
 
 		private Frame frame(Node node) {
@@ -1488,7 +1532,7 @@ public class StructurePattern {
 			return intervalIndex;
 		}
 
-		private Empty empty(IqlQueryElement source, int mappingId, @Nullable String label, int anchorId) {
+		private Node empty(IqlQueryElement source, int mappingId, @Nullable String label, int anchorId) {
 			return storeTrackable(new Empty(id(), source, mappingId, member(label), anchorId));
 		}
 
@@ -1504,19 +1548,19 @@ public class StructurePattern {
 
 		private Filter filter(boolean reset, int gateId) { return store(new Filter(id(), reset, gateId)); }
 
-		private Finish finish(long limit, boolean stopAfterMatch) {
+		private Node finish(long limit, boolean stopAfterMatch) {
 			return storeTrackable(new Finish(id(), limit, stopAfterMatch));
 		}
 
-		private PermInit permutate(IqlQueryElement source, int permId, boolean adjacent, Node[] atoms) {
+		private Node permutate(IqlQueryElement source, int permId, boolean adjacent, Node[] atoms) {
 			return storeTrackable(new PermInit(id(), source, permId, !adjacent, atoms));
 		}
 
-		private PermSlot permutationElement(int permId, int slot) {
+		private Node permutationElement(int permId, int slot) {
 			return storeTrackable(new PermSlot(id(), permId, slot));
 		}
 
-		private Tree tree(IqlTreeNode source, int anchorId, Node child, TreeConn conn) {
+		private Node tree(IqlTreeNode source, int anchorId, Node child, TreeConn conn) {
 			return storeTrackable(new Tree(id(), source, anchorId, child, conn));
 		}
 
@@ -1524,11 +1568,11 @@ public class StructurePattern {
 			return store(new TreeConn(id(), source, anchorId));
 		}
 
-		private TreeClosure closure(IqlQueryElement source, LevelFilter levelFilter, int pingId) {
+		private Node closure(IqlQueryElement source, LevelFilter levelFilter, int pingId) {
 			return storeTrackable(new TreeClosure(id(), source, closure(), levelFilter, cache(), pingId));
 		}
 
-		private TreeFilter treeFilter(IqlQueryElement source, FrameFilter filter) {
+		private Node treeFilter(IqlQueryElement source, FrameFilter filter) {
 			return storeTrackable(new TreeFilter(id(), source, filter));
 		}
 
@@ -1542,27 +1586,27 @@ public class StructurePattern {
 			return store(new Consecutive(id(), forward));
 		}
 
-		private Single single(IqlNode source, int mappingId, @Nullable String label, IqlConstraint constraint, int anchorId) {
+		private Node single(IqlNode source, int mappingId, @Nullable String label, IqlConstraint constraint, int anchorId) {
 			return storeTrackable(new Single(id(), source, mappingId, matcher(constraint), cache(), member(label), anchorId));
 		}
 
-		private Find find() {
+		private Node find() {
 			return storeTrackable(new Find(id()));
 		}
 
-		private Exhaust exhaust(boolean forward) {
+		private Node exhaust(boolean forward) {
 			return storeTrackable(new Exhaust(id(), forward));
 		}
 
-		private RootScan rootScan(boolean forward) {
+		private Node rootScan(boolean forward) {
 			return storeTrackable(new RootScan(id(), forward));
 		}
 
-		private Negation negate(IqlQuantifier source, Node atom) {
+		private Node negate(IqlQuantifier source, Node atom) {
 			return storeTrackable(new Negation(id(), source, cache(), atom));
 		}
 
-		private All all(IqlQuantifier source, Node atom) {
+		private Node all(IqlQuantifier source, Node atom) {
 			return storeTrackable(new All(id(), source, atom));
 		}
 
@@ -1604,7 +1648,7 @@ public class StructurePattern {
 					atoms.toArray(new Node[atoms.size()]))));
 		}
 
-		private Repetition repetition(IqlQuantifier source, Node atom, int cmin, int cmax,
+		private Node repetition(IqlQuantifier source, Node atom, int cmin, int cmax,
 				int mode, boolean discontinuous) {
 			return storeTrackable(new Repetition(id(), source, atom, cmin, cmax, mode,
 					buffer(), buffer(), buffer(), discontinuous ? id() : -1));
@@ -1756,6 +1800,12 @@ public class StructurePattern {
 			return node;
 		}
 
+		private void collectReferencedMembers() {
+			assert expressionFactory!=null : "no active expression context";
+			CountingStats<StatsField, String> stats = expressionFactory.getStats();
+			referencedMembers.addAll(stats.getKeys(StatsField.MEMBER));
+		}
+
 		StateMachineSetup createStateMachine() {
 			// Ensure we have a proper structural constraint here
 			rootElement.checkIntegrity();
@@ -1765,6 +1815,7 @@ public class StructurePattern {
 			if(filterConstraint != null) {
 				expressionFactory = new ExpressionFactory(rootContext);
 				filter = new FilterDef(containerStore(), constraint(globalConstraint), rootContext);
+				collectReferencedMembers();
 				expressionFactory = null;
 			}
 
@@ -1796,6 +1847,7 @@ public class StructurePattern {
 			if(globalConstraint != null) {
 				expressionFactory = new ExpressionFactory(rootContext);
 				global = new ExpressionDef(constraint(globalConstraint), rootContext);
+				collectReferencedMembers();
 				expressionFactory = null;
 				frame.append(new GlobalConstraint(id(), globalConstraint));
 			}
@@ -2605,7 +2657,7 @@ public class StructurePattern {
 
 		@Override
 		public Match toMatch() {
-			return SimpleMatch.of(index, entry, m_node, m_index);
+			return DefaultMatch.of(index, entry, m_node, m_index);
 		}
 
 		@Override
@@ -2929,14 +2981,23 @@ public class StructurePattern {
 		private Long limit;
 		private IqlConstraint filterConstraint;
 		private IqlConstraint globalConstraint;
-		private LaneContext context;
+		private EvaluationContext context;
 		private final Set<IqlLane.MatchFlag> flags = EnumSet.noneOf(IqlLane.MatchFlag.class);
 		private Function<IqlNode, IqlNode> nodeTransform;
 		private Boolean allowMonitor;
 		private Boolean cacheAll;
 		private Role role;
+		private final Set<String> declaredMembers = new ObjectOpenHashSet<>();
 
 		private Builder() { /* no-op */ }
+
+		public Builder declaredMembers(Collection<String> declaredMembers) {
+			requireNonNull(declaredMembers);
+			this.declaredMembers.addAll(declaredMembers);
+			return this;
+		}
+
+		public Set<String> getDeclaredMembers() { return new ObjectArraySet<>(declaredMembers); }
 
 		@VisibleForTesting
 		boolean isCacheAll() { return cacheAll==null ? false : cacheAll.booleanValue(); }
@@ -3021,9 +3082,9 @@ public class StructurePattern {
 			return this;
 		}
 
-		public LaneContext geContext() { return context; }
+		public EvaluationContext geContext() { return context; }
 
-		public Builder context(LaneContext context) {
+		public Builder context(EvaluationContext context) {
 			requireNonNull(context);
 			checkState("context already set", this.context==null);
 			this.context = context;
@@ -3561,6 +3622,7 @@ public class StructurePattern {
 		/** Keys for properties in {@link NodeInfo}. */
 		public enum Field {
 			MEMBER(Integer.class),
+			/** @deprecated use {@link #MAPPING} to refer to the id used in mapping entries */
 			@Deprecated
 			NODE(Integer.class),
 			MAPPING(Integer.class),

@@ -27,20 +27,25 @@ import java.util.Arrays;
  * @author Markus Gärtner
  *
  */
-public class SimpleMatch implements Match {
+public final class DefaultMatch implements Match {
 
 	private static final int[] EMPTY = {};
 
-	public static SimpleMatch empty(long index) {
-		return new SimpleMatch(index, EMPTY, EMPTY);
+	public static DefaultMatch empty(long index) {
+		return new DefaultMatch(index, EMPTY, EMPTY);
 	}
 
-	public static SimpleMatch of(long index, int[] m_node, int[] m_index) {
-		return new SimpleMatch(index, m_node, m_index);
+	public static DefaultMatch of(long index, int[] m_node, int[] m_index) {
+		return new DefaultMatch(index, m_node, m_index);
 	}
 
-	public static SimpleMatch of(long index, int size, int[] m_node, int[] m_index) {
-		return new SimpleMatch(index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
+	public static DefaultMatch of(long index, int size, int[] m_node, int[] m_index) {
+		return new DefaultMatch(index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
+	}
+
+	public static DefaultMatch of(long index, int offset, int size, int[] m_node, int[] m_index) {
+		return new DefaultMatch(index, Arrays.copyOfRange(m_node, offset, offset+size),
+				Arrays.copyOfRange(m_index, offset, offset+size));
 	}
 
 	private final long index;
@@ -49,7 +54,7 @@ public class SimpleMatch implements Match {
 
 	private int hash = UNSET_INT;
 
-	private SimpleMatch(long index, int[] m_node, int[] m_index) {
+	private DefaultMatch(long index, int[] m_node, int[] m_index) {
 		this.index = index;
 		this.m_node = m_node;
 		this.m_index = m_index;
@@ -77,8 +82,8 @@ public class SimpleMatch implements Match {
 	public boolean equals(Object obj) {
 		if(obj==this) {
 			return true;
-		} else if(obj instanceof SimpleMatch) {
-			SimpleMatch other = (SimpleMatch) obj;
+		} else if(obj instanceof DefaultMatch) {
+			DefaultMatch other = (DefaultMatch) obj;
 			return index==other.index
 					&& Arrays.equals(m_node, other.m_node)
 					&& Arrays.equals(m_index, other.m_index);

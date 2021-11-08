@@ -363,6 +363,11 @@ public class EvaluationUtils {
 				String.format("Failed to resolve name to a valid %s: %s", target, name));
 	}
 
+	public static QueryException forUnknownMember(String label) {
+		return new QueryException(QueryErrorCode.UNKNOWN_IDENTIFIER,
+				String.format("Member label '%s' is being used before it is defined as part of a node", label));
+	}
+
 	public static QueryException forIncorrectUse(String msg, Object...args) {
 		return new QueryException(QueryErrorCode.INCORRECT_USE, String.format(msg, args));
 	}

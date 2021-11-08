@@ -79,7 +79,6 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QuerySwitch;
-import de.ims.icarus2.query.api.exp.EvaluationContext.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
@@ -858,11 +857,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
 
 				Object value = new Object();
-				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
-						ValueType.UNKNOWN, TypeInfo.GENERIC);
 				Function<Item, Object> func = mock(Function.class);
 				when(func.apply(eq(item))).thenReturn(value);
-				annotation.objectSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(key)
+						.key(identifier.getElement())
+						.valueType(ValueType.UNKNOWN)
+						.type(TypeInfo.GENERIC)
+						.objectSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(input);
@@ -881,11 +884,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
 
 				String value = "testValue";
-				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
-						ValueType.STRING, TypeInfo.TEXT);
 				Function<Item, Object> func = mock(Function.class);
 				when(func.apply(eq(item))).thenReturn(value);
-				annotation.objectSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(key)
+						.key(identifier.getElement())
+						.valueType(ValueType.STRING)
+						.type(TypeInfo.TEXT)
+						.objectSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(input);
@@ -906,11 +913,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
 
 				long value = 123456;
-				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
-						ValueType.INTEGER, TypeInfo.INTEGER);
 				ToLongFunction<Item> func = mock(ToLongFunction.class);
 				when(func.applyAsLong(eq(item))).thenReturn(value);
-				annotation.integerSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(key)
+						.key(identifier.getElement())
+						.valueType(ValueType.INTEGER)
+						.type(TypeInfo.INTEGER)
+						.integerSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(input);
@@ -931,11 +942,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
 
 				double value = 123.456;
-				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
-						ValueType.DOUBLE, TypeInfo.FLOATING_POINT);
 				ToDoubleFunction<Item> func = mock(ToDoubleFunction.class);
 				when(func.applyAsDouble(eq(item))).thenReturn(value);
-				annotation.floatingPointSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(key)
+						.key(identifier.getElement())
+						.valueType(ValueType.DOUBLE)
+						.type(TypeInfo.FLOATING_POINT)
+						.floatingPointSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(input);
@@ -956,11 +971,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(key);
 
 				boolean value = true;
-				AnnotationInfo annotation = new AnnotationInfo(key, identifier.getElement(),
-						ValueType.BOOLEAN, TypeInfo.BOOLEAN);
 				Predicate<Item> func = mock(Predicate.class);
 				when(func.test(eq(item))).thenReturn(value);
-				annotation.booleanSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(key)
+						.key(identifier.getElement())
+						.valueType(ValueType.BOOLEAN)
+						.type(TypeInfo.BOOLEAN)
+						.booleanSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(input);
@@ -1005,11 +1024,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
 
 				String value = "testValue";
-				AnnotationInfo annotation = new AnnotationInfo(name, identifier.getElement(),
-						ValueType.STRING, TypeInfo.TEXT);
 				Function<Item, Object> func = mock(Function.class);
 				when(func.apply(eq(item))).thenReturn(value);
-				annotation.objectSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(name)
+						.key(identifier.getElement())
+						.valueType(ValueType.STRING)
+						.type(TypeInfo.TEXT)
+						.objectSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(name);
@@ -1114,11 +1137,15 @@ class ExpressionFactoryTest {
 				QualifiedIdentifier identifier = QualifiedIdentifier.parseIdentifier(name);
 
 				String value = "testValue";
-				AnnotationInfo annotation = new AnnotationInfo(name, identifier.getElement(),
-						ValueType.STRING, TypeInfo.TEXT);
 				Function<Item, Object> func = mock(Function.class);
 				when(func.apply(eq(item))).thenReturn(value);
-				annotation.objectSource = func;
+				AnnotationInfo annotation = AnnotationInfo.builer()
+						.rawKey(name)
+						.key(identifier.getElement())
+						.valueType(ValueType.STRING)
+						.type(TypeInfo.TEXT)
+						.objectSource(func)
+						.build();
 				prepareAnnotation(identifier, annotation);
 
 				Expression<?> parsed = parse(name);

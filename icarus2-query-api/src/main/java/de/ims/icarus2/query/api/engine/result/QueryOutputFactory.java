@@ -59,8 +59,9 @@ public class QueryOutputFactory {
 	private Long limit;
 	private Boolean percent;
 
-	/** Root context used for the entire query */
+	/** Root context used for the entire query. */
 	private EvaluationContext context;
+	/** Patterns used for individual lanes. */
 	private final List<StructurePattern> patterns = new ObjectArrayList<>();
 
 	/** Consumer to intercept a single match live while the container is loaded */

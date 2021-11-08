@@ -21,21 +21,38 @@ package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
+import java.util.function.LongFunction;
+import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.api.view.Scope;
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.engine.matcher.Matcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
+import de.ims.icarus2.query.api.engine.result.MatchAccumulator;
+import de.ims.icarus2.query.api.engine.result.MatchAggregator;
+import de.ims.icarus2.query.api.engine.result.MatchSource;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -49,10 +66,13 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  */
 public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
+	private static final Logger log = LoggerFactory.getLogger(SingleStreamJob.class);
+
 	public static Builder builder() { return new Builder(); }
 
 	private static final String KEY_BUFFER = "buffer";
 	private static final String KEY_MATCHER = "matcher";
+	private static final String KEY_MATCHERS = "matchers";
 
 	protected final IqlQuery query;
 	protected final QueryInput input;
@@ -74,6 +94,19 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 	public int getBatchSize() { return batchSize; }
 
+	protected final void disconnect(Corpus corpus) {
+		CorpusManager corpusManager = corpus.getManager();
+		try {
+			corpusManager.disconnect(corpus.getManifest());
+		} catch (InterruptedException e) {
+			log.error("Corpus disconnection process interrupted", e);
+		} catch (AccumulatingException e) {
+			log.error("Corpus disconnetion encoutnered %d errors", _int(e.getExceptionCount()), e);
+		}
+	}
+
+	protected abstract void afterJobFinished();
+
 	@Override
 	public JobController execute(ExecutorService executorService, int workerLimit) {
 		requireNonNull(executorService);
@@ -83,6 +116,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 				.executorService(executorService)
 				.query(query)
 				.exceptionHandler((worker, t) -> exceptionHandler.accept(worker.getThread(), t))
+				.shutdownHook(this::afterJobFinished)
 				.build();
 
 		for (int i = 0; i < workerLimit; i++) {
@@ -90,6 +124,42 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		}
 
 		return controller;
+	}
+
+	/**
+	 * Uses the given matcher to process all the still available input data
+	 * in batches. This method returns once there are no more remaining items
+	 * in the underlying {@link QueryInput input} or the {@link QueryOutput output}
+	 * is {@link QueryOutput#isFull() full}.
+	 * <p>
+	 * Additionally the buffer used for storing items from the input will be
+	 * stored as client data in the given worker with {@link #KEY_BUFFER} as key.
+	 */
+	protected final void matchInput(Matcher<Container> matcher, QueryWorker worker) {
+
+		final Container[] buffer = new Container[batchSize];
+		worker.putClientData(KEY_BUFFER, buffer);
+
+		int length;
+		while((length = input.load(buffer)) > 0) {
+			for (int i = 0; i < length; i++) {
+				// Abort search when canceled
+				if(worker.isCanceled()) {
+					return;
+				}
+
+				Container target = buffer[i];
+				// We rely on the original index values assigned to each container
+				long index = target.getIndex();
+
+				if(matcher.matches(index, target)) {
+					// Exit entire search if we have enough results already
+					if(output.isFull()) {
+						return;
+					}
+				}
+			}
+		}
 	}
 
 	static class SingleLaneJob extends SingleStreamJob {
@@ -103,49 +173,31 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			checkState("Single pattern must have role 'SINGLETON'", pattern.getRole()==Role.SINGLETON);
 		}
 
+		private StructureMatcher createMatcher(ThreadVerifier threadVerifier) {
+			return  pattern.matcherBuilder()
+				// Use same thread verifier for all components of the pipeline
+				.threadVerifier(threadVerifier)
+				// Instantiate result handler for this thread
+				.matchCollector(output.createTerminalCollector(threadVerifier))
+				.build();
+		}
+
 		/**
 		 * @see de.ims.icarus2.query.api.engine.QueryWorker.Task#execute(de.ims.icarus2.query.api.engine.QueryWorker)
 		 */
 		@Override
 		public void execute(QueryWorker worker) throws InterruptedException {
 			final ThreadVerifier threadVerifier = worker.getThreadVerifier();
-			// make sure we're on the right thread to begin with!
+			// Make sure we're on the right thread to begin with!
 			if(Tripwire.ACTIVE) {
 				threadVerifier.checkThread();
 			}
 
-			final Container[] buffer = new Container[batchSize];
-			worker.putClientData(KEY_BUFFER, buffer);
-
-			final StructureMatcher matcher = pattern.matcherBuilder()
-					// Use same thread verifier for all components of the pipeline
-					.threadVerifier(threadVerifier)
-					// Instantiate result handler for this thread
-					.matchCollector(output.createCollector(pattern.getId(), threadVerifier))
-					.build();
+			final StructureMatcher matcher = createMatcher(threadVerifier);
 			worker.putClientData(KEY_MATCHER, matcher);
 
 			// Now process the input data in batches
-			int length;
-			scan : while((length = input.load(buffer)) > 0) {
-				for (int i = 0; i < length; i++) {
-					// Abort search when canceled
-					if(worker.isCanceled()) {
-						break scan;
-					}
-
-					Container target = buffer[i];
-					// We rely on the original index values assigned to each container
-					long index = target.getIndex();
-
-					if(matcher.matches(index, target)) {
-						// Exit entire search if we have enough results already
-						if(output.isFull()) {
-							break scan;
-						}
-					}
-				}
-			}
+			matchInput(matcher, worker);
 
 			/* No cleanup needed here. We do that in cleanup(worker) method!
 			 * That way we can be sure that cleanup is being done even if errors
@@ -155,14 +207,12 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 		@Override
 		public void cleanup(QueryWorker worker) {
-			/*
-			 *  Make sure the output buffer is shut down.
-			 *
-			 *  We do this cleanup step first, since the handler might have a
-			 *  thread verifier assigned to it and so will throw an exception
-			 *  if this method is called from another thread!
-			 */
-			output.closeCollector(pattern.getId());
+			if(Tripwire.ACTIVE) {
+				worker.getThreadVerifier().checkThread();
+			}
+
+			// Make sure the output buffer is shut down.
+			output.closeTerminalCollector(worker.getThreadVerifier());
 
 			// The following cleanup steps are not thread-related
 
@@ -176,29 +226,141 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 			// At this point the worker should not hold any more references to our data
 		}
+
+		@Override
+		protected void afterJobFinished() {
+			disconnect(pattern.getContext().getCorpus());
+		}
 	}
 
 	static class MultiLaneJob extends SingleStreamJob {
 
+		/** Raw patterns to create matchers from */
 		private final StructurePattern[] patterns;
+		/** Indicates that caching is possible for the bridge between pattern i and i+1 */
+		private final boolean[] cachableBridge;
 
 		MultiLaneJob(Builder builder) {
 			super(builder);
+			patterns = builder.getPatterns().toArray(new StructurePattern[0]);
+			assert patterns.length>1;
 
-			//TODO
+			cachableBridge = new boolean[patterns.length-1];
+			//TODO fill cachableBridge array depending on used member labels in the patterns
+		}
 
+		private ItemLayer findLayer(Scope scope, IqlLane lane) {
+			if(lane.isProxy()) {
+				return scope.getPrimaryLayer();
+			}
+
+			ItemLayer layer = scope.getCorpus().getLayer(lane.getName(), false);
+			if(!scope.containsLayer(layer))
+				throw new QueryException(QueryErrorCode.INCORRECT_USE,
+						"Layer not registered with scope for query: "+lane.getName());
+
+			return layer;
+		}
+
+		private Matcher<Container> createMatcher(ThreadVerifier threadVerifier) {
+			// We need to construct the matcher combination back to front
+
+			final int laneCount = patterns.length;
+			final Scope scope = patterns[0].getContext().getScope();
+
+			// Final collector that just aggregates individual matches into a single MultiMatch
+			final MatchSource[] nonTerminalMatches = new MatchSource[laneCount-1];
+			final MatchAggregator aggregator = new MatchAggregator(nonTerminalMatches,
+					output.createTerminalCollector(threadVerifier));
+
+			final ItemLayer[] layers = new ItemLayer[laneCount];
+
+			// The final matcher doesn't need any bridging
+			final int last = laneCount-1;
+			Matcher<Container> matcher = patterns[last].matcherBuilder()
+					.threadVerifier(threadVerifier)
+					.matchCollector(aggregator)
+					.build();
+			layers[last] = findLayer(scope, patterns[last].getSource());
+
+			// Now build and link all the intermediate bridges (0 .. n-1)
+			for (int i = last-1; i >= 0; i--) {
+				final StructurePattern pattern = patterns[i];
+				final ItemLayer layer = layers[i] = findLayer(scope, pattern.getSource());
+				final ItemLayer nextLayer = layers[i+1];
+
+				LongFunction<Container> itemLookup;
+				LaneMapper laneMapper;
+
+				final LaneBridge bridge;
+				if(cachableBridge[i]) {
+					bridge = LaneBridge.Cached.builder()
+							.accumulator(new MatchAccumulator()) // we just use the default settings
+							.itemLookup(itemLookup)
+							.laneMapper(laneMapper)
+							.next(matcher)
+							.pattern(pattern)
+							.build();
+				} else {
+					bridge = LaneBridge.Uncached.builder()
+							.bufferSize(QueryUtils.BUFFER_STARTSIZE)
+							.itemLookup(itemLookup)
+							.laneMapper(laneMapper)
+							.next(matcher)
+							.pattern(pattern)
+							.build();
+				}
+
+				nonTerminalMatches[i] = bridge;
+				matcher = bridge;
+			}
+
+			return matcher;
 		}
 
 		@Override
 		public void execute(QueryWorker worker) throws InterruptedException {
-			// TODO Auto-generated method stub
+			final ThreadVerifier threadVerifier = worker.getThreadVerifier();
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
 
+			final StructureMatcher matcher = createMatcher(threadVerifier);
+
+			// Now process the input data in batches
+			matchInput(matcher, worker);
+
+			/* No cleanup needed here. We do that in cleanup(worker) method!
+			 * That way we can be sure that cleanup is being done even if errors
+			 * occurred or the process got canceled.
+			 */
 		}
 
 		@Override
 		public void cleanup(QueryWorker worker) {
-			// TODO Auto-generated method stub
+			if(Tripwire.ACTIVE) {
+				worker.getThreadVerifier().checkThread();
+			}
 
+			// Make sure the output buffer is shut down.
+			output.closeTerminalCollector(worker.getThreadVerifier());
+
+			// The following cleanup steps are not thread-related
+
+			// Cleanup all our previously stored container references
+			Container[] buffer = worker.removeClientData(KEY_BUFFER);
+			Arrays.fill(buffer, null);
+
+			// Force a reset of all the matchers just to be sure
+			StructureMatcher[] matchers = worker.removeClientData(KEY_MATCHERS);
+			Stream.of(matchers).forEach(StructureMatcher::reset);
+
+			// At this point the worker should not hold any more references to our data
+		}
+
+		@Override
+		protected void afterJobFinished() {
+			disconnect(patterns[0].getContext().getCorpus());
 		}
 	}
 
@@ -231,6 +393,13 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		public Builder addPattern(StructurePattern pattern) {
 			requireNonNull(pattern);
 			patterns.add(pattern);
+			return this;
+		}
+
+		public Builder addPatterns(List<StructurePattern> patterns) {
+			requireNonNull(patterns);
+			checkArgument("patterns list empty", !patterns.isEmpty());
+			this.patterns.addAll(patterns);
 			return this;
 		}
 

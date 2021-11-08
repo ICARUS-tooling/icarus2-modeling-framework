@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -196,6 +198,7 @@ public interface CorpusManager {
 	 * @throws ModelException in case the given {@code corpus} has been {@link #disableCorpus(CorpusManifest) disabled}
 	 * or is marked as {@link #isBadCorpus(CorpusManifest) bad} or for any internal error encountered during execution.
 	 */
+	@Nullable
 	Corpus connect(CorpusManifest corpus) throws InterruptedException;
 
 	/**

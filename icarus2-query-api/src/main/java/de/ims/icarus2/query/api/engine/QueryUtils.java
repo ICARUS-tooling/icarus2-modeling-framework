@@ -24,15 +24,21 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.concurrent.ThreadSafe;
+
+import de.ims.icarus2.model.api.corpus.CorpusOwner;
 import de.ims.icarus2.model.api.members.container.Container;
-import de.ims.icarus2.query.api.engine.QueryOutput.BufferedQueryOutput;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
+import de.ims.icarus2.query.api.engine.QueryOutput.BufferedMatchOutput;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
+import de.ims.icarus2.util.annotations.PreliminaryValue;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -42,8 +48,10 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  */
 public class QueryUtils {
 
+	@PreliminaryValue
 	public static final int BUFFER_STARTSIZE = 1<<10;
 
+	@PreliminaryValue
 	public static final int DEFAULT_BATCH_SIZE = 1<<10;
 
 	private static class WorkerThreadFactory implements ThreadFactory {
@@ -86,6 +94,7 @@ public class QueryUtils {
 		return new FixedQueryInput(containers);
 	}
 
+	@ThreadSafe
 	static class FixedQueryInput implements QueryInput {
 		private final Container[] items;
 		private int cursor = 0;
@@ -106,6 +115,51 @@ public class QueryUtils {
 
 			return len;
 		}
+
+		@Override
+		public void close() { /* no-op */ }
+	}
+
+	public static QueryInput streamedInput(StreamedCorpusView view) {
+		 return new StreamedQueryInput(view);
+	}
+
+	@ThreadSafe
+	static class StreamedQueryInput implements QueryInput, CorpusOwner {
+		private final StreamedCorpusView view;
+
+		StreamedQueryInput(StreamedCorpusView view) {
+			this.view = requireNonNull(view);
+			view.acquire(this);
+		}
+
+		@Override
+		public synchronized int load(Container[] buffer) {
+			int count = 0;
+			while(count < buffer.length && view.advance()) {
+				buffer[count++] = (Container) view.currentItem();
+			}
+			return count;
+		}
+
+		@Override
+		public void close() {
+			view.close();
+		}
+
+		@Override
+		public Optional<String> getId() { return Optional.of(getClass().getSimpleName()); }
+
+		@Override
+		public Optional<String> getDescription() { return Optional.empty(); }
+
+		@Override
+		public Optional<String> getName() { return Optional.of(getClass().getSimpleName()); }
+
+		@Override
+		public boolean release() throws InterruptedException {
+			return true;
+		}
 	}
 
 	public static BufferedSingleLaneQueryOutput bufferedOutput(int id, int limit) {
@@ -116,7 +170,8 @@ public class QueryUtils {
 		return bufferedOutput(id, UNSET_INT);
 	}
 
-	public static class BufferedSingleLaneQueryOutput implements BufferedQueryOutput {
+	@ThreadSafe
+	public static class BufferedSingleLaneQueryOutput implements BufferedMatchOutput {
 
 		private final int id;
 		private final int limit;
@@ -129,8 +184,7 @@ public class QueryUtils {
 		}
 
 		@Override
-		public MatchCollector createCollector(int id, ThreadVerifier threadVerifier) {
-			checkArgument("Foreign lane", id==this.id);
+		public MatchCollector createTerminalCollector(ThreadVerifier threadVerifier) {
 			return source -> {
 				if(Tripwire.ACTIVE) {
 					threadVerifier.checkThread();
@@ -145,8 +199,11 @@ public class QueryUtils {
 		}
 
 		@Override
-		public void closeCollector(int id) {
-			checkArgument("Foreign lane", id==this.id);
+		public void closeTerminalCollector(ThreadVerifier threadVerifier) {
+			if(Tripwire.ACTIVE) {
+				threadVerifier.checkThread();
+			}
+			// nothing to do here really
 		}
 
 		@Override
@@ -160,6 +217,9 @@ public class QueryUtils {
 				buffer.clear();
 			}
 		}
+
+		@Override
+		public void close() { /* no-op */ }
 
 		public int getLimit() { return limit; }
 

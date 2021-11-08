@@ -26,6 +26,7 @@ import de.ims.icarus2.ErrorCodeScope;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.Report;
+import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.query.api.engine.QueryJob;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
@@ -59,6 +60,13 @@ public enum QueryErrorCode implements ErrorCode {
 	 * and aggregated error descriptions.
 	 */
 	REPORT(103),
+
+	/**
+	 * Corpus resource required by the query engine is not reachable.
+	 * This can be due to a failed {@link CorpusManager#connect(de.ims.icarus2.model.manifest.api.CorpusManifest) connection}
+	 * attempt or underlying I/O errors.
+	 */
+	CORPUS_UNREACHABLE(104),
 
 	//**************************************************
 	//       2xx  INNER IQL SYNTAX ERRORS

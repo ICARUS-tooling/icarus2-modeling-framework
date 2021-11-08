@@ -106,7 +106,6 @@ public interface DataSet<E extends Object> extends Iterable<E> {
 		return isEmpty() ? emptyIterator() : new DataSetIterator<>(this);
 	}
 
-
 	@SuppressWarnings("unchecked")
 	public static <E extends Object> DataSet<E> emptySet() {
 		return (DataSet<E>) EMPTY_SET;

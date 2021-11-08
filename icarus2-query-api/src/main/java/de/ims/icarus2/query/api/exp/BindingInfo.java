@@ -17,35 +17,33 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.exp;
 
-import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static java.util.Objects.requireNonNull;
 
-import de.ims.icarus2.query.api.iql.IqlConstants;
+import de.ims.icarus2.model.api.layer.StructureLayer;
+import de.ims.icarus2.query.api.engine.CorpusData.LayerRef;
 
 /**
+ *
  * @author Markus Gärtner
  *
  */
-public enum QueryProperty {
+public class BindingInfo {
+	private final LayerRef layer;
+	private final TypeInfo type;
 
-	DEFAULT_NODE_ARRANGEMENT("default.arrangement", "Defines a default arrangement for node sequences to be used in the query"),
-	;
-
-	private final String key, description;
-
-	private QueryProperty(String key, String description) {
-		this.key = IqlConstants.IQL_PREFIX+'.'+checkNotEmpty(key);
-		this.description = requireNonNull(description);
+	public BindingInfo(LayerRef layer, TypeInfo type) {
+		this.layer = requireNonNull(layer);
+		this.type = requireNonNull(type);
 	}
 
-	public String getKey() {
-		return key;
-	}
+	/** The layer this binding refers to */
+	public LayerRef getLayer() { return layer; }
 
-	public String getDescription() {
-		return description;
-	}
-	//TODO property for defining default node arrangement for a query
+	/** The element type (one of the member related ones) of the associated layer. */
+	public TypeInfo getType() { return type; }
+
+	/** In case of {@link StructureLayer}s, bindings can target edges */
+	public boolean isEdges() { return type==TypeInfo.EDGE; }
 }

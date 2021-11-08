@@ -58,7 +58,7 @@ public abstract class ResultBuffer<T> {
 	private final List<Collector<T>> collectors = new ObjectArrayList<>();
 
 	private T[] items;
-	private int size;
+	private volatile int size;
 	private final IntFunction<T[]> bufferGen;
 
 	private final Object collectorLock = new Object();
@@ -103,6 +103,10 @@ public abstract class ResultBuffer<T> {
 			}
 			doFinish();
 		}
+	}
+
+	public boolean isFull() {
+		return false;
 	}
 
 	/** Finalize state after all pending collectors have been merged. */
@@ -302,6 +306,9 @@ public abstract class ResultBuffer<T> {
 			super(builder);
 			limit = builder.limit();
 		}
+
+		@Override
+		public boolean isFull() { return size() >= limit; }
 
 		@Override
 		protected Collector<T> newCollector(ThreadVerifier threadVerifier) {
@@ -569,6 +576,9 @@ public abstract class ResultBuffer<T> {
 		}
 
 		@Override
+		public boolean isFull() { return size() >= limit; }
+
+		@Override
 		protected Collector<ResultEntry> newCollector(ThreadVerifier threadVerifier) {
 			return new CollectorImpl();
 		}
@@ -617,6 +627,9 @@ public abstract class ResultBuffer<T> {
 			super(builder);
 			limit = builder.limit();
 		}
+
+		@Override
+		public boolean isFull() { return size() >= limit; }
 
 		@Override
 		protected Collector<ResultEntry> newCollector(ThreadVerifier threadVerifier) {
