@@ -724,8 +724,7 @@ public class QueryProcessor {
 
 				// Handle match flags
 				for (MatchFlagContext mfctx : ctx.matchFlag()) {
-					IqlLane.MatchFlag flag = IqlLane.MatchFlag.parse(mfctx.getText());
-					lane.setFlag(flag, true);
+					lane.setFlag(IqlLane.MatchFlag.parse(mfctx.getText()));
 				}
 
 				LaneType laneType;

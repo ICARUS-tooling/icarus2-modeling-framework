@@ -36,10 +36,10 @@ import org.junit.jupiter.api.TestFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.query.api.IqlQueryGenerator;
-import de.ims.icarus2.query.api.IqlQueryGenerator.IncrementalBuild;
 import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.iql.IqlQuery;
+import de.ims.icarus2.query.api.iql.IqlQueryGenerator;
+import de.ims.icarus2.query.api.iql.IqlQueryGenerator.IncrementalBuild;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.test.annotations.RandomizedTest;
@@ -91,6 +91,7 @@ class QueryEngineTest {
 						QueryEngine engine = QueryEngine.builder()
 								.mapper(mapper)
 								.corpusManager(mock(CorpusManager.class))
+								.useDefaultSettings()
 								.build();
 						IqlQuery query = engine.readQuery(new Query(json));
 						assertDeepEqual(null, original, query, json);

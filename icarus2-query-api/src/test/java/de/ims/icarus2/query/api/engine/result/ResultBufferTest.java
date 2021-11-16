@@ -102,7 +102,7 @@ class ResultBufferTest {
 	static final Comparator<ResultEntry> ENTRY_REVERSE_ORDER =
 			(r1, r2) -> -ENTRY_NATURAL_ORDER.compare(r1, r2);
 
-	static final int DEFAULT_TIMEOUT = 2;
+	static final int DEFAULT_TIMEOUT = 5;
 
 	static class ThreadedTest<T> {
 		private ResultBuffer<T> buffer;

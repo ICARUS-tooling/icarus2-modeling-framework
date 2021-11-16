@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.util.LazyStore;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -99,13 +100,12 @@ public class IqlLane extends IqlAliasedReference {
 
 	public void setElement(IqlElement element) { this.element = requireNonNull(element); }
 
-	public void setFlag(IqlLane.MatchFlag flag, boolean active) {
-		if(active) {
-			flags.add(flag);
-		} else {
-			flags.remove(flag);
-		}
-	}
+	public void setFlag(IqlLane.MatchFlag flag) { flags.add(requireNonNull(flag)); }
+
+	public void unsetFlag(IqlLane.MatchFlag flag) { flags.remove(requireNonNull(flag)); }
+
+	@VisibleForTesting
+	void unsetAllFlags() { flags.clear(); }
 
 	public void setLimit(long limit) {
 		checkArgument("Limit must be positive", limit>0);

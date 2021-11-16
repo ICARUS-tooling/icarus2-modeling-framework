@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.iql;
 
 import static de.ims.icarus2.test.TestUtils.assertDeepEqual;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,11 +31,8 @@ import org.junit.jupiter.api.TestFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import de.ims.icarus2.query.api.IqlQueryGenerator.Config;
-import de.ims.icarus2.query.api.IqlQueryGenerator.IncrementalBuild;
-import de.ims.icarus2.query.api.iql.IqlQueryElement;
-import de.ims.icarus2.query.api.iql.IqlType;
-import de.ims.icarus2.query.api.iql.IqlUtils;
+import de.ims.icarus2.query.api.iql.IqlQueryGenerator.Config;
+import de.ims.icarus2.query.api.iql.IqlQueryGenerator.IncrementalBuild;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;

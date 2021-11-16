@@ -17,7 +17,7 @@
 /**
  *
  */
-package de.ims.icarus2.query.api;
+package de.ims.icarus2.query.api.iql;
 
 import static de.ims.icarus2.test.TestUtils.other;
 import static de.ims.icarus2.util.Conditions.checkArgument;
@@ -42,16 +42,10 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import de.ims.icarus2.model.manifest.ManifestGenerator;
-import de.ims.icarus2.query.api.iql.IqlAliasedReference;
-import de.ims.icarus2.query.api.iql.IqlBinding;
-import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
-import de.ims.icarus2.query.api.iql.IqlCorpus;
-import de.ims.icarus2.query.api.iql.IqlData;
 import de.ims.icarus2.query.api.iql.IqlData.ChecksumType;
-import de.ims.icarus2.query.api.iql.IqlElement;
 import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
@@ -60,37 +54,15 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
-import de.ims.icarus2.query.api.iql.IqlExpression;
-import de.ims.icarus2.query.api.iql.IqlGroup;
-import de.ims.icarus2.query.api.iql.IqlImport;
-import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
-import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
-import de.ims.icarus2.query.api.iql.IqlNamedReference;
-import de.ims.icarus2.query.api.iql.IqlObjectIdGenerator;
-import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
-import de.ims.icarus2.query.api.iql.IqlProperty;
-import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
-import de.ims.icarus2.query.api.iql.IqlQuery;
-import de.ims.icarus2.query.api.iql.IqlQueryElement;
-import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlReference.ReferenceType;
-import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
-import de.ims.icarus2.query.api.iql.IqlResultInstruction;
-import de.ims.icarus2.query.api.iql.IqlScope;
-import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
-import de.ims.icarus2.query.api.iql.IqlStream;
-import de.ims.icarus2.query.api.iql.IqlTags;
-import de.ims.icarus2.query.api.iql.IqlType;
-import de.ims.icarus2.query.api.iql.IqlUnique;
-import de.ims.icarus2.query.api.iql.NodeArrangement;
 import de.ims.icarus2.test.Dummy;
 import de.ims.icarus2.test.random.RandomGenerator;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -499,7 +471,10 @@ public class IqlQueryGenerator {
 			build.addEnumFieldChange(lane::setLaneType, IqlTags.LANE_TYPE, laneType);
 		}
 		for(IqlLane.MatchFlag flag : IqlLane.MatchFlag.values()) {
-			build.addEnumFieldChange(f -> lane.setFlag(f, true), IqlTags.MATCH_FLAG, flag);
+			build.addEnumFieldChange(f -> {
+				lane.unsetAllFlags();
+				lane.setFlag(f);
+			}, IqlTags.MATCH_FLAG, flag);
 		}
 		for(int limit : new int[] {1, 5, 10}) {
 			build.addFieldChange(lane::setLimit, IqlTags.LIMIT, _long(limit));
@@ -628,7 +603,7 @@ public class IqlQueryGenerator {
 		// mandatory data
 		result.addResultType(rng.random(ResultType.class));
 
-		build.addFieldChange(result::setLimit, IqlTags.LIMIT, Long.MAX_VALUE);
+		build.addFieldChange(result::setLimit, IqlTags.LIMIT, Long.valueOf(99));
 		build.addFieldChange(result::setPercent, IqlTags.PERCENT, true);
 		build.addFieldChange(result::setFirst, IqlTags.FIRST, true);
 		for(ResultType resultType : ResultType.values()) {

@@ -535,6 +535,8 @@ public class QueryEngine {
 			return this;
 		}
 
+		public Builder useDefaultSettings() { return settings(new EngineSettings()); }
+
 		public ObjectMapper getMapper() { return mapper; }
 		public CorpusManager getCorpusManager() { return corpusManager; }
 		public EngineSettings getSettings() { return settings; }

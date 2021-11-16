@@ -247,7 +247,7 @@ class SorterTest {
 		}
 
 		@Override
-		public Class<?> getTestTargetClass() { return FloatingPointSorter.class; }
+		public Class<?> getTestTargetClass() { return AsciiSorter.class; }
 
 		@Override
 		public AsciiSorter create(int offset, int sign, Sorter next) {
