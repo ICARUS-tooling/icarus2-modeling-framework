@@ -52,7 +52,7 @@ public class IqlResult extends AbstractIqlQueryElement {
 	@JsonInclude(Include.NON_ABSENT)
 	private OptionalLong limit = OptionalLong.empty();
 
-	@JsonProperty(IqlTags.PERCENT)
+	@JsonProperty(IqlTags.FIRST)
 	@JsonInclude(Include.NON_DEFAULT)
 	private boolean first = false;
 
