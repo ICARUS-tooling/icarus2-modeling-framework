@@ -47,6 +47,14 @@ import de.ims.icarus2.query.api.exp.TypeInfo;
  */
 public abstract class Extractor {
 
+	public static double decode(long value) {
+		return Double.longBitsToDouble(value);
+	}
+
+	public static long encode(double value) {
+		return Double.doubleToLongBits(value);
+	}
+
 	/** Pointer into payload */
 	protected final int offset;
 	/** The expression used to extract data */
@@ -59,6 +67,8 @@ public abstract class Extractor {
 	}
 
 	public abstract void extract(long[] payload);
+
+	public final Expression<?> getExpression() { return expression; }
 
 	public static final class IntegerExtractor extends Extractor {
 
@@ -82,7 +92,7 @@ public abstract class Extractor {
 
 		@Override
 		public void extract(long[] payload) {
-			payload[offset] = Double.doubleToLongBits(expression.computeAsDouble());
+			payload[offset] = encode(expression.computeAsDouble());
 		}
 	}
 

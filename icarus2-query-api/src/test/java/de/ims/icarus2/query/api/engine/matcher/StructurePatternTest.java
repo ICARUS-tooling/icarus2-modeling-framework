@@ -1289,7 +1289,7 @@ public class StructurePatternTest {
 			builder = StructurePattern.builder();
 			builder.source(lane);
 			builder.id(1);
-			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
@@ -1319,7 +1319,7 @@ public class StructurePatternTest {
 			builder = StructurePattern.builder();
 			builder.source(lane);
 			builder.id(1);
-			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()

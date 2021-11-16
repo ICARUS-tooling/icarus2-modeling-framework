@@ -2842,6 +2842,11 @@ public class StructurePattern {
 			return matched;
 		}
 
+		@Override
+		public void close() {
+			reset();
+		}
+
 		private void growBuffers(int minCapacity) {
 			final int oldSize = elements.length;
 			final int newSize = CollectionUtils.growSize(oldSize, minCapacity);

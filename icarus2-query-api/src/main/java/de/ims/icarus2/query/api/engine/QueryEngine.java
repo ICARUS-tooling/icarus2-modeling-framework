@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +45,7 @@ import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.api.view.ScopeBuilder;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.Graph;
@@ -53,10 +54,12 @@ import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.QuerySwitch;
+import de.ims.icarus2.query.api.engine.EngineSettings.IntField;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.ext.EngineExtension;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
+import de.ims.icarus2.query.api.engine.result.QueryOutputFactory;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
@@ -222,7 +225,7 @@ public class QueryEngine {
 		}
 
 		QueryJob process() throws InterruptedException {
-			Set<Option> options = new HashSet<>();
+			Set<Option> options = EnumSet.noneOf(Option.class);
 			if(ignoreWarnings) {
 				options.add(Option.IGNORE_WARNINGS);
 			}
@@ -231,16 +234,6 @@ public class QueryEngine {
 			// Intermediate sanity check against missed settings
 			stream.checkIntegrity();
 
-			final CorpusManifest corpusManifest = resolveCorpus(stream.getCorpus());
-			final String corpusId = ManifestUtils.requireId(corpusManifest);
-			// We need fully connected corpus for the context builder below
-			Corpus corpus = corpusManager.connect(corpusManifest);
-			if(corpus==null)
-				throw new QueryException(QueryErrorCode.CORPUS_UNREACHABLE,
-						String.format("Failed to conenct to corpus: %s", corpusId));
-
-			final RootContext rootContext = createContext(corpus);
-
 			final IqlPayload payload = stream.getPayload().orElseThrow(
 					() -> EvaluationUtils.forInternalError("Failed to construct payload"));
 
@@ -248,6 +241,28 @@ public class QueryEngine {
 				//TODO provide a simple job implementation that just forwards all the corpus data
 				throw new UnsupportedOperationException("query type 'ALL' not implemented");
 			}
+
+			/* From here on we should be good at the formal query side, only issues now
+			 * can stem from errors in expressions/constraints or when interacting with
+			 * the live corpus resource.
+			 */
+
+			final CorpusManifest corpusManifest = resolveCorpus(stream.getCorpus());
+			final String corpusId = ManifestUtils.requireId(corpusManifest);
+			// We need fully connected corpus for the context builder below
+			final Corpus corpus = corpusManager.connect(corpusManifest);
+			if(corpus==null)
+				throw new QueryException(QueryErrorCode.CORPUS_UNREACHABLE,
+						String.format("Failed to conenct to corpus: %s", corpusId));
+
+			final Scope scope = createScope(corpus, stream);
+
+			final CorpusData corpusData = CorpusData.CorpusBacked.builder()
+					.corpus(corpus)
+					.scope(scope)
+					.build();
+
+			final RootContext rootContext = createContext(corpusData);
 
 			final List<IqlLane> lanes = payload.getLanes();
 			final List<StructurePattern> patterns = new ObjectArrayList<>();
@@ -263,33 +278,26 @@ public class QueryEngine {
 			assert !patterns.isEmpty();
 			assert patterns.size()>=lanes.size();
 
-			try {
-				QueryInput input = QueryUtils.streamedInput(corpus.createStream(
-						rootContext.getScope(), AccessMode.READ, Options.none()));
-			} catch (IcarusApiException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			final QueryOutput output = new QueryOutputFactory(rootContext)
+					//TODO configure factory
+					.createOutput();
 
 			return SingleStreamJob.builder()
 					.addPatterns(patterns)
-					.batchSize(settings.getBatchSize())
+					.batchSize(settings.getInt(IntField.BATCH_SIZE))
 					.exceptionHandler(fallbackExceptionHandler)
 					.query(queryContext.getQuery())
-					.input(null)
-					.output(null)
+					.input(QueryUtils.streamedInput(createStream(scope)))
+					.output(output)
 					.build();
 		}
 
-		private RootContext createContext(Corpus corpus) {
+		private RootContext createContext(CorpusData corpusData) {
 			// Now build context for our single stream
-			RootContextBuilder contextBuilder = EvaluationContext.rootBuilder();
-			// Live corpus required here
-			contextBuilder.corpus(corpus);
+			RootContextBuilder contextBuilder = EvaluationContext.rootBuilder(corpusData);
 
 			// Apply various aspects of configuration
 			applySettings(contextBuilder, queryContext.getQuery());
-			applyLayers(contextBuilder, corpus, stream);
 			applyEmbeddedData(contextBuilder, queryContext.getEmbeddedData());
 			applyExtensions(contextBuilder, queryContext.getExtensions()); // partly outside our control
 
@@ -301,11 +309,11 @@ public class QueryEngine {
 			StructurePattern.Builder builder = StructurePattern.builder()
 					// Use lane index as id for new pattern
 					.id(0)
-					// Environment for creating expressions etc...
+					// Raw root environment for creating expressions etc...
 					.context(context)
-					// We provide an empty lane as proxy
+					// We provide an empty lane as proxy without label/alias
 					.source(new IqlLane())
-					// For simplicity the SINGLETON role can be used here (instea dof defining a NONE proxy)
+					// For simplicity the SINGLETON role can be used here (instead of defining a NONE proxy)
 					.role(Role.SINGLETON);
 
 			payload.getFilter().ifPresent(builder::filterConstraint);
@@ -313,6 +321,7 @@ public class QueryEngine {
 
 			final StructurePattern pattern = builder.build();
 			assert pattern.getId()==0;
+
 			return pattern;
 		}
 
@@ -393,10 +402,7 @@ public class QueryEngine {
 			}
 		}
 
-		/**
-		 * Reads layer information from the given stream and prepares the specified builder.
-		 */
-		private void applyLayers(RootContextBuilder builder, Corpus corpus, IqlStream stream) {
+		private Scope createScope(Corpus corpus, IqlStream stream) {
 
 			List<IqlLayer> rawLayers;
 			boolean addTransitive = false;
@@ -448,17 +454,12 @@ public class QueryEngine {
 				graph.forEachNode(allLayers::add);
 			}
 
-			builder.scope(createScope(corpus, allLayers, primaryLayer));
-			aliasedLayers.forEach(builder::namedLayer);
-		}
-
-		private Scope createScope(Corpus corpus, Set<Layer> layers, ItemLayer primaryLayer) {
 			ScopeBuilder builder = ScopeBuilder.of(corpus);
-			builder.addContexts(layers.stream()
+			builder.addContexts(allLayers.stream()
 					.map(Layer::getContext)
 					.distinct()
 					.collect(Collectors.toList()));
-			builder.addLayers(new ArrayList<>(layers));
+			builder.addLayers(new ArrayList<>(allLayers));
 			builder.setPrimaryLayer(primaryLayer);
 			return builder.build();
 		}
@@ -472,6 +473,14 @@ public class QueryEngine {
 		private Layer resolveLayer(IqlLayer source, Corpus corpus) {
 			String name = source.getName();
 			return corpus.getLayer(name, true);
+		}
+
+		private StreamedCorpusView createStream(Scope scope) throws InterruptedException {
+			try {
+				return scope.getCorpus().createStream(scope, AccessMode.READ, Options.none());
+			} catch (IcarusApiException e) {
+				throw new QueryException(QueryErrorCode.CORPUS_UNREACHABLE, "Failed to create stream for corpus", e);
+			}
 		}
 	}
 

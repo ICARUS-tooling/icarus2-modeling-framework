@@ -27,6 +27,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
@@ -61,6 +62,7 @@ public abstract class ResultBuffer<T> {
 	private volatile int size;
 	private final IntFunction<T[]> bufferGen;
 
+	/** Used to synchronize actions on individual collectors that might affect the buffer */
 	private final Object collectorLock = new Object();
 
 	protected ResultBuffer(BuilderBase<?, T, ?> builder) {
@@ -109,6 +111,13 @@ public abstract class ResultBuffer<T> {
 		return false;
 	}
 
+	public final void forEachEntry(Consumer<? super T> action) {
+		final int size = this.size;
+		for (int i = 0; i < size; i++) {
+			action.accept(items[i]);
+		}
+	}
+
 	/** Finalize state after all pending collectors have been merged. */
 	protected void doFinish() { /* no-op */ }
 
@@ -133,9 +142,9 @@ public abstract class ResultBuffer<T> {
 		}
 	}
 
-	protected final void add(T[] elements, int offset, int length) {
+	protected final void add(T[] elements, int length) {
 		ensureCapacity(size + length);
-		System.arraycopy(elements, offset, items, size, length);
+		System.arraycopy(elements, 0, items, size, length);
 		size += length;
 	}
 
@@ -224,7 +233,7 @@ public abstract class ResultBuffer<T> {
 
 		/** Merge any leftover items in buffer */
 		@Override
-		public void finish() {
+		public final void finish() {
 			if(cursor>0) {
 				merge(buffer, cursor);
 				Arrays.fill(buffer, 0, cursor, null);
@@ -244,6 +253,8 @@ public abstract class ResultBuffer<T> {
 	 */
 	public static final class Unlimited<T> extends ResultBuffer<T> {
 
+		/** Creates a new builder with it's {@link BuilderBase#bufferGen(IntFunction)}
+		 * already set based on the specified {@code elementClass}. */
 		public static <T> Builder<T> builder(Class<T> elementClass) {
 			return new Builder<>(elementClass);
 		}
@@ -263,7 +274,7 @@ public abstract class ResultBuffer<T> {
 			@Override
 			protected boolean merge(T[] buffer, int length) {
 				synchronized (collectorLock()) {
-					add(buffer, 0, length);
+					add(buffer, length);
 				}
 				return true;
 			}
@@ -296,6 +307,8 @@ public abstract class ResultBuffer<T> {
 	 */
 	public static final class Limited<T> extends ResultBuffer<T> {
 
+		/** Creates a new builder with it's {@link BuilderBase#bufferGen(IntFunction)}
+		 * already set based on the specified {@code elementClass}. */
 		public static <T> Builder<T> builder(Class<T> elementClass) {
 			return new Builder<>(elementClass);
 		}
@@ -325,7 +338,7 @@ public abstract class ResultBuffer<T> {
 				synchronized (collectorLock()) {
 					int remaining = limit - size();
 					if(remaining>0) {
-						add(buffer, 0, Math.min(length, remaining));
+						add(buffer, Math.min(length, remaining));
 						return size()<limit;
 					}
 					return false;
@@ -401,7 +414,7 @@ public abstract class ResultBuffer<T> {
 		protected final void mergeSorted(ResultEntry[] buffer, int length) {
 			// Easy mode for first insertion
 			if(size()==0) {
-				add(buffer, 0, length);
+				add(buffer, length);
 				return;
 			}
 
@@ -421,7 +434,7 @@ public abstract class ResultBuffer<T> {
 			}
 			// If new set of results is completely after the old section, just append
 			if(left>=size()) {
-				add(buffer, 0, length);
+				add(buffer, length);
 				return;
 			}
 			// Just insert new block if we have no overlap
@@ -441,7 +454,7 @@ public abstract class ResultBuffer<T> {
 			insert(right, tmp, secLen, length);
 		}
 
-		static abstract class SortableBuilderBase<B extends SortableBuilderBase<B, R>, R extends ResultBuffer<ResultEntry>>
+		public static abstract class SortableBuilderBase<B extends SortableBuilderBase<B, R>, R extends ResultBuffer<ResultEntry>>
 				extends BuilderBase<B, ResultEntry, R> {
 
 			private Comparator<ResultEntry> sorter;
@@ -511,7 +524,7 @@ public abstract class ResultBuffer<T> {
 			protected boolean merge(ResultEntry[] buffer, int length) {
 				// Sort the original data (outside of lock)
 				ObjectArrays.quickSort(buffer, 0, length, sorter());
-				// Now merge the sorted data
+				// Now merge the sorted data (under lock)
 				synchronized (collectorLock()) {
 					mergeSorted(buffer, length);
 				}

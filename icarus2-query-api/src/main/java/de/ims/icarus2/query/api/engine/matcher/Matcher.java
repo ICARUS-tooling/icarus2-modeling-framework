@@ -23,11 +23,16 @@ package de.ims.icarus2.query.api.engine.matcher;
  * @author Markus Gärtner
  *
  */
-public interface Matcher<E> {
+public interface Matcher<E> extends AutoCloseable {
 
 	boolean matches(long index, E target);
 
 	int id();
+
+	@Override
+	default void close() {
+		// no-op
+	}
 
 	public static final int MATCH_ALL_ID = -2;
 

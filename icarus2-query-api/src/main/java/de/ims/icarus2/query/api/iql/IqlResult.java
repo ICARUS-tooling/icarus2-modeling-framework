@@ -106,6 +106,8 @@ public class IqlResult extends AbstractIqlQueryElement {
 
 		KWIC("kwic", "Simple 'keyword in context' result info with customizable window size"),
 		CUSTOM("custom", "Only the user defined result scheme is to be used"),
+		@Deprecated
+		RAW("raw", "For direct integration of the engine into a host application. Returns the raw in-memory model representation with match metadata."),
 		ID("id", "Returns only the ids of result entries and discards all deeper matching information"),
 		;
 

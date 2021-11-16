@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 import de.ims.icarus2.query.api.engine.Tripwire;
+import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;

@@ -26,6 +26,8 @@ import java.util.Arrays;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
+
 /**
  * @author Markus Gärtner
  *

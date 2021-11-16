@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.LongFunction;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -145,7 +146,7 @@ public class QueryTestUtils {
 				.toArray(Container[]::new);
 	}
 
-	public static CorpusData corpusData() { return new DummyCorpusData(); }
+	public static CorpusData dummyCorpus() { return new DummyCorpusData(); }
 
 	private static class DummyCorpusData extends CorpusData {
 
@@ -172,6 +173,21 @@ public class QueryTestUtils {
 		@Override
 		public Optional<LayerRef> findLayer(String name) {
 			return Optional.empty();
+		}
+
+		@Override
+		public LongFunction<Container> access(LayerRef layer) {
+			throw new UnsupportedOperationException("No data behind dummy corpus");
+		}
+
+		@Override
+		public LaneMapper map(LayerRef source, LayerRef target) {
+			throw new UnsupportedOperationException("No data behind dummy corpus");
+		}
+
+		@Override
+		public void close() {
+			// no-op
 		}
 	}
 }

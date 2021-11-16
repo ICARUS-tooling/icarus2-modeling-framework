@@ -101,8 +101,8 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 		@Override
 		protected int compareRaw(ResultEntry e1, ResultEntry e2, int offset) {
 			return Double.compare(
-					Double.longBitsToDouble(e1.payload[offset]),
-					Double.longBitsToDouble(e2.payload[offset]));
+					Extractor.decode(e1.payload[offset]),
+					Extractor.decode(e2.payload[offset]));
 		}
 	}
 

@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.LongFunction;
 import java.util.stream.Collectors;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -43,6 +44,7 @@ import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
@@ -79,19 +81,35 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * Abstracts away from the actual {@link Corpus} structure and allows
  * to inject virtual corpus content or alternative models to be used
  * in the matching process.
+ * <p>
+ * An implementation is responsible for both providing the abstract
+ * representations/pointers to corpus elements (e.g. via {@link #resolveLane(IqlLane)}
+ * and also offering efficient direct access to the underlying data
+ * when requested.
  *
  * @author Markus Gärtner
  *
  */
-public abstract class CorpusData {
+public abstract class CorpusData implements AutoCloseable {
 
+	/** Retrieve information about the specified lane */
 	public abstract LaneInfo resolveLane(IqlLane lane);
+	/** Retrieve information about the specified element inside the given lane */
 	public abstract ElementInfo resolveElement(LaneInfo lane, IqlProperElement element);
+	/** Resolve the given binding and return mappings for all the contained members */
 	public abstract Map<String, BindingInfo> bind(IqlBinding binding);
 
 	/** Lookup a single annotation for single identifier */
 	public abstract Optional<AnnotationInfo> findAnnotation(ElementInfo element, QualifiedIdentifier identifier);
+	/** Lookup a layer by name. This only resolved native layers! */
 	public abstract Optional<LayerRef> findLayer(String name);
+	/** Provide actual access to the given layer via a simple lookup interface */
+	public abstract LongFunction<Container> access(LayerRef layer);
+	/** Provide (lazy) access to the mapping facilities between {@code source} and {@code target} */
+	public abstract LaneMapper map(LayerRef source, LayerRef target);
+
+	@Override
+	public abstract void close();
 
 	public static abstract class LayerRef {
 		private final String id;
@@ -104,6 +122,8 @@ public abstract class CorpusData {
 	}
 
 	public static final class CorpusBacked extends CorpusData {
+
+		public static Builder builder() { return new Builder(); }
 
 		private static final Map<ManifestType, TypeInfo> typeTranslation = new EnumMap<>(ManifestType.class);
 		static {
@@ -368,6 +388,27 @@ public abstract class CorpusData {
 			return TypeInfo.ITEM;
 		}
 
+		@Override
+		public LongFunction<Container> access(LayerRef layerRef) {
+			ItemLayer layer = layer(layerRef);
+
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public LaneMapper map(LayerRef sourceRef, LayerRef targetRef) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void close() {
+			layers.clear();
+			boundLayers.clear();
+			annotationCaches.values().forEach(AnnotationCache::close);
+		}
+
 		private static class AnnotationLink {
 			private final AnnotationManifest manifest;
 			private final AnnotationLayer layer;
@@ -386,7 +427,7 @@ public abstract class CorpusData {
 			public boolean isNotAlias() { return !isAlias; }
 		}
 
-		private class AnnotationCache {
+		private class AnnotationCache implements AutoCloseable {
 
 			private final ElementInfo elementInfo;
 
@@ -580,6 +621,13 @@ public abstract class CorpusData {
 					builder.objectSource(item -> storage.getValue(item, key));
 				}
 			}
+
+			@Override
+			public void close() {
+				annotationLookup.clear();
+				catchAllLayers.clear();
+				cache.clear();
+			}
 		}
 
 		private static final class LayerRefImpl extends LayerRef {
@@ -604,6 +652,8 @@ public abstract class CorpusData {
 			private Corpus corpus;
 
 			private Scope scope;
+
+			private Builder() { /* no-op */ }
 
 			public Builder namedLayer(String alias, Layer layer) {
 				requireNonNull(alias);
@@ -631,6 +681,8 @@ public abstract class CorpusData {
 			protected void validate() {
 				checkState("Corpus not set", corpus!=null);
 				checkState("Scope not set", scope!=null);
+
+				checkState("scope source vs corpus mismatch", scope.getCorpus()==corpus);
 			}
 
 			@Override
@@ -639,6 +691,78 @@ public abstract class CorpusData {
 	}
 
 	public static final class Virtual extends CorpusData {
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#resolveLane(de.ims.icarus2.query.api.iql.IqlLane)
+		 */
+		@Override
+		public LaneInfo resolveLane(IqlLane lane) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#resolveElement(de.ims.icarus2.query.api.exp.LaneInfo, de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement)
+		 */
+		@Override
+		public ElementInfo resolveElement(LaneInfo lane, IqlProperElement element) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#bind(de.ims.icarus2.query.api.iql.IqlBinding)
+		 */
+		@Override
+		public Map<String, BindingInfo> bind(IqlBinding binding) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#findAnnotation(de.ims.icarus2.query.api.exp.ElementInfo, de.ims.icarus2.query.api.exp.QualifiedIdentifier)
+		 */
+		@Override
+		public Optional<AnnotationInfo> findAnnotation(ElementInfo element, QualifiedIdentifier identifier) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#findLayer(java.lang.String)
+		 */
+		@Override
+		public Optional<LayerRef> findLayer(String name) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#access(de.ims.icarus2.query.api.engine.CorpusData.LayerRef)
+		 */
+		@Override
+		public LongFunction<Container> access(LayerRef layer) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#map(de.ims.icarus2.query.api.engine.CorpusData.LayerRef, de.ims.icarus2.query.api.engine.CorpusData.LayerRef)
+		 */
+		@Override
+		public LaneMapper map(LayerRef source, LayerRef target) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/**
+		 * @see de.ims.icarus2.query.api.engine.CorpusData#close()
+		 */
+		@Override
+		public void close() {
+			// TODO Auto-generated method stub
+
+		}
 
 	}
 }

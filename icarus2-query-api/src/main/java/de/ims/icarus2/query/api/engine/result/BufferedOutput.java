@@ -19,73 +19,46 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
-import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Map;
+import java.util.function.Consumer;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.query.api.QueryException;
-import de.ims.icarus2.query.api.engine.QueryOutput;
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class BufferedOutput<T> implements QueryOutput {
+public abstract class BufferedOutput<T> extends AbstractOutput {
 
-	public static BufferedOutput<Match> nonExtracting(ResultBuffer<Match> buffer) {
-		return new NonExtracting(buffer);
+	public static BufferedOutput<Match> nonExtracting(ResultBuffer<Match> buffer,
+			Consumer<Match> finalMatchConsumer) {
+		return new NonExtracting(buffer, finalMatchConsumer);
 	}
 
 	public static BufferedOutput<ResultEntry> extracting(ResultBuffer<ResultEntry> buffer,
-			Extractor...extractors) {
-		return new Extracting(buffer, extractors);
+			Consumer<ResultEntry> finalMatchConsumer, Extractor...extractors) {
+		return new Extracting(buffer, finalMatchConsumer, extractors);
 	}
 
 	private final ResultBuffer<T> buffer;
 
-	private final Map<Thread, MatchCollector> openCollectors = new Object2ObjectOpenHashMap<>();
-	private final Object collectorLock = new Object();
+	private final Consumer<T> finalMatchConsumer;
 
-	protected BufferedOutput(ResultBuffer<T> buffer) {
+	protected BufferedOutput(ResultBuffer<T> buffer, @Nullable Consumer<T> finalMatchConsumer) {
 		this.buffer = requireNonNull(buffer);
+		this.finalMatchConsumer = finalMatchConsumer;
 	}
 
 	@Override
-	public final MatchCollector createTerminalCollector(ThreadVerifier threadVerifier) {
-		MatchCollector collector = createRawCollector(threadVerifier);
-		synchronized (collectorLock) {
-			if(openCollectors.put(threadVerifier.getThread(), collector)!=null)
-				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
-						"Thread already has an active collector: "+threadVerifier.getThread());
-		}
-		return collector;
-	}
-
-	protected abstract MatchCollector createRawCollector(ThreadVerifier threadVerifier);
-
-	@Override
-	public final void closeTerminalCollector(ThreadVerifier threadVerifier) {
-		synchronized (collectorLock) {
-			MatchCollector collector = openCollectors.remove(threadVerifier.getThread());
-			if(collector==null)
-				throw new QueryException(GlobalErrorCode.INVALID_INPUT,
-						"No open collector available for thread: "+threadVerifier.getThread());
-
-			// When last collector is closed we need to also finalize our result buffer
-			if(openCollectors.isEmpty()) {
-				buffer.finish();
-			}
-		}
-	}
-
-	@Override
-	public void close() {
-		synchronized (collectorLock) {
-			checkState("Unclosed collectors left over", openCollectors.isEmpty());
+	protected final void finish() {
+		// Ensure buffer is properly finished and merged
+		buffer.finish();
+		// Now send buffered matches to consumer if present
+		if(finalMatchConsumer!=null) {
+			buffer.forEachEntry(finalMatchConsumer);
 		}
 	}
 
@@ -105,8 +78,8 @@ public abstract class BufferedOutput<T> implements QueryOutput {
 	 */
 	static final class NonExtracting extends BufferedOutput<Match> {
 
-		NonExtracting(ResultBuffer<Match> buffer) {
-			super(buffer);
+		NonExtracting(ResultBuffer<Match> buffer, @Nullable Consumer<Match> finalMatchConsumer) {
+			super(buffer, finalMatchConsumer);
 		}
 
 		@Override
@@ -128,8 +101,9 @@ public abstract class BufferedOutput<T> implements QueryOutput {
 
 		private final Extractor[] extractors;
 
-		Extracting(ResultBuffer<ResultEntry> buffer, Extractor[] extractors) {
-			super(buffer);
+		Extracting(ResultBuffer<ResultEntry> buffer, @Nullable Consumer<ResultEntry> finalMatchConsumer, Extractor[] extractors) {
+			super(buffer, finalMatchConsumer);
+			// defensive copying
 			this.extractors = extractors.clone();
 		}
 

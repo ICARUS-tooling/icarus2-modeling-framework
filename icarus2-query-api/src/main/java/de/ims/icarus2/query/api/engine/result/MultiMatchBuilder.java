@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;

@@ -36,4 +36,47 @@ public interface Match extends MatchSource {
 
 	@Override
 	default Match toMatch() { return this; }
+
+	default MatchType getType() { return MatchType.SINGLE; }
+
+	enum MatchType {
+		SINGLE,
+		MULTI,
+		;
+	}
+
+	/**
+	 * Implements an aggregated match that represents multiple matches from
+	 * different lanes.
+	 * To navigate the multiple matches contained a cursor-style mechanic is
+	 * provided via {@link #moveToLane(int)}.
+	 * The basic {@link Match} methods (e.g {@link Match#getIndex()},
+	 * {@link Match#drainTo(MatchSink)}, etc..) always refer to the match that
+	 * the cursor currently points to with {@link #getCurrentLane()}.
+	 * Initially the cursor will always positioned at the lane that has the
+	 * index of {@code 0}.
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	interface MultiMatch extends Match {
+
+		/** Returns the index of the current lane */
+		int getCurrentLane();
+
+		/** Returns the total number of lanes present in this match.
+		 * Note that this number is <b>always</b> equal to the number of
+		 * lanes involved in the original matching process, even if for
+		 * individual lanes the multi-match does not contain any mappings! */
+		int getLaneCount();
+
+		/** Moves the read cursor to the match for the specified lane. */
+		void moveToLane(int index);
+
+		/** Moves the read cursor back to the first lane. */
+		default void reset() { moveToLane(0); }
+
+		@Override
+		default MatchType getType() { return MatchType.MULTI; }
+	}
 }

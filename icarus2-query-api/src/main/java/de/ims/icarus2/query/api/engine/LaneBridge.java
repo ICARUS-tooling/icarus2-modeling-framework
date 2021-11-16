@@ -125,11 +125,20 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 
 	protected abstract MatchSink sink();
 
+	/**
+	 * Closes the underlying matcher and mapper and then delegates to subclasses to
+	 * also close any internal helpers if applicable.
+	 *
+	 * @see de.ims.icarus2.query.api.engine.matcher.Matcher#close()
+	 */
 	@Override
 	public final void close() {
 		if(Tripwire.ACTIVE) {
 			threadVerifier.checkThread();
 		}
+
+		matcher.close();
+		laneMapper.close();
 
 		closeImpl();
 	}

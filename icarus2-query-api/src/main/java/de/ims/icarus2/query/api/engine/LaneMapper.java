@@ -60,6 +60,9 @@ public abstract class LaneMapper implements AutoCloseable {
 
 	protected abstract void doReset() throws InterruptedException;
 
+	@Override
+	public abstract void close();
+
 	public abstract int size();
 	public abstract long indexAt(int index);
 

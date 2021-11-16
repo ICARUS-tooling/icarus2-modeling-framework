@@ -23,6 +23,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.Predicate;
 
+import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
+
 /**
  * Aggregates the individual matches from multiple lanes into a
  * single {@link MultiMatch} and delegates to another {@link MatchCollector collector}.

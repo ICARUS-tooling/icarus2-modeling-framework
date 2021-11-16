@@ -19,25 +19,48 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
+import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+import static java.util.Objects.requireNonNull;
+
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.ToIntFunction;
 
-import de.ims.icarus2.model.api.members.container.Container;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
+
+import de.ims.icarus2.query.api.QueryErrorCode;
+import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.engine.EngineSettings;
+import de.ims.icarus2.query.api.engine.EngineSettings.IntField;
 import de.ims.icarus2.query.api.engine.QueryOutput;
-import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
+import de.ims.icarus2.query.api.exp.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
+import de.ims.icarus2.query.api.exp.Expression;
+import de.ims.icarus2.query.api.exp.ExpressionFactory;
+import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
 import de.ims.icarus2.query.api.iql.IqlSorting;
+import de.ims.icarus2.query.api.iql.IqlSorting.Order;
+import de.ims.icarus2.util.function.CharBiPredicate;
+import de.ims.icarus2.util.function.IntBiPredicate;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * @author Markus Gärtner
  *
  */
+@NotThreadSafe
 public class QueryOutputFactory {
 
 	/*
@@ -55,29 +78,274 @@ public class QueryOutputFactory {
 	private final List<IqlSorting> sortings = new ObjectArrayList<>();
 	private final List<IqlGroup> groups = new ObjectArrayList<>();
 
+	// Externally modifiable fields
+
+	private EngineSettings settings = new EngineSettings();
+
+	private Boolean unicodeOff;
+	private Boolean ignoreCase;
+
 	private Boolean first;
 	private Long limit;
 	private Boolean percent;
 
 	/** Root context used for the entire query. */
-	private EvaluationContext context;
-	/** Patterns used for individual lanes. */
-	private final List<StructurePattern> patterns = new ObjectArrayList<>();
+	private final EvaluationContext context;
 
-	/** Consumer to intercept a single match live while the container is loaded */
-	private BiConsumer<Container, Match> liveMatchConsumer;
-	/** Consumer to intercept a multi-match live while the containers are loaded */
-	private BiConsumer<Container[], MultiMatch> liveMultiMatchConsumer;
+	/** Consumer to intercept a single match when the result state is stable
+	 *  and the associated container is not available anymore. */
+	private Consumer<Match> matchConsumer;
 
 	/** Consumer to intercept a single match when the result state is stable
 	 *  and the associated container is not available anymore  */
-	private Consumer<Match> finalMatchConsumer;
-	/** Consumer to intercept a multi-match when the result state is stable
-	 *  and the associated containers are not available anymore  */
-	private Consumer<MultiMatch> finalMultiMatchConsumer;
+	private Consumer<ResultEntry> resultConsumer;
 
+	private ToIntFunction<CharSequence> encoder;
+	private IntFunction<CharSequence> decoder;
+
+	// Internally populated fields
+
+	private Sorter sorter;
+	private final List<Extractor> extractors = new ObjectArrayList<>();
+	private final Object2IntMap<String> exp2PayloadMap = new Object2IntOpenHashMap<>();
+
+	public QueryOutputFactory(EvaluationContext context) {
+		 this.context = requireNonNull(context);
+	}
+
+	private ToIntFunction<CharSequence> encoder() {
+		checkState("No encoder defined", encoder!=null);
+		return encoder;
+	}
+	private IntFunction<CharSequence> decoder() {
+		checkState("No decoder defined", decoder!=null);
+		return decoder;
+	}
+	private Consumer<Match> matchConsumer() {
+		checkState("No match consumer defined", matchConsumer!=null);
+		return matchConsumer;
+	}
+	private Consumer<ResultEntry> resultConsumer() {
+		checkState("No result consumer defined", resultConsumer!=null);
+		return resultConsumer;
+	}
+
+
+	private int getPayloadOffset(IqlExpression expression) {
+		return getPayloadOffset(expression.getContent());
+	}
+
+	private int getPayloadOffset(String expression) {
+		checkNotEmpty(expression);
+		int index = exp2PayloadMap.getOrDefault(expression, UNSET_INT);
+		if(index==UNSET_INT)
+			throw new IllegalArgumentException("unknown expression: "+expression);
+		return index;
+	}
+
+	private Extractor ensureExtractor(IqlExpression expression) {
+		//TODO we ignore the optionally set explicit result type of IqlExpression
+		return ensureExtractor(expression.getContent());
+	}
+
+	private Extractor ensureExtractor(String expression) {
+		checkNotEmpty(expression);
+		int offset = exp2PayloadMap.getOrDefault(expression, UNSET_INT);
+		if(offset==UNSET_INT) {
+			ExpressionFactory expressionFactory = new ExpressionFactory(context);
+			Expression<?> exp = expressionFactory.process(expression);
+			offset = extractors.size();
+			Extractor extractor = createExtractor(offset, exp);
+			extractors.add(extractor);
+			exp2PayloadMap.put(expression, offset);
+		}
+		return extractors.get(offset);
+	}
+
+	private Extractor createExtractor(int offset, Expression<?> expression) {
+		if(expression.isBoolean()) {
+			return new Extractor.BooleanExtractor(offset, expression);
+		} else if(expression.isInteger()) {
+			return new Extractor.IntegerExtractor(offset, expression);
+		} else if(expression.isFloatingPoint()) {
+			return new Extractor.FloatingPointExtractor(offset, expression);
+		} else if(expression.isText()) {
+			return new Extractor.TextExtractor(offset, expression, encoder());
+		}
+
+		throw new QueryException(QueryErrorCode.INCORRECT_USE,
+				"Result type not supported for extraction: "+expression.getResultType());
+	}
+
+	private static boolean getBool(Boolean b) { return b!=null && b.booleanValue(); }
+
+	private static long getLong(Long i) { return i==null ? UNSET_LONG : i.longValue(); }
+
+	private <B extends ResultBuffer.BuilderBase<B, T, R>,T,R extends ResultBuffer<T>> void initBase(
+			ResultBuffer.BuilderBase<B, T, R> builder) {
+		builder.collectorBufferSize(settings.getInt(IntField.COLLECTOR_BUFFER_SIZE));
+		builder.initialGlobalSize(settings.getInt(IntField.INITIAL_MAIN_BUFFER_SIZE));
+	}
+
+	/** Create {@link Match} based buffer without sorting or extraction */
+	private ResultBuffer<Match> createPlainBuffer() {
+		// Explicitly set limit
+		final int intLimit = strictToInt(getLong(limit));
+		if(intLimit > 0) {
+			ResultBuffer.Limited.Builder<Match> builder = ResultBuffer.Limited.builder(Match.class);
+			initBase(builder);
+			builder.limit(intLimit);
+			return builder.build();
+		}
+		// Use unlimited buffer
+		ResultBuffer.Unlimited.Builder<Match> builder = ResultBuffer.Unlimited.builder(Match.class);
+		initBase(builder);
+		return builder.build();
+	}
+
+	/** Create {@link ResultEntry} based buffer without sorting, but with extraction */
+	private ResultBuffer<ResultEntry> createExtractingBuffer() {
+		// Explicitly set limit
+		final int intLimit = strictToInt(getLong(limit));
+		if(intLimit > 0) {
+			ResultBuffer.Limited.Builder<ResultEntry> builder = ResultBuffer.Limited.builder(ResultEntry.class);
+			initBase(builder);
+			builder.limit(intLimit);
+			return builder.build();
+		}
+		// Use unlimited buffer
+		ResultBuffer.Unlimited.Builder<ResultEntry> builder = ResultBuffer.Unlimited.builder(ResultEntry.class);
+		initBase(builder);
+		return builder.build();
+	}
+
+	private <B extends ResultBuffer.SortableBase.SortableBuilderBase<B,R>, R extends ResultBuffer<ResultEntry>> void initSortable(
+			ResultBuffer.SortableBase.SortableBuilderBase<B,R> builder) {
+		initBase(builder);
+		builder.initialTmpSize(settings.getInt(IntField.INITIAL_SECONDARY_BUFFER_SIZE));
+		if(sorter!=null) {
+			builder.sorter(sorter);
+		}
+	}
+
+	/** Create {@link ResultEntry} based buffer with sorting (and thereby extraction) */
+	private ResultBuffer<ResultEntry> createSortingBuffer() {
+		// Explicitly set limit
+		final int intLimit = strictToInt(getLong(limit));
+		if(intLimit > 0) {
+			// First N
+			if(getBool(first)) {
+				ResultBuffer.FirstN.Builder builder = ResultBuffer.FirstN.builder();
+				initSortable(builder);
+				builder.limit(intLimit);
+				return builder.build();
+			}
+
+			// Best-N
+			ResultBuffer.BestN.Builder builder = ResultBuffer.BestN.builder();
+			initSortable(builder);
+			builder.limit(intLimit);
+			return builder.build();
+		}
+		// Use unlimited buffer
+		ResultBuffer.Sorted.Builder builder = ResultBuffer.Sorted.builder();
+		initSortable(builder);
+		return builder.build();
+	}
+
+	private void createExtractors() {
+		for(IqlSorting sorting : sortings) {
+			ensureExtractor(sorting.getExpression());
+		}
+		for(IqlGroup group : groups) {
+			ensureExtractor(group.getGroupBy());
+			group.getFilterOn().ifPresent(this::ensureExtractor);
+		}
+		//TODO process expressions inside result instructions
+	}
+
+	private Sorter createSorter(IqlSorting sorting, @Nullable Sorter next) {
+		int offset = getPayloadOffset(sorting.getExpression());
+		int sign = sorting.getOrder()==Order.ASCENDING ? Sorter.SIGN_ASC : Sorter.SIGN_DESC;
+		Expression<?> expression = extractors.get(offset).getExpression();
+
+		if(expression.isInteger()) {
+			return new Sorter.IntegerSorter(offset, sign, next);
+		} else if(expression.isFloatingPoint()) {
+			return new Sorter.FloatingPointSorter(offset, sign, next);
+		} else if(expression.isText()) {
+			StringMode stringMode = getBool(ignoreCase) ? StringMode.IGNORE_CASE : StringMode.DEFAULT;
+
+			if(getBool(unicodeOff)) {
+				CharBiPredicate comparator = stringMode.getCharComparator();
+				return new Sorter.AsciiSorter(offset, sign, decoder(), comparator, next);
+			}
+
+			IntBiPredicate comparator = stringMode.getCodePointComparator();
+			return new Sorter.UnicodeSorter(offset, sign, decoder(), comparator, next);
+		}
+
+		throw new QueryException(QueryErrorCode.INCORRECT_USE,
+				"Result type not supported for sorting: "+expression.getResultType());
+	}
+
+	private void createSorter() {
+		if(!sortings.isEmpty()) {
+			Sorter current = null;
+			for (int i = sortings.size()-1; i >= 0; i--) {
+				current = createSorter(sortings.get(i), current);
+			}
+			sorter = current;
+		}
+	}
+
+	private boolean needsBuffering() {
+		// Could check 'first' flag, but that one is meaningless without 'limit'
+		return getLong(limit)>0 || !sortings.isEmpty();
+	}
+
+	private boolean needsExtraction() {
+		return !groups.isEmpty() || !sortings.isEmpty() || resultTypes.contains(ResultType.CUSTOM);
+	}
 
 	public QueryOutput createOutput() {
-		//TODO
+		final boolean needsBuffering = needsBuffering();
+		final boolean needsExtraction = needsExtraction();
+
+		if(needsExtraction) {
+			createExtractors();
+
+			final Extractor[] extractors = this.extractors.toArray(new Extractor[0]);
+			ResultBuffer<ResultEntry> buffer = null;
+
+			if(!groups.isEmpty()) {
+				//TODO replace/set resultConsumer with a grouping storage
+			}
+
+			if(!sortings.isEmpty()) {
+				createSorter();
+				// Sorting is always buffered
+				buffer = createSortingBuffer();
+			} else if(needsBuffering) {
+				buffer = createExtractingBuffer();
+			}
+
+			// If we constructed a result buffer, we need the matching output wrapper
+			if(buffer!=null) {
+				return BufferedOutput.extracting(buffer, resultConsumer(), extractors);
+			}
+
+			// Otherwise go unbuffered
+			return UnbufferedOutput.extracting(resultConsumer(), extractors);
+		}
+
+		// Limit set, so needs buffer, even without extraction
+		if(needsBuffering) {
+			ResultBuffer<Match> buffer = createPlainBuffer();
+			return BufferedOutput.nonExtracting(buffer, matchConsumer());
+		}
+
+		// No fancy extras, just forward the matches
+		return UnbufferedOutput.nonExtracting(matchConsumer());
 	}
 }

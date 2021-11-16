@@ -166,7 +166,7 @@ class SingleStreamJobTest {
 			assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
 			IqlLane lane = payload.getLanes().get(0);
 
-			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()

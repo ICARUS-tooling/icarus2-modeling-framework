@@ -1451,7 +1451,7 @@ public class InteractiveMatcher {
 			builder.source(lane);
 			builder.id(1);
 			builder.role(Role.SINGLETON);
-			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.corpusData())
+			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()

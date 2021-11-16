@@ -280,6 +280,8 @@ public abstract class EvaluationContext {
 		@Override
 		protected ContextType getType() { return ContextType.LANE; }
 
+		public LaneInfo getLaneInfo() { return lane; }
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public ElementContextBuilder derive() { return new ElementContextBuilder(this); }
@@ -329,6 +331,8 @@ public abstract class EvaluationContext {
 		@Override
 		protected ContextType getType() { return ContextType.ELEMENT; }
 
+		public ElementInfo getElementInfo() { return element; }
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public ElementContextBuilder derive() { return new ElementContextBuilder(this); }
@@ -339,7 +343,7 @@ public abstract class EvaluationContext {
 		}
 
 		private LaneInfo requireLaneInfo() {
-			LaneInfo lane = ((LaneContext)getLaneContext()).lane;
+			LaneInfo lane = getLaneContext().getLaneInfo();
 			if(lane==null)
 				throw new QueryException(GlobalErrorCode.INTERNAL_ERROR, "No lane info available");
 			return lane;
@@ -405,25 +409,25 @@ public abstract class EvaluationContext {
 		return new QueryException(GlobalErrorCode.ILLEGAL_STATE,  "No root context available");
 	}
 
-	public final @Nullable EvaluationContext getRootContext() {
+	public final @Nullable RootContext getRootContext() {
 		EvaluationContext ctx = this;
 		while(!ctx.isRoot()) {
 			ctx = ctx.getParent().orElseThrow(EvaluationContext::forMissingRoot);
 		}
 		if(!ctx.isRoot())
 			throw forMissingRoot();
-		return ctx;
+		return (RootContext) ctx;
 	}
 
 	@SuppressWarnings("null")
-	public final @Nullable EvaluationContext getLaneContext() {
+	public final @Nullable LaneContext getLaneContext() {
 		EvaluationContext ctx = this;
 		while(!ctx.isLane()) {
 			ctx = getParent().orElse(null);
 		}
 		if(ctx==null || !ctx.isLane())
 			throw new QueryException(GlobalErrorCode.ILLEGAL_STATE,  "No lane context available");
-		return ctx;
+		return (LaneContext) ctx;
 	}
 
 	/**

@@ -22,6 +22,8 @@ package de.ims.icarus2.query.api.engine;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 
+import java.util.Arrays;
+
 /**
  * Fine-granular settings for performance control on {@link QueryEngine} instances.
  *
@@ -30,16 +32,23 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
  */
 public class EngineSettings implements Cloneable {
 
-	public static final int DEFAULT_BATCH_SIZE = 100;
-	public static final int DEFAULT_WORKER_LIMIT = UNSET_INT;
+	private final int[] intValues = new int[IntField.values().length];
 
-	private int batchSize = DEFAULT_BATCH_SIZE;
-	private int workerLimit = DEFAULT_WORKER_LIMIT;
+	public EngineSettings() {
+		Arrays.fill(intValues, UNSET_INT);
+	}
 
-	public int getBatchSize() { return batchSize; }
-	public void setBatchSize(int batchSize) {
-		checkArgument("batch size must be positive", batchSize>0);
-		this.batchSize = batchSize;
+	public void setInt(IntField field, int value) {
+		checkArgument(field+" must ve positive", value>0);
+		intValues[field.ordinal()] = value;
+	}
+
+	public int getInt(IntField field) {
+		int value = intValues[field.ordinal()];
+		if(value==UNSET_INT) {
+			value = field.getDefaultValue();
+		}
+		return value;
 	}
 
 	@Override
@@ -49,5 +58,21 @@ public class EngineSettings implements Cloneable {
 		} catch (CloneNotSupportedException e) {
 			throw new InternalError("not spossible", e);
 		}
+	}
+
+	public enum IntField {
+
+		BATCH_SIZE(1<<7),
+		COLLECTOR_BUFFER_SIZE(1<<10),
+		INITIAL_MAIN_BUFFER_SIZE(1<<14),
+		INITIAL_SECONDARY_BUFFER_SIZE(1<<12),
+		WORKER_LIMIT(UNSET_INT),
+		;
+
+		private final int defaultValue;
+
+		private IntField(int defaultValue) { this.defaultValue = defaultValue; }
+
+		public int getDefaultValue() { return defaultValue; }
 	}
 }
