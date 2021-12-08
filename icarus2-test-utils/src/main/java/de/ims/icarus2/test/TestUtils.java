@@ -58,6 +58,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import javax.tools.ToolProvider;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
@@ -79,6 +81,12 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  *
  */
 public class TestUtils {
+
+	public static void verifyCompiler() {
+		if(ToolProvider.getSystemJavaCompiler() == null)
+			throw new AssertionError(String.format("No compiler available for VM %s java version %s (%s)",
+					System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("java.runtime.version")));
+	}
 
 	/** Abort the current test with a {@link TestAbortedException} */
 	public static void abort() {
@@ -1474,9 +1482,9 @@ public class TestUtils {
 
 		Consumer<Consumer<? super K>> loop = wrapForEach(instance, forEach);
 
-		assertForEachNPE(loop);
+		TestUtils.<K, Consumer<? super K>>assertForEachNPE(loop);
 
-		assertForEachEmpty(loop);
+		TestUtils.<K, Consumer<? super K>>assertForEachEmpty(loop);
 
 		adder.accept(instance, value1);
 		assertForEachUnsorted(loop, value1);
@@ -1501,7 +1509,7 @@ public class TestUtils {
 
 		// Verify that none of our values can be found
 		for(int i=0; i<values.length; i++) {
-			assertForEachUntilSentinel(wrapForEachUntil(instance, forEachUntil), values[i], -1);
+			TestUtils.<K, Predicate<? super K>>assertForEachUntilSentinel(wrapForEachUntil(instance, forEachUntil), values[i], -1);
 		}
 
 		// Fill target
@@ -1511,7 +1519,7 @@ public class TestUtils {
 
 		// Now do the real lookups
 		for(int i=0; i<values.length; i++) {
-			assertForEachUntilSentinel(wrapForEachUntil(instance, forEachUntil), values[i], i);
+			TestUtils.<K, Predicate<? super K>>assertForEachUntilSentinel(wrapForEachUntil(instance, forEachUntil), values[i], i);
 		}
 
 		//TODO do we want to also cover the case of a foreign value not being found?
@@ -1523,9 +1531,9 @@ public class TestUtils {
 
 		Consumer<Consumer<? super K>> loop = wrapForEach(instance, forEachLocal);
 
-		assertForEachNPE(loop);
+		TestUtils.<K, Consumer<? super K>>assertForEachNPE(loop);
 
-		assertForEachEmpty(loop);
+		TestUtils.<K, Consumer<? super K>>assertForEachEmpty(loop);
 
 		adder.accept(instance, value1);
 		assertForEachUnsorted(loop, value1);
