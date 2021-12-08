@@ -209,7 +209,7 @@ public class FastChannelReader extends Reader {
 				if ((cb.position() > 0) && !inReady())
 					break; // Block at most once
 				int n = readBytes();
-				if (n < 0) {
+				if (n <= 0) {
 					eof = true;
 					if ((cb.position() == 0) && (!bb.hasRemaining()))
 						break;

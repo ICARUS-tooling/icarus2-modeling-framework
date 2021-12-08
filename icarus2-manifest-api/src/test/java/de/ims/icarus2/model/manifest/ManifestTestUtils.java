@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -38,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.function.Executable;
 
@@ -98,42 +101,48 @@ public class ManifestTestUtils {
 //	}
 
 	private static class TestInfo {
-		Object illegalValue;
-		Object[] legalValues;
+		Supplier<Object> illegalValue;
+		Supplier<Object[]> legalValues;
 		/**
 		 * @param illegalValue
 		 * @param legalValues
 		 */
-		public TestInfo(Object illegalValue, Object[] legalValues) {
+		public TestInfo(Supplier<Object> illegalValue, Supplier<Object[]> legalValues) {
 			super();
 			this.illegalValue = illegalValue;
 			this.legalValues = legalValues;
 		}
 	}
 
-	private static void addTestValues(ValueType type, Object illegalValue, Object...values) {
+	private static void addTestValues(ValueType type, Supplier<Object> illegalValue, Supplier<Object[]> values) {
 		testValues.put(type, new TestInfo(illegalValue, values));
 	}
+
+	private static void addImmutableTestValues(ValueType type, Object illegalValue, Object...values) {
+		testValues.put(type, new TestInfo(() -> illegalValue, () -> values));
+	}
+
 	static {
-		addTestValues(ValueType.STRING, -1, "test1", "test2", "test3");  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
-		addTestValues(ValueType.INTEGER, "illegal", 1, 20, 300);
-		addTestValues(ValueType.LONG, "illegal", 1L, 20L, 300L);
-		addTestValues(ValueType.FLOAT, "illegal", 1.1F, 2.5F, 3F);
-		addTestValues(ValueType.DOUBLE, "illegal", 1.765324D, 2.56789D, -3D);
-		addTestValues(ValueType.BOOLEAN, "illegal", true, false, true);
-		addTestValues(ValueType.ENUM, "illegal", (Object[]) TestEnum.values());
-		addTestValues(ValueType.IMAGE, "illegal",
+		addImmutableTestValues(ValueType.STRING, -1, "test1", "test2", "test3");  //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+		addImmutableTestValues(ValueType.INTEGER, "illegal", 1, 20, 300);
+		addImmutableTestValues(ValueType.LONG, "illegal", 1L, 20L, 300L);
+		addImmutableTestValues(ValueType.FLOAT, "illegal", 1.1F, 2.5F, 3F);
+		addImmutableTestValues(ValueType.DOUBLE, "illegal", 1.765324D, 2.56789D, -3D);
+		addImmutableTestValues(ValueType.BOOLEAN, "illegal", true, false, true);
+		addImmutableTestValues(ValueType.ENUM, "illegal", (Object[]) TestEnum.values());
+		addImmutableTestValues(ValueType.IMAGE, "illegal",
 				new IconWrapper("testIconName1"), //$NON-NLS-1$
 				new IconWrapper("testIconName2"), //$NON-NLS-1$
 				new IconWrapper("testIconName3")); //$NON-NLS-1$
 
-		addTestValues(ValueType.BINARY_STREAM, 1,
+		addTestValues(ValueType.BINARY_STREAM, () -> 1, () -> new Object[] {
 				ByteArrayChannel.fromChars("this is a test"),
 				ByteArrayChannel.fromChars("this is another slightly longer test...\n still a test"),
-				ByteArrayChannel.fromChars("this is the third and final test"));
+				ByteArrayChannel.fromChars("this is the third and final test")
+		});
 
 		try {
-			addTestValues(ValueType.URL, "illegal",
+			addImmutableTestValues(ValueType.URL, "illegal",
 					new Url("http://www.uni-stuttgart.de"), //$NON-NLS-1$
 					new Url("http://www.uni-stuttgart.de/linguistik"), //$NON-NLS-1$
 					new Url("http://www.dict.cc")); //$NON-NLS-1$
@@ -142,7 +151,7 @@ public class ManifestTestUtils {
 		}
 
 		try {
-			addTestValues(ValueType.URI, "illegal",
+			addImmutableTestValues(ValueType.URI, "illegal",
 					new URI("mailto:xzy"), //$NON-NLS-1$
 					new URI("/ref/some/relative/data"), //$NON-NLS-1$
 					new URI("http://www.dict.cc#marker")); //$NON-NLS-1$
@@ -151,7 +160,7 @@ public class ManifestTestUtils {
 		}
 
 		try {
-			addTestValues(ValueType.URL_RESOURCE, "illegal",
+			addImmutableTestValues(ValueType.URL_RESOURCE, "illegal",
 					new DefaultUrlResource(new Url("http://www.uni-stuttgart.de"), "Url-Link 1", "Some test url link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultUrlResource(new Url("http://www.uni-stuttgart.de/linguistik"), "Url-Link 2", "Another url link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultUrlResource(new Url("http://www.dict.cc"), "Url-Link 3 (no desciption)")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -160,7 +169,7 @@ public class ManifestTestUtils {
 		}
 
 		try {
-			addTestValues(ValueType.LINK, "illegal",
+			addImmutableTestValues(ValueType.LINK, "illegal",
 					new DefaultLink(new URI("mailto:xzy"), "Link 1", "Some test link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultLink(new URI("/ref/some/relative/data"), "Link 2", "Another link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					new DefaultLink(new URI("http://www.dict.cc#marker"), "Link 3 (no desciption)")); //$NON-NLS-1$ //$NON-NLS-2$
@@ -168,25 +177,25 @@ public class ManifestTestUtils {
 			// ignore
 		}
 
-		addTestValues(ValueType.IMAGE_RESOURCE, "illegal",
+		addImmutableTestValues(ValueType.IMAGE_RESOURCE, "illegal",
 				new DefaultIconLink(new IconWrapper("testIconName1"), "Icon-Link 1", "Some test icon link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				new DefaultIconLink(new IconWrapper("testIconName2"), "Icon-Link 2", "Some test icon link"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				new DefaultIconLink(new IconWrapper("testIconName3"), "Icon-Link 3 (no description)")); //$NON-NLS-1$ //$NON-NLS-2$$
 
-		addTestValues(ValueType.UNKNOWN, null, new Object(), new int[3], 456);
-		addTestValues(ValueType.CUSTOM, null, new Dummy(), new Dummy(), new Dummy());
+		addImmutableTestValues(ValueType.UNKNOWN, null, new Object(), new int[3], 456);
+		addImmutableTestValues(ValueType.CUSTOM, null, new Dummy(), new Dummy(), new Dummy());
 
-		addTestValues(ValueType.EXTENSION, -1,
+		addImmutableTestValues(ValueType.EXTENSION, -1,
 				"my.plugin@extension1",
 				"my.plugin@extension2",
 				"my.plugin2@extension1");
 
-		addTestValues(ValueType.FILE, "illegal",
+		addImmutableTestValues(ValueType.FILE, "illegal",
 				Paths.get("someFile"),
 				Paths.get("anotherFile"),
 				Paths.get("some","path","with","a","file.txt"));
 
-		addTestValues(ValueType.REF, null, Ref.emptyRef(), new DummyRef(), new DummyRef());
+		addImmutableTestValues(ValueType.REF, null, Ref.emptyRef(), new DummyRef(), new DummyRef());
 
 		//FIXME add some test values for the other more complex types!
 	}
@@ -232,7 +241,7 @@ public class ManifestTestUtils {
 		if(info==null)
 			throw new InternalError("No test values for type: "+type);
 
-		return info.legalValues;
+		return info.legalValues.get();
 	}
 
 	public static Object getTestValue(ValueType type) {
@@ -240,13 +249,13 @@ public class ManifestTestUtils {
 		if(info==null)
 			throw new InternalError("No test values for type: "+type);
 
-		return info.legalValues[0];
+		return info.legalValues.get()[0];
 	}
 
 	public static Object tryGetTestValue(ValueType type) {
 		TestInfo info = testValues.get(type);
 
-		return info==null ? null : info.legalValues[0];
+		return info==null ? null : info.legalValues.get()[0];
 	}
 
 	public static Object getIllegalValue(ValueType type) {
@@ -254,7 +263,7 @@ public class ManifestTestUtils {
 		if(info==null)
 			throw new InternalError("No test values for type: "+type);
 
-		return info.illegalValue;
+		return info.illegalValue.get();
 	}
 
 	public static Object[] getIllegalValues(ValueType type) {
@@ -407,41 +416,41 @@ public class ManifestTestUtils {
 
 		ManifestRegistry registry = assertMock(manifest.getRegistry());
 
-		when(registry.hasTemplate(id)).thenReturn(Boolean.TRUE);
+		doReturn(Boolean.TRUE).when(registry).hasTemplate(id);
 
 		return manifest;
 	}
 
 	public static <M extends Manifest> M stubIsTemplate(M manifest) {
 		assertMock(manifest);
-		when(manifest.isTemplate()).thenReturn(Boolean.TRUE);
-		when(manifest.isValidTemplate()).thenReturn(Boolean.TRUE);
+		doReturn(Boolean.TRUE).when(manifest).isTemplate();
+		doReturn(Boolean.TRUE).when(manifest).isValidTemplate();
 		return manifest;
 	}
 
 	public static <M extends ManifestFragment> M stubId(M manifest, String id) {
 		requireNonNull(id);
 		assertMock(manifest);
-		when(manifest.getId()).thenReturn(Optional.of(id));
+		doReturn(Optional.of(id)).when(manifest).getId();
 		return manifest;
 	}
 
 	public static <I extends Identity> I stubIdentity(I identity, String id) {
 		requireNonNull(id);
 		assertMock(identity);
-		when(identity.getId()).thenReturn(Optional.of(id));
+		doReturn(Optional.of(id)).when(identity).getId();
 		return identity;
 	}
 
 	public static <M extends TypedManifest> M stubType(M manifets, ManifestType type) {
 		requireNonNull(type);
-		when(manifets.getManifestType()).thenReturn(type);
+		doReturn(type).when(manifets).getManifestType();
 		return manifets;
 	}
 
 	public static ManifestLocation mockManifestLocation(boolean template) {
 		ManifestLocation location = mock(ManifestLocation.class);
-		when(location.isTemplate()).thenReturn(template);
+		doReturn(template).when(location).isTemplate();
 		return location;
 	}
 
@@ -451,14 +460,14 @@ public class ManifestTestUtils {
 		}
 
 		ManifestLocation location = mock(ManifestLocation.class);
-		when(location.isTemplate()).thenReturn(template);
+		doReturn(template).when(location).isTemplate();
 		return location;
 	}
 
 	public static ManifestRegistry mockManifestRegistry() {
 		ManifestRegistry registry = mock(ManifestRegistry.class);
 		AtomicInteger uuidGen = new AtomicInteger(0);
-		when(registry.createUID()).then(invocation -> uuidGen.incrementAndGet());
+		doAnswer(invocation -> uuidGen.incrementAndGet()).when(registry).createUID();
 		return registry;
 	}
 
@@ -469,7 +478,7 @@ public class ManifestTestUtils {
 
 		ManifestRegistry registry = mock(ManifestRegistry.class);
 		AtomicInteger uuidGen = new AtomicInteger(0);
-		when(registry.createUID()).then(invocation -> uuidGen.incrementAndGet());
+		doAnswer(invocation -> uuidGen.incrementAndGet()).when(registry).createUID();
 		return registry;
 	}
 
@@ -496,7 +505,7 @@ public class ManifestTestUtils {
 
 		M manifest = mockTypedManifest(clazz, mockId);
 
-		when(manifest.getManifestType()).thenReturn(type);
+		doReturn(type).when(manifest).getManifestType();
 
 		if(mockHierarchy) {
 			mockHierarchy(type, manifest);
@@ -518,8 +527,8 @@ public class ManifestTestUtils {
 			ManifestRegistry registry = mock(ManifestRegistry.class);
 			ManifestLocation location = mock(ManifestLocation.class);
 
-			when(fullManifest.getManifestLocation()).thenReturn(location);
-			when(fullManifest.getRegistry()).thenReturn(registry);
+			doReturn(location).when(fullManifest).getManifestLocation();
+			doReturn(registry).when(fullManifest).getRegistry();
 		}
 
 		if(mockId) {
@@ -547,7 +556,7 @@ public class ManifestTestUtils {
 			ManifestType hostType = envTypes[0];
 			TypedManifest host = mockTypedManifestRaw(hostType, false, true);
 
-			when(((Embedded)current).getHost()).thenReturn(Optional.of(host));
+			doReturn(Optional.of(host)).when((Embedded)current).getHost();
 
 			current = host;
 			currentType = hostType;

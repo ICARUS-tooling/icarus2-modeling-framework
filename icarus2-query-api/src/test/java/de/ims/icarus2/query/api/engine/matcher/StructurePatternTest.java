@@ -6789,7 +6789,7 @@ public class StructurePatternTest {
 							@IntervalArg Interval visited2) { // all slots visited for second node
 
 						// Sanity check since we expect symmetric results here
-						assertThat(hits1).hasSameSizeAs(hit2);
+						assertThat((Object[])hits1).hasSameSizeAs(hit2);
 
 						/*
 						 * We expect NODE_1 to aggressively consume slots with
@@ -8031,7 +8031,7 @@ public class StructurePatternTest {
 							@IntervalArrayArg Interval[] visited2) {// all slots visited for second node
 
 						// Sanity check since we expect symmetric results here
-						assertThat(hits1).as("Different match counters").hasSameSizeAs(hit2);
+						assertThat((Object[])hits1).as("Different match counters").hasSameSizeAs(hit2);
 
 						/*
 						 * We expect NODE_1 to aggressively consume slots with
@@ -9445,7 +9445,7 @@ public class StructurePatternTest {
 							boolean allowDuplicates) {
 
 						// Sanity check since we expect symmetric results here
-						assertThat(hits1).as("Different match counts").hasSameSizeAs(hit2);
+						assertThat((Object[])hits1).as("Different match counts").hasSameSizeAs(hit2);
 
 						/*
 						 * We expect NODE_1 to aggressively consume slots with
