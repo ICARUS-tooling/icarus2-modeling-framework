@@ -2,17 +2,20 @@
 plugins {
 	id 'java-library'
 	id 'jacoco'
-	id 'com.github.kt3k.coveralls' version '2.8.4'
-	id 'com.github.johnrengelman.shadow' version '4.0.1' apply false
-    id 'com.github.hierynomus.license' version '0.15.0' apply false
-	id 'net.ltgt.apt-eclipse' version '0.21'
-	id 'nebula.lint' version '16.17.0'
+	id 'com.github.kt3k.coveralls' version '2.12.0'
+	id 'com.github.johnrengelman.shadow' version '7.1.0' apply false
+    id 'com.github.hierynomus.license' version '0.16.1' apply false
+    id 'com.diffplug.eclipse.apt' version '3.33.3' apply false
+	id 'nebula.lint' version '17.5.0'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
 apply from: 'versions.gradle'
 
 description = 'ICARUS 2 framework root'
+	
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 allprojects {
 	apply plugin: 'eclipse'
@@ -30,7 +33,7 @@ allprojects {
 // Gradle Wrapper
 wrapper { 
 	// to upgrade wrapper: ./gradlew wrapper --distribution-type bin --gradle-version <version>
-	gradleVersion = "6.0.1" 
+	gradleVersion = "7.3.1" 
 }
 
 // Build Scan publishing
@@ -52,7 +55,7 @@ subprojects {
   	apply plugin: 'checkstyle'		
 	apply plugin: 'com.github.hierynomus.license'
 	apply plugin: 'com.github.johnrengelman.shadow'
-	apply plugin: 'net.ltgt.apt-eclipse'
+	apply plugin: 'com.diffplug.eclipse.apt'
 	
   	sourceCompatibility = 1.8
   	targetCompatibility = 1.8
@@ -81,6 +84,7 @@ subprojects {
 		antlrRuntime
 		json
 		apiguardian
+		jaxb
 		
 		// GUI related stuff
 		jgoodies
@@ -149,6 +153,13 @@ subprojects {
 		
 		// https://mvnrepository.com/artifact/com.github.vlsi.mxgraph/jgraphx
 		jgraph "com.github.vlsi.mxgraph:jgraphx:${versions.jgraph}"
+		
+		// https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
+		jaxb "jakarta.xml.bind:jakarta.xml.bind-api:${versions.jaxb}"
+		// https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl
+		jaxb "com.sun.xml.bind:jaxb-impl:${versions.jaxb}"
+		// https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-core
+		jaxb "com.sun.xml.bind:jaxb-core:${versions.jaxb}"
 			
 		// TEST ENVIRONMENT
 		
@@ -179,7 +190,9 @@ subprojects {
 		jmhImplementation project
 		benchmark "org.openjdk.jmh:jmh-core:${versions.jmh}"
 		benchmark "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
-		jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
+		
+		// Annotation processors
+		annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:${versions.jmhAp}"
 	}
   	
   	tasks.withType(JavaCompile) {
@@ -225,32 +238,32 @@ subprojects {
 			}
 		}
 
-		// Annotation processing (folders and configuration)
-		jdt {
-			/*
-			 *  Run 
-			 *    gradle eclipseJdtApt eclipseFactorypath eclipseJdt 
-			 *  for any project that needs annotation processing turned on in eclipse
-			 */ 
-			apt {
-				// whether annotation processing is enabled in Eclipse
-				aptEnabled = compileJava.aptOptions.annotationProcessing
-				// where Eclipse will output the generated sources; values are interpreted as per project.file()
-				genSrcDir = file('.apt_generated')
-				genTestSrcDir = file('.apt_generated_tests')
-				// whether annotation processing is enabled in the editor
-				reconcileEnabled = true
-				// a map of annotation processor options; a null value will pass the argument as -Akey rather than -Akey=value
-				processorOptions = compileJava.aptOptions.processorArgs
-			}
-		}
-		
-		// Annotation processing (ensuring declared processors are forwarded to eclipse)
-		factorypath {
-			//TODO add task or hook to clear out previous factorypath entries
-			plusConfigurations = [ configurations.annotationProcessor, configurations.testAnnotationProcessor, configurations.jmhAnnotationProcessor ]
-			minusConfigurations = []
-		}
+//		// Annotation processing (folders and configuration)
+//		jdt {
+//			/*
+//			 *  Run 
+//			 *    gradle eclipseJdtApt eclipseFactorypath eclipseJdt 
+//			 *  for any project that needs annotation processing turned on in eclipse
+//			 */ 
+//			apt {
+//				// whether annotation processing is enabled in Eclipse
+//				aptEnabled = compileJava.aptOptions.annotationProcessing
+//				// where Eclipse will output the generated sources; values are interpreted as per project.file()
+//				genSrcDir = file('.apt_generated')
+//				genTestSrcDir = file('.apt_generated_tests')
+//				// whether annotation processing is enabled in the editor
+//				reconcileEnabled = true
+//				// a map of annotation processor options; a null value will pass the argument as -Akey rather than -Akey=value
+//				processorOptions = compileJava.aptOptions.processorArgs
+//			}
+//		}
+//		
+//		// Annotation processing (ensuring declared processors are forwarded to eclipse)
+//		factorypath {
+//			//TODO add task or hook to clear out previous factorypath entries
+//			plusConfigurations = [ configurations.annotationProcessor, configurations.testAnnotationProcessor, configurations.jmhAnnotationProcessor ]
+//			minusConfigurations = []
+//		}
 	}
 	
 //	task prepareApt {
@@ -265,7 +278,7 @@ subprojects {
 		dependsOn jmhClasses
 		archiveClassifier = 'jmh'
 		from sourceSets.jmh.output + sourceSets.main.output + sourceSets.test.output
-		configurations = [project.configurations.jmhRuntime]
+		//TODO fix: configurations = [project.configurations.jmhRuntime]
 		manifest {
 			attributes 'Main-Class': 'org.openjdk.jmh.Main'
 		}
@@ -331,9 +344,9 @@ subprojects {
 	
 	jacocoTestReport {
 		reports {
-			html.enabled = true
-			xml.enabled = true
-			csv.enabled = false
+			html.required = true
+			xml.required = true
+			csv.required = false
 		}
 	}
 	
@@ -390,7 +403,7 @@ subprojects {
     // Silence javadoc spam a bit
     tasks.withType(Javadoc) {
 	    classpath = sourceSets.main.compileClasspath
-		options.addBooleanOption('Xdoclint:none', true)
+	    options.addStringOption('Xdoclint:none', '-quiet')
 	}
 	
 	// For when we need new subprojects
@@ -405,6 +418,7 @@ subprojects {
     checkstyle {
 	    ignoreFailures = true
 	    showViolations = false
+	    configFile = rootProject.file('config/checkstyle/checkstyle.xml')
 		sourceSets = [sourceSets.main, sourceSets.test]
     }
     
@@ -496,6 +510,14 @@ subprojects {
 	}
 }
 
+tasks.named('check') {
+	doFirst {
+		logger.info('Running Gradle {}', GradleVersion.current().toString())
+		logger.info('Using Java VM {}', org.gradle.internal.jvm.Jvm.current())
+	}
+}
+
+
 // Filter coverage reports 
 def publishedProjects = subprojects.findAll { true } //TODO add filter pattern for subprojects
 
@@ -518,8 +540,8 @@ task jacocoRootReport(type: JacocoReport, group: 'verification') {
 	executionData jacocoMerge.destinationFile
 
 	reports {
-		html.enabled = true // human readable
-		xml.enabled = true // required by codecov
+		html.required = true // human readable
+		xml.required = true // required by codecov
 	}
 }
 

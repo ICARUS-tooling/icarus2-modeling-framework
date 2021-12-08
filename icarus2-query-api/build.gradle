@@ -40,3 +40,9 @@ generateTestGrammarSource {
 //	}
 	arguments += ["-lib", "src/main/antlr/de/ims/icarus2/query/api/iql/antlr"]
 }
+
+sourcesJar.dependsOn(generateGrammarSource)
+licenseMain.dependsOn(generateGrammarSource)
+javadoc.dependsOn(generateGrammarSource)
+
+licenseTest.dependsOn(generateTestGrammarSource)
