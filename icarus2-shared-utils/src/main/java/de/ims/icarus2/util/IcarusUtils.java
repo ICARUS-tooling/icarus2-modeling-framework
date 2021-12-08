@@ -59,8 +59,6 @@ public final class IcarusUtils {
 	/**
 	 * Returns {@code true} if the JVM currently in use is reportedly
 	 * using a 64 bit architecture model.
-	 *
-	 * @return
 	 */
 	public static final boolean IS_64BIT_VM;
 

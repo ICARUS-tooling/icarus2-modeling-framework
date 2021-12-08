@@ -28,10 +28,7 @@ import de.ims.icarus2.util.AccessMode;
 
 /**
  * Models abstract access to an arbitrary byte storage that can be connected to
- * in both read and write mode. This interface exists primarily for testing of the
- * various {@link AbstractStoredMapping} implementations. Additionally it allows
- * for greater flexibility for {@link BufferedIOResource}s in general by splitting
- * off the actual storage part from the management and  access synchronization.
+ * in both read and write mode.
  *
  * @author Markus Gärtner
  *

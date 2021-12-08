@@ -140,7 +140,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 * @see java.nio.channels.SeekableByteChannel#position(long)
 	 */
 	@Override
-	public SeekableByteChannel position(long newPosition) throws IOException {
+	public ByteArrayChannel position(long newPosition) throws IOException {
 
 		this.position = IcarusUtils.ensureIntegerValueRange(newPosition);
 
@@ -153,7 +153,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 * @param limit
 	 * @return
 	 */
-	public SeekableByteChannel limit(int limit) {
+	public ByteArrayChannel limit(int limit) {
 		checkArgument(limit>=-1 && limit<=data.length);
 		if(limit==-1) {
 			size = data.length;
@@ -168,7 +168,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 * {@link #position() position} and then sets the position to {@code 0};
 	 * @return
 	 */
-	public SeekableByteChannel flip() {
+	public ByteArrayChannel flip() {
 		size = position;
 		position = 0;
 
@@ -191,7 +191,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 	 * @see java.nio.channels.SeekableByteChannel#truncate(long)
 	 */
 	@Override
-	public SeekableByteChannel truncate(long size) throws IOException {
+	public ByteArrayChannel truncate(long size) throws IOException {
 		return this;
 	}
 

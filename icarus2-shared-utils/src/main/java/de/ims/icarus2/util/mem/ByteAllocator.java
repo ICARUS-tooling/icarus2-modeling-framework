@@ -482,7 +482,7 @@ public final class ByteAllocator implements AutoCloseable {
 	 * being performed, as it manipulates internal fields that are generally
 	 * not guarded against concurrent modification!
 	 *
-	 * @param newSlotSize
+	 * @param size the desired new slot size
 	 */
 	public void adjustSlotSize(int size) {
 		checkArgument("Slot size must not be less than "+MIN_SLOT_SIZE, size>=MIN_SLOT_SIZE);

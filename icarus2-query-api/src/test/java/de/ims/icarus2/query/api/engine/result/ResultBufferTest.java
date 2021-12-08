@@ -102,7 +102,7 @@ class ResultBufferTest {
 	static final Comparator<ResultEntry> ENTRY_REVERSE_ORDER =
 			(r1, r2) -> -ENTRY_NATURAL_ORDER.compare(r1, r2);
 
-	static final int DEFAULT_TIMEOUT = 5;
+	static final int DEFAULT_TIMEOUT = 10;
 
 	static class ThreadedTest<T> {
 		private ResultBuffer<T> buffer;
@@ -223,7 +223,7 @@ class ResultBufferTest {
 				});
 			}
 
-			assertThat(latch.await(timeout, TimeUnit.SECONDS)).as("regular termination").isTrue();
+			assertThat(latch.await(timeout, TimeUnit.SECONDS)).as("failed regular termination").isTrue();
 
 			return limitReached.get();
 		}

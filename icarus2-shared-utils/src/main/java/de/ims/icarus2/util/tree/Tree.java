@@ -102,7 +102,6 @@ public class Tree<T> {
 	 * Creates a new child for the given {@code parent} and directly
 	 * {@link Tree#addChild(Tree) adds} it.
 	 *
-	 * @param parent
 	 * @return
 	 */
 	public Tree<T> newChild() {

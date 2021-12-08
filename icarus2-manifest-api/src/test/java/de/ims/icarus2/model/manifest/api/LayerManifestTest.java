@@ -27,6 +27,7 @@ import static de.ims.icarus2.test.TestUtils.wrapForEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -75,7 +76,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 		LayerGroupManifest manifest = mockTypedManifest(preferredType, true);
 
 		// Additional handling: ensure the proxy methods around getHost() return valid data
-		when(manifest.getContextManifest()).thenCallRealMethod();
+		doCallRealMethod().when(manifest).getContextManifest();
 
 		return manifest;
 	}
@@ -189,7 +190,7 @@ public interface LayerManifestTest<M extends LayerManifest<?>> extends EmbeddedM
 	public static <M extends LayerManifest<?>> BiConsumer<M, Consumer<? super String>> inject_forEachTargetLayerManifest(
 					BiConsumer<M, Consumer<? super TargetLayerManifest>> forEach) {
 		return (m, action) -> LazyCollection.<String>lazyList()
-				.addFromForEachTransformed(wrapForEach(m, forEach), t -> t.getLayerId())
+				.<TargetLayerManifest, Consumer<? super TargetLayerManifest>>addFromForEachTransformed(wrapForEach(m, forEach), t -> t.getLayerId())
 				.forEach(action);
 	}
 

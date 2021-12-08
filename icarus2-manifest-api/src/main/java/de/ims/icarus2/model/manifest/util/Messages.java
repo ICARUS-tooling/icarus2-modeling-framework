@@ -27,6 +27,8 @@ import de.ims.icarus2.model.manifest.api.LayerManifest;
  */
 public class Messages {
 
+	//TODO in case we move on to newer Java version, we need to switch to StackWalker
+
 	/**
 	 * Internal helper class to access call stack information in a cheaper way than
 	 * via {@link Thread#getStackTrace()}.
@@ -34,13 +36,14 @@ public class Messages {
 	 * @author Markus Gärtner
 	 *
 	 */
+	@SuppressWarnings("removal")
 	private static final class CallingClass extends SecurityManager {
 	    public static final CallingClass INSTANCE = new CallingClass();
 
 	    /**
 	     * @see SecurityManager#getClassContext()
 	     */
-	    @SuppressWarnings("rawtypes")
+	    @SuppressWarnings({ "rawtypes", "deprecation" })
 		public Class[] getCallingClasses() {
 	        return getClassContext();
 	    }

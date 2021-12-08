@@ -208,7 +208,8 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 			BiConsumer<M, Consumer<? super String>> inject_forEachPrerequisiteManifest(
 					BiConsumer<M, Consumer<? super PrerequisiteManifest>> forEach) {
 		return (m, action) -> LazyCollection.<String>lazyList()
-				.addFromForEachTransformed(wrapForEach(m, forEach), t -> t.getAlias())
+				.<PrerequisiteManifest, Consumer<? super PrerequisiteManifest>>addFromForEachTransformed(
+						wrapForEach(m, forEach), t -> t.getAlias())
 				.forEach(action);
 	}
 

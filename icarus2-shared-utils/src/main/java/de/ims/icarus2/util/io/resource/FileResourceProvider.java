@@ -67,17 +67,11 @@ public class FileResourceProvider implements ResourceProvider {
 
 	private static final Map<Path, FileLockWrapper> sharedLocks = new WeakHashMap<>();
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#exists(java.nio.file.Path)
-	 */
 	@Override
 	public boolean exists(Path path) {
 		return Files.exists(path, LinkOption.NOFOLLOW_LINKS);
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#create(java.nio.file.Path)
-	 */
 	@Override
 	public boolean create(Path path, boolean directory) throws IOException {
 		boolean exists = Files.exists(path, LinkOption.NOFOLLOW_LINKS);
@@ -93,9 +87,6 @@ public class FileResourceProvider implements ResourceProvider {
 		return !exists;
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#getResource(java.nio.file.Path)
-	 */
 	@Override
 	public IOResource getResource(Path path) throws IOException {
 		checkFilePath(path);
@@ -110,26 +101,17 @@ public class FileResourceProvider implements ResourceProvider {
 
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#children(java.nio.file.Path)
-	 */
 	@Override
 	public DirectoryStream<Path> children(Path folder, String glob) throws IOException {
 		return Files.newDirectoryStream(folder, glob);
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#isDirectory(java.nio.file.Path)
-	 */
 	@Override
 	public boolean isDirectory(Path path) {
 		requireNonNull(path);
 		return Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS);
 	}
 
-	/**
-	 * @see bwfdm.replaydh.io.resources.ResourceProvider#getLock(java.nio.file.Path)
-	 */
 	@Override
 	public Lock getLock(Path path) {
 		checkFilePath(path);

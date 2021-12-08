@@ -22,15 +22,18 @@ import static java.util.Objects.requireNonNull;
 import java.util.Arrays;
 import java.util.Stack;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import de.ims.icarus2.util.xml.XmlSerializer;
+import de.ims.icarus2.util.xml.XmlUtils;
 
 /**
  * @author Markus Gärtner
  *
  */
+@NotThreadSafe
 public abstract class XmlStreamSerializer implements XmlSerializer {
 
 	public static XmlStreamSerializer withoutNamespace(XMLStreamWriter writer) {
@@ -76,7 +79,10 @@ public abstract class XmlStreamSerializer implements XmlSerializer {
 
 	private final XMLStreamWriter writer;
 
+	/** Buffers characters across multiple calls */
 	private StringBuilder characters = new StringBuilder();
+	/** Secondary buffer to prevent underflow in buffered CharSequence implementations */
+	private StringBuilder buffer = new StringBuilder();
 
 	private char[] indentBuffer;
 
@@ -192,6 +198,20 @@ public abstract class XmlStreamSerializer implements XmlSerializer {
 
 		nested = true;
 		elementIsEmpty = false;
+	}
+
+	@Override
+	public void writeTextOrCData(CharSequence text) throws XMLStreamException {
+		requireNonNull(text);
+
+		buffer.setLength(0);
+		buffer.append(text);
+
+		if(XmlUtils.hasReservedXMLSymbols(buffer)) {
+			writeCData(buffer);
+		} else {
+			writeText(buffer);
+		}
 	}
 
 	/**

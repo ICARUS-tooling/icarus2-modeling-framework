@@ -285,12 +285,12 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			adder.accept(template, value1);
 			M derived = createDerived(settings, template);
 
-			TestUtils.assertForEachUnsorted(wrapForEach(derived, forEach), value1);
+			TestUtils.<K, Consumer<? super K>>assertForEachUnsorted(wrapForEach(derived, forEach), value1);
 
 			adder.accept(derived, value2);
 
-			TestUtils.assertForEachUnsorted(wrapForEach(derived, forEach), value1, value2);
-			TestUtils.assertForEachUnsorted(wrapForEach(template, forEach), value1);
+			TestUtils.<K, Consumer<? super K>>assertForEachUnsorted(wrapForEach(derived, forEach), value1, value2);
+			TestUtils.<K, Consumer<? super K>>assertForEachUnsorted(wrapForEach(template, forEach), value1);
 		}
 	}
 
@@ -305,12 +305,12 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			adder.accept(template, value1);
 			M derived = createDerived(settings, template);
 
-			TestUtils.assertForEachEmpty(wrapForEach(derived, forEachLocal));
+			TestUtils.<K, Consumer<? super K>>assertForEachEmpty(wrapForEach(derived, forEachLocal));
 
 			adder.accept(derived, value2);
 
-			TestUtils.assertForEachUnsorted(wrapForEach(derived, forEachLocal), value2);
-			TestUtils.assertForEachUnsorted(wrapForEach(template, forEachLocal), value1);
+			TestUtils.<K, Consumer<? super K>>assertForEachUnsorted(wrapForEach(derived, forEachLocal), value2);
+			TestUtils.<K, Consumer<? super K>>assertForEachUnsorted(wrapForEach(template, forEachLocal), value1);
 		}
 	}
 

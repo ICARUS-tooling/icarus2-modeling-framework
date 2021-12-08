@@ -430,7 +430,7 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * Throws {@link ModelException} with code {@link GlobalErrorCode#DRIVER_CONNECTION} in case
+	 * Throws {@link ModelException} with code {@link ModelErrorCode#DRIVER_CONNECTION} in case
 	 * the driver is not currently connected. Does nothing if the driver is in the process
 	 * of connecting and was marked to allow unchecked access to connection critical code.
 	 */
@@ -447,7 +447,7 @@ public abstract class AbstractDriver implements Driver {
 	}
 
 	/**
-	 * Throws {@link ModelException} with code {@link GlobalErrorCode#DRIVER_READY} in case
+	 * Throws {@link ModelException} with code {@link ModelErrorCode#DRIVER_READY} in case
 	 * the driver is not currently ready.
 	 */
 	protected void checkReady() {

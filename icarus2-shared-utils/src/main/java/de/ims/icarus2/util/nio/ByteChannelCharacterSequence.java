@@ -39,7 +39,10 @@ import de.ims.icarus2.util.strings.StringUtil;
 public class ByteChannelCharacterSequence implements CharSequence {
 
 	private final SeekableByteChannel channel;
-	private final int start, end;
+	/** Start index (inclusive), 0 or greater */
+	private final int start;
+	/** End index (exclusive) */
+	private final int end;
 
 	private transient ByteBuffer buffer = ByteBuffer.allocate(2);
 
@@ -102,7 +105,7 @@ public class ByteChannelCharacterSequence implements CharSequence {
 
 			channel.position(idx);
 			if(channel.read(buffer)!=2)
-				throw new IndexOutOfBoundsException();
+				throw new IndexOutOfBoundsException("Unable to read 2-byte block for index "+index);
 
 			buffer.flip();
 

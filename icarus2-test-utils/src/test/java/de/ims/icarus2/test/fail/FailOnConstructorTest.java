@@ -17,10 +17,12 @@
 package de.ims.icarus2.test.fail;
 
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Point;
+import java.lang.reflect.InvocationTargetException;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,9 +50,8 @@ class FailOnConstructorTest {
 		assertNPE(() -> FailOnConstructor.createClassForException(packageName, className, baseClass, null));
 
 		// Test all possible combinations of set and unset parameters
-		assertClassGeneration("", className, null, exceptionClass);
+		// (pretty limited since we can't pass empty package name)
 		assertClassGeneration(packageName, className, null, exceptionClass);
-		assertClassGeneration("", className, baseClass, exceptionClass);
 		assertClassGeneration(packageName, className, baseClass, exceptionClass);
 	}
 
@@ -64,6 +65,8 @@ class FailOnConstructorTest {
 
 		assertTrue(baseClass==null || baseClass.isAssignableFrom(generatedClass));
 
-		assertThrows(exceptionClass, generatedClass::newInstance);
+		InvocationTargetException exp = assertThrows(InvocationTargetException.class,
+				generatedClass.getDeclaredConstructor()::newInstance);
+		assertThat(exp.getCause()).isExactlyInstanceOf(exceptionClass);
 	}
 }

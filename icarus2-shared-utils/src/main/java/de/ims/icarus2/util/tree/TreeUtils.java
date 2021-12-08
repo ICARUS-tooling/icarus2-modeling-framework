@@ -103,7 +103,7 @@ public class TreeUtils {
 	 * Note however that there is no guarantee on the roder in which nodes will be visited!
 	 *
 	 * @param tree
-	 * @param visitor
+	 * @param action
 	 */
 	public static <T> void traverse(Tree<T> tree, Consumer<Tree<T>> action) {
 		Stack<Tree<T>> stack = new ObjectArrayList<>();
