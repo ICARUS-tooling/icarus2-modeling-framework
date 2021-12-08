@@ -25,9 +25,6 @@ import static java.util.Objects.requireNonNull;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,7 +50,6 @@ public final class DiffUtils {
 		// no-op
 	}
 
-	@SuppressWarnings("boxing")
 	public static boolean deepEquals(final Object obj1, final Object obj2) throws IllegalArgumentException, IllegalAccessException {
 		if (obj1 == null)
 			throw new NullPointerException("Invalid obj1"); //$NON-NLS-1$
@@ -64,21 +60,7 @@ public final class DiffUtils {
 		final Trace trace = new Trace(clazz, true);
 		trace.visit(obj1);
 		try {
-			return AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
-
-				@Override
-				public Boolean run() throws Exception {
-					return getChecker(clazz).equals(trace, obj1, obj2);
-				}
-			});
-		} catch (PrivilegedActionException e) {
-			Exception cause = e.getException();
-			if(cause instanceof IllegalAccessException) {
-				throw (IllegalAccessException) cause;
-			} else if(cause instanceof RuntimeException) {
-				throw (RuntimeException) cause;
-			} else
-				throw new InternalError("Unexpected exception from privileged invocation", cause); //$NON-NLS-1$
+			return getChecker(clazz).equals(trace, obj1, obj2);
 		} finally {
 			trace.leave(obj1);
 		}
@@ -92,21 +74,7 @@ public final class DiffUtils {
 		final Trace trace = new Trace(clazz, true);
 		trace.visit(obj1);
 		try {
-			AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
-
-				@SuppressWarnings("boxing")
-				@Override
-				public Boolean run() throws Exception {
-					return getChecker(clazz).equals(trace, obj1, obj2);
-				}
-			});
-		} catch (PrivilegedActionException e) {
-			Exception cause = e.getException();
-			if(cause instanceof IllegalAccessException) {
-				throw (IllegalAccessException) cause;
-			} else if(cause instanceof RuntimeException) {
-				throw (RuntimeException) cause;
-			}
+			getChecker(clazz).equals(trace, obj1, obj2);
 		} finally {
 			trace.leave(obj1);
 		}
@@ -266,6 +234,8 @@ public final class DiffUtils {
 					}
 				} else if(type==Object.class || type==String.class) {
 					fieldHandlers.add(new ObjectFieldHandler(field));
+				} else if(type==Optional.class) {
+					fieldHandlers.add(new OptionalFieldHandler(field));
 				} else if(Map.class.isAssignableFrom(type)) {
 					fieldHandlers.add(new MapFieldHandler(field));
 				} else if(List.class.isAssignableFrom(type)) {
@@ -413,11 +383,13 @@ public final class DiffUtils {
 			super(field);
 		}
 
+		protected Object unpack(Object value) { return value; }
+
 		@Override
 		boolean equalsField(Trace trace, Object obj1, Object obj2) throws IllegalArgumentException, IllegalAccessException {
 
-			final Object value1 = field.get(obj1);
-			final Object value2 = field.get(obj2);
+			final Object value1 = unpack(field.get(obj1));
+			final Object value2 = unpack(field.get(obj2));
 
 			if(value1==value2) {
 				return true;
@@ -457,6 +429,18 @@ public final class DiffUtils {
 		}
 	}
 
+	private static class OptionalFieldHandler extends ObjectFieldHandler {
+
+		OptionalFieldHandler(Field field) {
+			super(field);
+		}
+
+		@Override
+		protected Object unpack(Object value) {
+			return ((Optional<?>)value).orElse(null);
+		}
+	}
+
 	private static class DeepObjectFieldHandler extends ObjectFieldHandler {
 
 		DeepObjectFieldHandler(Field field) {
@@ -477,7 +461,6 @@ public final class DiffUtils {
 
 			try {
 				return getChecker(value1.getClass()).equals(trace, value1, value2);
-
 			} finally {
 				trace.leave(value1);
 			}

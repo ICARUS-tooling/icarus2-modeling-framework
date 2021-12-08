@@ -27,9 +27,8 @@ import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.SecureClassLoader;
+import java.util.Arrays;
 import java.util.Collections;
 
 import javax.lang.model.element.Modifier;
@@ -49,11 +48,17 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import de.ims.icarus2.test.TestUtils;
+
 /**
  * @author Markus Gärtner
  *
  */
 public class FailOnConstructor {
+
+	static {
+		TestUtils.verifyCompiler();
+	}
 
 	/**
 	 * Creates a class that will always fail its initialization via the
@@ -118,7 +123,8 @@ public class FailOnConstructor {
 		try(JavaFileManager fileManager = createFileManager(sourceFile, classFile)) {
 
 			assertTrue(ToolProvider.getSystemJavaCompiler().getTask(
-					null, fileManager, null, null, null, Collections.singleton(sourceFile)).call());
+					null, fileManager, null, Arrays.asList("-source", "1.8", "-target", "1.8"),
+					null, Collections.singleton(sourceFile)).call());
 
 			ClassLoader classLoader = createClassLoader(classFile);
 
@@ -159,6 +165,8 @@ public class FailOnConstructor {
 	private static JavaFileObject createSource(String packageName,
 			String className, Class<?> baseClass, Class<? extends Exception> exceptionClass,
 			Class<?>[] constructorSig) {
+		System.out.printf("pck=%s class=%s base=%s exception=%s%n", packageName, className, baseClass, exceptionClass);
+
 		MethodSpec constructorSpec = constructorSig==null ?
 				createNoArgsConstructor(exceptionClass) : createConstructor(exceptionClass, constructorSig);
 
@@ -170,6 +178,8 @@ public class FailOnConstructor {
 				.build();
 
 		JavaFile javaFile = JavaFile.builder(packageName, typeSpec).build();
+
+		System.out.println(javaFile.toString());
 
 		return javaFile.toJavaFileObject();
 	}
@@ -207,22 +217,17 @@ public class FailOnConstructor {
 	}
 
 	private static ClassLoader createClassLoader(final ByteArrayJavaFileObject classFile) {
+		return new SecureClassLoader() {
+			@Override
+			protected Class<?> findClass(String name) throws ClassNotFoundException {
+				if(!classFile.getName().replace('/', '.').startsWith(name))
+					throw new ClassNotFoundException("Unknown class: "+name);
 
-		PrivilegedAction<ClassLoader> createLoader = () -> {
-			return new SecureClassLoader() {
-				@Override
-				protected Class<?> findClass(String name) throws ClassNotFoundException {
-					if(!classFile.getName().replace('/', '.').startsWith(name))
-						throw new ClassNotFoundException("Unknown class: "+name);
+				byte[] b = classFile.getBytes();
 
-					byte[] b = classFile.getBytes();
-
-					return super.defineClass(name, b, 0, b.length);
-				}
-			};
+				return super.defineClass(name, b, 0, b.length);
+			}
 		};
-
-		return AccessController.doPrivileged(createLoader);
 	}
 
 	private static class ByteArrayJavaFileObject extends SimpleJavaFileObject {
