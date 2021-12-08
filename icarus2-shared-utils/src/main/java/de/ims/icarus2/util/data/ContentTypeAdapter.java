@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.util.data;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
 /**
  * @author Markus Gärtner
@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 public class ContentTypeAdapter extends XmlAdapter<String, ContentType> {
 
 	/**
-	 * @see javax.xml.bind.annotation.adapters.XmlAdapter#unmarshal(java.lang.Object)
+	 * @see jakarta.xml.bind.annotation.adapters.XmlAdapter#unmarshal(java.lang.Object)
 	 */
 	@Override
 	public ContentType unmarshal(String v) throws Exception {
@@ -33,7 +33,7 @@ public class ContentTypeAdapter extends XmlAdapter<String, ContentType> {
 	}
 
 	/**
-	 * @see javax.xml.bind.annotation.adapters.XmlAdapter#marshal(java.lang.Object)
+	 * @see jakarta.xml.bind.annotation.adapters.XmlAdapter#marshal(java.lang.Object)
 	 */
 	@Override
 	public String marshal(ContentType v) throws Exception {
