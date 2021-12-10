@@ -45,6 +45,7 @@ import de.ims.icarus2.query.api.exp.BinaryOperations.StringMode;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.Expression;
 import de.ims.icarus2.query.api.exp.ExpressionFactory;
+import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
@@ -87,7 +88,6 @@ public class QueryOutputFactory {
 
 	private Boolean first;
 	private Long limit;
-	private Boolean percent;
 
 	/** Root context used for the entire query. */
 	private final EvaluationContext context;
@@ -130,34 +130,41 @@ public class QueryOutputFactory {
 		return resultConsumer;
 	}
 
-
-	private int getPayloadOffset(IqlExpression expression) {
-		return getPayloadOffset(expression.getContent());
+	private static String key(IqlExpression expression) {
+		String key = checkNotEmpty(expression.getContent());
+		Class<?> resultType = expression.getReturnType().orElse(null);
+		if(resultType!=null) {
+			key = "("+resultType.getTypeName()+")"+key;
+		}
+		return key;
 	}
 
-	private int getPayloadOffset(String expression) {
-		checkNotEmpty(expression);
-		int index = exp2PayloadMap.getOrDefault(expression, UNSET_INT);
+	private int getPayloadOffset(IqlExpression expression) {
+		requireNonNull(expression);
+		String key = key(expression);
+		int index = exp2PayloadMap.getOrDefault(key, UNSET_INT);
 		if(index==UNSET_INT)
-			throw new IllegalArgumentException("unknown expression: "+expression);
+			throw new IllegalArgumentException("unknown expression: "+key);
 		return index;
 	}
 
 	private Extractor ensureExtractor(IqlExpression expression) {
-		//TODO we ignore the optionally set explicit result type of IqlExpression
-		return ensureExtractor(expression.getContent());
-	}
-
-	private Extractor ensureExtractor(String expression) {
-		checkNotEmpty(expression);
-		int offset = exp2PayloadMap.getOrDefault(expression, UNSET_INT);
+		requireNonNull(expression);
+		TypeInfo resultTypeOverride = expression.getReturnType().map(TypeInfo::of).orElse(null);
+		String key = key(expression);
+		int offset = exp2PayloadMap.getOrDefault(key, UNSET_INT);
 		if(offset==UNSET_INT) {
 			ExpressionFactory expressionFactory = new ExpressionFactory(context);
-			Expression<?> exp = expressionFactory.process(expression);
+			final Expression<?> exp;
+			if(resultTypeOverride!=null) {
+				exp = expressionFactory.process(expression.getContent(), resultTypeOverride);
+			} else {
+				exp = expressionFactory.process(expression.getContent());
+			}
 			offset = extractors.size();
 			Extractor extractor = createExtractor(offset, exp);
 			extractors.add(extractor);
-			exp2PayloadMap.put(expression, offset);
+			exp2PayloadMap.put(key, offset);
 		}
 		return extractors.get(offset);
 	}

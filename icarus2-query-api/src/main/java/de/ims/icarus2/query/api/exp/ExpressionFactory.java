@@ -70,7 +70,6 @@ import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.exp.Expression.ListExpression;
 import de.ims.icarus2.query.api.exp.Expressions.PathProxy;
 import de.ims.icarus2.query.api.iql.AntlrUtils;
-import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AdditiveOpContext;
 import de.ims.icarus2.query.api.iql.antlr.IQLParser.AnnotationAccessContext;
@@ -159,14 +158,10 @@ public class ExpressionFactory {
 	public CountingStats<StatsField,String> getStats() { return stats; }
 
 	/**
-	 * Transforms a {@link IqlConstraint constraint} object into a boolean
-	 * expression that is linked to the underlying {@link EvaluationContext}.
-	 * <p>
-	 * If the {@code constraint} is already marked as {@link IqlConstraint#isSolved() solved},
-	 * this method will only return a constant expression bearing the corresponding
-	 * {@link IqlConstraint#isSolvedAs() value}.
+	 * Parses the given {@code expression} into an actual {@link Expression} object
+	 * while honoring the settings and restrictions of the underlying {@link EvaluationContext}.
 	 *
-	 * @param constraint
+	 * @param expression
 	 * @return
 	 */
 	public Expression<?> process(String expression) {
@@ -180,6 +175,24 @@ public class ExpressionFactory {
 		} catch(RecognitionException e) {
 			throw AntlrUtils.asSyntaxException(e, "Failed to parse 'expression'");
 		}
+	}
+
+	/**
+	 * Parses the given {@code expression} into an actual {@link Expression} object
+	 * while honoring the settings and restrictions of the underlying {@link EvaluationContext}.
+	 * <p>
+	 * In contrast to {@link #process(String)} this method also overrides the result
+	 * type of the created expression to match {@code resultTypeOverride}.
+	 * <p>
+	 * Note that this might cause errors depending on the configuration, when for instance
+	 * certain types of casts are deactivated.
+	 *
+	 * @param expression
+	 * @return
+	 */
+	public Expression<?> process(String expression, TypeInfo resultTypeOverride) {
+		Expression<?> exp = process(expression);
+		return ensureType(resultTypeOverride, exp);
 	}
 
 	private boolean isAllowUnicode() {
@@ -281,6 +294,26 @@ public class ExpressionFactory {
 				"Unknown alterative: "+ctx.getClass().getCanonicalName(), asFragment(ctx));
 	}
 
+	private void checkConversionBlockerNotSet(QuerySwitch qs, TypeInfo type) {
+		if(context.isSwitchSet(qs))
+			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
+					"Conversion of "+type+" to BOOLEAN disabled by switch "+qs);
+	}
+
+	private void checkBooleanConversion(Expression<?> source) {
+		TypeInfo type = source.getResultType();
+		checkConversionBlockerNotSet(QuerySwitch.ANY_TO_BOOLEAN_OFF, type);
+		if(TypeInfo.isInteger(type)) {
+			checkConversionBlockerNotSet(QuerySwitch.INT_TO_BOOLEAN_OFF, type);
+		} if(TypeInfo.isFloatingPoint(type)) {
+			checkConversionBlockerNotSet(QuerySwitch.FLOAT_TO_BOOLEAN_OFF, type);
+		} if(TypeInfo.isText(type)) {
+			checkConversionBlockerNotSet(QuerySwitch.TEXT_TO_BOOLEAN_OFF, type);
+		} else {
+			checkConversionBlockerNotSet(QuerySwitch.OBJECT_TO_BOOLEAN_OFF, type);
+		}
+	}
+
 	private Expression<?> ensureNumerical(Expression<?> source) {
 		if(!source.isNumerical())
 			throw new QueryException(QueryErrorCode.TYPE_MISMATCH,
@@ -316,6 +349,7 @@ public class ExpressionFactory {
 	private Expression<Primitive<Boolean>> ensureBoolean(Expression<?> source) {
 		if(!source.isBoolean()) {
 			if(isAllowAutoCast()) {
+				checkBooleanConversion(source);
 				return Conversions.toBoolean(source);
 			}
 
@@ -340,6 +374,10 @@ public class ExpressionFactory {
 	}
 
 	private Expression<?> ensureType(TypeInfo type, Expression<?> source) {
+		if(type.equals(source.getResultType())) {
+			 return source;
+		}
+
 		if(TypeInfo.isInteger(type)) {
 			return ensureInteger(source);
 		} else if(TypeInfo.isFloatingPoint(type)) {
@@ -350,7 +388,7 @@ public class ExpressionFactory {
 			return ensureText(source);
 		}
 
-		return source;
+		return ensureGeneric(type, source);
 	}
 
 	private Expression<? extends Item> ensureItem(Expression<?> source) {
@@ -360,9 +398,19 @@ public class ExpressionFactory {
 		return castItem(source);
 	}
 
+	private Expression<?> ensureGeneric(TypeInfo tye, Expression<?> source) {
+		return Cast.cast(tye, source);
+	}
+
 	private Expression<Primitive<Long>>[] ensureInteger(Expression<?>[] source) {
 		return Stream.of(source)
 				.map(this::ensureInteger)
+				.toArray(Expression[]::new);
+	}
+
+	private Expression<?>[] ensureGeneric(TypeInfo type, Expression<?>[] source) {
+		return Stream.of(source)
+				.map(exp -> ensureGeneric(type, exp))
 				.toArray(Expression[]::new);
 	}
 
@@ -409,7 +457,7 @@ public class ExpressionFactory {
 			return ensureText(source);
 		}
 
-		return source;
+		return ensureGeneric(type, source);
 	}
 
 	private ListExpression<?, ?> ensureList(Expression<?> source) {

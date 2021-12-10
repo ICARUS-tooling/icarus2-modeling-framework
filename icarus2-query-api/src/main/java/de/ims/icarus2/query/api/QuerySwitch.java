@@ -44,7 +44,7 @@ public enum QuerySwitch {
 	AUTOCAST_OFF("autocast.off", "Disables automatic casting between compatible or convertible types."),
 
 	EXPANSION_OFF("expansion.off", "Effectively shuts down value expansion."),
-	STRING_TO_BOOLEAN_OFF("string2bool.off", "Deactivates the interpretation of strings as boolean values."),
+	TEXT_TO_BOOLEAN_OFF("text2bool.off", "Deactivates the interpretation of text as boolean values."),
 	INT_TO_BOOLEAN_OFF("int2bool.off", "Deactivates the interpretation of integers as boolean values."),
 	FLOAT_TO_BOOLEAN_OFF("float2bool.off", "Deactivates the interpretation of floating point numbers as boolean values."),
 	OBJECT_TO_BOOLEAN_OFF("obj2bool.off", "Deactivates the interpretation of arbitrary objects as boolean values."),

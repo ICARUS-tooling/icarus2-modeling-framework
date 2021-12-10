@@ -152,10 +152,9 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 	 */
 	@Override
 	public final void execute(QueryWorker worker) throws InterruptedException {
-		final ThreadVerifier threadVerifier = worker.getThreadVerifier();
 		// Make sure we're on the right thread to begin with!
 		if(Tripwire.ACTIVE) {
-			threadVerifier.checkThread();
+			worker.getThreadVerifier().checkThread();
 		}
 
 		final Matcher<Container> matcher = createMatcher(worker);
