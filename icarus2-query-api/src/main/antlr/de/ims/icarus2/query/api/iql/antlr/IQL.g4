@@ -329,7 +329,7 @@ groupExpression
  * engine will pick.
  */
 resultStatement
-	: (LIMIT FIRST? limit=unsignedIntegerLiteral PERCENT?)? orderExpressionList? EOF
+	: (LIMIT FIRST? limit=unsignedIntegerLiteral )? orderExpressionList? EOF
 	;
 	
 orderExpressionList

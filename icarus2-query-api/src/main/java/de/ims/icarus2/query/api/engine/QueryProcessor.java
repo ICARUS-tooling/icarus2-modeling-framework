@@ -337,8 +337,6 @@ public class QueryProcessor {
 				.map(AntlrUtils::cleanNumberLiteral)
 				.map(Long::parseLong)
 				.ifPresent(result::setLimit);
-			// Optional percentage flag
-			result.setPercent(ctx.PERCENT()!=null);
 			// Optional 'first' flag
 			result.setFirst(ctx.FIRST()!=null);
 			// Optional order instructions
@@ -350,12 +348,11 @@ public class QueryProcessor {
 				sortings.forEach(result::addSorting);
 			}
 
-			if(!primary && (result.isPercent()
-					|| result.isFirst()
+			if(!primary && (result.isFirst()
 					|| result.getLimit().isPresent()
 					|| !result.getSortings().isEmpty())) {
 				reportBuilder.addWarning(QueryErrorCode.INCORRECT_USE,
-						"Non-primary result statement contains sorting/percent/limit declarations: {}",
+						"Non-primary result statement contains sorting/limit declarations: {}",
 						textOf(ctx));
 
 			}

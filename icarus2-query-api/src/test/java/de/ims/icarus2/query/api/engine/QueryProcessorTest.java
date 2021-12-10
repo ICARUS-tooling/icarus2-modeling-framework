@@ -394,22 +394,6 @@ public class QueryProcessorTest {
 			assertThat(result.getLimit())
 				.isPresent()
 				.hasValue(123);
-			assertThat(result.isPercent())
-				.isFalse();
-			assertThat(result.getSortings())
-				.isEmpty();
-		}
-
-		@Test
-		void testProcessResultLimitPercent() {
-			String rawResult = "LIMIT 50%";
-			IqlResult result = new IqlResult();
-			new QueryProcessor().processResult(rawResult, result, true);
-			assertThat(result.getLimit())
-				.isPresent()
-				.hasValue(50);
-			assertThat(result.isPercent())
-				.isTrue();
 			assertThat(result.getSortings())
 				.isEmpty();
 		}
@@ -422,8 +406,6 @@ public class QueryProcessorTest {
 			new QueryProcessor().processResult(rawResult, result, true);
 			assertThat(result.getLimit())
 				.isEmpty();
-			assertThat(result.isPercent())
-				.isFalse();
 			assertThat(result.getSortings())
 				.hasSize(1);
 			assertSorting(result.getSortings().get(0), "$token.value", order);
@@ -431,14 +413,12 @@ public class QueryProcessorTest {
 
 		@Test
 		void testProcessStackedResult() {
-			String rawResult = "LIMIT 66% ORDER BY exp1 ASC, exp2 DESC, exp3 ASC";
+			String rawResult = "LIMIT 66 ORDER BY exp1 ASC, exp2 DESC, exp3 ASC";
 			IqlResult result = new IqlResult();
 			new QueryProcessor().processResult(rawResult, result, true);
 			assertThat(result.getLimit())
 				.isPresent()
 				.hasValue(66);
-			assertThat(result.isPercent())
-				.isTrue();
 			List<IqlSorting> sortings = result.getSortings();
 			assertThat(sortings)
 				.hasSize(3);
