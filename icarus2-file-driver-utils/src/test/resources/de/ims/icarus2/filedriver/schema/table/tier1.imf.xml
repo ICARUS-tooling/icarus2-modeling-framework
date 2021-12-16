@@ -18,8 +18,7 @@
 
 -->
 <imf:manifest xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/manifest corpus.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<imf:corpora>
 		<imf:corpus editable="false" id="testCorpus">
 			<imf:rootContext id="test.tier1.format" independent="true" name="Tier-1 Tabular Format" primaryLayer="token" foundationLayer="token">

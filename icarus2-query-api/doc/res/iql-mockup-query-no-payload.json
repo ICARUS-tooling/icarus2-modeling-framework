@@ -1,4 +1,4 @@
-{ "@context" : "http://www.ims.uni-stuttgart.de/icarus/v2/jsonld/iql/query" 
+{ "@context" : "http://www.ims.uni-stuttgart.de/icarus/v2/jsonld/iql/query",
   "@type" : "iql:Query",
   "@id" : "query/000001",
   "iql:imports" : [ {

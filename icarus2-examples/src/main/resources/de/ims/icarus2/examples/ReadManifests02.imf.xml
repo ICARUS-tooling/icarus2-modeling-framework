@@ -18,8 +18,7 @@
 
 -->
 <imf:manifest  xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.ims.uni-stuttgart.de/icarus/xml/manifest http://www.ims.uni-stuttgart.de/icarus/xml/manifest/corpus.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<imf:templates>
 		<imf:context id="derivedContext" templateId="exampleContext">
 			<!-- define additional local fields/settings -->
