@@ -38,6 +38,8 @@ import java.util.function.LongFunction;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.model.api.ModelTestUtils;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -156,7 +158,8 @@ public class QueryTestUtils {
 		}
 
 		@Override
-		public ElementInfo resolveElement(LaneInfo lane, IqlProperElement element) {
+		public ElementInfo resolveElement(LaneInfo lane, IqlProperElement element,
+				@Nullable ElementInfo parentElement) {
 			return new ElementInfo(element, TypeInfo.ITEM, list(mock(LayerRef.class)));
 		}
 

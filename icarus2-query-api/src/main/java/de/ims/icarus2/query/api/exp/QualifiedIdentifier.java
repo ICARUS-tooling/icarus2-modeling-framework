@@ -95,14 +95,6 @@ public final class QualifiedIdentifier {
 
 	public boolean hasHost() { return host!=null; }
 
-	public QualifiedIdentifier elementIdentifier() {
-		return of(element);
-	}
-
-	public QualifiedIdentifier hostIdentifier() {
-		return of(host);
-	}
-
 	@Override
 	public int hashCode() { return rawText.hashCode(); }
 
@@ -116,6 +108,7 @@ public final class QualifiedIdentifier {
 		return false;
 	}
 
+	/** Returns the raw string from which this identifier was parsed. */
 	@Override
 	public String toString() { return rawText; }
 }

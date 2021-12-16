@@ -62,10 +62,15 @@ public class EngineSettings implements Cloneable {
 
 	public enum IntField {
 
+		/** Size of batches processed by a single thread */
 		BATCH_SIZE(1<<7),
+		/** Buffer size for the collector used by a single thread */
 		COLLECTOR_BUFFER_SIZE(1<<10),
+		/** Starting size of the shared main buffer that final result entries end up in */
 		INITIAL_MAIN_BUFFER_SIZE(1<<14),
+		/** Initial size of additional utility buffers, e.g. for sorting or value substitution */
 		INITIAL_SECONDARY_BUFFER_SIZE(1<<12),
+		/** maximum number of worker threads to use in parallel */
 		WORKER_LIMIT(UNSET_INT),
 		;
 

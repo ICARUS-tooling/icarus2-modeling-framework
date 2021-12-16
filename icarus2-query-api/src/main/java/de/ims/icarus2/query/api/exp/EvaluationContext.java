@@ -314,7 +314,9 @@ public abstract class EvaluationContext {
 			// First assign the fields we need for resolving other parts
 			parent = builder.parent;
 
-			element = getCorpusData().resolveElement(requireLaneInfo(), builder.element);
+			ElementInfo parentElement = parent instanceof ElementContext ?
+					((ElementContext)parent).requireElementInfo() : null;
+			element = getCorpusData().resolveElement(requireLaneInfo(), builder.element, parentElement);
 
 			itemStore = CloseableThreadLocal.withInitial(this::createStore);
 		}

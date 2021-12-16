@@ -64,6 +64,8 @@ public class Substitutor<T> implements Closeable, ToIntFunction<T>, IntFunction<
 		clearOnClose = true;
 	}
 
+	/** Encodes the given {@code value} into an integer replacement.
+	 */
 	@Override
 	public int applyAsInt(T value) {
 		if(value==null) {
@@ -80,6 +82,7 @@ public class Substitutor<T> implements Closeable, ToIntFunction<T>, IntFunction<
 		return index+1;
 	}
 
+	/** Decodes the given integer replacement back into a proper object */
 	@Override
 	public T apply(int value) {
 		return value==EMPTY_VALUE ? null : buffer.get(value-1);
