@@ -29,6 +29,7 @@ import de.ims.icarus2.util.eval.ExpressionFactory;
  */
 class ExpressionXmlHandlerTest {
 
+	@SuppressWarnings("unused")
 	private void assertParse(String xml, ExpressionFactory factory) {
 		//TODO currently no good strategy for actually testing textual expression?
 	}

@@ -36,14 +36,13 @@ public class Messages {
 	 * @author Markus Gärtner
 	 *
 	 */
-	@SuppressWarnings("removal")
 	private static final class CallingClass extends SecurityManager {
 	    public static final CallingClass INSTANCE = new CallingClass();
 
 	    /**
 	     * @see SecurityManager#getClassContext()
 	     */
-	    @SuppressWarnings({ "rawtypes", "deprecation" })
+	    @SuppressWarnings({ "rawtypes" })
 		public Class[] getCallingClasses() {
 	        return getClassContext();
 	    }
