@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -465,6 +466,10 @@ public final class CollectionUtils {
 	public static boolean firstSetBoolean(Map<String, String> map, boolean defaultValue, String...keys) {
 		String val = firstSet(map, keys);
 		return val==null ? defaultValue : Boolean.parseBoolean(val);
+	}
+
+	public static <T> T[] toArray(Collection<T> collection, IntFunction<T[]> arrayGen) {
+		return collection.toArray(arrayGen.apply(collection.size()));
 	}
 
 	public static final Iterator<Object> EMPTY_ITERATOR = new Iterator<Object>() {
