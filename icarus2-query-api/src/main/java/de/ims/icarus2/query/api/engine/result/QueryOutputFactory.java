@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 
 import javax.annotation.Nullable;
@@ -38,6 +40,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
+import de.ims.icarus2.query.api.QuerySwitch;
 import de.ims.icarus2.query.api.engine.EngineSettings;
 import de.ims.icarus2.query.api.engine.EngineSettings.IntField;
 import de.ims.icarus2.query.api.engine.QueryOutput;
@@ -48,9 +51,12 @@ import de.ims.icarus2.query.api.exp.ExpressionFactory;
 import de.ims.icarus2.query.api.exp.TypeInfo;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
+import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
+import de.ims.icarus2.query.api.iql.IqlStream;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.function.CharBiPredicate;
 import de.ims.icarus2.util.function.IntBiPredicate;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -83,9 +89,6 @@ public class QueryOutputFactory {
 
 	private EngineSettings settings = new EngineSettings();
 
-	private Boolean unicodeOff;
-	private Boolean ignoreCase;
-
 	private Boolean first;
 	private Long limit;
 
@@ -100,8 +103,8 @@ public class QueryOutputFactory {
 	 *  and the associated container is not available anymore  */
 	private Consumer<ResultEntry> resultConsumer;
 
-	private ToIntFunction<CharSequence> encoder;
-	private IntFunction<CharSequence> decoder;
+	private Supplier<ToIntFunction<CharSequence>> encoder;
+	private Supplier<IntFunction<CharSequence>> decoder;
 
 	// Internally populated fields
 
@@ -115,11 +118,11 @@ public class QueryOutputFactory {
 
 	private ToIntFunction<CharSequence> encoder() {
 		checkState("No encoder defined", encoder!=null);
-		return encoder;
+		return encoder.get();
 	}
 	private IntFunction<CharSequence> decoder() {
 		checkState("No decoder defined", decoder!=null);
-		return decoder;
+		return decoder.get();
 	}
 	private Consumer<Match> matchConsumer() {
 		checkState("No match consumer defined", matchConsumer!=null);
@@ -281,9 +284,10 @@ public class QueryOutputFactory {
 		} else if(expression.isFloatingPoint()) {
 			return new Sorter.FloatingPointSorter(offset, sign, next);
 		} else if(expression.isText()) {
-			StringMode stringMode = getBool(ignoreCase) ? StringMode.IGNORE_CASE : StringMode.DEFAULT;
+			StringMode stringMode = context.isSwitchSet(QuerySwitch.STRING_CASE_OFF) ?
+					StringMode.IGNORE_CASE : StringMode.DEFAULT;
 
-			if(getBool(unicodeOff)) {
+			if(context.isSwitchSet(QuerySwitch.STRING_UNICODE_OFF)) {
 				CharBiPredicate comparator = stringMode.getCharComparator();
 				return new Sorter.AsciiSorter(offset, sign, decoder(), comparator, next);
 			}
@@ -354,5 +358,108 @@ public class QueryOutputFactory {
 
 		// No fancy extras, just forward the matches
 		return UnbufferedOutput.nonExtracting(matchConsumer());
+	}
+
+	// Setup methods
+
+	public QueryOutputFactory resultTypes(ResultType...resultTypes) {
+		requireNonNull(sortings);
+		checkArgument("result types array empty", resultTypes.length>0);
+		CollectionUtils.feedItems(this.resultTypes, resultTypes);
+		return this;
+	}
+
+	public QueryOutputFactory sortings(IqlSorting...sortings) {
+		requireNonNull(sortings);
+		checkArgument("sortings array empty", sortings.length>0);
+		CollectionUtils.feedItems(this.sortings, sortings);
+		return this;
+	}
+
+	public QueryOutputFactory groups(IqlGroup...groups) {
+		requireNonNull(groups);
+		checkArgument("groups array empty", groups.length>0);
+		CollectionUtils.feedItems(this.groups, groups);
+		return this;
+	}
+
+	public QueryOutputFactory settings(EngineSettings settings) {
+		this.settings = requireNonNull(settings);
+		return this;
+	}
+
+	public QueryOutputFactory first(boolean first) {
+		checkState("'first' flag already set", this.first==null);
+		this.first = Boolean.valueOf(first);
+		return this;
+	}
+
+	public QueryOutputFactory limit(long limit) {
+		checkState("limit already set", this.limit==null);
+		this.limit = Long.valueOf(limit);
+		return this;
+	}
+
+	/** Consumer to intercept a single match when the result state is stable
+	 *  and the associated container is not available anymore. */
+	public QueryOutputFactory matchConsumer(Consumer<Match> matchConsumer) {
+		requireNonNull(matchConsumer);
+		checkState("match consumer already set", this.matchConsumer==null);
+		this.matchConsumer = matchConsumer;
+		return this;
+	}
+
+	/** Consumer to intercept a single match when the result state is stable
+	 *  and the associated container is not available anymore  */
+	public QueryOutputFactory resultConsumer(Consumer<ResultEntry> resultConsumer) {
+		requireNonNull(resultConsumer);
+		checkState("result consumer already set", this.resultConsumer==null);
+		this.resultConsumer = resultConsumer;
+		return this;
+	}
+
+	public QueryOutputFactory encoder(Supplier<ToIntFunction<CharSequence>> encoder) {
+		requireNonNull(encoder);
+		checkState("encoder already set", this.encoder==null);
+		this.encoder = encoder;
+		return this;
+	}
+
+	public QueryOutputFactory decoder(Supplier<IntFunction<CharSequence>> decoder) {
+		requireNonNull(decoder);
+		checkState("decoder already set", this.decoder==null);
+		this.decoder = decoder;
+		return this;
+	}
+
+	public QueryOutputFactory applyFromResult(IqlResult result) {
+		requireNonNull(result);
+		result.getLimit().ifPresent(this::limit);
+		first(result.isFirst());
+
+		Set<ResultType> resultTypes = result.getResultTypes();
+		if(!resultTypes.isEmpty()) {
+			resultTypes(CollectionUtils.toArray(resultTypes, ResultType[]::new));
+		}
+
+		List<IqlSorting> sortings = result.getSortings();
+		if(!sortings.isEmpty()) {
+			sortings(CollectionUtils.toArray(sortings, IqlSorting[]::new));
+		}
+
+		return this;
+	}
+
+	public QueryOutputFactory applyFromStream(IqlStream stream) {
+		requireNonNull(stream);
+
+		List<IqlGroup> groups = stream.getGrouping();
+		if(!groups.isEmpty()) {
+			groups(CollectionUtils.toArray(groups, IqlGroup[]::new));
+		}
+
+		applyFromResult(stream.getResult());
+
+		return this;
 	}
 }
