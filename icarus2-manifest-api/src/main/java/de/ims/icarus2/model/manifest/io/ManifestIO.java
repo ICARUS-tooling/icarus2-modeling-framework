@@ -41,7 +41,7 @@ public class ManifestIO {
 
 	private static final ManifestRegistry NO_REGISTRY = null;
 
-	private static List<Manifest> load0(ManifestLocation location, ManifestRegistry registry, int limit)
+	private static List<? extends Manifest> load0(ManifestLocation location, ManifestRegistry registry, int limit)
 			throws SAXException, IOException {
 		if(registry==null) {
 			registry = new DefaultManifestRegistry();
@@ -53,7 +53,7 @@ public class ManifestIO {
 				.source(location)
 				.build();
 
-		List<Manifest> loadedManifests = location.isTemplate() ?
+		List<? extends Manifest> loadedManifests = location.isTemplate() ?
 				reader.parseTemplates() : reader.parseCorpora();
 
 		if(loadedManifests.size()==0)

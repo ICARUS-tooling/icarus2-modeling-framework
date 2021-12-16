@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 import javax.xml.parsers.ParserConfigurationException;
@@ -81,6 +82,7 @@ import de.ims.icarus2.util.lang.Lazy;
 import de.ims.icarus2.util.xml.UnexpectedTagException;
 import de.ims.icarus2.util.xml.XmlHandler;
 import de.ims.icarus2.util.xml.XmlUtils;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * Important constraints:
@@ -119,6 +121,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 	private final String namespaceUri;
 	private final String namespacePrefix;
 
+	private final Consumer<Manifest> templateProcessor;
+	private final Consumer<CorpusManifest> corpusProcessor;
+
 	private static final Lazy<Schema> schema = XmlUtils.createShareableSchemaSource(
 			ManifestXmlReader.class.getResource("corpus.xsd"));
 
@@ -138,6 +143,8 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		this.registry = builder.getRegistry();
 		this.namespacePrefix = builder.getNamespacePrefix();
 		this.namespaceUri = builder.getNamespaceUri();
+		this.templateProcessor = builder.getTemplateProcessor();
+		this.corpusProcessor = builder.getCorpusProcessor();
 
 		List<ManifestLocation> sources = builder.getSources();
 		sources.forEach(this::addSource);
@@ -166,9 +173,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		return this;
 	}
 
-	private List<Manifest> parseSources(Set<ManifestLocation> sources, XMLReader reader, InputSource inputSource) throws IOException, SAXException {
+	private void parseSources(Set<ManifestLocation> sources, XMLReader reader, InputSource inputSource,
+			Consumer<Manifest> action) throws IOException, SAXException {
 
-		List<Manifest> manifests = new ArrayList<>();
 		for(ManifestLocation source : sources) {
 			try (Reader in = source.getInput()) {
 				RootHandlerProxy handler = new RootHandlerProxy(source, new ManifestCollector());
@@ -182,11 +189,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 				reader.parse(inputSource);
 
-				manifests.addAll(handler.getTopLevelManifests());
+				handler.getTopLevelManifests().forEach(action);
 			}
 		}
-
-		return manifests;
 	}
 
 	/**
@@ -203,14 +208,24 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			throw new IllegalStateException("Reading already in progress"); //$NON-NLS-1$
 
 		try {
-
 			XMLReader reader = newReader();
 			InputSource inputSource = new InputSource();
-
-			return parseSources(templateSources, reader, inputSource);
+			return parseTemplates0(reader, inputSource);
 		} finally {
 			reading.set(false);
 		}
+	}
+
+	private List<Manifest> parseTemplates0(XMLReader reader, InputSource inputSource) throws SAXException, IOException {
+		List<Manifest> results = new ObjectArrayList<>();
+		Consumer<Manifest> action = results::add;
+		if(templateProcessor!=null) {
+			action = templateProcessor.andThen(action);
+		}
+
+		parseSources(templateSources, reader, inputSource, action);
+
+		return results;
 	}
 
 	/**
@@ -221,20 +236,35 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	public List<Manifest> parseCorpora() throws SAXException, IOException {
+	public List<CorpusManifest> parseCorpora() throws SAXException, IOException {
 
 		if(!reading.compareAndSet(false, true))
 			throw new IllegalStateException("Reading already in progress"); //$NON-NLS-1$
 
 		try {
-
 			XMLReader reader = newReader();
 			InputSource inputSource = new InputSource();
-
-			return parseSources(corpusSources, reader, inputSource);
+			return parseCorpora0(reader, inputSource);
 		} finally {
 			reading.set(false);
 		}
+	}
+
+	private List<CorpusManifest> parseCorpora0(XMLReader reader, InputSource inputSource) throws SAXException, IOException {
+		List<CorpusManifest> results = new ObjectArrayList<>();
+		Consumer<Manifest> action = m -> results.add((CorpusManifest) m);
+		if(corpusProcessor!=null) {
+			action = m -> {
+				CorpusManifest cm = (CorpusManifest)m;
+				corpusProcessor.accept(cm);
+				results.add(cm);
+			};
+		}
+
+
+		parseSources(corpusSources, reader, inputSource, action);
+
+		return results;
 	}
 
 	public ManifestXmlReader readAndRegisterAll() throws IOException, SAXException {
@@ -248,15 +278,13 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			InputSource inputSource = new InputSource();
 
 			// Read and register all template manifests (use batch method!!)
-			registry.addTemplates(parseSources(templateSources, reader, inputSource));
+			registry.addTemplates(parseTemplates0(reader, inputSource));
 
 			// Read in, build and register all live corpora
-			for(Manifest manifest : parseSources(corpusSources, reader, inputSource)) {
-				CorpusManifest corpusManifest = (CorpusManifest) manifest;
-
+			for(CorpusManifest manifest : parseCorpora0(reader, inputSource)) {
 				//TODO instantiate a fresh new corpus manifest with proper linking!
 
-				registry.addCorpusManifest(corpusManifest);
+				registry.addCorpusManifest(manifest);
 			}
 		} finally {
 			reading.set(false);
@@ -679,6 +707,9 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 
 		private final List<ManifestLocation> sources = new ArrayList<>();
 
+		private Consumer<Manifest> templateProcessor;
+		private Consumer<CorpusManifest> corpusProcessor;
+
 		private Builder() {
 			// no-op
 		}
@@ -710,6 +741,16 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 		@Guarded(methodType=MethodType.GETTER)
 		public List<ManifestLocation> getSources() {
 			return Collections.unmodifiableList(sources);
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		public Consumer<Manifest> getTemplateProcessor() {
+			return templateProcessor;
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		public Consumer<CorpusManifest> getCorpusProcessor() {
+			return corpusProcessor;
 		}
 
 		@Guarded(methodType=MethodType.BUILDER)
@@ -764,6 +805,26 @@ public class ManifestXmlReader extends ManifestXmlProcessor {
 			checkArgument(locations.length>0);
 
 			CollectionUtils.feedItems(sources, locations);
+
+			return thisAsCast();
+		}
+
+		@Guarded(methodType=MethodType.BUILDER)
+		public Builder templateProcessor(Consumer<Manifest> templateProcessor) {
+			requireNonNull(templateProcessor);
+			checkState("Template processor already set", this.templateProcessor==null);
+
+			this.templateProcessor = templateProcessor;
+
+			return thisAsCast();
+		}
+
+		@Guarded(methodType=MethodType.BUILDER)
+		public Builder corpusProcessor(Consumer<CorpusManifest> corpusProcessor) {
+			requireNonNull(corpusProcessor);
+			checkState("Corpus processor already set", this.corpusProcessor==null);
+
+			this.corpusProcessor = corpusProcessor;
 
 			return thisAsCast();
 		}

@@ -97,7 +97,7 @@ public class ManifestXmlTestUtils {
 
 		reader.addSource(inputLocation);
 
-		List<Manifest> manifests;
+		List<? extends Manifest> manifests;
 		if(isTemplate) {
 			manifests = reader.parseTemplates();
 		} else {
