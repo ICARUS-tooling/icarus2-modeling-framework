@@ -23,6 +23,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -72,7 +73,8 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 	protected final QueryOutput output;
 	protected final BiConsumer<Thread, Throwable> exceptionHandler;
 	protected final int batchSize;
-	//TODO
+
+	protected final List<Closeable> closeables;
 
 	protected SingleStreamJob(Builder builder) {
 		query = builder.getQuery();
@@ -81,6 +83,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		exceptionHandler = builder.getExceptionHandler();
 		batchSize = builder.getBatchSize();
 		corpusData = builder.getCorpusData();
+		closeables = new ObjectArrayList<>(builder.getCloseables());
 	}
 
 	@Override
@@ -239,7 +242,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 		MultiLaneJob(Builder builder) {
 			super(builder);
-			patterns = builder.getPatterns().toArray(new StructurePattern[0]);
+			patterns = CollectionUtils.toArray(builder.getPatterns(), StructurePattern[]::new);
 			assert patterns.length>1;
 
 			cachableBridge = new boolean[patterns.length-1];
@@ -328,6 +331,8 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		private BiConsumer<Thread, Throwable> exceptionHandler;
 		private Integer batchSize;
 
+		private final List<Closeable> closeables = new ObjectArrayList<>();
+
 		private Builder() { /* no-op */ }
 
 		public IqlQuery getQuery() { return query; }
@@ -355,6 +360,13 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			requireNonNull(patterns);
 			checkArgument("patterns list empty", !patterns.isEmpty());
 			this.patterns.addAll(patterns);
+			return this;
+		}
+
+		public List<Closeable> getCloseables() { return CollectionUtils.unmodifiableListProxy(closeables); }
+		public Builder addCloseable(Closeable...closeables) {
+			requireNonNull(closeables);
+			CollectionUtils.feedItems(this.closeables, closeables);
 			return this;
 		}
 
