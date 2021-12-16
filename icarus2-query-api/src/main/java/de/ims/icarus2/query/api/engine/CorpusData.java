@@ -20,13 +20,16 @@
 package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -34,10 +37,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.LongFunction;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.DependencyType;
 import de.ims.icarus2.model.api.layer.HighlightLayer;
@@ -45,6 +56,8 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
@@ -55,6 +68,7 @@ import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -72,8 +86,18 @@ import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.collections.CollectionUtils;
+import de.ims.icarus2.util.collections.set.DataSet;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
@@ -94,8 +118,10 @@ public abstract class CorpusData implements AutoCloseable {
 
 	/** Retrieve information about the specified lane */
 	public abstract LaneInfo resolveLane(IqlLane lane);
-	/** Retrieve information about the specified element inside the given lane */
-	public abstract ElementInfo resolveElement(LaneInfo lane, IqlProperElement element);
+	/** Retrieve information about the specified element inside the given lane.
+	 * For nested elements, the immediate parent must be supplied. */
+	// TODO should be make it explicit that 'parent' must be of type IqlTreeNode ?
+	public abstract ElementInfo resolveElement(LaneInfo lane, IqlProperElement element, @Nullable ElementInfo parentElement);
 	/** Resolve the given binding and return mappings for all the contained members */
 	public abstract Map<String, BindingInfo> bind(IqlBinding binding);
 
@@ -111,14 +137,29 @@ public abstract class CorpusData implements AutoCloseable {
 	@Override
 	public abstract void close();
 
-	public static abstract class LayerRef {
+	public static class LayerRef {
 		private final String id;
 
-		protected LayerRef(String id) { this.id = requireNonNull(id); }
+		LayerRef(String id) { this.id = requireNonNull(id); }
 
 		public final String getId() { return id; }
 
-//		public CorpusData getSource() { return CorpusData.this; }
+		@Override
+		public int hashCode() { return id.hashCode(); }
+
+		@Override
+		public boolean equals(Object obj) {
+			if(this==obj) {
+				return true;
+			} else if(obj instanceof LayerRef) {
+				return id.equals(((LayerRef)obj).id);
+			}
+			return false;
+		}
+
+		@Override
+		public String toString() { return "LayerRef@"+id; }
+
 	}
 
 	public static final class CorpusBacked extends CorpusData {
@@ -133,8 +174,6 @@ public abstract class CorpusData implements AutoCloseable {
 			typeTranslation.put(ManifestType.ANNOTATION_LAYER_MANIFEST, TypeInfo.ANNOTATION_LAYER);
 			typeTranslation.put(ManifestType.HIGHLIGHT_LAYER_MANIFEST, TypeInfo.of(HighlightLayer.class));
 		}
-
-		private final Corpus corpus;
 
 		/**
 		 *  Contains additional layers that have not received a dedicated reference in the
@@ -168,7 +207,6 @@ public abstract class CorpusData implements AutoCloseable {
 
 		private CorpusBacked(Builder builder) {
 
-			corpus = builder.corpus;
 			scope = builder.scope;
 			layers = new Object2ObjectOpenHashMap<>(builder.namedLayers);
 
@@ -246,7 +284,8 @@ public abstract class CorpusData implements AutoCloseable {
 		}
 
 		@Override
-		public ElementInfo resolveElement(LaneInfo laneInfo, IqlProperElement element) {
+		public ElementInfo resolveElement(LaneInfo laneInfo, IqlProperElement element,
+				@Nullable ElementInfo parentElement) {
 			requireNonNull(element);
 
 			// Edges can only be referenced from the surrounding structure
@@ -268,8 +307,25 @@ public abstract class CorpusData implements AutoCloseable {
 				return new ElementInfo(element, type, list(ref));
 			}
 
-			// Unbound element can stem from any base layer of current lane
-			List<ItemLayer> baseLayers = layer(laneInfo.getLayer()).getBaseLayers().toList();
+			// Unbound element can stem from any base layer of current lane or parent node
+			List<ItemLayer> baseLayers;
+			if(parentElement!=null) {
+				Set<ItemLayer> layerCandidates = new ObjectLinkedOpenHashSet<>();
+				parentElement.getLayers().stream()
+					.<ItemLayer>map(CorpusBacked::layer)
+					.map(ItemLayer::getBaseLayers)
+					.map(DataSet::toSet)
+					.flatMap(Set::stream)
+					.filter(scope::containsLayer)
+					.forEach(layerCandidates::add);
+				baseLayers = new ObjectArrayList<>(layerCandidates);
+			} else {
+				baseLayers = layer(laneInfo.getLayer()).getBaseLayers()
+						.toList()
+						.stream()
+						.filter(scope::containsLayer)
+						.collect(Collectors.toList());
+			}
 			if(baseLayers.isEmpty())
 				throw EvaluationUtils.forIncorrectUse("Cannot use non-aggregating layer as lane: %s",
 						getName(laneInfo.getLayer()));
@@ -324,7 +380,7 @@ public abstract class CorpusData implements AutoCloseable {
 		private ItemLayer resolveBoundLayer(String name) {
 			ItemLayer layer = boundLayers.get(name);
 			if(layer==null)
-				throw EvaluationUtils.forUnknownIdentifier(name, "layer");
+				throw EvaluationUtils.forUnknownIdentifier(name, "bound layer");
 			return layer;
 		}
 
@@ -347,8 +403,9 @@ public abstract class CorpusData implements AutoCloseable {
 
 			for(IqlReference ref : binding.getMembers()) {
 				String name = ref.getName();
-				checkState("Name already bound: "+name, !bindings.containsKey(name));
+				checkState("Name already bound: "+name, !boundLayers.containsKey(name));
 				bindings.put(name, new BindingInfo(layerRef, type));
+				boundLayers.put(name, targetLayer);
 			}
 
 			return bindings;
@@ -391,15 +448,17 @@ public abstract class CorpusData implements AutoCloseable {
 		@Override
 		public LongFunction<Container> access(LayerRef layerRef) {
 			ItemLayer layer = layer(layerRef);
-
-			// TODO Auto-generated method stub
-			return null;
+			ItemLayerManager itemLayerManager = layer.getContext().getDriver();
+			return index  -> (Container) itemLayerManager.getItem(layer, index);
 		}
 
 		@Override
 		public LaneMapper map(LayerRef sourceRef, LayerRef targetRef) {
-			// TODO Auto-generated method stub
-			return null;
+			ItemLayer source = layer(sourceRef);
+			ItemLayer target = layer(targetRef);
+
+			Mapping mapping = source.getContext().getDriver().getMapping(source, target);
+			return LaneMapper.forMapping(mapping.newReader(), 1024);
 		}
 
 		@Override
@@ -649,8 +708,6 @@ public abstract class CorpusData implements AutoCloseable {
 			/** Maps the usable raw names or aliases to layer entries. */
 			private final Map<String, Layer> namedLayers = new Object2ObjectOpenHashMap<>();
 
-			private Corpus corpus;
-
 			private Scope scope;
 
 			private Builder() { /* no-op */ }
@@ -670,19 +727,10 @@ public abstract class CorpusData implements AutoCloseable {
 				return this;
 			}
 
-			public Builder corpus(Corpus corpus) {
-				requireNonNull(corpus);
-				checkState("Corpus already set", this.corpus==null);
-				this.corpus = corpus;
-				return this;
-			}
 
 			@Override
 			protected void validate() {
-				checkState("Corpus not set", corpus!=null);
 				checkState("Scope not set", scope!=null);
-
-				checkState("scope source vs corpus mismatch", scope.getCorpus()==corpus);
 			}
 
 			@Override
@@ -692,77 +740,385 @@ public abstract class CorpusData implements AutoCloseable {
 
 	public static final class Virtual extends CorpusData {
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#resolveLane(de.ims.icarus2.query.api.iql.IqlLane)
-		 */
+		public static Builder builder() { return new Builder(); }
+
+		/** Maps registered (item-)layers to descriptor (including content) */
+		private final Map<String, LayerInfo> layers = new Object2ObjectOpenHashMap<>();
+		/** Maps (src_id+dest_id) to proper mapper objects */
+		private final Map<String, LaneMapper> mappers = new Object2ObjectOpenHashMap<>();
+		/** Direct lookup for annotation keys. Mapped values might be duplicates if keys are aliased */
+		private final Map<String, AnnotationInfo> annotations = new Object2ObjectOpenHashMap<>();
+		/** Maps aliases to original layer ids */
+		private final Map<String, String> boundLayers = new Object2ObjectOpenHashMap<>();
+
+		private Virtual(Builder builder) {
+			layers.putAll(builder.layers);
+			mappers.putAll(builder.mappers);
+			annotations.putAll(builder.annotations);
+		}
+
+		private static String mappingKey(String source, String target) {
+			return source + "->" + target;
+		}
+
+		private LayerInfo requireLayer(String name) {
+			return Optional.ofNullable(layers.get(name)).orElseThrow(() -> EvaluationUtils.forUnknownIdentifier(name, "layer"));
+		}
+
 		@Override
 		public LaneInfo resolveLane(IqlLane lane) {
-			// TODO Auto-generated method stub
-			return null;
+			LayerInfo info = requireLayer(lane.getName());
+			return new LaneInfo(lane, info.type, info.ref);
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#resolveElement(de.ims.icarus2.query.api.exp.LaneInfo, de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement)
-		 */
 		@Override
-		public ElementInfo resolveElement(LaneInfo lane, IqlProperElement element) {
-			// TODO Auto-generated method stub
-			return null;
+		public ElementInfo resolveElement(LaneInfo lane, IqlProperElement element, @Nullable ElementInfo parentElement) {
+			String label = element.getLabel().orElse(null);
+			if(label!=null) {
+				String name = boundLayers.get(label);
+				if(name==null)
+					throw EvaluationUtils.forUnknownIdentifier(name, "bound layer");
+				 return new ElementInfo(element, TypeInfo.ITEM, list(new LayerRef(name)));
+			}
+
+			LayerInfo info = requireLayer(lane.getLayer().getId());
+			return new ElementInfo(element, TypeInfo.ITEM, info.sources);
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#bind(de.ims.icarus2.query.api.iql.IqlBinding)
-		 */
 		@Override
 		public Map<String, BindingInfo> bind(IqlBinding binding) {
-			// TODO Auto-generated method stub
-			return null;
+
+			Map<String, BindingInfo> bindings = new Object2ObjectOpenHashMap<>();
+
+			LayerInfo info = requireLayer(binding.getTarget());
+
+			for(IqlReference ref : binding.getMembers()) {
+				String name = ref.getName();
+				checkState("Name already bound: "+name, !boundLayers.containsKey(name));
+				bindings.put(name, new BindingInfo(info.ref, info.type));
+				boundLayers.put(name, info.ref.getId());
+			}
+
+			return bindings;
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#findAnnotation(de.ims.icarus2.query.api.exp.ElementInfo, de.ims.icarus2.query.api.exp.QualifiedIdentifier)
-		 */
+		/** Looks up the annotation with the full {@link QualifiedIdentifier#toString() identifier string}. */
 		@Override
 		public Optional<AnnotationInfo> findAnnotation(ElementInfo element, QualifiedIdentifier identifier) {
-			// TODO Auto-generated method stub
-			return null;
+			return Optional.ofNullable(annotations.get(identifier.toString()));
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#findLayer(java.lang.String)
-		 */
 		@Override
 		public Optional<LayerRef> findLayer(String name) {
-			// TODO Auto-generated method stub
-			return null;
+			return Optional.ofNullable(layers.get(requireNonNull(name))).map(info -> info.ref);
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#access(de.ims.icarus2.query.api.engine.CorpusData.LayerRef)
-		 */
 		@Override
 		public LongFunction<Container> access(LayerRef layer) {
-			// TODO Auto-generated method stub
-			return null;
+			List<Item> buffer = requireNonNull(layers.get(layer.getId())).elements;
+			return index -> (Container)buffer.get(strictToInt(index));
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#map(de.ims.icarus2.query.api.engine.CorpusData.LayerRef, de.ims.icarus2.query.api.engine.CorpusData.LayerRef)
-		 */
 		@Override
 		public LaneMapper map(LayerRef source, LayerRef target) {
-			// TODO Auto-generated method stub
-			return null;
+			String key = mappingKey(source.getId(), target.getId());
+			return requireNonNull(mappers.get(key), "no such mapping");
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.CorpusData#close()
-		 */
 		@Override
 		public void close() {
-			// TODO Auto-generated method stub
+			// TODO clear all lookup structures
+		}
+
+		/** Special descriptor for item layers. */
+		private static class LayerInfo {
+			/** Top-level members of the layer */
+			private final List<Item> elements = new ObjectArrayList<>();
+			/** Type of top-level members */
+			private TypeInfo type = TypeInfo.CONTAINER;
+			/** Reference to the abstract layer */
+			private final LayerRef ref;
+			/** Source layers for elements in this layer */
+			private final List<LayerRef> sources = new ObjectArrayList<>();
+			/** Keys of annotation layers available for this layer */
+			private final Set<String> annotations = new ObjectOpenHashSet<>();
+
+			private LayerInfo(String name) { ref = new LayerRef(name); }
+		}
+
+		public static class Builder extends AbstractBuilder<Builder, Virtual> {
+
+			/** Maps registered (item-)layers to descriptor (including content) */
+			private final Map<String, LayerInfo> layers = new Object2ObjectOpenHashMap<>();
+			/** Maps (src_id+dest_id) to proper mapper objects */
+			private final Map<String, LaneMapper> mappers = new Object2ObjectOpenHashMap<>();
+			/** Direct lookup for annotation keys. Mapped values might be duplicates if keys are aliased */
+			private final Map<String, AnnotationInfo> annotations = new Object2ObjectOpenHashMap<>();
+
+			/** Layers that have their element lists locked due to usage of indirect mapping methods for annotations */
+			private final Set<String> lockedLayers = new ObjectOpenHashSet<>();
+
+
+			private void addLayer(LayerInfo info) { layers.put(info.ref.getId(), info); }
+
+			private void addAnnotation(AnnotationInfo info, Set<String> lockedLayers) {
+				annotations.put(info.getRawKey(), info);
+				this.lockedLayers.addAll(lockedLayers);
+			}
+
+			public LayerBuilder layer(String name) {
+				requireNonNull(name);
+				checkState("layer already registered: "+name, !layers.containsKey(name));
+				return new LayerBuilder(this, name);
+			}
+
+			public AnnotationBuilder annotation() {
+				return new AnnotationBuilder(this);
+			}
+
+			public Builder mapper(String source, String target, LaneMapper mapper) {
+				String key = mappingKey(source, target);
+				checkState("mapping already registered: "+key, !mappers.containsKey(key));
+				mappers.put(key, requireNonNull(mapper));
+				return this;
+			}
+
+
+			@Override
+			protected Virtual create() { return new Virtual(this); }
 
 		}
 
+		public static class LayerBuilder {
+			private final Builder host;
+
+			private LayerInfo info;
+
+			private LayerBuilder(Builder host, String name) {
+				this.host = requireNonNull(host);
+				info = new LayerInfo(name);
+			}
+
+			public LayerBuilder elements(Item...containers) {
+				CollectionUtils.feedItems(info.elements, containers);
+				return this;
+			}
+
+			public LayerBuilder elements(List<? extends Item> containers) {
+				info.elements.addAll(containers);
+				return this;
+			}
+
+			public LayerBuilder type(TypeInfo type) {
+				info.type = requireNonNull(type);
+				return this;
+			}
+
+			/** Assign base layer ids */
+			public LayerBuilder sources(String...layerIds) {
+				Stream.of(layerIds).map(LayerRef::new).forEach(info.sources::add);
+				return this;
+			}
+
+			/** Assign base layer ids */
+			public LayerBuilder sources(Collection<String> layerIds) {
+				layerIds.stream().map(LayerRef::new).forEach(info.sources::add);
+				return this;
+			}
+
+			/** Assign annotation layer ids */
+			public LayerBuilder annotations(String...layerIds) {
+				checkArgument("layer id array is empty", layerIds.length>0);
+				CollectionUtils.feedItems(info.annotations, layerIds);
+				return this;
+			}
+
+			/** Assign annotation layer ids */
+			public LayerBuilder annotations(Collection<String> layerIds) {
+				checkArgument("layer id list is empty", !layerIds.isEmpty());
+				info.annotations.addAll(layerIds);
+				return this;
+			}
+
+			public Builder commit() {
+				// Validate built layer info
+				checkState("layer empty", !info.elements.isEmpty());
+				if(info.type==TypeInfo.CONTAINER) {
+					checkState("container layer must have at least 1 base layer", !info.sources.isEmpty());
+				}
+				// Add to surrounding builder
+				host.addLayer(info);
+				// Invalidate local copy to prevent future modifications leaking through
+				info = null;
+				return host;
+			}
+		}
+
+		public static class AnnotationBuilder {
+			private final Builder host;
+			private final Set<String> targets = new ObjectOpenHashSet<>();
+
+			private AnnotationInfo.Builder builder;
+
+			private AnnotationBuilder(Builder host) {
+				this.host = requireNonNull(host);
+
+				builder = AnnotationInfo.builer();
+			}
+
+			/** Sets both the raw key and actual annotation key to the given value */
+			public AnnotationBuilder key(String key) {
+				builder.rawKey(key);
+				builder.key(key);
+				return this;
+			}
+
+			/** Sets the raw key and annotation key independently */
+			public AnnotationBuilder key(String rawKey, String key) {
+				builder.rawKey(rawKey);
+				builder.key(key);
+				return this;
+			}
+
+			public AnnotationBuilder targets(String...names) {
+				requireNonNull(names);
+				checkArgument("array of target names is empty", names.length>0);
+				CollectionUtils.feedItems(targets, names);
+				return this;
+			}
+
+			public AnnotationBuilder targets(Set<String> names) {
+				requireNonNull(names);
+				checkArgument("set of target names is empty", !names.isEmpty());
+				targets.addAll(names);
+				return this;
+			}
+
+			private void checkSingularTarget() {
+				checkState("no target layers defined", !targets.isEmpty());
+				checkState("can't use mapping shortcuts with more than one target", targets.size()==1);
+			}
+
+			private List<Item> items(int expectedSize) {
+				checkSingularTarget();
+				String target = targets.iterator().next();
+				LayerInfo info = host.layers.get(target);
+				requireNonNull(info, "target layer not found: "+target);
+				checkState("target layer contains no items: "+target, !info.elements.isEmpty());
+				checkState(Messages.sizeMismatch("target layer size mismatch", expectedSize, info.elements.size()),
+						info.elements.size()==expectedSize);
+
+				return info.elements;
+			}
+
+			// Externalized methods
+
+			public AnnotationBuilder integers(ToLongFunction<Item> lookup) {
+				builder.type(TypeInfo.INTEGER);
+				builder.integerSource(lookup);
+				return this;
+			}
+
+			public AnnotationBuilder floatingPoints(ToDoubleFunction<Item> lookup) {
+				builder.type(TypeInfo.FLOATING_POINT);
+				builder.floatingPointSource(lookup);
+				return this;
+			}
+
+			public AnnotationBuilder booleans(Predicate<Item> lookup) {
+				builder.type(TypeInfo.BOOLEAN);
+				builder.booleanSource(lookup);
+				return this;
+			}
+
+			public AnnotationBuilder generics(Function<Item,Object> lookup) {
+				builder.type(TypeInfo.GENERIC);
+				builder.objectSource(lookup);
+				return this;
+			}
+
+			// Shortcut methods
+
+			/** Maps members of the assigned target layer to the given long values, in
+			 * the same order. Will fail if any annotations have been set for the target
+			 * layer already or if the number of annotation values and items in the target
+			 * layer do not match. */
+			public AnnotationBuilder integers(long...values) {
+				builder.type(TypeInfo.INTEGER);
+				List<Item> items = items(values.length);
+				Object2LongMap<Item> map = new Object2LongOpenHashMap<>(values.length);
+				for (int i = 0; i < values.length; i++) {
+					map.put(items.get(i), values[i]);
+				}
+				builder.integerSource(map::getLong);
+				return this;
+			}
+
+			/** Maps members of the assigned target layer to the given boolean values, in
+			 * the same order. Will fail if any annotations have been set for the target
+			 * layer already or if the number of annotation values and items in the target
+			 * layer do not match. */
+			public AnnotationBuilder booleans(boolean...values) {
+				builder.type(TypeInfo.INTEGER);
+				List<Item> items = items(values.length);
+				Object2BooleanMap<Item> map = new Object2BooleanOpenHashMap<>(values.length);
+				for (int i = 0; i < values.length; i++) {
+					map.put(items.get(i), values[i]);
+				}
+				builder.booleanSource(map::getBoolean);
+				return this;
+			}
+
+			/** Maps members of the assigned target layer to the given string values, in
+			 * the same order. Will fail if any annotations have been set for the target
+			 * layer already or if the number of annotation values and items in the target
+			 * layer do not match. */
+			public AnnotationBuilder floatingPoints(double...values) {
+				builder.type(TypeInfo.FLOATING_POINT);
+				List<Item> items = items(values.length);
+				Object2DoubleMap<Item> map = new Object2DoubleOpenHashMap<>(values.length);
+				for (int i = 0; i < values.length; i++) {
+					map.put(items.get(i), values[i]);
+				}
+				builder.floatingPointSource(map::getDouble);
+				return this;
+			}
+
+			/** Maps members of the assigned target layer to the given string values, in
+			 * the same order. Will fail if any annotations have been set for the target
+			 * layer already or if the number of annotation values and items in the target
+			 * layer do not match. */
+			public AnnotationBuilder strings(String...values) {
+				builder.type(TypeInfo.TEXT);
+				List<Item> items = items(values.length);
+				Map<Item,String> map = new Object2ObjectOpenHashMap<>(values.length);
+				for (int i = 0; i < values.length; i++) {
+					map.put(items.get(i), values[i]);
+				}
+				builder.objectSource(map::get);
+				return this;
+			}
+
+			/** Maps members of the assigned target layer to the given generic values, in
+			 * the same order. Will fail if any annotations have been set for the target
+			 * layer already or if the number of annotation values and items in the target
+			 * layer do not match. */
+			public AnnotationBuilder generic(Object...values) {
+				builder.type(TypeInfo.GENERIC);
+				List<Item> items = items(values.length);
+				Map<Item,Object> map = new Object2ObjectOpenHashMap<>(values.length);
+				for (int i = 0; i < values.length; i++) {
+					map.put(items.get(i), values[i]);
+				}
+				builder.objectSource(map::get);
+				return this;
+			}
+
+			public Builder commit() {
+				host.addAnnotation(builder.build(), targets);
+				builder = null;
+				return host;
+			}
+		}
 	}
 }
