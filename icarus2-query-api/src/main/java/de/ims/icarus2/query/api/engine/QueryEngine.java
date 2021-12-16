@@ -80,6 +80,8 @@ import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.Options;
+import de.ims.icarus2.util.collections.Substitutor;
+import de.ims.icarus2.util.lang.Lazy;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -258,7 +260,6 @@ public class QueryEngine {
 			final Scope scope = createScope(corpus, stream);
 
 			final CorpusData corpusData = CorpusData.CorpusBacked.builder()
-					.corpus(corpus)
 					.scope(scope)
 					.build();
 
@@ -278,18 +279,27 @@ public class QueryEngine {
 			assert !patterns.isEmpty();
 			assert patterns.size()>=lanes.size();
 
+			final Lazy<Substitutor<CharSequence>> substitutor = Lazy.create(
+					() -> new Substitutor<>(settings.getInt(IntField.INITIAL_SECONDARY_BUFFER_SIZE)));
 			final QueryOutput output = new QueryOutputFactory(rootContext)
-					//TODO configure factory
+					.encoder(() -> substitutor.value()::applyAsInt)
+					.decoder(() -> substitutor.value()::apply)
+					.applyFromStream(stream)
+					.settings(settings)
 					.createOutput();
 
-			return SingleStreamJob.builder()
+			SingleStreamJob.Builder builder = SingleStreamJob.builder()
 					.addPatterns(patterns)
 					.batchSize(settings.getInt(IntField.BATCH_SIZE))
 					.exceptionHandler(fallbackExceptionHandler)
 					.query(queryContext.getQuery())
 					.input(QueryUtils.streamedInput(createStream(scope)))
-					.output(output)
-					.build();
+					.output(output);
+
+			// Only register substitutor if the output actually used it
+			substitutor.optional().ifPresent(builder::addCloseable);
+
+			return builder.build();
 		}
 
 		private RootContext createContext(CorpusData corpusData) {
