@@ -168,7 +168,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		@Override
 		public AttributeSchema[] getAttributes() {
 
-			AttributeSchema[] result = null;
+			AttributeSchema[] result = EMPTY_ATTRIBUTES;
 
 			if(attributes!=null) {
 				result = attributes.toArray(EMPTY_ATTRIBUTES);
@@ -183,7 +183,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		@Override
 		public ColumnSchema[] getColumns() {
 
-			ColumnSchema[] result = null;
+			ColumnSchema[] result = EMPTY_COLUMNS;
 
 			if(columns!=null) {
 				result = columns.toArray(EMPTY_COLUMNS);

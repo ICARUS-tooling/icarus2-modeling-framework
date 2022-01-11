@@ -45,6 +45,8 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
@@ -2360,9 +2362,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			separator = tableSchema.getSeparator();
 		}
 
-		if(separator==null)
-			throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Missing separator specification");
-
 		return separator;
 	}
 
@@ -2470,11 +2469,14 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			this(blockSchema, null, new MutableInteger(0));
 		}
 
-		private BlockHandler(BlockSchema blockSchema, BlockHandler parent, MutableInteger idGen) {
+		private BlockHandler(BlockSchema blockSchema, @Nullable BlockHandler parent, MutableInteger idGen) {
 			requireNonNull(blockSchema);
 
 			this.parent = parent;
 			this.blockSchema = blockSchema;
+
+			final ColumnSchema[] columnSchemas = blockSchema.getColumns();
+			final BlockSchema[] nestedBlockSchemas = blockSchema.getNestedBlocks();
 
 			blockId = idGen.getAndIncrement();
 
@@ -2489,32 +2491,37 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			String separator = getSeparator(this, tableSchema);
 
-			if(separator.length()==1) {
-				separatorChar = separator.charAt(0);
+			if(separator==null) {
+				if(columnSchemas.length>0)
+					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Missing separator specification");
 			} else {
-				switch (separator) {
-				case TableSchema.SEPARATOR_SPACE:
-					separatorChar = ' ';
-					break;
+				if(separator.length()==1) {
+					separatorChar = separator.charAt(0);
+				} else {
+					switch (separator) {
+					case TableSchema.SEPARATOR_SPACE:
+						separatorChar = ' ';
+						break;
 
-				case TableSchema.SEPARATOR_TAB:
-					separatorChar = '\t';
-					break;
+					case TableSchema.SEPARATOR_TAB:
+						separatorChar = '\t';
+						break;
 
-				case TableSchema.SEPARATOR_WHITESPACE:
-					separator = "\\s";
-					break;
+					case TableSchema.SEPARATOR_WHITESPACE:
+						separator = "\\s";
+						break;
 
-				case TableSchema.SEPARATOR_WHITESPACES:
-					separator = "\\s+";
-					break;
+					case TableSchema.SEPARATOR_WHITESPACES:
+						separator = "\\s+";
+						break;
 
-				default:
-					break;
-				}
+					default:
+						break;
+					}
 
-				if(separatorChar=='\0') {
-					separatorMatcher = Pattern.compile(separator).matcher("");
+					if(separatorChar=='\0') {
+						separatorMatcher = Pattern.compile(separator).matcher("");
+					}
 				}
 			}
 
@@ -2531,7 +2538,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			endDelimiter = createProcessor(blockSchema.getEndDelimiter());
 
 			// Column related stuff
-			ColumnSchema[] columnSchemas = blockSchema.getColumns();
 			requiredColumnCount = columnSchemas.length;
 
 			// Make sure we have enough space in our column offset buffer
@@ -2565,7 +2571,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				fallbackHandler = null;
 			}
 
-			BlockSchema[] nestedBlockSchemas = blockSchema.getNestedBlocks();
 			if(nestedBlockSchemas.length>0) {
 				nestedBlockHandlers = new BlockHandler[nestedBlockSchemas.length];
 				for(int i=0; i<nestedBlockHandlers.length; i++) {
@@ -2886,7 +2891,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(nestedBlockHandlers!=null) {
 
 				long index = context.currentIndex();
-				Container host = context.currentContainer();
+				final Container host = context.currentContainer();
 				final boolean isProxyContainer = host.isProxy();
 				final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 

@@ -171,7 +171,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 
 		// Remaining attributes
 		AttributeSchema[] attributes = schema.getAttributes();
-		if(attributes!=null && attributes.length>0) {
+		if(attributes.length>0) {
 			serializer.startElement(TableSchemaXmlConstants.TAG_ATTRIBUTES);
 			for(AttributeSchema attributeSchema : attributes) {
 				writeAttributeSchema(TableSchemaXmlConstants.TAG_ATTRIBUTE, attributeSchema);
@@ -181,7 +181,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 
 		// Columns
 		ColumnSchema[] columns = schema.getColumns();
-		if(columns!=null && columns.length>0) {
+		if(columns.length>0) {
 			serializer.startElement(TableSchemaXmlConstants.TAG_COLUMNS);
 			for(ColumnSchema columnSchema : columns) {
 				writeColumnSchema(TableSchemaXmlConstants.TAG_COLUMN, columnSchema);
@@ -194,7 +194,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 
 		// Nested blocks
 		BlockSchema[] nestedBlocks = schema.getNestedBlocks();
-		if(nestedBlocks!=null && nestedBlocks.length>0) {
+		if(nestedBlocks.length>0) {
 			serializer.startElement(TableSchemaXmlConstants.TAG_NESTED_BLOCKS);
 			for(BlockSchema blockSchema : nestedBlocks) {
 				writeBlockSchema(TableSchemaXmlConstants.TAG_BLOCK, blockSchema);
