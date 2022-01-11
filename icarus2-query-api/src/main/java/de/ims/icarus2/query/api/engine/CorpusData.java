@@ -277,6 +277,9 @@ public abstract class CorpusData implements AutoCloseable {
 			if(!ModelUtils.isItemLayer(layer))
 				throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE,
 						"Lane name must reference an item or structure layer: "+getName(layer));
+			if(layer.getBaseLayers().isEmpty())
+				throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE,
+						"Laye for lane reference must not be a foundation layer: "+getName(layer));
 			TypeInfo type = typeTranslation.get(layer.getManifest().getManifestType());
 			requireNonNull(type, "unknown layer type for "+layer.getName());
 
