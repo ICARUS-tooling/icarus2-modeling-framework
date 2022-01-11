@@ -33,7 +33,7 @@ allprojects {
 // Gradle Wrapper
 wrapper { 
 	// to upgrade wrapper: ./gradlew wrapper --distribution-type bin --gradle-version <version>
-	gradleVersion = "7.3.1" 
+	gradleVersion = "7.3.3" 
 }
 
 // Build Scan publishing
@@ -425,8 +425,8 @@ subprojects {
     // Switch checkstyle reporting to be html only
     tasks.withType(Checkstyle) {
 	    reports {
-	        xml.enabled false
-	        html.enabled true
+	        xml.required = false
+	        html.required = true
 	    }
 	}
 	
