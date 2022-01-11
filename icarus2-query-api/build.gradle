@@ -9,7 +9,8 @@ dependencies {
 	 
 	testImplementation(project(':icarus2-model-defaults'))
  	testImplementation(project(':icarus2-test-utils'))
-	testImplementation(project(':icarus2-file-driver-utils'))
+ 	//TODO needs to be changed back to testImplementation once buildship bugs are fixed
+	implementation(project(':icarus2-file-driver-utils'))
 	testImplementation project(path: ':icarus2-model-api', configuration: 'tests')
 	
 	// https://mvnrepository.com/artifact/org.antlr/antlr4
