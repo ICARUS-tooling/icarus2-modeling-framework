@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -368,7 +368,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					reportBuilder.addError(errorCode,
 							"Invalid content in chunk {} in line {}: {}",
 							_long(index), _long(lines.getLineNumber()), e.getMessage());
+					//FIXME this is bad: manifest errors can keep the scan in an endless loop
 
+					// For now we also abort here
+					break scan_loop;
 				} catch(Exception e) {
 					// ""Real" errors will break the scanning process
 

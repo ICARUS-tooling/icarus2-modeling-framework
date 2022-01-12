@@ -2,7 +2,7 @@
 <!--
 
     ICARUS2 Corpus Modeling Framework
-    Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+    Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -516,11 +516,11 @@
 						</xsd:annotation>
 						<xsd:complexType>
 							<xsd:sequence>
-								<xsd:element name="container" type="imf:containerManifestType" minOccurs="1" maxOccurs="unbounded">
+								<!-- <xsd:element name="container" type="imf:containerManifestType" minOccurs="1" maxOccurs="unbounded">
 									<xsd:annotation>
 										<xsd:documentation>Hierarchy has to start with a container (and arbitrary number of nested containers)</xsd:documentation>
 									</xsd:annotation>
-								</xsd:element>
+								</xsd:element> -->
 								<xsd:element name="structure" type="imf:structureManifestType" minOccurs="1" maxOccurs="unbounded">
 									<xsd:annotation>
 										<xsd:documentation>For simplicity reasons we don't allow intermixing of containers between structures</xsd:documentation>
@@ -532,6 +532,7 @@
 									</xsd:annotation>
 								</xsd:element>
 							</xsd:sequence>
+							<xsd:attribute name="rootContainerType" type="imf:containerTypeAttr" default="list" />
 						</xsd:complexType>
 					</xsd:element>
 				</xsd:sequence>
@@ -558,6 +559,7 @@
 									</xsd:annotation>
 								</xsd:element>
 							</xsd:sequence>
+							<xsd:attribute name="rootContainerType" type="imf:containerTypeAttr" default="list" />
 						</xsd:complexType>
 					</xsd:element>
 				</xsd:sequence>

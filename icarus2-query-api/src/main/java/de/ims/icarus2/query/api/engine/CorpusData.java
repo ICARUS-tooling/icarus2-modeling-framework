@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,7 +279,7 @@ public abstract class CorpusData implements AutoCloseable {
 						"Lane name must reference an item or structure layer: "+getName(layer));
 			if(layer.getBaseLayers().isEmpty())
 				throw new QueryException(QueryErrorCode.INCOMPATIBLE_REFERENCE,
-						"Laye for lane reference must not be a foundation layer: "+getName(layer));
+						"Layer for lane reference must not be a foundation layer: "+getName(layer));
 			TypeInfo type = typeTranslation.get(layer.getManifest().getManifestType());
 			requireNonNull(type, "unknown layer type for "+layer.getName());
 

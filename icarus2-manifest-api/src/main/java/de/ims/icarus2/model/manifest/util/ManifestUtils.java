@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package de.ims.icarus2.model.manifest.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -136,6 +138,17 @@ public class ManifestUtils {
 		}
 
 		return result;
+	}
+
+	private static final Set<ManifestType> itemLayerFamily = EnumSet.noneOf(ManifestType.class);
+	static {
+		itemLayerFamily.add(ManifestType.ITEM_LAYER_MANIFEST);
+		itemLayerFamily.add(ManifestType.STRUCTURE_LAYER_MANIFEST);
+		itemLayerFamily.add(ManifestType.FRAGMENT_LAYER_MANIFEST);
+	}
+
+	public static boolean isAnyItemLayerManifest(Manifest manifest) {
+		return itemLayerFamily.contains(manifest.getManifestType());
 	}
 
 	public static boolean isItemLayerManifest(Manifest manifest) {

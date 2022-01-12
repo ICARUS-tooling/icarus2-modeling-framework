@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -311,14 +311,6 @@ public final class ModelUtils {
 			container = parent;
 		}
 
-		/*
-		 * Implementation info:
-		 *   was container.getLayer().getManifest()
-		 *
-		 * Changed to this version as a result of the policy to switch
-		 * contexts as early as possible from live items/containers to
-		 * the respective manifest framework members.
-		 */
 		ItemLayerManifestBase<?> manifest = container.getLayer().getManifest();
 
 		Hierarchy<ContainerManifestBase<?>> hierarchy = manifest.getContainerHierarchy()

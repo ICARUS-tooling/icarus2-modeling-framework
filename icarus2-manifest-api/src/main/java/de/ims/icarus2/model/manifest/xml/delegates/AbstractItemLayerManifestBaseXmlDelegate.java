@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,10 +85,11 @@ public abstract class AbstractItemLayerManifestBaseXmlDelegate<M extends ItemLay
 		}
 
 		if(manifest.hasLocalContainerHierarchy()) {
+			Hierarchy<ContainerManifestBase<?>> hierarchy = manifest.getContainerHierarchy()
+					.orElse(Hierarchy.empty());
 			serializer.startElement(ManifestXmlTags.HIERARCHY);
-			for(ContainerManifestBase<?> containerManifest : manifest.getContainerHierarchy()
-					.orElse(Hierarchy.empty())) {
-				writeContainerElement(serializer, containerManifest);
+			for (int i = 0; i < hierarchy.getDepth(); i++) {
+				writeContainerElement(serializer, hierarchy.atLevel(i));
 			}
 			serializer.endElement(ManifestXmlTags.HIERARCHY);
 		}

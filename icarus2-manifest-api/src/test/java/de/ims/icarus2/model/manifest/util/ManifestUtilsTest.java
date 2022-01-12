@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,6 +202,22 @@ class ManifestUtilsTest {
 				when(manifest.getManifestType()).thenReturn(type);
 				assertEquals(type==ManifestType.ITEM_LAYER_MANIFEST,
 						ManifestUtils.isItemLayerManifest(manifest));
+			}
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.model.manifest.util.ManifestUtils#isAnyItemLayerManifest(de.ims.icarus2.model.manifest.api.Manifest)}.
+		 */
+		@SuppressWarnings("boxing")
+		@Test
+		void testIsAnyItemLayerManifest() {
+			for(ManifestType type : ManifestType.values()) {
+				Manifest manifest = mock(Manifest.class);
+				when(manifest.getManifestType()).thenReturn(type);
+				assertEquals(type==ManifestType.ITEM_LAYER_MANIFEST
+						|| type==ManifestType.STRUCTURE_LAYER_MANIFEST
+						|| type==ManifestType.FRAGMENT_LAYER_MANIFEST,
+						ManifestUtils.isAnyItemLayerManifest(manifest));
 			}
 		}
 

@@ -1,6 +1,7 @@
 
 plugins {
 	id 'java-library'
+	id 'java-test-fixtures'
 	id 'jacoco'
 	id 'com.github.kt3k.coveralls' version '2.12.0'
 	id 'com.github.johnrengelman.shadow' version '7.1.0' apply false
@@ -51,6 +52,8 @@ gradleLint {
 
 subprojects {
   	apply plugin: 'java-library'
+  	//TODO enable test-fixtures and migrate all test-utils into shared-utils testFixture
+//  	apply plugin: 'java-test-fixtures'
   	apply plugin: 'maven-publish'
   	apply plugin: 'checkstyle'		
 	apply plugin: 'com.github.hierynomus.license'

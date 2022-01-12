@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class FileDataStates {
 		ContextManifest contextManifest = ManifestUtils.requireHost(driver.getManifest());
 		for(LayerManifest<?> layerManifest : contextManifest.getLayerManifests()) {
 
-			if(ManifestUtils.isItemLayerManifest(layerManifest)) {
+			if(ManifestUtils.isAnyItemLayerManifest(layerManifest)) {
 				layerInfos.put(layerManifest.getUID(), new LayerInfo((ItemLayerManifestBase<?>)layerManifest));
 			}
 		}

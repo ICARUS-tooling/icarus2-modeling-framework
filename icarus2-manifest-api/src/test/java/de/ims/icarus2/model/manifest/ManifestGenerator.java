@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -633,7 +633,7 @@ public class ManifestGenerator {
 		prepareLayerManifest(manifest, container, config);
 
 		LayerManifest<?> layerManifest = manifest.getContextManifest()
-				.map(c -> c.getLayerManifests(ManifestUtils::isItemLayerManifest))
+				.map(c -> c.getLayerManifests(ManifestUtils::isAnyItemLayerManifest))
 				.filter(l -> !l.isEmpty())
 				.map(l -> l.get(0))
 				.orElse(null);
@@ -725,7 +725,7 @@ public class ManifestGenerator {
 		 */
 		container.addLazyFieldChange(manifest::setPrimaryLayerId, "primaryLayer",
 				() -> ManifestUtils.requireId(layers.stream()
-						.filter(ManifestUtils::isItemLayerManifest)
+						.filter(ManifestUtils::isAnyItemLayerManifest)
 						.findFirst()
 						.get()));
 	}

@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -270,7 +270,7 @@ public class CorpusVerifier {
 
 				//TODO inconsistency: we start at level 0 and expect a parent?
 
-				if(IcarusUtils.equals(containerManifest.getParentManifest(), parent)) {
+				if(!IcarusUtils.equals(containerManifest.getParentManifest(), parent)) {
 					error(ManifestErrorCode.MANIFEST_CORRUPTED_STATE, "Corrupted hierarchy - foreign parent container at level "+i); //$NON-NLS-1$
 				}
 

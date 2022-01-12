@@ -2,7 +2,7 @@
 <!--
 
     ICARUS2 Corpus Modeling Framework
-    Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+    Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 				
 				<!-- to be replaced in live version by post-processing step
 				<imf:location>
-					<imf:path type="resource">de/ims/icarus2/filedriver/schema/table/singleBlock.txt</imf:path>
+					...
 				</imf:location>
 				 -->
 				

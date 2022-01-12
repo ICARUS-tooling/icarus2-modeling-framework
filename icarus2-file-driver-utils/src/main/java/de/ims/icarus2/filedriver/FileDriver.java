@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -459,7 +459,7 @@ public class FileDriver extends AbstractDriver {
 	protected BufferedItemManager createBufferedItemManager() {
 		BufferedItemManager.Builder builder = BufferedItemManager.builder();
 
-		for(LayerManifest<?> layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isItemLayerManifest)) {
+		for(LayerManifest<?> layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isAnyItemLayerManifest)) {
 			ItemLayerManifestBase<?> itemLayerManifest = (ItemLayerManifestBase<?>) layerManifest;
 			//TODO add options to activate recycling and pooling of items
 			long layerSize = getItemCount(itemLayerManifest);

@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import de.ims.icarus2.util.access.AccessPolicy;
 @AccessControl(AccessPolicy.DENY)
 public interface ItemLayerManifest extends ItemLayerManifestBase<ItemLayerManifest> {
 
+
+	public static final ContainerType DEFAULT_ROOT_CONTAINER_TYPE = ContainerType.LIST;
 
 	/**
 	 * @see de.ims.icarus2.model.manifest.api.MemberManifest#getManifestType()

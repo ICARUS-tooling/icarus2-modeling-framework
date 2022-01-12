@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Iterator;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
@@ -43,6 +44,7 @@ public class HierarchyImpl<E extends Object> extends AbstractLockable implements
 	 * @see de.ims.icarus2.model.manifest.api.Hierarchy#getRoot()
 	 */
 	@Override
+	@Nullable
 	public E getRoot() {
 		return items.isEmpty() ? null : items.get(ROOT);
 	}

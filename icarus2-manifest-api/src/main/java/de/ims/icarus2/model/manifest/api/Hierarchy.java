@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.util.collections.LazyCollection;
 
 /**
@@ -35,10 +37,11 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 
 	/**
 	 * Helper constant to indicate the root level when accessing or trying to
-	 * access a element in a hierarchy.
+	 * access an element in a hierarchy.
 	 */
 	public static final int ROOT = 0;
 
+	@Nullable
 	E getRoot();
 
 	int getDepth();

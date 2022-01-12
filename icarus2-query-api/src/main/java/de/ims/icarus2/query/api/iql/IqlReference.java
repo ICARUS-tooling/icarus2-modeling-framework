@@ -1,6 +1,6 @@
 /*
  * ICARUS2 Corpus Modeling Framework
- * Copyright (C) 2014-2021 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ * Copyright (C) 2014-2022 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,13 @@ public class IqlReference extends IqlNamedReference {
 
 	@JsonProperty(value=IqlTags.REFERENCE_TYPE, required=true)
 	private ReferenceType referenceType;
+
+	public IqlReference() { /* no-op */ }
+
+	public IqlReference(String name, ReferenceType type) {
+		setName(name);
+		setReferenceType(type);
+	}
 
 	public ReferenceType getReferenceType() { return referenceType; }
 
