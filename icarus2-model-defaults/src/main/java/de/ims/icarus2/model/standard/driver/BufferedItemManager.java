@@ -46,6 +46,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 /**
  * @author Markus Gärtner
@@ -121,11 +124,15 @@ public class BufferedItemManager {
 		 */
 		Iterator<Item> pendingItemIterator();
 
-		/** Remove all entries in this cache */
+		/** Remove all entries in this cache and make sure associated data is also erased */
 		int discard();
 
-		/** Persist the content of this cache in the back-end storage and clear the cache */
+		/** Persist the content of this cache in the back-end storage and keep cached data for now */
 		int commit();
+
+		/** Soft version of {@link #discard()} that only drops the currently cached data but does
+		 * <b>not</> cascade to associated data or other caches. */
+		int reset();
 
 	}
 
@@ -178,6 +185,14 @@ public class BufferedItemManager {
 		 */
 		@Override
 		public int commit() {
+			return 0;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#reset()
+		 */
+		@Override
+		public int reset() {
 			return 0;
 		}
 	}
@@ -297,8 +312,169 @@ public class BufferedItemManager {
 			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
 				result = pendingEntries.size();
 				getBuffer().commit(this);
-				// Soft reset by discarding the current buffer content
+			}
+
+			return result;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#reset()
+		 */
+		@Override
+		public int reset() {
+			Long2ObjectMap<Item> pendingEntries = this.pendingEntries;
+			int result = 0;
+
+			if(pendingEntries!=null && !pendingEntries.isEmpty()) {
+				result = pendingEntries.size();
 				pendingEntries.clear();
+			}
+
+			return result;
+		}
+	}
+
+	/**
+	 * Cache implementation that directly stores a set of top-level items
+	 * and keeps track of the indices for the case of a call to {@link #discard()}.
+	 * <p>
+	 * Not thread-safe!
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	static class OptimisticInputCache implements InputCache {
+
+		private final WeakReference<LayerBuffer> buffer;
+		private final Consumer<? super InputCache> cleanupAction;
+
+		private volatile LongSet indices;
+
+		public OptimisticInputCache(LayerBuffer buffer, Consumer<? super InputCache> cleanupAction) {
+			this.buffer = new WeakReference<>(buffer);
+			this.cleanupAction = cleanupAction;
+		}
+
+		public LayerBuffer getBuffer() {
+			LayerBuffer buffer = this.buffer.get();
+			if(buffer==null)
+				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Source buffer no longer available");
+			return buffer;
+		}
+
+		protected LongSet indices() {
+			if(indices==null) {
+				int size = Math.min(getBuffer().getEstimatedSize(), 100_000);
+				indices = new LongOpenHashSet(size);
+			}
+
+			return indices;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.InputCache#offer(de.ims.icarus2.model.api.members.item.Item, long)
+		 */
+		@Override
+		public void offer(Item item, long index) {
+			getBuffer().entries().put(index, item);
+			indices().add(index);
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.InputCache#hasPendingEntries()
+		 */
+		@Override
+		public boolean hasPendingEntries() {
+			LongSet indices = this.indices;
+			return indices!=null && !indices.isEmpty();
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.InputCache#forEach(java.util.function.ObjLongConsumer)
+		 */
+		@Override
+		public void forEach(ObjLongConsumer<Item> action) {
+			LongSet indices = this.indices;
+			if(indices!=null) {
+				final Long2ObjectMap<Item> entries = getBuffer().entries();
+				indices.forEach(index -> {
+					action.accept(entries.get(index), index);
+				});
+			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#pendingItemIterator()
+		 */
+		@Override
+		public Iterator<Item> pendingItemIterator() {
+			LongSet indices = this.indices;
+			Iterator<Item> it = Collections.emptyIterator();
+			if(indices!=null) {
+				final Long2ObjectMap<Item> entries = getBuffer().entries();
+				final LongIterator lit = indices.iterator();
+				it = new Iterator<Item>() {
+
+					@Override
+					public Item next() {
+						long index = lit.nextLong();
+						return entries.get(index);
+					}
+
+					@Override
+					public boolean hasNext() {
+						return lit.hasNext();
+					}
+				};
+			}
+			return it;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.InputCache#discard()
+		 */
+		@Override
+		public int discard() {
+			LongSet indices = this.indices;
+			int result = 0;
+
+			if(indices!=null && !indices.isEmpty()) {
+				result = indices.size();
+
+				try {
+					if(cleanupAction!=null) {
+						cleanupAction.accept(this);
+					}
+					getBuffer().entries().keySet().removeAll(indices);
+				} finally {
+					// Make sure we really clear our buffer
+					indices.clear();
+				}
+			}
+
+			return result;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.InputCache#commit()
+		 */
+		@Override
+		public int commit() {
+			// Data is already persisted, so only need to erase our "backup" indices
+			return reset();
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#reset()
+		 */
+		@Override
+		public int reset() {
+			LongSet indices = this.indices;
+			int result = 0;
+
+			if(indices!=null && !indices.isEmpty()) {
+				result = indices.size();
+				indices.clear();
 			}
 
 			return result;
@@ -437,11 +613,16 @@ public class BufferedItemManager {
 		 * Creates a new {@link InputCache} that when ordered to {@link InputCache#commit()}
 		 * will add its content to this buffer and use the provided {@code action} for
 		 * cleaning up connected data when a {@link InputCache#discard() discard} is called.
+		 * <p>
+		 * If the {@code optimistic} parameter is set to {@code true} the returned cache might
+		 * write directly to the underlying storage and only keep information required to
+		 * remove items later.
 		 *
 		 * @return
 		 */
-		public InputCache newCache(Consumer<? super InputCache> cleanupAction) {
-			return new InputCacheImpl(this, cleanupAction);
+		public InputCache newCache(Consumer<? super InputCache> cleanupAction, boolean optimistic) {
+			return optimistic ? new OptimisticInputCache(this, cleanupAction)
+					: new InputCacheImpl(this, cleanupAction);
 		}
 
 		/**
@@ -450,16 +631,14 @@ public class BufferedItemManager {
 		 * Will only be called by package-private code, so we do not need to make additional
 		 * checks on the provided cache.
 		 */
-		void commit(InputCache cache) {
-
-			InputCacheImpl cacheImpl = (InputCacheImpl) cache;
+		void commit(InputCacheImpl cache) {
 
 			/*
 			 *  Long2ObjectOpenHashMap internally checks if the source of a putAll() implements
 			 *  the Long2ObjectMap interface and uses faster non-boxing iterators to add all
 			 *  the new entries.
 			 */
-			entries().putAll(cacheImpl.pendingEntries);
+			entries().putAll(cache.pendingEntries);
 		}
 
 		/**
