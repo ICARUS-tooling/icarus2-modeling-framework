@@ -31,7 +31,6 @@
 			<imf:layerGroup name="Sentence Group" primaryLayer="token" id="sentenceGroup">
 				<imf:itemLayer id="token" layerType="common.layer.token">
 					<imf:hierarchy>
-						<imf:container containerType="list" />
 						<imf:container containerType="span" />
 					</imf:hierarchy>
 				</imf:itemLayer>
@@ -39,7 +38,6 @@
 					<imf:baseLayer layerId="tokens"/>
 					<imf:foundationLayer layerId="tokens"/>
 					<imf:hierarchy>
-						<imf:container containerType="list" />
 						<imf:container containerType="span" />
 					</imf:hierarchy>
 				</imf:itemLayer>
@@ -52,7 +50,6 @@
 					<imf:boundaryLayer layerId="sentence"/>
 					<imf:foundationLayer layerId="token"/>
 					<imf:hierarchy>
-						<imf:container containerType="list" />
 						<imf:structure containerType="span" structureType="tree" />
 					</imf:hierarchy>
 				</imf:structureLayer>
@@ -61,7 +58,6 @@
 					<imf:boundaryLayer layerId="sentence"/>
 					<imf:foundationLayer layerId="token"/>
 					<imf:hierarchy>
-						<imf:container containerType="list" />
 						<imf:structure containerType="span" structureType="tree" />
 					</imf:hierarchy>
 				</imf:structureLayer>
