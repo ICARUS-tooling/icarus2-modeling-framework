@@ -434,9 +434,11 @@ public class FileDriver extends AbstractDriver {
 	 */
 	@Override
 	public long getItemCount(ItemLayerManifestBase<?> layer) {
-		checkReady();
+		LayerInfo info = null;
 
-		LayerInfo info = getFileStates().getLayerInfo(layer);
+		if(isReady()) {
+			info = getFileStates().getLayerInfo(layer);
+		}
 
 		return info==null ? IcarusUtils.UNSET_LONG : info.getSize();
 	}
