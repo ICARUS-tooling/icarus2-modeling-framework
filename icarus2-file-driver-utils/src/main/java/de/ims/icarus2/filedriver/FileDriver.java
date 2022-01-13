@@ -634,7 +634,7 @@ public class FileDriver extends AbstractDriver {
 			try {
 				loadAllFiles(null);
 			} catch(IOException e) {
-				throw new IcarusApiException(GlobalErrorCode.IO_ERROR, "Failed to load complete file resources");
+				throw new IcarusApiException(GlobalErrorCode.IO_ERROR, "Failed to load complete file resources", e);
 			}
 		}
 	}
@@ -1456,15 +1456,15 @@ public class FileDriver extends AbstractDriver {
 
 			if(!fileInfo.isValid())
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Cannot attempt to load from invalid file at index "+fileIndex+" - state="+fileInfo.states2String());
+						"Cannot attempt to load from invalid file at index "+fileIndex+" ["+fileInfo.getPath()+"] - state="+fileInfo.states2String());
 
 			if(fileInfo.isFlagSet(ElementFlag.PARTIALLY_LOADED))
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"Cannot attempt to completely load already partially loaded file at index "+fileIndex);
+						"Cannot attempt to completely load already partially loaded file at index "+fileIndex+" ["+fileInfo.getPath()+"]");
 
 			if(fileInfo.isFlagSet(ElementFlag.LOADED))
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-						"File already completely loaded for index "+fileIndex);
+						"File already completely loaded for index "+fileIndex+" ["+fileInfo.getPath()+"]");
 
 			/*
 			 * Converter.loadFile() returns number of loaded elements in context's primary layer,
