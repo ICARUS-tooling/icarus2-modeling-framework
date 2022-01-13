@@ -118,6 +118,8 @@
 							</imf:properties>
 						</imf:implementation>
 					</imf:module>
+					<imf:mapping id="m_sent_tok" sourceLayer="sentence" targetLayer="token" relation="one-to-many" coverage="total"/>
+					<imf:mapping id="m_tok_sent" sourceLayer="token" targetLayer="sentence" relation="many-to-one" coverage="total" inverseMapping="m_sent_tok"/>
 				</imf:driver>
 			</imf:rootContext>
 		</imf:corpus>
