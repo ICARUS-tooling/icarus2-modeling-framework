@@ -28,12 +28,11 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.IcarusRuntimeException;
@@ -57,24 +56,28 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlReference.ReferenceType;
+import de.ims.icarus2.test.annotations.IntArrayArg;
 
 /**
  * @author Markus Gärtner
  *
  */
-@Disabled
 class CorpusDataTest {
 
 	@TempDir
 	private static Path tmpFolder;
 
 	@ParameterizedTest
-	@EnumSource(DummyType.class)
-	public void testDummyCreation(DummyType type) throws Exception {
-		Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, type, 1, 2, 3);
+	@CsvSource({
+		"FLAT, 3, 3, {3}",
+		"HIERARCHICAL, 3, 6, {1;2;3}",
+		"FULL, 4, 10, {1;2;3;4}",
+	})
+	public void testDummyCreation(DummyType type, int primarySize, int foundationSize, @IntArrayArg int[] setup) throws Exception {
+		Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, type, setup);
 		ItemLayerManager mgr = corpus.getDriver("context0");
-		assertThat(mgr.getItemCount(corpus.getPrimaryLayer())).isEqualTo(type==DummyType.FLAT ? 6 : 3);
-		assertThat(mgr.getItemCount(corpus.getFoundationLayer())).isEqualTo(6);
+		assertThat(mgr.getItemCount(corpus.getPrimaryLayer())).isEqualTo(primarySize);
+		assertThat(mgr.getItemCount(corpus.getFoundationLayer())).isEqualTo(foundationSize);
 	}
 
 	@Nested
@@ -168,7 +171,7 @@ class CorpusDataTest {
 			void testUnknownLayer() throws Exception {
 				CorpusData data = create(1, 2, 3);
 				IqlLane lane = new IqlLane();
-				lane.setName("not-there");
+				lane.setName(DummyCorpus.UNKNOWN_LAYER);
 
 				assertThatExceptionOfType(QueryException.class).isThrownBy(() -> data.resolveLane(lane))
 					.withMessageContaining("valid layer")
@@ -308,7 +311,7 @@ class CorpusDataTest {
 				String key = "tok";
 
 				IqlBinding binding = new IqlBinding();
-				binding.setTarget("not-there");
+				binding.setTarget(DummyCorpus.UNKNOWN_LAYER);
 				binding.addMember(new IqlReference(key, ReferenceType.MEMBER));
 
 				assertThatExceptionOfType(QueryException.class).isThrownBy(() -> data.bind(binding))
@@ -441,7 +444,7 @@ class CorpusDataTest {
 
 				ElementInfo elementInfo = data.resolveElement(laneInfo, element, null);
 
-				QualifiedIdentifier identifier = QualifiedIdentifier.of("anno3");
+				QualifiedIdentifier identifier = QualifiedIdentifier.of(DummyCorpus.UNKNOWN_KEY);
 				assertThat(data.findAnnotation(elementInfo, identifier)).isEmpty();
 			}
 
@@ -461,7 +464,8 @@ class CorpusDataTest {
 
 				ElementInfo elementInfo = data.resolveElement(laneInfo, element, null);
 
-				QualifiedIdentifier identifier = QualifiedIdentifier.of(DummyCorpus.LAYER_ANNO+"::anno3", DummyCorpus.LAYER_ANNO, "anno3");
+				QualifiedIdentifier identifier = QualifiedIdentifier.of(
+						DummyCorpus.LAYER_ANNO+"::"+DummyCorpus.UNKNOWN_KEY, DummyCorpus.LAYER_ANNO, DummyCorpus.UNKNOWN_KEY);
 				assertThatExceptionOfType(QueryException.class).isThrownBy(() -> data.findAnnotation(elementInfo, identifier))
 					.withMessageContaining("not be resolved to an annotation")
 					.extracting(IcarusRuntimeException::getErrorCode)

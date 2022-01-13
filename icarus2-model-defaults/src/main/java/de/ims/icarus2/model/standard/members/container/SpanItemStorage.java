@@ -366,7 +366,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getBeginOffset(Container context) {
-		return target(context).getItemAt(beginIndex).getBeginOffset();
+		return beginIndex==IcarusUtils.UNSET_LONG ? IcarusUtils.UNSET_LONG : target(context).getItemAt(beginIndex).getBeginOffset();
 	}
 
 	/**
@@ -374,7 +374,7 @@ public class SpanItemStorage implements ItemStorage {
 	 */
 	@Override
 	public long getEndOffset(Container context) {
-		return target(context).getItemAt(endIndex).getEndOffset();
+		return endIndex==IcarusUtils.UNSET_LONG ? IcarusUtils.UNSET_LONG : target(context).getItemAt(endIndex).getEndOffset();
 	}
 
 	public long getBeginIndex() {

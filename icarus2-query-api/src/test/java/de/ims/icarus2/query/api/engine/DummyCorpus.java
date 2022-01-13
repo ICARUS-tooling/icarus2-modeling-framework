@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -54,9 +56,13 @@ public class DummyCorpus {
 	public static final String LAYER_ANNO = "anno";
 	public static final String LAYER_ANNO_2 = "anno2";
 
+	public static final String UNKNOWN_LAYER = "not-there";
+
 	public static final String ANNO_COUNTER = "counter";
 	public static final String ANNO_1 = "anno1";
 	public static final String ANNO_2 = "anno2";
+
+	public static final String UNKNOWN_KEY = "anno3";
 
 	public enum DummyType {
 		FLAT("tpl_flat_corpus.imf.xml"),
@@ -70,8 +76,16 @@ public class DummyCorpus {
 		}
 	}
 
-	public static Path createCorpusFile(Path folder, int...setup) throws IOException {
-		StringBuilder sb = new StringBuilder(setup.length * 100);
+	private static void fillFlatContent(StringBuilder sb, int size) {
+		for (int i = 0; i < size; i++) {
+			sb.append(i)
+				.append('\t').append("anno1_").append(0).append('_').append(i)
+				.append('\t').append("anno2_").append(0).append('_').append(i)
+				.append('\n');
+		}
+	}
+
+	private static void fillHierarchicalContent(StringBuilder sb, int...setup) {
 		for (int i = 0; i < setup.length; i++) {
 			if(i>0) {
 				sb.append('\n');
@@ -82,6 +96,33 @@ public class DummyCorpus {
 					.append('\t').append("anno2_").append(i).append('_').append(j)
 					.append('\n');
 			}
+		}
+	}
+
+	private static void fillFullContent(StringBuilder sb, int...setup) {
+		//TODO implement and remove delegation
+		fillHierarchicalContent(sb, setup);
+	}
+
+	public static Path createCorpusFile(Path folder, DummyType type, int...setup) throws IOException {
+		StringBuilder sb = new StringBuilder(setup.length * 100);
+
+		switch (type) {
+		case FLAT:
+			assertThat(setup).hasSize(1);
+			fillFlatContent(sb, setup[0]);
+			break;
+
+		case HIERARCHICAL:
+			fillHierarchicalContent(sb, setup);
+			break;
+
+		case FULL:
+			fillFullContent(sb, setup);
+			break;
+
+		default:
+			break;
 		}
 
 		Path file = Files.createTempFile(folder, "test_corpus", ".imf.xml");
@@ -105,7 +146,7 @@ public class DummyCorpus {
 	 * @throws InterruptedException
 	 */
 	public static Corpus createDummyCorpus(Path folder, DummyType type, int...setup) throws SAXException, IOException, InterruptedException {
-		Path file = createCorpusFile(folder, setup);
+		Path file = createCorpusFile(folder, type, setup);
 		Consumer<CorpusManifest> processor = corpus -> {
 			LocationManifest loc = new LocationManifestImpl(corpus.getManifestLocation(), corpus.getRegistry());
 			loc.setRootPathType(PathType.FILE);

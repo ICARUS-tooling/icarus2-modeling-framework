@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.function.LongSupplier;
 import java.util.function.LongUnaryOperator;
 import java.util.function.ObjLongConsumer;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -44,14 +45,17 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Coverage;
 import de.ims.icarus2.model.manifest.api.MappingManifest.Relation;
 import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  *
@@ -165,6 +169,8 @@ public interface ComponentSupplier extends AutoCloseable {
 		private final MemberType componentType;
 		private final ObjLongConsumer<Item> componentConsumer;
 
+		private final Supplier<DataSet<Container>> baseContainerSupplier;
+
 		private long id;
 		private Item item;
 		private Container host;
@@ -185,6 +191,7 @@ public interface ComponentSupplier extends AutoCloseable {
 			memberFactory = builder.getMemberFactory();
 			componentType = builder.getComponentType();
 			componentConsumer = builder.getComponentConsumer();
+			baseContainerSupplier = builder.getBaseContainerSupplier();
 		}
 
 		@Override
@@ -284,20 +291,35 @@ public interface ComponentSupplier extends AutoCloseable {
 		protected Item newComponent(Container host, long id) {
 			ItemLayerManifestBase<?> manifest = componentLayer.getManifest();
 			switch (componentType) {
-			case CONTAINER:
-				return memberFactory.newContainer(manifest.getRootContainerManifest()
-						.orElseThrow(ManifestException.missing(manifest, "root container")),
-						host, null, null, id); //TODO for now we ignore base and boundary containers!!!
-			case STRUCTURE:
-				return memberFactory.newStructure(((StructureLayerManifest)manifest).getRootStructureManifest()
-						.orElseThrow(ManifestException.missing(manifest, "root structure")),
-						host, null, null, id); //TODO for now we ignore base and boundary containers!!!
+			case CONTAINER: {
+				DataSet<Container> baseContainers = fetchBaseContainers(host, id);
+				ContainerManifestBase<?> containerManifest = manifest.getRootContainerManifest()
+						.orElseThrow(ManifestException.missing(manifest, "root container"));
+				return memberFactory.newContainer(containerManifest,
+						host, baseContainers, null, id); //TODO for now we ignore boundary containers!!!
+			}
+			case STRUCTURE: {
+				DataSet<Container> baseContainers = fetchBaseContainers(host, id);
+				StructureManifest structureManifest = ((StructureLayerManifest)manifest).getRootStructureManifest()
+						.orElseThrow(ManifestException.missing(manifest, "root structure"));
+				return memberFactory.newStructure(structureManifest,
+						host, baseContainers, null, id); //TODO for now we ignore boundary containers!!!
+			}
 			case ITEM:
 				return memberFactory.newItem(host, id);
 
 			default:
 				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Current component type not supported: "+componentType);
 			}
+		}
+
+		protected @Nullable DataSet<Container> fetchBaseContainers(Container host, long id) {
+			/*
+			 * TODO currently we rely on the external facilities to produce containers
+			 * in the correct order, so that we can simply use the most recent set of
+			 * base containers.
+			 */
+			return baseContainerSupplier==null ? null : baseContainerSupplier.get();
 		}
 	}
 
@@ -660,6 +682,11 @@ public interface ComponentSupplier extends AutoCloseable {
 		 */
 		private ObjLongConsumer<Item> componentConsumer;
 
+		/**
+		 * Source of base containers for newly created elements.
+		 */
+		private Supplier<DataSet<Container>> baseContainerSupplier;
+
 		protected Builder() {
 			// no-op
 		}
@@ -838,6 +865,22 @@ public interface ComponentSupplier extends AutoCloseable {
 			checkState(this.componentConsumer==null);
 
 			this.componentConsumer = componentConsumer;
+
+			return thisAsCast();
+		}
+
+		@Guarded(methodType=MethodType.GETTER)
+		@Nullable
+		public Supplier<DataSet<Container>> getBaseContainerSupplier() {
+			return baseContainerSupplier;
+		}
+
+		@Guarded(methodType=MethodType.BUILDER)
+		public Builder baseContainerSupplier(Supplier<DataSet<Container>> baseContainerSupplier) {
+			requireNonNull(baseContainerSupplier);
+			checkState(this.baseContainerSupplier==null);
+
+			this.baseContainerSupplier = baseContainerSupplier;
 
 			return thisAsCast();
 		}

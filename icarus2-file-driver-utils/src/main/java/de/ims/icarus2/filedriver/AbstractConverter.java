@@ -643,7 +643,10 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 			published = true;
 			LongAdder adder = new LongAdder();
 
+			// Commit first
 			caches.forEach(c -> adder.add(c.commit()));
+			// Then clear all caches
+			caches.forEach(InputCache::reset);
 
 			return adder.longValue();
 		}

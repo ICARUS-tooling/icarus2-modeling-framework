@@ -18,6 +18,8 @@ package de.ims.icarus2.filedriver.schema.tabular;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
@@ -95,7 +97,10 @@ import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
+import de.ims.icarus2.model.api.members.item.manager.ItemLookup;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
+import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
@@ -103,6 +108,7 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
+import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
@@ -116,6 +122,8 @@ import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.LazyMap;
 import de.ims.icarus2.util.collections.Pool;
 import de.ims.icarus2.util.collections.WeakHashSet;
+import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
@@ -246,6 +254,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		Map<Layer, Analyzer> analyzers = createAnalyzers(layerGroup, fileIndex);
 
+		Map<ItemLayer, ItemLookup> lookups = new Object2ObjectOpenHashMap<>();
+
 		// For each item layer create a wrapped analyzer that also cleans up related annotation content
 		BiFunction<ItemLayer, Graph<Layer>, InputCache> cacheGen = (layer, graph) -> {
 
@@ -261,7 +271,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			 */
 			ItemLayerAnalyzer analyzer = (ItemLayerAnalyzer) analyzers.getOrDefault(layer, ItemLayerAnalyzer.EMPTY_ANALYZER);
 
-			return new AnalyzingInputCache(analyzer, cleanupAction);
+			AnalyzingInputCache cache = new AnalyzingInputCache(analyzer, cleanupAction);
+
+			lookups.put(layer, cache);
+
+			return cache;
 		};
 
 		/*
@@ -280,37 +294,35 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			.memberFactory(getSharedMemberFactory())
 			.mode(ReadMode.SCAN)
 			.consumers(layer -> caches.get(layer)::offer)
+			.lookups(lookups)
 			.build();
 
-		ObjLongConsumer<Item> topLevelItemAction = new ObjLongConsumer<Item>() {
+		// Reduce overhead by only purging our back-end storage every so often
+		final MutableInteger chunksTillPurge = new MutableInteger(DEFAULT_TEMP_CHUNK_COUNT);
 
-			// Reduce overhead by only purging our back-end storage every so often
-			private int chunksTillPurge = DEFAULT_TEMP_CHUNK_COUNT;
+		ObjLongConsumer<Item> topLevelItemAction = (item, index) -> {
+			/*
+			 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
+			 *
+			 *  Our assumption is that subclasses or factory code that gets called from within
+			 *  the creation process already assigns other flags than ALIVE. Therefore this is
+			 *  the only flag we need to worry about here. It is also the only one that MUST be
+			 *  set in order for a blank item to get assigned VALID chunk state!
+			 */
+			if(item instanceof ManagedItem) {
+				((ManagedItem)item).setAlive(true);
+			}
 
-			@Override
-			public void accept(Item item, long index) {
-				/*
-				 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
-				 *
-				 *  Our assumption is that subclasses or factory code that gets called from within
-				 *  the creation process already assigns other flags than ALIVE. Therefore this is
-				 *  the only flag we need to worry about here. It is also the only one that MUST be
-				 *  set in order for a blank item to get assigned VALID chunk state!
-				 */
-				if(item instanceof ManagedItem) {
-					((ManagedItem)item).setAlive(true);
-				}
-
-				/*
-				 *  We "abuse" caches to collect all the items created for a single chunk here.
-				 *
-				 *  Committing the caches will trigger the nested analyzers to collect metadata
-				 *  and then discard the content of the cache.
-				 */
-				if(--chunksTillPurge<=0) {
-					chunksTillPurge = DEFAULT_TEMP_CHUNK_COUNT;
-					caches.values().forEach(InputCache::commit);
-				}
+			/*
+			 *  We "abuse" caches to collect all the items created for a single chunk here.
+			 *
+			 *  Committing the caches will trigger the nested analyzers to collect metadata
+			 *  and then discard the content of the cache.
+			 */
+			if(chunksTillPurge.decrementAndGet()<=0) {
+				chunksTillPurge.setInt(DEFAULT_TEMP_CHUNK_COUNT);
+				caches.values().forEach(InputCache::commit);
+				caches.values().forEach(InputCache::reset);
 			}
 		};
 
@@ -358,7 +370,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				try {
 					// Delegate actual conversion work (which will advance lines on its own)
 					blockHandler.readChunk(lines, inputContext);
-
 				} catch(RuntimeException e) {
 					// Only care about "soft" errors here (they won't terminate the scanning process)
 
@@ -671,14 +682,19 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				 *
 				 *  Otherwise we'll create a link to related annotation
 				 *  layers (storages) that should get cleaned when a cache
-				 *  gets canceled.
+				 *  gets discarded before committing.
 				 */
 				if(cacheGen==null) {
 					Consumer<InputCache> cleanupAction = new AnnotationCleaner()
 							.addStoragesFromLayers(graph.incomingNodes(itemLayer));
 
-					// Let driver component decide on actual cache implementation
-					cache = getDriver().getLayerBuffer(itemLayer).newCache(cleanupAction);
+					/*
+					 * Let driver component decide on actual cache implementation.
+					 *
+					 * We request optimistic caches here so that the linking of freshly
+					 * loaded items/containers can be done directly.
+					 */
+					cache = getDriver().getLayerBuffer(itemLayer).newCache(cleanupAction, true);
 				} else {
 					cache = cacheGen.apply(itemLayer, graph);
 				}
@@ -728,7 +744,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 	}
 
-	public static class AnalyzingInputCache implements InputCache{
+	public static class AnalyzingInputCache implements InputCache, ItemLookup {
 
 		private final List<Item> items = new ObjectArrayList<>(100);
 		private final LongList indices = new LongArrayList(100);
@@ -754,6 +770,28 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public void offer(Item item, long index) {
 			items.add(item);
 			indices.add(index);
+		}
+
+		@Override
+		public long getItemCount() {
+			return indices.isEmpty() ? 0L : indices.getLong(indices.size()-1) + 1;
+		}
+
+		@Override
+		public Item getItemAt(long index) {
+			int localIndex = indices.indexOf(index);
+			if(localIndex==UNSET_INT)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Item alread purged from cache or invalid index: "+index);
+
+			return items.get(localIndex);
+		}
+
+		@Override
+		public long indexOfItem(Item item) {
+			int localIndex = items.indexOf(item);
+			if(localIndex==UNSET_INT)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Item alread purged from cache or unknown item: "+item);
+			return indices.getLong(localIndex);
 		}
 
 		/**
@@ -790,6 +828,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public int discard() {
 			int size = items.size();
 
+			System.out.printf("discarding items %s for indices %s in cache %s%n", items, indices, this);
+
 			try {
 				if(cleanupAction!=null) {
 					cleanupAction.accept(this);
@@ -807,13 +847,21 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		public int commit() {
-			// First perform analysis
+			// Perform analysis
 			forEach(analyzer);
-
-			// Then proceed by simply discarding all content
-			return discard();
+			return items.size();
 		}
 
+		/**
+		 * @see de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache#reset()
+		 */
+		@Override
+		public int reset() {
+			int size = items.size();
+			items.clear();
+			indices.clear();
+			return size;
+		}
 	}
 
 	/**
@@ -2004,6 +2052,36 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 	}
 
+	private static class ContainerSupplierProxy implements Supplier<Container> {
+
+		private Supplier<Container> supplier;
+
+		@Override
+		public Container get() { return supplier.get(); }
+
+		void setSupplier(Supplier<Container> supplier) {
+			checkState("Supplier already set", this.supplier==null);
+			this.supplier = requireNonNull(supplier);
+		}
+	}
+
+	private static class BaseContainerSupplier implements Supplier<DataSet<Container>> {
+		private final Supplier<Container>[] containerSuppliers;
+
+		public BaseContainerSupplier(Supplier<Container>[] containerSuppliers) {
+			this.containerSuppliers = containerSuppliers;
+		}
+
+		@Override
+		public DataSet<Container> get() {
+			Container[] containers = new Container[containerSuppliers.length];
+			for (int i = 0; i < containers.length; i++) {
+				containers[i] = containerSuppliers[i].get();
+			}
+			return DataSets.createDataSet(containers);
+		}
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -2018,6 +2096,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private ReadMode mode;
 
 		private LayerMemberFactory memberFactory;
+
+		private Map<ItemLayer, ItemLookup> lookups;
 
 		private BlockHandler rootBlockHandler;
 
@@ -2076,6 +2156,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return thisAsCast();
 		}
 
+		public ComponentSuppliersFactory lookups(Map<ItemLayer, ItemLookup> lookups) {
+			requireNonNull(lookups);
+			checkState("Lookup already set", this.lookups==null);
+
+			this.lookups = lookups;
+
+			return thisAsCast();
+		}
+
 		/**
 		 * @see de.ims.icarus2.util.AbstractBuilder#constructor(java.util.function.Function)
 		 */
@@ -2093,6 +2182,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			checkState("Missing mode", mode!=null);
 			checkState("Missing root block handler", rootBlockHandler!=null);
 			checkState("Missing member factory", memberFactory!=null);
+
+			if(mode==ReadMode.SCAN) {
+				checkState("Missing lookup", lookups!=null);
+			}
 		}
 
 		/**
@@ -2100,14 +2193,24 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		protected Map<ItemLayer, ComponentSupplier> create() {
-			Map<ItemLayer, ComponentSupplier> map = new Object2ObjectOpenHashMap<>();
+			Map<ItemLayer, ComponentSupplier> componentSuppliers = new Object2ObjectOpenHashMap<>();
+			Map<ItemLayer, Supplier<Container>> containerSuppliers = new Object2ObjectOpenHashMap<>();
 
-			collectComponentSuppliers0(rootBlockHandler, map);
+			collectComponentSuppliers0(rootBlockHandler, componentSuppliers, containerSuppliers);
 
-			return map;
+			return componentSuppliers;
 		}
 
-		private void collectComponentSuppliers0(BlockHandler blockHandler, Map<ItemLayer, ComponentSupplier> map) {
+		private void collectComponentSuppliers0(BlockHandler blockHandler,
+				Map<ItemLayer, ComponentSupplier> componentSuppliers,
+				Map<ItemLayer, Supplier<Container>> containerSuppliers) {
+
+			BlockHandler[] nestedHandlers = blockHandler.nestedBlockHandlers;
+			if(nestedHandlers!=null) {
+				for(BlockHandler nestedHandler : nestedHandlers) {
+					collectComponentSuppliers0(nestedHandler, componentSuppliers, containerSuppliers);
+				}
+			}
 
 			ItemLayer layer = blockHandler.getItemLayer();
 
@@ -2119,6 +2222,41 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			ObjLongConsumer<Item> consumer = consumers==null ? null : consumers.apply(layer);
 			if(consumer!=null) {
 				builder.componentConsumer(consumer);
+			}
+
+			if(!layer.getBaseLayers().isEmpty()) {
+				/** Creates a supplier for element sof the specified layer */
+				// Currently we only supply top-level elements, so the root container is sufficient
+				//TODO add parameters to control whether nested containers are desired
+				final Function<ItemLayer, Supplier<Container>> baseContainerCrator = itemLayer -> {
+					final Container container;
+					if(mode==ReadMode.SCAN) {
+						// When scanning, items don't get actually stored persistently
+						container = new TempContainer(lookups.get(itemLayer));
+					} else {
+						// For live reading we can already rely on the underlying storage to work
+						container = itemLayer.getProxyContainer();
+					}
+					return () -> container;
+				};
+
+				@SuppressWarnings("unchecked")
+				Supplier<Container>[] suppliers = new Supplier[layer.getBaseLayers().entryCount()];
+				boolean dynamic = false;
+				for (int i = 0; i < suppliers.length; i++) {
+					Supplier<Container> supplier = containerSuppliers.computeIfAbsent(layer.getBaseLayers().entryAt(i), baseContainerCrator);
+					suppliers[i] = supplier;
+					dynamic |= supplier instanceof ContainerSupplierProxy;
+				}
+
+				if(dynamic) {
+					// Requires dynamic construction of base containers
+					builder.baseContainerSupplier(new BaseContainerSupplier(suppliers));
+				} else {
+					// Compute base layers once and then reuse the result
+					final DataSet<Container> baseContainers = new BaseContainerSupplier(suppliers).get();
+					builder.baseContainerSupplier(() -> baseContainers);
+				}
 			}
 
 			// In SCAN mode we only read items, analyze and then immediately discard them
@@ -2178,15 +2316,97 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				}
 			}
 
-			map.put(blockHandler.getItemLayer(), builder.build());
+			ComponentSupplier componentSupplier = builder.build();
+			componentSupplier.setHost(layer.getProxyContainer());
 
-			BlockHandler[] nestedHandlers = blockHandler.nestedBlockHandlers;
-			if(nestedHandlers!=null) {
-				for(BlockHandler nestedHandler : nestedHandlers) {
-					collectComponentSuppliers0(nestedHandler, map);
-				}
-			}
+			componentSuppliers.put(blockHandler.getItemLayer(), componentSupplier);
 		}
+
+	}
+
+	private static class TempContainer extends AbstractImmutableContainer {
+
+		private final ItemLookup lookup;
+
+		TempContainer(ItemLookup lookup) {
+			this.lookup = requireNonNull(lookup);
+		}
+
+		@Override
+		public ContainerType getContainerType() {
+			return ContainerType.LIST;
+		}
+
+		@Override
+		public ContainerManifestBase<?> getManifest() {
+			return null;
+		}
+
+		@Override
+		public DataSet<Container> getBaseContainers() {
+			return DataSet.emptySet();
+		}
+
+		@Override
+		public Container getBoundaryContainer() {
+			return null;
+		}
+
+		@Override
+		public boolean isItemsComplete() {
+			return true;
+		}
+
+		@Override
+		public long getItemCount() {
+			return lookup.getItemCount();
+		}
+
+		@Override
+		public Item getItemAt(long index) {
+			return lookup.getItemAt(index);
+		}
+
+		@Override
+		public long indexOfItem(Item item) {
+			return lookup.indexOfItem(item);
+		}
+
+		@Override
+		public Container getContainer() {
+			return null;
+		}
+
+		@Override
+		public long getIndex() {
+			return UNSET_LONG;
+		}
+
+		@Override
+		public long getId() {
+			return UNSET_LONG;
+		}
+
+		@Override
+		public boolean isAlive() {
+			return true;
+		}
+
+		@Override
+		public boolean isLocked() {
+			return false;
+		}
+
+		@Override
+		public boolean isDirty() {
+			return false;
+		}
+
+		@Override
+		public boolean isProxy() {
+			return true;
+		}
+
 
 	}
 
@@ -2899,7 +3119,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 
 				ComponentSupplier componentSupplier = context.getComponentSupplier(this);
-				componentSupplier.setHost(host);
 				componentSupplier.reset(index);
 				if(!componentSupplier.next())
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
@@ -2910,7 +3129,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 						topLevelAction.accept(container, componentSupplier.currentIndex());
 					}
 				} else {
-					// Only for non-top-level items do we need to add them to their host container
+					// Only for non-top-level items do we need to manually add them to their host container
 					host.addItem(container);
 				}
 
@@ -2954,7 +3173,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			ComponentSupplier componentSupplier = context.getComponentSupplier(this);
 			componentSupplier.reset(index);
-			componentSupplier.setHost(host);
 
 			// Prepare for beginning of content (notify batch resolvers)
 			beginContent(context);

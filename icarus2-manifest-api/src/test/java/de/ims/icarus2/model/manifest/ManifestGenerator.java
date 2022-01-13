@@ -869,7 +869,6 @@ public class ManifestGenerator {
 			IncrementalBuild<?> container, Config config) {
 
 		Hierarchy<ContainerManifestBase<?>> hierarchy = new HierarchyImpl<>();
-		hierarchy.add((ContainerManifest)generate0(ManifestType.CONTAINER_MANIFEST, manifest, config).applyAllAndGet());
 		hierarchy.add((StructureManifest)generate0(ManifestType.STRUCTURE_MANIFEST, manifest, config).applyAllAndGet());
 		manifest.setContainerHierarchy(hierarchy);
 

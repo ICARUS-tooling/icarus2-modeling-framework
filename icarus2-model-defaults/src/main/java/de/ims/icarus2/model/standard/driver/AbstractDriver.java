@@ -214,9 +214,6 @@ public abstract class AbstractDriver implements Driver {
 			verifyInternals();
 
 			connected.set(true);
-
-			// Connect notify AFTER this driver's 'connected' flag has been set!
-			context.connectNotify(this);
 		} finally {
 			// Make sure we go back to verifying access to critical components
 			allowUncheckedAccess = false;
@@ -252,6 +249,9 @@ public abstract class AbstractDriver implements Driver {
 		checkState(this.context==null);
 
 		this.context = context;
+
+		// Connect notify AFTER this driver's 'connected' flag has been set!
+		context.connectNotify(this);
 	}
 
 	/**
