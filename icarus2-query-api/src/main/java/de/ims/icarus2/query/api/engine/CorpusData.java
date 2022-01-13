@@ -55,7 +55,6 @@ import de.ims.icarus2.model.api.layer.HighlightLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
-import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.api.view.Scope;
@@ -130,7 +129,7 @@ public abstract class CorpusData implements AutoCloseable {
 	/** Lookup a layer by name. This only resolved native layers! */
 	public abstract Optional<LayerRef> findLayer(String name);
 	/** Provide actual access to the given layer via a simple lookup interface */
-	public abstract LongFunction<Container> access(LayerRef layer);
+	public abstract LongFunction<Item> access(LayerRef layer);
 	/** Provide (lazy) access to the mapping facilities between {@code source} and {@code target} */
 	public abstract LaneMapper map(LayerRef source, LayerRef target);
 
@@ -449,10 +448,10 @@ public abstract class CorpusData implements AutoCloseable {
 		}
 
 		@Override
-		public LongFunction<Container> access(LayerRef layerRef) {
+		public LongFunction<Item> access(LayerRef layerRef) {
 			ItemLayer layer = layer(layerRef);
 			ItemLayerManager itemLayerManager = layer.getContext().getDriver();
-			return index  -> (Container) itemLayerManager.getItem(layer, index);
+			return index  -> itemLayerManager.getItem(layer, index);
 		}
 
 		@Override
@@ -817,9 +816,9 @@ public abstract class CorpusData implements AutoCloseable {
 		}
 
 		@Override
-		public LongFunction<Container> access(LayerRef layer) {
+		public LongFunction<Item> access(LayerRef layer) {
 			List<Item> buffer = requireNonNull(layers.get(layer.getId())).elements;
-			return index -> (Container)buffer.get(strictToInt(index));
+			return index -> buffer.get(strictToInt(index));
 		}
 
 		@Override

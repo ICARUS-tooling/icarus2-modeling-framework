@@ -179,7 +179,7 @@ public class QueryTestUtils {
 		}
 
 		@Override
-		public LongFunction<Container> access(LayerRef layer) {
+		public LongFunction<Item> access(LayerRef layer) {
 			throw new UnsupportedOperationException("No data behind dummy corpus");
 		}
 

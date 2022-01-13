@@ -28,12 +28,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
+import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.query.api.engine.CorpusData.LayerRef;
 import de.ims.icarus2.query.api.engine.matcher.Matcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
@@ -288,11 +290,14 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 				final LayerRef layer = layers[i] = getPrimaryLayer(activePattern);
 				final LayerRef nextLayer = layers[i+1];
 
+				final LongFunction<Item> itemLookup = corpusData.access(layer);
+				final LongFunction<Container> containerLookup = idx -> Container.class.cast(itemLookup.apply(idx));
+
 				final LaneBridge bridge;
 				if(cachableBridge[i]) {
 					bridge = LaneBridge.Cached.builder()
 							.accumulator(new MatchAccumulator()) // we just use the default settings
-							.itemLookup(corpusData.access(layer))
+							.itemLookup(containerLookup)
 							.laneMapper(corpusData.map(layer, nextLayer))
 							.next(previousMatcher)
 							.pattern(activePattern)
@@ -300,7 +305,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 				} else {
 					bridge = LaneBridge.Uncached.builder()
 							.bufferSize(QueryUtils.BUFFER_STARTSIZE)
-							.itemLookup(corpusData.access(layer))
+							.itemLookup(containerLookup)
 							.laneMapper(corpusData.map(layer, nextLayer))
 							.next(previousMatcher)
 							.pattern(activePattern)
