@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.LongFunction;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,12 +39,16 @@ import org.xml.sax.SAXException;
 
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
+import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.CorpusData.CorpusBacked;
+import de.ims.icarus2.query.api.engine.CorpusData.LayerRef;
 import de.ims.icarus2.query.api.engine.DummyCorpus.DummyType;
 import de.ims.icarus2.query.api.exp.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.BindingInfo;
@@ -75,7 +81,7 @@ class CorpusDataTest {
 	})
 	public void testDummyCreation(DummyType type, int primarySize, int foundationSize, @IntArrayArg int[] setup) throws Exception {
 		Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, type, setup);
-		ItemLayerManager mgr = corpus.getDriver("context0");
+		ItemLayerManager mgr = corpus.getDriver(DummyCorpus.CONTEXT);
 		assertThat(mgr.getItemCount(corpus.getPrimaryLayer())).isEqualTo(primarySize);
 		assertThat(mgr.getItemCount(corpus.getFoundationLayer())).isEqualTo(foundationSize);
 	}
@@ -84,6 +90,13 @@ class CorpusDataTest {
 	class ForCorpusBacked {
 
 
+		private CorpusData.CorpusBacked create(int...setup) throws SAXException, IOException, InterruptedException {
+			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
+			return CorpusBacked.builder()
+					.scope(corpus.createCompleteScope())
+					.build();
+		}
+
 		/**
 		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#close()}.
 		 */
@@ -91,13 +104,6 @@ class CorpusDataTest {
 		void testClose() throws Exception {
 			create(1, 2, 3).close();
 			//TODO do we need to verify that methods can fail now?
-		}
-
-		private CorpusData.CorpusBacked create(int...setup) throws SAXException, IOException, InterruptedException {
-			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
-			return CorpusBacked.builder()
-					.scope(corpus.createCompleteScope())
-					.build();
 		}
 
 		@Nested
@@ -478,8 +484,131 @@ class CorpusDataTest {
 		/**
 		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#findLayer(java.lang.String)}.
 		 */
+		@ParameterizedTest
+		@CsvSource({
+			"FLAT, {3}",
+			"HIERARCHICAL, {1;2;3}",
+			"FULL, {1;2;3;4}",
+		})
+		void testFindLayer(DummyType type, @IntArrayArg int[] setup) throws Exception {
+			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
+			CorpusBacked data = CorpusBacked.builder()
+					.scope(corpus.createCompleteScope())
+					.build();
+			Map<String, ManifestType> layers = type.getLayers();
+			for(String layer : layers.keySet()) {
+				Optional<LayerRef> ref = data.findLayer(layer);
+				assertThat(ref).isNotEmpty()
+					.hasValueSatisfying(lr -> assertThat(lr.getId()).endsWith(layer));
+			}
+		}
+
 		@Test
-		void testFindLayer() throws Exception {
+		void testFindUnknownLayer() throws Exception {
+			CorpusData data = create(3);
+			assertThat(data.findLayer(DummyCorpus.UNKNOWN_LAYER)).isEmpty();
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#access(de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
+		 */
+		@ParameterizedTest
+		@CsvSource({
+			"FLAT, {3}, token, 3, false",
+			"HIERARCHICAL, {1;2;3}, token, 6, false",
+			"HIERARCHICAL, {1;2;3}, sentence, 3, true",
+			"FULL, {1;2;3;4}, token, 10, false",
+			"FULL, {1;2;3;4}, sentence, 4, true",
+		})
+		void testAccess(DummyType type, @IntArrayArg int[] setup, String layer, int size, boolean container) throws Exception {
+			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
+			CorpusBacked data = CorpusBacked.builder()
+					.scope(corpus.createCompleteScope())
+					.build();
+
+			LayerRef ref = data.findLayer(layer).get();
+
+			LongFunction<Item> itemLookup = data.access(ref);
+
+			for (int i = 0; i < size; i++) {
+				Item item = itemLookup.apply(i);
+				assertThat(item).isNotNull();
+				if(container) {
+					assertThat(item).isInstanceOf(Container.class);
+				}
+			}
+		}
+
+		//TODO enable tests once the tabular converter actually ppulates mapping data
+		@Disabled
+		@Nested
+		class ForMap {
+
+			/**
+			 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#map(de.ims.icarus2.query.api.engine.CorpusData.LayerRef, de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
+			 */
+			@Test
+			void testTok2Sent() throws Exception {
+				Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.HIERARCHICAL, 1, 2, 3);
+				CorpusBacked data = CorpusBacked.builder()
+						.scope(corpus.createCompleteScope())
+						.build();
+
+				LayerRef sourceRef = data.findLayer(DummyCorpus.LAYER_TOKEN).get();
+				LayerRef targetRef = data.findLayer(DummyCorpus.LAYER_SENTENCE).get();
+
+				LaneMapper mapper = data.map(sourceRef, targetRef);
+
+				mapper.reset(0);
+				assertThat(mapper.size()).isEqualTo(1);
+				assertThat(mapper.indexAt(0)).isEqualTo(0);
+			}
+
+		}
+	}
+
+	//TODO enable tests once virtual CorpusData is done
+	@Disabled
+	@Nested
+	class ForVirtual {
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#resolveLane(de.ims.icarus2.query.api.iql.IqlLane)}.
+		 */
+		@Test
+		void testResolveLane() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#resolveElement(de.ims.icarus2.query.api.exp.LaneInfo, de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement, de.ims.icarus2.query.api.exp.ElementInfo)}.
+		 */
+		@Test
+		void testResolveElement() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#bind(de.ims.icarus2.query.api.iql.IqlBinding)}.
+		 */
+		@Test
+		void testBind() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#findAnnotation(de.ims.icarus2.query.api.exp.ElementInfo, de.ims.icarus2.query.api.exp.QualifiedIdentifier)}.
+		 */
+		@Test
+		void testFindAnnotation() {
+			fail("Not yet implemented"); // TODO
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#findLayer(java.lang.String)}.
+		 */
+		@Test
+		void testFindLayer() {
 			fail("Not yet implemented"); // TODO
 		}
 
@@ -487,7 +616,7 @@ class CorpusDataTest {
 		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#access(de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
 		 */
 		@Test
-		void testAccess() throws Exception {
+		void testAccess() {
 			fail("Not yet implemented"); // TODO
 		}
 
@@ -495,78 +624,18 @@ class CorpusDataTest {
 		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#map(de.ims.icarus2.query.api.engine.CorpusData.LayerRef, de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
 		 */
 		@Test
-		void testMap() throws Exception {
+		void testMap() {
 			fail("Not yet implemented"); // TODO
 		}
-	}
 
-	@Nested
-	class ForVirtual {
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#close()}.
+		 */
+		@Test
+		void testClose() {
+			fail("Not yet implemented"); // TODO
+		}
 
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#resolveLane(de.ims.icarus2.query.api.iql.IqlLane)}.
-	 */
-	@Test
-	void testResolveLane() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#resolveElement(de.ims.icarus2.query.api.exp.LaneInfo, de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement, de.ims.icarus2.query.api.exp.ElementInfo)}.
-	 */
-	@Test
-	void testResolveElement() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#bind(de.ims.icarus2.query.api.iql.IqlBinding)}.
-	 */
-	@Test
-	void testBind() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#findAnnotation(de.ims.icarus2.query.api.exp.ElementInfo, de.ims.icarus2.query.api.exp.QualifiedIdentifier)}.
-	 */
-	@Test
-	void testFindAnnotation() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#findLayer(java.lang.String)}.
-	 */
-	@Test
-	void testFindLayer() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#access(de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
-	 */
-	@Test
-	void testAccess() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#map(de.ims.icarus2.query.api.engine.CorpusData.LayerRef, de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
-	 */
-	@Test
-	void testMap() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#close()}.
-	 */
-	@Test
-	void testClose() {
-		fail("Not yet implemented"); // TODO
 	}
 
 }

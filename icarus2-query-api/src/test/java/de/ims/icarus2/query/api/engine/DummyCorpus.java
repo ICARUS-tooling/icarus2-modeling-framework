@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.xml.sax.SAXException;
@@ -36,9 +39,12 @@ import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
+import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.standard.LocationManifestImpl;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -64,15 +70,38 @@ public class DummyCorpus {
 
 	public static final String UNKNOWN_KEY = "anno3";
 
+	private static final Map<String, ManifestType> typeLookup = new Object2ObjectOpenHashMap<>();
+	static {
+		for(String layer : new String[] {LAYER_TOKEN, LAYER_TOKEN_2, LAYER_SENTENCE, LAYER_SENTENCE_2}) {
+			typeLookup.put(layer, ManifestType.ITEM_LAYER_MANIFEST);
+		}
+		for(String layer : new String[] {LAYER_ANNO, LAYER_ANNO_2}) {
+			typeLookup.put(layer, ManifestType.STRUCTURE_LAYER_MANIFEST);
+		}
+		for(String layer : new String[] {LAYER_SYNTAX, LAYER_SYNTAX_2}) {
+			typeLookup.put(layer, ManifestType.ANNOTATION_LAYER_MANIFEST);
+		}
+	}
+
 	public enum DummyType {
 		FLAT("tpl_flat_corpus.imf.xml"),
 		HIERARCHICAL("tpl_hierarchical_corpus.imf.xml"),
 		FULL("tpl_full_corpus.imf.xml"),
 		;
-		private final String path;
+		public final String path;
+		private final Set<String> layers = new ObjectOpenHashSet<>();
 
-		private DummyType(String path) {
+		private DummyType(String path, String...layers) {
 			this.path = path;
+			Collections.addAll(this.layers, layers);
+		}
+
+		public Map<String, ManifestType> getLayers() {
+			Map<String, ManifestType> map = new Object2ObjectOpenHashMap<>();
+			for(String layer : layers) {
+				map.put(layer, typeLookup.get(layer));
+			}
+			return map;
 		}
 	}
 
