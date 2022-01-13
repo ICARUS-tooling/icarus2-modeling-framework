@@ -141,7 +141,7 @@ public abstract class AbstractLayer<M extends LayerManifest<?>>
 	 */
 	@Override
 	public String toString() {
-		return "Layer@"+getManifest().getId();
+		return "Layer@"+getManifest().getId().orElse("<no_id>");
 	}
 
 	/**

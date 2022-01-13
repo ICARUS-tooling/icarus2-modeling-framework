@@ -175,12 +175,12 @@ public interface Item extends CorpusMember {
 	 * <p>
 	 * Do <b>not</b> mix up the returned index with the result of a call to
 	 * {@link Container#indexOfItem(Item)}! The latter returns the <i>current</i> position
-	 * of a item within that container's internal storage.
+	 * of an item within that container's internal storage.
 	 * This index can change over time and is most likely different when using containers from
 	 * multiple {@link PagedCorpusView}s.
 	 * The result of the {@code #getIndex()} method on the other hand is constant,
 	 * no matter where the item in question is stored. The only way to modify
-	 * a item's index is to remove or insert other items into the underlying data.
+	 * an item's index is to remove or insert other items into the underlying data.
 	 * <p>
 	 * All <i>real</i> items are required to return a non-negative index value unless they
 	 * are marked as {@link #isDirty() dirty} by their managing driver. The only items allowed

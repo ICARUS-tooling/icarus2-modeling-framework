@@ -100,7 +100,7 @@ public interface Histogram extends LongConsumer {
 
 		/** Buffer for frequencies */
 		private int[] bins;
-		/** FLag to indicate if the bins array is allowed to grow */
+		/** Flag to indicate if the bins array is allowed to grow */
 		private boolean fixed;
 		/** Total number of samples contained */
 		private long entries;
