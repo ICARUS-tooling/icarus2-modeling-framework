@@ -93,12 +93,17 @@ public class MemberUtils {
 	/**
 	 * Throw {@link ModelException} of type {@link ModelErrorCode#MODEL_ILLEGAL_LINKING}
 	 * if the container's {@link ContainerManifest manifest} has set the
-	 * {@link ContainerFlag#NON_STATIC} flag.
+	 * {@link ContainerFlag#NON_STATIC} flag or if the container is not a
+	 * {@link Container#isProxy() proxy}.
 	 *
 	 * @param container
 	 */
 	public static void checkStaticContainer(Container container) {
 		requireNonNull(container);
+
+		if(container.isProxy()) {
+			return;
+		}
 
 		ContainerManifestBase<?> manifest = container.getManifest();
 		if(manifest.isContainerFlagSet(ContainerFlag.NON_STATIC))

@@ -25,6 +25,7 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.util.IcarusUtils;
@@ -39,14 +40,20 @@ import de.ims.icarus2.util.collections.set.DataSet;
 public class ProxyContainer extends AbstractImmutableContainer {
 
 	private final ItemLayer layer;
+	private final boolean virtual;
 
 	/**
 	 * @param layer
 	 */
-	public ProxyContainer(ItemLayer layer) {
+	public ProxyContainer(ItemLayer layer, boolean virtual) {
 		requireNonNull(layer);
 
 		this.layer = layer;
+		this.virtual = virtual;
+	}
+
+	private ItemLayerManager manager() {
+		return layer.getContext().getDriver();
 	}
 
 	/**
@@ -110,7 +117,7 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long getItemCount() {
-		return 0;
+		return virtual ? 0 : manager().getItemCount(layer);
 	}
 
 	/**
@@ -118,7 +125,9 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public Item getItemAt(long index) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Immutable proxy");
+		if(virtual)
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Immutable proxy");
+		return manager().getItem(layer, index);
 	}
 
 	/**
@@ -126,7 +135,11 @@ public class ProxyContainer extends AbstractImmutableContainer {
 	 */
 	@Override
 	public long indexOfItem(Item item) {
-		return UNSET_LONG;
+		if(virtual)
+			throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Immutable proxy");
+//		long index = item.getIndex();
+//		return manager().getItem(layer, index) == item ? index : UNSET_LONG;
+		return item.getContainer()==this ? item.getIndex() : UNSET_LONG;
 	}
 
 	/**
@@ -201,4 +214,11 @@ public class ProxyContainer extends AbstractImmutableContainer {
 		return getLayer().getCorpus();
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "ProxyContainer@"+getLayer().getName();
+	}
 }

@@ -1083,7 +1083,7 @@ public class DefaultCorpus implements Corpus {
 		private final Container proxyContainer;
 
 		OverlayLayer() {
-			proxyContainer = new ProxyContainer(this);
+			proxyContainer = new ProxyContainer(this, true);
 		}
 
 		/**

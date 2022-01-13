@@ -43,7 +43,15 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifestBase<?>> im
 	 */
 	private IdManager idManager;
 
-	private Container proxyContainer;
+//	/**
+//	 * Optionally assigned manager prior to the external driver
+//	 * being available. Crucial for scanning phase of some driver
+//	 * implementations!
+//	 */
+//	private ItemLayerManager layerManager;
+
+
+	private volatile Container proxyContainer;
 
 	/**
 	 * @param context
@@ -51,25 +59,29 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifestBase<?>> im
 	 */
 	public DefaultItemLayer(ItemLayerManifest manifest) {
 		super(manifest);
-
-		initProxy();
 	}
 
 	protected DefaultItemLayer(ItemLayerManifestBase<?> manifest) {
 		super(manifest);
-
-		initProxy();
 	}
 
-	private void initProxy() {
-		proxyContainer = new ProxyContainer(this);
-	}
+//	public void setLayerManager(ItemLayerManager layerManager) {
+//		checkState("Layer manager already assigned", this.layerManager==null);
+//		this.layerManager = requireNonNull(layerManager);
+//	}
 
 	/**
 	 * @see de.ims.icarus2.model.api.layer.ItemLayer#getProxyContainer()
 	 */
 	@Override
 	public Container getProxyContainer() {
+		if(proxyContainer==null) {
+			synchronized (this) {
+				if(proxyContainer==null) {
+					proxyContainer = new ProxyContainer(this, false);
+				}
+			}
+		}
 		return proxyContainer;
 	}
 
@@ -87,6 +99,18 @@ public class DefaultItemLayer extends AbstractLayer<ItemLayerManifestBase<?>> im
 
 		return idManager;
 	}
+
+//	/**
+//	 * @see de.ims.icarus2.model.api.layer.ItemLayer#getLayerManager()
+//	 */
+//	@Override
+//	public ItemLayerManager getLayerManager() {
+//		if(layerManager!=null) {
+//			return layerManager;
+//		}
+//
+//		return ItemLayer.super.getLayerManager();
+//	}
 
 	/**
 	 * Forces this layer to use the supplied {@link IdManager} instance.
