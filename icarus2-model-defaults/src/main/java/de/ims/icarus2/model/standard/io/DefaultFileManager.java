@@ -26,6 +26,8 @@ import java.util.Map;
 
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.xml.ManifestXmlAttributes;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
@@ -67,7 +69,7 @@ public class DefaultFileManager implements FileManager {
 		return rootFolder;
 	}
 
-	private Path getToplevelPath(String folder) {
+	private Path getTopLevelPath(String folder) {
 		return rootFolder.resolve(folder);
 	}
 
@@ -81,7 +83,7 @@ public class DefaultFileManager implements FileManager {
 			return null;
 		}
 
-		return getToplevelPath(storedName);
+		return getTopLevelPath(storedName);
 	}
 
 	/**
@@ -89,7 +91,8 @@ public class DefaultFileManager implements FileManager {
 	 */
 	@Override
 	public Path getCorpusFolder(CorpusManifest manifest) {
-		String folderName = DefaultFileStructure.CORPUS_PREFIX+manifest.getId(); //TODO clean folder name
+		String folderName = DefaultFileStructure.CORPUS_PREFIX+manifest.getId()
+			.orElseThrow(ManifestException.missing(manifest, ManifestXmlAttributes.ID)); //TODO clean folder name?
 		Path metadataFolder = getSharedFolder(CommonFolders.METADATA.getId());
 
 		return metadataFolder.resolve(folderName);
