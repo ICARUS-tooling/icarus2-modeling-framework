@@ -19,20 +19,20 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
+import static de.ims.icarus2.util.collections.CollectionUtils.set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.LongFunction;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.xml.sax.SAXException;
@@ -49,6 +49,7 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.CorpusData.CorpusBacked;
 import de.ims.icarus2.query.api.engine.CorpusData.LayerRef;
+import de.ims.icarus2.query.api.engine.CorpusData.Virtual;
 import de.ims.icarus2.query.api.engine.DummyCorpus.DummyType;
 import de.ims.icarus2.query.api.exp.AnnotationInfo;
 import de.ims.icarus2.query.api.exp.BindingInfo;
@@ -70,9 +71,6 @@ import de.ims.icarus2.test.annotations.IntArrayArg;
  */
 class CorpusDataTest {
 
-	@TempDir
-	private static Path tmpFolder;
-
 	@ParameterizedTest
 	@CsvSource({
 		"FLAT, 3, 3, {3}",
@@ -80,7 +78,7 @@ class CorpusDataTest {
 		"FULL, 4, 10, {1;2;3;4}",
 	})
 	public void testDummyCreation(DummyType type, int primarySize, int foundationSize, @IntArrayArg int[] setup) throws Exception {
-		Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, type, setup);
+		Corpus corpus = DummyCorpus.createDummyCorpus(type, setup);
 		ItemLayerManager mgr = corpus.getDriver(DummyCorpus.CONTEXT);
 		assertThat(mgr.getItemCount(corpus.getPrimaryLayer())).isEqualTo(primarySize);
 		assertThat(mgr.getItemCount(corpus.getFoundationLayer())).isEqualTo(foundationSize);
@@ -91,7 +89,7 @@ class CorpusDataTest {
 
 
 		private CorpusData.CorpusBacked create(int...setup) throws SAXException, IOException, InterruptedException {
-			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
+			Corpus corpus = DummyCorpus.createDummyCorpus(DummyType.FULL, setup);
 			return CorpusBacked.builder()
 					.scope(corpus.createCompleteScope())
 					.build();
@@ -491,7 +489,7 @@ class CorpusDataTest {
 			"FULL, {1;2;3;4}",
 		})
 		void testFindLayer(DummyType type, @IntArrayArg int[] setup) throws Exception {
-			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
+			Corpus corpus = DummyCorpus.createDummyCorpus(DummyType.FULL, setup);
 			CorpusBacked data = CorpusBacked.builder()
 					.scope(corpus.createCompleteScope())
 					.build();
@@ -521,7 +519,7 @@ class CorpusDataTest {
 			"FULL, {1;2;3;4}, sentence, 4, true",
 		})
 		void testAccess(DummyType type, @IntArrayArg int[] setup, String layer, int size, boolean container) throws Exception {
-			Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.FULL, setup);
+			Corpus corpus = DummyCorpus.createDummyCorpus(DummyType.FULL, setup);
 			CorpusBacked data = CorpusBacked.builder()
 					.scope(corpus.createCompleteScope())
 					.build();
@@ -549,7 +547,7 @@ class CorpusDataTest {
 			 */
 			@Test
 			void testTok2Sent() throws Exception {
-				Corpus corpus = DummyCorpus.createDummyCorpus(tmpFolder, DummyType.HIERARCHICAL, 1, 2, 3);
+				Corpus corpus = DummyCorpus.createDummyCorpus(DummyType.HIERARCHICAL, 1, 2, 3);
 				CorpusBacked data = CorpusBacked.builder()
 						.scope(corpus.createCompleteScope())
 						.build();
@@ -568,16 +566,52 @@ class CorpusDataTest {
 	}
 
 	//TODO enable tests once virtual CorpusData is done
-	@Disabled
 	@Nested
 	class ForVirtual {
+
+
+		private Virtual.Builder basic() {
+			return Virtual.builder()
+				.layer(DummyCorpus.LAYER_TOKEN)
+					.type(TypeInfo.ITEM)
+					.annotations(DummyCorpus.LAYER_ANNO).commit()
+				.layer(DummyCorpus.LAYER_SENTENCE)
+					.type(TypeInfo.CONTAINER)
+					.sources(DummyCorpus.LAYER_TOKEN).commit()
+				.layer(DummyCorpus.LAYER_ANNO)
+					.type(TypeInfo.ANNOTATION_LAYER).commit();
+		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#resolveLane(de.ims.icarus2.query.api.iql.IqlLane)}.
 		 */
 		@Test
 		void testResolveLane() {
-			fail("Not yet implemented"); // TODO
+			Virtual data = basic().build();
+
+			IqlLane lane = new IqlLane();
+			lane.setName(DummyCorpus.LAYER_SENTENCE);
+			LaneInfo laneInfo = data.resolveLane(lane);
+
+			assertThat(laneInfo.getLane()).isSameAs(lane);
+			assertThat(laneInfo.getLayer()).extracting(LayerRef::getId).isEqualTo(DummyCorpus.LAYER_SENTENCE);
+			assertThat(laneInfo.getType()).isSameAs(TypeInfo.ITEM_LAYER);
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#resolveLane(de.ims.icarus2.query.api.iql.IqlLane)}.
+		 */
+		@Test
+		void testResolveUnknownLane() {
+			Virtual data = basic().build();
+
+			IqlLane lane = new IqlLane();
+			lane.setName(DummyCorpus.UNKNOWN_LAYER);
+
+			assertThatExceptionOfType(QueryException.class).isThrownBy(() -> data.resolveLane(lane))
+				.withMessageContaining("valid layer")
+				.extracting(IcarusRuntimeException::getErrorCode)
+				.isSameAs(QueryErrorCode.UNKNOWN_IDENTIFIER);
 		}
 
 		/**
@@ -585,7 +619,20 @@ class CorpusDataTest {
 		 */
 		@Test
 		void testResolveElement() {
-			fail("Not yet implemented"); // TODO
+			Virtual data = basic().build();
+
+			IqlLane lane = new IqlLane();
+			lane.setName(DummyCorpus.LAYER_SENTENCE);
+			LaneInfo laneInfo = data.resolveLane(lane);
+
+			IqlNode node = new IqlNode();
+			ElementInfo elementInfo = data.resolveElement(laneInfo, node, null);
+
+			assertThat(elementInfo.getElement()).isSameAs(node);
+			assertThat(elementInfo.getLayers()).singleElement()
+				.extracting(LayerRef::getId).isEqualTo(DummyCorpus.LAYER_TOKEN);
+			assertThat(elementInfo.getType()).isSameAs(TypeInfo.ITEM);
+			assertThat(elementInfo.isEdge()).isFalse();
 		}
 
 		/**
@@ -593,7 +640,28 @@ class CorpusDataTest {
 		 */
 		@Test
 		void testBind() {
-			fail("Not yet implemented"); // TODO
+			Virtual data = basic().build();
+
+			String key1 = "tok1";
+			String key2 = "tok2";
+			String key3 = "tok3";
+			Set<String> keys = set(key1, key2, key3);
+
+			IqlBinding binding = new IqlBinding();
+			binding.setTarget(DummyCorpus.LAYER_TOKEN);
+			binding.addMember(new IqlReference("tok1", ReferenceType.MEMBER));
+			binding.addMember(new IqlReference("tok2", ReferenceType.MEMBER));
+			binding.addMember(new IqlReference("tok3", ReferenceType.MEMBER));
+
+			Map<String, BindingInfo> bindings = data.bind(binding);
+
+			assertThat(bindings).hasSize(3)
+				.allSatisfy((label, info) -> {
+					assertThat(keys).contains(label);
+					assertThat(info).extracting(BindingInfo::getLayer).extracting(LayerRef::getId)
+						.isEqualTo(DummyCorpus.LAYER_TOKEN);
+					assertThat(info).extracting(BindingInfo::getType).isSameAs(TypeInfo.ITEM);
+				});
 		}
 
 		/**
@@ -601,7 +669,45 @@ class CorpusDataTest {
 		 */
 		@Test
 		void testFindAnnotation() {
-			fail("Not yet implemented"); // TODO
+			Virtual data = basic()
+					.annotation()
+						.key(DummyCorpus.ANNO_1)
+						.targets(DummyCorpus.LAYER_TOKEN)
+						.strings(item -> null)
+						.commit()
+					.build();
+
+			IqlLane lane = new IqlLane();
+			lane.setName(DummyCorpus.LAYER_SENTENCE);
+			LaneInfo laneInfo = data.resolveLane(lane);
+
+			IqlNode node = new IqlNode();
+			ElementInfo elementInfo = data.resolveElement(laneInfo, node, null);
+
+			Optional<AnnotationInfo> annotationInfo = data.findAnnotation(elementInfo, QualifiedIdentifier.of(DummyCorpus.ANNO_1));
+			assertThat(annotationInfo).isNotEmpty().hasValueSatisfying(info -> {
+				assertThat(info.getKey()).isEqualTo(DummyCorpus.ANNO_1);
+				assertThat(info.getRawKey()).isEqualTo(DummyCorpus.ANNO_1);
+				assertThat(info.getType()).isSameAs(TypeInfo.TEXT);
+				assertThat(info.getObjectSource()).isNotNull();
+			});
+		}
+
+		/**
+		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#findAnnotation(de.ims.icarus2.query.api.exp.ElementInfo, de.ims.icarus2.query.api.exp.QualifiedIdentifier)}.
+		 */
+		@Test
+		void testFindUnknownAnnotation() {
+			Virtual data = basic().build();
+
+			IqlLane lane = new IqlLane();
+			lane.setName(DummyCorpus.LAYER_SENTENCE);
+			LaneInfo laneInfo = data.resolveLane(lane);
+
+			IqlNode node = new IqlNode();
+			ElementInfo elementInfo = data.resolveElement(laneInfo, node, null);
+
+			assertThat(data.findAnnotation(elementInfo, QualifiedIdentifier.of(DummyCorpus.UNKNOWN_KEY))).isEmpty();
 		}
 
 		/**
@@ -609,7 +715,15 @@ class CorpusDataTest {
 		 */
 		@Test
 		void testFindLayer() {
-			fail("Not yet implemented"); // TODO
+			Virtual data = basic().build();
+
+			assertThat(data.findLayer(DummyCorpus.UNKNOWN_LAYER)).isEmpty();
+			assertThat(data.findLayer(DummyCorpus.LAYER_TOKEN)).isNotEmpty()
+				.hasValueSatisfying(ref -> assertThat(ref.getId()).isEqualTo(DummyCorpus.LAYER_TOKEN));
+			assertThat(data.findLayer(DummyCorpus.LAYER_SENTENCE)).isNotEmpty()
+				.hasValueSatisfying(ref -> assertThat(ref.getId()).isEqualTo(DummyCorpus.LAYER_SENTENCE));
+			assertThat(data.findLayer(DummyCorpus.LAYER_ANNO)).isNotEmpty()
+				.hasValueSatisfying(ref -> assertThat(ref.getId()).isEqualTo(DummyCorpus.LAYER_ANNO));
 		}
 
 		/**
@@ -617,15 +731,51 @@ class CorpusDataTest {
 		 */
 		@Test
 		void testAccess() {
-			fail("Not yet implemented"); // TODO
+			Item[] items = mockItems(5);
+			Virtual data = Virtual.builder()
+					.layer(DummyCorpus.LAYER_TOKEN).elements(items).type(TypeInfo.ITEM).commit()
+					.build();
+
+			LongFunction<Item> lookup = data.access(data.findLayer(DummyCorpus.LAYER_TOKEN).get());
+			for (int i = 0; i < items.length; i++) {
+				assertThat(lookup.apply(i)).as("item mismatch at index "+i).isSameAs(items[i]);
+			}
 		}
 
 		/**
 		 * Test method for {@link de.ims.icarus2.query.api.engine.CorpusData#map(de.ims.icarus2.query.api.engine.CorpusData.LayerRef, de.ims.icarus2.query.api.engine.CorpusData.LayerRef)}.
 		 */
 		@Test
-		void testMap() {
-			fail("Not yet implemented"); // TODO
+		void testMap() throws Exception {
+			Item[] items1 = mockItems(2);
+			Item[] items2 = mockItems(5);
+
+			LaneMapper expected = LaneMapper.fixedBuilder()
+					.map(0, 0, 1)
+					.map(1, 2, 3, 4)
+					.build();
+
+			Virtual data = Virtual.builder()
+					.layer(DummyCorpus.LAYER_TOKEN).elements(items1).type(TypeInfo.ITEM).commit()
+					.layer(DummyCorpus.LAYER_TOKEN_2).elements(items2).type(TypeInfo.ITEM).commit()
+					.mapper(DummyCorpus.LAYER_TOKEN, DummyCorpus.LAYER_TOKEN_2, expected)
+					.build();
+
+			LaneMapper mapper = data.map(data.findLayer(DummyCorpus.LAYER_TOKEN).get(),
+					data.findLayer(DummyCorpus.LAYER_TOKEN_2).get());
+
+			assertThat(mapper.size()).isEqualTo(0);
+			mapper.reset(0);
+			assertThat(mapper.size()).isEqualTo(2);
+			assertThat(mapper.indexAt(0)).isEqualTo(0);
+			assertThat(mapper.indexAt(1)).isEqualTo(1);
+			mapper.reset(1);
+			assertThat(mapper.size()).isEqualTo(3);
+			assertThat(mapper.indexAt(0)).isEqualTo(2);
+			assertThat(mapper.indexAt(1)).isEqualTo(3);
+			assertThat(mapper.indexAt(2)).isEqualTo(4);
+			mapper.reset(2);
+			assertThat(mapper.size()).isEqualTo(0);
 		}
 
 		/**
@@ -633,7 +783,7 @@ class CorpusDataTest {
 		 */
 		@Test
 		void testClose() {
-			fail("Not yet implemented"); // TODO
+			basic().build().close();
 		}
 
 	}

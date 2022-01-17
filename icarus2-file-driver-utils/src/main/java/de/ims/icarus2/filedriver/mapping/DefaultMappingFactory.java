@@ -276,7 +276,7 @@ public class DefaultMappingFactory implements MappingFactory {
 			B builder, MappingManifest manifest, Options options) {
 		initMappingBuilder(builder, manifest, options);
 
-		builder.resource(getResource(manifest.getUniqueId(), options));
+		builder.resource(getResource(ManifestUtils.idToPath(manifest.getUniqueId()), options));
 		builder.blockCache(getBlockCache(options));
 
 		int cacheSize = options.getInteger(FileDriverUtils.MappingProperty.CACHE_SIZE.key(), -1);

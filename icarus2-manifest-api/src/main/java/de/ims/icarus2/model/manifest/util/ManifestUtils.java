@@ -18,6 +18,7 @@ package de.ims.icarus2.model.manifest.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
@@ -103,6 +104,21 @@ public class ManifestUtils {
 		if(id==null)
 			throw new ManifestException(GlobalErrorCode.ILLEGAL_STATE,
 					"Id is null");
+		return id;
+	}
+
+	/**
+	 * Formats the given {@code id} in a way that it is compatible with
+	 * {@link Paths#get(String, String...)}.
+	 */
+	public static String idToPath(String id) {
+		checkId(id);
+		if(id.contains(ID_SEPARATOR)) {
+			id = id.replace(ID_SEPARATOR, "/");
+		}
+		if(id.indexOf(':')!=-1) {
+			id = id.replace(':', '/');
+		}
 		return id;
 	}
 

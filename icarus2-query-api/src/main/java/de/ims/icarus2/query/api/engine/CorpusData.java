@@ -744,6 +744,16 @@ public abstract class CorpusData implements AutoCloseable {
 
 		public static Builder builder() { return new Builder(); }
 
+		private static TypeInfo toLayerType(TypeInfo componentType) {
+			if(componentType==TypeInfo.FRAGMENT) {
+				return TypeInfo.FRAGMENT_LAYER;
+			} else if(componentType==TypeInfo.STRUCTURE) {
+				return TypeInfo.STRUCTURE_LAYER;
+			}
+
+			return TypeInfo.ITEM_LAYER;
+		}
+
 		/** Maps registered (item-)layers to descriptor (including content) */
 		private final Map<String, LayerInfo> layers = new Object2ObjectOpenHashMap<>();
 		/** Maps (src_id+dest_id) to proper mapper objects */
@@ -770,7 +780,7 @@ public abstract class CorpusData implements AutoCloseable {
 		@Override
 		public LaneInfo resolveLane(IqlLane lane) {
 			LayerInfo info = requireLayer(lane.getName());
-			return new LaneInfo(lane, info.type, info.ref);
+			return new LaneInfo(lane, toLayerType(info.type), info.ref);
 		}
 
 		@Override
@@ -901,16 +911,19 @@ public abstract class CorpusData implements AutoCloseable {
 				info = new LayerInfo(name);
 			}
 
+			/** Top-level members of the layer */
 			public LayerBuilder elements(Item...containers) {
 				CollectionUtils.feedItems(info.elements, containers);
 				return this;
 			}
 
+			/** Top-level members of the layer */
 			public LayerBuilder elements(List<? extends Item> containers) {
 				info.elements.addAll(containers);
 				return this;
 			}
 
+			/** Type of top-level members (any ITEM derivate) */
 			public LayerBuilder type(TypeInfo type) {
 				info.type = requireNonNull(type);
 				return this;
@@ -944,7 +957,10 @@ public abstract class CorpusData implements AutoCloseable {
 
 			public Builder commit() {
 				// Validate built layer info
-				checkState("layer empty", !info.elements.isEmpty());
+
+				// For now we don't enforce layer content
+//				checkState("layer empty", !info.elements.isEmpty());
+
 				if(info.type==TypeInfo.CONTAINER) {
 					checkState("container layer must have at least 1 base layer", !info.sources.isEmpty());
 				}
@@ -1013,28 +1029,40 @@ public abstract class CorpusData implements AutoCloseable {
 				return info.elements;
 			}
 
+			public AnnotationBuilder type(ValueType type) {
+				builder.type(EvaluationUtils.typeFor(type));
+				builder.valueType(type);
+				return this;
+			}
+
 			// Externalized methods
 
 			public AnnotationBuilder integers(ToLongFunction<Item> lookup) {
-				builder.type(TypeInfo.INTEGER);
+				type(ValueType.INTEGER);
 				builder.integerSource(lookup);
 				return this;
 			}
 
 			public AnnotationBuilder floatingPoints(ToDoubleFunction<Item> lookup) {
-				builder.type(TypeInfo.FLOATING_POINT);
+				type(ValueType.DOUBLE);
 				builder.floatingPointSource(lookup);
 				return this;
 			}
 
 			public AnnotationBuilder booleans(Predicate<Item> lookup) {
-				builder.type(TypeInfo.BOOLEAN);
+				type(ValueType.BOOLEAN);
 				builder.booleanSource(lookup);
 				return this;
 			}
 
 			public AnnotationBuilder generics(Function<Item,Object> lookup) {
-				builder.type(TypeInfo.GENERIC);
+				type(ValueType.UNKNOWN);
+				builder.objectSource(lookup);
+				return this;
+			}
+
+			public AnnotationBuilder strings(Function<Item,Object> lookup) {
+				type(ValueType.STRING);
 				builder.objectSource(lookup);
 				return this;
 			}
@@ -1046,7 +1074,7 @@ public abstract class CorpusData implements AutoCloseable {
 			 * layer already or if the number of annotation values and items in the target
 			 * layer do not match. */
 			public AnnotationBuilder integers(long...values) {
-				builder.type(TypeInfo.INTEGER);
+				type(ValueType.INTEGER);
 				List<Item> items = items(values.length);
 				Object2LongMap<Item> map = new Object2LongOpenHashMap<>(values.length);
 				for (int i = 0; i < values.length; i++) {
@@ -1061,7 +1089,7 @@ public abstract class CorpusData implements AutoCloseable {
 			 * layer already or if the number of annotation values and items in the target
 			 * layer do not match. */
 			public AnnotationBuilder booleans(boolean...values) {
-				builder.type(TypeInfo.INTEGER);
+				type(ValueType.INTEGER);
 				List<Item> items = items(values.length);
 				Object2BooleanMap<Item> map = new Object2BooleanOpenHashMap<>(values.length);
 				for (int i = 0; i < values.length; i++) {
@@ -1076,7 +1104,7 @@ public abstract class CorpusData implements AutoCloseable {
 			 * layer already or if the number of annotation values and items in the target
 			 * layer do not match. */
 			public AnnotationBuilder floatingPoints(double...values) {
-				builder.type(TypeInfo.FLOATING_POINT);
+				type(ValueType.DOUBLE);
 				List<Item> items = items(values.length);
 				Object2DoubleMap<Item> map = new Object2DoubleOpenHashMap<>(values.length);
 				for (int i = 0; i < values.length; i++) {
@@ -1091,7 +1119,7 @@ public abstract class CorpusData implements AutoCloseable {
 			 * layer already or if the number of annotation values and items in the target
 			 * layer do not match. */
 			public AnnotationBuilder strings(String...values) {
-				builder.type(TypeInfo.TEXT);
+				type(ValueType.STRING);
 				List<Item> items = items(values.length);
 				Map<Item,String> map = new Object2ObjectOpenHashMap<>(values.length);
 				for (int i = 0; i < values.length; i++) {
@@ -1106,7 +1134,7 @@ public abstract class CorpusData implements AutoCloseable {
 			 * layer already or if the number of annotation values and items in the target
 			 * layer do not match. */
 			public AnnotationBuilder generic(Object...values) {
-				builder.type(TypeInfo.GENERIC);
+				type(ValueType.UNKNOWN);
 				List<Item> items = items(values.length);
 				Map<Item,Object> map = new Object2ObjectOpenHashMap<>(values.length);
 				for (int i = 0; i < values.length; i++) {

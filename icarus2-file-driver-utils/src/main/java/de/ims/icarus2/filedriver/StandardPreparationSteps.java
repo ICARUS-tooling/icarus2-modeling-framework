@@ -90,7 +90,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
 
-				Path path = dataFiles.getResourceAt(fileIndex).getLocalPath();
+				Path path = dataFiles.getResourceAt(fileIndex).getPath();
 				if(path==null) {
 					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
 							"Resource at index {1} is not a local file - cannot compute file metadata", _int(fileIndex));
@@ -197,6 +197,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
+			ResourceProvider resourceProvider = driver.getResourceProvider();
 
 			int fileCount = dataFiles.getResourceCount();
 			int invalidFiles = 0;
@@ -211,7 +212,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 				FileChecksum checksum;
 
 				try {
-					checksum = FileChecksum.compute(path);
+					checksum = FileChecksum.compute(resourceProvider, path);
 				} catch (IOException e) {
 					reportBuilder.addError(GlobalErrorCode.IO_ERROR,
 							"Failed to compute checksum for file at index {} : {}", _int(fileIndex), path, e);
