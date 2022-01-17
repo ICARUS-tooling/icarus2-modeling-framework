@@ -38,6 +38,7 @@ import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.util.io.resource.FileResourceProvider;
 
 /**
  * @author Markus Gärtner
@@ -51,7 +52,7 @@ class LazyResourceSetTest implements ResourceSetTest<LazyResourceSet> {
 	@Test
 	void testGetPathResolver() {
 		PathResolver resolver = mockResolver();
-		LazyResourceSet set = new LazyResourceSet(resolver);
+		LazyResourceSet set = new LazyResourceSet(new FileResourceProvider(), resolver);
 		assertThat(set.getPathResolver()).isSameAs(resolver);
 	}
 
@@ -76,7 +77,7 @@ class LazyResourceSetTest implements ResourceSetTest<LazyResourceSet> {
 	 */
 	@Override
 	public LazyResourceSet createTestInstance(TestSettings settings) {
-		return settings.process(new LazyResourceSet(mockResolver()));
+		return settings.process(new LazyResourceSet(new FileResourceProvider(), mockResolver()));
 	}
 
 	/**
@@ -84,7 +85,8 @@ class LazyResourceSetTest implements ResourceSetTest<LazyResourceSet> {
 	 */
 	@Override
 	public LazyResourceSet createFilled() {
-		return new LazyResourceSet(mockResolver(new ResourcePath("test", LocationType.LOCAL)));
+		return new LazyResourceSet(new FileResourceProvider(),
+				mockResolver(new ResourcePath("test", LocationType.LOCAL)));
 	}
 
 	@TestFactory
@@ -93,7 +95,7 @@ class LazyResourceSetTest implements ResourceSetTest<LazyResourceSet> {
 				pair(LocationType.LOCAL, "test/file"),
 				pair(LocationType.REMOTE, TestUtils.TEST_URL.toExternalForm()))
 				.map(p -> dynamicTest(p.first.name(), () -> {
-					LazyResourceSet set = new LazyResourceSet(mockResolver(
+					LazyResourceSet set = new LazyResourceSet(new FileResourceProvider(), mockResolver(
 							new ResourcePath(p.second, p.first)));
 					assertThat(set.getResourceCount()).isEqualTo(1);
 					assertThat(set.getResourceAt(0)).isNotNull();
@@ -105,7 +107,7 @@ class LazyResourceSetTest implements ResourceSetTest<LazyResourceSet> {
 		return Stream.of(LocationType.values())
 				.filter(type -> type!=LocationType.LOCAL && type!=LocationType.REMOTE)
 				.map(type -> dynamicTest(type.name(), () -> {
-					LazyResourceSet set = new LazyResourceSet(mockResolver(
+					LazyResourceSet set = new LazyResourceSet(new FileResourceProvider(), mockResolver(
 							new ResourcePath("test", type)));
 
 					assertModelException(GlobalErrorCode.DELEGATION_FAILED, () -> set.getResourceAt(0));

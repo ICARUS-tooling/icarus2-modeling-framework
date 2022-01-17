@@ -74,6 +74,7 @@ public abstract class ManifestLocation {
 		this.template = template;
 	}
 
+	@Nullable
 	public URL getUrl() {
 		return null;
 	}

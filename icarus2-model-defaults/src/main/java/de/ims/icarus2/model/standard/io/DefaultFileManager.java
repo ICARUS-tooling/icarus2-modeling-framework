@@ -16,10 +16,8 @@
  */
 package de.ims.icarus2.model.standard.io;
 
-import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
@@ -55,7 +53,8 @@ public class DefaultFileManager implements FileManager {
 	 */
 	public DefaultFileManager(Path rootFolder) {
 		requireNonNull(rootFolder);
-		checkArgument("Root path must be a directory", Files.isDirectory(rootFolder));
+		// Dependency on actual file system interferes with virtual resource storage
+//		checkArgument("Root path must be a directory", Files.isDirectory(rootFolder));
 		//TODO maybe check if folder actually exists, is not a link, etc...
 
 		this.rootFolder = rootFolder;

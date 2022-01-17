@@ -42,6 +42,7 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -161,7 +162,7 @@ class BufferedIOResourceTest {
 						config.header = headerSize==0 ? null : new DummyHeader(headerSize);
 						config.cache = RUBlockCache.newLeastRecentlyUsedCache();
 						config.entries = entries;
-						config.resource = new VirtualIOResource(bytesPerBlock * config.entries + headerSize);
+						config.resource = new VirtualIOResource(Paths.get("."), bytesPerBlock * config.entries + headerSize);
 						config.converter = new PayloadConverter() {
 							@Override
 							public void write(Object source, ByteBuffer buffer, int length) throws IOException {
@@ -407,7 +408,7 @@ class BufferedIOResourceTest {
 	Stream<DynamicNode> testNewAccessorNotWritable() {
 		return configurations().map(config -> dynamicTest(config.label, () -> {
 			// Reset resource to be read-only
-			config.resource = new VirtualIOResource(AccessMode.READ);
+			config.resource = new VirtualIOResource(Paths.get("."), AccessMode.READ);
 			BufferedIOResource instance = config.create();
 
 			assertModelException(GlobalErrorCode.NO_WRITE_ACCESS,

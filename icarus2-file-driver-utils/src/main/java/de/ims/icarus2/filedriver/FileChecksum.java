@@ -19,14 +19,16 @@ package de.ims.icarus2.filedriver;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
+
+import de.ims.icarus2.util.io.resource.IOResource;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 
 /**
  * Implements a simple 16 bytes checksum to encapsulate the last modification time
  * and size of a file. Since reading in an entire file to compute an actual checksum
- * is way to expensive for large files, those 2 informations are considered enough
+ * is way too expensive for large files, those 2 data points are considered enough
  * to make a very quick check whether or not a file has changed since the last time it
  * was accessed by the framework.
  * <p>
@@ -39,14 +41,16 @@ public class FileChecksum implements Serializable {
 
 	private static final long serialVersionUID = -2035971325487167347L;
 
-	public static FileChecksum compute(Path file) throws IOException {
+	public static FileChecksum compute(ResourceProvider resourceProvider, Path file) throws IOException {
 		if (file == null)
 			throw new NullPointerException("Invalid file"); //$NON-NLS-1$
-		if(Files.notExists(file))
+		if(!resourceProvider.exists(file))
 			throw new FileNotFoundException("File does not exist: "+file); //$NON-NLS-1$
 
-		long timestamp = Files.getLastModifiedTime(file).toMillis();
-		long size = Files.size(file);
+		IOResource resource = resourceProvider.getResource(file);
+
+		long timestamp = resource.getLastModifiedTime();
+		long size = resource.size();
 
 		return new FileChecksum(timestamp, size);
 	}

@@ -31,6 +31,8 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -85,6 +87,8 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
  */
 class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpanManyToOne, MappingImplSpanManyToOneTest.ConfigImpl> {
 
+	private static final Path DEFAULT_PATH = Paths.get(".");
+
 	/**
 	 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne#builder()}.
 	 */
@@ -128,7 +132,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 		config.groupPower = groupPower;
 		config.cacheSize = cacheSize;
 		config.valueType = valueType;
-		config.resourceGen = VirtualIOResource::new;
+		config.resourceGen = () -> new VirtualIOResource(DEFAULT_PATH);
 
 		config.driver = mock(Driver.class);
 		config.sourceLayer = mock(ItemLayerManifestBase.class);
@@ -144,7 +148,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 			return MappingImplSpanOneToMany.builder()
 				.cacheSize(cacheSize)
 				.blockPower(blockPower)
-				.resource(new VirtualIOResource())
+				.resource(new VirtualIOResource(DEFAULT_PATH))
 				.blockCache(cacheGen.get())
 				.valueType(valueType)
 				.sourceLayer(mock(ItemLayerManifestBase.class))
@@ -170,7 +174,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 				.sourceLayer(mock(ItemLayerManifestBase.class))
 				.targetLayer(mock(ItemLayerManifestBase.class))
 				.manifest(manifest)
-				.resource(new VirtualIOResource())
+				.resource(new VirtualIOResource(DEFAULT_PATH))
 				.valueType(IndexValueType.LONG)
 				.cacheSize(100)
 				.build();
@@ -188,7 +192,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 				.sourceLayer(mock(ItemLayerManifestBase.class))
 				.targetLayer(mock(ItemLayerManifestBase.class))
 				.manifest(manifest)
-				.resource(new VirtualIOResource())
+				.resource(new VirtualIOResource(DEFAULT_PATH))
 				.valueType(IndexValueType.LONG)
 				.cacheSize(100)
 				.inverseMapping(createInverseMapping())

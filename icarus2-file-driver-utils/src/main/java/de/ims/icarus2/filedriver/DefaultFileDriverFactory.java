@@ -19,8 +19,15 @@ package de.ims.icarus2.filedriver;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDriver.Builder;
@@ -60,6 +67,8 @@ import de.ims.icarus2.util.io.resource.ResourceProvider;
  *
  */
 public class DefaultFileDriverFactory implements Factory {
+
+	private static final Logger log = LoggerFactory.getLogger(DefaultFileDriverFactory.class);
 
 	private Builder builder;
 
@@ -201,7 +210,20 @@ public class DefaultFileDriverFactory implements Factory {
 
 		if(locationManifest.isInline()) {
 			// Special and easy case for inline data: just wrap it into a read-only resource
+			URL location = locationManifest.getManifestLocation().getUrl();
+			Path path = null;
+			if(location!=null) {
+				try {
+					path = Paths.get(location.toURI());
+				} catch (URISyntaxException e) {
+					log.warn("Manifest location not resolvable to proper URI: {}", location.toExternalForm());
+				}
+			}
+			if(path==null) {
+				path = Paths.get(".");
+			}
 			IOResource resource = new ReadOnlyStringResource(
+					path,
 					locationManifest.getInlineData().orElseThrow(
 							ManifestException.missing(locationManifest, "inline data")).toString(),
 					// We simply use the encoding specified by the enclosing manifest
@@ -218,7 +240,7 @@ public class DefaultFileDriverFactory implements Factory {
 		case FOLDER: {
 			PathResolver pathResolver = getResolverForLocation(corpus, resourceProvider, locationManifest);
 
-			return new LazyResourceSet(pathResolver);
+			return new LazyResourceSet(corpus.getManager().getResourceProvider(), pathResolver);
 		}
 
 		default:

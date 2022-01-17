@@ -19,6 +19,7 @@ package de.ims.icarus2.filedriver.mapping;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static java.util.Objects.requireNonNull;
 
+import java.nio.file.Paths;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.LongUnaryOperator;
@@ -170,13 +171,13 @@ public class DefaultMappingFactory implements MappingFactory {
 		return builder.build();
 	}
 
-	protected IOResource getResource(Options options) {
+	protected IOResource getResource(String uid, Options options) {
 		Object resource = FileDriverUtils.MappingProperty.RESOURCE.getValue(options);
 
 		if(!IOResource.class.isInstance(resource)) {
 			int capacity = options.getInteger(FileDriverUtils.MappingProperty.CAPACITY.key(), 1024*1024);
 
-			resource = new VirtualIOResource(capacity);
+			resource = new VirtualIOResource(Paths.get(uid), capacity);
 		}
 
 		return (IOResource) resource;
@@ -275,7 +276,7 @@ public class DefaultMappingFactory implements MappingFactory {
 			B builder, MappingManifest manifest, Options options) {
 		initMappingBuilder(builder, manifest, options);
 
-		builder.resource(getResource(options));
+		builder.resource(getResource(manifest.getUniqueId(), options));
 		builder.blockCache(getBlockCache(options));
 
 		int cacheSize = options.getInteger(FileDriverUtils.MappingProperty.CACHE_SIZE.key(), -1);

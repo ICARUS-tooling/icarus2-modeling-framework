@@ -18,6 +18,7 @@ package de.ims.icarus2.filedriver.io.sets;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -28,9 +29,9 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
 import de.ims.icarus2.util.annotations.TestableImplementation;
-import de.ims.icarus2.util.io.resource.FileResource;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.ReadOnlyURLResource;
+import de.ims.icarus2.util.io.resource.ResourceProvider;
 import de.ims.icarus2.util.strings.ToStringBuilder;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -50,15 +51,15 @@ public class LazyResourceSet implements ResourceSet {
 
 	private final Int2ObjectMap<IOResource> resources = new Int2ObjectOpenHashMap<>();
 	private final PathResolver pathResolver;
+	private final ResourceProvider resourceProvider;
 
 	/**
 	 * @param pathResolver
 	 * @param storage
 	 */
-	public LazyResourceSet(PathResolver pathResolver) {
-		requireNonNull(pathResolver);
-
-		this.pathResolver = pathResolver;
+	public LazyResourceSet(ResourceProvider resourceProvider, PathResolver pathResolver) {
+		this.resourceProvider = requireNonNull(resourceProvider);
+		this.pathResolver = requireNonNull(pathResolver);
 	}
 
 	public PathResolver getPathResolver() {
@@ -92,12 +93,17 @@ public class LazyResourceSet implements ResourceSet {
 
 			switch (resourcePath.getType()) {
 			case LOCAL:
-				resource = new FileResource(Paths.get(resourcePath.getPath()));
+				try {
+					resource = resourceProvider.getResource(Paths.get(resourcePath.getPath()));
+				} catch (IOException e) {
+					throw new ModelException(GlobalErrorCode.IO_ERROR,
+							"Failed to resolve resource for path: "+resourcePath.getPath());
+				}
 				break;
 
 			case REMOTE:
 				try {
-					resource = new ReadOnlyURLResource(new URL(resourcePath.getPath()));
+					resource = new ReadOnlyURLResource(Paths.get("remote", String.valueOf(resourceIndex)), new URL(resourcePath.getPath()));
 				} catch (MalformedURLException e) {
 					throw new ModelException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
 							"Stored path is not a valid URL: "+resourcePath.getPath());

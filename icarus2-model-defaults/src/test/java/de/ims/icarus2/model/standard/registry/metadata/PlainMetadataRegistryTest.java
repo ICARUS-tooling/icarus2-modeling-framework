@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.registry.metadata;
 
+import java.nio.file.Paths;
+
 import de.ims.icarus2.model.api.registry.MetadataRegistryTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.util.io.resource.VirtualIOResource;
@@ -39,7 +41,7 @@ class PlainMetadataRegistryTest implements MetadataRegistryTest<PlainMetadataReg
 	 */
 	@Override
 	public PlainMetadataRegistry createTestInstance(TestSettings settings) {
-		return settings.process(new PlainMetadataRegistry(new VirtualIOResource()));
+		return settings.process(new PlainMetadataRegistry(new VirtualIOResource(Paths.get("."))));
 	}
 
 	/**

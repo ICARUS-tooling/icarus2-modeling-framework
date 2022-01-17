@@ -29,6 +29,8 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -82,6 +84,8 @@ import de.ims.icarus2.util.io.resource.VirtualIOResource;
  */
 class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpanOneToMany, MappingImplSpanOneToManyTest.ConfigImpl> {
 
+	private static final Path DEFAULT_PATH = Paths.get(".");
+
 	/**
 	 * Test method for {@link de.ims.icarus2.filedriver.mapping.MappingImplSpanOneToMany#builder()}.
 	 */
@@ -122,7 +126,7 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 		config.blockPower = blockPower;
 		config.cacheSize = cacheSize;
 		config.valueType = valueType;
-		config.resourceGen = VirtualIOResource::new;
+		config.resourceGen = () -> new VirtualIOResource(DEFAULT_PATH);
 
 		config.driver = mock(Driver.class);
 		config.sourceLayer = mock(ItemLayerManifestBase.class);
@@ -548,7 +552,7 @@ class MappingImplSpanOneToManyTest implements WritableMappingTest<MappingImplSpa
 				.sourceLayer(mock(ItemLayerManifestBase.class))
 				.targetLayer(mock(ItemLayerManifestBase.class))
 				.manifest(manifest)
-				.resource(new VirtualIOResource())
+				.resource(new VirtualIOResource(DEFAULT_PATH))
 				.valueType(IndexValueType.LONG)
 				.cacheSize(100)
 				.build();
