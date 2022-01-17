@@ -18,6 +18,8 @@ package de.ims.icarus2.util.io.resource;
 
 import static java.util.Objects.requireNonNull;
 
+import java.nio.file.Path;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.util.AccessMode;
@@ -26,22 +28,32 @@ import de.ims.icarus2.util.AccessMode;
  * @author Markus Gärtner
  *
  */
-public abstract class ReadWriteResource implements IOResource {
+public abstract class AbstractIOResource implements IOResource {
 
 	private final AccessMode accessMode;
+	private final Path path;
 
-	protected ReadWriteResource(AccessMode accessMode) {
+	protected AbstractIOResource(Path path, AccessMode accessMode) {
+		this.path = requireNonNull(path);
 		this.accessMode = requireNonNull(accessMode);
+	}
+
+	protected IcarusRuntimeException forMissingWriteAccess() {
+		return new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No write access specified for resource: "+this);
+	}
+
+	protected IcarusRuntimeException forMissingReadAccess() {
+		return new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No read access specified for resource: "+this);
 	}
 
 	protected void checkWriteAccess() {
 		if(!accessMode.isWrite())
-			throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No write access specified for resource: "+this);
+			throw forMissingWriteAccess();
 	}
 
 	protected void checkReadAccess() {
 		if(!accessMode.isRead())
-			throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "No read access specified for resource: "+this);
+			throw forMissingReadAccess();
 	}
 
 	/**
@@ -50,5 +62,13 @@ public abstract class ReadWriteResource implements IOResource {
 	@Override
 	public AccessMode getAccessMode() {
 		return accessMode;
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getPath()
+	 */
+	@Override
+	public Path getPath() {
+		return path;
 	}
 }

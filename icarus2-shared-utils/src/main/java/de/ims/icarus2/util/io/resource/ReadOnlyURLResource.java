@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -36,7 +37,7 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  *
  */
 @TestableImplementation(IOResource.class)
-public class ReadOnlyURLResource implements IOResource {
+public class ReadOnlyURLResource extends AbstractIOResource {
 
 	private URL source;
 
@@ -45,7 +46,8 @@ public class ReadOnlyURLResource implements IOResource {
 	/**
 	 * @param url
 	 */
-	public ReadOnlyURLResource(URL url) {
+	public ReadOnlyURLResource(Path path, URL url) {
+		super(path, AccessMode.READ);
 		this.source = requireNonNull(url);
 	}
 
@@ -54,14 +56,6 @@ public class ReadOnlyURLResource implements IOResource {
 	 */
 	public URL getSource() {
 		return source;
-	}
-
-	/**
-	 * @see de.ims.icarus2.util.io.resource.IOResource#getAccessMode()
-	 */
-	@Override
-	public AccessMode getAccessMode() {
-		return AccessMode.READ;
 	}
 
 	private void checkOpen() {
@@ -75,7 +69,7 @@ public class ReadOnlyURLResource implements IOResource {
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
-		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION, "Cant write to URL resource");
+		throw forMissingWriteAccess();
 	}
 
 	/**
@@ -138,4 +132,11 @@ public class ReadOnlyURLResource implements IOResource {
 		return buffer.size();
 	}
 
+	/**
+	 * @see de.ims.icarus2.util.io.resource.IOResource#isLocal()
+	 */
+	@Override
+	public boolean isLocal() {
+		return false;
+	}
 }

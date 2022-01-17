@@ -19,6 +19,7 @@ package de.ims.icarus2.util.io.resource;
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.test.TestUtils.MAX_INTEGER_INDEX;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,6 +28,8 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -48,6 +51,8 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  */
 class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 
+	private static final Path DEFAULT_PATH = Paths.get(".");
+
 	@Override
 	public Class<? extends VirtualIOResource> getTestTargetClass() {
 		return VirtualIOResource.class;
@@ -55,7 +60,7 @@ class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 
 	@Override
 	public VirtualIOResource create(AccessMode accessMode) throws IOException {
-		return new VirtualIOResource(accessMode);
+		return new VirtualIOResource(DEFAULT_PATH, accessMode);
 	}
 
 	@Override
@@ -70,7 +75,7 @@ class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 	@ValueSource(ints = {0, -1, MAX_INTEGER_INDEX+1})
 	void testVirtualIOResource(int value) {
 		assertIcarusException(GlobalErrorCode.INVALID_INPUT,
-				() -> new VirtualIOResource(value));
+				() -> new VirtualIOResource(DEFAULT_PATH, value));
 	}
 
 	/**
@@ -98,12 +103,12 @@ class VirtualIOResourceTest implements IOResourceTest<VirtualIOResource> {
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.util.io.resource.VirtualIOResource#getLocalPath()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.VirtualIOResource#getPath()}.
 	 * @throws IOException
 	 */
 	@Test
-	void testGetLocalPath() throws IOException {
-		assertNull(create().getLocalPath());
+	void testGetPath() throws IOException {
+		assertThat(create().getPath()).isNotNull();
 	}
 
 	/**

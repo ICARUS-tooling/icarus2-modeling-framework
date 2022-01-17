@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -45,6 +47,7 @@ import de.ims.icarus2.util.AccessMode;
 class ReadOnlyStringResourceTest implements IOResourceTest<ReadOnlyStringResource> {
 
 	private static final String DEFAULT_CONTENT = TestUtils.LOREM_IPSUM_ASCII;
+	private static final Path DEFAULT_PATH = Paths.get(".");
 
 	/**
 	 * @see de.ims.icarus2.util.io.resource.IOResourceTest#getSupportedAccessModes()
@@ -72,11 +75,11 @@ class ReadOnlyStringResourceTest implements IOResourceTest<ReadOnlyStringResourc
 	}
 
 	public ReadOnlyStringResource create(String content) {
-		return new ReadOnlyStringResource(content);
+		return new ReadOnlyStringResource(DEFAULT_PATH, content);
 	}
 
 	public ReadOnlyStringResource create(String content, Charset encoding) {
-		return new ReadOnlyStringResource(content, encoding);
+		return new ReadOnlyStringResource(DEFAULT_PATH, content, encoding);
 	}
 
 	/**

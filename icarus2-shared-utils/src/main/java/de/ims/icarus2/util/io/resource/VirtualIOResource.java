@@ -18,6 +18,7 @@ package de.ims.icarus2.util.io.resource;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -40,27 +41,27 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  *
  */
 @TestableImplementation(IOResource.class)
-public class VirtualIOResource extends ReadWriteResource {
+public class VirtualIOResource extends AbstractIOResource {
 
 	private MemoryByteStorage buffer;
 
 	// Initial capacity for buffer creation
 	private final int capacity;
 
-	public VirtualIOResource() {
-		this(IOUtil.DEFAULT_BUFFER_SIZE, AccessMode.READ_WRITE);
+	public VirtualIOResource(Path path) {
+		this(path, IOUtil.DEFAULT_BUFFER_SIZE, AccessMode.READ_WRITE);
 	}
 
-	public VirtualIOResource(int capacity) {
-		this(capacity, AccessMode.READ_WRITE);
+	public VirtualIOResource(Path path, int capacity) {
+		this(path, capacity, AccessMode.READ_WRITE);
 	}
 
-	public VirtualIOResource(AccessMode accessMode) {
-		this(IOUtil.DEFAULT_BUFFER_SIZE, accessMode);
+	public VirtualIOResource(Path path, AccessMode accessMode) {
+		this(path, IOUtil.DEFAULT_BUFFER_SIZE, accessMode);
 	}
 
-	public VirtualIOResource(int capacity, AccessMode accessMode) {
-		super(accessMode);
+	public VirtualIOResource(Path path, int capacity, AccessMode accessMode) {
+		super(path, accessMode);
 
 		if(capacity<=0 || capacity>IcarusUtils.MAX_INTEGER_INDEX)
 			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
@@ -141,5 +142,12 @@ public class VirtualIOResource extends ReadWriteResource {
 	public long size() throws IOException {
 		checkOpen();
 		return buffer.size();
+	}
+	/**
+	 * @see de.ims.icarus2.util.io.resource.IOResource#isLocal()
+	 */
+	@Override
+	public boolean isLocal() {
+		return false;
 	}
 }

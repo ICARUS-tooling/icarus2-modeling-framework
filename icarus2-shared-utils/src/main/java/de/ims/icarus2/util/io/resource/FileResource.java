@@ -16,8 +16,6 @@
  */
 package de.ims.icarus2.util.io.resource;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
@@ -35,10 +33,7 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
  *
  */
 @TestableImplementation(IOResource.class)
-public final class FileResource extends ReadWriteResource {
-
-
-	private final Path file;
+public final class FileResource extends AbstractIOResource {
 
 	/**
 	 * Creates a new file resource for {@link AccessMode#READ_WRITE} access.
@@ -49,16 +44,21 @@ public final class FileResource extends ReadWriteResource {
 	}
 
 	public FileResource(Path file, AccessMode accessMode) {
-		super(accessMode);
+		super(file, accessMode);
+	}
 
-		requireNonNull(file);
-
-		this.file = file;
+	/**
+	 * @throws IOException
+	 * @see de.ims.icarus2.util.io.resource.IOResource#getLastModifiedTime()
+	 */
+	@Override
+	public long getLastModifiedTime() throws IOException {
+		return Files.getLastModifiedTime(getPath()).toMillis();
 	}
 
 	@Override
 	public String toString() {
-		return "[FileResource file="+file+"]";
+		return "[FileResource file="+getPath()+"]";
 	}
 
 	/**
@@ -68,7 +68,7 @@ public final class FileResource extends ReadWriteResource {
 	public SeekableByteChannel getWriteChannel() throws IOException {
 		checkWriteAccess();
 
-		return Files.newByteChannel(file, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+		return Files.newByteChannel(getPath(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 	}
 
 	/**
@@ -78,7 +78,7 @@ public final class FileResource extends ReadWriteResource {
 	public SeekableByteChannel getReadChannel() throws IOException {
 		checkReadAccess();
 
-		return Files.newByteChannel(file, StandardOpenOption.READ);
+		return Files.newByteChannel(getPath(), StandardOpenOption.READ);
 	}
 
 	/**
@@ -88,7 +88,7 @@ public final class FileResource extends ReadWriteResource {
 	public void delete() throws IOException {
 		checkWriteAccess();
 
-		Files.delete(file);
+		Files.delete(getPath());
 	}
 
 	/**
@@ -96,6 +96,8 @@ public final class FileResource extends ReadWriteResource {
 	 */
 	@Override
 	public void prepare() throws IOException {
+
+		Path file = getPath();
 
 		if(!Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
 			checkWriteAccess();
@@ -120,15 +122,15 @@ public final class FileResource extends ReadWriteResource {
 	public long size() throws IOException {
 		checkReadAccess();
 
-		return Files.size(file);
+		return Files.size(getPath());
 	}
 
 	/**
-	 * @see de.ims.icarus2.util.io.resource.IOResource#getLocalPath()
+	 * @see de.ims.icarus2.util.io.resource.IOResource#isLocal()
 	 */
 	@Override
-	public final Path getLocalPath() {
-		return file;
+	public boolean isLocal() {
+		return true;
 	}
 
 	/**
@@ -139,7 +141,7 @@ public final class FileResource extends ReadWriteResource {
 		if(obj == this) {
 			return true;
 		} else if(obj instanceof FileResource) {
-			return file.equals(((FileResource)obj).file);
+			return getPath().equals(((FileResource)obj).getPath());
 		}
 		return false;
 	}
@@ -149,6 +151,6 @@ public final class FileResource extends ReadWriteResource {
 	 */
 	@Override
 	public int hashCode() {
-		return file.hashCode();
+		return getPath().hashCode();
 	}
 }

@@ -82,18 +82,18 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	@Test
 	void testConstructorWithPath() throws IOException {
 		Path file = tempFile();
-		assertSame(file, new FileResource(file).getLocalPath());
+		assertSame(file, new FileResource(file).getPath());
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#getLocalPath()}.
+	 * Test method for {@link de.ims.icarus2.util.io.resource.FileResource#getPath()}.
 	 * @throws IOException
 	 */
 	@Test
 	void testGetLocalPath() throws IOException {
 		Path file = tempFile();
 		FileResource resource = new FileResource(file, AccessMode.READ);
-		assertSame(file, resource.getLocalPath());
+		assertSame(file, resource.getPath());
 	}
 
 	/**
@@ -105,7 +105,7 @@ class FileResourceTest implements IOResourceTest<FileResource> {
 	void testConstructorWithAccessMode(AccessMode accessMode) throws IOException {
 		Path file = tempFile();
 		FileResource resource = new FileResource(file, accessMode);
-		assertSame(file, resource.getLocalPath());
+		assertSame(file, resource.getPath());
 		assertSame(accessMode, resource.getAccessMode());
 	}
 

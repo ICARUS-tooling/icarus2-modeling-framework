@@ -46,6 +46,15 @@ public interface IOResource {
 	AccessMode getAccessMode();
 
 	/**
+	 * Returns the timestamp in milliseconds of the last physical modification of the
+	 * resource. The default implementation returns {@code 0}.
+	 * @return
+	 */
+	default long getLastModifiedTime() throws IOException {
+		return 0L;
+	}
+
+	/**
 	 * Opens the resource for writing. The returned channel is expected to be fully
 	 * initialized and it will be only used for a single operation or batch of operations
 	 * and then {@link AutoCloseable#close() closed} again.
@@ -97,16 +106,19 @@ public interface IOResource {
 	long size() throws IOException;
 
 	/**
-	 * Returns the path on the local file system this resource is pointing at.
-	 * A return value of {@code null} indicates the resource is not referring to local data
-	 * (i.e. it's either based on remote {@link URL} data or just exists virtually in
-	 * memory).
-	 * <p>
-	 * The default implementation returns {@code null}.
+	 * Returns the path used to lookup this resource within the associated
+	 * {@link ResourceProvider} via {@link ResourceProvider#getResource(Path)}.
 	 *
 	 * @return
 	 */
-	default Path getLocalPath() {
-		return null;
-	}
+	Path getPath();
+
+	/**
+	 * Returns whether the resource is located on the local file system.
+	 * A return value of {@code false} indicates the resource is not referring to local data
+	 * (i.e. it's either based on remote {@link URL} data or just exists virtually in
+	 * memory).
+	 * @return
+	 */
+	boolean isLocal();
 }

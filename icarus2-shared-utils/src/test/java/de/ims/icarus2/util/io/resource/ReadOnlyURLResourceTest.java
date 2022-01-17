@@ -30,6 +30,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -50,6 +51,7 @@ import de.ims.icarus2.util.AccessMode;
  *
  */
 class ReadOnlyURLResourceTest implements IOResourceTest<ReadOnlyURLResource> {
+
 
 	@TempDir
 	Path tempFolder;
@@ -98,11 +100,12 @@ class ReadOnlyURLResourceTest implements IOResourceTest<ReadOnlyURLResource> {
 	@Override
 	public ReadOnlyURLResource create(AccessMode accessMode) throws IOException {
 		assertEquals(AccessMode.READ, accessMode);
-		return new ReadOnlyURLResource(toUrl(tempFile()));
+		Path file = tempFile();
+		return new ReadOnlyURLResource(file, toUrl(file));
 	}
 
 	private ReadOnlyURLResource create(URL url) {
-		return new ReadOnlyURLResource(url);
+		return new ReadOnlyURLResource(Paths.get("."), url);
 	}
 
 	@Override

@@ -53,8 +53,8 @@ public class VirtualResourceProvider implements ResourceProvider {
 
 	private final Map<Path, Lock> locks = new WeakHashMap<>();
 
-	protected VirtualIOResource createResource() {
-		return new VirtualIOResource();
+	protected VirtualIOResource createResource(Path path) {
+		return new VirtualIOResource(path);
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class VirtualResourceProvider implements ResourceProvider {
 		if(directory) {
 			return directories.add(path);
 		} else if(!resources.containsKey(path)) {
-			resources.put(path, createResource());
+			resources.put(path, createResource(path));
 			return true;
 		}
 
@@ -76,16 +76,16 @@ public class VirtualResourceProvider implements ResourceProvider {
 	}
 
 	@Override
-	public IOResource getResource(Path path) {
+	public VirtualIOResource getResource(Path path) {
 		requireNonNull(path);
 		if(directories.contains(path))
 			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 					"Path is registered as a directory: "+path);
-		IOResource resource = resources.get(path);
+		VirtualIOResource resource = resources.get(path);
 		if(resource==null)
 			throw new IcarusRuntimeException(GlobalErrorCode.INVALID_INPUT,
 					"No resource registered for path: "+path);
-		return resources.get(path);
+		return resource;
 	}
 
 	public void clear() {

@@ -24,6 +24,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -37,7 +38,7 @@ import de.ims.icarus2.util.nio.MemoryByteStorage;
  *
  */
 @TestableImplementation(IOResource.class)
-public class ReadOnlyStringResource implements IOResource, CharSequence {
+public class ReadOnlyStringResource extends AbstractIOResource implements CharSequence {
 
 	private String source;
 	private final Charset encoding;
@@ -47,15 +48,16 @@ public class ReadOnlyStringResource implements IOResource, CharSequence {
 	/**
 	 * @param source
 	 */
-	public ReadOnlyStringResource(String source) {
-		this(source, StandardCharsets.UTF_8);
+	public ReadOnlyStringResource(Path path, String source) {
+		this(path, source, StandardCharsets.UTF_8);
 	}
 
 	/**
 	 * @param source
 	 * @param encoding
 	 */
-	public ReadOnlyStringResource(String source, Charset encoding) {
+	public ReadOnlyStringResource(Path path, String source, Charset encoding) {
+		super(path, AccessMode.READ);
 		this.source = requireNonNull(source);
 		this.encoding = requireNonNull(encoding);
 	}
@@ -74,14 +76,6 @@ public class ReadOnlyStringResource implements IOResource, CharSequence {
 		return encoding;
 	}
 
-	/**
-	 * @see de.ims.icarus2.util.io.resource.IOResource#getAccessMode()
-	 */
-	@Override
-	public AccessMode getAccessMode() {
-		return AccessMode.READ;
-	}
-
 	private void checkOpen() {
 		if(buffer==null || source==null)
 			throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE,
@@ -93,8 +87,7 @@ public class ReadOnlyStringResource implements IOResource, CharSequence {
 	 */
 	@Override
 	public SeekableByteChannel getWriteChannel() throws IOException {
-		throw new IcarusRuntimeException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-				"Read only implementation -  backed by constant source string");
+		throw forMissingWriteAccess();
 	}
 
 	/**
@@ -168,6 +161,14 @@ public class ReadOnlyStringResource implements IOResource, CharSequence {
 	@Override
 	public CharSequence subSequence(int start, int end) {
 		return source.subSequence(start, end);
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.io.resource.IOResource#isLocal()
+	 */
+	@Override
+	public boolean isLocal() {
+		return false;
 	}
 
 }
