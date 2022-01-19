@@ -59,6 +59,12 @@ public class AccumulatingException extends Exception {
 		this.exceptions = exceptions==null ? EMPTY : exceptions.clone();
 	}
 
+	public AccumulatingException(String message, Collection<Throwable> exceptions) {
+		super(message);
+
+		this.exceptions = exceptions==null ? EMPTY : CollectionUtils.toArray(exceptions, Throwable[]::new);
+	}
+
 	public int getExceptionCount() {
 		return exceptions.length;
 	}

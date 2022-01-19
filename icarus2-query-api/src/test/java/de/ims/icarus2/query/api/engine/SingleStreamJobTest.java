@@ -39,7 +39,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.query.api.engine.QueryJob.JobController;
-import de.ims.icarus2.query.api.engine.QueryOutput.BufferedMatchOutput;
+import de.ims.icarus2.query.api.engine.QueryUtils.BufferedSingleLaneQueryOutput;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.result.Match;
@@ -181,15 +181,13 @@ class SingleStreamJobTest {
 					.build();
 		}
 
-		private QueryJob createJob(StructurePattern pattern,
-				BiConsumer<Thread, Throwable> exceptionCollector) {
+		private QueryJob createJob(StructurePattern pattern) {
 			return SingleStreamJob.builder()
 					.addPattern(pattern)
 					.input(input)
 					.output(output)
 					.query(mock(IqlQuery.class)) // not needed for internal workings anyway
 					.batchSize(batchSize.intValue())
-					.exceptionHandler(exceptionCollector)
 					.build();
 		}
 
@@ -204,17 +202,7 @@ class SingleStreamJobTest {
 
 			StructurePattern pattern = createPattern();
 
-			List<Pair<Thread, Throwable>> exceptions = new ObjectArrayList<>();
-			BiConsumer<Thread, Throwable> exceptionCollector = (thread, ex) -> {
-				synchronized (exceptions) {
-					exceptions.add(Pair.pair(thread, ex));
-				}
-			};
-			if(exceptionHandler!=null) {
-				exceptionCollector = exceptionCollector.andThen(exceptionHandler);
-			}
-
-			QueryJob job = createJob(pattern, exceptionCollector);
+			QueryJob job = createJob(pattern);
 
 			JobController controller = job.execute(workerLimit.intValue());
 			assertThat(controller.getTotal()).as("Expecting %d created worker(s)", workerLimit).isEqualTo(workerLimit.intValue());
@@ -224,11 +212,9 @@ class SingleStreamJobTest {
 
 			assertThat(controller.awaitFinish(timeout.intValue(), TimeUnit.SECONDS)).isTrue();
 
+			List<Throwable> exceptions = controller.getExceptions();
 			if(!exceptions.isEmpty()) {
-				exceptions.forEach(p -> {
-					System.err.printf("Error in thread: '%s'%n", p.first.getName());
-					p.second.printStackTrace(System.err);
-				});
+				exceptions.forEach(p -> p.printStackTrace(System.err));
 
 				throw new AssertionError("Search encountered errors: "+exceptions.toString());
 			}
@@ -236,8 +222,8 @@ class SingleStreamJobTest {
 			if(outputAsserter!=null) {
 				assertThat(matches).as("Superfluous match listing").isEmpty();
 				outputAsserter.accept(output);
-			} else if(output instanceof BufferedMatchOutput) {
-				BufferedMatchOutput bo = (BufferedMatchOutput) output;
+			} else if(output instanceof BufferedSingleLaneQueryOutput) {
+				BufferedSingleLaneQueryOutput bo = (BufferedSingleLaneQueryOutput) output;
 				List<Match> ml = bo.getMatches();
 				assertThat(ml).hasSameSizeAs(matches);
 

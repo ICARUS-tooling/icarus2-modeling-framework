@@ -35,7 +35,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.ims.icarus2.model.api.corpus.CorpusOwner;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
-import de.ims.icarus2.query.api.engine.QueryOutput.BufferedMatchOutput;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 import de.ims.icarus2.util.annotations.PreliminaryValue;
@@ -171,7 +170,7 @@ public class QueryUtils {
 	}
 
 	@ThreadSafe
-	public static class BufferedSingleLaneQueryOutput implements BufferedMatchOutput {
+	public static class BufferedSingleLaneQueryOutput implements QueryOutput {
 
 		private final int id;
 		private final int limit;
@@ -212,20 +211,20 @@ public class QueryUtils {
 		@Override
 		public boolean isFull() { return limit!=UNSET_INT && buffer.size()>=limit; }
 
-		public void reset() {
+		@Override
+		public void close() { /* no-op */ }
+
+		@Override
+		public void discard() {
 			synchronized (lock) {
 				buffer.clear();
 			}
 		}
 
-		@Override
-		public void close() { /* no-op */ }
-
 		public int getLimit() { return limit; }
 
 		public int getId() { return id; }
 
-		@Override
 		public List<Match> getMatches() { return CollectionUtils.unmodifiableListProxy(buffer); }
 	}
 }

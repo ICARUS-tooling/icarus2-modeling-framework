@@ -19,9 +19,6 @@
  */
 package de.ims.icarus2.query.api.engine;
 
-import java.util.List;
-
-import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 
 /**
@@ -53,7 +50,5 @@ public interface QueryOutput extends AutoCloseable {
 	@Override
 	void close();
 
-	public interface BufferedMatchOutput extends QueryOutput {
-		List<Match> getMatches();
-	}
+	void discard();
 }

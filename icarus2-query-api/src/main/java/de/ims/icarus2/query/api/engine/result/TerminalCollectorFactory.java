@@ -149,9 +149,8 @@ public class TerminalCollectorFactory extends AbstractBuilder<TerminalCollectorF
 
 		private boolean process(Match match) {
 			final ResultEntry entry = new ResultEntry(match, payloadSize);
-			final long[] payload = entry.payload;
 			for (int i = extractors.length-1; i >= 0; i--) {
-				extractors[i].extract(payload);
+				entry.setPayload(i, extractors[i].extract());
 			}
 
 			return sink.test(entry);

@@ -27,7 +27,6 @@ import java.io.Closeable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.function.BiConsumer;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
@@ -73,7 +72,6 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 	protected final IqlQuery query;
 	protected final QueryInput input;
 	protected final QueryOutput output;
-	protected final BiConsumer<Thread, Throwable> exceptionHandler;
 	protected final int batchSize;
 
 	protected final List<Closeable> closeables;
@@ -82,7 +80,6 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		query = builder.getQuery();
 		input = builder.getInput();
 		output = builder.getOutput();
-		exceptionHandler = builder.getExceptionHandler();
 		batchSize = builder.getBatchSize();
 		corpusData = builder.getCorpusData();
 		closeables = new ObjectArrayList<>(builder.getCloseables());
@@ -105,7 +102,6 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		DefaultJobController controller = DefaultJobController.builder()
 				.executorService(executorService)
 				.query(query)
-				.exceptionHandler((worker, t) -> exceptionHandler.accept(worker.getThread(), t))
 				.shutdownHook(this::shutdown)
 				.build();
 
@@ -333,7 +329,6 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		private IqlQuery query;
 		private QueryInput input;
 		private QueryOutput output;
-		private BiConsumer<Thread, Throwable> exceptionHandler;
 		private Integer batchSize;
 
 		private final List<Closeable> closeables = new ObjectArrayList<>();
@@ -393,15 +388,6 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			return this;
 		}
 
-		public BiConsumer<Thread, Throwable> getExceptionHandler() { return exceptionHandler; }
-
-		public Builder exceptionHandler(BiConsumer<Thread, Throwable> exceptionHandler) {
-			requireNonNull(exceptionHandler);
-			checkArgument("Exception handler already set", this.exceptionHandler==null);
-			this.exceptionHandler = exceptionHandler;
-			return this;
-		}
-
 		public int getBatchSize() { return batchSize==null ? QueryUtils.DEFAULT_BATCH_SIZE : batchSize.intValue(); }
 
 		public Builder batchSize(int batchSize) {
@@ -422,7 +408,6 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			checkState("No patterns defined", !patterns.isEmpty());
 			checkState("No input defined", input!=null);
 			checkState("No output defined", output!=null);
-			checkState("No exception handler defined", exceptionHandler!=null);
 		}
 
 		@Override

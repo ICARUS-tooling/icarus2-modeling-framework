@@ -30,10 +30,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -56,6 +56,7 @@ import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
 import de.ims.icarus2.query.api.iql.IqlStream;
+import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.function.CharBiPredicate;
 import de.ims.icarus2.util.function.IntBiPredicate;
@@ -95,13 +96,8 @@ public class QueryOutputFactory {
 	/** Root context used for the entire query. */
 	private final EvaluationContext context;
 
-	/** Consumer to intercept a single match when the result state is stable
-	 *  and the associated container is not available anymore. */
-	private Consumer<Match> matchConsumer;
-
-	/** Consumer to intercept a single match when the result state is stable
-	 *  and the associated container is not available anymore  */
-	private Consumer<ResultEntry> resultConsumer;
+	/** External sink to send final matches or result entries to */
+	private ResultSink resultSink;
 
 	private Supplier<ToIntFunction<CharSequence>> encoder;
 	private Supplier<IntFunction<CharSequence>> decoder;
@@ -124,13 +120,9 @@ public class QueryOutputFactory {
 		checkState("No decoder defined", decoder!=null);
 		return decoder.get();
 	}
-	private Consumer<Match> matchConsumer() {
-		checkState("No match consumer defined", matchConsumer!=null);
-		return matchConsumer;
-	}
-	private Consumer<ResultEntry> resultConsumer() {
-		checkState("No result consumer defined", resultConsumer!=null);
-		return resultConsumer;
+	private ResultSink resultSink() {
+		checkState("No result sink defined", resultSink!=null);
+		return resultSink;
 	}
 
 	private static String key(IqlExpression expression) {
@@ -165,22 +157,22 @@ public class QueryOutputFactory {
 				exp = expressionFactory.process(expression.getContent());
 			}
 			offset = extractors.size();
-			Extractor extractor = createExtractor(offset, exp);
+			Extractor extractor = createExtractor(exp);
 			extractors.add(extractor);
 			exp2PayloadMap.put(key, offset);
 		}
 		return extractors.get(offset);
 	}
 
-	private Extractor createExtractor(int offset, Expression<?> expression) {
+	private Extractor createExtractor(Expression<?> expression) {
 		if(expression.isBoolean()) {
-			return new Extractor.BooleanExtractor(offset, expression);
+			return new Extractor.BooleanExtractor(expression);
 		} else if(expression.isInteger()) {
-			return new Extractor.IntegerExtractor(offset, expression);
+			return new Extractor.IntegerExtractor(expression);
 		} else if(expression.isFloatingPoint()) {
-			return new Extractor.FloatingPointExtractor(offset, expression);
+			return new Extractor.FloatingPointExtractor(expression);
 		} else if(expression.isText()) {
-			return new Extractor.TextExtractor(offset, expression, encoder());
+			return new Extractor.TextExtractor(expression, encoder());
 		}
 
 		throw new QueryException(QueryErrorCode.INCORRECT_USE,
@@ -310,6 +302,17 @@ public class QueryOutputFactory {
 		}
 	}
 
+	private PayloadReader createPayloadReader(Extractor[] extractors) {
+		TypeInfo[] types = Stream.of(extractors)
+				.map(Extractor::getExpression)
+				.map(Expression::getResultType)
+				.toArray(TypeInfo[]::new);
+		// Only grab a decoder if we actually need it!
+		IntFunction<CharSequence> decoder = ArrayUtils.contains(types, TypeInfo.TEXT) ?
+				decoder() : null;
+		return new DefaultPayloadReader(types, decoder);
+	}
+
 	private boolean needsBuffering() {
 		// Could check 'first' flag, but that one is meaningless without 'limit'
 		return getLong(limit)>0 || !sortings.isEmpty();
@@ -326,7 +329,9 @@ public class QueryOutputFactory {
 		if(needsExtraction) {
 			createExtractors();
 
-			final Extractor[] extractors = this.extractors.toArray(new Extractor[0]);
+			final Extractor[] extractors = CollectionUtils.toArray(this.extractors, Extractor[]::new);
+			final PayloadReader payloadReader = createPayloadReader(extractors);
+
 			ResultBuffer<ResultEntry> buffer = null;
 
 			if(!groups.isEmpty()) {
@@ -343,21 +348,21 @@ public class QueryOutputFactory {
 
 			// If we constructed a result buffer, we need the matching output wrapper
 			if(buffer!=null) {
-				return BufferedOutput.extracting(buffer, resultConsumer(), extractors);
+				return BufferedOutput.extracting(buffer, resultSink(), payloadReader, extractors);
 			}
 
 			// Otherwise go unbuffered
-			return UnbufferedOutput.extracting(resultConsumer(), extractors);
+			return UnbufferedOutput.extracting(resultSink(), payloadReader, extractors);
 		}
 
 		// Limit set, so needs buffer, even without extraction
 		if(needsBuffering) {
 			ResultBuffer<Match> buffer = createPlainBuffer();
-			return BufferedOutput.nonExtracting(buffer, matchConsumer());
+			return BufferedOutput.nonExtracting(buffer, resultSink());
 		}
 
 		// No fancy extras, just forward the matches
-		return UnbufferedOutput.nonExtracting(matchConsumer());
+		return UnbufferedOutput.nonExtracting(resultSink());
 	}
 
 	// Setup methods
@@ -400,24 +405,15 @@ public class QueryOutputFactory {
 		return this;
 	}
 
-	/** Consumer to intercept a single match when the result state is stable
-	 *  and the associated container is not available anymore. */
-	public QueryOutputFactory matchConsumer(Consumer<Match> matchConsumer) {
-		requireNonNull(matchConsumer);
-		checkState("match consumer already set", this.matchConsumer==null);
-		this.matchConsumer = matchConsumer;
+	/** External sink to send final matches or result entries to */
+	public QueryOutputFactory resultSink(ResultSink resultSink) {
+		requireNonNull(resultSink);
+		checkState("result sink already set", this.resultSink==null);
+		this.resultSink = resultSink;
 		return this;
 	}
 
-	/** Consumer to intercept a single match when the result state is stable
-	 *  and the associated container is not available anymore  */
-	public QueryOutputFactory resultConsumer(Consumer<ResultEntry> resultConsumer) {
-		requireNonNull(resultConsumer);
-		checkState("result consumer already set", this.resultConsumer==null);
-		this.resultConsumer = resultConsumer;
-		return this;
-	}
-
+	/** Lazy access to the underlying encoder. Repeated calls should return the same object! */
 	public QueryOutputFactory encoder(Supplier<ToIntFunction<CharSequence>> encoder) {
 		requireNonNull(encoder);
 		checkState("encoder already set", this.encoder==null);
@@ -425,6 +421,7 @@ public class QueryOutputFactory {
 		return this;
 	}
 
+	/** Lazy access to the underlying decoder. Repeated calls should return the same object! */
 	public QueryOutputFactory decoder(Supplier<IntFunction<CharSequence>> decoder) {
 		requireNonNull(decoder);
 		checkState("decoder already set", this.decoder==null);

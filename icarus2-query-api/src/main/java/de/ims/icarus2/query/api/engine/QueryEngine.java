@@ -27,7 +27,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -60,6 +59,7 @@ import de.ims.icarus2.query.api.engine.ext.EngineExtension;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.result.QueryOutputFactory;
+import de.ims.icarus2.query.api.engine.result.ResultSink;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
@@ -107,8 +107,6 @@ public class QueryEngine {
 	private final CorpusManager corpusManager;
 	/** Performance-related settings for the engine */
 	private final EngineSettings settings;
-	/** Exception handler that simply logs unexpected errors */
-	private final BiConsumer<Thread, Throwable> fallbackExceptionHandler;
 
 	private QueryEngine(Builder builder) {
 		builder.validate();
@@ -116,21 +114,33 @@ public class QueryEngine {
 		mapper = builder.getMapper();
 		corpusManager = builder.getCorpusManager();
 		settings = builder.getSettings().clone();
-
-		fallbackExceptionHandler = (thread, exception) -> {
-			log.error("Unexpected error in thread %s", thread.getName(), exception);
-		};
 	}
 
-	public QueryJob evaluateQuery(Query rawQuery) throws InterruptedException {
+	public ObjectMapper getMapper() { return mapper; }
+
+	public EngineSettings getSettings() { return settings; }
+
+	public QueryJob evaluateQuery(Query rawQuery, ResultSink resultSink) throws InterruptedException {
+		requireNonNull(rawQuery);
+		requireNonNull(resultSink);
 
 		// Read and parse query content
 		IqlQuery query = readQuery(rawQuery);
+
+		return evaluateQuery(query, resultSink);
+	}
+
+	/**
+	 * Evaluates the given query.
+	 * query!
+	 */
+	@VisibleForTesting
+	QueryJob evaluateQuery(IqlQuery query, ResultSink resultSink) throws InterruptedException {
 		// Ensure we only ever consider validated queries
 		query.checkIntegrity();
 
 		// Resolves imports and embedded data
-		QueryContext queryContext = new QueryContext(query);
+		QueryContext queryContext = new QueryContext(query, resultSink);
 
 		List<IqlStream> streams = query.getStreams();
 		if(streams.size()>1)
@@ -168,9 +178,11 @@ public class QueryEngine {
 		private final IqlQuery query;
 		private final List<EngineExtension> extensions;
 		private final Map<String, Object> embeddedData;
+		private final ResultSink resultSink;
 
-		QueryContext(IqlQuery query) {
+		QueryContext(IqlQuery query, ResultSink resultSink) {
 			this.query = requireNonNull(query);
+			this.resultSink = requireNonNull(resultSink);
 
 			// Resolve extensions
 			List<IqlImport> imports = query.getImports();
@@ -203,6 +215,8 @@ public class QueryEngine {
 		public List<EngineExtension> getExtensions() { return extensions; }
 
 		public Map<String, Object> getEmbeddedData() { return embeddedData; }
+
+		public ResultSink getResultSink() { return resultSink; }
 	}
 
 	private EngineExtension resolveExtension(String name, boolean optional) {
@@ -286,12 +300,12 @@ public class QueryEngine {
 					.decoder(() -> substitutor.value()::apply)
 					.applyFromStream(stream)
 					.settings(settings)
+					.resultSink(queryContext.getResultSink())
 					.createOutput();
 
 			SingleStreamJob.Builder builder = SingleStreamJob.builder()
 					.addPatterns(patterns)
 					.batchSize(settings.getInt(IntField.BATCH_SIZE))
-					.exceptionHandler(fallbackExceptionHandler)
 					.query(queryContext.getQuery())
 					.input(QueryUtils.streamedInput(createStream(scope)))
 					.output(output);

@@ -21,6 +21,7 @@ package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -99,6 +100,10 @@ public interface QueryJob {
 		/** Returns {@code true} iff the job has been finished, either by successfully
 		 * performing the associated search, getting canceled or by aborting due to errors. */
 		boolean isFinished();
+
+		/** Returns all the accumulated exceptions from workers or an empty list if nothing
+		 * has gone wrong so far. */
+		List<Throwable> getExceptions();
 	}
 
 	public static enum JobStatus {

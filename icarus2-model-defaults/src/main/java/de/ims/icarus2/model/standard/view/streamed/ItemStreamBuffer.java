@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
@@ -44,6 +45,7 @@ import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
+import de.ims.icarus2.model.manifest.util.Messages;
 
 /**
  * Implements the actual buffering and streaming logic for
@@ -145,7 +147,8 @@ public class ItemStreamBuffer {
 
 				if(actualSize<expectedSize)
 					throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
-							"At least one item has been reported to be corrupted while reloading buffer");
+							Messages.mismatch("At least one item has been reported to be corrupted while reloading buffer",
+									_int(expectedSize), _int(actualSize)));
 
 				// Only if everything went well do we allow a legal cursor again
 				cursor = 0;

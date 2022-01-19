@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -39,6 +38,7 @@ import de.ims.icarus2.query.api.engine.QueryJob.JobStats;
 import de.ims.icarus2.query.api.engine.QueryJob.JobStatus;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.util.AbstractBuilder;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 
@@ -63,7 +63,7 @@ public class DefaultJobController implements JobController {
 
 	private final AtomicInteger total = new AtomicInteger();
 	private final AtomicInteger active = new AtomicInteger();
-	private final BiConsumer<QueryWorker, Throwable> exceptionHandler;
+	private final List<Throwable> exceptions = new ObjectArrayList<>();
 	private final Runnable shutdownHook;
 	private final AtomicReference<JobStatus> status = new AtomicReference<>(JobStatus.WAITING);
 
@@ -74,7 +74,6 @@ public class DefaultJobController implements JobController {
 	private DefaultJobController(Builder builder) {
 		query = builder.getQuery();
 		executorService = builder.getExecutorService();
-		exceptionHandler = builder.getExceptionHandler();
 		shutdownHook = builder.getShutdownHook();
 	}
 
@@ -178,6 +177,13 @@ public class DefaultJobController implements JobController {
 		}
 	}
 
+	@Override
+	public List<Throwable> getExceptions() {
+		synchronized (lock) {
+			return new ObjectArrayList<>(exceptions);
+		}
+	}
+
 	private void markDone(QueryWorker worker) {
 		latch.countDown();
 	}
@@ -215,7 +221,8 @@ public class DefaultJobController implements JobController {
 		synchronized (lock) {
 			result = active.decrementAndGet() == 0;
 			try {
-				exceptionHandler.accept(worker, t);
+				exceptions.add(new QueryException(QueryErrorCode.WORKER_FIALED,
+						"Unexpected error in thread "+worker.getThread().getName(), t));
 			} finally {
 				// Make sure all other workers get canceled
 				workers.forEach(QueryWorker::cancel);
@@ -238,7 +245,6 @@ public class DefaultJobController implements JobController {
 
 		private IqlQuery query;
 		private ExecutorService executorService;
-		private BiConsumer<QueryWorker, Throwable> exceptionHandler;
 		private Runnable shutdownHook;
 
 		private Builder() { /* no-op */ }
@@ -270,20 +276,10 @@ public class DefaultJobController implements JobController {
 			return this;
 		}
 
-		public BiConsumer<QueryWorker, Throwable> getExceptionHandler() { return exceptionHandler; }
-
-		public Builder exceptionHandler(BiConsumer<QueryWorker, Throwable> exceptionHandler) {
-			requireNonNull(executorService);
-			checkArgument("Exception handler already set", this.exceptionHandler==null);
-			this.exceptionHandler = exceptionHandler;
-			return this;
-		}
-
 		@Override
 		protected void validate() {
 			checkArgument("Query not set", query!=null);
 			checkArgument("Executor service not set", executorService!=null);
-			checkArgument("Exception handler not set", exceptionHandler!=null);
 		}
 
 		@Override

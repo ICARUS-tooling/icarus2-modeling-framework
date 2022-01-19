@@ -68,6 +68,14 @@ public enum QueryErrorCode implements ErrorCode {
 	 */
 	CORPUS_UNREACHABLE(104),
 
+	/**
+	 * A worker (thread) participating in a multi-threaded matching process
+	 * has failed due to some nested exception. This error mainly exists to
+	 * also provide information about the thread that the actual exception
+	 * was caught in.
+	 */
+	WORKER_FIALED(105),
+
 	//**************************************************
 	//       2xx  INNER IQL SYNTAX ERRORS
 	//**************************************************

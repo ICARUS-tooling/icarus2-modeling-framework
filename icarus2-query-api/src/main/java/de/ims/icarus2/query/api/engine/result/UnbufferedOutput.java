@@ -25,6 +25,9 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ims.icarus2.query.api.engine.QueryOutput;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 
@@ -42,21 +45,24 @@ import de.ims.icarus2.query.api.engine.ThreadVerifier;
  */
 public abstract class UnbufferedOutput<T> extends AbstractOutput {
 
-	public static UnbufferedOutput<Match> nonExtracting(Consumer<Match> collector) {
-		return new NonExtracting(collector);
+	private static final Logger log = LoggerFactory.getLogger(UnbufferedOutput.class);
+
+	public static UnbufferedOutput<Match> nonExtracting(ResultSink resultSink) {
+		return new NonExtracting(resultSink);
 	}
 
-	public static UnbufferedOutput<ResultEntry> extracting(Consumer<ResultEntry> collector,
-			Extractor...extractors) {
-		return new Extracting(collector, extractors);
+	public static UnbufferedOutput<ResultEntry> extracting(ResultSink resultSink,
+			PayloadReader payloadReader, Extractor...extractors) {
+		return new Extracting(resultSink, payloadReader, extractors);
 	}
 
-	private final LongAdder size = new LongAdder();
+	protected final LongAdder size = new LongAdder();
 
-	private final Consumer<T> collector;
+	protected final ResultSink resultSink;
 
-	protected UnbufferedOutput(Consumer<T> collector) {
-		this.collector = requireNonNull(collector);
+	protected UnbufferedOutput(ResultSink resultSink) {
+		this.resultSink = requireNonNull(resultSink);
+		resultSink.prepare();
 	}
 
 	@Override
@@ -65,20 +71,24 @@ public abstract class UnbufferedOutput<T> extends AbstractOutput {
 	@Override
 	public boolean isFull() {  return false; }
 
-	private final void process(T element) {
-		collector.accept(element);
-		size.increment();
-	}
-
-	protected final Predicate<T> externalCollector() {
-		return item -> {
-			process(item);
-			return true;
-		};
+	@Override
+	public void discard() {
+		try {
+			resultSink.discard();
+		} catch (InterruptedException e1) {
+			log.error("Disrupted while discarding result sink data");
+		}
 	}
 
 	@Override
-	protected void finish() { /* no-op */ }
+	protected void finish() {
+		try {
+			resultSink.finish();
+		} catch (InterruptedException e) {
+			log.info("Finalizing of result sink got interrupted");
+			discard();
+		}
+	}
 
 	/**
 	 * Direct forwarding of matches to consumer.
@@ -88,8 +98,16 @@ public abstract class UnbufferedOutput<T> extends AbstractOutput {
 	 */
 	static final class NonExtracting extends UnbufferedOutput<Match> {
 
-		NonExtracting(Consumer<Match> finalMatchConsumer) {
-			super(finalMatchConsumer);
+		NonExtracting(ResultSink resultSink) {
+			super(resultSink);
+		}
+
+		private final Predicate<Match> externalCollector() {
+			return item -> {
+				resultSink.add(item);
+				size.increment();
+				return true;
+			};
 		}
 
 		@Override
@@ -110,10 +128,20 @@ public abstract class UnbufferedOutput<T> extends AbstractOutput {
 	static final class Extracting extends UnbufferedOutput<ResultEntry> {
 
 		private final Extractor[] extractors;
+		private final PayloadReader payloadReader;
 
-		Extracting(Consumer<ResultEntry> finalMatchConsumer, Extractor[] extractors) {
-			super(finalMatchConsumer);
+		Extracting(ResultSink resultSink, PayloadReader payloadReader, Extractor[] extractors) {
+			super(resultSink);
+			this.payloadReader = requireNonNull(payloadReader);
 			this.extractors = extractors.clone();
+		}
+
+		private final Predicate<ResultEntry> externalCollector() {
+			return entry -> {
+				resultSink.add(entry, payloadReader);
+				size.increment();
+				return true;
+			};
 		}
 
 		@Override

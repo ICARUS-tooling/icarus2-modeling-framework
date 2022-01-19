@@ -21,9 +21,8 @@ package de.ims.icarus2.query.api.engine.result;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.function.Consumer;
-
-import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 
@@ -33,33 +32,25 @@ import de.ims.icarus2.query.api.engine.ThreadVerifier;
  */
 public abstract class BufferedOutput<T> extends AbstractOutput {
 
+	private static final Logger log = LoggerFactory.getLogger(BufferedOutput.class);
+
 	public static BufferedOutput<Match> nonExtracting(ResultBuffer<Match> buffer,
-			Consumer<Match> finalMatchConsumer) {
-		return new NonExtracting(buffer, finalMatchConsumer);
+			ResultSink resultSink) {
+		return new NonExtracting(buffer, resultSink);
 	}
 
 	public static BufferedOutput<ResultEntry> extracting(ResultBuffer<ResultEntry> buffer,
-			Consumer<ResultEntry> finalMatchConsumer, Extractor...extractors) {
-		return new Extracting(buffer, finalMatchConsumer, extractors);
+			ResultSink resultSink, PayloadReader payloadReader, Extractor...extractors) {
+		return new Extracting(buffer, resultSink, payloadReader, extractors);
 	}
 
-	private final ResultBuffer<T> buffer;
+	protected final ResultBuffer<T> buffer;
 
-	private final Consumer<T> finalMatchConsumer;
+	protected final ResultSink resultSink;
 
-	protected BufferedOutput(ResultBuffer<T> buffer, @Nullable Consumer<T> finalMatchConsumer) {
+	protected BufferedOutput(ResultBuffer<T> buffer, ResultSink resultSink) {
 		this.buffer = requireNonNull(buffer);
-		this.finalMatchConsumer = finalMatchConsumer;
-	}
-
-	@Override
-	protected final void finish() {
-		// Ensure buffer is properly finished and merged
-		buffer.finish();
-		// Now send buffered matches to consumer if present
-		if(finalMatchConsumer!=null) {
-			buffer.forEachEntry(finalMatchConsumer);
-		}
+		this.resultSink = requireNonNull(resultSink);
 	}
 
 	@Override
@@ -68,7 +59,29 @@ public abstract class BufferedOutput<T> extends AbstractOutput {
 	@Override
 	public final boolean isFull() { return buffer.isFull(); }
 
-	protected final ResultBuffer<T> buffer() { return buffer; }
+	@Override
+	public void discard() {
+		try {
+			resultSink.discard();
+		} catch (InterruptedException e1) {
+			log.error("Disrupted while discarding result sink data");
+		}
+	}
+
+	protected abstract void toSink() throws InterruptedException;
+
+	@Override
+	protected void finish() {
+		buffer.finish();
+		resultSink.prepare(buffer.size());
+		try {
+			toSink();
+			resultSink.finish();
+		} catch (InterruptedException e) {
+			log.info("Finalizing of result sink got interrupted");
+			discard();
+		}
+	}
 
 	/**
 	 * Direct forwarding of matches to buffer.
@@ -78,15 +91,20 @@ public abstract class BufferedOutput<T> extends AbstractOutput {
 	 */
 	static final class NonExtracting extends BufferedOutput<Match> {
 
-		NonExtracting(ResultBuffer<Match> buffer, @Nullable Consumer<Match> finalMatchConsumer) {
-			super(buffer, finalMatchConsumer);
+		NonExtracting(ResultBuffer<Match> buffer, ResultSink resultSink) {
+			super(buffer, resultSink);
+		}
+
+		@Override
+		protected void toSink() throws InterruptedException {
+			buffer.forEachEntry(resultSink::add);
 		}
 
 		@Override
 		protected MatchCollector createRawCollector(ThreadVerifier threadVerifier) {
 			return new TerminalCollectorFactory()
 					.threadVerifier(threadVerifier)
-					.matchSink(buffer().createCollector(threadVerifier))
+					.matchSink(buffer.createCollector(threadVerifier))
 					.build();
 		}
 	}
@@ -100,18 +118,30 @@ public abstract class BufferedOutput<T> extends AbstractOutput {
 	static final class Extracting extends BufferedOutput<ResultEntry> {
 
 		private final Extractor[] extractors;
+		private final PayloadReader payloadReader;
 
-		Extracting(ResultBuffer<ResultEntry> buffer, @Nullable Consumer<ResultEntry> finalMatchConsumer, Extractor[] extractors) {
-			super(buffer, finalMatchConsumer);
+		Extracting(ResultBuffer<ResultEntry> buffer, ResultSink resultSink,
+				PayloadReader payloadReader, Extractor[] extractors) {
+			super(buffer, resultSink);
+			this.payloadReader = requireNonNull(payloadReader);
 			// defensive copying
 			this.extractors = extractors.clone();
+		}
+
+		private void delegateResultEntry(ResultEntry entry) {
+			resultSink.add(entry, payloadReader);
+		}
+
+		@Override
+		protected void toSink() throws InterruptedException {
+			buffer.forEachEntry(this::delegateResultEntry);
 		}
 
 		@Override
 		protected MatchCollector createRawCollector(ThreadVerifier threadVerifier) {
 			return new TerminalCollectorFactory()
 					.threadVerifier(threadVerifier)
-					.resultEntrySink(buffer().createCollector(threadVerifier))
+					.resultEntrySink(buffer.createCollector(threadVerifier))
 					.payloadSize(extractors.length)
 					.extractors(extractors)
 					.build();
