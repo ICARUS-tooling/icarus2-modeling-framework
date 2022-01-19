@@ -59,7 +59,7 @@ public interface Match extends MatchSource {
 	 * @author Markus Gärtner
 	 *
 	 */
-	interface MultiMatch extends Match {
+	public interface MultiMatch extends Match {
 
 		/** Returns the index of the current lane */
 		int getCurrentLane();

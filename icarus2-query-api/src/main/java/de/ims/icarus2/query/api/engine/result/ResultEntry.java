@@ -23,20 +23,30 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Arrays;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
+ * Models an entry within a complex search result. Each entry is composed
+ * of a {@link Match} and a series of associated payload values. Internally
+ * the payload is stored as a simple long array and other result-related
+ * framework members will provide appropriate facilities to access that
+ * payload data.
+ *
  * @author Markus Gärtner
  *
  */
-public class ResultEntry {
+public final class ResultEntry {
 	/** The match or MultiMatch assigned to this entry */
-	public final Match match;
+	private final Match match;
 	/** Computed values for sorting, grouping and other forms of result processing */
-	public final long[] payload;
+	private final long[] payload;
 
 	public ResultEntry(Match match, int payloadSize) {
 		this.match = requireNonNull(match);
 		this.payload = new long[payloadSize];
 	}
+
+	public Match getMatch() { return match; }
 
 	@Override
 	public boolean equals(Object obj) {
@@ -49,6 +59,19 @@ public class ResultEntry {
 		}
 		return false;
 	}
+
+	long payloadAt(int index) { return payload[index]; }
+
+	void setPayload(int index, long value) { payload[index] = value; }
+
+	@VisibleForTesting
+	void setPayload(long[] payload) {
+		assert payload.length==this.payload.length;
+		System.arraycopy(payload, 0, this.payload, 0, payload.length);
+	}
+
+	@VisibleForTesting
+	long[] getPayload() { return payload; }
 
 	@Override
 	public int hashCode() {

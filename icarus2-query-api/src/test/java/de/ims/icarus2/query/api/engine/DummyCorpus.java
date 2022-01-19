@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import org.xml.sax.SAXException;
 
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
@@ -59,7 +60,8 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  */
 public class DummyCorpus {
 
-	public static final String CONTEXT = "context0";
+	public static final String CORPUS_ID = "testCorpus";
+	public static final String CONTEXT_ID = "context0";
 	public static final String LAYER_TOKEN = "token";
 	public static final String LAYER_TOKEN_2 = "token2";
 	public static final String LAYER_SENTENCE = "sentence";
@@ -91,10 +93,10 @@ public class DummyCorpus {
 	}
 
 	public enum DummyType {
-		FLAT("tpl_flat_corpus.imf.xml", LAYER_TOKEN, LAYER_ANNO),
-		HIERARCHICAL("tpl_hierarchical_corpus.imf.xml", LAYER_TOKEN, LAYER_SENTENCE, LAYER_ANNO),
-		HIERARCHICAL_BLANK("tpl_hierarchical_blank_corpus.imf.xml", LAYER_TOKEN, LAYER_SENTENCE, LAYER_ANNO),
-		FULL("tpl_full_corpus.imf.xml", LAYER_TOKEN, LAYER_TOKEN_2, LAYER_SENTENCE, LAYER_SENTENCE_2,
+		FLAT(Templates.FLAT, LAYER_TOKEN, LAYER_ANNO),
+		HIERARCHICAL(Templates.HIERARCHICAL, LAYER_TOKEN, LAYER_SENTENCE, LAYER_ANNO),
+		HIERARCHICAL_BLANK(Templates.HIERARCHICAL_BLANK, LAYER_TOKEN, LAYER_SENTENCE, LAYER_ANNO),
+		FULL(Templates.FULL, LAYER_TOKEN, LAYER_TOKEN_2, LAYER_SENTENCE, LAYER_SENTENCE_2,
 				LAYER_ANNO, LAYER_ANNO_2, LAYER_SYNTAX, LAYER_SYNTAX_2),
 		;
 		public final String path;
@@ -228,6 +230,53 @@ public class DummyCorpus {
 				.source(ManifestLocation.builder()
 						.utf8()
 						.url(DummyCorpus.class.getResource(type.path))
+						.build())
+				.build();
+
+		CorpusManifest manifest = reader.parseCorpora().get(0);
+		registry.addCorpusManifest(manifest);
+
+		return manager.connect(manifest);
+	}
+
+	/**
+	 * Sets up a dummy corpus based on an external manifest and the provided textual content.
+	 *
+	 * @param manifestPath path to the manifest file, usable for {@link Class#getResource(String)}
+	 * @param corpusContent actual content of the corpus, in a form the associated {@link Driver} can read
+	 */
+	public static Corpus createDummyCorpus(String manifestPath, String corpusContent) throws SAXException, IOException, InterruptedException {
+		VirtualResourceProvider resourceProvider = new VirtualResourceProvider();
+		Path file = Paths.get("test_corpus");
+		resourceProvider.create(file, false);
+		VirtualIOResource resource = resourceProvider.getResource(file);
+		resource.prepare();
+		try(WritableByteChannel ch = resource.getWriteChannel()) {
+			ch.write(ByteBuffer.wrap(corpusContent.getBytes(StandardCharsets.UTF_8)));
+		}
+
+		Consumer<CorpusManifest> processor = corpus -> {
+			LocationManifest loc = new LocationManifestImpl(corpus.getManifestLocation(), corpus.getRegistry());
+			loc.setRootPathType(PathType.FILE);
+			loc.setRootPath(file.toString());
+			corpus.getRootContextManifest().get().addLocationManifest(loc);
+		};
+
+
+		CorpusManager manager = DefaultCorpusManager.builder()
+				.fileManager(new DefaultFileManager(Paths.get(".")))
+				.resourceProvider(resourceProvider)
+				.metadataRegistry(new VirtualMetadataRegistry())
+				.manifestRegistry(new DefaultManifestRegistry())
+				.build();
+		ManifestRegistry registry = manager.getManifestRegistry();
+		ManifestXmlReader reader = ManifestXmlReader.builder()
+				.registry(registry)
+				.useImplementationDefaults()
+				.corpusProcessor(processor)
+				.source(ManifestLocation.builder()
+						.utf8()
+						.url(DummyCorpus.class.getResource(manifestPath))
 						.build())
 				.build();
 

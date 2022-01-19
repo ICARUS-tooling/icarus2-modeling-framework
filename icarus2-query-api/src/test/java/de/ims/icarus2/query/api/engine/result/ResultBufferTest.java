@@ -97,7 +97,7 @@ class ResultBufferTest {
 			(m1, m2) -> -MATCH_NATURAL_ORDER.compare(m1, m2);
 
 	static final Comparator<ResultEntry> ENTRY_NATURAL_ORDER =
-			(r1, r2) -> strictToInt(r1.match.getIndex()-r2.match.getIndex());
+			(r1, r2) -> strictToInt(r1.getMatch().getIndex()-r2.getMatch().getIndex());
 
 	static final Comparator<ResultEntry> ENTRY_REVERSE_ORDER =
 			(r1, r2) -> -ENTRY_NATURAL_ORDER.compare(r1, r2);

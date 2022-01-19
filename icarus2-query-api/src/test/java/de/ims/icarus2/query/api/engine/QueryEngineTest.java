@@ -24,9 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
@@ -35,15 +40,28 @@ import org.junit.jupiter.api.TestFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
+import de.ims.icarus2.model.standard.io.DefaultFileManager;
+import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
+import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.query.api.Query;
+import de.ims.icarus2.query.api.engine.QueryJob.JobController;
+import de.ims.icarus2.query.api.engine.result.BufferedResultSink;
+import de.ims.icarus2.query.api.iql.IqlCorpus;
+import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlQueryGenerator;
 import de.ims.icarus2.query.api.iql.IqlQueryGenerator.IncrementalBuild;
+import de.ims.icarus2.query.api.iql.IqlResult;
+import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
+import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.util.io.resource.VirtualResourceProvider;
 
 /**
  * @author Markus Gärtner
@@ -64,7 +82,7 @@ class QueryEngineTest {
 
 
 	@Nested
-	class ReadQuery {
+	class ForReadQuery {
 
 		/**
 		 * Test method for {@link QueryEngine#readQuery(de.ims.icarus2.query.api.Query)}.
@@ -96,8 +114,126 @@ class QueryEngineTest {
 						IqlQuery query = engine.readQuery(new Query(json));
 						assertDeepEqual(null, original, query, json);
 					}));
-
 		}
 
+	}
+
+	@Nested
+	class ForEvaluateQuery {
+
+		@Nested
+		class ForVirtual {
+
+			private CorpusManager manager;
+			private VirtualResourceProvider provider;
+
+			@BeforeEach
+			void setUp() {
+				provider = new VirtualResourceProvider();
+				manager = DefaultCorpusManager.builder()
+						.fileManager(new DefaultFileManager(Paths.get(".")))
+						.resourceProvider(provider)
+						.manifestRegistry(new DefaultManifestRegistry())
+						.metadataRegistry(new VirtualMetadataRegistry())
+						.build();
+			}
+
+			@AfterEach
+			void tearDown() throws Exception {
+				manager.shutdown();
+				manager = null;
+
+				provider.clear();
+				provider = null;
+			}
+
+			private String createCorpusContent(String[] anno1, int[] sizes) {
+				StringBuilder sb = new StringBuilder();
+
+				int idx = 0;
+				for (int size : sizes) {
+					for (int i = 0; i < size; i++) {
+						if(i>0) {
+							sb.append('\n');
+						}
+						// <counter>\t<anno1>\t<empty>\n
+						sb.append(i).append('\t')
+							.append(anno1[idx++]).append('\t')
+							.append('_').append('\n');
+					}
+				}
+
+				return sb.toString();
+
+			}
+
+			private IqlQuery createQuery(String rawPayload) {
+				IqlCorpus corpus = new IqlCorpus();
+				corpus.setId("corpus01");
+				corpus.setName(DummyCorpus.CORPUS_ID);
+
+				IqlResult result = new IqlResult();
+				result.addResultType(ResultType.ID);
+
+				IqlLayer layer = new IqlLayer();
+				layer.setId("layer01");
+				layer.setPrimary(true);
+				layer.setName("sentence");
+
+				IqlStream stream = new IqlStream();
+				stream.setId("stream01");
+				stream.setCorpus(corpus);
+				stream.setRawPayload(rawPayload);
+				stream.setResult(result);
+				stream.addLayer(layer);
+
+				IqlQuery query = new IqlQuery();
+				query.setId("query01");
+				query.addStream(stream);
+
+				return query;
+			}
+
+
+			@Test
+			public void testFlat() throws Exception {
+
+				String[] anno1 = IntStream.range(0, 10)
+						.mapToObj(i -> "tok"+i)
+						.toArray(String[]::new);
+				int[] sizes = {2, 4, 3, 1};
+
+				Corpus corpus = DummyCorpus.createDummyCorpus(Templates.HIERARCHICAL, createCorpusContent(anno1, sizes));
+
+				QueryEngine engine = QueryEngine.builder()
+						.corpusManager(corpus.getManager())
+						.useDefaultMapper()
+						.useDefaultSettings()
+						.build();
+
+				IqlQuery query = createQuery("FIND []");
+
+				BufferedResultSink resultSink = new BufferedResultSink(engine.getSettings());
+
+				QueryJob job = engine.evaluateQuery(query, resultSink);
+
+				JobController controller = job.execute(1);
+				controller.start();
+				controller.awaitFinish(5, TimeUnit.SECONDS);
+
+				List<Throwable> exceptions = controller.getExceptions();
+				if(!exceptions.isEmpty()) {
+					for(Throwable t : exceptions) {
+						t.printStackTrace(System.err);
+					}
+				}
+			}
+		}
+
+		//TODO add full-stack tests for real corpora
+
+		private Corpus createDummyCorpus() {
+			throw new UnsupportedOperationException();
+		}
 	}
 }

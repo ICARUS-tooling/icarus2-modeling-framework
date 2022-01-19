@@ -79,7 +79,7 @@ class CorpusDataTest {
 	})
 	public void testDummyCreation(DummyType type, int primarySize, int foundationSize, @IntArrayArg int[] setup) throws Exception {
 		Corpus corpus = DummyCorpus.createDummyCorpus(type, setup);
-		ItemLayerManager mgr = corpus.getDriver(DummyCorpus.CONTEXT);
+		ItemLayerManager mgr = corpus.getDriver(DummyCorpus.CONTEXT_ID);
 		assertThat(mgr.getItemCount(corpus.getPrimaryLayer())).isEqualTo(primarySize);
 		assertThat(mgr.getItemCount(corpus.getFoundationLayer())).isEqualTo(foundationSize);
 	}

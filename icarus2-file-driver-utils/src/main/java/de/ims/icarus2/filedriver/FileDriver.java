@@ -1162,7 +1162,7 @@ public class FileDriver extends AbstractDriver {
 		 *  We do not forward the consumer action for publishing since that is only
 		 *  required when actually loading chunks from a backend storage!
 		 */
-		SingleThreadedItemLoader singleThreadedItemLoader = new SingleThreadedItemLoader(indices, getLayerBuffer(primaryLayer), null);
+		SingleThreadedItemLoader singleThreadedItemLoader = new SingleThreadedItemLoader(indices, getLayerBuffer(primaryLayer), action);
 
 		// Potentially long running part
 		singleThreadedItemLoader.execute();
@@ -1267,8 +1267,8 @@ public class FileDriver extends AbstractDriver {
 		}
 
 		public void onAvailableItem(Item item, long index) {
-			ChunkState chunkState = ChunkState.CORRUPTED;
-			if(item.isUsable()) {
+			ChunkState chunkState = ChunkState.forItem(item);
+			if(chunkState!=ChunkState.CORRUPTED) {
 				availableIndicesCount++;
 			}
 			publisher.accept(index, item, chunkState);

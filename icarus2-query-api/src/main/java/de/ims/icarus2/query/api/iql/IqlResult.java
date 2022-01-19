@@ -66,7 +66,7 @@ public class IqlResult extends AbstractIqlQueryElement {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkCondition(!resultTypes.isEmpty(), "resultTypes", "Must define at elast 1 result type");
+		checkCondition(!resultTypes.isEmpty(), "resultTypes", "Must define at least 1 result type");
 
 		checkCollection(resultInstructions);
 		checkCollection(sortings);
