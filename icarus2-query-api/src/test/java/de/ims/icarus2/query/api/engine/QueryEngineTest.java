@@ -20,7 +20,9 @@
 package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.test.TestUtils.assertDeepEqual;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
@@ -37,6 +39,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -49,6 +53,7 @@ import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.engine.QueryJob.JobController;
 import de.ims.icarus2.query.api.engine.result.BufferedResultSink;
+import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlQuery;
@@ -59,6 +64,8 @@ import de.ims.icarus2.query.api.iql.IqlResult.ResultType;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.query.api.iql.IqlUtils;
+import de.ims.icarus2.test.annotations.IntArrayArg;
+import de.ims.icarus2.test.annotations.IntMatrixArg;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.io.resource.VirtualResourceProvider;
@@ -151,17 +158,19 @@ class QueryEngineTest {
 				StringBuilder sb = new StringBuilder();
 
 				int idx = 0;
-				for (int size : sizes) {
-					for (int i = 0; i < size; i++) {
-						if(i>0) {
-							sb.append('\n');
-						}
+				for (int i=0; i<sizes.length; i++) {
+					if(i>0) {
+						sb.append('\n');
+					}
+					for (int j = 0; j < sizes[i]; j++) {
 						// <counter>\t<anno1>\t<empty>\n
-						sb.append(i).append('\t')
+						sb.append(j).append('\t')
 							.append(anno1[idx++]).append('\t')
 							.append('_').append('\n');
 					}
 				}
+
+//				System.out.println(sb.toString());
 
 				return sb.toString();
 
@@ -195,15 +204,20 @@ class QueryEngineTest {
 			}
 
 
-			@Test
-			public void testFlat() throws Exception {
+			@ParameterizedTest
+			@CsvSource({
+				"'WITH $x FROM token FIND [$x:]', 10, {2;4;3;1}, {{0;1}{0;1;2;3}{0;1;2}{0}}",
+				"'WITH $x FROM token FIND FIRST [$x:]', 10, {2;4;3;1}, {{0}{0}{0}{0}}",
+			})
+			public void TESTFLAT(String constraint, int tokens, @IntArrayArg int[] containerSetup,
+					// [container_id][global_id]
+					@IntMatrixArg int[][] containerHits) throws Exception {
 
-				String[] anno1 = IntStream.range(0, 10)
+				String[] anno1 = IntStream.range(0, tokens)
 						.mapToObj(i -> "tok"+i)
 						.toArray(String[]::new);
-				int[] sizes = {2, 4, 3, 1};
 
-				Corpus corpus = DummyCorpus.createDummyCorpus(Templates.HIERARCHICAL, createCorpusContent(anno1, sizes));
+				Corpus corpus = DummyCorpus.createDummyCorpus(Templates.HIERARCHICAL, createCorpusContent(anno1, containerSetup));
 
 				QueryEngine engine = QueryEngine.builder()
 						.corpusManager(corpus.getManager())
@@ -211,7 +225,7 @@ class QueryEngineTest {
 						.useDefaultSettings()
 						.build();
 
-				IqlQuery query = createQuery("FIND []");
+				IqlQuery query = createQuery(constraint);
 
 				BufferedResultSink resultSink = new BufferedResultSink(engine.getSettings());
 
@@ -225,6 +239,32 @@ class QueryEngineTest {
 				if(!exceptions.isEmpty()) {
 					for(Throwable t : exceptions) {
 						t.printStackTrace(System.err);
+					}
+					fail("Unexpected internal errors");
+				}
+
+				int expectedMatchCount = Stream.of(containerHits)
+						.mapToInt(hits -> hits.length)
+						.sum();
+				List<Match> matches = resultSink.getMatches();
+				assertThat(matches).hasSize(expectedMatchCount);
+				int idx = 0;
+				for(int containerId = 0; containerId < containerHits.length; containerId++) {
+					int[] hits = containerHits[containerId];
+					if(hits==null || hits.length==0) {
+						continue;
+					}
+					for(int hit : hits) {
+						Match match = matches.get(idx);
+						assertThat(match.getIndex())
+							.as("Container index mismatch for match %d", _int(idx))
+							.isEqualTo(containerId);
+						assertThat(match.getMapCount()).isEqualTo(1);
+						assertThat(match.getIndex(0))
+							.as("Item index mismatch for match %d", _int(idx))
+							.isEqualTo(hit);
+
+						idx++;
 					}
 				}
 			}

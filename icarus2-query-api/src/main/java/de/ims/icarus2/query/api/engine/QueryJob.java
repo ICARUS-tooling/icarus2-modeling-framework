@@ -84,8 +84,23 @@ public interface QueryJob {
 		 * for an amount of time up the specified timeout. */
 		boolean cancel(long timeout, TimeUnit unit) throws InterruptedException;
 
-		/** Wait for completion of the underlying workers */
+		/**
+		 * Wait for completion of the underlying workers.
+		 * This method is similar to {@link #awaitFinish()} but imposes an
+		 * upper limit on the waiting time.
+		 */
 		boolean awaitFinish(long timeout, TimeUnit unit) throws InterruptedException;
+
+		/**
+		 * Wait for completion of the underlying workers.
+		 * This method blocks the calling thread until the underlying search process
+		 * has finished or is interrupted. Note that there is no way to control the
+		 * maximum waiting time when using this method. Therefore the timeout-supporting
+		 * variant {@link #awaitFinish(long, TimeUnit)} is the preferred way of waiting
+		 * for the end of a search when there is no user interaction planned to make
+		 * decisions about canceling.
+		 */
+		void awaitFinish() throws InterruptedException;
 
 		/** Fetches a snapshot of the current search statistics. */
 		JobStats getStats();

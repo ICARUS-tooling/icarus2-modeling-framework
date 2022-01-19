@@ -84,7 +84,6 @@ import de.ims.icarus2.query.api.engine.result.MatchSink;
 import de.ims.icarus2.query.api.engine.result.MatchSource;
 import de.ims.icarus2.query.api.exp.Assignable;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
-import de.ims.icarus2.query.api.exp.EvaluationContext.ElementContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.Expression;
@@ -478,7 +477,7 @@ public class StructurePattern {
 		final IntList permutators = new IntArrayList();
 		Supplier<Matcher<Container>> filter;
 		Supplier<Expression<?>> global;
-		ElementContext context;
+		EvaluationContext context;
 		ExpressionFactory expressionFactory;
 		final MarkerTransform markerTransform = new MarkerTransform();
 
@@ -815,9 +814,12 @@ public class StructurePattern {
 
 			// Process actual node content
 			if(constraint==null) {
+				// For resolving member labels we can use _any_ context
+				context = rootContext;
 				// Dummy nodes don't get added to the "proper nodes" list
 				Node node = empty(source, mappingId, label, anchorId);
 				atom = segment(node);
+				context = null;
 			} else {
 				// Full fledged node with local constraints and potentially a member label
 
@@ -1116,6 +1118,7 @@ public class StructurePattern {
 			if(label==null) {
 				return UNSET_INT;
 			}
+			assert context!=null: "missing evaluation context";
 			final MemberDef memberDef = new MemberDef(label, context);
 			final int memberId = members.size();
 			members.add(memberDef);
@@ -1891,6 +1894,7 @@ public class StructurePattern {
 			sm.globalMarkers = globalMarkers.toArray(new RangeMarker[0]);
 			sm.nestedMarkers = nestedMarkers.toArray(new RangeMarker[0]);
 			sm.matchers = matchers.toArray(new Supplier[0]);
+			sm.members = members.toArray(new Supplier[0]);
 
 			return sm;
 		}
@@ -2629,6 +2633,9 @@ public class StructurePattern {
 			rootFrame.reset();
 			Arrays.fill(roots, UNSET_INT);
 			frame = rootFrame;
+			finished = false;
+			stop = false;
+			reported = 0L;
 		}
 
 		/** Send current match state to consumers. Return {@code true} in case no
@@ -4416,7 +4423,7 @@ public class StructurePattern {
 					state.finished = true;
 				}
 			} else {
-				state.finished = false;
+				state.finished = true;
 			}
 
 			state.lastMatchSize = state.entry;

@@ -277,7 +277,7 @@ public class QueryEngine {
 					.scope(scope)
 					.build();
 
-			final RootContext rootContext = createContext(corpusData);
+			final RootContext rootContext = createContext(corpusData, payload);
 
 			final List<IqlLane> lanes = payload.getLanes();
 			final List<StructurePattern> patterns = new ObjectArrayList<>();
@@ -316,7 +316,7 @@ public class QueryEngine {
 			return builder.build();
 		}
 
-		private RootContext createContext(CorpusData corpusData) {
+		private RootContext createContext(CorpusData corpusData, IqlPayload payload) {
 			// Now build context for our single stream
 			RootContextBuilder contextBuilder = EvaluationContext.rootBuilder(corpusData);
 
@@ -324,6 +324,7 @@ public class QueryEngine {
 			applySettings(contextBuilder, queryContext.getQuery());
 			applyEmbeddedData(contextBuilder, queryContext.getEmbeddedData());
 			applyExtensions(contextBuilder, queryContext.getExtensions()); // partly outside our control
+			payload.getBindings().forEach(contextBuilder::bind);
 
 			return contextBuilder.build();
 		}

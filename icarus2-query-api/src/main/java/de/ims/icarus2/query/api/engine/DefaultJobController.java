@@ -120,6 +120,14 @@ public class DefaultJobController implements JobController {
 		return executorService.awaitTermination(timeout, unit);
 	}
 
+	/**
+	 * @see de.ims.icarus2.query.api.engine.QueryJob.JobController#awaitFinish()
+	 */
+	@Override
+	public void awaitFinish() throws InterruptedException {
+		latch.await();
+	}
+
 	@Override
 	public boolean awaitFinish(long timeout, TimeUnit unit) throws InterruptedException {
 		checkState("No workers in progress or start failed", latch!=null);
