@@ -89,7 +89,7 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 
 		@Override
 		protected int compareRaw(ResultEntry e1, ResultEntry e2, int offset) {
-			return (int)(e1.payload[offset] - e2.payload[offset]);
+			return (int)(e1.payloadAt(offset) - e2.payloadAt(offset));
 		}
 	}
 
@@ -101,8 +101,8 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 		@Override
 		protected int compareRaw(ResultEntry e1, ResultEntry e2, int offset) {
 			return Double.compare(
-					Extractor.decode(e1.payload[offset]),
-					Extractor.decode(e2.payload[offset]));
+					Extractor.decode(e1.payloadAt(offset)),
+					Extractor.decode(e2.payloadAt(offset)));
 		}
 	}
 
@@ -120,8 +120,8 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 
 		@Override
 		protected int compareRaw(ResultEntry e1, ResultEntry e2, int offset) {
-			CharSequence left = decoder.apply(strictToInt(e1.payload[offset]));
-			CharSequence right = decoder.apply(strictToInt(e2.payload[offset]));
+			CharSequence left = decoder.apply(strictToInt(e1.payloadAt(offset)));
+			CharSequence right = decoder.apply(strictToInt(e2.payloadAt(offset)));
 			return CodePointUtils.compare(left, right, comparator);
 		}
 	}
@@ -146,8 +146,8 @@ public abstract class Sorter implements Comparator<ResultEntry> {
 
 		@Override
 		protected int compareRaw(ResultEntry e1, ResultEntry e2, int offset) {
-			CharSequence left = decoder.apply(strictToInt(e1.payload[offset]));
-			CharSequence right = decoder.apply(strictToInt(e2.payload[offset]));
+			CharSequence left = decoder.apply(strictToInt(e1.payloadAt(offset)));
+			CharSequence right = decoder.apply(strictToInt(e2.payloadAt(offset)));
 			return CodePointUtils.compareCodePoints(left, right, comparator);
 		}
 	}

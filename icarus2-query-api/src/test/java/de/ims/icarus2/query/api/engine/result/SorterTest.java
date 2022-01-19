@@ -78,12 +78,8 @@ class SorterTest {
 
 	private static ResultEntry entry(long...payload) {
 		ResultEntry entry = new ResultEntry(DUMMY_MATCH, payload.length);
-		System.arraycopy(payload, 0, entry.payload, 0, payload.length);
+		entry.setPayload(payload);
 		return entry;
-	}
-
-	private static void assertEntry(ResultEntry entry, long...expectedPayload) {
-		assertThat(entry.payload).containsExactly(expectedPayload);
 	}
 
 	private static Stream<DynamicTest> assertProcess(Sorter sorter, ResultEntry[] entries,
@@ -118,6 +114,7 @@ class SorterTest {
 			 *  parameters here and spam ResultEntry instances.
 			 */
 			apiGuard.parameterResolver(Object.class, s -> new ResultEntry(mock(Match.class), 1));
+			apiGuard.parameterResolver(ResultEntry.class, s -> new ResultEntry(mock(Match.class), 1));
 			/*
 			 * Some of the constructors have primitive parameters before the null-guarded
 			 * object arguments. Therefore we need to make sure that  the
@@ -155,7 +152,7 @@ class SorterTest {
 				ResultEntry[] entries = LongStream.of(values)
 						.mapToObj(v -> {
 							ResultEntry entry = entry(10);
-							entry.payload[offset] = v;
+							entry.setPayload(offset, v);
 							return entry;
 						})
 						.toArray(ResultEntry[]::new);
@@ -175,7 +172,7 @@ class SorterTest {
 				ResultEntry[] entries = LongStream.of(values)
 						.mapToObj(v -> {
 							ResultEntry entry = entry(10);
-							entry.payload[offset] = v;
+							entry.setPayload(offset, v);
 							return entry;
 						})
 						.toArray(ResultEntry[]::new);

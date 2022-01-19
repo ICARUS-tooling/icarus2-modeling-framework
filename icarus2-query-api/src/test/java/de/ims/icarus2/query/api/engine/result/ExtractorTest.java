@@ -19,7 +19,6 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -27,8 +26,6 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -70,18 +67,11 @@ class ExtractorTest {
 
 		Expression<?> wrap(long value);
 
-		E create(int offset, Expression<?> exp);
+		E create(Expression<?> exp);
 
 		@Override
 		default E createTestInstance(TestSettings settings) {
-			return settings.process(create(0, wrap(defaultValue())));
-		}
-
-
-		@Test
-		default void testIllegalOffset() throws Exception {
-			assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-					() -> create(-1, wrap(defaultValue()))).withMessageContaining("Offset");;
+			return settings.process(create(wrap(defaultValue())));
 		}
 
 		@TestFactory
@@ -93,31 +83,16 @@ class ExtractorTest {
 						Expression<?> exp = mock(Expression.class);
 						when(exp.getResultType()).thenReturn(type);
 						assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-								() -> create(0, exp));
+								() -> create(exp));
 					}));
 		}
 
 		@Test
 		default void testDefaultValue() throws Exception {
 			long defaultValue = defaultValue();
-			E extractor = create(0, wrap(defaultValue));
-			long[] payload = new long[1];
-			extractor.extract(payload);
-			assertThat(payload).containsExactly(defaultValue);
-		}
-
-		@TestFactory
-		default Stream<DynamicTest> testOffsets() throws Exception {
-			return IntStream.range(0, 10).mapToObj(offset -> dynamicTest(String.valueOf(offset), () -> {
-				long defaultValue = defaultValue();
-				E extractor = create(offset, wrap(defaultValue));
-				long[] payload = new long[10];
-				Arrays.fill(payload, UNSET_LONG);
-				long[] expected = payload.clone();
-				expected[offset] = defaultValue;
-				extractor.extract(payload);
-				assertThat(payload).containsExactly(expected);
-			}));
+			E extractor = create(wrap(defaultValue));
+			long value = extractor.extract();
+			assertThat(value).isEqualTo(defaultValue);
 		}
 	}
 
@@ -137,8 +112,8 @@ class ExtractorTest {
 		public Expression<?> wrap(long value) { return Literals.of(value); }
 
 		@Override
-		public IntegerExtractor create(int offset, Expression<?> exp) {
-			return new IntegerExtractor(offset, exp);
+		public IntegerExtractor create(Expression<?> exp) {
+			return new IntegerExtractor(exp);
 		}
 	}
 
@@ -158,8 +133,8 @@ class ExtractorTest {
 		public Expression<?> wrap(long value) { return Literals.of(Double.longBitsToDouble(value)); }
 
 		@Override
-		public FloatingPointExtractor create(int offset, Expression<?> exp) {
-			return new FloatingPointExtractor(offset, exp);
+		public FloatingPointExtractor create(Expression<?> exp) {
+			return new FloatingPointExtractor(exp);
 		}
 	}
 
@@ -179,17 +154,16 @@ class ExtractorTest {
 		public Expression<?> wrap(long value) { return Literals.of(value==BooleanExtractor.TRUE); }
 
 		@Override
-		public BooleanExtractor create(int offset, Expression<?> exp) {
-			return new BooleanExtractor(offset, exp);
+		public BooleanExtractor create(Expression<?> exp) {
+			return new BooleanExtractor(exp);
 		}
 
 		@Test
 		void testFalseValue() throws Exception {
-			long value = BooleanExtractor.FALSE;
-			BooleanExtractor extractor = create(0, wrap(value));
-			long[] payload = new long[1];
-			extractor.extract(payload);
-			assertThat(payload).containsExactly(value);
+			long expected = BooleanExtractor.FALSE;
+			BooleanExtractor extractor = create(wrap(expected));
+			long value = extractor.extract();
+			assertThat(value).isEqualTo(expected);
 		}
 	}
 
@@ -222,8 +196,8 @@ class ExtractorTest {
 		public Expression<?> wrap(long value) { return Literals.of(substitutor.apply(strictToInt(value))); }
 
 		@Override
-		public TextExtractor create(int offset, Expression<?> exp) {
-			return new TextExtractor(offset, exp, substitutor);
+		public TextExtractor create(Expression<?> exp) {
+			return new TextExtractor(exp, substitutor);
 		}
 	}
 }

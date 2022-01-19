@@ -55,44 +55,40 @@ public abstract class Extractor {
 		return Double.doubleToLongBits(value);
 	}
 
-	/** Pointer into payload */
-	protected final int offset;
 	/** The expression used to extract data */
 	protected final Expression<?> expression;
 
-	protected Extractor(int offset, Expression<?> expression) {
-		checkArgument("Offset must not be negative", offset>=0);
-		this.offset = offset;
+	protected Extractor(Expression<?> expression) {
 		this.expression = requireNonNull(expression);
 	}
 
-	public abstract void extract(long[] payload);
+	public abstract long extract();
 
 	public final Expression<?> getExpression() { return expression; }
 
 	public static final class IntegerExtractor extends Extractor {
 
-		public IntegerExtractor(int offset, Expression<?> expression) {
-			super(offset, expression);
+		public IntegerExtractor(Expression<?> expression) {
+			super(expression);
 			checkArgument("Expression must evaluate to integer result", expression.isInteger());
 		}
 
 		@Override
-		public void extract(long[] payload) {
-			payload[offset] = expression.computeAsLong();
+		public long extract() {
+			return expression.computeAsLong();
 		}
 	}
 
 	public static final class FloatingPointExtractor extends Extractor {
 
-		public FloatingPointExtractor(int offset, Expression<?> expression) {
-			super(offset, expression);
+		public FloatingPointExtractor(Expression<?> expression) {
+			super(expression);
 			checkArgument("Expression must evaluate to floating point result", expression.isFloatingPoint());
 		}
 
 		@Override
-		public void extract(long[] payload) {
-			payload[offset] = encode(expression.computeAsDouble());
+		public long extract() {
+			return encode(expression.computeAsDouble());
 		}
 	}
 
@@ -101,14 +97,14 @@ public abstract class Extractor {
 		static final long FALSE = 0L;
 		static final long TRUE = 1L;
 
-		public BooleanExtractor(int offset, Expression<?> expression) {
-			super(offset, expression);
+		public BooleanExtractor(Expression<?> expression) {
+			super(expression);
 			checkArgument("Expression must evaluate to boolean result", expression.isBoolean());
 		}
 
 		@Override
-		public void extract(long[] payload) {
-			payload[offset] = expression.computeAsBoolean() ? TRUE : FALSE;
+		public long extract() {
+			return expression.computeAsBoolean() ? TRUE : FALSE;
 		}
 	}
 
@@ -116,15 +112,15 @@ public abstract class Extractor {
 
 		private final ToIntFunction<CharSequence> encoder;
 
-		public TextExtractor(int offset, Expression<?> expression, ToIntFunction<CharSequence> encoder) {
-			super(offset, expression);
+		public TextExtractor(Expression<?> expression, ToIntFunction<CharSequence> encoder) {
+			super(expression);
 			this.encoder = requireNonNull(encoder);
 			checkArgument("Expression must evaluate to text result", expression.isText());
 		}
 
 		@Override
-		public void extract(long[] payload) {
-			payload[offset] = encoder.applyAsInt((CharSequence) expression.compute());
+		public long extract() {
+			return encoder.applyAsInt((CharSequence) expression.compute());
 		}
 	}
 }
