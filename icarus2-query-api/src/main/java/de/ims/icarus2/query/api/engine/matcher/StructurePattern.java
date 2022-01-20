@@ -1867,7 +1867,11 @@ public class StructurePattern {
 			// Force optimization
 			TreeInfo info = new TreeInfo();
 			root.study(info);
-			//TODO assert tree info and make sure we can't have zero-width assertion as root?
+
+			// Make sure we search for _something_ non-empty
+			if(info.minSize==0 && info.policy==RELUCTANT)
+				throw new QueryException(QueryErrorCode.INCORRECT_USE,
+						"Query must not be collapsable into a reluctant zero-width assertion");
 
 			// Fill state machine setup
 			StateMachineSetup sm = new StateMachineSetup();
@@ -3588,6 +3592,11 @@ public class StructurePattern {
 		/** Nesting depth of tree nodes */
 		int depth = 0;
 		//TODO properly propagate 'depth' for accumulating nodes (Branch, PermInit and Repetition)
+		/**
+		 * Expansion policy (greediness) used by the highest-level quantification.
+		 * Effectively dictates whether we can have a zero-width assertion as root.
+		 */
+		int policy = UNSET_INT;
 
 		/** Used to track fixed positions or areas. */
 		int from, to;
@@ -3604,6 +3613,7 @@ public class StructurePattern {
             to = UNSET_INT;
             depth = 0;
             descendants = 0;
+            policy = UNSET_INT;
 		}
 
 		@Override
@@ -3987,9 +3997,9 @@ public class StructurePattern {
 		}
 	}
 
-	static final int GREEDY = QuantifierModifier.GREEDY.id();
-	static final int RELUCTANT = QuantifierModifier.RELUCTANT.id();
-	static final int POSSESSIVE = QuantifierModifier.POSSESSIVE.id();
+	static final int RELUCTANT = 1;
+	static final int GREEDY = 2;
+	static final int POSSESSIVE = 3;
 
 	static final class Track extends Node {
 
@@ -6051,10 +6061,13 @@ public class StructurePattern {
             int maxL = info.maxSize;
             int segL = info.segmentSize;
             int descL = info.descendants;
+            int policy = info.policy;
             boolean maxV = info.maxValid;
             boolean detm = info.deterministic;
             boolean stopOnSuccess = info.stopOnSuccess;
             info.reset();
+
+            info.policy = policy==UNSET_INT ? type : policy;
 
             // Ensure we don't get any full explorative nodes as atoms
             info.stopOnSuccess = true;

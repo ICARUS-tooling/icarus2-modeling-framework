@@ -52,6 +52,7 @@ import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.matchers;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.seq;
 import static de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.Utils.tree;
+import static de.ims.icarus2.query.api.exp.ExpressionTestUtils.assertQueryException;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_LABEL;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.NO_MARKER;
 import static de.ims.icarus2.query.api.iql.IqlTestUtils.all;
@@ -94,6 +95,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -123,6 +125,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.QueryTestUtils;
@@ -8528,10 +8531,6 @@ public class StructurePatternTest {
 
 					@ParameterizedTest(name="{index}: <{1}..{2}>[X] in {0}")
 					@CsvSource({
-						// Optional
-						"X, 0, 1, -, -",
-						"XX, 0, 2, -, -",
-
 						"X, 1, 2, 0, 0",
 						"X-, 1, 2, 0, 0",
 						"XX, 1, 2, 0, 0",
@@ -8581,10 +8580,6 @@ public class StructurePatternTest {
 
 					@ParameterizedTest(name="{index}: <{1}..{2}^>[X] in {0}")
 					@CsvSource({
-						// Optional
-						"X, 0, 1, -, -",
-						"XX, 0, 2, -, -",
-
 						"X, 1, 2, 0, 0",
 						"X-, 1, 2, 0, 0",
 						"XX, 1, 2, 0, 0",
@@ -10084,6 +10079,60 @@ public class StructurePatternTest {
 		}
 
 		@Nested
+		class IllegalQueryConstructs {
+
+			@ParameterizedTest
+			@ValueSource(strings = {
+					// Dummy nodes
+					"[?]",
+					"[*]",
+					// Pure singular reluctance
+					"{[?]}",
+					// Pure expanded reluctance
+					"{[*]}",
+					// Plain quantification
+					"<0..1?>[]",
+					"<0..2?>[]",
+					// Nested groupings
+					"{{[?]}}",
+					"{{[*]}}",
+					// Sequence of dummy nodes
+					"ORDERED [?][?]",
+					"ORDERED [?][*]",
+					// Grouping of dummy nodes
+					"{ORDERED [?][?]}",
+					"{ORDERED [?][*]}",
+			})
+			void testZeroWidthAssertion(String query) {
+
+				IqlPayload payload = new QueryProcessor(Collections.emptySet()).processPayload("FIND "+query);
+				assertThat(payload).as("No payload").isNotNull();
+				assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
+				assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
+				IqlLane lane = payload.getLanes().get(0);
+
+				assignMappingIds(lane.getElement());
+
+				StructurePattern.Builder builder = StructurePattern.builder();
+				builder.source(lane);
+				builder.id(1);
+				RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
+						.addEnvironment(SharedUtilityEnvironments.all())
+						.build();
+				LaneContext context = rootContext.derive()
+						.lane(lane)
+						.build();
+				builder.context(context);
+				lane.getLimit().ifPresent(builder::limit);
+				lane.getFlags().forEach(builder::flag);
+				builder.initialBufferSize(10);
+				builder.role(Role.SINGLETON);
+
+				assertQueryException(QueryErrorCode.INCORRECT_USE, builder::build);
+			}
+		}
+
+		@Nested
 		class StandaloneNode {
 
 			private final QueryConfig QUERY_CONFIG = QueryConfig.of(IqlNode.class);
@@ -10108,16 +10157,6 @@ public class StructurePatternTest {
 				/* Note that "optional reluctant" nodes don't get added to a mapping
 				 * unless the context forces an expansion.
 				 */
-
-				// Pure singular reluctance
-				"'[?]', '', 1, { {{}} }",
-				"'[?]', X, 1, { {{}} }",
-
-				// Pure expanded reluctance
-				"'[*]', '', 1, { {{}} }",
-				"'[*]', X, 1, { {{}} }",
-				"'[*]', XY, 2, { {{}{}} }",
-				"'[*]', XYZ, 3, { {{}{}{}} }",
 
 				// Mandatory dummy node with reluctant expansion
 				"'[+]', '', 0, -",
@@ -10305,18 +10344,6 @@ public class StructurePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				/* Note that "optional reluctant" nodes don't get added to a mapping
-				 * unless the context forces an expansion.
-				 */
-
-				// Pure singular reluctance
-				"'{[?]}', X, 1, { {{}} }",
-
-				// Pure expanded reluctance
-				"'{[*]}', X, 1, { {{}} }",
-				"'{[*]}', XY, 2, { {{}{}} }",
-				"'{[*]}', XYZ, 3, { {{}{}{}} }",
-
 				// Mandatory dummy node with reluctant expansion
 				"'{[+]}', X, 1, { {{0}} }",
 				"'{[+]}', XY, 2, { {{0}{1}} }",
@@ -10541,10 +10568,6 @@ public class StructurePatternTest {
 				/* Note that "optional reluctant" nodes don't get added to a mapping
 				 * unless the context forces an expansion.
 				 */
-
-				// Pure singular reluctance
-				"'ORDERED [?][?]', X, 1, { {{}} }, false",
-				"'ORDERED [?][?]', XY, 3, { {{}{}{}} {{}{}{}} }, true",
 
 				// Mandatory node with following optional
 				"'ORDERED [][?]', XY, 2, { {{0}{1}} {{}{}} }, false",
@@ -11213,12 +11236,9 @@ public class StructurePatternTest {
 
 			@ParameterizedTest(name="{index}: {0} in {1} -> {2} matches")
 			@CsvSource({
-				"'{{[?]}}', X, 1, { {{}} }, false",
-
 				"'{{[?]}[]}', X, 1, { {{}} {{0}} }, false",
 				"'{[]{[?]}}', X, 1, { {{0}} {{}} }, false",
 
-				"'{{[*]}}', X, 1, { {{}} }, false",
 				"'{{[*]}[]}', X, 1, { {{}} {{0}} }, false",
 				"'{[]{[*]}}', X, 1, { {{0}} {{}} }, false",
 
@@ -11797,10 +11817,6 @@ public class StructurePatternTest {
 				/* Note that "optional reluctant" nodes don't get added to a mapping
 				 * unless the context forces an expansion.
 				 */
-
-				// Pure singular reluctance
-				"'{ORDERED [?][?]}', X, 1, { {{}} }, false",
-				"'{ORDERED [?][?]}', XY, 3, { {{}{}{}} {{}{}{}} }, false",
 
 				// Mandatory node with following optional
 				"'{ORDERED [][?]}', XY, 2, { {{0}{1}} {{}{}} }, false",
