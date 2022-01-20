@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.engine;
 
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
@@ -46,12 +47,14 @@ import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
+import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -103,12 +106,6 @@ class SingleStreamJobTest {
 		SingleLaneTest output(QueryOutput output) {
 			checkState("output already set", this.output==null);
 			this.output = requireNonNull(output);
-			return this;
-		}
-
-		SingleLaneTest exceptionHandler(BiConsumer<Thread, Throwable> exceptionHandler) {
-			checkState("exception handler already set", this.exceptionHandler==null);
-			this.exceptionHandler = requireNonNull(exceptionHandler);
 			return this;
 		}
 
@@ -165,6 +162,12 @@ class SingleStreamJobTest {
 			assertThat(payload.getQueryType()).isEqualTo(QueryType.SINGLE_LANE);
 			assertThat(payload.getLanes()).as("Missing lane").isNotEmpty();
 			IqlLane lane = payload.getLanes().get(0);
+
+			MutableInteger id = new MutableInteger(0);
+			EvaluationUtils.visitNodes(lane.getElement(), node -> {
+				assertThat(node.getMappingId()).isEqualTo(UNSET_INT);
+				node.setMappingId(id.getAndIncrement());
+			});
 
 			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
 					.addEnvironment(SharedUtilityEnvironments.all())

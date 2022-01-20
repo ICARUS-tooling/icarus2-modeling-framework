@@ -121,17 +121,16 @@ import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
 import de.ims.icarus2.util.tree.IntTree;
+import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import it.unimi.dsi.fastutil.objects.Reference2IntMap;
-import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
@@ -207,8 +206,6 @@ public class StructurePattern {
 	private final int id;
 
 	private final IqlNode[] mappedNodes;
-	private final Reference2IntMap<IqlNode> mappedIds;
-	private final Object2IntMap<String> mappedLabels;
 
 	private StructurePattern(Builder builder) {
 		source = builder.getSource();
@@ -222,19 +219,6 @@ public class StructurePattern {
 		setup.initialSize = builder.getInitialBufferSize();
 
 		mappedNodes = setup.getMappedNodes();
-		mappedIds = new Reference2IntOpenHashMap<>(mappedNodes.length);
-		mappedIds.defaultReturnValue(UNSET_INT);
-		for (int i = 0; i < mappedNodes.length; i++) {
-			mappedIds.put(mappedNodes[i], i);
-		}
-		mappedLabels = new Object2IntOpenHashMap<>();
-		mappedIds.reference2IntEntrySet().forEach(e -> {
-			IqlNode node = e.getKey();
-			Optional<String> label = node.getLabel();
-			if(label!=null && label.isPresent()) {
-				mappedLabels.put(label.get(), e.getIntValue());
-			}
-		});
 	}
 
 	public IqlLane getSource() { return source; }
@@ -242,9 +226,7 @@ public class StructurePattern {
 	public Role getRole() { return role; }
 	public int getId() { return id; }
 
-	public IqlNode nodeForId(int mappingId) { return mappedNodes[mappingId]; }
-	public int idForNode(IqlNode node) { return mappedIds.getInt(node); }
-	public int idForLabel(String label) { return mappedLabels.getInt(label); }
+	public IqlNode[] getMappedNodes() { return mappedNodes.clone(); }
 	public Set<String> getDeclaredMembers() { return Collections.unmodifiableSet(setup.declaredMembers); }
 	public Set<String> getReferencedMembers() { return Collections.unmodifiableSet(setup.referencedMembers); }
 
@@ -376,7 +358,6 @@ public class StructurePattern {
 		RangeMarker[] getGlobalMarkers() { return globalMarkers; }
 		RangeMarker[] getNestedMarkers() { return nestedMarkers; }
 		IqlNode[] getMappedNodes() { return mappedNodes; }
-		int[] getHits() { return new int[mappedNodes.length]; }
 		int[] getBorders() { return new int[borderCount]; }
 		boolean[] getPings() { return new boolean[pingCount]; }
 		Matcher<Container> makeFilterConstraint() {
@@ -429,6 +410,16 @@ public class StructurePattern {
 			return IntStream.range(0, permutations.length)
 				.mapToObj(i -> new PermutationContext(permutations[i]))
 				.toArray(PermutationContext[]::new);
+		}
+		Int2IntMap createHits() {
+			Int2IntMap map;
+			if(mappedNodes.length<=0) {
+				map = new Int2IntArrayMap(8);
+			} else {
+				map = new Int2IntOpenHashMap();
+			}
+			map.defaultReturnValue(UNSET_INT);
+			return map;
 		}
 	}
 
@@ -503,7 +494,7 @@ public class StructurePattern {
 		final List<RangeMarker> globalMarkers = new ObjectArrayList<>();
 		final List<RangeMarker> nestedMarkers = new ObjectArrayList<>();
 		final long limit;
-		final IqlElement rootElement;
+		final @Nullable IqlElement rootElement;
 		final IqlConstraint filterConstraint;
 		final IqlConstraint globalConstraint;
 		final Set<IqlLane.MatchFlag> flags;
@@ -746,7 +737,7 @@ public class StructurePattern {
 			rootContext = builder.geContext();
 			flags = builder.geFlags();
 			limit = builder.getLimit();
-			rootElement = builder.getSource().getElement();
+			rootElement = Optional.ofNullable(builder.getSource()).map(IqlLane::getElement).orElse(null);
 			filterConstraint = builder.getFilterConstraint();
 			globalConstraint = builder.getGlobalConstraint();
 
@@ -790,7 +781,7 @@ public class StructurePattern {
 			final IqlConstraint constraint = source.getConstraint().orElse(null);
 			final String label = source.getLabel().orElse(null);
 			final int anchorId = isTree && ((IqlTreeNode)source).getChildren().isPresent() ? anchor() : UNSET_INT;
-			final int mappingId = (label!=null || constraint!=null) ? mappedNodes.size() : UNSET_INT;
+			final int mappingId = EvaluationUtils.needsMapping(source) ? source.getMappingId() : UNSET_INT;
 
 			if(mappingId!=UNSET_INT) {
 				mappedNodes.add(source);
@@ -1809,11 +1800,10 @@ public class StructurePattern {
 			referencedMembers.addAll(stats.getKeys(StatsField.MEMBER));
 		}
 
-		StateMachineSetup createStateMachine() {
-			// Ensure we have a proper structural constraint here
-			rootElement.checkIntegrity();
+		Frame frame;
+		boolean stopAfterMatch = false;
 
-			//TODO run a verification of marker+quantifier combinations
+		StateMachineSetup createStateMachine() {
 
 			if(filterConstraint != null) {
 				expressionFactory = new ExpressionFactory(rootContext);
@@ -1822,29 +1812,37 @@ public class StructurePattern {
 				expressionFactory = null;
 			}
 
-			final boolean forward = !isFlagSet(IqlLane.MatchFlag.REVERSE);
+			if(rootElement!=null) {
+				// Ensure we have a proper structural constraint here
+				rootElement.checkIntegrity();
 
-			resetFindOnly(false);
-			//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
-			final Node rootScan;
-			boolean stopAfterMatch = false;
-			if(isFlagSet(IqlLane.MatchFlag.DISJOINT)) {
-				rootScan = disjoint(forward);
-				stopAfterMatch = true;
-			} else if(isFlagSet(IqlLane.MatchFlag.CONSECUTIVE)) {
-				rootScan = consecutive(forward);
-				stopAfterMatch = true;
-			} else if(isFlagSet(IqlLane.MatchFlag.ROOTED)) {
-				rootScan = rootScan(forward);
+				//TODO run a verification of marker+quantifier combinations
+
+				final boolean forward = !isFlagSet(IqlLane.MatchFlag.REVERSE);
+
+				resetFindOnly(false);
+				//TODO check if the first actual node has an "isRoot" marker and use RootScan instead?
+				final Node rootScan;
+				if(isFlagSet(IqlLane.MatchFlag.DISJOINT)) {
+					rootScan = disjoint(forward);
+					stopAfterMatch = true;
+				} else if(isFlagSet(IqlLane.MatchFlag.CONSECUTIVE)) {
+					rootScan = consecutive(forward);
+					stopAfterMatch = true;
+				} else if(isFlagSet(IqlLane.MatchFlag.ROOTED)) {
+					rootScan = rootScan(forward);
+				} else {
+					rootScan = explore(forward);
+				}
+
+				// For now we don't honor the 'consumed' flag on IqlElement instances
+				frame = process(rootElement, rootScan);
+
+				// Collapse all actual content before we add special nodes
+				frame.collapse();
 			} else {
-				rootScan = explore(forward);
+				frame = new Frame();
 			}
-
-			// For now we don't honor the 'consumed' flag on IqlElement instances
-			final Frame frame = process(rootElement, rootScan);
-
-			// Collapse all actual content before we add special nodes
-			frame.collapse();
 
 			// Global constraints get evaluated after all normal content but before dispatch phase
 			if(globalConstraint != null) {
@@ -2419,7 +2417,7 @@ public class StructurePattern {
 		/** In-place permutation generators and contexts to be used for unordered groups */
 		final PermutationContext[] permutations;
 		/** Keeps track of the last hit index for every raw node */
-		final int[] hits;
+		final Int2IntMap hits;
 		/** The available int[] buffers used by various node implementations */
 		final int[][] buffers;
 		/** Stores the right boundary around marker interval operations */
@@ -2525,7 +2523,7 @@ public class StructurePattern {
 			globalMarkers = setup.getGlobalMarkers();
 			nestedMarkers = setup.getNestedMarkers();
 
-			hits = setup.getHits();
+			hits = setup.createHits();
 			borders = setup.getBorders();
 			pings = setup.getPings();
 
@@ -2616,7 +2614,7 @@ public class StructurePattern {
 			}
 
 			// Other buffers have to get cleared out completely
-			Arrays.fill(hits, UNSET_INT);
+			hits.clear();
 			for (int i = 0; i < caches.length; i++) {
 				caches[i].reset(size);
 			}
@@ -2708,7 +2706,7 @@ public class StructurePattern {
 		public final int size;
 		public final Interval[] intervals;
 		public final BitSet[] gates;
-		public final int[] hits;
+		public final Int2IntMap hits;
 		public final int[][] buffers;
 		public final int[] borders;
 		public final List<Mapping> mapping;
@@ -2727,7 +2725,7 @@ public class StructurePattern {
 			gates = Stream.of(source.gates)
 					.map(Gate::asBitSet)
 					.toArray(BitSet[]::new);
-			hits = source.hits.clone();
+			hits =new Int2IntArrayMap(source.hits);
 			buffers = Stream.of(source.buffers)
 					.map(b -> Arrays.copyOf(b, size))
 					.toArray(int[][]::new);
@@ -2979,7 +2977,7 @@ public class StructurePattern {
 		@VisibleForTesting
 		void softReset() {
 			Arrays.fill(elements, 0, size, null);
-			Arrays.fill(hits, UNSET_INT);
+			hits.clear();
 			entry = 0;
 			rootFrame.reset();
 		}
@@ -3132,7 +3130,7 @@ public class StructurePattern {
 		protected void validate() {
 			super.validate();
 
-			checkState("No source lane defined", source!=null);
+//			checkState("No source lane defined", source!=null);
 			checkState("Id not defined", id!=null);
 			checkState("Role not defined", role!=null);
 			checkState("Context not defined", context!=null);
@@ -4239,7 +4237,7 @@ public class StructurePattern {
 
 				if(value) {
 					// Store last successful match
-					state.hits[mappingId] = index;
+					state.hits.put(mappingId, index);
 				}
 			}
 

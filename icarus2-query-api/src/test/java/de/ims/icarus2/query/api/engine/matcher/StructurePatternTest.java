@@ -157,6 +157,7 @@ import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
+import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
 import de.ims.icarus2.query.api.iql.IqlElement;
@@ -182,6 +183,7 @@ import de.ims.icarus2.test.annotations.IntMatrixArg;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -1164,6 +1166,14 @@ public class StructurePatternTest {
 
 	static RawTestConfig rawTest() { return new RawTestConfig(); }
 
+	private static void assignMappingIds(IqlElement element) {
+		MutableInteger id = new MutableInteger(0);
+		EvaluationUtils.visitNodes(element, node -> {
+			assertThat(node.getMappingId()).isEqualTo(UNSET_INT);
+			node.setMappingId(id.getAndIncrement());
+		});
+	}
+
 	static class MatcherTestConfig extends MatchConfig<MatcherTestConfig> {
 		private StructurePattern.Builder builder;
 		private StructurePattern pattern;
@@ -1283,6 +1293,8 @@ public class StructurePatternTest {
 		private void makeBuilderFromQueryElement(int size) {
 			checkState("Root element not set", root!=null);
 
+			assignMappingIds(root);
+
 			IqlLane lane = mock(IqlLane.class);
 			when(lane.getElement()).thenReturn(root);
 
@@ -1315,6 +1327,8 @@ public class StructurePatternTest {
 			if(lane.getLaneType()==LaneType.TREE) {
 				assertThat(tree).as("Must provide tree structure for tree query").isNotNull();
 			}
+
+			assignMappingIds(lane.getElement());
 
 			builder = StructurePattern.builder();
 			builder.source(lane);
@@ -1655,7 +1669,7 @@ public class StructurePatternTest {
 
 		void assertResult(State state) {
 			if(last!=UNSET_INT) {
-				assertThat(state.hits[nodeId])
+				assertThat(state.hits.get(nodeId))
 					.as("Last hit for node %d", _int(nodeId))
 					.isEqualTo(last);
 			}
@@ -10719,10 +10733,10 @@ public class StructurePatternTest {
 				"'ADJACENT [isFirst,$X]<2+>[isInside(2,5),$X][isLast,$X]', XX-XX-XX, 0, -",
 				"'ADJACENT [isFirst,$X]<2+>[isInside(2,5),$Y][isLast,$Z]', XYYYYZ, 1, { {{0}} {{1;2;3;4}} {{5}} }",
 				"'ADJACENT <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', XYZZ, 0, -",
-				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', ---XYZZ, 1, { {{3}} {{4}} {{5;6}} }",
-				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', X---YZZ, 1, { {{0}} {{4}} {{5;6}} }",
-				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', -XXXYZZ, 3, { {{1;2;3}{2;3}{3}} {{4}{4}{4}} {{5;6}{5;6}{5;6}} }",
-				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', XXXXYZZ, 4, { {{0;1;2}{1;2;3}{2;3}{3}} {{4}{4}{4}{4}} {{5;6}{5;6}{5;6}{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', ---XYZZ, 1, { {{3}} {-} {{4}} {{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', X---YZZ, 1, { {{0}} {-} {{4}} {{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', -XXXYZZ, 3, { {{1;2;3}{2;3}{3}} {-} {{4}{4}{4}} {{5;6}{5;6}{5;6}} }",
+				"'ADJACENT ORDERED <1..3>[$X][*][isAfter(4),$Y]<2+>[$Z]', XXXXYZZ, 4, { {{0;1;2}{1;2;3}{2;3}{3}} {-} {{4}{4}{4}{4}} {{5;6}{5;6}{5;6}{5;6}} }",
 			})
 			@DisplayName("set with explicit arrangement and quantified nodes with markers")
 			void testArrangementWithQuantifiedNodesWithMarkers(String query, String target, int matches,
@@ -11313,8 +11327,8 @@ public class StructurePatternTest {
 			@CsvSource({
 				"'<2+>{{[$X][+]}[$Y]}', XY, 0, -",
 				"'<2+>{{[$X][+]}[$Y]}', X-Y, 0, -",
-				"'<2+>{{[$X][+]}[$Y]}', X-YX-Y, 1, { {{0;3}} {{2;5}} }",
-				"'<2+>{[$X]{[+][$Y]}}', X-YX-Y, 1, { {{0;3}} {{2;5}} }",
+				"'<2+>{{[$X][+]}[$Y]}', X-YX-Y, 1, { {{0;3}} {-} {{2;5}} }",
+				"'<2+>{[$X]{[+][$Y]}}', X-YX-Y, 1, { {{0;3}} {-} {{2;5}} }",
 			})
 			@DisplayName("group nested in quantified group")
 			void testOuterQuantification(String query, String target, int matches,
@@ -11722,11 +11736,11 @@ public class StructurePatternTest {
 			@CsvSource({
 				// Use dummy nodes as quantification
 				"'[$X {ADJACENT [$Y][*][$Z]}]', XYY, *00, 0, -",
-				"'[$X {ADJACENT [$Y][*][$Z]}]', XYZ, *00, 1, { {{0}} {{1}} {{2}} }",
-				"'[$X {ADJACENT [$Y][*][$Z]}]', XY--Z, *0000, 1, { {{0}} {{1}} {{4}} }",
+				"'[$X {ADJACENT [$Y][*][$Z]}]', XYZ, *00, 1, { {{0}} {{1}} {-} {{2}} }",
+				"'[$X {ADJACENT [$Y][*][$Z]}]', XY--Z, *0000, 1, { {{0}} {{1}} {-} {{4}} }",
 				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XY--Z, *0000, 0, -",
-				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYY--Z, *00000, 1, { {{0}} {{1;2}} {{5}} }",
-				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYYY--Z, *000000, 2, { {{0}{0}} {{1;2;3}{2;3}} {{6}{6}} }",
+				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYY--Z, *00000, 1, { {{0}} {{1;2}} {-} {{5}} }",
+				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYYY--Z, *000000, 2, { {{0}{0}} {{1;2;3}{2;3}} {-} {{6}{6}} }",
 				"'[$X {ADJACENT <2+>[$Y][*][$Z]}]', XYY--Z, *00500, 0, -",
 				//TODO
 			})

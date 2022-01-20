@@ -325,6 +325,7 @@ public class IqlQueryGenerator {
 		prepareElement0(element, build, config);
 
 		build.addFieldChange(element::setLabel, IqlTags.LABEL, index("label"));
+		build.addFieldChange(element::setMappingId, IqlTags.MAPPING_ID, _int(123));
 		build.addNestedChange(IqlTags.CONSTRAINT, IqlType.PREDICATE, config, element, element::setConstraint);
 	}
 

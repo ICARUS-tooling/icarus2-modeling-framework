@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -48,6 +49,12 @@ import de.ims.icarus2.query.api.exp.Expression.BooleanListExpression;
 import de.ims.icarus2.query.api.exp.Expression.FloatingPointListExpression;
 import de.ims.icarus2.query.api.exp.Expression.IntegerListExpression;
 import de.ims.icarus2.query.api.exp.Expression.ListExpression;
+import de.ims.icarus2.query.api.iql.IqlElement;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.util.MutablePrimitives.Primitive;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
@@ -67,6 +74,27 @@ public class EvaluationUtils {
 	@SuppressWarnings("unchecked")
 	public static <T> Expression<T>[] noArgs() {
 		return (Expression<T>[]) NO_ARGS;
+	}
+
+	public static boolean needsMapping(IqlNode node) {
+		return node.getLabel().isPresent() || node.getConstraint().isPresent();
+	}
+
+	public static void visitNodes(IqlElement element, Consumer<IqlNode> action) {
+		switch (element.getType()) {
+		case GROUPING: visitNodes(((IqlGrouping)element).getElement(), action); break;
+		case SEQUENCE: ((IqlSequence) element).getElements().forEach(e -> visitNodes(e, action)); break;
+		case NODE: action.accept((IqlNode) element); break;
+		case TREE_NODE: {
+			IqlTreeNode node = (IqlTreeNode)element;
+			action.accept(node);
+			node.getChildren().ifPresent(c -> visitNodes(c, action));
+		} break;
+		case DISJUNCTION: ((IqlElementDisjunction) element).getAlternatives().forEach(e -> visitNodes(e, action)); break;
+
+		default:
+			throw forUnsupportedQueryFragment("element", element.getType());
+		}
 	}
 
 	public static String unquote(String s) {

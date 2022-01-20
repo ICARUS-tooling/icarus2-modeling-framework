@@ -58,6 +58,11 @@ public abstract class IqlElement extends IqlUnique {
 	public abstract int length();
 
 	public static abstract class IqlProperElement extends IqlElement {
+		//TODO add MAPPING_ID field for assigning the ids used for mapping in Match  results
+
+		@JsonProperty(IqlTags.MAPPING_ID)
+		@JsonInclude(Include.NON_DEFAULT)
+		private int mappingId = UNSET_INT;
 
 		@JsonProperty(IqlTags.LABEL)
 		@JsonInclude(Include.NON_ABSENT)
@@ -67,6 +72,8 @@ public abstract class IqlElement extends IqlUnique {
 		@JsonInclude(Include.NON_ABSENT)
 		private Optional<IqlConstraint> constraint = Optional.empty();
 
+		public int getMappingId() { return mappingId; }
+
 		public Optional<String> getLabel() { return label; }
 
 		public Optional<IqlConstraint> getConstraint() { return constraint; }
@@ -75,10 +82,14 @@ public abstract class IqlElement extends IqlUnique {
 
 		public void setConstraint(IqlConstraint constraint) { this.constraint = Optional.of(constraint); }
 
+		public void setMappingId(int mappingId) { this.mappingId = mappingId; }
+
 		@Override
 		public void checkIntegrity() {
 			super.checkIntegrity();
 
+			// Mapping id can be undefined, in which case the engine will assign it
+//			checkCondition(mappingId!=UNSET_INT, IqlTags.MAPPING_ID, "Mapping id not set");
 			checkOptionalStringNotEmpty(label, IqlTags.LABEL);
 			checkOptionalNested(constraint);
 		}

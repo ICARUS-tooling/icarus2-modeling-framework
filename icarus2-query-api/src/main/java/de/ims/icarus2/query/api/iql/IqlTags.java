@@ -99,6 +99,8 @@ public final class IqlTags {
 
 	public static final String LABEL = IQL_NS_PREFIX+"label";
 
+	public static final String MAPPING_ID = IQL_NS_PREFIX+"mappingId";
+
 	public static final String CONSUMED = IQL_NS_PREFIX+"consumed";
 
 	public static final String DEFAULT_VALUE = IQL_NS_PREFIX+"defaultValue";

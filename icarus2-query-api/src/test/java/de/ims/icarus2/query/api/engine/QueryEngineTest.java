@@ -208,8 +208,9 @@ class QueryEngineTest {
 			@CsvSource({
 				"'WITH $x FROM token FIND [$x:]', 10, {2;4;3;1}, {{0;1}{0;1;2;3}{0;1;2}{0}}",
 				"'WITH $x FROM token FIND FIRST [$x:]', 10, {2;4;3;1}, {{0}{0}{0}{0}}",
+				"'WITH $x FROM token FIND 2 HITS [$x:]', 10, {2;4;3;1}, {{0;1}{0;1}{0;1}{0}}",
 			})
-			public void TESTFLAT(String constraint, int tokens, @IntArrayArg int[] containerSetup,
+			public void testFlat(String constraint, int tokens, @IntArrayArg int[] containerSetup,
 					// [container_id][global_id]
 					@IntMatrixArg int[][] containerHits) throws Exception {
 
@@ -260,6 +261,9 @@ class QueryEngineTest {
 							.as("Container index mismatch for match %d", _int(idx))
 							.isEqualTo(containerId);
 						assertThat(match.getMapCount()).isEqualTo(1);
+						assertThat(match.getNode(0))
+							.as("Mapping id mismatch for match %d", _int(idx))
+							.isEqualTo(0);
 						assertThat(match.getIndex(0))
 							.as("Item index mismatch for match %d", _int(idx))
 							.isEqualTo(hit);

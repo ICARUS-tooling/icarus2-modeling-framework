@@ -19,6 +19,8 @@ package de.ims.icarus2.query.api.engine;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.query.api.iql.IqlUtils.fragment;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -68,6 +70,7 @@ import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.env.ConstantsEnvironment;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlData;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
 import de.ims.icarus2.query.api.iql.IqlImport;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLayer;
@@ -82,6 +85,8 @@ import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.collections.Substitutor;
 import de.ims.icarus2.util.lang.Lazy;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -130,12 +135,7 @@ public class QueryEngine {
 		return evaluateQuery(query, resultSink);
 	}
 
-	/**
-	 * Evaluates the given query.
-	 * query!
-	 */
-	@VisibleForTesting
-	QueryJob evaluateQuery(IqlQuery query, ResultSink resultSink) throws InterruptedException {
+	public QueryJob evaluateQuery(IqlQuery query, ResultSink resultSink) throws InterruptedException {
 		// Ensure we only ever consider validated queries
 		query.checkIntegrity();
 
@@ -253,10 +253,9 @@ public class QueryEngine {
 			final IqlPayload payload = stream.getPayload().orElseThrow(
 					() -> EvaluationUtils.forInternalError("Failed to construct payload"));
 
-			if(payload.getQueryType()==QueryType.ALL) {
+			if(payload.getQueryType()==QueryType.ALL)
 				//TODO provide a simple job implementation that just forwards all the corpus data
 				throw new UnsupportedOperationException("query type 'ALL' not implemented");
-			}
 
 			/* From here on we should be good at the formal query side, only issues now
 			 * can stem from errors in expressions/constraints or when interacting with
@@ -286,6 +285,7 @@ public class QueryEngine {
 				// Plain query without any lanes or structural constraints
 				patterns.add(createPlainPattern(payload, rootContext));
 			} else {
+				createNodeMapping(lanes);
 				// At least one proper (proxy) lane definition available
 				createLanePatterns(payload, rootContext, patterns::add);
 			}
@@ -316,6 +316,53 @@ public class QueryEngine {
 			return builder.build();
 		}
 
+		/** Collect all the nodes in our query that need mapping and ensure unique mapping ids for all of them */
+		private void createNodeMapping(List<IqlLane> lanes) {
+			List<IqlNode> mappedNodes = new ObjectArrayList<>();
+			Int2ObjectMap<IqlNode> nodeLookup = new Int2ObjectOpenHashMap<>();
+
+			Consumer<IqlNode> action = node -> {
+				if(EvaluationUtils.needsMapping(node)) {
+					mappedNodes.add(node);
+				}
+			};
+
+			for(IqlLane lane : lanes) {
+				EvaluationUtils.visitNodes(lane.getElement(), action);
+			}
+
+			// No mappings required... rare but possible
+			if(mappedNodes.isEmpty()) {
+				return;
+			}
+
+			List<IqlNode> pendingNodes = new ObjectArrayList<>();
+
+			// Honor all the pre-configured mapping ids
+			for(IqlNode node : mappedNodes) {
+				if(node.getMappingId() == UNSET_INT) {
+					pendingNodes.add(node);
+					continue;
+				}
+				if(nodeLookup.putIfAbsent(node.getMappingId(), node) != null)
+					throw EvaluationUtils.forIncorrectUse("Duplicate mapping id: %d", _int(node.getMappingId()));
+			}
+
+			// All unique pre-configured mapping ids are done, now process those with undefined mapping ids
+			if(!pendingNodes.isEmpty()) {
+				int mappingId = 0;
+				for(IqlNode node : pendingNodes) {
+					// Find the first unused mapping id
+					while(nodeLookup.containsKey(mappingId)) {
+						mappingId++;
+					}
+					node.setMappingId(mappingId);
+					nodeLookup.put(mappingId, node);
+					mappingId++; // Saves us one iteration on the next node
+				}
+			}
+		}
+
 		private RootContext createContext(CorpusData corpusData, IqlPayload payload) {
 			// Now build context for our single stream
 			RootContextBuilder contextBuilder = EvaluationContext.rootBuilder(corpusData);
@@ -336,8 +383,6 @@ public class QueryEngine {
 					.id(0)
 					// Raw root environment for creating expressions etc...
 					.context(context)
-					// We provide an empty lane as proxy without label/alias
-					.source(new IqlLane())
 					// For simplicity the SINGLETON role can be used here (instead of defining a NONE proxy)
 					.role(Role.SINGLETON);
 
