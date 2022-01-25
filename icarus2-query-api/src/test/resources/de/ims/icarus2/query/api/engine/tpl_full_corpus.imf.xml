@@ -53,6 +53,7 @@
 					
 					<imf:structureLayer id="syntax">
 						<imf:baseLayer layerId="token"/>
+						<imf:boundaryLayer layerId="sentence"/>
 						<imf:hierarchy>
 							<imf:structure structureType="tree" />
 						</imf:hierarchy>
@@ -61,6 +62,7 @@
 					<imf:structureLayer id="syntax2">
 						<imf:baseLayer layerId="token"/>
 						<imf:baseLayer layerId="token2"/>
+						<imf:boundaryLayer layerId="sentence2"/>
 						<imf:hierarchy>
 							<imf:structure structureType="tree" />
 						</imf:hierarchy>

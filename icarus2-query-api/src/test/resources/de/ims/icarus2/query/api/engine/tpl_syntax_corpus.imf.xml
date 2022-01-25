@@ -42,13 +42,20 @@
 						</imf:hierarchy>
 					</imf:itemLayer>	
 					
+					<imf:structureLayer id="syntax">
+						<imf:baseLayer layerId="token"/>
+						<imf:boundaryLayer layerId="sentence"/>
+						<imf:hierarchy>
+							<imf:structure containerType="span" structureType="tree"/>
+						</imf:hierarchy>
+					</imf:structureLayer>
 					
 					<imf:annotationLayer id="anno" defaultKey="counter">	
 						<imf:baseLayer layerId="token"/>
 						<imf:annotation key="counter" name="Counter"/>
 						<imf:annotation key="anno1" name="Annotation1"/>
 						<imf:annotation key="anno2" name="Annotation2"/>
-					</imf:annotationLayer>	
+					</imf:annotationLayer>
 				</imf:layerGroup>
 				
 				<imf:driver>
@@ -73,8 +80,13 @@
 											<its:separator>WHITESPACES</its:separator>
 											<its:columns>
 												<its:column name="ID" layerId="anno" annotationKey="counter"/>
-												<its:column name="form" layerId="anno" annotationKey="form"/>
-												<its:column name="ANNO2" layerId="anno" annotationKey="anno2"/>
+												<its:column name="ANNO1" layerId="anno" annotationKey="anno1"/>
+												<its:column name="SYNTAX" layerId="syntax">
+													<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver">
+														<its:option name="layer">syntax</its:option>
+														<its:option name="root">root</its:option>
+													</its:resolver>
+												</its:column>
 											</its:columns>
 											<its:endDelimiter>
 												<its:pattern>EMPTY_LINE</its:pattern>
@@ -90,6 +102,7 @@
 					</imf:module>
 					<imf:mapping id="m_sent_tok" sourceLayer="sentence" targetLayer="token" relation="one-to-many" coverage="total"/>
 					<imf:mapping id="m_tok_sent" sourceLayer="token" targetLayer="sentence" relation="many-to-one" coverage="total" inverseMapping="m_sent_tok"/>
+					<imf:mapping id="m_sent_synt" sourceLayer="syntax" targetLayer="sentence" relation="one-to-one" coverage="total-monotonic"/>
 				</imf:driver>
 			</imf:rootContext>
 		</imf:corpus>
