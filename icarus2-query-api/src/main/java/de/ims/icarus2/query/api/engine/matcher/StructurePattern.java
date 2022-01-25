@@ -61,8 +61,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.QueryUtils;
@@ -104,6 +107,7 @@ import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlLane;
+import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlMarker;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
@@ -120,7 +124,6 @@ import de.ims.icarus2.util.MutablePrimitives.MutableBoolean;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.strings.ToStringBuilder;
-import de.ims.icarus2.util.tree.IntTree;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -301,6 +304,9 @@ public class StructurePattern {
 		/** Flag to indicate whether monitoring of the state machine is supported. */
 		boolean allowMonitor = false;
 
+		/** Type of the underlying lane definition */
+		LaneType type = LaneType.SEQUENCE;
+
 		/** All the nodes in the query that can occur in result mappings. The
 		 * position in this array equals their respective {@code mappingId} value. */
 		IqlNode[] mappedNodes = {};
@@ -413,7 +419,7 @@ public class StructurePattern {
 		}
 		Int2IntMap createHits() {
 			Int2IntMap map;
-			if(mappedNodes.length<=0) {
+			if(mappedNodes.length<=8) {
 				map = new Int2IntArrayMap(8);
 			} else {
 				map = new Int2IntOpenHashMap();
@@ -502,6 +508,8 @@ public class StructurePattern {
 		final boolean allowMonitor;
 		final Function<IqlNode, IqlNode> nodeTransform;
 		final boolean cacheAll;
+
+		final StateMachineSetup setup = new StateMachineSetup();
 
 		private static enum Flag {
 			/** Signals that the segment is accompanied by a disjunctive marker
@@ -746,6 +754,8 @@ public class StructurePattern {
 			cacheAll = builder.isCacheAll();
 
 			declaredMembers.addAll(builder.getDeclaredMembers());
+
+			setup.type = Optional.ofNullable(builder.getSource()).map(IqlLane::getLaneType).orElse(LaneType.SEQUENCE);
 		}
 
 		/** Check whether given flag is set in current query context. */
@@ -1874,31 +1884,30 @@ public class StructurePattern {
 						"Query must not be collapsable into a reluctant zero-width assertion");
 
 			// Fill state machine setup
-			StateMachineSetup sm = new StateMachineSetup();
-			sm.allowMonitor = allowMonitor;
-			sm.nodes = nodes.toArray(new Node[0]);
-			sm.trackedNodes = trackedNodes.toArray(new Node[0]);
-			sm.filterConstraint = filter;
-			sm.globalConstraint = global;
-			sm.mappedNodes = mappedNodes.toArray(new IqlNode[0]);
-			sm.limit = limit;
-			sm.root = root;
-			sm.cacheCount = cacheCount;
-			sm.borderCount = borderCount;
-			sm.bufferCount = bufferCount;
-			sm.gateCount = gateCount;
-			sm.anchorCount = anchorCount;
-			sm.pingCount = pingCount;
-			sm.closureCount = closureCount;
-			sm.skipControlCount = skipControlCount;
-			sm.permutations = permutators.toIntArray();
-			sm.intervals = intervals.toArray(new Interval[0]);
-			sm.globalMarkers = globalMarkers.toArray(new RangeMarker[0]);
-			sm.nestedMarkers = nestedMarkers.toArray(new RangeMarker[0]);
-			sm.matchers = matchers.toArray(new Supplier[0]);
-			sm.members = members.toArray(new Supplier[0]);
+			setup.allowMonitor = allowMonitor;
+			setup.nodes = nodes.toArray(new Node[0]);
+			setup.trackedNodes = trackedNodes.toArray(new Node[0]);
+			setup.filterConstraint = filter;
+			setup.globalConstraint = global;
+			setup.mappedNodes = mappedNodes.toArray(new IqlNode[0]);
+			setup.limit = limit;
+			setup.root = root;
+			setup.cacheCount = cacheCount;
+			setup.borderCount = borderCount;
+			setup.bufferCount = bufferCount;
+			setup.gateCount = gateCount;
+			setup.anchorCount = anchorCount;
+			setup.pingCount = pingCount;
+			setup.closureCount = closureCount;
+			setup.skipControlCount = skipControlCount;
+			setup.permutations = permutators.toIntArray();
+			setup.intervals = intervals.toArray(new Interval[0]);
+			setup.globalMarkers = globalMarkers.toArray(new RangeMarker[0]);
+			setup.nestedMarkers = nestedMarkers.toArray(new RangeMarker[0]);
+			setup.matchers = matchers.toArray(new Supplier[0]);
+			setup.members = members.toArray(new Supplier[0]);
 
-			return sm;
+			return setup;
 		}
 	}
 
@@ -2144,6 +2153,129 @@ public class StructurePattern {
 		}
 	}
 
+	static class TreeManager {
+		/** The target container cast to a structure */
+		Structure structure;
+		/** View on the target tree as frames */
+		TreeFrame[] frames;
+		/** Indices of root nodes in the tree. */
+		int[] roots;
+		/** */
+		int rootCount;
+		/** Path from a root node to current node */
+		int[] trace;
+
+		TreeManager(int initialSize) {
+			frames = new TreeFrame[initialSize];
+			roots = new int[initialSize];
+			trace = new int[initialSize];
+
+			Arrays.fill(trace, UNSET_INT);
+			Arrays.fill(roots, UNSET_INT);
+			for (int i = 0; i < frames.length; i++) {
+				frames[i] = new TreeFrame(i, initialSize);
+			}
+		}
+
+		private int indexOfSource(Edge edge) {
+			return strictToInt(structure.indexOfItem(edge.getSource()));
+		}
+
+		private int indexOfTarget(Edge edge) {
+			return strictToInt(structure.indexOfItem(edge.getTarget()));
+		}
+
+		/** Consumer to collect actual root nodes. Fixed to prevent heap allocation. */
+		private final Consumer<Edge> _rootCollector = edge -> {
+			roots[rootCount++] = indexOfTarget(edge);
+		};
+
+		void init(Structure target) {
+			structure = target;
+			structure.forEachOutgoingEdge(structure.getVirtualRoot(), _rootCollector);
+		}
+
+		/** Fetches and if needed initializes the frame for given element index */
+		TreeFrame frameAt(int index) {
+			TreeFrame frame = frames[index];
+
+			if(!frame.valid) {
+				refreshFrame(frame);
+			}
+
+			return frame;
+		}
+
+		/** Stores the target for {@link #_childCollector} */
+		private TreeFrame _current;
+		/** Consumer to collect children of a node. Fixed to prevent heap allocation. */
+		private final Consumer<Edge> _childCollector = edge -> {
+			_current.indices[_current.length++] = indexOfTarget(edge);
+		};
+
+		private void refreshFrame(TreeFrame frame) {
+			assert structure!=null : "No structure available - is the target a regular item layer?";
+			assert frame.index!=UNSET_INT : "can't refresh the root frame";
+
+			Item node = structure.getItemAt(frame.index);
+			frame.depth = strictToInt(structure.getDepth(node));
+			frame.height = strictToInt(structure.getHeight(node));
+			frame.descendants = strictToInt(structure.getDescendantCount(node));
+			frame.length = 0;
+
+			Edge incoming = structure.getEdgeAt(node, 0, false);
+			assert incoming!=null : "Missing incoming edge for "+node;
+			if(incoming.getSource()!=structure.getVirtualRoot()) {
+				frame.parent = indexOfSource(incoming);
+			}
+
+			_current = frame;
+			structure.forEachOutgoingEdge(node, _childCollector);
+			_current = null;
+
+			//TODO check that we got valid information for height/depth/descendants and do a recursive tree traversal otherwise
+
+			frame.valid = true;
+		}
+
+		private void forceRefreshAllFrames() {
+			//TODO recursively calculate all tree data for frames
+		}
+
+		void resize(int newSize) {
+			final int oldSize = frames.length;
+			trace = new int[newSize];
+			roots = new int[newSize];
+
+			for (int i = 0; i < frames.length; i++) {
+				frames[i].resize(newSize);
+			}
+
+			Arrays.fill(roots, UNSET_INT);
+			// Resize old frames
+			for (int i = oldSize; i < frames.length; i++) {
+				frames[i].resize(newSize);
+			}
+			// Create and init new frames
+			frames = Arrays.copyOf(frames, newSize);
+			for (int i = oldSize; i < frames.length; i++) {
+				frames[i] = new TreeFrame(i, newSize);
+			}
+		}
+
+		void reset(int range) {
+			structure = null;
+			for (int i = 0; i < range; i++) {
+				TreeFrame frame = frames[i];
+				frame.reset();
+				frame.valid = false;
+			}
+			Arrays.fill(roots, 0, rootCount, UNSET_INT);
+			rootCount = 0;
+			Arrays.fill(trace, 0, range, UNSET_INT);
+		}
+	}
+
 	/**
 	 * Models the matching context for a node collection in the tree.
 	 * For plain sequence matching this is equal to the total list
@@ -2162,7 +2294,7 @@ public class StructurePattern {
 	 */
 	static class TreeFrame {
 		/** Index of the node that this frame represents or {@code -1} for the virtual root node */
-		int index = -1;
+		final int index;
 		/** Sorted index values */
 		int[] indices;
 		/** Total number of index values available */
@@ -2201,7 +2333,8 @@ public class StructurePattern {
 		/** Flag to signal that frame data is up to date */
 		boolean valid; //TODO actually use this for lazy tree construction
 
-		TreeFrame(int initialSize) {
+		TreeFrame(int index, int initialSize) {
+			this.index = index;
 			indices = new int[initialSize];
 		}
 
@@ -2211,10 +2344,16 @@ public class StructurePattern {
 		}
 
 		/** Discard previousIndex and set the window of this frame to cover its entire length. */
-		public void reset() {
+		public void rewind() {
 			window.reset(0, length-1);
 			previousIndex = UNSET_INT;
 			last = 0;
+		}
+
+		/** Fully reset this frame. */
+		public void reset() {
+			rewind();
+			length = depth = descendants = height = parent = UNSET_INT;
 		}
 
 		// tree methods
@@ -2317,12 +2456,11 @@ public class StructurePattern {
 	static final class RootFrame extends TreeFrame {
 
 		RootFrame(int initialSize) {
-			super(initialSize);
+			super(UNSET_INT, initialSize);
 			ArrayUtils.fillAscending(indices);
 
 			window.reset(0, 0);
 			depth = height = descendants = 0;
-			index = UNSET_INT;
 			parent = UNSET_INT;
 			valid = true;
 		}
@@ -2394,7 +2532,7 @@ public class StructurePattern {
 	 * @author Markus Gärtner
 	 *
 	 */
-	static class State implements IntTree, MatchSource {
+	static class State implements MatchSource {
 		/** Raw target container or structure */
 		Container target;
 		/** Total number of items in container */
@@ -2403,6 +2541,9 @@ public class StructurePattern {
 		long index = UNSET_INT;
 
 		final boolean allowMonitor;
+
+		/** Flag to signal that the underlying query used tree features. */
+		final boolean allowTrees;
 
 		/** All the atomic nodes defined in the query */
 		final Matcher<Item>[] matchers;
@@ -2449,9 +2590,6 @@ public class StructurePattern {
 		/** Highest allowed index to be matched. */
 		int max = UNSET_INT;
 
-		/** The frame representing the overall list of items in the container */
-		final RootFrame rootFrame;
-
 		/** Tentatively marked tree node spots. Stores the positional index for node. */
 		final Anchor[] anchors;
 
@@ -2480,13 +2618,6 @@ public class StructurePattern {
 		/** Stores the number of entries in the last mapping */
 		int lastMatchSize = 0;
 
-		/**
-		 * Currently active frame in the tree matching.
-		 * Initially set to the {@link State} instance itself to represent the
-		 * entirety of the item sequence.
-		 */
-		TreeFrame frame;
-
 		Consumer<State> resultConsumer;
 		final MatchCollector matchCollector;
 
@@ -2494,14 +2625,16 @@ public class StructurePattern {
 
 		/** Items in target container, copied for faster access */
 		Item[] elements;
-		/** View on the target tree as frames */
-		TreeFrame[] tree;
-		/** Indices of root nodes in the tree. */
-		int[] roots;
-		/** */
-		int rootCount;
-		/** Path from a root node to current node */
-		int[] trace;
+		/** Wrapper for tree interactions */
+		final TreeManager tree;
+		/**
+		 * Currently active frame in the tree matching.
+		 * Initially set to the {@link State} instance itself to represent the
+		 * entirety of the item sequence.
+		 */
+		TreeFrame frame;
+		/** The frame representing the overall list of items in the container */
+		final RootFrame rootFrame;
 		/** Keys for the node mapping */
 		int[] m_node;
 		/** Values for the node mapping, i.e. the associated indices */
@@ -2515,14 +2648,12 @@ public class StructurePattern {
 			final int initialSize = setup.initialSize == UNSET_INT ?
 					QueryUtils.BUFFER_STARTSIZE : setup.initialSize;
 			elements = new Item[initialSize];
-			tree = new TreeFrame[initialSize];
-			roots = new int[initialSize];
-			trace = new int[initialSize];
 			m_node = new int[initialSize];
 			m_index = new int[initialSize];
 			locked = new boolean[initialSize];
 
 			allowMonitor = setup.allowMonitor;
+			allowTrees = setup.type==LaneType.TREE;
 
 			globalMarkers = setup.getGlobalMarkers();
 			nestedMarkers = setup.getNestedMarkers();
@@ -2532,6 +2663,11 @@ public class StructurePattern {
 			pings = setup.getPings();
 
 			modes = new ModeTrace[1];
+
+			tree = new TreeManager(initialSize);
+
+			rootFrame = new RootFrame(initialSize);
+			frame = rootFrame;
 
 			modes[MODE_SKIP] = new ModeTrace(setup.skipControlCount, true);
 
@@ -2547,14 +2683,6 @@ public class StructurePattern {
 			anchors = setup.makeAnchors();
 			closures = setup.makeClosures(initialSize);
 			permutations = setup.makePermutations();
-
-			rootFrame = new RootFrame(initialSize);
-			frame = rootFrame;
-
-			Arrays.fill(roots, UNSET_INT);
-			for (int i = 0; i < tree.length; i++) {
-				tree[i] = new TreeFrame(initialSize);
-			}
 		}
 
 		State(StateMachineSetup setup) {
@@ -2613,14 +2741,16 @@ public class StructurePattern {
 			final int range = size==UNSET_INT ? elements.length : size;
 			Arrays.fill(elements, 0, range, null);
 			Arrays.fill(locked, 0, range, false);
-			for (int i = 0; i < range; i++) {
-				tree[i].reset();
-			}
+
+			tree.reset(range);
+
+			rootFrame.reset();
+			frame = rootFrame;
 
 			// Other buffers have to get cleared out completely
 			hits.clear();
 			for (int i = 0; i < caches.length; i++) {
-				caches[i].reset(size);
+				caches[i].reset(range);
 			}
 			for (int i = 0; i < modes.length; i++) {
 				modes[i].reset();
@@ -2631,10 +2761,6 @@ public class StructurePattern {
 			index = UNSET_LONG;
 			first = last = UNSET_INT;
 			min = max = UNSET_INT;
-			rootCount = 0;
-			rootFrame.reset();
-			Arrays.fill(roots, UNSET_INT);
-			frame = rootFrame;
 			finished = false;
 			stop = false;
 			reported = 0L;
@@ -2674,22 +2800,23 @@ public class StructurePattern {
 			sink.consume(index, 0, entry, m_node, m_index);
 		}
 
-		// tree interface
-
-		@Override
-		public final int size() { return size; }
-
-		@Override
-		public final int size(int nodeId) { return tree[nodeId].length; }
-
-		@Override
-		public final int height(int nodeId) { return tree[nodeId].height; }
-
-		@Override
-		public final int depth(int nodeId) { return tree[nodeId].depth; }
-
-		@Override
-		public final int childAt(int nodeId, int index) { return tree[nodeId].indices[index]; }
+		//TODO delete
+//		// tree interface
+//
+//		@Override
+//		public final int size() { return size; }
+//
+//		@Override
+//		public final int size(int nodeId) { return tree[nodeId].length; }
+//
+//		@Override
+//		public final int height(int nodeId) { return tree[nodeId].height; }
+//
+//		@Override
+//		public final int depth(int nodeId) { return tree[nodeId].depth; }
+//
+//		@Override
+//		public final int childAt(int nodeId, int index) { return tree[nodeId].indices[index]; }
 
 	}
 
@@ -2744,7 +2871,7 @@ public class StructurePattern {
 			frameId = source.frame.index;
 			from = source.frame.from();
 			to = source.frame.to();
-			trace = Arrays.copyOf(source.trace, size);
+			trace = Arrays.copyOf(source.tree.trace, size);
 			locked = Arrays.copyOf(source.locked, size);
 		}
 	}
@@ -2833,6 +2960,9 @@ public class StructurePattern {
 				globalMarkers[i].adjust(intervals, size);
 			}
 
+			// Perform first step of lazy tree initialization
+			initTree();
+
 			// Let the state machine do its work
 			return root.match(this, 0);
 		}
@@ -2856,6 +2986,12 @@ public class StructurePattern {
 			reset();
 		}
 
+		private void initTree() {
+			if(allowTrees && target.getMemberType()==MemberType.STRUCTURE) {
+				tree.init((Structure) target);
+			}
+		}
+
 		private void growBuffers(int minCapacity) {
 			final int oldSize = elements.length;
 			final int newSize = CollectionUtils.growSize(oldSize, minCapacity);
@@ -2863,8 +2999,8 @@ public class StructurePattern {
 			m_node = new int[newSize];
 			m_index = new int[newSize];
 			locked = new boolean[newSize];
-			trace = new int[newSize];
-			roots = new int[newSize];
+			tree.resize(newSize);
+			rootFrame.resize(newSize);
 			for (int i = 0; i < buffers.length; i++) {
 				buffers[i] = new int[newSize];
 			}
@@ -2876,22 +3012,6 @@ public class StructurePattern {
 			}
 			for (int i = 0; i < closures.length; i++) {
 				closures[i].resize(newSize);
-			}
-
-			for (int i = 0; i < tree.length; i++) {
-				tree[i].resize(newSize);
-			}
-
-			Arrays.fill(roots, UNSET_INT);
-			// Resize old frames
-			rootFrame.resize(newSize);
-			for (int i = oldSize; i < tree.length; i++) {
-				tree[i].resize(newSize);
-			}
-			// Create and init new frames
-			tree = Arrays.copyOf(tree, newSize);
-			for (int i = oldSize; i < tree.length; i++) {
-				tree[i] = new TreeFrame(newSize);
 			}
 		}
 	}
@@ -4348,8 +4468,8 @@ public class StructurePattern {
 			final TreeFrame frame = state.frame;
     		final int from = frame.from();
     		final int to = frame.to();
-			final int[] roots = state.roots;
-			final int rootCount = state.rootCount;
+			final int[] roots = state.tree.roots;
+			final int rootCount = state.tree.rootCount;
 
 			boolean result = false;
 
@@ -4378,8 +4498,8 @@ public class StructurePattern {
     		final int from = frame.from();
     		final int to = frame.to();
 			boolean result = false;
-			final int[] roots = state.roots;
-			final int rootCount = state.rootCount;
+			final int[] roots = state.tree.roots;
+			final int rootCount = state.tree.rootCount;
 
 			for (int i = rootCount - 1; i >= 0 && !state.stop; i--) {
 				frame.previousIndex = UNSET_INT;
@@ -6429,7 +6549,7 @@ public class StructurePattern {
 			final Anchor anchor = state.anchors[anchorId];
 			assert anchor.index != UNSET_INT : "Illegal index for frame: "+anchor.index;
 
-			final TreeFrame newFrame = state.tree[anchor.index];
+			final TreeFrame newFrame = state.tree.frameAt(anchor.index);
 			assert newFrame.valid : "Invalid tree frame for index "+anchor.index;
 
 			// Bail early if basic (upper) tree properties aren't met
@@ -6448,7 +6568,7 @@ public class StructurePattern {
 			}
 
 			// Step into new frame
-			newFrame.reset();
+			newFrame.rewind();
 			state.frame = newFrame;
 
 			// Store our return position and frame for the TreeConn node
@@ -6579,7 +6699,8 @@ public class StructurePattern {
 
 		@Override
 		boolean match(State state, int pos) {
-			if(!filter.contains(state.tree[state.frame.indices[pos]])) {
+			int index = state.frame.indices[pos];
+			if(!filter.contains(state.tree.frameAt(index))) {
 				return false;
 			}
 			return next.match(state, pos);
@@ -6648,13 +6769,13 @@ public class StructurePattern {
 			while(!state.stop) {
 				ClosureStep step = ctx.current();
 
-				final TreeFrame frame = state.tree[step.frameId];
+				final TreeFrame frame = state.tree.frameAt(step.frameId);
 				assert frame!=state.rootFrame : "Cannot descend _into_ root frame";
 
 				// Try remaining nodes in current frame
 				if(step.pos < frame.length - minSize + 1) {
 					if(step.pos==0) {
-						frame.reset();
+						frame.rewind();
 					}
 
 					// Assign current frame context
@@ -6709,7 +6830,7 @@ public class StructurePattern {
 					}
 
 					// Now descend if possible
-					if(state.tree[index].length > 0 && (maxLevel==UNSET_INT || ctx.level < maxLevel)) {
+					if(state.tree.frameAt(index).length > 0 && (maxLevel==UNSET_INT || ctx.level < maxLevel)) {
 						ctx.descend(index);
 					} else {
 						// Or continue to next neighbor for future traversal
