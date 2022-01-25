@@ -51,9 +51,11 @@ import de.ims.icarus2.model.standard.io.DefaultFileManager;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
 import de.ims.icarus2.model.standard.registry.metadata.VirtualMetadataRegistry;
 import de.ims.icarus2.query.api.Query;
+import de.ims.icarus2.query.api.annotation.MatchArrayArg;
 import de.ims.icarus2.query.api.engine.QueryJob.JobController;
 import de.ims.icarus2.query.api.engine.result.BufferedResultSink;
 import de.ims.icarus2.query.api.engine.result.Match;
+import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.iql.IqlCorpus;
 import de.ims.icarus2.query.api.iql.IqlLayer;
 import de.ims.icarus2.query.api.iql.IqlQuery;
@@ -67,7 +69,9 @@ import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.test.annotations.IntArrayArg;
 import de.ims.icarus2.test.annotations.IntMatrixArg;
 import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.annotations.StringArrayArg;
 import de.ims.icarus2.test.random.RandomGenerator;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.io.resource.VirtualResourceProvider;
 
 /**
@@ -85,6 +89,19 @@ class QueryEngineTest {
 		void builder() {
 			assertThat(QueryEngine.builder()).isNotNull();
 		}
+	}
+
+	static void assertMatch(Match given, Match expected) {
+
+	}
+
+	static void assertMatch(Match given, Match expected, int index) {
+
+	}
+
+	static void assertMatches(Match[] given, Match[] expected) {
+		assertThat(given).usingElementComparator(Match::compareMatches)
+			.containsExactly(expected);
 	}
 
 
@@ -176,7 +193,30 @@ class QueryEngineTest {
 
 			}
 
-			private IqlQuery createQuery(String rawPayload) {
+			private String createCorpusContent(String[] anno1, String[] trees) {
+				StringBuilder sb = new StringBuilder();
+
+				int idx = 0;
+				for (int i=0; i<trees.length; i++) {
+					if(i>0) {
+						sb.append('\n');
+					}
+					String tree = trees[i];
+					int[] parents = EvaluationUtils.parseTree(tree, tree.contains(" "));
+					for (int j = 0; j < parents.length; j++) {
+						// <counter>\t<anno1>\t<head>\n
+						sb.append(j).append('\t')
+							.append(anno1[idx++]).append('\t')
+							.append(parents[j]==-1 ? "root" : String.valueOf(parents[j])).append('\n');
+					}
+				}
+
+//				System.out.println(sb.toString());
+
+				return sb.toString();
+			}
+
+			private IqlQuery createQuery(String tagetLayer, String rawPayload) {
 				IqlCorpus corpus = new IqlCorpus();
 				corpus.setId("corpus01");
 				corpus.setName(DummyCorpus.CORPUS_ID);
@@ -187,7 +227,7 @@ class QueryEngineTest {
 				IqlLayer layer = new IqlLayer();
 				layer.setId("layer01");
 				layer.setPrimary(true);
-				layer.setName("sentence");
+				layer.setName(tagetLayer);
 
 				IqlStream stream = new IqlStream();
 				stream.setId("stream01");
@@ -210,8 +250,8 @@ class QueryEngineTest {
 				"'WITH $x FROM token FIND FIRST [$x:]', 10, {2;4;3;1}, {{0}{0}{0}{0}}",
 				"'WITH $x FROM token FIND 2 HITS [$x:]', 10, {2;4;3;1}, {{0;1}{0;1}{0;1}{0}}",
 			})
-			public void testFlat(String constraint, int tokens, @IntArrayArg int[] containerSetup,
-					// [container_id][global_id]
+			public void testWithoutStructure(String constraint, int tokens, @IntArrayArg int[] containerSetup,
+					// [container_id][local_index]
 					@IntMatrixArg int[][] containerHits) throws Exception {
 
 				String[] anno1 = IntStream.range(0, tokens)
@@ -226,7 +266,7 @@ class QueryEngineTest {
 						.useDefaultSettings()
 						.build();
 
-				IqlQuery query = createQuery(constraint);
+				IqlQuery query = createQuery(DummyCorpus.LAYER_SENTENCE, constraint);
 
 				BufferedResultSink resultSink = new BufferedResultSink(engine.getSettings());
 
@@ -271,6 +311,48 @@ class QueryEngineTest {
 						idx++;
 					}
 				}
+			}
+
+			@ParameterizedTest
+			@CsvSource({
+				"'WITH $x,$y FROM token FIND [$x: [$y:]]', 5, {1*;*0;*}, '{(0:0->1,1->0);(1:0->0,1->1)}'",
+				"'WITH $x,$y FROM token FIND [$x: [$y:]]', 4, {2*1;*}, '{(0:0->1,1->2);(0:0->2,1->0)}'",
+				"'WITH $x,$y FROM token FIND [$x: [$y:]]', 8, {1*;2*1;*0;*}, '{(0:0->1,1->0);(1:0->1,1->2);(1:0->2,1->0);(2:0->0,1->1)}'",
+			})
+			public void testWithStructure(String constraint, int tokens, @StringArrayArg String[] trees,
+					@MatchArrayArg Match[] expectedMatches) throws Exception {
+
+				String[] anno1 = IntStream.range(0, tokens)
+						.mapToObj(i -> "tok"+i)
+						.toArray(String[]::new);
+
+				Corpus corpus = DummyCorpus.createDummyCorpus(Templates.SYNTAX, createCorpusContent(anno1, trees));
+
+				QueryEngine engine = QueryEngine.builder()
+						.corpusManager(corpus.getManager())
+						.useDefaultMapper()
+						.useDefaultSettings()
+						.build();
+
+				IqlQuery query = createQuery(DummyCorpus.LAYER_SYNTAX, constraint);
+
+				BufferedResultSink resultSink = new BufferedResultSink(engine.getSettings());
+
+				QueryJob job = engine.evaluateQuery(query, resultSink);
+
+				JobController controller = job.execute(1);
+				controller.start();
+				controller.awaitFinish(5, TimeUnit.SECONDS);
+
+				List<Throwable> exceptions = controller.getExceptions();
+				if(!exceptions.isEmpty()) {
+					for(Throwable t : exceptions) {
+						t.printStackTrace(System.err);
+					}
+					fail("Unexpected internal errors");
+				}
+
+				assertMatches(CollectionUtils.toArray(resultSink.getMatches(), Match[]::new), expectedMatches);
 			}
 		}
 

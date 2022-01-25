@@ -20,9 +20,11 @@
 package de.ims.icarus2.query.api.exp;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._char;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -95,6 +97,21 @@ public class EvaluationUtils {
 		default:
 			throw forUnsupportedQueryFragment("element", element.getType());
 		}
+	}
+
+	/** Parses a dependency style "list of heads" and uses the '*' symbol to recognize roots */
+	public static int[] parseTree(String s, boolean whitespaceDelimiter) {
+		if(whitespaceDelimiter) {
+			return Stream.of(s.split(" "))
+					.mapToInt(val -> "*".matches(val) ? UNSET_INT : Integer.parseInt(val))
+					.toArray();
+		}
+		int[] parents = new int[s.length()];
+		for (int i = 0; i < parents.length; i++) {
+			parents[i] = s.charAt(i)=='*' ? UNSET_INT : s.charAt(i)-'0';
+			assertThat(parents[i]).as("can't set node as its own parent: %d", _int(i)).isNotEqualTo(i);
+		}
+		return parents;
 	}
 
 	public static String unquote(String s) {

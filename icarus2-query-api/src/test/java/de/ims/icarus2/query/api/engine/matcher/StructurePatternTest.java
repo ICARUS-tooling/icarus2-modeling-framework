@@ -1136,7 +1136,7 @@ public class StructurePatternTest {
 		RawTestConfig tree(String encodedHeads) {
 			checkState("State not set", state!=null);
 			requireNonNull(encodedHeads);
-			int[] parents = parseTree(encodedHeads, encodedHeads.contains(" "));
+			int[] parents = EvaluationUtils.parseTree(encodedHeads, encodedHeads.contains(" "));
 			return tree(parents);
 		}
 
@@ -1281,7 +1281,7 @@ public class StructurePatternTest {
 		MatcherTestConfig tree(String encodedHeads) {
 			checkState("Tree already set", this.tree==null);
 			requireNonNull(encodedHeads);
-			tree = parseTree(encodedHeads, encodedHeads.contains(" "));
+			tree = EvaluationUtils.parseTree(encodedHeads, encodedHeads.contains(" "));
 			return this;
 		}
 
@@ -1426,30 +1426,14 @@ public class StructurePatternTest {
 				.query(query);
 	}
 
-	/** Parses a dependency style "list of heads" and uses the '*' symbol to recognize roots */
-	static int[] parseTree(String s, boolean whitespaceDelimiter) {
-		if(whitespaceDelimiter) {
-			return Stream.of(s.split(" "))
-					.mapToInt(val -> "*".matches(val) ? UNSET_INT : Integer.parseInt(val))
-					.toArray();
-		}
-		int[] parents = new int[s.length()];
-		for (int i = 0; i < parents.length; i++) {
-			parents[i] = s.charAt(i)=='*' ? UNSET_INT : s.charAt(i)-'0';
-			assertThat(parents[i]).as("can't set node as its own parent: %d", _int(i)).isNotEqualTo(i);
-		}
-		return parents;
-	}
-
 	/** Applies a tree consisting of parent links to the TreeFrame list in the given State */
 	static void applyTree(State state, int[] parents) {
-		final TreeFrame[] tree = state.tree;
+		final TreeFrame[] tree = state.tree.frames;
 		final IntList roots = new IntArrayList();
 		for (int i = 0; i < parents.length; i++) {
 			int parentIndex = parents[i];
 			TreeFrame frame = tree[i];
 			frame.parent = parentIndex;
-			frame.index = i;
 			frame.valid = true;
 
 			if(parentIndex != UNSET_INT) {
@@ -1936,10 +1920,10 @@ public class StructurePatternTest {
 		class ForTreeFrame {
 
 			private TreeFrame frame(int...indices) {
-				TreeFrame frame = new TreeFrame(indices.length);
+				TreeFrame frame = new TreeFrame(0, indices.length);
 				System.arraycopy(indices, 0, frame.indices, 0, indices.length);
 				frame.length = indices.length;
-				frame.reset();
+				frame.rewind();
 				return frame;
 			}
 
