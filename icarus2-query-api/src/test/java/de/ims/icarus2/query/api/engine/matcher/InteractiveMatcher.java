@@ -120,6 +120,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
+import de.ims.icarus2.query.api.exp.EvaluationUtils;
 import de.ims.icarus2.query.api.exp.env.SharedUtilityEnvironments;
 import de.ims.icarus2.query.api.iql.IqlBinding;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
@@ -1407,7 +1408,7 @@ public class InteractiveMatcher {
 			if(encodedTree.isEmpty()) {
 				tree = null;
 			} else {
-				tree = StructurePatternTest.parseTree(encodedTree, encodedTree.contains(" "));
+				tree = EvaluationUtils.parseTree(encodedTree, encodedTree.contains(" "));
 			}
 
 			String input = tfTarget.getText();

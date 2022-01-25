@@ -74,6 +74,8 @@ public class IqlLane extends IqlAliasedReference {
 		checkNotNull(laneType, IqlTags.LANE_TYPE);
 		checkNestedNotNull(element, IqlTags.ELEMENT);
 
+		//TODO do we want to enforce the rules given by lane type here already?
+
 		for(IqlLane.MatchFlag flag : flags) {
 			for(IqlLane.MatchFlag excluded : flag.getExcluded()) {
 				checkCondition(!flags.contains(excluded), IqlTags.MATCH_FLAG,
