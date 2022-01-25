@@ -58,7 +58,7 @@ public class ArrayConverters {
 	public static ArrayFormat defaultFormat() { return defaultFormat; }
 
 
-	static abstract class ArrayConverterBase implements ArgumentConverter {
+	public static abstract class ArrayConverterBase implements ArgumentConverter {
 
 		protected abstract Object convert(String[] items, ParameterContext context,
 				Class<?> componentType) throws ArgumentConversionException;
@@ -108,9 +108,9 @@ public class ArrayConverters {
 		}
 	}
 
-	static abstract class MatrixConverterBase implements ArgumentConverter {
+	public static abstract class MatrixConverterBase implements ArgumentConverter {
 
-		protected abstract Object convert(String raw) throws ArgumentConversionException;
+		protected abstract Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException;
 
 		@Override
 		public Object convert(Object source, ParameterContext context) throws ArgumentConversionException {
@@ -172,7 +172,7 @@ public class ArrayConverters {
 					if(sb.length()>0) {
 						String content = sb.toString().trim();
 						if(!content.isEmpty() && !content.equals(format.empty())) {
-							buffer[depth].add(convert(content));
+							buffer[depth].add(convertElement(content, context));
 						}
 						sb.setLength(0);
 					}
@@ -244,6 +244,17 @@ public class ArrayConverters {
 
 	}
 
+	public static class StringArrayConverter extends ArrayConverterBase {
+
+		@Override
+		protected Object convert(String[] items, ParameterContext context,
+				Class<?> componentType)
+				throws ArgumentConversionException {
+			return items;
+		}
+
+	}
+
 	public static class IntegerArrayConverter extends ArrayConverterBase {
 
 		@Override
@@ -256,7 +267,7 @@ public class ArrayConverters {
 	public static class IntegerMatrixConverter extends MatrixConverterBase {
 
 		@Override
-		protected Object convert(String raw) throws ArgumentConversionException {
+		protected Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException {
 			return Integer.valueOf(raw);
 		}
 
