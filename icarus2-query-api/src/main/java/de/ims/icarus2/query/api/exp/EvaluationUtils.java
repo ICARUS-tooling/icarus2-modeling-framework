@@ -24,7 +24,6 @@ import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._char;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -109,7 +108,8 @@ public class EvaluationUtils {
 		int[] parents = new int[s.length()];
 		for (int i = 0; i < parents.length; i++) {
 			parents[i] = s.charAt(i)=='*' ? UNSET_INT : s.charAt(i)-'0';
-			assertThat(parents[i]).as("can't set node as its own parent: %d", _int(i)).isNotEqualTo(i);
+			if(parents[i] == i)
+				throw new IllegalArgumentException("can't set node as its own parent: "+_int(i));
 		}
 		return parents;
 	}

@@ -227,7 +227,24 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 
 		private Builder() {
 			// private to only be available via factory method
-			valueType(IndexValueType.LONG);
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.mapping.AbstractVirtualMapping.AbstractMappingBuilder#validate()
+		 */
+		@Override
+		protected void validate() {
+			/*
+			 * Identity mapping doesn't require a value type, but we allow
+			 * client code to use the normal builder functions freely. For
+			 * cases where client code doesn't care about value type we do
+			 * however need to make sure it's properly set up, otherwise
+			 * super class validation is gonna fail.
+			 */
+			if(getValueType()==null) {
+				valueType(IndexValueType.LONG);
+			}
+			super.validate();
 		}
 
 		/**
