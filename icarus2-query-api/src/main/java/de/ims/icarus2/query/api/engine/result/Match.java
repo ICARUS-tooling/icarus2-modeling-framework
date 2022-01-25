@@ -19,11 +19,48 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelException;
+
 /**
  * @author Markus Gärtner
  *
  */
 public interface Match extends MatchSource {
+
+	public static boolean matchesEqual(Match m1, Match m2) {
+		if(m1.getType()!=m2.getType())
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Cannot compare matches of different type");
+		if(m1.getIndex()!=m2.getIndex())
+			return false;
+		if(m1.getMapCount()!=m2.getMapCount())
+			return false;
+		for (int i = m1.getMapCount()-1; i >= 0; i--) {
+			if(m1.getIndex(i)!=m2.getIndex(i))
+				return false;
+			if(m1.getNode(i)!=m2.getNode(i))
+				return false;
+		}
+		return true;
+	}
+
+	public static int compareMatches(Match m1, Match m2) {
+		if(m1.getType()!=m2.getType())
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Cannot compare matches of different type");
+		if(m1.getIndex()!=m2.getIndex())
+			return strictToInt(m1.getIndex()-m2.getIndex());
+		if(m1.getMapCount()!=m2.getMapCount())
+			return m1.getMapCount()-m2.getMapCount();
+		for (int i = m1.getMapCount()-1; i >= 0; i--) {
+			if(m1.getIndex(i)!=m2.getIndex(i))
+				return m1.getIndex(i)-m2.getIndex(i);
+			if(m1.getNode(i)!=m2.getNode(i))
+				return m1.getNode(i)-m2.getNode(i);
+		}
+		return 0;
+	}
 
 	/** Get the global index of the container this match refers to. */
 	long getIndex();
