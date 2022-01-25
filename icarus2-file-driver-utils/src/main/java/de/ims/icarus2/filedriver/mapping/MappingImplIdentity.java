@@ -27,6 +27,7 @@ import de.ims.icarus2.apiguard.Api.ApiType;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
@@ -226,6 +227,7 @@ public class MappingImplIdentity extends AbstractVirtualMapping {
 
 		private Builder() {
 			// private to only be available via factory method
+			valueType(IndexValueType.LONG);
 		}
 
 		/**

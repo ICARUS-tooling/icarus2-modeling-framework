@@ -146,6 +146,14 @@ public class Options extends HashMap<String, Object> {
 		return value;
 	}
 
+	public String getString(String key, String defaultValue) {
+		return String.class.cast(getOrDefault(key, defaultValue));
+	}
+
+	public String getString(String key) {
+		return String.class.cast(get(key));
+	}
+
 	public int getInteger(String key, int defaultValue) {
 		Object result = get(key);
 		if(result instanceof String) {

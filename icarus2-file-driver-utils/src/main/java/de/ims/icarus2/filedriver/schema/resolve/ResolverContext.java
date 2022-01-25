@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve;
 
+import java.util.function.ObjLongConsumer;
+
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 
@@ -61,4 +63,6 @@ public interface ResolverContext {
 	default void consumeData() {
 		// no-op
 	}
+
+	ObjLongConsumer<? super Item> getTopLevelAction();
 }

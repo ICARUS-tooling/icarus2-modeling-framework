@@ -21,6 +21,7 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -1131,7 +1132,7 @@ public class FileDriver extends AbstractDriver {
 	 */
 	@Override
 	public long load(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException {
+			@Nullable Consumer<ChunkInfo> action) throws InterruptedException, IcarusApiException {
 		requireNonNull(indices);
 		requireNonNull(layer);
 
@@ -1153,16 +1154,12 @@ public class FileDriver extends AbstractDriver {
 		final ItemLayer primaryLayer = group.getPrimaryLayer();
 		final boolean mappingRequired = layer!=primaryLayer;
 
-		if(mappingRequired) {
-			indices = mapIndices(layer.getManifest(), primaryLayer.getManifest(), indices);
-		}
-
 		/*
 		 *  Delegate loading.
 		 *  We do not forward the consumer action for publishing since that is only
 		 *  required when actually loading chunks from a backend storage!
 		 */
-		SingleThreadedItemLoader singleThreadedItemLoader = new SingleThreadedItemLoader(indices, getLayerBuffer(primaryLayer), action);
+		SingleThreadedItemLoader singleThreadedItemLoader = new SingleThreadedItemLoader(indices, getLayerBuffer(layer), action);
 
 		// Potentially long running part
 		singleThreadedItemLoader.execute();
@@ -1173,12 +1170,24 @@ public class FileDriver extends AbstractDriver {
 		if(singleThreadedItemLoader.getMissingIndicesCount()>0L) {
 			IndexSet[] missingIndices = singleThreadedItemLoader.getMissingIndices();
 
+			// If needed map to primary layer indices
+			IndexSet[] indicesToLoad = missingIndices;
+			if(mappingRequired) {
+				indicesToLoad = mapIndices(layer.getManifest(), primaryLayer.getManifest(), missingIndices);
+			}
+
 			// Delegate to chunk aware method to do the actual I/O stuff
 			try {
-				loadedItems = loadPrimaryLayer(missingIndices, primaryLayer, action);
+				// We only forward the original action if we did not have to translate indices
+				loadedItems = loadPrimaryLayer(indicesToLoad, primaryLayer, mappingRequired ? null : action);
 			} catch (IOException e) {
 				throw new ModelException(getCorpus(), GlobalErrorCode.IO_ERROR,
 						"Failed loading chunks for layer: "+ModelUtils.getUniqueId(primaryLayer));
+			}
+
+			// When everything's done, load and publish the items in correct layer (in case of mapping)
+			if(mappingRequired) {
+				singleThreadedItemLoader.loadMissingIndices();
 			}
 		}
 
@@ -1217,6 +1226,7 @@ public class FileDriver extends AbstractDriver {
 		 * Storage for index values of chunks that need to be loaded
 		 */
 		private IndexSetBuilder missingIndicesBuffer;
+		private IndexSet[] missingIndices;
 
 		private boolean allIndicesMissing = false;
 
@@ -1244,15 +1254,31 @@ public class FileDriver extends AbstractDriver {
 
 				buffer.load(it, this::onAvailableItem, this::onMissingItem);
 
+				allIndicesMissing = missingIndicesCount==requestedItemCount;
+
 				// Make sure to tell the publisher we're done, so it can wrap up pending chunk information
 				publisher.flush();
 			}
 		}
 
+		public void loadMissingIndices() {
+			// This might force creation of missing indices array
+			getMissingIndices();
+
+			checkState("No missing indices defined", missingIndices!=null);
+
+
+			OfLong it = IndexUtils.asIterator(missingIndices);
+
+			buffer.load(it, this::onLoadedMissingItem, this::onRepeatedlyMissingItem);
+
+			publisher.flush();
+		}
+
 		/**
 		 * Called only for missing items by the {@link BufferedItemManager.LayerBuffer}
 		 */
-		public void onMissingItem(long index) {
+		private void onMissingItem(long index) {
 			missingIndicesCount++;
 
 			if(missingIndicesBuffer==null) {
@@ -1266,7 +1292,7 @@ public class FileDriver extends AbstractDriver {
 			missingIndicesBuffer.add(index);
 		}
 
-		public void onAvailableItem(Item item, long index) {
+		private void onAvailableItem(Item item, long index) {
 			ChunkState chunkState = ChunkState.forItem(item);
 			if(chunkState!=ChunkState.CORRUPTED) {
 				availableIndicesCount++;
@@ -1274,14 +1300,30 @@ public class FileDriver extends AbstractDriver {
 			publisher.accept(index, item, chunkState);
 		}
 
-		public IndexSet[] getMissingIndices() {
+		private void onLoadedMissingItem(Item item, long index) {
+			publisher.accept(index, item, ChunkState.forItem(item));
+		}
 
+		private void onRepeatedlyMissingItem(long index) {
+			throw new ModelException(ModelErrorCode.DRIVER_INDEX_ERROR, String.format(
+					"Item at index %d not available after internal loading", _long(index)));
+		}
+
+		public @Nullable IndexSet[] getMissingIndices() {
 			// Shortcut in case of empty buffer: just forward the raw input indices
 			if(allIndicesMissing) {
 				return indices;
 			}
 
-			return missingIndicesBuffer==null ? null : missingIndicesBuffer.build();
+			if(missingIndicesBuffer==null) {
+				return null;
+			}
+
+			if(missingIndices==null) {
+				missingIndices = missingIndicesBuffer.build();
+			}
+
+			return missingIndices;
 		}
 
 		public long getRequestedItemCount() {
@@ -1334,7 +1376,7 @@ public class FileDriver extends AbstractDriver {
 	}
 
 	protected long loadPrimaryLayer(IndexSet[] indices, ItemLayer layer,
-			Consumer<ChunkInfo> action) throws IOException, InterruptedException, IcarusApiException {
+			@Nullable Consumer<ChunkInfo> action) throws IOException, InterruptedException, IcarusApiException {
 		checkConnected();
 		checkReady();
 
@@ -1446,7 +1488,7 @@ public class FileDriver extends AbstractDriver {
 	 * @throws IcarusApiException
 	 * @throws ModelException in case the specified file has already been (partially) loaded
 	 */
-	public long loadFile(int fileIndex, Consumer<ChunkInfo> action)
+	public long loadFile(int fileIndex, @Nullable Consumer<ChunkInfo> action)
 			throws IOException, InterruptedException, IcarusApiException {
 
 		LockableFileObject fileObject = getFileObject(fileIndex);
@@ -1581,7 +1623,7 @@ public class FileDriver extends AbstractDriver {
 	 * @param bufferSize
 	 * @return
 	 */
-	protected ChunkConsumer createPublisher(Consumer<ChunkInfo> action, int bufferSize) {
+	protected ChunkConsumer createPublisher(@Nullable Consumer<ChunkInfo> action, int bufferSize) {
 		ChunkConsumer consumer = noOpChunkConsumer;
 
 		if(action!=null) {

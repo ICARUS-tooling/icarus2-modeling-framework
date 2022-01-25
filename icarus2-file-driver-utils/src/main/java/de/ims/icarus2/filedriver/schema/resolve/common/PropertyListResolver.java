@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.ObjLongConsumer;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -248,6 +249,10 @@ public class PropertyListResolver implements Resolver {
 		public void reset(ResolverContext source, CharSequence data) {
 			this.source = source;
 			this.data = data;
+		}
+		@Override
+		public ObjLongConsumer<? super Item> getTopLevelAction() {
+			return source.getTopLevelAction();
 		}
 	}
 }

@@ -376,6 +376,10 @@ public class BufferedItemManager {
 		 */
 		@Override
 		public void offer(Item item, long index) {
+			// We optimistically track usage on add already
+			if(getBuffer().isTrackItemUse()) {
+				((TrackedMember)item).incrementUseCounter();
+			}
 			getBuffer().entries().put(index, item);
 			indices().add(index);
 		}
@@ -445,7 +449,26 @@ public class BufferedItemManager {
 					if(cleanupAction!=null) {
 						cleanupAction.accept(this);
 					}
-					getBuffer().entries().keySet().removeAll(indices);
+					LayerBuffer buffer = getBuffer();
+					if(buffer.isTrackItemUse()) {
+						/*
+						 *  Since we optimistically incremented use counter on add,
+						 *  need to revert that when discarding items. This is some
+						 *  extra work but this implementation is based on the
+						 *  assumption that caches rarely get discarded and on valid
+						 *  live corpora we will only ever add and commit data.
+						 */
+						Long2ObjectMap<Item> entries = buffer.entries();
+						LongIterator lit = indices.iterator();
+						while(lit.hasNext()) {
+							long index = lit.nextLong();
+							Item item = entries.remove(index);
+							assert item!=null : "No item stored for index "+index;
+							((TrackedMember)item).decrementUseCounter();
+						}
+					} else {
+						buffer.entries().keySet().removeAll(indices);
+					}
 				} finally {
 					// Make sure we really clear our buffer
 					indices.clear();
@@ -632,6 +655,11 @@ public class BufferedItemManager {
 		 * checks on the provided cache.
 		 */
 		void commit(InputCacheImpl cache) {
+			if(trackItemUse) {
+				for(Item item : cache.pendingEntries.values()) {
+					((TrackedMember)item).incrementUseCounter();
+				}
+			}
 
 			/*
 			 *  Long2ObjectOpenHashMap internally checks if the source of a putAll() implements

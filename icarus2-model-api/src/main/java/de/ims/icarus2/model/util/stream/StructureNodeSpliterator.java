@@ -23,6 +23,7 @@ import java.util.Spliterator;
 
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
 
 /**
@@ -68,5 +69,15 @@ public class StructureNodeSpliterator extends AbstractFencedSpliterator<Item> {
 	@Override
 	protected Spliterator<Item> split(long pos, long fence) {
 		return new StructureNodeSpliterator(source, pos, fence);
+	}
+
+	/**
+	 * @see de.ims.icarus2.util.stream.AbstractFencedSpliterator#updateFence()
+	 */
+	@Override
+	protected void updateFence() {
+		if(fence==IcarusUtils.UNSET_LONG) {
+			fence = source.getItemCount();
+		}
 	}
 }

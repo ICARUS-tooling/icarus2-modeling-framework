@@ -165,12 +165,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return null;
 		}
 
-		Resolver resolver = RESOLVER_FACTORY.createResolver(schema.getType());
-
-//		resolver.prepareForReading(this, schema.getOptions());
-		//FIXME move to init method of blockhandlers
-
-		return resolver;
+		return RESOLVER_FACTORY.createResolver(schema.getType());
 	}
 
 	/**
@@ -297,6 +292,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			.lookups(lookups)
 			.build();
 
+		final ItemLayer primaryLayer = blockHandler.getItemLayer();
+
 		// Reduce overhead by only purging our back-end storage every so often
 		final MutableInteger chunksTillPurge = new MutableInteger(DEFAULT_TEMP_CHUNK_COUNT);
 
@@ -319,7 +316,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			 *  Committing the caches will trigger the nested analyzers to collect metadata
 			 *  and then discard the content of the cache.
 			 */
-			if(chunksTillPurge.decrementAndGet()<=0) {
+			if(item.getLayer()==primaryLayer && chunksTillPurge.decrementAndGet()<=0) {
 				chunksTillPurge.setInt(DEFAULT_TEMP_CHUNK_COUNT);
 				caches.values().forEach(InputCache::commit);
 				caches.values().forEach(InputCache::reset);
@@ -327,7 +324,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		};
 
 		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, topLevelItemAction);
-		ItemLayer primaryLayer = blockHandler.getItemLayer();
 		long index = 0L;
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
@@ -382,7 +378,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					//FIXME this is bad: manifest errors can keep the scan in an endless loop
 
 					// For now we also abort here
-					break scan_loop;
+//					break scan_loop;
+					throw e;
 				} catch(Exception e) {
 					// ""Real" errors will break the scanning process
 
@@ -1348,6 +1345,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return componentSuppliers.get(blockHandler.getItemLayer());
 		}
 
+		@Override
 		public ObjLongConsumer<? super Item> getTopLevelAction() {
 			return topLevelAction;
 		}
@@ -3166,20 +3164,21 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
 
-			long index = context.currentIndex();
+			final long hostIndex = context.currentIndex();
 			Container host = context.currentContainer();
 			final boolean isProxyContainer = host.isProxy();
 			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 
 			ComponentSupplier componentSupplier = context.getComponentSupplier(this);
-			componentSupplier.reset(index);
+			componentSupplier.reset(hostIndex);
 
 			// Prepare for beginning of content (notify batch resolvers)
 			beginContent(context);
 
+			long index = 0;
+
 			// Read in content lines until a stop line is detected or the iterator runs out of lines
 			while(!isEndLine(context)) {
-
 				// Create new nested item
 				if(!componentSupplier.next())
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce nested item");
@@ -3187,6 +3186,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 				// Link context to new item
 				context.setItem(item);
+				context.setIndex(index);
 				if(isProxyContainer) {
 					if(topLevelAction!=null) {
 						topLevelAction.accept(item, componentSupplier.currentIndex());
@@ -3202,7 +3202,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					break;
 				}
 				context.setData(lines.getLine());
+
+				index++;
 			}
+
+			context.setIndex(hostIndex);
 
 			// Finalize content (notify batch resolvers)
 			endContent(context);

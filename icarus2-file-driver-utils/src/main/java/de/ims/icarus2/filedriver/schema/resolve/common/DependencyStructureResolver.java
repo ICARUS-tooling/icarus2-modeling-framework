@@ -35,10 +35,10 @@ import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
+import de.ims.icarus2.model.standard.members.structure.builder.StaticStructure;
 import de.ims.icarus2.model.standard.members.structure.builder.StructureBuilder;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Options;
@@ -55,6 +55,7 @@ public class DependencyStructureResolver implements BatchResolver {
 	public static final String OPTION_ROOT_LABEL = "root";
 
 	private StructureLayer dependencyLayer;
+	private Container rootContainer;
 
 	private ObjLongConsumer<Item> structureSaveAction;
 
@@ -98,10 +99,11 @@ public class DependencyStructureResolver implements BatchResolver {
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode,
 			Function<ItemLayer, InputCache> caches, Options options) {
-		dependencyLayer = (StructureLayer) options.get(ResolverOptions.LAYER);
+		dependencyLayer = converter.getDriver().getContext().getLayer(options.getString(ResolverOptions.LAYER));
 		if(dependencyLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No layer assigned to this resolver "+getClass());
+		rootContainer = dependencyLayer.getProxyContainer();
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
 
@@ -206,6 +208,7 @@ public class DependencyStructureResolver implements BatchResolver {
 			case UNDEFINED_POINTER: break;
 			case ROOT_POINTER:
 				edges[i].setSource(root);
+				structureBuilder.getRoot().addEdge(edges[i], false);
 				break;
 
 			default:
@@ -215,12 +218,16 @@ public class DependencyStructureResolver implements BatchResolver {
 		}
 
 		// Now delegate work to builder
+		structureBuilder.setId(sentence.getId()); // Mimic ID of associated sentence
 		structureBuilder.augmented(false);
 		structureBuilder.addNodes(sentence);
-		structureBuilder.addEdges(edges, 0, IcarusUtils.ensureIntegerValueRange(context.currentIndex()));
+		structureBuilder.addEdges(edges, 0, length);
 		structureBuilder.setBoundaryContainer(sentence);
 		structureBuilder.setBaseContainer(sentence);
-		Structure dependencyTree = structureBuilder.build();
+		StaticStructure dependencyTree = structureBuilder.build();
+
+		dependencyTree.setAlive(true);
+		dependencyTree.setContainer(rootContainer);
 
 		/*
 		 * Push structure into back-end storage.
@@ -230,6 +237,8 @@ public class DependencyStructureResolver implements BatchResolver {
 		 * sentences.
 		 */
 		structureSaveAction.accept(dependencyTree, sentence.getIndex());
+
+//		context.getTopLevelAction().accept(dependencyTree, sentence.getIndex());
 
 		// Reset buffers
 		Arrays.fill(heads, 0, length, UNDEFINED_POINTER);

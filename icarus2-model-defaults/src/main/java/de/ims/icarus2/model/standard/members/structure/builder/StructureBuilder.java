@@ -19,6 +19,7 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 import static de.ims.icarus2.model.util.ModelUtils.isVirtual;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -133,7 +134,7 @@ public class StructureBuilder {
 
 	private boolean augmented = false;
 
-	private long id;
+	private long id = UNSET_LONG;
 
 	@Override
 	public String toString() {
@@ -599,7 +600,7 @@ public class StructureBuilder {
 	 * builder's buffer and then resets the builder for the next building
 	 * process.
 	 */
-	public Structure build() {
+	public StaticStructure build() {
 		ItemStorage itemStorage = this.itemStorage;
 		if(itemStorage==null) {
 			itemStorage = createItemStorage();
