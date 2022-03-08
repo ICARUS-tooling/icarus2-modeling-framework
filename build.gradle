@@ -1,13 +1,13 @@
 
 plugins {
 	id 'java-library'
-	id 'java-test-fixtures'
+//	id 'java-test-fixtures'
 	id 'jacoco'
-	id 'com.github.kt3k.coveralls' version '2.12.0'
-	id 'com.github.johnrengelman.shadow' version '7.1.0' apply false
+	id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
     id 'com.github.hierynomus.license' version '0.16.1' apply false
     id 'com.diffplug.eclipse.apt' version '3.33.3' apply false
 	id 'nebula.lint' version '17.5.0'
+	id 'de.gliderpilot.semantic-release' version '1.4.2'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -25,16 +25,15 @@ allprojects {
 
 	group = 'de.unistuttgart.ims.icarus2'
 
-	// For now all projects follow the global pre-release version (this will change with 1.0.0 !!)
-	version = '0.1.0'
-
-	repositories { mavenCentral() }
+	repositories { 
+		mavenCentral() 
+	}
 }
 	
 // Gradle Wrapper
 wrapper { 
 	// to upgrade wrapper: ./gradlew wrapper --distribution-type bin --gradle-version <version>
-	gradleVersion = "7.3.3" 
+	gradleVersion = "7.4" 
 }
 
 // Build Scan publishing
@@ -274,23 +273,6 @@ subprojects {
 //		dependsOn eclipseJdtApt eclipseFactorypath eclipseJdt
 //	}
 
-	// Lets us create a ready-to-use jar for benchmarking on other machines
-	task jmhJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-		group = 'jmh'
-		description = 'Create a benchmark jar with all dependencies included'
-		dependsOn jmhClasses
-		archiveClassifier = 'jmh'
-		from sourceSets.jmh.output + sourceSets.main.output + sourceSets.test.output
-		//TODO fix: configurations = [project.configurations.jmhRuntime]
-		manifest {
-			attributes 'Main-Class': 'org.openjdk.jmh.Main'
-		}
-	}
-
-	shadowJar {
-		archiveClassifier = 'shadow'
-	}
-
 	test {
 	    useJUnitPlatform {
 			excludeTags = ['concurrent', 'integration', 'slow', 'learner']
@@ -462,6 +444,23 @@ subprojects {
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
+
+	// Lets us create a ready-to-use jar for benchmarking on other machines
+	task jmhJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+		group = 'jmh'
+		description = 'Create a benchmark jar with all dependencies included'
+		dependsOn jmhClasses
+		archiveClassifier = 'jmh'
+		from sourceSets.jmh.output + sourceSets.main.output + sourceSets.test.output
+		//TODO fix: configurations = [project.configurations.jmhRuntime]
+		manifest {
+			attributes 'Main-Class': 'org.openjdk.jmh.Main'
+		}
+	}
+
+	shadowJar {
+		archiveClassifier = 'shadow'
+	}
 	
     publishing {
         repositories {
@@ -546,17 +545,4 @@ task jacocoRootReport(type: JacocoReport, group: 'verification') {
 		html.required = true // human readable
 		xml.required = true // required by codecov
 	}
-}
-
-coveralls {
-	sourceDirs = publishedProjects.sourceSets.main.allSource.srcDirs.flatten()
-	jacocoReportPath = "${buildDir}/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
-}
-
-tasks.coveralls {
-	group = 'Coverage reports'
-	description = 'Uploads the aggregated coverage report to Coveralls'
-
-	dependsOn jacocoRootReport
-	onlyIf { System.env.'CI' }
 }
