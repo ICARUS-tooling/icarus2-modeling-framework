@@ -53,6 +53,26 @@
 						<imf:structure containerType="span" structureType="tree" />
 					</imf:hierarchy>
 				</imf:structureLayer>
+				<imf:annotationLayer id="predictedPos" layerType="common.layer.pos">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="ppos" templateId="common.tags.stts" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedLemma" layerType="common.layer.lemma">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="plemma" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedFeatures" layerType="common.layer.morph">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="pfeat" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="predictedDependencyRelation" layerType="common.layer.dependencyRelation">
+					<imf:baseLayer layerId="predictedDependency"/>
+					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
+					<imf:annotation key="deprel" valueType="string" />
+				</imf:annotationLayer>
+			</imf:layerGroup>
+			
+			<imf:layerGroup name="Gold Group" primaryLayer="token" id="goldGroup">
 				<imf:structureLayer id="goldDependency" layerType="common.layer.dependencySyntax">
 					<imf:baseLayer layerId="token"/>
 					<imf:boundaryLayer layerId="sentence"/>
@@ -61,41 +81,19 @@
 						<imf:structure containerType="span" structureType="tree" />
 					</imf:hierarchy>
 				</imf:structureLayer>
-				<imf:annotationLayer id="goldPos" layerType="common.layer.pos">
+				<imf:annotationLayer id="goldPos">
 					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="pos" templateId="common.tags.stts" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedPos" layerType="common.layer.pos">
-					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="ppos" templateId="common.tags.stts" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="goldLemma" layerType="common.layer.lemma">
-					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="lemma" valueType="string" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedLemma" layerType="common.layer.lemma">
-					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="plemma" valueType="string" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="goldFeatures" layerType="common.layer.morph">
-					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="feat" valueType="string" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedFeatures" layerType="common.layer.morph">
-					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="pfeat" valueType="string" />
+					<imf:annotation key="goldPos" templateId="common.tags.stts" />
+					<imf:annotation key="goldLemma" valueType="string" />
+					<imf:annotation key="goldFeatures" valueType="string" />
 				</imf:annotationLayer>
 				<imf:annotationLayer id="goldDependencyRelation" layerType="common.layer.dependencyRelation">
 					<imf:baseLayer layerId="goldDependency"/>
 					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
-					<imf:annotation key="deprel" valueType="string" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedDependencyRelation" layerType="common.layer.dependencyRelation">
-					<imf:baseLayer layerId="predictedDependency"/>
-					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
-					<imf:annotation key="deprel" valueType="string" />
+					<imf:annotation key="goldDeprel" valueType="string" />
 				</imf:annotationLayer>
 			</imf:layerGroup>
+			
 			
 			<imf:driver>
 				<imf:implementation classname="de.ims.icarus2.common.formats.conll.drivers.CoNLL2009FileDriver" />
