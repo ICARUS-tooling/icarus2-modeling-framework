@@ -8,6 +8,7 @@ plugins {
     id 'com.diffplug.eclipse.apt' version '3.33.3' apply false
 	id 'nebula.lint' version '17.5.0'
 	id 'de.gliderpilot.semantic-release' version '1.4.2'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
@@ -47,6 +48,15 @@ buildScan {
 gradleLint {
 	// https://github.com/nebula-plugins/gradle-lint-plugin/wiki
 	rules  = ['all-dependency', 'duplicate-dependency-class']
+}
+    
+nexusPublishing {
+    repositories {
+        sonatype {
+            username = System.getenv("OSSRH_USER") ?: System.getProperty("ossrhUser") ?: 'no_user'
+            password = System.getenv("OSSRH_PASSWORD") ?: System.getProperty("ossrhPassword") ?: 'no_password'
+        }
+    }
 }
 
 subprojects {
@@ -240,39 +250,7 @@ subprojects {
 				}
 			}
 		}
-
-//		// Annotation processing (folders and configuration)
-//		jdt {
-//			/*
-//			 *  Run 
-//			 *    gradle eclipseJdtApt eclipseFactorypath eclipseJdt 
-//			 *  for any project that needs annotation processing turned on in eclipse
-//			 */ 
-//			apt {
-//				// whether annotation processing is enabled in Eclipse
-//				aptEnabled = compileJava.aptOptions.annotationProcessing
-//				// where Eclipse will output the generated sources; values are interpreted as per project.file()
-//				genSrcDir = file('.apt_generated')
-//				genTestSrcDir = file('.apt_generated_tests')
-//				// whether annotation processing is enabled in the editor
-//				reconcileEnabled = true
-//				// a map of annotation processor options; a null value will pass the argument as -Akey rather than -Akey=value
-//				processorOptions = compileJava.aptOptions.processorArgs
-//			}
-//		}
-//		
-//		// Annotation processing (ensuring declared processors are forwarded to eclipse)
-//		factorypath {
-//			//TODO add task or hook to clear out previous factorypath entries
-//			plusConfigurations = [ configurations.annotationProcessor, configurations.testAnnotationProcessor, configurations.jmhAnnotationProcessor ]
-//			minusConfigurations = []
-//		}
 	}
-	
-//	task prepareApt {
-//		description = 'Shorthand task for preparing annotation processing in eclipse'
-//		dependsOn eclipseJdtApt eclipseFactorypath eclipseJdt
-//	}
 
 	test {
 	    useJUnitPlatform {
@@ -439,7 +417,7 @@ subprojects {
 		from javadoc
 	}
 
-	// Create a jar with soruces
+	// Create a jar with sources
 	task sourcesJar(type: Jar) {
 		description = 'Bundle source files'
 		classifier = 'sources'
@@ -485,19 +463,14 @@ subprojects {
     publishing {
         repositories {
 			mavenLocal()
-            maven {
-                name = "OSSRH"
-                setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
-                credentials {
-                    username = System.getenv("OSSRH_USER") ?: System.getProperty("ossrhUser") ?: 'no_user'
-                    password = System.getenv("OSSRH_PASSWORD") ?: System.getProperty("ossrhPassword") ?: 'no_password'
-                }
-            }
         }
         
         publications {
             mavenJava(MavenPublication) {
-                from(components.java)
+            	// We manually specify the artifacts so that the shadow.jar is filtered out
+                artifact jar
+                artifact javadocJar
+                artifact sourcesJar
 				
 				pom {
 					licenses {
@@ -529,7 +502,7 @@ subprojects {
 	
 	artifacts {
 	    tests testJar
-	    archives javadocJar, sourcesJar
+	    archives jar, javadocJar, sourcesJar
 	}
 }
 
@@ -538,10 +511,6 @@ tasks.named('check') {
 		logger.info('Running Gradle {}', GradleVersion.current().toString())
 		logger.info('Using Java VM {}', org.gradle.internal.jvm.Jvm.current())
 	}
-}
-
-tasks.withType(Sign) {
-    onlyIf { !version.endsWith("SNAPSHOT") && gradle.taskGraph.hasTask("publish") }
 }
 
 // Filter coverage reports 
