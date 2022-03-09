@@ -54,6 +54,7 @@ subprojects {
   	//TODO enable test-fixtures and migrate all test-utils into shared-utils testFixture
 //  	apply plugin: 'java-test-fixtures'
   	apply plugin: 'maven-publish'
+	apply plugin: 'signing'
   	apply plugin: 'checkstyle'		
 	apply plugin: 'com.github.hierynomus.license'
 	apply plugin: 'com.github.johnrengelman.shadow'
@@ -462,20 +463,40 @@ subprojects {
 		archiveClassifier = 'shadow'
 	}
 	
+	java {
+        withJavadocJar()
+        withSourcesJar()
+	}
+	
+	signing {		
+        def key = System.getenv("GPG_KEY") ?: System.getProperty("gpgKey") ?: 'no_key'
+        def password = System.getenv("GPG_PASSWORD") ?: System.getProperty("gpgPassword") ?: 'no_password'
+        
+        // For local testing it's better to provide the key as file
+        if(System.getProperty("gpgKeyFile")) {
+            key = file(System.getProperty("gpgKeyFile")).text
+        }
+
+        useInMemoryPgpKeys(key, password)
+        
+        sign(publishing.publications)
+    }
+	
     publishing {
         repositories {
 			mavenLocal()
-//            maven {
-//                name = "GitHubPackages"
-//                url = uri("https://maven.pkg.github.com/icarus-tooling/icarus2-modeling-framework")
-//                credentials {	
-//	                username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
-//	                password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
-//                }
-//            }
+            maven {
+                name = "OSSRH"
+                setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+                credentials {
+                    username = System.getenv("OSSRH_USER") ?: System.getProperty("ossrhUser") ?: 'no_user'
+                    password = System.getenv("OSSRH_PASSWORD") ?: System.getProperty("ossrhPassword") ?: 'no_password'
+                }
+            }
         }
+        
         publications {
-            mavenJava(MavenPublication) {  //gpr for GitHubPackages
+            mavenJava(MavenPublication) {
                 from(components.java)
 				
 				pom {
@@ -508,7 +529,7 @@ subprojects {
 	
 	artifacts {
 	    tests testJar
-	    archives jar, testJar, javadocJar, sourcesJar
+	    archives javadocJar, sourcesJar
 	}
 }
 
@@ -519,6 +540,9 @@ tasks.named('check') {
 	}
 }
 
+tasks.withType(Sign) {
+    onlyIf { !version.endsWith("SNAPSHOT") && gradle.taskGraph.hasTask("publish") }
+}
 
 // Filter coverage reports 
 def publishedProjects = subprojects.findAll { true } //TODO add filter pattern for subprojects
