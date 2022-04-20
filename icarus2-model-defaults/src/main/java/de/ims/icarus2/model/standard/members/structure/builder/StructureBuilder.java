@@ -538,10 +538,7 @@ public class StructureBuilder {
 	}
 
 	public Edge newEdge(long id, Item source, Item target) {
-		Edge edge = getMemberFactory().newEdge(currentStructure(), id);
-		edge.setSource(source);
-		edge.setTarget(target);
-		return edge;
+		return getMemberFactory().newEdge(currentStructure(), id, source, target);
 	}
 
 	public Edge newEdge(long id) {
