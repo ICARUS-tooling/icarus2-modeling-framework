@@ -125,6 +125,8 @@ public class StructureBuilder {
 
 	private Structure proxyStructure;
 
+	private Container host;
+
 	private RootItem<?> root;
 
 	private final EdgeBuffer edgeBuffer;
@@ -223,6 +225,10 @@ public class StructureBuilder {
 					return boundaryContainer();
 				}
 
+				@Override
+				public Container getContainer() {
+					return getHost();
+				}
 			};
 		}
 
@@ -231,7 +237,8 @@ public class StructureBuilder {
 
 	StaticStructure currentStructure() {
 		if(currentStructure==null) {
-			currentStructure = new StaticStructure();
+			currentStructure = new StaticStructure(manifest);
+			currentStructure.setContainer(getHost());
 		}
 
 		return currentStructure;
@@ -341,6 +348,16 @@ public class StructureBuilder {
 		this.augmented = augmented;
 
 		return this;
+	}
+
+	public StructureBuilder host(Container host) {
+		this.host = requireNonNull(host);
+		return this;
+	}
+
+	Container getHost() {
+		checkState("Missing host", host!=null);
+		return host;
 	}
 
 	//**********************************
@@ -697,7 +714,7 @@ public class StructureBuilder {
 	private EdgeStorage createEdgeStorage(ItemStorage itemStorage) {
 
 		List<Edge> edges = edges();
-		checkState(!edges.isEmpty());
+		checkState(!edges.isEmpty() || getNodeCount()<=1);
 
 		Comparator<? super Edge> sorter = getEdgeSortType();
 

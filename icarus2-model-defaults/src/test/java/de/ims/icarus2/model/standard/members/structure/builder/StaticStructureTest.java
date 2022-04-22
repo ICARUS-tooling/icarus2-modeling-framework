@@ -75,7 +75,7 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 
 		@BeforeEach
 		void setUp() {
-			structure = new StaticStructure();
+			structure = new StaticStructure(mock(StructureManifest.class));
 		}
 
 		@AfterEach

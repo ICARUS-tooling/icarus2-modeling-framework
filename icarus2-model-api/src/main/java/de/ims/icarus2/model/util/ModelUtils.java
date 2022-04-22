@@ -297,6 +297,10 @@ public final class ModelUtils {
 		editModel.execute(change);
 	}
 
+	/**
+	 * @deprecated makes unreasonable assumptions on the linking and stacking of manifests
+	 */
+	@Deprecated
 	public static ContainerManifestBase<?> getContainerManifest(Container container) {
 		requireNonNull(container);
 
@@ -306,7 +310,7 @@ public final class ModelUtils {
 		int level = 0;
 
 		Container parent;
-		while((parent = container.getContainer())!=null) {
+		while((parent = container.getContainer())!=null && !parent.isProxy()) {
 			level++;
 			container = parent;
 		}

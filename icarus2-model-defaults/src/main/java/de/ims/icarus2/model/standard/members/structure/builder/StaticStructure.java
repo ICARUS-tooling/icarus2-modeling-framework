@@ -37,7 +37,6 @@ import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
-import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
@@ -60,6 +59,12 @@ public class StaticStructure extends DefaultItem implements Structure {
 
 	private DataSet<Container> baseContainers;
 	private Container boundaryContainer;
+
+	private final StructureManifest manifest;
+
+	public StaticStructure(StructureManifest manifest) {
+		this.manifest = requireNonNull(manifest);
+	}
 
 	void setNodes(ItemStorage nodes) {
 		requireNonNull(nodes);
@@ -265,7 +270,7 @@ public class StaticStructure extends DefaultItem implements Structure {
 	 */
 	@Override
 	public StructureManifest getManifest() {
-		return (StructureManifest) ModelUtils.getContainerManifest(this);
+		return manifest;
 	}
 
 	/**
