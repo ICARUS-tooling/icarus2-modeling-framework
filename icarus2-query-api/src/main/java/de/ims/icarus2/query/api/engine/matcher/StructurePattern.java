@@ -6832,6 +6832,7 @@ public class StructurePattern {
 		boolean match(State state, int pos) {
 			//TODO determine what mode we need to use for traversal
 			final TreeFrame root = state.frame;
+			final TreeManager tree = state.tree;
 			final ClosureContext ctx = state.closures[closureId];
 			final Cache cache = state.caches[cacheId];
 			final int minLevel = levelFilter.minLevel;
@@ -6852,8 +6853,8 @@ public class StructurePattern {
 			while(!state.stop) {
 				ClosureStep step = ctx.current();
 
-				final TreeFrame frame = state.tree.frameAt(step.frameId);
-				assert frame!=state.tree.rootFrame : "Cannot descend _into_ root frame";
+				final TreeFrame frame = tree.frameAt(step.frameId);
+				assert frame!=tree.rootFrame : "Cannot descend _into_ root frame";
 
 				// Try remaining nodes in current frame
 				if(step.pos < frame.length - minSize + 1) {
@@ -6913,7 +6914,7 @@ public class StructurePattern {
 					}
 
 					// Now descend if possible
-					if(state.tree.frameAt(index).length > 0 && (maxLevel==UNSET_INT || ctx.level < maxLevel)) {
+					if(tree.frameAt(index).length > 0 && (maxLevel==UNSET_INT || ctx.level < maxLevel)) {
 						ctx.descend(index);
 					} else {
 						// Or continue to next neighbor for future traversal

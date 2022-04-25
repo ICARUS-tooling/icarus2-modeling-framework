@@ -110,6 +110,7 @@ public class DependencyStructureResolver implements BatchResolver {
 		structureBuilder = StructureBuilder.builder(
 				dependencyLayer.getManifest().getRootStructureManifest().orElseThrow(
 						ManifestException.error("No root structure manifest available")));
+		structureBuilder.host(rootContainer);
 
 		FileDriver driver = converter.getDriver();
 

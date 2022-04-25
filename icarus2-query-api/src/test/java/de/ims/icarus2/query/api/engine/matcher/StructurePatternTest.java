@@ -150,6 +150,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.NonResettingMatc
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Ping;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Repetition;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.RootFrame;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Single;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.State;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StateMachineSetup;
@@ -194,8 +195,6 @@ import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import it.unimi.dsi.fastutil.Stack;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -1434,43 +1433,49 @@ public class StructurePatternTest {
 
 	/** Applies a tree consisting of parent links to the TreeFrame list in the given State */
 	static void applyTree(State state, int[] parents) {
-		final TreeFrame[] tree = state.tree.frames;
-		final IntList roots = new IntArrayList();
+		TreeManager tree = state.tree;
+		final TreeFrame[] frames = tree.frames;
+		for (int i = 0; i < parents.length; i++) {
+			TreeFrame frame = frames[i];
+			frame.length = 0;
+			frame.height = 0;
+			frame.descendants = 0;
+		}
 		for (int i = 0; i < parents.length; i++) {
 			int parentIndex = parents[i];
-			TreeFrame frame = tree[i];
+			TreeFrame frame = frames[i];
 			frame.parent = parentIndex;
 			frame.valid = true;
 
 			if(parentIndex != UNSET_INT) {
-				TreeFrame parent = tree[parentIndex];
+				TreeFrame parent = frames[parentIndex];
 				parent.indices[parent.length++] = i;
 				parent.descendants++;
 			} else {
-				roots.add(i);
+				tree.roots[tree.rootCount++] = frame.index;
 			}
 		}
 
-		for(int root : roots) {
-			computeTreeData(tree, root, 0);
+		final RootFrame rootFrame = tree.rootFrame;
+		for (int i = 0; i < tree.rootCount; i++) {
+			TreeFrame root = frames[tree.roots[i]];
+			computeTreeData(tree, root, 1);
+			rootFrame.height = Math.max(rootFrame.height, root.height+1);
+			rootFrame.descendants += root.descendants + 1;
 		}
 	}
 
-	private static TreeFrame computeTreeData(TreeFrame[] tree, int index, int depth) {
-		final TreeFrame frame = tree[index];
+	private static void computeTreeData(TreeManager tree, TreeFrame frame, int depth) {
 		frame.depth = depth;
 
-		if(frame.length==0) {
-			frame.height = 0;
-		} else {
+		if(frame.length>0) {
 			for (int i = 0; i < frame.length; i++) {
-				TreeFrame child = computeTreeData(tree, frame.indices[i], depth+1);
-				frame.descendants += child.descendants;
+				TreeFrame child = tree.frames[frame.indices[i]];
+				computeTreeData(tree, child, depth+1);
+				frame.descendants += child.descendants + 1;
 				frame.height = Math.max(frame.height, child.height+1);
 			}
 		}
-
-		return frame;
 	}
 
 	interface NodeTest {
