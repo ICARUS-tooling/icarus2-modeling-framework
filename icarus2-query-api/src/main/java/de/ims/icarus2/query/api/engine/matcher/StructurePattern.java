@@ -66,6 +66,8 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.StructureFlag;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.QueryUtils;
@@ -128,8 +130,10 @@ import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import it.unimi.dsi.fastutil.ints.IntStack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
@@ -2158,6 +2162,8 @@ public class StructurePattern {
 		Structure structure;
 		/** View on the target tree as frames */
 		TreeFrame[] frames;
+		/** The frame representing the overall list of items in the container */
+		final RootFrame rootFrame;
 		/** Indices of root nodes in the tree. */
 		int[] roots;
 		/** */
@@ -2165,10 +2171,33 @@ public class StructurePattern {
 		/** Path from a root node to current node */
 		int[] trace;
 
+		// For local rebuild method
+
+		/** Stores the target for {@link #_childCollector} */
+		private TreeFrame _current;
+		/** Consumer to collect children of a node. Fixed to prevent heap allocation. */
+		private final Consumer<Edge> _childCollector = edge -> {
+			_current.indices[_current.length++] = indexOfTarget(edge);
+		};
+
+		/** Consumer to collect actual root nodes. Fixed to prevent heap allocation. */
+		private final Consumer<Edge> _rootCollector = edge -> {
+			roots[rootCount++] = indexOfTarget(edge);
+		};
+
+		// For global rebuild
+
+		/** Path of nodes followed during rebuild */
+		private final ObjectArrayList<TreeFrame> _trace = new ObjectArrayList<>();
+		/** Index of the next child of respective node to process. */
+		private final IntStack _indices = new IntArrayList();
+
 		TreeManager(int initialSize) {
 			frames = new TreeFrame[initialSize];
 			roots = new int[initialSize];
 			trace = new int[initialSize];
+
+			rootFrame = new RootFrame(initialSize);
 
 			Arrays.fill(trace, UNSET_INT);
 			Arrays.fill(roots, UNSET_INT);
@@ -2184,11 +2213,6 @@ public class StructurePattern {
 		private int indexOfTarget(Edge edge) {
 			return strictToInt(structure.indexOfItem(edge.getTarget()));
 		}
-
-		/** Consumer to collect actual root nodes. Fixed to prevent heap allocation. */
-		private final Consumer<Edge> _rootCollector = edge -> {
-			roots[rootCount++] = indexOfTarget(edge);
-		};
 
 		void init(Structure target) {
 			structure = target;
@@ -2206,13 +2230,6 @@ public class StructurePattern {
 			return frame;
 		}
 
-		/** Stores the target for {@link #_childCollector} */
-		private TreeFrame _current;
-		/** Consumer to collect children of a node. Fixed to prevent heap allocation. */
-		private final Consumer<Edge> _childCollector = edge -> {
-			_current.indices[_current.length++] = indexOfTarget(edge);
-		};
-
 		private void refreshFrame(TreeFrame frame) {
 			assert structure!=null : "No structure available - is the target a regular item layer?";
 			assert frame.index!=UNSET_INT : "can't refresh the root frame";
@@ -2221,25 +2238,104 @@ public class StructurePattern {
 			frame.depth = strictToInt(structure.getDepth(node));
 			frame.height = strictToInt(structure.getHeight(node));
 			frame.descendants = strictToInt(structure.getDescendantCount(node));
-			frame.length = 0;
 
 			Edge incoming = structure.getEdgeAt(node, 0, false);
 			assert incoming!=null : "Missing incoming edge for "+node;
-			if(incoming.getSource()!=structure.getVirtualRoot()) {
-				frame.parent = indexOfSource(incoming);
+			frame.parent = incoming.getSource()==structure.getVirtualRoot() ?
+					UNSET_INT : indexOfSource(incoming);
+
+			refreshChildren(frame, node);
+
+			frame.valid = frame.isTreeDataValid();
+
+			// If any of the tree informations are not set properly, we need to take the expensive route
+			if(!frame.valid) {
+				forceRefreshAllFrames();
 			}
+		}
+
+		boolean isOrderedStructure() {
+			StructureManifest sm = structure.getManifest();
+			return sm!=null && sm.isStructureFlagSet(StructureFlag.ORDERED);
+		}
+
+		void refreshChildren(TreeFrame frame, Item node) {
+			frame.length = 0;
 
 			_current = frame;
 			structure.forEachOutgoingEdge(node, _childCollector);
 			_current = null;
 
-			//TODO check that we got valid information for height/depth/descendants and do a recursive tree traversal otherwise
-
-			frame.valid = true;
+			if(frame.length>0 && !isOrderedStructure()) {
+				IntArrays.quickSort(frame.indices, 0, frame.length);
+			}
 		}
 
-		private void forceRefreshAllFrames() {
-			//TODO recursively calculate all tree data for frames
+		void forceRefreshAllFrames() {
+			assert structure!=null : "No structure available - is the target a regular item layer?";
+			assert _trace.isEmpty() : "Concurrent";
+
+			/*
+			 * Trace mechanics:
+			 * for every 2-tuple <frame, index> the 'frame' defines the TreeFrame to
+			 * operate on and 'index' defines the index of the next child of 'frame'
+			 * to be processed.
+			 */
+			_trace.push(rootFrame);
+			_indices.push(0);
+
+
+			/*
+			 * We perform a post-order traversal of the tree and feed the trace
+			 * buffer depth-first.
+			 */
+			while(!_trace.isEmpty()) {
+				TreeFrame frame = _trace.top();
+				int index = _indices.topInt();
+
+				Item node = frame==rootFrame ? structure.getVirtualRoot() : structure.getItemAt(frame.index);
+
+				// Fetch child count and indices if not already set
+				if(index==0 && frame.length==UNSET_INT) {
+					refreshChildren(frame, node);
+				}
+
+				// Step into child node if possible
+				if(index<frame.length) {
+					int childIndex = frame.indices[index];
+					TreeFrame child = frames[childIndex];
+
+					// Now push child data
+					_trace.push(child);
+					_indices.push(0);
+				} else {
+					// Child nodes exhausted -> accumulate metadata and step out
+					_trace.pop();
+					_indices.popInt();
+
+					frame.depth = _trace.size();
+					frame.height = 0;
+					frame.descendants = frame.length;
+					if(frame!=rootFrame) {
+						frame.parent = _trace.top().index;
+
+						// Increment stored child index
+						_indices.push(_indices.popInt()+1);
+					}
+
+					for (int i = 0; i < frame.length; i++) {
+						TreeFrame child = frames[frame.indices[i]];
+						frame.height = Math.max(frame.height, child.height+1);
+						frame.descendants += child.descendants;
+					}
+
+					assert frame.isTreeDataValid() : "Failed to produce proper tree metadata";
+					frame.valid = true;
+				}
+
+			}
+
+			assert _trace.isEmpty() : "Leftover items in trace";
 		}
 
 		void resize(int newSize) {
@@ -2247,13 +2343,15 @@ public class StructurePattern {
 			trace = new int[newSize];
 			roots = new int[newSize];
 
+			rootFrame.resize(newSize);
+
 			for (int i = 0; i < frames.length; i++) {
 				frames[i].resize(newSize);
 			}
 
 			Arrays.fill(roots, UNSET_INT);
 			// Resize old frames
-			for (int i = oldSize; i < frames.length; i++) {
+			for (int i = 0; i < oldSize; i++) {
 				frames[i].resize(newSize);
 			}
 			// Create and init new frames
@@ -2273,6 +2371,12 @@ public class StructurePattern {
 			Arrays.fill(roots, 0, rootCount, UNSET_INT);
 			rootCount = 0;
 			Arrays.fill(trace, 0, range, UNSET_INT);
+			rootFrame.reset();
+		}
+
+		/** Resets <b>all</b> frames and other utility objects. */
+		void reset() {
+			reset(frames.length);
 		}
 	}
 
@@ -2298,15 +2402,15 @@ public class StructurePattern {
 		/** Sorted index values */
 		int[] indices;
 		/** Total number of index values available */
-		int length;
+		int length = UNSET_INT;
 		/** Length of path to root */
-		int depth;
+		int depth = UNSET_INT;
 		/** Length of path to deepest nested leaf */
-		int height;
+		int height = UNSET_INT;
 		/** Index of parent node/frame */
-		int parent;
+		int parent = UNSET_INT;
 		/** Accumulated number of descendants in the subtree rooted at this frame */
-		int descendants;
+		int descendants = UNSET_INT;
 		/**
 		 * End index of the last (sub)match, used by repetitions and similar nodes to keep track.
 		 * Initially {@code 0}, turned to {@code -1} for failed matches and to
@@ -2336,6 +2440,10 @@ public class StructurePattern {
 		TreeFrame(int index, int initialSize) {
 			this.index = index;
 			indices = new int[initialSize];
+		}
+
+		boolean isTreeDataValid() {
+			return length!=UNSET_INT && depth!=UNSET_INT && height!=UNSET_INT && descendants!=UNSET_INT;
 		}
 
 		/** Ensure that {@code newSize} index values fit into the indices buffer. */
@@ -2633,8 +2741,6 @@ public class StructurePattern {
 		 * entirety of the item sequence.
 		 */
 		TreeFrame frame;
-		/** The frame representing the overall list of items in the container */
-		final RootFrame rootFrame;
 		/** Keys for the node mapping */
 		int[] m_node;
 		/** Values for the node mapping, i.e. the associated indices */
@@ -2665,9 +2771,7 @@ public class StructurePattern {
 			modes = new ModeTrace[1];
 
 			tree = new TreeManager(initialSize);
-
-			rootFrame = new RootFrame(initialSize);
-			frame = rootFrame;
+			frame = tree.rootFrame;
 
 			modes[MODE_SKIP] = new ModeTrace(setup.skipControlCount, true);
 
@@ -2744,8 +2848,7 @@ public class StructurePattern {
 
 			tree.reset(range);
 
-			rootFrame.reset();
-			frame = rootFrame;
+			frame = tree.rootFrame;
 
 			// Other buffers have to get cleared out completely
 			hits.clear();
@@ -2799,25 +2902,6 @@ public class StructurePattern {
 		public void drainTo(MatchSink sink) {
 			sink.consume(index, 0, entry, m_node, m_index);
 		}
-
-		//TODO delete
-//		// tree interface
-//
-//		@Override
-//		public final int size() { return size; }
-//
-//		@Override
-//		public final int size(int nodeId) { return tree[nodeId].length; }
-//
-//		@Override
-//		public final int height(int nodeId) { return tree[nodeId].height; }
-//
-//		@Override
-//		public final int depth(int nodeId) { return tree[nodeId].depth; }
-//
-//		@Override
-//		public final int childAt(int nodeId, int index) { return tree[nodeId].indices[index]; }
-
 	}
 
 	public static class Mapping {
@@ -2894,7 +2978,7 @@ public class StructurePattern {
 		/** The node of the state machine to start matching with. */
 		final Node root;
 
-		/** SPecial constructor for {@link NonResettingMatcher} subclass. */
+		/** Special constructor for {@link NonResettingMatcher} subclass. */
 		private StructureMatcher(StateMachineSetup stateMachineSetup, int id) {
 			super(stateMachineSetup);
 			this.id = id;
@@ -2946,7 +3030,7 @@ public class StructurePattern {
 			for (int i = 0; i < size; i++) {
 				elements[i] = target.getItemAt(i);
 			}
-			rootFrame.reset(size);
+			tree.rootFrame.reset(size);
 
 			// Update dynamic marker intervals
 			for (int i = 0; i < globalMarkers.length; i++) {
@@ -3000,7 +3084,6 @@ public class StructurePattern {
 			m_index = new int[newSize];
 			locked = new boolean[newSize];
 			tree.resize(newSize);
-			rootFrame.resize(newSize);
 			for (int i = 0; i < buffers.length; i++) {
 				buffers[i] = new int[newSize];
 			}
@@ -3103,7 +3186,7 @@ public class StructurePattern {
 			Arrays.fill(elements, 0, size, null);
 			hits.clear();
 			entry = 0;
-			rootFrame.reset();
+			tree.rootFrame.reset();
 		}
 	}
 
@@ -6283,7 +6366,7 @@ public class StructurePattern {
 
 		private boolean matchForwards(State state, int pos) {
 			final TreeFrame frame = state.frame;
-			assert frame==state.rootFrame : "Reset node can only operate on root frame!";
+			assert frame==state.tree.rootFrame : "Reset node can only operate on root frame!";
 			final int to = frame.to();
 			final int fence = to - minSize + 1;
 
@@ -6403,7 +6486,7 @@ public class StructurePattern {
 
 		private boolean matchForwards(State state, int pos) {
 			final TreeFrame frame = state.frame;
-			assert frame==state.rootFrame : "Reset node can only operate on root frame!";
+			assert frame==state.tree.rootFrame : "Reset node can only operate on root frame!";
 			int from = frame.from();
 			final int to = frame.to();
 			final int fence = to - minSize + 1;
@@ -6754,7 +6837,7 @@ public class StructurePattern {
 			final int minLevel = levelFilter.minLevel;
 			final int maxLevel = levelFilter.maxLevel;
 
-			assert root!=state.rootFrame : "Cannot descend _into_ root frame";
+			assert root!=state.tree.rootFrame : "Cannot descend _into_ root frame";
 
 			/*
 			 * We run a pre-order traversal on the subtree with
@@ -6770,7 +6853,7 @@ public class StructurePattern {
 				ClosureStep step = ctx.current();
 
 				final TreeFrame frame = state.tree.frameAt(step.frameId);
-				assert frame!=state.rootFrame : "Cannot descend _into_ root frame";
+				assert frame!=state.tree.rootFrame : "Cannot descend _into_ root frame";
 
 				// Try remaining nodes in current frame
 				if(step.pos < frame.length - minSize + 1) {

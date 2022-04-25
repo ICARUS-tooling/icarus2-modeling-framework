@@ -90,6 +90,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -125,10 +126,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.StructureFlag;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.engine.QueryProcessor;
 import de.ims.icarus2.query.api.engine.QueryProcessor.Option;
 import de.ims.icarus2.query.api.engine.QueryTestUtils;
+import de.ims.icarus2.query.api.engine.TreeStructure;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArg;
 import de.ims.icarus2.query.api.engine.matcher.IntervalConverter.IntervalArrayArg;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Branch;
@@ -154,6 +159,7 @@ import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeClosure;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeConn;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeFrame;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeInfo;
+import de.ims.icarus2.query.api.engine.matcher.StructurePattern.TreeManager;
 import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.RepetitionUtils.ClosedBase;
 import de.ims.icarus2.query.api.engine.matcher.StructurePatternTest.RepetitionUtils.OpenBase;
 import de.ims.icarus2.query.api.engine.matcher.mark.Interval;
@@ -1124,8 +1130,8 @@ public class StructurePatternTest {
 			checkState("State not set", this.state!=null);
 			requireNonNull(s);
 
-			state.rootFrame.length = s.length();
-			state.rootFrame.to(s.length()-1);
+			state.tree.rootFrame.length = s.length();
+			state.tree.rootFrame.to(s.length()-1);
 			state.elements = IntStream.range(0, s.length())
 					.mapToObj(i -> item(i, s.charAt(i)))
 					.toArray(Item[]::new);
@@ -1916,6 +1922,119 @@ public class StructurePatternTest {
 	@Nested
 	class ForUtilityClasses {
 
+		/**
+		 * Tests for {@link TreeManager}
+		 */
+		@Nested
+		class ForTreeManager {
+
+			private TreeManager tree;
+			private Container host;
+
+			@BeforeEach
+			void setUp() {
+				tree = new TreeManager(10);
+				host = mockContainer();
+			}
+
+			@AfterEach
+			void tearDown() {
+				tree.reset(10);
+				tree = null;
+			}
+
+			private void assertFrame(String msg, TreeFrame frame, int parent, int height, int depth, int desc,
+					int...children) {
+				assertThat(frame.valid).as(msg+" Valid").isTrue();
+				assertThat(frame.parent).as(msg+" Parent").isEqualTo(parent);
+				assertThat(frame.height).as(msg+" Height").isEqualTo(height);
+				assertThat(frame.depth).as(msg+" Depth").isEqualTo(depth);
+				assertThat(frame.descendants).as(msg+" Descendant count").isEqualTo(desc);
+				assertThat(frame.length).as(msg+" Child count").isEqualTo(children.length);
+				if(children.length>0) {
+					assertThat(frame.indices).as(msg+" Children").startsWith(children);
+				}
+			}
+
+			/**
+			 * Test for {@link TreeManager#init(Structure)}
+			 */
+			@Test
+			void testInit() {
+				Structure s = TreeStructure.SINGLETON.apply(host);
+
+				tree.init(s);
+
+				assertThat(tree.rootCount).isEqualTo(1);
+				assertThat(tree.roots[0]).isEqualTo(0);
+			}
+
+			/**
+			 * Tests for {@link TreeManager#r}
+			 */
+			@Nested
+			class ForForceRefreshAllFrames {
+
+				@Test
+				void testBalanced3NodeTree() {
+					Structure s = TreeStructure.TREE_3_BALANCED.apply(host);
+					tree.init(s);
+
+					tree.forceRefreshAllFrames();
+
+					assertFrame("root: ", tree.rootFrame, UNSET_INT, 2, 0, 3, 0);
+					assertFrame("frame_0: ", tree.frames[0], UNSET_INT, 1, 1, 2, 1, 2);
+					assertFrame("frame_1: ", tree.frames[1], 0, 0, 2, 0);
+					assertFrame("frame_2: ", tree.frames[2], 0, 0, 2, 0);
+				}
+
+				@Test
+				void test3NodeChain() {
+					Structure s = TreeStructure.CHAIN_3.apply(host);
+					tree.init(s);
+
+					tree.forceRefreshAllFrames();
+
+					assertFrame("root: ", tree.rootFrame, UNSET_INT, 3, 0, 3, 0);
+					assertFrame("frame_0: ", tree.frames[0], UNSET_INT, 2, 1, 2, 1);
+					assertFrame("frame_1: ", tree.frames[1], 0, 1, 2, 1, 2);
+					assertFrame("frame_2: ", tree.frames[2], 1, 0, 3, 0);
+				}
+			}
+
+			@Nested
+			class ForIsOrderedStructure {
+
+				void testNullManifest() {
+					Structure s = mock(Structure.class);
+					tree.init(s);
+					assertThat(tree.isOrderedStructure()).isFalse();
+				}
+
+				void testUnorderedManifest() {
+					Structure s = mock(Structure.class);
+					when(s.getManifest()).thenReturn(mock(StructureManifest.class));
+					tree.init(s);
+					assertThat(tree.isOrderedStructure()).isFalse();
+				}
+
+				@SuppressWarnings("boxing")
+				void testOrderedManifest() {
+					Structure s = mock(Structure.class);
+					StructureManifest m = mock(StructureManifest.class);
+					when(s.getManifest()).thenReturn(m);
+					when(m.isStructureFlagSet(eq(StructureFlag.ORDERED))).thenReturn(Boolean.TRUE);
+					tree.init(s);
+					assertThat(tree.isOrderedStructure()).isTrue();
+				}
+			}
+
+			//TODO
+		}
+
+		/**
+		 * Tests for {@link TreeFrame}
+		 */
 		@Nested
 		class ForTreeFrame {
 
@@ -1950,6 +2069,9 @@ public class StructurePatternTest {
 			//TODO
 		}
 
+		/**
+		 * Tests for {@link Cache}
+		 */
 		@Nested
 		class ForCache {
 
@@ -1994,6 +2116,9 @@ public class StructurePatternTest {
 			//TODO test reset(int)?
 		}
 
+		/**
+		 * Tests for {@link LevelFilter}
+		 */
 		@Nested
 		class ForLevelFilter {
 			//TODO
