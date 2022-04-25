@@ -53,6 +53,7 @@ import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
+import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
@@ -67,6 +68,11 @@ class StaticStructureTest implements ImmutableStructureTest<StaticStructure> {
 	@Override
 	public Class<? extends StaticStructure> getTestTargetClass() {
 		return StaticStructure.class;
+	}
+
+	@Override
+	public StaticStructure createTestInstance(TestSettings settings) {
+		return settings.process(new StaticStructure(mock(StructureManifest.class)));
 	}
 
 	@Nested
