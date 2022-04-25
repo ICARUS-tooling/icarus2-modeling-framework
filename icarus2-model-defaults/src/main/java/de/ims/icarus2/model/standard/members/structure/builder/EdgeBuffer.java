@@ -276,6 +276,12 @@ public class EdgeBuffer {
 		maxDescendants = 0;
 		maxDepth = 0;
 
+		if(data.isEmpty()) {
+			minIncoming = maxIncoming = UNSET_INT;
+			metadataComputed = true;
+			return;
+		}
+
 		/*
 		 * Reworked 2-path strategy:
 		 *
@@ -295,7 +301,7 @@ public class EdgeBuffer {
 		// Nodes that have been found to be leaf candidates for second path
 		List<Item> leaves = new ArrayList<>();
 
-		// Now do the first path of top-down calculations and detect leaves
+		// Now do the first path of top-down calculations and detect leafs
 		while(!pendingNodes.isEmpty()) {
 			Item node = pendingNodes.poll();
 			NodeInfo info = getInfo(node, false);

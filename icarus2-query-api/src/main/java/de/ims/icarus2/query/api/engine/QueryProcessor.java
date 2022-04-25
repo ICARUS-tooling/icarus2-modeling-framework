@@ -1070,13 +1070,26 @@ public class QueryProcessor {
 
 		private List<IqlQuantifier> processQuantifier(QuantifierContext ctx) {
 			// List of disjunctive quantifier statements
-			return ctx.simpleQuantifier()
+			List<IqlQuantifier> quantifiers = ctx.simpleQuantifier()
 					.stream()
 					.map(this::processSimpleQuantifier)
 					// Ignore redundant quantifiers directly
-					//TODO should we collect all of them first and then emit warnings for redundant ones?
-					.filter(new ObjectOpenCustomHashSet<>(IqlQuantifier.EQUALITY)::add)
 					.collect(Collectors.toList());
+
+			Set<IqlQuantifier> compacted = new ObjectOpenCustomHashSet<>(quantifiers, IqlQuantifier.EQUALITY);
+			if(compacted.size()<quantifiers.size()) {
+				quantifiers.removeAll(compacted);
+				String redundantQuantifiers = String.join(", ", quantifiers.stream()
+						.map(IqlQuantifier::toString)
+						.toArray(String[]::new));
+				reportBuilder.addWarning(QueryErrorCode.SUPERFLUOUS_DECLARATION,
+						"Redundant quantifiers: [{1}]", redundantQuantifiers);
+
+				quantifiers.clear();
+				quantifiers.addAll(compacted);
+			}
+
+			return quantifiers;
 		}
 
 		/** Unwraps arbitrarily nested marker wrapping to the deepest nested one */

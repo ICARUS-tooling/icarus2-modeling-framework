@@ -25,7 +25,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.Closeable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
@@ -49,6 +51,7 @@ import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * Implements a {@link QueryJob} that operates on a single {@link IqlStream}.
@@ -244,7 +247,30 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			assert patterns.length>1;
 
 			cachableBridge = new boolean[patterns.length-1];
-			//TODO fill cachableBridge array depending on used member labels in the patterns
+
+			/*
+			 *  We can cache the mapping towards a pattern if the set of labels
+			 *  used by the target pattern is disjoint to the total accumulated
+			 *  set of labels so far.
+			 */
+			final Set<String> globalLabels = new ObjectOpenHashSet<>();
+			for (int i = 0; i < patterns.length; i++) {
+				StructurePattern pattern = patterns[i];
+				Set<String> usedLabels = pattern.getReferencedMembers();
+
+				if(i>0) {
+					/*
+					 *  Performance info:
+					 *  Collections.disjoint() checks for collection
+					 *  types to determine which collection to iterate and which to use
+					 *  for containment checks. We use globalLabels as first argument here
+					 *  so it gets picked as "contains", meaning less overall iterations.
+					 */
+					cachableBridge[i-1] = Collections.disjoint(globalLabels, usedLabels);
+				}
+
+				globalLabels.addAll(usedLabels);
+			}
 		}
 
 		private static LayerRef getPrimaryLayer(StructurePattern pattern) {
@@ -288,13 +314,14 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 
 				final LongFunction<Item> itemLookup = corpusData.access(layer);
 				final LongFunction<Container> containerLookup = idx -> Container.class.cast(itemLookup.apply(idx));
+				final LaneMapper laneMapper = corpusData.map(layer, nextLayer);
 
 				final LaneBridge bridge;
 				if(cachableBridge[i]) {
 					bridge = LaneBridge.Cached.builder()
 							.accumulator(new MatchAccumulator()) // we just use the default settings
 							.itemLookup(containerLookup)
-							.laneMapper(corpusData.map(layer, nextLayer))
+							.laneMapper(laneMapper)
 							.next(previousMatcher)
 							.pattern(activePattern)
 							.build();
@@ -302,7 +329,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 					bridge = LaneBridge.Uncached.builder()
 							.bufferSize(QueryUtils.BUFFER_STARTSIZE)
 							.itemLookup(containerLookup)
-							.laneMapper(corpusData.map(layer, nextLayer))
+							.laneMapper(laneMapper)
 							.next(previousMatcher)
 							.pattern(activePattern)
 							.build();

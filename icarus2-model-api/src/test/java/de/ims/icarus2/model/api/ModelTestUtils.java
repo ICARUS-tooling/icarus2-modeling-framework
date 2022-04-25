@@ -22,6 +22,7 @@ import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -475,6 +476,29 @@ public class ModelTestUtils {
 		return stubEdges(structure, DEFAULT_MAKE_EDGE);
 	}
 
+	//TODO do we actually want a factory method for live structures here?
+//	@SuppressWarnings({ "boxing", "unchecked" })
+//	public static Structure mockNonVirtualTree(int[][] children, int[] roots, int [] heights, int[] depths, int[] descendants) {
+//		final int size = children.length;
+//		Structure s = mockStructure(size, size);
+//
+//		final int[] heads = new int[size];
+//		Arrays.fill(heads, UNSET_INT);
+//
+//		stubEdges(s, IntStream.range(0, size)
+//				// Collect all parent->child pairs
+//				.mapToObj(parent -> Pair.<Integer,int[]>pair(parent, children[parent]))
+//				.flatMap(p -> IntStream.of(p.second).mapToObj(c -> Pair.pair(p.first.intValue(), c)))
+//				// Ensure we store the head information
+//				.map(p -> {heads[p.second] = p.first; return p; })
+//				.toArray(Pair[]::new));
+//
+//		doReturn(_int(1)).when(s.getIncomingEdgeCount(any()));
+//
+//		doAnswer(invoc -> {
+//
+//		}).when(s.geto);
+//	}
 
 	public static final Item ITEM = mockItem();
 	public static final DataSequence<Item> ITEM_SEQUENCE = mockSequence(1, ITEM);
@@ -732,5 +756,19 @@ public class ModelTestUtils {
 
 	public static Executable alternateIoobAsserter(Executable executable) {
 		return () -> assertAlternateIOOB(executable);
+	}
+
+	public static void assertTreeProperties(Structure s, Item node, int inc, int out,
+			int height, int depth, int descendants) {
+		assertTreeProperties("", s, node, inc, out, height, depth, descendants);
+	}
+
+	public static void assertTreeProperties(String msg, Structure s, Item node, int inc, int out,
+			int height, int depth, int descendants) {
+		assertThat(s.getIncomingEdgeCount(node)).as(msg+"Incoming edges").isEqualTo(inc);
+		assertThat(s.getOutgoingEdgeCount(node)).as(msg+"Outgoing edges").isEqualTo(out);
+		assertThat(s.getHeight(node)).as(msg+"Node height").isEqualTo(height);
+		assertThat(s.getDepth(node)).as(msg+"Node depth").isEqualTo(depth);
+		assertThat(s.getDescendantCount(node)).as(msg+"Descendant count").isEqualTo(descendants);
 	}
 }

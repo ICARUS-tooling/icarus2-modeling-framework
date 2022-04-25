@@ -36,6 +36,10 @@ public class TreeParser<T> {
 		return new TreeParser<>(s -> s.isEmpty() ? null : s, bracketStyle);
 	}
 
+	public static TreeParser<Integer> forIntegerPayload(BracketStyle bracketStyle) {
+		return new TreeParser<>(s -> s.isEmpty() ? _int(0) : Integer.valueOf(s), bracketStyle);
+	}
+
 	public static TreeParser<Integer> withAutomaticNumbering(BracketStyle bracketStyle) {
 		final MutableInteger counter = new MutableInteger(1);
 

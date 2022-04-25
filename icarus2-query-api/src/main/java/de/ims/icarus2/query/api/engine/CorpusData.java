@@ -839,7 +839,13 @@ public abstract class CorpusData implements AutoCloseable {
 
 		@Override
 		public void close() {
-			// TODO clear all lookup structures
+			layers.clear();
+
+			mappers.values().forEach(LaneMapper::close);
+			mappers.clear();
+
+			annotations.clear();
+			boundLayers.clear();
 		}
 
 		/** Special descriptor for item layers. */
