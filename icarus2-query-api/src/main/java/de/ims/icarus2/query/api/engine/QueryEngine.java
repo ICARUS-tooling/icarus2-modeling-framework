@@ -596,6 +596,7 @@ public class QueryEngine {
 			return this;
 		}
 
+		/** Use a {@link ObjectMapper} with default settings, obtained via {@link IqlUtils#createMapper()}. */
 		public Builder useDefaultMapper() { return mapper(IqlUtils.createMapper()); }
 
 		public Builder settings(EngineSettings settings) {
@@ -605,6 +606,7 @@ public class QueryEngine {
 			return this;
 		}
 
+		/** Use a {@link EngineSettings} instance with default values. */
 		public Builder useDefaultSettings() { return settings(new EngineSettings()); }
 
 		public ObjectMapper getMapper() { return mapper; }

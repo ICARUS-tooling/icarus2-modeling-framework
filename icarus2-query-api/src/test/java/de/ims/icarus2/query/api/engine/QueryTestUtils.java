@@ -123,6 +123,8 @@ public class QueryTestUtils {
 		return lane;
 	}
 
+	/** Creates a mocked {@link Item} that returns the given index as positional
+	 * value and the given character as its sole output of {@link Object#toString()}. */
 	public static Item item(int index, char c) {
 		Item item = mockItem();
 		when(_long(item.getIndex())).thenReturn(_long(index));
@@ -130,6 +132,11 @@ public class QueryTestUtils {
 		return item;
 	}
 
+	/**
+	 * Creates a series of {@link Item}s out of a textual representation
+	 * and wraps them into a {@link Container}. Every character in the input
+	 * string is converted to a single {@link Item} using {@link #item(int, char)}.
+	 */
 	public static Container sentence(long index, String sentence) {
 		Item[] items = IntStream.range(0, sentence.length())
 				.mapToObj(j -> item(j, sentence.charAt(j)))
@@ -139,6 +146,7 @@ public class QueryTestUtils {
 		return c;
 	}
 
+	/** Converts a series of strings into a {@link Container} array using {@link #sentence(long, String)}. */
 	public static Container[] sentences(String...sentences) {
 		return IntStream.range(0, sentences.length)
 				.mapToObj(i -> {
