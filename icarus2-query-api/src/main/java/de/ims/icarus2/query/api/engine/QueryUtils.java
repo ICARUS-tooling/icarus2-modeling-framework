@@ -161,23 +161,23 @@ public class QueryUtils {
 		}
 	}
 
-	public static BufferedSingleLaneQueryOutput bufferedOutput(int id, int limit) {
-		return new BufferedSingleLaneQueryOutput(id, limit);
+	public static BufferedQueryOutput bufferedOutput(int id, int limit) {
+		return new BufferedQueryOutput(id, limit);
 	}
 
-	public static BufferedSingleLaneQueryOutput bufferedOutput(int id) {
+	public static BufferedQueryOutput bufferedOutput(int id) {
 		return bufferedOutput(id, UNSET_INT);
 	}
 
 	@ThreadSafe
-	public static class BufferedSingleLaneQueryOutput implements QueryOutput {
+	public static class BufferedQueryOutput implements QueryOutput {
 
 		private final int id;
 		private final int limit;
 		private final List<Match> buffer = new ObjectArrayList<>();
 		private final Object lock = new Object();
 
-		public BufferedSingleLaneQueryOutput(int id, int limit) {
+		public BufferedQueryOutput(int id, int limit) {
 			this.id = id;
 			this.limit = limit;
 		}

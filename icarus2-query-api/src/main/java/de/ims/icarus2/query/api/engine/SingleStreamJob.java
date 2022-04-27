@@ -289,6 +289,8 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			final LaneBridge[] bridges = new LaneBridge[laneCount-1];
 			worker.putClientData(KEY_BRIDGES, bridges);
 			// Final collector that just aggregates individual matches into a single MultiMatch
+			//FIXME we have to hand over the raw array here and disable defensive copying in
+			// the aggregator to allow us lazy populating the array
 			final MatchAggregator aggregator = new MatchAggregator(bridges,
 					output.createTerminalCollector(threadVerifier));
 
@@ -312,7 +314,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 				final LayerRef layer = layers[i] = getPrimaryLayer(activePattern);
 				final LayerRef nextLayer = layers[i+1];
 
-				final LongFunction<Item> itemLookup = corpusData.access(layer);
+				final LongFunction<Item> itemLookup = corpusData.access(nextLayer);
 				final LongFunction<Container> containerLookup = idx -> Container.class.cast(itemLookup.apply(idx));
 				final LaneMapper laneMapper = corpusData.map(layer, nextLayer);
 
@@ -324,6 +326,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 							.laneMapper(laneMapper)
 							.next(previousMatcher)
 							.pattern(activePattern)
+							.threadVerifier(threadVerifier)
 							.build();
 				} else {
 					bridge = LaneBridge.Uncached.builder()
@@ -332,6 +335,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 							.laneMapper(laneMapper)
 							.next(previousMatcher)
 							.pattern(activePattern)
+							.threadVerifier(threadVerifier)
 							.build();
 				}
 

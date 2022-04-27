@@ -54,7 +54,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 	private final LaneMapper laneMapper;
 	private final LongFunction<Container> itemLookup;
 
-	protected LaneBridge(BuilderBase<?> builder) {
+	protected LaneBridge(BuilderBase<?,?> builder) {
 		threadVerifier = builder.threadVerifier();
 		matcher = builder.matcherGen().apply(threadVerifier, this);
 		next = builder.next();
@@ -170,7 +170,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 		@Override
 		public void drainTo(MatchSink sink) { buffer.drainTo(sink); }
 
-		public static class Builder extends BuilderBase<Uncached> {
+		public static class Builder extends BuilderBase<Builder, Uncached> {
 
 			private Integer bufferSize;
 
@@ -243,7 +243,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 		@Override
 		public void drainTo(MatchSink sink) { accumulator.drainTo(sink); }
 
-		public static class Builder extends BuilderBase<Cached> {
+		public static class Builder extends BuilderBase<Builder, Cached> {
 
 			private MatchAccumulator accumulator;
 
@@ -268,7 +268,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 		}
 	}
 
-	public static abstract class BuilderBase<B> extends AbstractBuilder<BuilderBase<B>, B> {
+	public static abstract class BuilderBase<B extends BuilderBase<B,LB>, LB> extends AbstractBuilder<B, LB> {
 
 		private ThreadVerifier threadVerifier;
 		private BiFunction<ThreadVerifier, MatchCollector, Matcher<Container>> matcherGen;
@@ -277,14 +277,14 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 		private LongFunction<Container> itemLookup;
 
 		/** Sets the thread verifier to be used for the bridge (and all associated resources). */
-		public BuilderBase<B> threadVerifier(ThreadVerifier threadVerifier) {
+		public B threadVerifier(ThreadVerifier threadVerifier) {
 			checkState("thread verifier already set", this.threadVerifier==null);
 			this.threadVerifier = requireNonNull(threadVerifier);
 			return thisAsCast();
 		}
 
 		/** Sets the given {@link StructurePattern} as source for matcher creation in this bridge. */
-		public BuilderBase<B> pattern(StructurePattern pattern) {
+		public B pattern(StructurePattern pattern) {
 			checkState("matcher generator already set - cannot apply pattern", this.matcherGen==null);
 			requireNonNull(pattern);
 			this.matcherGen = (threadVerifier, collector)  -> pattern.matcherBuilder()
@@ -296,7 +296,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 		ThreadVerifier threadVerifier() { return threadVerifier; }
 
 		@VisibleForTesting
-		BuilderBase<B> matcherGen(BiFunction<ThreadVerifier, MatchCollector, Matcher<Container>> matcherGen) {
+		B matcherGen(BiFunction<ThreadVerifier, MatchCollector, Matcher<Container>> matcherGen) {
 			checkState("matcher generator already set", this.matcherGen==null);
 			this.matcherGen = requireNonNull(matcherGen);
 			return thisAsCast();
@@ -306,7 +306,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 
 		/** Sets the matcher to be used for containers in the target lane
 		 * after matching in the source lane and mapping of indices. */
-		public BuilderBase<B> next(Matcher<Container> next) {
+		public B next(Matcher<Container> next) {
 			checkState("next matcher already set", this.next==null);
 			this.next = requireNonNull(next);
 			return thisAsCast();
@@ -315,7 +315,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 		Matcher<Container> next() { return next; }
 
 		/** Sets the mapper to be used to translate from source to target lane. */
-		public BuilderBase<B> laneMapper(LaneMapper laneMapper) {
+		public B laneMapper(LaneMapper laneMapper) {
 			checkState("lane mapper already set", this.laneMapper==null);
 			this.laneMapper = requireNonNull(laneMapper);
 			return thisAsCast();
@@ -325,7 +325,7 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 
 		/** Sets the lookup function to be used to turn mapped index values into
 		 * {@link Container} instances of the target lane. */
-		public BuilderBase<B> itemLookup(LongFunction<Container> itemLookup) {
+		public B itemLookup(LongFunction<Container> itemLookup) {
 			checkState("item lookup already set", this.itemLookup==null);
 			this.itemLookup = requireNonNull(itemLookup);
 			return thisAsCast();

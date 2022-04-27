@@ -24,6 +24,9 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.LongFunction;
+import java.util.function.LongUnaryOperator;
+
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
@@ -149,6 +152,26 @@ public abstract class LaneMapper implements AutoCloseable {
 			checkArgument("target mapping is empty", targets.length>0);
 
 			lookup.put(source, targets);
+			return this;
+		}
+
+		public FixedBuilder mapIndividual(long from, long to, LongUnaryOperator mapper) {
+			for(long source = from; source<=to; source++) {
+				checkState("source index already has a mapping: "+source, !lookup.containsKey(source));
+				long target = mapper.applyAsLong(source);
+
+				lookup.put(source, new long[] { target });
+			}
+			return this;
+		}
+
+		public FixedBuilder mapBatch(long from, long to, LongFunction<long[]> mapper) {
+			for(long source = from; source<=to; source++) {
+				checkState("source index already has a mapping: "+source, !lookup.containsKey(source));
+				long[] targets = mapper.apply(source);
+
+				lookup.put(source, targets);
+			}
 			return this;
 		}
 

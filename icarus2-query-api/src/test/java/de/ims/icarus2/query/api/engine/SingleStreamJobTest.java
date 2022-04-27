@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Nested;
@@ -39,11 +40,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.engine.QueryJob.JobController;
-import de.ims.icarus2.query.api.engine.QueryUtils.BufferedSingleLaneQueryOutput;
+import de.ims.icarus2.query.api.engine.QueryUtils.BufferedQueryOutput;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.result.Match;
+import de.ims.icarus2.query.api.engine.result.Match.MatchType;
+import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
 import de.ims.icarus2.query.api.exp.EvaluationContext.RootContext;
@@ -64,92 +68,152 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  */
 class SingleStreamJobTest {
 
-	private static class SingleLaneTest {
+	protected abstract static class SingleStreamTest<T extends SingleStreamTest<T>> {
 
-		private String query;
-//		private final List<Container> sentences = new ObjectArrayList<>();
-		private QueryInput input;
-		private QueryOutput output;
-		private BiConsumer<Thread, Throwable> exceptionHandler;
-		private final List<MatchAsserter> matches = new ObjectArrayList<>();
+			protected String query;
+			protected CorpusData corpus;
+			protected QueryInput input;
+			protected QueryOutput output;
+			protected BiConsumer<Thread, Throwable> exceptionHandler;
 
-		private Consumer<QueryOutput> outputAsserter;
+			protected Consumer<QueryOutput> outputAsserter;
 
-		private Boolean sortMatches;
-		private Boolean promote;
-		private Integer batchSize;
-		private Integer workerLimit;
-		private Integer timeout;
+			protected Boolean sortMatches;
+			protected Boolean promote;
+			protected Integer batchSize;
+			protected Integer workerLimit;
+			protected Integer timeout;
 
-		SingleLaneTest query(String query) {
-			checkState("query already set", this.query==null);
-			this.query = requireNonNull(query);
-			return this;
+			@SuppressWarnings("unchecked")
+			T thisAsCast() { return (T) this; }
+
+			T query(String query) {
+				checkState("query already set", this.query==null);
+				this.query = requireNonNull(query);
+				return thisAsCast();
+			}
+
+			T corpus(CorpusData corpus) {
+				checkState("corpus already set", this.corpus==null);
+				this.corpus = requireNonNull(corpus);
+				return thisAsCast();
+			}
+
+			T input(QueryInput input) {
+				checkState("input already set", this.input==null);
+				this.input = requireNonNull(input);
+				return thisAsCast();
+			}
+
+			T output(QueryOutput output) {
+				checkState("output already set", this.output==null);
+				this.output = requireNonNull(output);
+				return thisAsCast();
+			}
+
+			T sortMatches(boolean sortMatches) {
+				checkState("'sortMatches' flag already set", this.sortMatches==null);
+				this.sortMatches = Boolean.valueOf(sortMatches);
+				return thisAsCast();
+			}
+
+			T promote(boolean promote) {
+				checkState("'promote' flag already set", this.promote==null);
+				this.promote = Boolean.valueOf(promote);
+				return thisAsCast();
+			}
+
+			T batchSize(int batchSize) {
+				checkState("'batchSize' value already set", this.batchSize==null);
+				this.batchSize = Integer.valueOf(batchSize);
+				return thisAsCast();
+			}
+
+			T workerLimit(int workerLimit) {
+				checkState("'workerLimit' value already set", this.workerLimit==null);
+				this.workerLimit = Integer.valueOf(workerLimit);
+				return thisAsCast();
+			}
+
+			T timeout(int timeout) {
+				checkState("'timeout' value already set", this.timeout==null);
+				this.timeout = Integer.valueOf(timeout);
+				return thisAsCast();
+			}
+
+			protected boolean isSet(Boolean b) { return b!=null && b.booleanValue(); }
+
+			protected abstract QueryJob createJob();
+
+			protected void assertOutput(QueryOutput output) {
+				throw new UnsupportedOperationException();
+			}
+
+			void assertProcess()  throws Exception {
+				checkState("missing query", query!=null);
+				checkState("missing corpus", corpus!=null);
+				checkState("missing input", input!=null);
+				checkState("missing output", output!=null);
+				checkState("missing batchSize", batchSize!=null);
+				checkState("missing workerLimit", workerLimit!=null);
+				checkState("missing timeout", timeout!=null);
+
+				QueryJob job = createJob();
+
+				JobController controller = job.execute(workerLimit.intValue());
+				assertThat(controller.getTotal()).as("Expecting %d created worker(s)", workerLimit).isEqualTo(workerLimit.intValue());
+				assertThat(controller.getActive()).as("Expecting no active worker yet").isEqualTo(0);
+
+				controller.start();
+
+				assertThat(controller.awaitFinish(timeout.intValue(), TimeUnit.SECONDS))
+					.as("process timed out").isTrue();
+
+				List<Throwable> exceptions = controller.getExceptions();
+				if(!exceptions.isEmpty()) {
+					exceptions.forEach(p -> p.printStackTrace(System.err));
+
+					throw new AssertionError("Search encountered errors: "+exceptions.toString());
+				}
+
+				if(outputAsserter!=null) {
+					outputAsserter.accept(output);
+				} else  {
+					assertOutput(output);
+				}
+			}
 		}
 
-//		SingleLaneTest sentences(List<Container> sentences) {
-//			this.sentences.addAll(requireNonNull(sentences));
-//			return this;
-//		}
-//
-//		SingleLaneTest sentences(Container...sentences) {
-//			CollectionUtils.feedItems(this.sentences, requireNonNull(sentences));
-//			return this;
-//		}
+	private static class SingleLaneTest extends SingleStreamTest<SingleLaneTest> {
 
-		SingleLaneTest input(QueryInput input) {
-			checkState("input already set", this.input==null);
-			this.input = requireNonNull(input);
-			return this;
-		}
-
-		SingleLaneTest output(QueryOutput output) {
-			checkState("output already set", this.output==null);
-			this.output = requireNonNull(output);
-			return this;
-		}
+		protected final List<MatchAsserter> matches = new ObjectArrayList<>();
 
 		SingleLaneTest matches(MatchAsserter...matches) {
 			CollectionUtils.feedItems(this.matches, requireNonNull(matches));
-			return this;
+			return thisAsCast();
 		}
 
 		SingleLaneTest matches(int count, IntFunction<MatchAsserter> asserterGen) {
 			IntStream.range(0, count).mapToObj(asserterGen).forEach(matches::add);
-			return this;
+			return thisAsCast();
 		}
 
-		SingleLaneTest sortMatches(boolean sortMatches) {
-			checkState("'sortMatches' flag already set", this.sortMatches==null);
-			this.sortMatches = Boolean.valueOf(sortMatches);
-			return this;
-		}
+		@Override
+		protected void assertOutput(QueryOutput output) {
+			assertThat(output).isInstanceOf(BufferedQueryOutput.class);
+			BufferedQueryOutput bo = (BufferedQueryOutput) output;
+			List<Match> ml = bo.getMatches();
+			assertThat(ml).hasSameSizeAs(matches);
 
-		SingleLaneTest promote(boolean promote) {
-			checkState("'promote' flag already set", this.promote==null);
-			this.promote = Boolean.valueOf(promote);
-			return this;
-		}
+			if(isSet(sortMatches)) {
+				ml = new ObjectArrayList<>(ml);
+				ml.sort((m1, m2) -> Long.compare(m1.getIndex(), m2.getIndex()));
+			}
 
-		SingleLaneTest batchSize(int batchSize) {
-			checkState("'batchSize' value already set", this.batchSize==null);
-			this.batchSize = Integer.valueOf(batchSize);
-			return this;
+			for (int i = 0; i < ml.size(); i++) {
+				matches.get(i).assertMatch(ml.get(i), i);
+			}
 		}
-
-		SingleLaneTest workerLimit(int workerLimit) {
-			checkState("'workerLimit' value already set", this.workerLimit==null);
-			this.workerLimit = Integer.valueOf(workerLimit);
-			return this;
-		}
-
-		SingleLaneTest timeout(int timeout) {
-			checkState("'timeout' value already set", this.timeout==null);
-			this.timeout = Integer.valueOf(timeout);
-			return this;
-		}
-
-		private boolean isSet(Boolean b) { return b!=null && b.booleanValue(); }
 
 		private StructurePattern createPattern() {
 
@@ -169,7 +233,7 @@ class SingleStreamJobTest {
 				node.setMappingId(id.getAndIncrement());
 			});
 
-			RootContext rootContext = EvaluationContext.rootBuilder(QueryTestUtils.dummyCorpus())
+			RootContext rootContext = EvaluationContext.rootBuilder(corpus)
 					.addEnvironment(SharedUtilityEnvironments.all())
 					.build();
 			LaneContext context = rootContext.derive()
@@ -194,55 +258,108 @@ class SingleStreamJobTest {
 					.build();
 		}
 
-		void assertProcess()  throws Exception {
-			checkState("missing query", query!=null);
-			checkState("missing input", input!=null);
-			checkState("missing output", output!=null);
-//			checkState("missing sentences", !sentences.isEmpty());
-			checkState("missing batchSize", batchSize!=null);
-			checkState("missing workerLimit", workerLimit!=null);
-			checkState("missing timeout", timeout!=null);
-
-			StructurePattern pattern = createPattern();
-
-			QueryJob job = createJob(pattern);
-
-			JobController controller = job.execute(workerLimit.intValue());
-			assertThat(controller.getTotal()).as("Expecting %d created worker(s)", workerLimit).isEqualTo(workerLimit.intValue());
-			assertThat(controller.getActive()).as("Expecting no active worker yet").isEqualTo(0);
-
-			controller.start();
-
-			assertThat(controller.awaitFinish(timeout.intValue(), TimeUnit.SECONDS)).isTrue();
-
-			List<Throwable> exceptions = controller.getExceptions();
-			if(!exceptions.isEmpty()) {
-				exceptions.forEach(p -> p.printStackTrace(System.err));
-
-				throw new AssertionError("Search encountered errors: "+exceptions.toString());
-			}
-
-			if(outputAsserter!=null) {
-				assertThat(matches).as("Superfluous match listing").isEmpty();
-				outputAsserter.accept(output);
-			} else if(output instanceof BufferedSingleLaneQueryOutput) {
-				BufferedSingleLaneQueryOutput bo = (BufferedSingleLaneQueryOutput) output;
-				List<Match> ml = bo.getMatches();
-				assertThat(ml).hasSameSizeAs(matches);
-
-				if(isSet(sortMatches)) {
-					ml = new ObjectArrayList<>(ml);
-					ml.sort((m1, m2) -> Long.compare(m1.getIndex(), m2.getIndex()));
-				}
-
-				for (int i = 0; i < ml.size(); i++) {
-					matches.get(i).assertMatch(ml.get(i), i);
-				}
-			}
+		@Override
+		protected QueryJob createJob() {
+			return createJob(createPattern());
 		}
 	}
 
-	private static SingleLaneTest singleTest() { return new SingleLaneTest(); }
+	/** Prepare a new {@link SingleLaneTest} with a mocked {@link CorpusData} already set. */
+	private static SingleLaneTest singleTest() {
+		return new SingleLaneTest()
+				.corpus(QueryTestUtils.dummyCorpus());
+	}
+
+	private static class MultiLaneTest extends SingleStreamTest<MultiLaneTest> {
+
+		protected final List<MatchAsserter[]> matches = new ObjectArrayList<>();
+
+		MultiLaneTest matches(MatchAsserter...matches) {
+			this.matches.add(requireNonNull(matches));
+			return thisAsCast();
+		}
+
+		MultiLaneTest matches(int count, IntFunction<MatchAsserter[]> asserterGen) {
+			IntStream.range(0, count).mapToObj(asserterGen).forEach(matches::add);
+			return thisAsCast();
+		}
+		@Override
+		protected void assertOutput(QueryOutput output) {
+			assertThat(output).isInstanceOf(BufferedQueryOutput.class);
+			BufferedQueryOutput bo = (BufferedQueryOutput) output;
+			List<Match> ml = bo.getMatches();
+			assertThat(ml).hasSameSizeAs(matches);
+
+			if(isSet(sortMatches)) {
+				//TODO verify if we should actually enable sorting for multi-match results
+//				ml = new ObjectArrayList<>(ml);
+//				ml.sort((m1, m2) -> Long.compare(m1.getIndex(), m2.getIndex()));
+			}
+
+			for (int i = 0; i < ml.size(); i++) {
+				assertThat(ml.get(i).getType()).as("type mismatch at match %d", _int(i)).isSameAs(MatchType.MULTI);
+				MatchAsserter[] asserters = matches.get(i);
+				MultiMatch m = (MultiMatch) ml.get(i);
+				assertThat(m.getLaneCount()).as("lane count mismatch in result %d",_int(i)).isEqualTo(asserters.length);
+				for (int j = 0; j < asserters.length; j++) {
+					m.moveToLane(j);
+					asserters[j].assertMatch(m, i);
+				}
+			}
+		}
+
+		private List<StructurePattern> createPatterns() {
+
+			String payloadString = query;
+			if(isSet(promote)) {
+				payloadString = QueryTestUtils.expand(payloadString);
+			}
+			IqlPayload payload = new QueryProcessor().processPayload(payloadString);
+			assertThat(payload).as("No payload").isNotNull();
+			assertThat(payload.getQueryType()).isEqualTo(QueryType.MULTI_LANE);
+			List<IqlLane> lanes = payload.getLanes();
+			assertThat(lanes).as("Missing lanes").isNotEmpty();
+
+			RootContext rootContext = EvaluationContext.rootBuilder(corpus)
+					.addEnvironment(SharedUtilityEnvironments.all())
+					.build();
+
+			return IntStream.range(0, lanes.size()).mapToObj(index -> {
+				IqlLane lane = lanes.get(index);
+				MutableInteger id = new MutableInteger(0);
+				EvaluationUtils.visitNodes(lane.getElement(), node -> {
+					assertThat(node.getMappingId()).isEqualTo(UNSET_INT);
+					node.setMappingId(id.getAndIncrement());
+				});
+				LaneContext context = rootContext.derive()
+						.lane(lane)
+						.build();
+				return StructurePattern.builder()
+						.id(index)
+						.role(Role.of(index==0, index==lanes.size()-1))
+						.context(context)
+						.source(lane)
+						.build();
+			}).collect(Collectors.toList());
+		}
+
+		private QueryJob createJob(List<StructurePattern> patterns) {
+			return SingleStreamJob.builder()
+					.addPatterns(patterns)
+					.input(input)
+					.output(output)
+					.query(mock(IqlQuery.class)) // not needed for internal workings anyway
+					.batchSize(batchSize.intValue())
+					.build();
+		}
+
+		@Override
+		protected QueryJob createJob() {
+			return createJob(createPatterns());
+		}
+	}
+
+	private static MultiLaneTest multiTest() { return new MultiLaneTest(); }
 
 	private static class MatchAsserter {
 		private long index = UNSET_LONG;
@@ -269,7 +386,7 @@ class SingleStreamJobTest {
 		}
 	}
 
-	private static MatchAsserter match() { return new MatchAsserter(); }
+	private static MatchAsserter match(long index) { return new MatchAsserter().index(index); }
 
 	@Nested
 	class ForSingleLane {
@@ -290,7 +407,7 @@ class SingleStreamJobTest {
 				.timeout(5)
 				.input(QueryUtils.fixedInput(QueryTestUtils.sentences(sentences)))
 				.output(QueryUtils.bufferedOutput(0))
-				.matches(sentences.length, i -> match().index(i).mapping(0, i))
+				.matches(sentences.length, i -> match(i).mapping(0, i))
 				.assertProcess();
 		}
 
@@ -319,7 +436,7 @@ class SingleStreamJobTest {
 				.input(QueryUtils.fixedInput(QueryTestUtils.sentences(sentences)))
 				.output(QueryUtils.bufferedOutput(0))
 				.sortMatches(true)
-				.matches(sentences.length, i -> match().index(i).mapping(0, i))
+				.matches(sentences.length, i -> match(i).mapping(0, i))
 				.assertProcess();
 		}
 	}
@@ -327,5 +444,44 @@ class SingleStreamJobTest {
 	@Nested
 	class ForMultipleLanes {
 
+		@Test
+		public void testSingleWorker() throws Exception {
+			Container[] sentences1 = QueryTestUtils.sentences(
+					"X----",
+					"-X---",
+					"--X--"
+			);
+
+			Container[] sentences2 = QueryTestUtils.sentences(
+					"----Y",
+					"---Y-",
+					"--Y--"
+			);
+
+			LaneMapper mapper = LaneMapper.fixedBuilder()
+					.mapIndividual(0, sentences1.length-1, i -> i)
+					.build();
+
+			CorpusData corpus = CorpusData.Virtual.builder()
+					.layer("sent1").elements(sentences1).sources("token").commit()
+					.layer("sent2").elements(sentences2).sources("token").commit()
+					.mapper("sent1", "sent2", mapper)
+					.build();
+
+			multiTest()
+				.query("LANE sent1 [$X] AND LANE sent2 [$Y]")
+				.corpus(corpus)
+				.promote(true)
+				.batchSize(2)
+				.workerLimit(1)
+				.timeout(5)
+				.input(QueryUtils.fixedInput(sentences1))
+				.output(QueryUtils.bufferedOutput(0))
+				.matches(3, index -> new MatchAsserter[] {
+						match(index).mapping(0, index),
+						match(index).mapping(0, 4-index),
+				})
+				.assertProcess();
+		}
 	}
 }

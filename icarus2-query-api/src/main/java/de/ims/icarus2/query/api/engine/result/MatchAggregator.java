@@ -42,7 +42,8 @@ public class MatchAggregator implements MatchCollector {
 	private final MultiMatchBuilder matchBuilder = new MultiMatchBuilder();
 
 	public MatchAggregator(MatchSource[] sources, MatchCollector sink) {
-		this.sources = sources.clone();
+		//FIXME we used to do defensive copying here, but that actually ruins the approach taken in de.ims.icarus2.query.api.engine.SingleStreamJob
+		this.sources = sources;
 		this.sink = requireNonNull(sink);
 	}
 
