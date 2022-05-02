@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
@@ -32,12 +33,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.ims.icarus2.model.api.members.container.Container;
@@ -57,6 +64,7 @@ import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlQuery;
+import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -141,12 +149,17 @@ class SingleStreamJobTest {
 				return thisAsCast();
 			}
 
+			T config(Consumer<T> config) {
+				config.accept(thisAsCast());
+				return thisAsCast();
+			}
+
 			protected boolean isSet(Boolean b) { return b!=null && b.booleanValue(); }
 
 			protected abstract QueryJob createJob();
 
 			protected void assertOutput(QueryOutput output) {
-				throw new UnsupportedOperationException();
+				throw new UnsupportedOperationException("no dedicated output assertion provided by subclass");
 			}
 
 			void assertProcess()  throws Exception {
@@ -279,6 +292,13 @@ class SingleStreamJobTest {
 			return thisAsCast();
 		}
 
+		MultiLaneTest matches(MatchAsserter[][] matches) {
+			for (MatchAsserter[] matchAsserters : matches) {
+				this.matches.add(matchAsserters);
+			}
+			return thisAsCast();
+		}
+
 		MultiLaneTest matches(int count, IntFunction<MatchAsserter[]> asserterGen) {
 			IntStream.range(0, count).mapToObj(asserterGen).forEach(matches::add);
 			return thisAsCast();
@@ -288,7 +308,7 @@ class SingleStreamJobTest {
 			assertThat(output).isInstanceOf(BufferedQueryOutput.class);
 			BufferedQueryOutput bo = (BufferedQueryOutput) output;
 			List<Match> ml = bo.getMatches();
-			assertThat(ml).hasSameSizeAs(matches);
+			assertThat(ml).as("result count mismatch").hasSameSizeAs(matches);
 
 			if(isSet(sortMatches)) {
 				//TODO verify if we should actually enable sorting for multi-match results
@@ -405,7 +425,7 @@ class SingleStreamJobTest {
 				.batchSize(2)
 				.workerLimit(1)
 				.timeout(5)
-				.input(QueryUtils.fixedInput(QueryTestUtils.sentences(sentences)))
+				.input(QueryUtils.fixedInput(_containers(sentences)))
 				.output(QueryUtils.bufferedOutput(0))
 				.matches(sentences.length, i -> match(i).mapping(0, i))
 				.assertProcess();
@@ -433,7 +453,7 @@ class SingleStreamJobTest {
 				.batchSize(2)
 				.workerLimit(workerLimit)
 				.timeout(10)
-				.input(QueryUtils.fixedInput(QueryTestUtils.sentences(sentences)))
+				.input(QueryUtils.fixedInput(_containers(sentences)))
 				.output(QueryUtils.bufferedOutput(0))
 				.sortMatches(true)
 				.matches(sentences.length, i -> match(i).mapping(0, i))
@@ -441,47 +461,281 @@ class SingleStreamJobTest {
 		}
 	}
 
+	private static Container[] _containers(String...sentences) {
+		return QueryTestUtils.sentences(sentences);
+	}
+
+	/** Fixed lane mapper implementation erases all data on {@link LaneMapper#close()},
+	 * so we need to instantiate a fresh mapper for every test run! */
+	private static Supplier<LaneMapper> _mapdIdent(int size) {
+		return () -> LaneMapper.fixedBuilder()
+				.mapIndividual(0, size-1, i -> i)
+				.build();
+	}
+
+	private static final class Data5 {
+
+		/**X matches at indices 0, 1, 2 */
+		private final static String[] SINGLE_X_012 = {"X----", "-X---", "--X--"};
+		/**X matches at indices 1 */
+		private final static String[] SINGLE_X_1 = {"A----", "-X---", "--A--"};
+		/**X matches at indices 0, 2 */
+		private final static String[] SINGLE_X_02 = {"X----", "-A---", "--X--"};
+		/**Y matches at indices 4, 3, 2 */
+		private final static String[] SINGLE_Y_432 = {"----Y", "---Y-", "--Y--"};
+		/**Y matches at indices 3 */
+		private final static String[] SINGLE_Y_3 = {"----B", "---Y-", "--B--"};
+		/**Y matches at indices 4, 2 */
+		private final static String[] SINGLE_Y_42 = {"----Y", "---B-", "--Y--"};
+
+		/** Maps indices 0 to 4 via identity */
+		private final static Supplier<LaneMapper> MAPPER_3_IDENT = _mapdIdent(3);
+		/** Maps indices [0..4] to [4..0] */
+		private final static Supplier<LaneMapper> MAPPER_3_CROSS = () -> {
+			return LaneMapper.fixedBuilder()
+					.mapIndividual(0, 2, i -> 2-i)
+					.build();
+		};
+
+	}
+
+	private static final class Data6 {
+
+		/**X matches at indices [0,1] [2,3] [4,5] */
+		private final static String[] DOUBLE_XXX_DISTINCT = {"XX----", "--XX--", "----XX"};
+
+		/**X matches at indices 1, 2, and 5 */
+		private final static String[] SINGLE_Y_125 = {"-Y----", "--Y---", "-----Y"};
+
+		/** Maps indices [0,1] to 0 and 2 to 2 */
+		private final static Supplier<LaneMapper> MAPPER_3_NON_OVERLAP = () -> {
+			return LaneMapper.fixedBuilder()
+					.map(0, 0)
+					.map(1, 0)
+					.map(2, 2)
+					.build();
+		};
+
+	}
+
 	@Nested
 	class ForMultipleLanes {
 
-		@Test
-		public void testSingleWorker() throws Exception {
-			Container[] sentences1 = QueryTestUtils.sentences(
-					"X----",
-					"-X---",
-					"--X--"
-			);
+		/** Provides expected matchings as pairs of pairs, with each inner pair holding the
+		 * sentence index as first value and token index as second. */
+		@SuppressWarnings("boxing")
+		private Consumer<MultiLaneTest> matches(@SuppressWarnings("unchecked") Pair<Integer, Integer>...matches) {
+			assertThat(matches.length % 2).as("match count must be multiple of 2: %d", _int(matches.length)).isEqualTo(0);
+			return test -> {
+			test.matches(matches.length/2, index -> {
+					Pair<Integer, Integer> m1 = matches[index*2];
+					Pair<Integer, Integer> m2 = matches[index*2 + 1];
+					return new MatchAsserter[] {
+						match(m1.first).mapping(0, m1.second),
+						match(m2.first).mapping(0, m2.second),
+					};
+				});
+			};
+		}
 
-			Container[] sentences2 = QueryTestUtils.sentences(
-					"----Y",
-					"---Y-",
-					"--Y--"
-			);
+		@Nested
+		@TestInstance(Lifecycle.PER_CLASS)
+		class For1to1Mapping {
 
-			LaneMapper mapper = LaneMapper.fixedBuilder()
-					.mapIndividual(0, sentences1.length-1, i -> i)
-					.build();
+			/** label, query, sent1, sent2, mapper, matches */
+			@SuppressWarnings("unchecked")
+			Stream<Arguments> args() {
 
-			CorpusData corpus = CorpusData.Virtual.builder()
-					.layer("sent1").elements(sentences1).sources("token").commit()
-					.layer("sent2").elements(sentences2).sources("token").commit()
-					.mapper("sent1", "sent2", mapper)
-					.build();
+				final List<Arguments> args = new ObjectArrayList<>();
 
-			multiTest()
-				.query("LANE sent1 [$X] AND LANE sent2 [$Y]")
-				.corpus(corpus)
-				.promote(true)
-				.batchSize(2)
-				.workerLimit(1)
-				.timeout(5)
-				.input(QueryUtils.fixedInput(sentences1))
-				.output(QueryUtils.bufferedOutput(0))
-				.matches(3, index -> new MatchAsserter[] {
-						match(index).mapping(0, index),
-						match(index).mapping(0, 4-index),
-				})
-				.assertProcess();
+				args.add(Arguments.of(
+						"no hits on 2nd lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_012,
+						Data5.SINGLE_X_012,
+						Data5.MAPPER_3_IDENT,
+						TestUtils.DO_NOTHING()
+				));
+
+				args.add(Arguments.of(
+						"no hits on 1st lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_Y_432,
+						Data5.SINGLE_Y_432,
+						Data5.MAPPER_3_IDENT,
+						TestUtils.DO_NOTHING()
+				));
+
+				args.add(Arguments.of(
+						"3 hits, identity mapping",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_012,
+						Data5.SINGLE_Y_432,
+						Data5.MAPPER_3_IDENT,
+						matches(pair(0, 0), pair(0, 4),
+								pair(1, 1), pair(1, 3),
+								pair(2, 2), pair(2, 2))
+				));
+
+				args.add(Arguments.of(
+						"2 distinct hits, filter on 2nd lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_012,
+						Data5.SINGLE_Y_42,
+						Data5.MAPPER_3_IDENT,
+						matches(pair(0, 0), pair(0, 4),
+								pair(2, 2), pair(2, 2))
+				));
+
+				args.add(Arguments.of(
+						"single hit, filter on 2nd lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_012,
+						Data5.SINGLE_Y_3,
+						Data5.MAPPER_3_IDENT,
+						matches(pair(1, 1), pair(1, 3))
+				));
+
+				args.add(Arguments.of(
+						"3 hits, cross mapping",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_012,
+						Data5.SINGLE_Y_432,
+						Data5.MAPPER_3_CROSS,
+						matches(pair(0, 0), pair(2, 2),
+								pair(1, 1), pair(1, 3),
+								pair(2, 2), pair(0, 4))
+				));
+
+				args.add(Arguments.of(
+						"2 distinct hits, filter on 1st lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_02,
+						Data5.SINGLE_Y_432,
+						Data5.MAPPER_3_IDENT,
+						matches(pair(0, 0), pair(0, 4),
+								pair(2, 2), pair(2, 2))
+				));
+
+				args.add(Arguments.of(
+						"single hit, filter on 1st lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data5.SINGLE_X_1,
+						Data5.SINGLE_Y_432,
+						Data5.MAPPER_3_IDENT,
+						matches(pair(1, 1), pair(1, 3))
+				));
+
+				return args.stream();
+			}
+
+			/** @see #singleWorkerArgs() */
+			@ParameterizedTest(name = "{index}: {0}")
+			@MethodSource("args")
+			public void test(String label, String query, String[] sent1, String[] sent2,
+					Supplier<LaneMapper> mapper,
+					Consumer<MultiLaneTest> config) throws Exception {
+
+				Container[] sentences1 = _containers(sent1);
+				Container[] sentences2 = _containers(sent2);
+
+				CorpusData corpus = CorpusData.Virtual.builder()
+						.layer("sent1").elements(sentences1).sources("token").commit()
+						.layer("sent2").elements(sentences2).sources("token").commit()
+						.mapper("sent1", "sent2", mapper.get())
+						.build();
+
+				multiTest()
+					.query(query)
+					.corpus(corpus)
+					.promote(true)
+					.batchSize(2)
+					.workerLimit(1)
+					.timeout(5)
+					.input(QueryUtils.fixedInput(sentences1))
+					.output(QueryUtils.bufferedOutput(0))
+					.config(config)
+					.assertProcess();
+			}
+
+		}
+
+		@Nested
+		@TestInstance(Lifecycle.PER_CLASS)
+		class ForNto1Mapping {
+
+			/** label, query, sent1, sent2, mapper, matches */
+			@SuppressWarnings("unchecked")
+			Stream<Arguments> args() {
+
+				final List<Arguments> args = new ObjectArrayList<>();
+
+				args.add(Arguments.of(
+						"no hits on 2nd lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data6.DOUBLE_XXX_DISTINCT,
+						Data6.DOUBLE_XXX_DISTINCT,
+						Data6.MAPPER_3_NON_OVERLAP,
+						TestUtils.DO_NOTHING()
+				));
+
+				args.add(Arguments.of(
+						"no hits on 1st lane",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data6.SINGLE_Y_125,
+						Data6.SINGLE_Y_125,
+						Data6.MAPPER_3_NON_OVERLAP,
+						TestUtils.DO_NOTHING()
+				));
+
+				args.add(Arguments.of(
+						"6 hits",
+						"LANE sent1 [$X] AND LANE sent2 [$Y]",
+						Data6.DOUBLE_XXX_DISTINCT,
+						Data6.SINGLE_Y_125,
+						Data6.MAPPER_3_NON_OVERLAP,
+						matches(pair(0, 0), pair(0, 1),
+								pair(0, 1), pair(0, 1),
+								pair(1, 2), pair(0, 1),
+								pair(1, 3), pair(0, 1),
+								pair(2, 4), pair(2, 5),
+								pair(2, 5), pair(2, 5))
+				));
+
+				//TODO reverse map and fails?
+
+				return args.stream();
+			}
+
+			/** @see #singleWorkerArgs() */
+			@ParameterizedTest(name = "{index}: {0}")
+			@MethodSource("args")
+			public void test(String label, String query, String[] sent1, String[] sent2,
+					Supplier<LaneMapper> mapper,
+					Consumer<MultiLaneTest> config) throws Exception {
+
+				Container[] sentences1 = _containers(sent1);
+				Container[] sentences2 = _containers(sent2);
+
+				CorpusData corpus = CorpusData.Virtual.builder()
+						.layer("sent1").elements(sentences1).sources("token").commit()
+						.layer("sent2").elements(sentences2).sources("token").commit()
+						.mapper("sent1", "sent2", mapper.get())
+						.build();
+
+				multiTest()
+					.query(query)
+					.corpus(corpus)
+					.promote(true)
+					.batchSize(2)
+					.workerLimit(1)
+					.timeout(5)
+					.input(QueryUtils.fixedInput(sentences1))
+					.output(QueryUtils.bufferedOutput(0))
+					.config(config)
+					.assertProcess();
+			}
+
 		}
 	}
 }
