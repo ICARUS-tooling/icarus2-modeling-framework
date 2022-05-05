@@ -180,7 +180,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		ContextManifest contextManifest = driver.getManifest().getContextManifest()
 				.orElseThrow(ManifestException.noHost(driver.getManifest()));
 
-		//TODO fetch and process TableSchema from driver settings
+		//TODO fetch and process TableSchema from driver settings [redundant to constructor?]
 
 		/*
 		 * Initialize our character buffer with sufficient capacity to hold a single block.
