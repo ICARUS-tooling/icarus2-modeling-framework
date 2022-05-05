@@ -174,7 +174,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 
 	protected void addLocationManifest0(LocationManifest manifest) {
 		requireNonNull(manifest);
-//		checkNotTemplate();
+		checkNotTemplate();
 
 		if(locationManifests.contains(manifest))
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Location already present: "+manifest); //$NON-NLS-1$
@@ -193,7 +193,7 @@ public class ContextManifestImpl extends AbstractMemberManifest<ContextManifest,
 
 	protected void removeLocationManifest0(LocationManifest manifest) {
 		requireNonNull(manifest);
-//		checkNotTemplate();
+		checkNotTemplate();
 
 		if(!locationManifests.remove(manifest))
 			throw new ManifestException(GlobalErrorCode.INVALID_INPUT, "Location unknown: "+manifest); //$NON-NLS-1$
