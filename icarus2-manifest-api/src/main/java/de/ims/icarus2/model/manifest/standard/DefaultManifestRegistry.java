@@ -40,7 +40,7 @@ import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.util.Counter;
+import de.ims.icarus2.util.RefCounter;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
 import de.ims.icarus2.util.events.SimpleEventListener;
@@ -143,7 +143,11 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		requireNonNull(name);
 
 		synchronized (lock) {
-			return Optional.ofNullable(layerTypes.get(name));
+			LayerType type = layerTypes.get(name);
+			if(type!=null) {
+				return Optional.of(type);
+			}
+			return DefaultLayerType.forId(name);
 		}
 	}
 
@@ -452,14 +456,12 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 
 	@Override
 	public LayerType getOverlayLayerType() {
-		return getLayerType(DefaultLayerTypeIds.ITEM_LAYER_OVERLAY)
-				.orElseThrow(ManifestException.error(GlobalErrorCode.ILLEGAL_STATE,
-						"No shared overlay layer type registered"));
+		return DefaultLayerType.ITEM_LAYER_OVERLAY;
 	}
 
 	public static class TemplateManifestLock {
 
-		private final Counter<Manifest> manifestRefCounter = new Counter<>();
+		private final RefCounter<Manifest> manifestRefCounter = new RefCounter<>();
 
 		private static final int UNLOCK = -1;
 		private static final int LOCK = +1;
