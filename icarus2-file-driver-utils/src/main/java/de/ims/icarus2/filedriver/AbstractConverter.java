@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,8 +200,10 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 
 		DelegatingCursor<?> cursor = createDelegatingCursor(fileIndex, layer);
 
-		// Open now so we have the I/O initialization work out of the way
-		cursor.open();
+		if(cursor!=null) {
+			// Open now so we have the I/O initialization work out of the way
+			cursor.open();
+		}
 
 		return cursor;
 	}
@@ -211,6 +215,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * @param layer
 	 * @return
 	 */
+	@Nullable
 	protected abstract DelegatingCursor<?> createDelegatingCursor(int fileIndex, ItemLayer layer);
 
 	/**
