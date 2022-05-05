@@ -50,10 +50,9 @@ public class LazyLayerType implements LayerType {
 		this.id = Optional.of(id);
 	}
 
-	public LazyLayerType(ManifestRegistry registry, Category category, String layerId) {
+	public LazyLayerType(ManifestRegistry registry, Category category, @Nullable String layerId) {
 		requireNonNull(registry);
 		requireNonNull(category);
-		requireNonNull(layerId);
 
 		if(!category.getId().isPresent())
 			throw new IllegalArgumentException("Missing 'id' calue from identity"); //$NON-NLS-1$
@@ -65,7 +64,7 @@ public class LazyLayerType implements LayerType {
 		name = category.getName();
 		description = category.getDescription();
 
-		this.layerId = Optional.of(layerId);
+		this.layerId = Optional.ofNullable(layerId);
 	}
 
 	/**
