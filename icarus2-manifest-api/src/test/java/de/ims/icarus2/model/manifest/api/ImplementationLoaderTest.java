@@ -27,6 +27,8 @@ import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -101,7 +103,7 @@ public interface ImplementationLoaderTest extends GenericTest<ImplementationLoad
 		ImplementationLoader<?> instance = createForLoading(settings(), classToLoad, source, classname);
 
 		instance.manifest(manifest);
-		instance.environment(host);
+		instance.environment(MemberManifest.class, host);
 
 		if(constructorSig!=null) {
 			instance.signature(constructorSig);
@@ -375,11 +377,26 @@ public interface ImplementationLoaderTest extends GenericTest<ImplementationLoad
 	 */
 	@Test
 	default void testEnvironment() {
-		assertRestrictedSetter(create(),
-				ImplementationLoader::environment,
-				mock(Object.class),
-				mock(Object.class),
-				NPE_CHECK, ILLEGAL_STATE_CHECK);
+		ImplementationLoader<?> loader = create();
+		final Object value = mock(Object.class);
+
+		loader.environment(Object.class, value);
+
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
+				() -> loader.environment(Object.class, mock(Object.class)));
+
+		assertThatExceptionOfType(NullPointerException.class).isThrownBy(
+				() -> loader.environment(Object.class, null));
+
+		assertThatExceptionOfType(NullPointerException.class).isThrownBy(
+				() -> loader.environment(null, mock(Object.class)));
+
+
+		loader.environment(String.class, "test");
+
+		assertThat(loader.getEnvironment(String.class)).isEqualTo("test");
+		assertThat(loader.getEnvironment(Object.class)).isEqualTo(value);
+		assertThat(loader.getEnvironment(Dummy.class)).isNull();
 	}
 
 	/**
@@ -404,18 +421,6 @@ public interface ImplementationLoaderTest extends GenericTest<ImplementationLoad
 				new Class[] {String.class, Object.class, Integer.class},
 				new Class[] {Class.class},
 				NPE_CHECK, ILLEGAL_STATE_CHECK);
-	}
-
-	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.ImplementationLoader#getEnvironment()}.
-	 */
-	@Test
-	default void testGetEnvironment() {
-		assertGetter(create(),
-				mock(Object.class), NO_VALUE(),
-				NO_DEFAULT(),
-				ImplementationLoader::getEnvironment,
-				ImplementationLoader::environment);
 	}
 
 	/**

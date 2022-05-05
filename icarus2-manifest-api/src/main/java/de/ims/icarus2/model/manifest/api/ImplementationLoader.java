@@ -17,12 +17,19 @@
 package de.ims.icarus2.model.manifest.api;
 
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.strings.StringUtil.getName;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.reflect.Constructor;
+import java.util.Iterator;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 
 import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.util.Options;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 
 /**
  * Utility class for loading actual implementations for individual
@@ -31,11 +38,12 @@ import de.ims.icarus2.util.Options;
  * @author Markus Gärtner
  *
  */
+@NotThreadSafe
 public abstract class ImplementationLoader<L extends ImplementationLoader<L>> extends Options {
 
 	private static final long serialVersionUID = -5553129801313520868L;
 
-	protected transient Object environment;
+	protected transient Map<Class<?>, Object> environment;
 	protected transient String message;
 	@SuppressWarnings("rawtypes")
 	protected transient Class[] signature;
@@ -98,11 +106,17 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 	 * the instantiation.
 	 * @return
 	 */
-	public L environment(Object environment) {
+	public <T> L environment(Class<T> clazz, T environment) {
+		requireNonNull(clazz);
 		requireNonNull(environment);
-		checkState(this.environment==null);
 
-		this.environment = environment;
+		if(this.environment==null) {
+			this.environment = new Object2ObjectArrayMap<>();
+		}
+
+		checkState("environment already set for type "+clazz, !this.environment.containsKey(clazz));
+
+		this.environment.put(clazz, environment);
 
 		return thisAsCast();
 	}
@@ -131,8 +145,12 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 		return thisAsCast();
 	}
 
-	public Object getEnvironment() {
-		return environment;
+	public <T> @Nullable T getEnvironment(Class<T> clazz) {
+		requireNonNull(clazz);
+		if(environment==null) {
+			return null;
+		}
+		return clazz.cast(environment.get(clazz));
 	}
 
 	public String getMessage() {
@@ -146,5 +164,23 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 
 	public ImplementationManifest getManifest() {
 		return manifest;
+	}
+
+	protected String getEnvironmentDescription() {
+		if(environment==null) {
+			return "[]";
+		}
+
+		StringBuilder sb = new StringBuilder();
+		for(Iterator<Map.Entry<Class<?>, Object>> it = environment.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<Class<?>, Object> e = it.next();
+			sb.append(e.getKey().getName()).append('=').append(getName(e.getValue()));
+			if(it.hasNext()) {
+				sb.append(", ");
+			}
+		}
+		sb.append(']');
+
+		return sb.toString();
 	}
 }

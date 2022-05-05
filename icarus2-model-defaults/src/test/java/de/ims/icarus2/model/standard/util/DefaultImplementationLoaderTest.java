@@ -184,7 +184,7 @@ class DefaultImplementationLoaderTest implements ImplementationLoaderTest {
 
 		// Assert that loader derived corpus from environment
 		Corpus corpus1 = mock(Corpus.class);
-		instance.environment(corpus1);
+		instance.environment(Corpus.class, corpus1);
 		assertSame(corpus1, instance.getCorpus());
 
 		// Assert that explicitly set corpus overrides environment

@@ -64,10 +64,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 		Corpus corpus =  this.corpus;
 
 		if(corpus==null) {
-			Object environment = getEnvironment();
-			if(environment instanceof Corpus) {
-				corpus = (Corpus) environment;
-			}
+			corpus = getEnvironment(Corpus.class);
 		}
 
 		return corpus;
@@ -128,10 +125,10 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			instance = clazz.newInstance();
 		} catch (InstantiationException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_ERROR,
-					message+"Unable to instantiate custom implementation: "+getName(getEnvironment()), e);
+					message+"Unable to instantiate custom implementation: "+getEnvironmentDescription(), e);
 		} catch (IllegalAccessException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
-					message+"Cannot access custom implementation: "+getName(getEnvironment()), e);
+					message+"Cannot access custom implementation: "+getEnvironmentDescription(), e);
 		}
 
 		if(isFactory) {
@@ -141,7 +138,7 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 				instance = factory.create(resultClass, manifest, this);
 			} catch (Exception e) { // Usually it's bad to catch all exceptions, but we gonna wrap it anyway
 				throw new ModelException(ManifestErrorCode.IMPLEMENTATION_FACTORY,
-						message+"Delegated instatiation via factory failed: "+getName(getEnvironment()), e);
+						message+"Delegated instatiation via factory failed: "+getEnvironmentDescription(), e);
 			}
 		}
 
@@ -177,10 +174,10 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			constructor = clazz.getConstructor(signature);
 		} catch (NoSuchMethodException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_FOUND,
-					message+"Missing custom constructor: "+getName(getEnvironment()), e);
+					message+"Missing custom constructor: "+getEnvironmentDescription(), e);
 		} catch (SecurityException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
-					message+"Cannot access custom constructor: "+getName(getEnvironment()), e);
+					message+"Cannot access custom constructor: "+getEnvironmentDescription(), e);
 		}
 
 		Object instance = null;
@@ -189,13 +186,13 @@ public class DefaultImplementationLoader extends ImplementationLoader<DefaultImp
 			instance = constructor.newInstance(params);
 		} catch (InstantiationException | InvocationTargetException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_ERROR,
-					message+"Unable to instantiate custom implementation: "+getName(getEnvironment()), e);
+					message+"Unable to instantiate custom implementation: "+getEnvironmentDescription(), e);
 		} catch (IllegalAccessException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_NOT_ACCESSIBLE,
-					message+"Cannot access custom implementation: "+getName(getEnvironment()), e);
+					message+"Cannot access custom implementation: "+getEnvironmentDescription(), e);
 		} catch (IllegalArgumentException e) {
 			throw new ModelException(getCorpus(), ManifestErrorCode.IMPLEMENTATION_ERROR,
-					message+"Provided arguments are illegal for custom constructor: "+getName(getEnvironment()), e);
+					message+"Provided arguments are illegal for custom constructor: "+getEnvironmentDescription(), e);
 		}
 
 		return ensureCompatibility(instance, resultClass);
