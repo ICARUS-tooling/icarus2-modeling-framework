@@ -44,16 +44,16 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	/** Placeholder for the addItem() method to reserve storage */
 	private static final Object DUMMY = new Object();
 
-	public SingleKeyObjectStorage() {
-		this(-1);
+	public SingleKeyObjectStorage(String annotationKey) {
+		this(annotationKey, -1);
 	}
 
-	public SingleKeyObjectStorage(int initialCapacity) {
-		this(false, initialCapacity);
+	public SingleKeyObjectStorage(String annotationKey, int initialCapacity) {
+		this(annotationKey, false, initialCapacity);
 	}
 
-	public SingleKeyObjectStorage(boolean weakKeys, int initialCapacity) {
-		super(weakKeys, initialCapacity);
+	public SingleKeyObjectStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
+		super(annotationKey, weakKeys, initialCapacity);
 	}
 
 	protected Map<Item, Object> buildBuffer(AnnotationLayer layer) {
@@ -71,7 +71,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		String key = requireDefaultKey(manifest);
+		String key = getAnnotationKey();
 		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
 		noEntryValue = annotationManifest.getNoEntryValue().orElse(null);

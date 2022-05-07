@@ -50,16 +50,16 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 
 	public static final float DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_FLOAT;
 
-	public SingleKeyFloatStorage() {
-		this(-1);
+	public SingleKeyFloatStorage(String annotationKey) {
+		this(annotationKey, -1);
 	}
 
-	public SingleKeyFloatStorage(int initialCapacity) {
-		this(false, initialCapacity);
+	public SingleKeyFloatStorage(String annotationKey, int initialCapacity) {
+		this(annotationKey, false, initialCapacity);
 	}
 
-	public SingleKeyFloatStorage(boolean weakKeys, int initialCapacity) {
-		super(weakKeys, initialCapacity);
+	public SingleKeyFloatStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
+		super(annotationKey, weakKeys, initialCapacity);
 	}
 
 	protected Object2FloatMap<Item> buildBuffer(AnnotationLayer layer) {
@@ -79,7 +79,7 @@ public class SingleKeyFloatStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		String key = requireDefaultKey(manifest);
+		String key = getAnnotationKey();
 		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
 		noEntryValue = annotationManifest.getNoEntryValue()

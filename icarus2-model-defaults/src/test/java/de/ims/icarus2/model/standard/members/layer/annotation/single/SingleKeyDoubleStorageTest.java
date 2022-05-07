@@ -51,7 +51,7 @@ class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleK
 		 */
 		@Test
 		void testSingleKeyDoubleStorage() {
-			assertNotNull(new SingleKeyDoubleStorage());
+			assertNotNull(new SingleKeyDoubleStorage(key()));
 		}
 
 		/**
@@ -60,7 +60,7 @@ class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyDoubleStorageInt(int capacity) {
-			assertNotNull(new SingleKeyDoubleStorage(capacity));
+			assertNotNull(new SingleKeyDoubleStorage(key(), capacity));
 		}
 
 		/**
@@ -70,7 +70,7 @@ class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyDoubleStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyDoubleStorage(capacity));
+					() -> new SingleKeyDoubleStorage(key(), capacity));
 		}
 
 		/**
@@ -79,8 +79,8 @@ class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyDoubleStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyDoubleStorage(true, capacity));
-			assertNotNull(new SingleKeyDoubleStorage(false, capacity));
+			assertNotNull(new SingleKeyDoubleStorage(key(), true, capacity));
+			assertNotNull(new SingleKeyDoubleStorage(key(), false, capacity));
 		}
 
 		/**
@@ -90,9 +90,9 @@ class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyDoubleStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyDoubleStorage(true, capacity));
+					() -> new SingleKeyDoubleStorage(key(), true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyDoubleStorage(false, capacity));
+					() -> new SingleKeyDoubleStorage(key(), false, capacity));
 		}
 
 	}
@@ -134,7 +134,7 @@ class SingleKeyDoubleStorageTest implements ManagedAnnotationStorageTest<SingleK
 	 */
 	@Override
 	public SingleKeyDoubleStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyDoubleStorage();
+		return new SingleKeyDoubleStorage(key());
 	}
 
 	/**

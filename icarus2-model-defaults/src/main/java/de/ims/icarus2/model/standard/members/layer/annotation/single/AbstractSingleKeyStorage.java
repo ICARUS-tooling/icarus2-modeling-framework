@@ -16,14 +16,13 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Consumer;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
-import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
-import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnnotationStorage;
 
@@ -33,32 +32,16 @@ import de.ims.icarus2.model.standard.members.layer.annotation.AbstractManagedAnn
  */
 public abstract class AbstractSingleKeyStorage extends AbstractManagedAnnotationStorage {
 
+	private final String annotationKey;
+
 	/**
 	 * @param weakKeys
 	 * @param initialCapacity
 	 */
-	public AbstractSingleKeyStorage(boolean weakKeys, int initialCapacity) {
+	public AbstractSingleKeyStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
 		super(weakKeys, initialCapacity);
-	}
 
-	protected static String requireDefaultKey(AnnotationLayerManifest manifest) {
-		return manifest.getDefaultKey().orElseThrow(ManifestException.missing(manifest, "default key"));
-	}
-
-	private String annotationKey;
-
-	@Override
-	public void addNotify(AnnotationLayer layer) {
-		super.addNotify(layer);
-
-		this.annotationKey = requireDefaultKey(layer.getManifest());
-	}
-
-	@Override
-	public void removeNotify(AnnotationLayer layer) {
-		super.removeNotify(layer);
-
-		annotationKey = null;
+		this.annotationKey = requireNonNull(annotationKey);
 	}
 
 	public String getAnnotationKey() {

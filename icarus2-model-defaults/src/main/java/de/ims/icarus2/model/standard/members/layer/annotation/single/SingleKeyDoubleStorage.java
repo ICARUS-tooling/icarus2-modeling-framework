@@ -48,16 +48,16 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 
 	public static final double DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_DOUBLE;
 
-	public SingleKeyDoubleStorage() {
-		this(-1);
+	public SingleKeyDoubleStorage(String annotationKey) {
+		this(annotationKey, -1);
 	}
 
-	public SingleKeyDoubleStorage(int initialCapacity) {
-		this(false, initialCapacity);
+	public SingleKeyDoubleStorage(String annotationKey, int initialCapacity) {
+		this(annotationKey, false, initialCapacity);
 	}
 
-	public SingleKeyDoubleStorage(boolean weakKeys, int initialCapacity) {
-		super(weakKeys, initialCapacity);
+	public SingleKeyDoubleStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
+		super(annotationKey, weakKeys, initialCapacity);
 	}
 
 	protected Object2DoubleMap<Item> buildBuffer(AnnotationLayer layer) {
@@ -77,7 +77,7 @@ public class SingleKeyDoubleStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		String key = requireDefaultKey(manifest);
+		String key = getAnnotationKey();
 		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
 		noEntryValue = annotationManifest.getNoEntryValue()

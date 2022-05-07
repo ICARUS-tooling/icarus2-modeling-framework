@@ -75,15 +75,20 @@ public class AnnotationStorageFactory {
 		AnnotationStorage storage = null;
 
 		final Set<String> keySet = layerManifest.getAvailableKeys();
-		final String defaultKey = layerManifest.getDefaultKey().orElseThrow(
-				ManifestException.missing(layerManifest, "default key"));
+		String defaultKey = layerManifest.getDefaultKey().orElse(null);
+		if(defaultKey==null) {
+			if(keySet.size()==1) {
+				defaultKey = keySet.iterator().next();
+			} else
+				throw ManifestException.missing(layerManifest, "default key").get();
+		}
 
 		if(layerManifest.isAnnotationFlagSet(AnnotationFlag.UNKNOWN_KEYS)) {
 			storage = buildUnboundStorage(layerManifest);
 		} else {
 			if(keySet.size()==1) {
 				storage = buildSingleKeyStorage(layerManifest.getAnnotationManifest(defaultKey).orElseThrow(
-						ManifestException.missing(layerManifest, "annotation manifest for key: "+defaultKey)));
+						ManifestException.missing(layerManifest, "annotation manifest for key: "+defaultKey)), defaultKey);
 			} else {
 				storage = buildFixedKeyStorage(keySet, layerManifest);
 			}
@@ -92,21 +97,21 @@ public class AnnotationStorageFactory {
 		return storage;
 	}
 
-	protected AnnotationStorage buildSingleKeyStorage(AnnotationManifest annotationManifest) {
+	protected AnnotationStorage buildSingleKeyStorage(AnnotationManifest annotationManifest, String annotationKey) {
 		ValueType valueType = annotationManifest.getValueType();
 
 		if(valueType==ValueType.INTEGER) {
-			return new SingleKeyIntegerStorage();
+			return new SingleKeyIntegerStorage(annotationKey);
 		} else if(valueType==ValueType.LONG) {
-			return new SingleKeyLongStorage();
+			return new SingleKeyLongStorage(annotationKey);
 		} else if(valueType==ValueType.FLOAT) {
-			return new SingleKeyFloatStorage();
+			return new SingleKeyFloatStorage(annotationKey);
 		} else if(valueType==ValueType.DOUBLE) {
-			return new SingleKeyDoubleStorage();
+			return new SingleKeyDoubleStorage(annotationKey);
 		} else if(valueType==ValueType.BOOLEAN) {
-			return new SingleKeyBooleanStorage();
+			return new SingleKeyBooleanStorage(annotationKey);
 		} else {
-			return new SingleKeyObjectStorage();
+			return new SingleKeyObjectStorage(annotationKey);
 		}
 	}
 

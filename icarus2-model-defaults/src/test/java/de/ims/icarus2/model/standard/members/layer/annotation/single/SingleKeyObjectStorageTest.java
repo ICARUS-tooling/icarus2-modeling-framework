@@ -69,7 +69,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 
 	@Override
 	public SingleKeyObjectStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyObjectStorage();
+		return new SingleKeyObjectStorage(key());
 	}
 
 	@Nested
@@ -80,7 +80,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		 */
 		@Test
 		void testSingleKeyObjectStorage() {
-			assertNotNull(new SingleKeyObjectStorage());
+			assertNotNull(new SingleKeyObjectStorage(key()));
 		}
 
 		/**
@@ -89,7 +89,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyObjectStorageInt(int capacity) {
-			assertNotNull(new SingleKeyObjectStorage(capacity));
+			assertNotNull(new SingleKeyObjectStorage(key(), capacity));
 		}
 
 		/**
@@ -99,7 +99,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyObjectStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyObjectStorage(capacity));
+					() -> new SingleKeyObjectStorage(key(), capacity));
 		}
 
 		/**
@@ -108,8 +108,8 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyObjectStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyObjectStorage(true, capacity));
-			assertNotNull(new SingleKeyObjectStorage(false, capacity));
+			assertNotNull(new SingleKeyObjectStorage(key(), true, capacity));
+			assertNotNull(new SingleKeyObjectStorage(key(), false, capacity));
 		}
 
 		/**
@@ -119,9 +119,9 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyObjectStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyObjectStorage(true, capacity));
+					() -> new SingleKeyObjectStorage(key(), true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyObjectStorage(false, capacity));
+					() -> new SingleKeyObjectStorage(key(), false, capacity));
 		}
 
 	}

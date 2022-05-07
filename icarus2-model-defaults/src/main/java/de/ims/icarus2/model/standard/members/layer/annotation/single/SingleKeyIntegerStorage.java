@@ -50,16 +50,16 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	public static final int DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_INT;
 
-	public SingleKeyIntegerStorage() {
-		this(-1);
+	public SingleKeyIntegerStorage(String annotationKey) {
+		this(annotationKey, -1);
 	}
 
-	public SingleKeyIntegerStorage(int initialCapacity) {
-		this(false, initialCapacity);
+	public SingleKeyIntegerStorage(String annotationKey, int initialCapacity) {
+		this(annotationKey, false, initialCapacity);
 	}
 
-	public SingleKeyIntegerStorage(boolean weakKeys, int initialCapacity) {
-		super(weakKeys, initialCapacity);
+	public SingleKeyIntegerStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
+		super(annotationKey, weakKeys, initialCapacity);
 	}
 
 	protected Object2IntMap<Item> buildBuffer(AnnotationLayer layer) {
@@ -79,7 +79,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		String key = requireDefaultKey(manifest);
+		String key = getAnnotationKey();
 		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
 		noEntryValue = annotationManifest.getNoEntryValue()

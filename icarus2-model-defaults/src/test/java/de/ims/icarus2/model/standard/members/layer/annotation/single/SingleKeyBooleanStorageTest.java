@@ -48,7 +48,7 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 		 */
 		@Test
 		void testSingleKeyBooleanStorage() {
-			assertNotNull(new SingleKeyBooleanStorage());
+			assertNotNull(new SingleKeyBooleanStorage(key()));
 		}
 
 		/**
@@ -57,7 +57,7 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyBooleanStorageInt(int capacity) {
-			assertNotNull(new SingleKeyBooleanStorage(capacity));
+			assertNotNull(new SingleKeyBooleanStorage(key(), capacity));
 		}
 
 		/**
@@ -67,7 +67,7 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyBooleanStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyBooleanStorage(capacity));
+					() -> new SingleKeyBooleanStorage(key(), capacity));
 		}
 
 		/**
@@ -76,8 +76,8 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyBooleanStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyBooleanStorage(true, capacity));
-			assertNotNull(new SingleKeyBooleanStorage(false, capacity));
+			assertNotNull(new SingleKeyBooleanStorage(key(), true, capacity));
+			assertNotNull(new SingleKeyBooleanStorage(key(), false, capacity));
 		}
 
 		/**
@@ -87,9 +87,9 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyBooleanStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyBooleanStorage(true, capacity));
+					() -> new SingleKeyBooleanStorage(key(), true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyBooleanStorage(false, capacity));
+					() -> new SingleKeyBooleanStorage(key(), false, capacity));
 		}
 
 	}
@@ -147,7 +147,7 @@ class SingleKeyBooleanStorageTest implements ManagedAnnotationStorageTest<Single
 	 */
 	@Override
 	public SingleKeyBooleanStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyBooleanStorage();
+		return new SingleKeyBooleanStorage(key());
 	}
 
 	/**

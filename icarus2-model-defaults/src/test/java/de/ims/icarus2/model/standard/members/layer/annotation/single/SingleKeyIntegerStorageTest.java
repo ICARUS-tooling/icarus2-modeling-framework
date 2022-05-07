@@ -54,7 +54,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		 */
 		@Test
 		void testSingleKeyIntegerStorage() {
-			assertNotNull(new SingleKeyIntegerStorage());
+			assertNotNull(new SingleKeyIntegerStorage(key()));
 		}
 
 		/**
@@ -63,7 +63,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyIntegerStorageInt(int capacity) {
-			assertNotNull(new SingleKeyIntegerStorage(capacity));
+			assertNotNull(new SingleKeyIntegerStorage(key(), capacity));
 		}
 
 		/**
@@ -73,7 +73,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyIntegerStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyIntegerStorage(capacity));
+					() -> new SingleKeyIntegerStorage(key(), capacity));
 		}
 
 		/**
@@ -82,8 +82,8 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyIntegerStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyIntegerStorage(true, capacity));
-			assertNotNull(new SingleKeyIntegerStorage(false, capacity));
+			assertNotNull(new SingleKeyIntegerStorage(key(), true, capacity));
+			assertNotNull(new SingleKeyIntegerStorage(key(), false, capacity));
 		}
 
 		/**
@@ -93,9 +93,9 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyIntegerStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyIntegerStorage(true, capacity));
+					() -> new SingleKeyIntegerStorage(key(), true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyIntegerStorage(false, capacity));
+					() -> new SingleKeyIntegerStorage(key(), false, capacity));
 		}
 
 	}
@@ -152,7 +152,7 @@ class SingleKeyIntegerStorageTest implements ManagedAnnotationStorageTest<Single
 	 */
 	@Override
 	public SingleKeyIntegerStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyIntegerStorage();
+		return new SingleKeyIntegerStorage(key());
 	}
 
 	/**

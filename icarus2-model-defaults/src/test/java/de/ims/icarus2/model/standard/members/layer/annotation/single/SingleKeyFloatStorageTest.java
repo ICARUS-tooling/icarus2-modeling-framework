@@ -53,7 +53,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		 */
 		@Test
 		void testSingleKeyFloatStorage() {
-			assertNotNull(new SingleKeyFloatStorage());
+			assertNotNull(new SingleKeyFloatStorage(key()));
 		}
 
 		/**
@@ -62,7 +62,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyFloatStorageInt(int capacity) {
-			assertNotNull(new SingleKeyFloatStorage(capacity));
+			assertNotNull(new SingleKeyFloatStorage(key(), capacity));
 		}
 
 		/**
@@ -72,7 +72,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyFloatStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyFloatStorage(capacity));
+					() -> new SingleKeyFloatStorage(key(), capacity));
 		}
 
 		/**
@@ -81,8 +81,8 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyFloatStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyFloatStorage(true, capacity));
-			assertNotNull(new SingleKeyFloatStorage(false, capacity));
+			assertNotNull(new SingleKeyFloatStorage(key(), true, capacity));
+			assertNotNull(new SingleKeyFloatStorage(key(), false, capacity));
 		}
 
 		/**
@@ -92,9 +92,9 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyFloatStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyFloatStorage(true, capacity));
+					() -> new SingleKeyFloatStorage(key(), true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyFloatStorage(false, capacity));
+					() -> new SingleKeyFloatStorage(key(), false, capacity));
 		}
 
 	}
@@ -151,7 +151,7 @@ class SingleKeyFloatStorageTest implements ManagedAnnotationStorageTest<SingleKe
 	 */
 	@Override
 	public SingleKeyFloatStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyFloatStorage();
+		return new SingleKeyFloatStorage(key());
 	}
 
 	/**

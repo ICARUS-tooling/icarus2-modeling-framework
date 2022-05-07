@@ -49,16 +49,16 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 
 	public static final boolean DEFAULT_NO_ENTRY_VALUE = false;
 
-	public SingleKeyBooleanStorage() {
-		this(-1);
+	public SingleKeyBooleanStorage(String annotationKey) {
+		this(annotationKey, -1);
 	}
 
-	public SingleKeyBooleanStorage(int initialCapacity) {
-		this(false, initialCapacity);
+	public SingleKeyBooleanStorage(String annotationKey, int initialCapacity) {
+		this(annotationKey, false, initialCapacity);
 	}
 
-	public SingleKeyBooleanStorage(boolean weakKeys, int initialCapacity) {
-		super(weakKeys, initialCapacity);
+	public SingleKeyBooleanStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
+		super(annotationKey, weakKeys, initialCapacity);
 	}
 
 	protected Set<Item> buildBuffer(AnnotationLayer layer) {
@@ -76,7 +76,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		String key = requireDefaultKey(manifest);
+		String key = getAnnotationKey();
 		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
 		Optional<Object> declaredNoEntryValue = annotationManifest.getNoEntryValue();

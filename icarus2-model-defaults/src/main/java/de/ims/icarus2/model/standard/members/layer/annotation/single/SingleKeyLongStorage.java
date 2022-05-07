@@ -48,16 +48,16 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 
 	public static final long DEFAULT_NO_ENTRY_VALUE = IcarusUtils.UNSET_LONG;
 
-	public SingleKeyLongStorage() {
-		this(-1);
+	public SingleKeyLongStorage(String annotationKey) {
+		this(annotationKey, -1);
 	}
 
-	public SingleKeyLongStorage(int initialCapacity) {
-		this(false, initialCapacity);
+	public SingleKeyLongStorage(String annotationKey, int initialCapacity) {
+		this(annotationKey, false, initialCapacity);
 	}
 
-	public SingleKeyLongStorage(boolean weakKeys, int initialCapacity) {
-		super(weakKeys, initialCapacity);
+	public SingleKeyLongStorage(String annotationKey, boolean weakKeys, int initialCapacity) {
+		super(annotationKey, weakKeys, initialCapacity);
 	}
 
 	protected Object2LongMap<Item> buildBuffer(AnnotationLayer layer) {
@@ -77,7 +77,7 @@ public class SingleKeyLongStorage extends AbstractSingleKeyStorage {
 		super.addNotify(layer);
 
 		AnnotationLayerManifest manifest = layer.getManifest();
-		String key = requireDefaultKey(manifest);
+		String key = getAnnotationKey();
 		AnnotationManifest annotationManifest = requireAnnotationsManifest(manifest, key);
 
 		noEntryValue = annotationManifest.getNoEntryValue()

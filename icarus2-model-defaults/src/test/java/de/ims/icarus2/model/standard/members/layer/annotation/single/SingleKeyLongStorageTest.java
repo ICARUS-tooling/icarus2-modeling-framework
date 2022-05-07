@@ -52,7 +52,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		 */
 		@Test
 		void testSingleKeyLongStorage() {
-			assertNotNull(new SingleKeyLongStorage());
+			assertNotNull(new SingleKeyLongStorage(key()));
 		}
 
 		/**
@@ -61,7 +61,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyLongStorageInt(int capacity) {
-			assertNotNull(new SingleKeyLongStorage(capacity));
+			assertNotNull(new SingleKeyLongStorage(key(), capacity));
 		}
 
 		/**
@@ -71,7 +71,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyLongStorageIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyLongStorage(capacity));
+					() -> new SingleKeyLongStorage(key(), capacity));
 		}
 
 		/**
@@ -80,8 +80,8 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		@ParameterizedTest
 		@ValueSource(ints = {UNSET_INT, 1, 10, 100, 10_000})
 		void testSingleKeyLongStorageBooleanInt(int capacity) {
-			assertNotNull(new SingleKeyLongStorage(true, capacity));
-			assertNotNull(new SingleKeyLongStorage(false, capacity));
+			assertNotNull(new SingleKeyLongStorage(key(), true, capacity));
+			assertNotNull(new SingleKeyLongStorage(key(), false, capacity));
 		}
 
 		/**
@@ -91,9 +91,9 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 		@ValueSource(ints = {0, -2})
 		void testSingleKeyLongStorageBooleanIntInvalidCapacity(int capacity) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyLongStorage(true, capacity));
+					() -> new SingleKeyLongStorage(key(), true, capacity));
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingleKeyLongStorage(false, capacity));
+					() -> new SingleKeyLongStorage(key(), false, capacity));
 		}
 
 	}
@@ -135,7 +135,7 @@ class SingleKeyLongStorageTest implements ManagedAnnotationStorageTest<SingleKey
 	 */
 	@Override
 	public SingleKeyLongStorage createForLayer(AnnotationLayer layer) {
-		return new SingleKeyLongStorage();
+		return new SingleKeyLongStorage(key());
 	}
 
 	/**
