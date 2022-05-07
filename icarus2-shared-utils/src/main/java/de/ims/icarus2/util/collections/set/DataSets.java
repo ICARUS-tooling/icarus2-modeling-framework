@@ -44,7 +44,8 @@ public class DataSets {
 		}
 	}
 
-	public static <E extends Object> DataSet<E> createDataSet(E[] items) {
+	@SafeVarargs
+	public static <E extends Object> DataSet<E> createDataSet(E...items) {
 		requireNonNull(items);
 
 		int size = items.length;
