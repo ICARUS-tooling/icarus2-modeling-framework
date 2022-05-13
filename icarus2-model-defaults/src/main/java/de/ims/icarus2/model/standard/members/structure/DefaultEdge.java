@@ -20,10 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import javax.annotation.Nullable;
 
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.MemberType;
-import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
@@ -98,16 +95,11 @@ public class DefaultEdge extends DefaultItem implements Edge, Recyclable {
 		// no-op
 	}
 
-	@Override
-	public void setId(long id) {
-		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-				"Edges cannot have an id asigned");
-	}
-
-	@Override
-	public void setContainer(Container container) {
-		super.setContainer(container);
-	}
+//	@Override
+//	public void setId(long id) {
+//		throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
+//				"Edges cannot have an id asigned");
+//	}
 
 	public void setStructure(Structure structure) {
 		setContainer(structure);
