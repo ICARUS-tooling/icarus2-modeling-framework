@@ -30,17 +30,17 @@ import de.ims.icarus2.util.stat.Histogram;
  * @author Markus Gärtner
  *
  */
-public class DefaultStructureLayerAnalzyer extends DefaultItemLayerAnalyzer {
+public class DefaultStructureLayerAnalyzer extends DefaultItemLayerAnalyzer {
 
-	private Histogram structureSizes = Histogram.fixedHistogram(1000);
-	private Histogram rootCounts = Histogram.fixedHistogram(1000);
+	private Histogram structureSizes = Histogram.openHistogram(100);
+	private Histogram rootCounts = Histogram.openHistogram(100);
 
-	private Histogram treeHeights = Histogram.fixedHistogram(1000);
-	private Histogram branching = Histogram.fixedHistogram(1000);
+	private Histogram treeHeights = Histogram.openHistogram(100);
+	private Histogram branching = Histogram.openHistogram(100);
 
 	private LongCounter<StructureType> structureTypeCount = new LongCounter<>();
 
-	public DefaultStructureLayerAnalzyer(FileDataStates states, StructureLayer layer, int fileIndex) {
+	public DefaultStructureLayerAnalyzer(FileDataStates states, StructureLayer layer, int fileIndex) {
 		super(states, layer, fileIndex);
 	}
 

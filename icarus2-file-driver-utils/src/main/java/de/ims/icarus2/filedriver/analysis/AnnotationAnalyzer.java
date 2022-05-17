@@ -24,4 +24,5 @@ import de.ims.icarus2.model.util.func.AnnotationConsumer;
  */
 public interface AnnotationAnalyzer<E extends Object> extends Analyzer, AnnotationConsumer<E> {
 
+	// All relevant consumer methods are defined in AnnotationConsumer interface
 }

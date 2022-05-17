@@ -72,9 +72,9 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	 * Largest {@link Container#getItemCount() size} of a container
 	 * encountered during analysis.
 	 */
-	private final Histogram containerSizes = Histogram.fixedHistogram(1000);
+	private final Histogram containerSizes = Histogram.openHistogram(100);
 
-	private final Histogram spanSizes = Histogram.fixedHistogram(1000);
+	private final Histogram spanSizes = Histogram.openHistogram(100);
 
 	/**
 	 * Individual counts for every {@link ContainerType type} of
@@ -117,7 +117,7 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 				beginIndex = previousEndIndex+1;
 			}
 		}
-		long endIndex = beginIndex + elementCount;
+		long endIndex = beginIndex + elementCount - 1;
 
 		fileInfo.setCoverage(layerManifest, elementCount, beginIndex, endIndex);
 
@@ -144,6 +144,7 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 		if(ModelUtils.isContainerOrStructure(item)) {
 			Container container = (Container) item;
 			containerSizes.accept(container.getItemCount());
+//			System.out.printf("entry %d, size=%d span=%d%n",_long(elementCount),_long(container.getItemCount()),_long(container.getSpan()));
 
 			long spanSize = container.getSpan();
 			if(spanSize!=IcarusUtils.UNSET_LONG) {
