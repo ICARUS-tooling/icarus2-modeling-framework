@@ -16,7 +16,6 @@
  */
 package de.ims.icarus2.model.standard.members.structure;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockStructure;
 import static de.ims.icarus2.test.TestUtils.NO_CHECK;
@@ -27,6 +26,7 @@ import static de.ims.icarus2.test.TestUtils.RUNS;
 import static de.ims.icarus2.test.TestUtils.assertGetter;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,7 +49,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
-import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -199,8 +198,9 @@ class DefaultEdgeTest implements EdgeTest<Edge> {
 		 */
 		@Test
 		void testSetId() {
-			assertModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-					() -> instance.setId(1L));
+			long id = 12345;
+			instance.setId(id);
+			assertThat(instance.getId()).isEqualTo(id);
 		}
 
 		/**
