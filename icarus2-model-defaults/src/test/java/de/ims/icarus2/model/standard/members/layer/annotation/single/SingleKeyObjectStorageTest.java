@@ -44,6 +44,7 @@ class SingleKeyObjectStorageTest implements ManagedAnnotationStorageTest<SingleK
 		return SingleKeyObjectStorage.class;
 	}
 
+
 	@Override
 	public Object testValue(String key) {
 		return new Object();

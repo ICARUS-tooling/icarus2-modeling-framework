@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
@@ -92,6 +94,7 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	@Override
 	public Object getValue(Item item, String key) {
 		checkKey(key);
+		requireNonNull(item);
 
 		Object value = annotations.get(item);
 
@@ -106,8 +109,9 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 	 * @see de.ims.icarus2.model.api.layer.AnnotationLayer.AnnotationStorage#setValue(de.ims.icarus2.model.api.members.item.Item, ByteAllocator, int, java.lang.Object)
 	 */
 	@Override
-	public void setValue(Item item, String key, Object value) {
+	public void setValue(Item item, String key, @Nullable Object value) {
 		checkKey(key);
+		requireNonNull(item);
 
 		if(value==null || value==noEntryValue) {
 			annotations.remove(item);
@@ -134,21 +138,25 @@ public class SingleKeyObjectStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean hasAnnotations(Item item) {
+		requireNonNull(item);
 		return annotations.containsKey(item);
 	}
 
 	@Override
 	public boolean removeItem(Item item) {
+		requireNonNull(item);
 		return annotations.remove(item)!=null;
 	}
 
 	@Override
 	public boolean addItem(Item item) {
+		requireNonNull(item);
 		return annotations.putIfAbsent(item, DUMMY)==null;
 	}
 
 	@Override
 	public boolean containsItem(Item item) {
+		requireNonNull(item);
 		return annotations.containsKey(item);
 	}
 

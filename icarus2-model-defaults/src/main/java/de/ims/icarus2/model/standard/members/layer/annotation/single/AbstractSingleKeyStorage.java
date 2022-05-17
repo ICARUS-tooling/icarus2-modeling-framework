@@ -53,13 +53,17 @@ public abstract class AbstractSingleKeyStorage extends AbstractManagedAnnotation
 	 * keys which default to the one single key defined for this annotation!
 	 */
 	protected void checkKey(String key) {
-		if(key!=null && !annotationKey.equals(key))
+		requireNonNull(key);
+		if(!annotationKey.equals(key))
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					Messages.mismatch("Unknown key", annotationKey, key));
 	}
 
 	@Override
 	public boolean collectKeys(Item item, Consumer<String> action) {
+		requireNonNull(item);
+		requireNonNull(action);
+
 		boolean result = false;
 
 		if(hasAnnotations(item)) {
@@ -73,6 +77,7 @@ public abstract class AbstractSingleKeyStorage extends AbstractManagedAnnotation
 
 	@Override
 	public boolean containsItem(Item item) {
+		requireNonNull(item);
 		return hasAnnotations(item);
 	}
 

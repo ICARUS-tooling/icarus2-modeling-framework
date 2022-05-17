@@ -18,6 +18,7 @@ package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives.unbox;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 import java.util.Set;
@@ -120,6 +121,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	@Override
 	public boolean getBoolean(Item item, String key) {
 		checkKey(key);
+		requireNonNull(item);
 
 		boolean result = annotations.contains(item);
 
@@ -133,6 +135,7 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 	@Override
 	public void setBoolean(Item item, String key, boolean value) {
 		checkKey(key);
+		requireNonNull(item);
 
 		if(!value || (noEntryValueSet && value==noEntryValue)) {
 			annotations.remove(item);
@@ -159,11 +162,13 @@ public class SingleKeyBooleanStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean hasAnnotations(Item item) {
+		requireNonNull(item);
 		return annotations.contains(item);
 	}
 
 	@Override
 	public boolean removeItem(Item item) {
+		requireNonNull(item);
 		return annotations.remove(item);
 	}
 

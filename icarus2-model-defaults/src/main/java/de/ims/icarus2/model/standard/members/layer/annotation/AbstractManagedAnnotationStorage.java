@@ -17,10 +17,9 @@
 package de.ims.icarus2.model.standard.members.layer.annotation;
 
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.Consumer;
-
-import javax.annotation.Nullable;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Unguarded;
@@ -138,7 +137,7 @@ public abstract class AbstractManagedAnnotationStorage extends AbstractPart<Anno
 
 	protected final static ModelException forUnsupportedSetter(ValueType type, String key) {
 		return new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
-				"Cannot set "+type+" value for key: "+key);
+				"Cannot assign "+type+" value for key: "+key);
 	}
 
 	@Unguarded(Unguarded.UNSUPPORTED)
@@ -184,11 +183,13 @@ public abstract class AbstractManagedAnnotationStorage extends AbstractPart<Anno
 
 	@Override
 	public boolean hasAnnotations(Item item) {
+		requireNonNull(item);
 		return false;
 	}
 
 	@Override
 	public boolean containsItem(Item item) {
+		requireNonNull(item);
 		return false;
 	}
 
@@ -196,7 +197,8 @@ public abstract class AbstractManagedAnnotationStorage extends AbstractPart<Anno
 	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#addItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public boolean addItem(@Nullable Item item) {
+	public boolean addItem(Item item) {
+		requireNonNull(item);
 		return false;
 	}
 
@@ -204,7 +206,8 @@ public abstract class AbstractManagedAnnotationStorage extends AbstractPart<Anno
 	 * @see de.ims.icarus2.model.api.layer.annotation.ManagedAnnotationStorage#removeItem(de.ims.icarus2.model.api.members.item.Item)
 	 */
 	@Override
-	public boolean removeItem(@Nullable Item item) {
+	public boolean removeItem(Item item) {
+		requireNonNull(item);
 		return true;
 	}
 

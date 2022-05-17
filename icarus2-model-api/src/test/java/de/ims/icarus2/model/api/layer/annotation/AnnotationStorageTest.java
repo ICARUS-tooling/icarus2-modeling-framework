@@ -21,7 +21,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.abort;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
-import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,6 +56,7 @@ import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.annotations.Provider;
 import de.ims.icarus2.test.annotations.RandomizedTest;
+import de.ims.icarus2.test.guard.ApiGuard;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -100,6 +100,15 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 
 	ValueType valueType(String key);
 
+	/**
+	 * @see de.ims.icarus2.test.ApiGuardedTest#configureApiGuard(de.ims.icarus2.test.guard.ApiGuard)
+	 */
+	@Override
+	default void configureApiGuard(ApiGuard<S> apiGuard) {
+		ApiGuardedTest.super.configureApiGuard(apiGuard);
+		apiGuard.parameterResolver(Object.class, t -> testValue(key()));
+	}
+
 	default AnnotationManifest createAnnotationManifest(String key) {
 		AnnotationManifest annotationManifest = mock(AnnotationManifest.class);
 		when(annotationManifest.getValueType()).thenReturn(valueType(key));
@@ -109,17 +118,21 @@ public interface AnnotationStorageTest<S extends AnnotationStorage>
 	}
 
 	@SuppressWarnings("unchecked")
-	default AnnotationLayerManifest createManifest(String key) {
+	default AnnotationLayerManifest createManifest(String...keys) {
 		AnnotationLayerManifest manifest = mockTypedManifest(AnnotationLayerManifest.class);
-		when(manifest.getAvailableKeys()).thenReturn(singleton(key));
-		when(manifest.getDefaultKey()).thenReturn(Optional.of(key));
+		when(manifest.getAvailableKeys()).thenReturn(set(keys));
+		when(manifest.getDefaultKey()).thenReturn(Optional.of(keys[0]));
 
-		AnnotationManifest annotationManifest = createAnnotationManifest(key);
-		when(manifest.getAnnotationManifest(key)).thenReturn(Optional.of(annotationManifest));
+		Set<AnnotationManifest> annotationManifests = new ObjectOpenHashSet<>();
+		for(String key : keys) {
+			AnnotationManifest annotationManifest = createAnnotationManifest(key);
+			when(manifest.getAnnotationManifest(key)).thenReturn(Optional.of(annotationManifest));
+			annotationManifests.add(annotationManifest);
+		}
 
-		when(manifest.getAnnotationManifests()).thenReturn(singleton(annotationManifest));
+		when(manifest.getAnnotationManifests()).thenReturn(annotationManifests);
 		doAnswer(invoc -> {
-			((Consumer<? super AnnotationManifest>)invoc.getArgument(0)).accept(annotationManifest);
+			annotationManifests.forEach((Consumer<? super AnnotationManifest>)invoc.getArgument(0));
 			return null;
 		}).when(manifest).forEachAnnotationManifest(any());
 

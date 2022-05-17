@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.model.standard.members.layer.annotation.single;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -116,6 +118,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	@Override
 	public int getInteger(Item item, String key) {
 		checkKey(key);
+		requireNonNull(item);
 
 		return annotations.getInt(item);
 	}
@@ -138,6 +141,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 	@Override
 	public void setInteger(Item item, String key, int value) {
 		checkKey(key);
+		requireNonNull(item);
 
 		if(value==noEntryValue) {
 			annotations.removeInt(item);
@@ -172,11 +176,13 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean hasAnnotations(Item item) {
+		requireNonNull(item);
 		return annotations.containsKey(item);
 	}
 
 	@Override
 	public boolean removeItem(Item item) {
+		requireNonNull(item);
 		if(annotations.containsKey(item)) {
 			annotations.removeInt(item);
 			return true;
@@ -187,6 +193,7 @@ public class SingleKeyIntegerStorage extends AbstractSingleKeyStorage {
 
 	@Override
 	public boolean addItem(Item item) {
+		requireNonNull(item);
 		if(!annotations.containsKey(item)) {
 			annotations.put(item, noEntryValue);
 			return true;

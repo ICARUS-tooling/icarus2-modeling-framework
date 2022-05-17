@@ -40,6 +40,7 @@ import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyFl
 import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyIntegerStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyLongStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyObjectStorage;
+import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyStringStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
 import de.ims.icarus2.util.Options;
@@ -110,6 +111,8 @@ public class AnnotationStorageFactory {
 			return new SingleKeyDoubleStorage(annotationKey);
 		} else if(valueType==ValueType.BOOLEAN) {
 			return new SingleKeyBooleanStorage(annotationKey);
+		} else if(valueType==ValueType.STRING) {
+			return new SingleKeyStringStorage(annotationKey);
 		} else {
 			return new SingleKeyObjectStorage(annotationKey);
 		}
