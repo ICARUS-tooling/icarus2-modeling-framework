@@ -159,6 +159,8 @@ public class StructureBuilder {
 			.build();
 	}
 
+	public StructureManifest getManifest() { return manifest; }
+
 	List<Item> nodes() {
 		if(nodes==null) {
 			nodes = new ArrayList<>(getNodeCapacity());
@@ -177,9 +179,10 @@ public class StructureBuilder {
 
 	@SuppressWarnings("unchecked")
 	public <R extends RootItem<?>> R getRoot() {
-		if(root==null) {
-			root = RootItem.forManifest(manifest);
-		}
+//		if(root==null) {
+//			root = RootItem.forManifest(manifest);
+//		}
+		checkState("no root item assigned", root!=null);
 
 		return (R) root;
 	}
@@ -364,6 +367,11 @@ public class StructureBuilder {
 	//    CONSTRUCTION METHODS
 	//**********************************
 
+	public RootItem<?> createRoot() {
+		setRoot(RootItem.forManifest(manifest));
+		return root;
+	}
+
 	public <R extends RootItem<?>> void setRoot(R item) {
 		checkState(itemStorage == null);
 		checkState(root == null);
@@ -422,43 +430,63 @@ public class StructureBuilder {
 		}
 	}
 
+	public Item nodeAt(int index) {
+		checkState(itemStorage == null);
+		return nodes().get(index);
+	}
+
+	/**
+	 * Preconditions: no edge storage set, root set
+	 * @param edges
+	 * @param edge
+	 */
+	private void addEdge0(List<Edge> edges, Edge edge, RootItem<?> root) {
+		assert edge.getSource()!=null;
+		assert edge.getTarget()!=null;
+		edges.add(edge);
+		if(edge.getSource()==root) {
+			root.addEdge(edge, false);
+		}
+	}
+
 	public void addEdge(Edge edge) {
 		checkState(edgeStorage == null);
 		requireNonNull(edge);
 
-		edges().add(edge);
+		addEdge0(edges(), edge, getRoot());
 	}
 
 	public <E extends Edge> void addEdges(E[] edges) {
 		checkState(edgeStorage == null);
 		requireNonNull(edges);
+		RootItem<?> root = getRoot();
+		List<Edge> e = edges();
 
-		CollectionUtils.feedItems(edges(), edges);
+		for(Edge edge : edges) {
+			addEdge0(e, edge, root);
+		}
 	}
 
 	public <E extends Edge> void addEdges(E[] edges, int offset, int length) {
 		checkState(edgeStorage == null);
 		requireNonNull(edges);
+		RootItem<?> root = getRoot();
+		List<Edge> e = edges();
 
-		CollectionUtils.feedItems(edges(), edges, offset, length);
+		int fence = offset+length;
+		for(int i=offset; i<fence; i++) {
+			addEdge0(e, edges[i], root);
+		}
 	}
 
 	public <E extends Edge> void addEdges(Collection<E> edges) {
 		checkState(edgeStorage == null);
 		requireNonNull(edges);
+		RootItem<?> root = getRoot();
+		List<Edge> e = edges();
 
-		edges().addAll(edges);
-	}
-
-	public void addEdges(Structure structure) {
-		checkState(itemStorage == null);
-		requireNonNull(structure);
-
-		int size = IcarusUtils.ensureIntegerValueRange(structure.getEdgeCount());
-		List<Edge> nodes = edges();
-
-		for(int i=0; i<size; i++) {
-			nodes.add(structure.getEdgeAt(i));
+		for(Edge edge : edges) {
+			addEdge0(e, edge, root);
 		}
 	}
 

@@ -354,8 +354,7 @@ public class ChainsAndTrees {
 			return edge;
 		}
 
-		@SuppressWarnings("unchecked")
-		void finalizeRootEdges(@SuppressWarnings("rawtypes") RootItem root) {
+		void finalizeRootEdges(RootItem<?> root) {
 
 			for(int i = 0; i<rootEdges.length; i++) {
 				Edge rootEdge = rootEdges[i];
@@ -365,7 +364,8 @@ public class ChainsAndTrees {
 				} else {
 					rootEdge.setTerminal(root, true);
 				}
-				root.addEdge(rootEdge);
+				// No need to hard-link the edge, the builder will do this
+//				root.addEdge(rootEdge);
 			}
 		}
 

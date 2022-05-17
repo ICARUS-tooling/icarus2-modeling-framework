@@ -98,6 +98,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 	default StructureBuilder toBuilder(ChainsAndTrees.ChainConfig chainConfig) {
 		chainConfig.validate();
 		StructureBuilder builder = StructureBuilder.builder(createManifest(chainConfig));
+		builder.createRoot();
 
 		// Adjust source terminal of all root edges to the virtual root node
 		chainConfig.finalizeRootEdges(builder.getRoot());

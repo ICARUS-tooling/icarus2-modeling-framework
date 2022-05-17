@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
@@ -62,6 +63,15 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		}
 
 		return new RootItem.SingleEdgeRootItem<>();
+	}
+
+	public static <E extends Edge> Supplier<RootItem<E>> generator(StructureManifest manifest) {
+
+		if(manifest.isStructureFlagSet(StructureFlag.MULTI_ROOT)) {
+			return () -> new RootItem.MultiEdgeRootItem<>();
+		}
+
+		return () -> new RootItem.SingleEdgeRootItem<>();
 	}
 
 	@Reference(ReferenceType.UPLINK)

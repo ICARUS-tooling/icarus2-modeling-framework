@@ -31,9 +31,9 @@ import de.ims.icarus2.model.api.members.structure.StructureInfo;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.standard.driver.cache.TrackedMember.TrackedItem;
 import de.ims.icarus2.model.standard.members.MemberFlags;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
-import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.model.standard.members.structure.ImmutableStructureEditVerifier;
 import de.ims.icarus2.model.standard.members.structure.info.StructureInfoBuilder;
@@ -52,7 +52,7 @@ import de.ims.icarus2.util.collections.set.DataSet;
  *
  */
 @TestableImplementation(Structure.class)
-public class StaticStructure extends DefaultItem implements Structure {
+public class StaticStructure extends TrackedItem implements Structure {
 
 	private ItemStorage nodes;
 	private EdgeStorage edges;

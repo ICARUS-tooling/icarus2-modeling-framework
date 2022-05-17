@@ -65,6 +65,7 @@ public class EdgeBuffer {
 	private final Stack<NodeInfo> pool = new ObjectArrayList<>();
 
 	private Item root;
+	private final NodeInfo rootInfo = newInfo();
 
 	public void reset() {
 		for(NodeInfo info : data.values()) {
@@ -73,6 +74,7 @@ public class EdgeBuffer {
 			pool.push(info);
 		}
 		data.clear();
+		rootInfo.reset();
 
 		root = null;
 		maxHeight = UNSET_INT;
@@ -92,6 +94,9 @@ public class EdgeBuffer {
 	}
 
 	private NodeInfo getInfo(Item node, boolean createIfMissing) {
+		if(node==root) {
+			return rootInfo;
+		}
 		NodeInfo info = data.get(node);
 		if(info==null && createIfMissing) {
 			info = newInfo();
@@ -101,7 +106,7 @@ public class EdgeBuffer {
 	}
 
 	public NodeInfo getInfo(Item node) {
-		return data.get(node);
+		return node==root ? rootInfo : data.get(node);
 	}
 
 	public void setRoot(Item root) {

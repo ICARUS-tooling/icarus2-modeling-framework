@@ -115,6 +115,7 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 	default StructureBuilder toBuilder(ChainsAndTrees.TreeConfig treeConfig) {
 		treeConfig.validate();
 		StructureBuilder builder = StructureBuilder.builder(createManifest(treeConfig));
+		builder.createRoot();
 
 		// Adjust source terminal of all root edges to the virtual root node
 		treeConfig.finalizeRootEdges(builder.getRoot());
