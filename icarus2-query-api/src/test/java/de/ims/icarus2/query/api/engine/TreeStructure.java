@@ -111,6 +111,7 @@ public enum TreeStructure implements Function<Container,Structure> {
 	 */
 	public static Structure convertTree(StructureManifest m, Tree<Integer> t, Container host) {
 		StructureBuilder sb = StructureBuilder.builder(m);
+		sb.createRoot();
 		Reference2ObjectMap<Tree<Integer>, Item> lookup = new Reference2ObjectOpenHashMap<>();
 		LongSet usedIds = new LongOpenHashSet();
 
