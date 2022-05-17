@@ -195,6 +195,7 @@ public class DefaultManifestFactory implements ManifestFactory {
 		registerInfo(ManifestType.LOCATION_MANIFEST, LocationManifestImpl.class, NO_HOST);
 		registerInfo(ManifestType.MODULE_MANIFEST, ModuleManifestImpl.class, DriverManifest.class);
 		registerInfo(ManifestType.MODULE_SPEC, ModuleSpecImpl.class, DriverManifest.class, true);
+		registerInfo(ManifestType.MAPPING_MANIFEST, MappingManifestImpl.class, DriverManifest.class, true);
 		registerInfo(ManifestType.OPTIONS_MANIFEST, OptionsManifestImpl.class, MemberManifest.class);
 		registerInfo(ManifestType.PATH_RESOLVER_MANIFEST, PathResolverManifestImpl.class, LocationManifest.class);
 		registerInfo(ManifestType.RASTERIZER_MANIFEST, RasterizerManifestImpl.class, FragmentLayerManifest.class);

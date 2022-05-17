@@ -73,8 +73,9 @@ public class DefaultLayerMemberFactory implements LayerMemberFactory {
 	 */
 	@Override
 	public Edge newEdge(Structure host, long id) {
-		//FIXME ignores id
-		return new DefaultEdge(host);
+		DefaultEdge edge = new DefaultEdge(host);
+		edge.setId(id);
+		return edge;
 	}
 
 	/**

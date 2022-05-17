@@ -93,13 +93,7 @@ public class DefaultFileDriverFactory implements Factory {
 			return ((DefaultImplementationLoader)loader).getCorpus();
 		}
 
-		Object environment = loader.getEnvironment();
-
-		if(environment instanceof Corpus) {
-			return (Corpus) environment;
-		}
-
-		return null;
+		return loader.getEnvironment(Corpus.class);
 	}
 
 	/**
@@ -129,8 +123,10 @@ public class DefaultFileDriverFactory implements Factory {
 
 		final ResourceProvider resourceProvider = createResourceProvider(corpus, driverManifest);
 
-		final ResourceSet dataFiles = createResourceSet(corpus, resourceProvider,
-				ManifestUtils.<ContextManifest,DriverManifest>requireHost(driverManifest).getLocationManifests());
+		final ContextManifest contextManifest = requireNonNull(loader.getEnvironment(ContextManifest.class),
+				"No context manifest defined");
+
+		final ResourceSet dataFiles = createResourceSet(corpus, resourceProvider, contextManifest.getLocationManifests());
 
 		// use Builder and add utility method for creation of required parts
 
@@ -201,6 +197,8 @@ public class DefaultFileDriverFactory implements Factory {
 			return resourceSets.get(0);
 		}
 
+		assert !resourceSets.isEmpty() : "no resource sets";
+
 		return new CompoundResourceSet(resourceSets);
 	}
 
@@ -259,7 +257,7 @@ public class DefaultFileDriverFactory implements Factory {
 					.manifest(pathResolverManifest.getImplementationManifest()
 							.orElseThrow(ManifestException.noElement(pathResolverManifest, "implementation")))
 					.message("Path resolver for location "+locationManifest+" in corpus "+ManifestUtils.getName(corpus))
-					.environment(corpus)
+					.environment(Corpus.class, corpus)
 					.instantiate(PathResolver.class);
 		}
 
