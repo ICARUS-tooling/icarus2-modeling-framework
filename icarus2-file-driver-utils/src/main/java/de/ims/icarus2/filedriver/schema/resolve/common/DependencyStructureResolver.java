@@ -188,6 +188,7 @@ public class DependencyStructureResolver implements BatchResolver {
 	@Override
 	public void beginBatch(ResolverContext context) {
 		structureBuilder.clear();
+		structureBuilder.createRoot();
 	}
 
 	/**
