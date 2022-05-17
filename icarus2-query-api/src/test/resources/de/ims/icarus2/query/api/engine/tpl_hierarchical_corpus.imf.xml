@@ -20,7 +20,7 @@
 <imf:manifest xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<imf:corpora>
-		<imf:corpus editable="false" id="testCorpus">
+		<imf:corpus editable="false" id="testCorpus" name="Test Corpus - Hierarchical">
 			<imf:rootContext id="context0" independent="true" name="Dummy Context" primaryLayer="sentence" foundationLayer="token">
 				
 				<!-- to be replaced in live version by post-processing step
