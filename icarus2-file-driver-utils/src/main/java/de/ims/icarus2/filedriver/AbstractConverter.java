@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDriver.LockableFileObject;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
@@ -268,7 +269,6 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * or the length of the largest chunk in the data if such information has been
 	 * stored in the metadata available to the surrounding {@link FileDriver driver}.
 	 */
-	@SuppressWarnings("resource")
 	protected int getRecommendedByteBufferSize(ItemLayerManifestBase<?> layerManifest) {
 
 		// Determine good buffer size for the block-wise stream
@@ -292,7 +292,6 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 	 * @return
 	 * @throws ModelException if there is no exploitable metadata on the maximum size of containers for the given layer
 	 */
-	@SuppressWarnings("resource")
 	protected int getRecommendedIndexBufferSize(ItemLayerManifestBase<?> sourceLayer) {
 		int bufferSize  = -1;
 		MetadataRegistry metadataRegistry = getDriver().getMetadataRegistry();
@@ -306,6 +305,22 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 					"Missing information on maximum container size for layer: "+ManifestUtils.getUniqueId(sourceLayer));
 
 		return bufferSize;
+	}
+
+	protected long getStartingIndex(ItemLayer layer, int fileIndex, ReadMode mode) {
+		requireNonNull(layer);
+		requireNonNull(mode);
+		checkArgument("Chunking not supported for general supplier generation", mode!=ReadMode.CHUNK);
+
+		if(mode==ReadMode.FILE) {
+			FileInfo info = getDriver().getFileStates().getFileInfo(fileIndex);
+			return info.getBeginIndex(layer.getManifest());
+		} else if(fileIndex==0) {
+			return 0;
+		} else {
+			FileInfo info = getDriver().getFileStates().getFileInfo(fileIndex-1);
+			return info.getEndIndex(layer.getManifest()) + 1;
+		}
 	}
 
 	/**

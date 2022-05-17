@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.api.driver.mods;
 
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.id.Identifiable;
 
@@ -40,6 +41,14 @@ public interface DriverModule extends Identifiable, Part<Driver> {
 	 * @return
 	 */
 	boolean isReady();
+
+	/**
+	 * Called after a module has been {@link #addNotify(Driver) added} to the
+	 * driver. This allows configuration based on the settings in the associated
+	 * {@link ModuleManifest} definition.
+	 * @param manifest
+	 */
+	void readManifest(ModuleManifest manifest);
 
 	/**
 	 * Returns whether or not the module is carrying out an extensive background

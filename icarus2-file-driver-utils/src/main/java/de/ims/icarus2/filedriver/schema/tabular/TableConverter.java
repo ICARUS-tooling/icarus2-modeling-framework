@@ -66,7 +66,7 @@ import de.ims.icarus2.filedriver.FileDriver.LockableFileObject;
 import de.ims.icarus2.filedriver.analysis.Analyzer;
 import de.ims.icarus2.filedriver.analysis.AnnotationAnalyzer;
 import de.ims.icarus2.filedriver.analysis.DefaultItemLayerAnalyzer;
-import de.ims.icarus2.filedriver.analysis.DefaultStructureLayerAnalzyer;
+import de.ims.icarus2.filedriver.analysis.DefaultStructureLayerAnalyzer;
 import de.ims.icarus2.filedriver.analysis.ItemLayerAnalyzer;
 import de.ims.icarus2.filedriver.schema.SchemaBasedConverter;
 import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
@@ -102,6 +102,7 @@ import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -196,6 +197,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		encoding = driver.getEncoding();
 		memberFactory = driver.newMemberFactory();
+
+	}
+
+	/**
+	 * @see de.ims.icarus2.model.api.driver.mods.DriverModule#readManifest(de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest)
+	 */
+	@Override
+	public void readManifest(ModuleManifest manifest) {
+		// TODO Auto-generated method stub
 
 	}
 
@@ -436,7 +446,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * The following relations are mandatory for the returned map:
 	 * <ul>
 	 * <li>If the provided layer is an {@link ItemLayer}, the returned analyzer will be an implementation of {@link ItemLayerAnalyzer}</li>
-	 * <li>If the provided layer is an {@link StructureLayer}, the returned analyzer will be an implementation of {@link DefaultStructureLayerAnalzyer}</li>
+	 * <li>If the provided layer is an {@link StructureLayer}, the returned analyzer will be an implementation of {@link DefaultStructureLayerAnalyzer}</li>
 	 * <li>If the provided layer is an {@link AnnotationLayer}, the returned analyzer will be an implementation of {@link AnnotationAnalyzer}</li>
 	 * </ul>
 	 *
@@ -448,7 +458,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		group.forEachLayer(layer -> {
 			if(ModelUtils.isStructureLayer(layer.getManifest())) {
-				result.add(layer, new DefaultStructureLayerAnalzyer(states, (StructureLayer) layer, fileIndex));
+				result.add(layer, new DefaultStructureLayerAnalyzer(states, (StructureLayer) layer, fileIndex));
 			} else if(ModelUtils.isItemLayer(layer)) {
 				result.add(layer, new DefaultItemLayerAnalyzer(states, (ItemLayer) layer, fileIndex));
 			}
@@ -464,7 +474,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @see de.ims.icarus2.filedriver.Converter#loadFile(int, de.ims.icarus2.model.standard.driver.ChunkConsumer)
 	 */
 	@Override
-	public LoadResult loadFile(final int fileIndex, final ChunkConsumer action)
+	public LoadResult loadFile(final int fileIndex, @Nullable final ChunkConsumer action)
 			throws IOException, InterruptedException, IcarusApiException {
 		checkAdded();
 
@@ -825,7 +835,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public int discard() {
 			int size = items.size();
 
-			System.out.printf("discarding items %s for indices %s in cache %s%n", items, indices, this);
+//			System.out.printf("discarding items %s for indices %s in cache %s%n", items, indices, this);
 
 			try {
 				if(cleanupAction!=null) {
@@ -2292,7 +2302,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				firstIndex = fileInfo.getBeginIndex(layer.getManifest());
 				if(firstIndex==IcarusUtils.UNSET_LONG && fileIndex>0) {
 					FileInfo previousInfo = states.getFileInfo(fileIndex-1);
-					firstIndex = previousInfo.getBeginIndex(layer.getManifest());
+					firstIndex = previousInfo.getEndIndex(layer.getManifest()) + 1;
 				}
 
 				if(firstIndex==IcarusUtils.UNSET_LONG) {
