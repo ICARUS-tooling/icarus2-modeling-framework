@@ -30,6 +30,9 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Documentable;
+import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.FragmentLayerManifest;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
@@ -41,6 +44,7 @@ import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestType;
+import de.ims.icarus2.model.manifest.api.MappingManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.MemberManifest.Property;
 import de.ims.icarus2.model.manifest.api.ModifiableIdentity;
@@ -50,6 +54,7 @@ import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.ValueManifest;
 import de.ims.icarus2.model.manifest.standard.AbstractItemLayerManifestBase;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.id.Identifiable;
 import de.ims.icarus2.util.id.Identity;
 import de.ims.icarus2.util.id.MutableIdentifiable;
@@ -81,6 +86,8 @@ import de.ims.icarus2.util.id.StaticIdentity;
  */
 public class ContextManifestResolver {
 
+	//TODO currently we do NOT clone nested lockable content, which might cause issues when locking a cloned outer manifest that contains shared data
+
 	private final ManifestFactory manifestFactory;
 
 	public ContextManifestResolver(ManifestFactory manifestFactory) {
@@ -96,6 +103,9 @@ public class ContextManifestResolver {
 
 		return cloneContextManifest(template, host);
 	}
+
+
+	// COPY METHODS
 
 	protected void copyManifestFields(Manifest source, Manifest target) {
 		if(source==null || target==null) {
@@ -183,9 +193,11 @@ public class ContextManifestResolver {
 
 		target.setIndependent(source.isIndependent());
 
-		source.getPrimaryLayerManifest().ifPresent(m -> target.setPrimaryLayerId(
-				m.getId().orElseThrow(Manifest.invalidId(
-				"Primary layer does not declare valid identifier"))));
+		for(LayerManifest<?> layerManifest : source.getLayerManifests()) {
+			target.addLayerManifest(cloneLayerManifest(layerManifest, target));
+		}
+
+		source.getPrimaryLayerManifest().ifPresent(m -> target.setPrimaryLayerId(ManifestUtils.requireId(m)));
 	}
 
 	protected void copyLayerFields(LayerManifest<?> source, LayerManifest<?> target) {
@@ -237,6 +249,9 @@ public class ContextManifestResolver {
 
 		source.getValueLayerManifest().ifPresent(m -> target.setAndGetValueLayer(m.getLayerId()));
 		source.getAnnotationKey().ifPresent(target::setAnnotationKey);
+
+		source.getRasterizerManifest().ifPresent(
+				m -> target.setRasterizerManifest(cloneRasterizerManifest(m, target)));
 	}
 
 	protected void copyContainerFields(ContainerManifestBase<?> source, ContainerManifestBase<?> target) {
@@ -295,6 +310,8 @@ public class ContextManifestResolver {
 
 		// Default key
 		source.getDefaultKey().ifPresent(target::setDefaultKey);
+
+		source.forEachAnnotationManifest(a -> target.addAnnotationManifest(cloneAnnotationManifest(a, target)));
 	}
 
 	protected void copyRasterizerFields(RasterizerManifest source, RasterizerManifest target) {
@@ -303,6 +320,59 @@ public class ContextManifestResolver {
 		}
 
 		copyMemberFields(source, target);
+
+		source.getImplementationManifest().ifPresent(f -> target.setImplementationManifest(cloneImplementationManifest(f, target)));
+	}
+
+	protected void copyModuleFields(ModuleManifest source, ModuleManifest target) {
+		if(source==null || target==null) {
+			return;
+		}
+
+		copyMemberFields(source, target);
+
+		source.getImplementationManifest().ifPresent(f -> target.setImplementationManifest(cloneImplementationManifest(f, target)));
+		source.getModuleSpec().ifPresent(s -> target.setModuleSpecId(ManifestUtils.requireId(s)));
+	}
+
+	protected void copyModuleSpecFields(ModuleSpec source, ModuleSpec target) {
+		if(source==null || target==null) {
+			return;
+		}
+
+		copyIdentityFields(source, target);
+		copyDocumentableFields(source, target);
+
+		source.getExtensionPointUid().ifPresent(target::setExtensionPointUid);
+		target.setMultiplicity(source.getMultiplicity());
+		target.setCustomizable(source.isCustomizable());
+		source.forEachCategory(target::addCategory);
+	}
+
+	protected void copyMappingFields(MappingManifest source, MappingManifest target) {
+		if(source==null || target==null) {
+			return;
+		}
+
+		source.getId().ifPresent(target::setId);
+		source.getInverse().ifPresent(m -> target.setInverseId(ManifestUtils.requireId(m)));
+		source.getSourceLayerId().ifPresent(target::setSourceLayerId);
+		source.getTargetLayerId().ifPresent(target::setTargetLayerId);
+		source.getCoverage().ifPresent(target::setCoverage);
+		source.getRelation().ifPresent(target::setRelation);
+	}
+
+	protected void copyDriverFields(DriverManifest source, DriverManifest target) {
+		if(source==null || target==null) {
+			return;
+		}
+
+		copyMemberFields(source, target);
+
+		source.forEachModuleManifest(m -> target.addModuleManifest(cloneModuleManifest(m, target)));
+		source.forEachModuleSpec(s -> target.addModuleSpec(cloneModuleSpec(s, target)));
+		source.forEachMappingManifest(m -> target.addMappingManifest(cloneMappingManifest(m, target)));
+		source.getImplementationManifest().ifPresent(f -> target.setImplementationManifest(cloneImplementationManifest(f, target)));
 	}
 
 	protected void copyContextFields(ContextManifest source, ContextManifest target) {
@@ -311,6 +381,18 @@ public class ContextManifestResolver {
 		}
 
 		copyMemberFields(source, target);
+
+		target.setEditable(source.isEditable());
+		source.forEachGroupManifest(g -> target.addLayerGroup(cloneLayerGroupManifest(g, target)));
+		source.getDriverManifest().ifPresent(d -> target.setDriverManifest(cloneDriverManifest(d, target)));
+		source.getPrimaryLayerManifest().ifPresent(t -> target.setPrimaryLayerId(t.getLayerId()));
+		source.getFoundationLayerManifest().ifPresent(t -> target.setFoundationLayerId(t.getLayerId()));
+		target.setIndependentContext(source.isIndependentContext());
+		source.forEachPrerequisite(p -> {
+			PrerequisiteManifest pNew = target.addAndGetPrerequisite(p.getAlias());
+			copyPrerequisiteFields(p, pNew);
+		});
+		source.getLocationManifests().forEach(target::addLocationManifest);
 	}
 
 	protected void copyPrerequisiteFields(PrerequisiteManifest source, PrerequisiteManifest target) {
@@ -324,6 +406,9 @@ public class ContextManifestResolver {
 		source.getTypeId().ifPresent(target::setTypeId);
 	}
 
+
+	// CLONE METHODS
+
 	public ImplementationManifest cloneImplementationManifest(ImplementationManifest source, MemberManifest<?> host) {
 		ImplementationManifest target = manifestFactory.create(ManifestType.IMPLEMENTATION_MANIFEST, host, null);
 
@@ -336,10 +421,6 @@ public class ContextManifestResolver {
 		LayerGroupManifest target = manifestFactory.create(ManifestType.LAYER_GROUP_MANIFEST, contextManifest, null);
 
 		copyLayerGroupFields(source, target);
-
-		for(LayerManifest<?> layerManifest : source.getLayerManifests()) {
-			target.addLayerManifest(cloneLayerManifest(layerManifest, target));
-		}
 
 		return target;
 	}
@@ -364,14 +445,11 @@ public class ContextManifestResolver {
 
 		copyAnnotationLayerFields(source, target);
 
-		// Annotation manifests
-		source.forEachAnnotationManifest(m -> target.addAnnotationManifest(cloneAnnotationManifest(m)));
-
 		return target;
 	}
 
-	public AnnotationManifest cloneAnnotationManifest(AnnotationManifest source) {
-		AnnotationManifest target = manifestFactory.create(ManifestType.ANNOTATION_MANIFEST);
+	public AnnotationManifest cloneAnnotationManifest(AnnotationManifest source, AnnotationLayerManifest host) {
+		AnnotationManifest target = manifestFactory.create(ManifestType.ANNOTATION_MANIFEST, host, null);
 
 		copyAnnotationFields(source, target);
 
@@ -416,9 +494,6 @@ public class ContextManifestResolver {
 
 		copyFragmentLayerFields(source, target);
 
-		source.getRasterizerManifest().ifPresent(
-				m -> target.setRasterizerManifest(cloneRasterizerManifest(m, target)));
-
 		return target;
 	}
 
@@ -427,7 +502,37 @@ public class ContextManifestResolver {
 
 		copyRasterizerFields(source, target);
 
-		source.getImplementationManifest().ifPresent(target::setImplementationManifest);
+		return target;
+	}
+
+	public ModuleManifest cloneModuleManifest(ModuleManifest source, DriverManifest driverManifest) {
+		ModuleManifest target = manifestFactory.create(ManifestType.MODULE_MANIFEST, driverManifest, null);
+
+		copyModuleFields(source, target);
+
+		return target;
+	}
+
+	public ModuleSpec cloneModuleSpec(ModuleSpec source, DriverManifest driverManifest) {
+		ModuleSpec target = manifestFactory.create(ManifestType.MODULE_SPEC, driverManifest, null);
+
+		copyModuleSpecFields(source, target);
+
+		return target;
+	}
+
+	public MappingManifest cloneMappingManifest(MappingManifest source, DriverManifest driverManifest) {
+		MappingManifest target = manifestFactory.create(ManifestType.MAPPING_MANIFEST, driverManifest, null);
+
+		copyMappingFields(source, target);
+
+		return target;
+	}
+
+	public DriverManifest cloneDriverManifest(DriverManifest source, ContextManifest contextManifest) {
+		DriverManifest target = manifestFactory.create(ManifestType.DRIVER_MANIFEST, contextManifest, null);
+
+		copyDriverFields(source, target);
 
 		return target;
 	}
@@ -436,13 +541,6 @@ public class ContextManifestResolver {
 		ContextManifest target = manifestFactory.create(ManifestType.CONTEXT_MANIFEST, corpusManifest, null);
 
 		copyContextFields(source, target);
-
-		source.forEachGroupManifest(g -> target.addLayerGroup(cloneLayerGroupManifest(g, target)));
-
-		source.forEachPrerequisite(p -> {
-			PrerequisiteManifest pNew = target.addAndGetPrerequisite(p.getAlias());
-			copyPrerequisiteFields(p, pNew);
-		});
 
 		return target;
 	}
