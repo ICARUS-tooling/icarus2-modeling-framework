@@ -21,6 +21,12 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">	
 	<imf:templates>
 	
+		<imf:annotation id="common.tags.stts">
+			<imf:valueSet>
+				<imf:value id="dummy"><imf:content>DUMMY</imf:content></imf:value>
+			</imf:valueSet>
+		</imf:annotation>
+	
 		<imf:context id="common.format.conll09" independent="true" foundationLayer="token" primaryLayer="sentence">
 			<imf:version>1.0</imf:version>
 			<imf:documentation>
@@ -28,24 +34,27 @@
 				<imf:resource name="Task website with description" id="url">https://ufal.mff.cuni.cz/conll2009-st/task-description.html</imf:resource>
 			</imf:documentation>
 			
-			<imf:layerGroup name="Sentence Group" primaryLayer="token" id="sentenceGroup">
-				<imf:itemLayer id="token" layerType="common.layer.token">
+			<imf:layerGroup name="Sentence Group" primaryLayer="sentence" id="sentenceGroup">
+				<imf:itemLayer id="token" layerType="item:token">
 					<imf:hierarchy>
 						<imf:container containerType="span" />
 					</imf:hierarchy>
 				</imf:itemLayer>
-				<imf:itemLayer id="sentence" layerType="common.layer.sentence">
-					<imf:baseLayer layerId="tokens"/>
-					<imf:foundationLayer layerId="tokens"/>
+				<imf:itemLayer id="sentence" layerType="item:sentence">
+					<imf:baseLayer layerId="token"/>
+					<imf:foundationLayer layerId="token"/>
 					<imf:hierarchy>
 						<imf:container containerType="span" />
 					</imf:hierarchy>
 				</imf:itemLayer>
-				<imf:annotationLayer id="form" layerType="common.layer.form">
+				<imf:annotationLayer id="form" layerType="anno:form" defaultKey="form">
 					<imf:baseLayer layerId="token"/>
 					<imf:annotation key="form" valueType="string" />
 				</imf:annotationLayer>
-				<imf:structureLayer id="predictedDependency" layerType="common.layer.dependencySyntax">
+			</imf:layerGroup>
+			
+			<imf:layerGroup name="Predicted Group" primaryLayer="predictedDependency" id="predictedGroup">
+				<imf:structureLayer id="predictedDependency" layerType="struct:dependency">
 					<imf:baseLayer layerId="token"/>
 					<imf:boundaryLayer layerId="sentence"/>
 					<imf:foundationLayer layerId="token"/>
@@ -53,50 +62,72 @@
 						<imf:structure containerType="span" structureType="tree" />
 					</imf:hierarchy>
 				</imf:structureLayer>
-				<imf:annotationLayer id="predictedPos" layerType="common.layer.pos">
+				<imf:annotationLayer id="predictedPos" layerType="anno:part-of-speech" defaultKey="ppos">
 					<imf:baseLayer layerId="token"/>
 					<imf:annotation key="ppos" templateId="common.tags.stts" />
 				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedLemma" layerType="common.layer.lemma">
+				<imf:annotationLayer id="predictedLemma" layerType="anno:lemma" defaultKey="plemma">
 					<imf:baseLayer layerId="token"/>
 					<imf:annotation key="plemma" valueType="string" />
 				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedFeatures" layerType="common.layer.morph">
+				<imf:annotationLayer id="predictedFeatures" layerType="anno:features" defaultKey="pfeats">
 					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="pfeat" valueType="string" />
+					<imf:annotationFlag>unknown-keys</imf:annotationFlag>
+					<imf:annotation key="pfeats" valueType="string" />
 				</imf:annotationLayer>
-				<imf:annotationLayer id="predictedDependencyRelation" layerType="common.layer.dependencyRelation">
+				<imf:annotationLayer id="predictedDependencyRelation" layerType="anno:relation" defaultKey="pdeprel">
 					<imf:baseLayer layerId="predictedDependency"/>
+					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
+					<imf:annotation key="pdeprel" valueType="string" />
+				</imf:annotationLayer>
+			</imf:layerGroup>
+			
+			<imf:layerGroup name="Gold Group" primaryLayer="goldDependency" id="goldGroup">
+				<imf:structureLayer id="goldDependency" layerType="struct:dependency">
+					<imf:baseLayer layerId="token"/>
+					<imf:boundaryLayer layerId="sentence"/>
+					<imf:foundationLayer layerId="token"/>
+					<imf:hierarchy>
+						<imf:structure containerType="span" structureType="tree" />
+					</imf:hierarchy>
+				</imf:structureLayer>
+				<imf:annotationLayer id="goldPos" layerType="anno:part-of-speech" defaultKey="pos">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="pos" templateId="common.tags.stts" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="goldLemma" layerType="anno:lemma" defaultKey="lemma">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotation key="lemma" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="goldFeatures" layerType="anno:features" defaultKey="feats">
+					<imf:baseLayer layerId="token"/>
+					<imf:annotationFlag>unknown-keys</imf:annotationFlag>
+					<imf:annotation key="feats" valueType="string" />
+				</imf:annotationLayer>
+				<imf:annotationLayer id="goldDependencyRelation" layerType="anno:relation" defaultKey="deprel">
+					<imf:baseLayer layerId="goldDependency"/>
 					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
 					<imf:annotation key="deprel" valueType="string" />
 				</imf:annotationLayer>
 			</imf:layerGroup>
 			
-			<imf:layerGroup name="Gold Group" primaryLayer="token" id="goldGroup">
-				<imf:structureLayer id="goldDependency" layerType="common.layer.dependencySyntax">
-					<imf:baseLayer layerId="token"/>
-					<imf:boundaryLayer layerId="sentence"/>
-					<imf:foundationLayer layerId="token"/>
-					<imf:hierarchy>
-						<imf:structure containerType="span" structureType="tree" />
-					</imf:hierarchy>
-				</imf:structureLayer>
-				<imf:annotationLayer id="goldPos">
-					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="goldPos" templateId="common.tags.stts" />
-					<imf:annotation key="goldLemma" valueType="string" />
-					<imf:annotation key="goldFeatures" valueType="string" />
-				</imf:annotationLayer>
-				<imf:annotationLayer id="goldDependencyRelation" layerType="common.layer.dependencyRelation">
-					<imf:baseLayer layerId="goldDependency"/>
-					<imf:annotationFlag>edge-annotation</imf:annotationFlag>
-					<imf:annotation key="goldDeprel" valueType="string" />
-				</imf:annotationLayer>
-			</imf:layerGroup>
-			
-			
-			<imf:driver>
-				<imf:implementation classname="de.ims.icarus2.common.formats.conll.drivers.CoNLL2009FileDriver" />
+			<imf:driver id="common.drivers.conll09">
+				<imf:properties>
+					<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">false</imf:property>
+					<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
+					<imf:property name="de.ims.icarus2.conll09.empty.label">_</imf:property>
+					<imf:property name="de.ims.icarus2.conll09.features.expand" valueType="boolean">true</imf:property>
+					<imf:property name="de.ims.icarus2.conll09.features.delimiter">|</imf:property>
+					<imf:property name="de.ims.icarus2.conll09.features.assign">=</imf:property>
+				</imf:properties>	
+				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />			
+				<imf:module id="de.ims.icarus2.filedriver.converter">
+					<imf:implementation classname="de.ims.icarus2.common.formats.conll.CoNLL2009Converter" />
+				</imf:module>
+				<imf:mapping sourceLayer="sentence" targetLayer="token" relation="one-to-many" coverage="total-monotonic" id="sent2tok" />
+				<imf:mapping sourceLayer="token" targetLayer="sentence" relation="many-to-one" coverage="total-monotonic" id="tok2sent" inverseMapping="sent2tok" />
+				<imf:mapping sourceLayer="sentence" targetLayer="goldDependency" relation="one-to-one" coverage="total-monotonic" id="sent2syntax" />
+				<imf:mapping sourceLayer="sentence" targetLayer="predictedDependency" relation="one-to-one" coverage="total-monotonic" id="sent2psyntax" />
 			</imf:driver>
 		</imf:context>
 	</imf:templates>
