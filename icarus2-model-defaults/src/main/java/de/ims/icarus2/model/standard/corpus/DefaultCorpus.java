@@ -984,7 +984,8 @@ public class DefaultCorpus implements Corpus {
 							.manifest(getManifest().getDriverManifest()
 									.flatMap(DriverManifest::getImplementationManifest)
 									.get())
-							.environment(corpus)
+							.environment(Corpus.class, corpus)
+							.environment(ContextManifest.class, contextManifest)
 							.message("Driver for context '"+getName(contextManifest)+"'")
 							.instantiate(Driver.class);
 

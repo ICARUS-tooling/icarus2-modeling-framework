@@ -199,11 +199,13 @@ public class SpanItemStorage implements ItemStorage {
 
 				beginIndex--;
 			} else if(index==size) {
-				if(target.getItemCount()<=endIndex+1)
-					throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-							"End index in target contianer is already at maximum size - cannot increment it further: "+endIndex);
+				if(!target.isProxy()) {
+					if(target.getItemCount()<=endIndex+1)
+						throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
+								"End index in target contianer is already at maximum size - cannot increment it further: "+endIndex);
 
-				checkTargetItem(target, endIndex+1, item);
+					checkTargetItem(target, endIndex+1, item);
+				}
 
 				endIndex++;
 			} else

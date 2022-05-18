@@ -36,12 +36,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -104,14 +106,14 @@ public class DefaultCorpusManager implements CorpusManager {
 	/**
 	 * Current state of corpora. Must never contain corpora that are 'only' enabled!
 	 */
-	private final Map<CorpusManifest, CorpusManager.CorpusState> states = new HashMap<>();
+	private final Map<String, CorpusManager.CorpusState> states = new HashMap<>();
 
 	/**
 	 * Mapping of corpora that are truly live (i.e. properly connected).
 	 * Chosen to be a linked map as we need the order in which corpora got connected
 	 * for the proper shutdown sequence.
 	 */
-	private final Map<CorpusManifest, Corpus> liveCorpora = new LinkedHashMap<>();
+	private final Map<String, Corpus> liveCorpora = new LinkedHashMap<>();
 
 	/**
 	 * Global lock to synchronize manipulation of corpora that are under control
@@ -258,11 +260,12 @@ public class DefaultCorpusManager implements CorpusManager {
 			throw new ModelException(ManifestErrorCode.MANIFEST_ERROR,
 					"Foreign manifest: "+getName(manifest));
 
-		CorpusManager.CorpusState state = states.get(manifest);
+		final String id = ManifestUtils.requireId(manifest);
+		CorpusManager.CorpusState state = states.get(id);
 
 		if(state==CorpusManager.CorpusState.BAD && !allowBadState)
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
-					"Bad corpus: "+getName(manifest));
+					"Bad corpus: "+id);
 
 		if(state==null) {
 			state = CorpusManager.CorpusState.ENABLED;
@@ -283,7 +286,9 @@ public class DefaultCorpusManager implements CorpusManager {
 		requireNonNull(manifest);
 		requireNonNull(state);
 
-		CorpusManager.CorpusState oldState = states.get(manifest);
+		final String id = ManifestUtils.requireId(manifest);
+
+		CorpusManager.CorpusState oldState = states.get(id);
 
 		if(oldState==null) {
 			oldState = CorpusManager.CorpusState.ENABLED;
@@ -292,12 +297,12 @@ public class DefaultCorpusManager implements CorpusManager {
 		if(!state.isValidPrecondition(oldState))
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE,
 					String.format("Corpus %s cannot be set to state %s while currently being %s",
-							getName(manifest), state, oldState));
+							id, state, oldState));
 
 		if(state==CorpusManager.CorpusState.ENABLED) {
-			states.remove(manifest);
+			states.remove(id);
 		} else {
-			states.put(manifest, state);
+			states.put(id, state);
 		}
 
 		return oldState;
@@ -376,9 +381,11 @@ public class DefaultCorpusManager implements CorpusManager {
 		try {
 			CorpusManager.CorpusState oldState = getStateUnsafe(manifest, false);
 
+			final String id = ManifestUtils.requireId(manifest);
+
 			// Immediately return in case the corpus is already connected (do not notify listeners!!!)
 			if(oldState==CorpusManager.CorpusState.CONNECTED) {
-				return liveCorpora.get(manifest);
+				return liveCorpora.get(id);
 			}
 
 			// If currently disconnecting, signal the client to wait and try again later
@@ -417,8 +424,7 @@ public class DefaultCorpusManager implements CorpusManager {
 			}
 
 			// Everything went smooth -> set live state and notify
-
-			liveCorpora.put(manifest, corpus);
+			liveCorpora.put(id, corpus);
 			setStateUnsafe(manifest, CorpusManager.CorpusState.CONNECTED);
 			fireCorpusConnected(corpus);
 
@@ -435,8 +441,11 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer = this.corpusProducer;
 		if(corpusProducer!=null) {
+			// When delegating corpus creation, the producer is responsible for cloning the manifest
 			corpus = corpusProducer.apply(this, manifest);
 		} else {
+			// Create a detached version of the manifest that uses no templating
+			manifest = ManifestUtils.flattenCorpus(manifest);
 			corpus = instantiate(manifest);
 		}
 
@@ -508,8 +517,10 @@ public class DefaultCorpusManager implements CorpusManager {
 		setStateUnsafe(manifest, CorpusManager.CorpusState.DISCONNECTING);
 		fireCorpusChanged(manifest);
 
+		final String id = ManifestUtils.requireId(manifest);
+
 		// Now destroy corpus
-		Corpus corpus = liveCorpora.get(manifest);
+		Corpus corpus = liveCorpora.get(id);
 		try {
 			destroy(corpus);
 			// Reset to null is indicator for successful destruction
@@ -525,7 +536,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		// Everything went smooth -> remove corpus, set state and notify
 
-		liveCorpora.remove(manifest);
+		liveCorpora.remove(id);
 		setStateUnsafe(manifest, CorpusManager.CorpusState.ENABLED);
 		fireCorpusDisconnected(manifest);
 
@@ -547,16 +558,16 @@ public class DefaultCorpusManager implements CorpusManager {
 	public void shutdown() throws InterruptedException, AccumulatingException {
 		long stamp = lock.writeLockInterruptibly();
 		try {
-			List<CorpusManifest> pendingCorpora = new ArrayList<>(liveCorpora.keySet());
+			List<Corpus> pendingCorpora = new ArrayList<>(liveCorpora.values());
 			if(pendingCorpora.isEmpty()) {
 				return;
 			}
 
 			AccumulatingException.Buffer exceptionBuffer = new AccumulatingException.Buffer();
-			for(CorpusManifest manifest : pendingCorpora) {
+			for(Corpus corpus : pendingCorpora) {
 				try {
 					//TODO do we need to add measures for suppressing events at this stage?
-					disconnectUnsafe(manifest);
+					disconnectUnsafe(corpus.getManifest());
 				} catch (AccumulatingException e) {
 					exceptionBuffer.addExceptionsFrom(e);
 				}
@@ -585,8 +596,10 @@ public class DefaultCorpusManager implements CorpusManager {
 			Corpus corpus = null;
 			CorpusManager.CorpusState state = getStateUnsafe(manifest, true);
 
+			final String id = ManifestUtils.requireId(manifest);
+
 			if(state==CorpusManager.CorpusState.CONNECTED) {
-				corpus = liveCorpora.get(manifest);
+				corpus = liveCorpora.get(id);
 			}
 
 			return corpus;
@@ -768,7 +781,10 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		long stamp = lock.readLock();
 		try {
-			return new ArrayList<>(liveCorpora.keySet());
+			return liveCorpora.values()
+					.stream()
+					.map(Corpus::getManifest)
+					.collect(Collectors.toList());
 		} finally {
 			lock.unlockRead(stamp);
 		}
@@ -780,7 +796,7 @@ public class DefaultCorpusManager implements CorpusManager {
 
 		long stamp = lock.readLock();
 		try {
-			Collection<CorpusManifest> corpora = states.keySet();
+			Collection<String> corpora = states.keySet();
 
 			if(corpora.isEmpty()) {
 				return Collections.emptyList();
@@ -789,13 +805,14 @@ public class DefaultCorpusManager implements CorpusManager {
 			Collection<CorpusManifest> result = null;
 
 			int visited = 0;
-			for(CorpusManifest corpus : corpora) {
-				if(p.test(corpus)) {
+			for(String id : corpora) {
+				Optional<CorpusManifest> corpus = manifestRegistry.getCorpusManifest(id);
+				if(corpus.isPresent() && p.test(corpus.get())) {
 					// Create result buffer lazily only in case we really need it
 					if(result==null) {
 						result = new ArrayList<>(corpora.size()-visited);
 					}
-					result.add(corpus);
+					result.add(corpus.get());
 				}
 				visited++;
 			}
@@ -818,7 +835,7 @@ public class DefaultCorpusManager implements CorpusManager {
 		try {
 			//TODO currently we can't return 'enabled' manifests
 
-			Set<Entry<CorpusManifest, CorpusState>> entries = states.entrySet();
+			Set<Entry<String, CorpusState>> entries = states.entrySet();
 
 			if(entries.isEmpty()) {
 				return Collections.emptyList();
@@ -827,13 +844,14 @@ public class DefaultCorpusManager implements CorpusManager {
 			Collection<CorpusManifest> result = null;
 
 			int visited = 0;
-			for(Entry<CorpusManifest, CorpusState> entry : entries) {
-				if(entry.getValue()==state) {
+			for(Entry<String, CorpusState> entry : entries) {
+				Optional<CorpusManifest> corpus = manifestRegistry.getCorpusManifest(entry.getKey());
+				if(corpus.isPresent() && entry.getValue()==state) {
 					// Create result buffer lazily only in case we really need it
 					if(result==null) {
 						result = new ArrayList<>(entries.size()-visited);
 					}
-					result.add(entry.getKey());
+					result.add(corpus.get());
 				}
 				visited++;
 			}
@@ -1031,6 +1049,17 @@ public class DefaultCorpusManager implements CorpusManager {
 			return thisAsCast();
 		}
 
+		/**
+		 * Assigns an alternative way of creating actual corpus instances when
+		 * connecting to a corpus resource. Note that the {@code corpusProducer}
+		 * has the responsibility to fully instantiate and link a {@link Corpus}
+		 * instance based on a given {@link CorpusManifest}. This potentially
+		 * includes cloning the manifest into a {@link ManifestUtils#flattenCorpus(CorpusManifest) flattened}
+		 * version first.
+		 *
+		 * @param corpusProducer
+		 * @return
+		 */
 		@Guarded(methodType=MethodType.BUILDER)
 		public Builder corpusProducer(
 				BiFunction<CorpusManager, CorpusManifest, Corpus> corpusProducer) {

@@ -230,7 +230,7 @@ public class FileDriver extends AbstractDriver {
 
 		Converter converter = factory.newImplementationLoader()
 				.manifest(manifest.getImplementationManifest().get())
-				.environment(this)
+				.environment(FileDriver.class, this)
 				.message("Converter for driver "+getName(getManifest()))
 				.instantiate(Converter.class);
 
@@ -242,6 +242,7 @@ public class FileDriver extends AbstractDriver {
 //		converter.init(this);
 
 		converter.addNotify(this);
+		converter.readManifest(manifest);
 
 		return converter;
 	}
@@ -1550,6 +1551,9 @@ public class FileDriver extends AbstractDriver {
 				loadedChunkCount = 0L;
 			}
 
+			// All good till here, mark file as loaded
+			fileInfo.setFlag(ElementFlag.LOADED);
+
 			return loadedChunkCount;
 
 		} catch (IOException e) {
@@ -1590,6 +1594,29 @@ public class FileDriver extends AbstractDriver {
 			}
 		}
 
+	}
+
+	/**
+	 * Attempts to scan all files comprising the resources of this driver.
+	 *
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws IcarusApiException
+	 */
+	public boolean scanAllFiles() throws IOException, InterruptedException, IcarusApiException {
+		ResourceSet dataFiles = getDataFiles();
+
+		int fileCount = dataFiles.getResourceCount();
+
+		for(int fileIndex = 0; fileIndex < fileCount; fileIndex++) {
+
+			boolean success = scanFile(fileIndex);
+			if(!success) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
