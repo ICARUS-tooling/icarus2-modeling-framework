@@ -49,7 +49,6 @@ import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.test.ApiGuardedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
-import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
@@ -161,7 +160,7 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 
 		assertSame(host, edge.getContainer());
 		assertSame(host, edge.getStructure());
-		assertEquals(IcarusUtils.UNSET_LONG, edge.getId());
+		assertEquals(id, edge.getId());
 	}
 
 	/**
@@ -181,7 +180,7 @@ public interface LayerMemberFactoryTest<F extends LayerMemberFactory>
 		assertSame(host, edge.getStructure());
 		assertSame(source, edge.getSource());
 		assertSame(target, edge.getTarget());
-		assertEquals(IcarusUtils.UNSET_LONG, edge.getId());
+		assertEquals(id, edge.getId());
 	}
 
 	/**
