@@ -59,7 +59,7 @@ public final class CoNLLTemplates {
 	 * @throws IOException
 	 * @throws SAXException
 	 */
-	public static void readTeplates(ManifestRegistry registry) throws IOException, SAXException {
+	public static void registerTeplates(ManifestRegistry registry) throws IOException, SAXException {
 		ManifestXmlReader reader = ManifestXmlReader.builder()
 				.registry(registry)
 				.useImplementationDefaults()
@@ -82,7 +82,7 @@ public final class CoNLLTemplates {
 		ManifestRegistry registry = new DefaultManifestRegistry();
 
 		try {
-			readTeplates(registry);
+			registerTeplates(registry);
 		} catch (IOException | SAXException e) {
 			throw new IcarusRuntimeException(ManifestErrorCode.MANIFEST_ERROR,
 					"Failed to read CoNNL default templates", e);
