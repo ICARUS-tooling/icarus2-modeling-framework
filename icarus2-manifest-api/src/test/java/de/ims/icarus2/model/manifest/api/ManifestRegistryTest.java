@@ -60,7 +60,7 @@ import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.model.manifest.ManifestTestUtils;
 import de.ims.icarus2.model.manifest.api.events.ManifestEvents;
-import de.ims.icarus2.model.manifest.standard.DefaultLayerTypeIds;
+import de.ims.icarus2.model.manifest.standard.DefaultLayerType;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.TestUtils;
 import de.ims.icarus2.util.events.EventManagerTest;
@@ -285,7 +285,7 @@ public interface ManifestRegistryTest
 		ManifestRegistry instance = createTestInstance(settings());
 
 		// No registry implementation is expected to provide its own overlay layer type, so we need to add it first
-		instance.addLayerType(mockLayerType(DefaultLayerTypeIds.ITEM_LAYER_OVERLAY));
+		instance.addLayerType(DefaultLayerType.ITEM_LAYER_OVERLAY);
 
 		assertNotNull(instance.getOverlayLayerType());
 	}

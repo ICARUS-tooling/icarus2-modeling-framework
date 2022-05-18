@@ -32,14 +32,18 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
+import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.Embedded;
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ManifestFactory;
 import de.ims.icarus2.model.manifest.api.ManifestFragment;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
 import de.ims.icarus2.model.manifest.api.TypedManifest;
+import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
+import de.ims.icarus2.model.manifest.standard.resolve.ContextManifestResolver;
 
 /**
  * @author Markus Gärtner
@@ -333,5 +337,31 @@ public class ManifestUtils {
 		}
 
 		return null;
+	}
+
+	public static CorpusManifest flattenCorpus(CorpusManifest source) {
+		final ManifestFactory factory = new DefaultManifestFactory(source.getManifestLocation(), source.getRegistry());
+		final ContextManifestResolver resolver = new ContextManifestResolver(factory);
+
+		final CorpusManifest clone = factory.create(ManifestType.CORPUS_MANIFEST);
+
+		// Mandatory parts
+		clone.setId(ManifestUtils.requireId(source));
+		clone.setName(ManifestUtils.requireName(source));
+		source.forEachRootContextManifest(context -> clone.addRootContextManifest(resolver.cloneContextManifest(context, clone)));
+		clone.setEditable(false); // live corpus can't be edited anyway
+
+		// Optional fields
+		source.getDescription().ifPresent(clone::setDescription);
+		source.getDocumentation().ifPresent(clone::setDocumentation);
+		source.forEachCategory(clone::addCategory);
+		source.forEachNote(clone::addNote);
+		source.forEachProperty(clone::addProperty);
+		source.forEachCustomContextManifest(context -> clone.addCustomContextManifest(resolver.cloneContextManifest(context, clone)));
+		source.getVersionManifest().ifPresent(clone::setVersionManifest);
+
+		//TODO we _should_ lock the clone, but shared nested data would be compromised
+
+		return clone;
 	}
 }

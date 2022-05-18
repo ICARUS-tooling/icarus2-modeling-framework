@@ -435,6 +435,13 @@ public class ManifestTestUtils {
 		return manifest;
 	}
 
+	public static <I extends Identity> I stubName(I identity, String name) {
+		requireNonNull(name);
+		assertMock(identity);
+		doReturn(Optional.of(name)).when(identity).getName();
+		return identity;
+	}
+
 	public static <I extends Identity> I stubIdentity(I identity, String id) {
 		requireNonNull(id);
 		assertMock(identity);

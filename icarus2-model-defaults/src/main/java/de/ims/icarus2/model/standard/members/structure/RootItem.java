@@ -351,7 +351,7 @@ public abstract class RootItem<E extends Edge> implements Item, NodeInfo {
 		public void addEdge(E edge) {
 			requireNonNull(edge);
 
-			if(this.edge!=null)
+			if(this.edge!=null && this.edge!=edge)
 				throw Nodes.edgeAlreadySet(false, this.edge);
 
 			this.edge = edge;

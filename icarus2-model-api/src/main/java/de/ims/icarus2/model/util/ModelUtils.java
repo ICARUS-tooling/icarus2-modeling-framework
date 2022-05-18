@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.util;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
@@ -54,6 +55,7 @@ import de.ims.icarus2.model.api.members.NamedCorpusMember;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Fragment;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Metric;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.raster.RasterAxis;
@@ -72,6 +74,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestOwner;
 import de.ims.icarus2.model.manifest.api.ManifestType;
 import de.ims.icarus2.model.manifest.api.MemberManifest;
+import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -417,6 +420,25 @@ public final class ModelUtils {
 		}
 
 		return layer==null ? null : layer.getContext();
+	}
+
+	private static void dumpTree0(Structure tree, Item node, StringBuilder sb) {
+		sb.append('[');
+		sb.append(node.toString());
+		if(tree.getOutgoingEdgeCount(node)>0) {
+			sb.append(' ');
+			tree.forEachOutgoingEdge(node, e -> dumpTree0(tree, e.getTarget(), sb));
+		}
+		sb.append(']');
+	}
+
+	public static String dumpTree(Structure tree) {
+		checkArgument("structure is not a tree", tree.getStructureType()==StructureType.TREE
+				|| tree.getStructureType()==StructureType.CHAIN);
+
+		StringBuilder sb = new StringBuilder();
+		tree.forEachOutgoingEdge(tree.getVirtualRoot(), e -> dumpTree0(tree, e.getTarget(), sb));
+		return sb.toString();
 	}
 
 	private static char getTypePrefix(MemberType type) {

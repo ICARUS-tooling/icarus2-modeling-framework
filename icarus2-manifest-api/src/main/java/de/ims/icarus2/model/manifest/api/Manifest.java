@@ -103,21 +103,8 @@ public interface Manifest extends ManifestFragment {
 
 	/**
 	 * Throws a {@link ManifestException} with {@link ManifestErrorCode#MANIFEST_ILLEGAL_TEMPLATE_STATE}
-	 * in case the {@link #getManifestLocation() location} of this manifest is declared to be
-	 * a storage for "live" manifests, i.e. its {@link ManifestLocation#isTemplate()} method returns {@code true}.
-	 */
-	@Deprecated
-	default void checkNotLive() {
-		if(!getManifestLocation().isTemplate())
-			throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,
-					"Manifest is not a template: "+getId());
-	}
-
-	/**
-	 * Throws a {@link ManifestException} with {@link ManifestErrorCode#MANIFEST_ILLEGAL_TEMPLATE_STATE}
 	 * in case this manifest is declared to be a {@link #isTemplate() template}.
 	 */
-	@Deprecated
 	default void checkNotTemplate() {
 		if(isTemplate())
 			throw new ManifestException(ManifestErrorCode.MANIFEST_ILLEGAL_TEMPLATE_STATE,

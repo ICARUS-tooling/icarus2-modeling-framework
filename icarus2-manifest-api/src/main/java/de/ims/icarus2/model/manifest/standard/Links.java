@@ -108,6 +108,7 @@ public class Links {
 				target = wrap(resolve());
 			}
 
+			assert target!=null : "unresolvable link: "+id;
 			return target.get();
 		}
 

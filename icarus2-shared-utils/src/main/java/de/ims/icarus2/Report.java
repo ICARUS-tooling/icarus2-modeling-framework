@@ -23,6 +23,7 @@ import java.util.Locale;
 
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.util.id.Identity;
+import de.ims.icarus2.util.strings.StringUtil;
 
 /**
  *
@@ -78,6 +79,9 @@ public interface Report<R extends ReportItem> {
     	 * This is the main collection method, all other predefined
     	 * methods in this interface delegate to this method with
     	 * their respective fixed values for {@link Severity} etc...
+    	 * <p>
+    	 * Message formating is delegated to {@link StringUtil#format(String, Object...)} which
+    	 * currently uses {@link String#format(String, Object...)}.
     	 *
     	 * @param severity
     	 * @param source
@@ -87,38 +91,47 @@ public interface Report<R extends ReportItem> {
     	 */
     	void addItem(Severity severity, Identity source, ErrorCode code, String message, Object...data);
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addItem(Severity severity, ErrorCode code, String message) {
     		addItem(severity, null, code, message, (Object[])null);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addError(ErrorCode code, String message) {
     		addItem(Severity.ERROR, null, code, message, (Object[])null);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addError(ErrorCode code, String message, Object...data) {
     		addItem(Severity.ERROR, null, code, message, data);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addWarning(ErrorCode code, String message) {
     		addItem(Severity.WARNING, null, code, message, (Object[])null);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addWarning(ErrorCode code, String message, Object...data) {
     		addItem(Severity.WARNING, null, code, message, data);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addInfo(ErrorCode code, String message) {
     		addItem(Severity.INFO, null, code, message, (Object[])null);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addInfo(ErrorCode code, String message, Object...data) {
     		addItem(Severity.INFO, null, code, message, data);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addInfo(String message) {
     		addItem(Severity.INFO, null, GlobalErrorCode.INFO, message, (Object[])null);
     	}
 
+    	/** @see #addItem(Severity, Identity, ErrorCode, String, Object...) */
     	default void addInfo(String message, Object...data) {
     		addItem(Severity.INFO, null, GlobalErrorCode.INFO, message, data);
     	}
