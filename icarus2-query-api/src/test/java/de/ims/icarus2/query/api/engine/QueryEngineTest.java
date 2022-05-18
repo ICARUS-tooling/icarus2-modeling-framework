@@ -146,6 +146,12 @@ class QueryEngineTest {
 	class ForEvaluateQuery {
 
 		@Nested
+		class ForLive {
+
+			private CorpusManager manager;
+		}
+
+		@Nested
 		class ForVirtual {
 
 			private CorpusManager manager;

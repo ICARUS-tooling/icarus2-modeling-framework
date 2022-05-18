@@ -98,7 +98,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  * @author Markus Gärtner
  *
  */
-public class QueryEngine {
+public class QueryEngine implements AutoCloseable {
 
 	private static final Logger log = LoggerFactory.getLogger(QueryEngine.class);
 
@@ -124,6 +124,11 @@ public class QueryEngine {
 	public ObjectMapper getMapper() { return mapper; }
 
 	public EngineSettings getSettings() { return settings; }
+
+	@Override
+	public void close() {
+		// TODO cleanup extension registry and buffers
+	}
 
 	public QueryJob evaluateQuery(Query rawQuery, ResultSink resultSink) throws InterruptedException {
 		requireNonNull(rawQuery);
