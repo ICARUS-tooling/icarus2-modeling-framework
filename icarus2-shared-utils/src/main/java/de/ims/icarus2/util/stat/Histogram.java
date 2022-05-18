@@ -38,11 +38,17 @@ public interface Histogram extends LongConsumer {
 	/** Returns the lower bound for values in the specified {@code bin}. */
 	long lowerBound(int bin);
 
+	default long lowerBound() { return lowerBound(0); }
+
 	/** Returns the lower bound for values in the specified {@code bin}. */
 	long higherBound(int bin);
 
+	default long higherBound() { return higherBound(bins()-1); }
+
 	/** Returns the total number of entries in this entire histogram. */
 	long entries();
+
+	default boolean isEmpty() { return entries()==0; }
 
 	/** Returns the frequency of the specified {@code bin}. */
 	long freq(int bin);
@@ -56,13 +62,13 @@ public interface Histogram extends LongConsumer {
 	 */
 	double average();
 
-	default long min() {
-		return lowerBound(0);
-	}
+	/** Returns the smallest value encountered so far. Return value is undefined if
+	 * histogram is {@link #isEmpty() empty}! */
+	long min();
 
-	default long max() {
-		return higherBound(bins()-1);
-	}
+	/** Returns the largest value encountered so far. Return value is undefined if
+	 * histogram is {@link #isEmpty() empty}! */
+	long max();
 
 	//TODO add method for average and percentile retrieval
 
@@ -72,6 +78,10 @@ public interface Histogram extends LongConsumer {
 
 	public static Histogram rangedHistogram(int capacity) {
 		return ArrayHistogram.fixed(capacity);
+	}
+
+	public static Histogram openHistogram(int initialCapacity) {
+		return ArrayHistogram.open(initialCapacity);
 	}
 
 	public static class ArrayHistogram implements Histogram, LongConsumer {
@@ -109,27 +119,20 @@ public interface Histogram extends LongConsumer {
 		/** Offset to be applied when determining the bin for a given value */
 		private long offset;
 
+		private long min = Long.MAX_VALUE;
+		private long max = Long.MIN_VALUE;
+
 		private ArrayHistogram(int capacity, long offset, boolean fixed) {
 			this.bins = new int[capacity];
 			this.offset = offset;
 			this.fixed = fixed;
 		}
 
-		/**
-		 * @see de.ims.icarus2.util.stat.Histogram#bins()
-		 */
 		@Override
-		public int bins() {
-			return bins.length;
-		}
+		public int bins() { return bins.length; }
 
-		/**
-		 * @see de.ims.icarus2.util.stat.Histogram#lowerBound(int)
-		 */
 		@Override
-		public long lowerBound(int bin) {
-			return offset + bin;
-		}
+		public long lowerBound(int bin) { return offset + bin; }
 
 		/**
 		 * {@inheritDoc}
@@ -139,29 +142,20 @@ public interface Histogram extends LongConsumer {
 		 * @see de.ims.icarus2.util.stat.Histogram#higherBound(int)
 		 */
 		@Override
-		public long higherBound(int bin) {
-			return lowerBound(bin);
-		}
+		public long higherBound(int bin) { return lowerBound(bin); }
 
-		/**
-		 * @see de.ims.icarus2.util.stat.Histogram#entries()
-		 */
 		@Override
-		public long entries() {
-			return entries;
-		}
+		public long entries() { return entries; }
 
-		/**
-		 * @see de.ims.icarus2.util.stat.Histogram#freq(int)
-		 */
 		@Override
-		public long freq(int bin) {
-			return bins[bin];
-		}
+		public long freq(int bin) { return bins[bin]; }
 
-		/**
-		 * @see de.ims.icarus2.util.stat.Histogram#average()
-		 */
+		@Override
+		public long min() { return min; }
+
+		@Override
+		public long max() { return max; }
+
 		@Override
 		public double average() {
 			return entries==0L ? Double.NaN : (double) sum / entries;
@@ -204,6 +198,8 @@ public interface Histogram extends LongConsumer {
 			bins[rawBin]++;
 			sum += value;
 			entries++;
+			if(value < min) min = value;
+			if(value > max) max = value;
 		}
 
 		public ArrayHistogram add(long value) {

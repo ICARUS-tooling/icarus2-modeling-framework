@@ -104,6 +104,7 @@ class HistogramTest {
 					.mapToObj(lowerBound -> dynamicTest(displayString(lowerBound), () -> {
 						H histogram = createForRange(lowerBound, lowerBound+100);
 						assertEquals(lowerBound, histogram.lowerBound(0));
+						assertEquals(lowerBound, histogram.lowerBound());
 						assertEquals(lowerBound+99, histogram.lowerBound(99));
 					}));
 		}
@@ -121,6 +122,7 @@ class HistogramTest {
 					.mapToObj(higherBound -> dynamicTest(displayString(higherBound), () -> {
 						H histogram = createForRange(higherBound-100, higherBound);
 						assertEquals(higherBound, histogram.higherBound(100));
+						assertEquals(higherBound, histogram.higherBound());
 						assertEquals(higherBound-100, histogram.higherBound(0));
 					}));
 		}
@@ -323,19 +325,34 @@ class HistogramTest {
 					dynamicTest("no offset", () -> {
 						int bins = rand.random(10, 100);
 						H hist = createForBins(bins);
-						assertEquals(0, hist.min());
+
+						hist.accept(2);
+						hist.accept(1);
+						hist.accept(bins-1);
+
+						assertEquals(1, hist.min());
 					}),
 					dynamicTest("negative offset", () -> {
 						int bins = rand.random(10, 100);
 						long offset = rand.random(Long.MIN_VALUE, 0);
 						H hist = createForRange(offset, offset+bins-1);
-						assertEquals(offset, hist.min());
+
+						hist.accept(offset+bins-2);
+						hist.accept(offset+1);
+						hist.accept(offset+bins/2);
+
+						assertEquals(offset+1, hist.min());
 					}),
 					dynamicTest("positive offset", () -> {
 						int bins = rand.random(10, 100);
 						long offset = rand.random(1, Long.MAX_VALUE/2);
 						H hist = createForRange(offset, offset+bins-1);
-						assertEquals(offset, hist.min());
+
+						hist.accept(offset+bins-2);
+						hist.accept(offset+1);
+						hist.accept(offset+bins/2);
+
+						assertEquals(offset+1, hist.min());
 					})
 			);
 		}
@@ -350,19 +367,34 @@ class HistogramTest {
 					dynamicTest("no offset", () -> {
 						int bins = rand.random(10, 100);
 						H hist = createForBins(bins);
-						assertEquals(bins-1, hist.max());
+
+						hist.accept(2);
+						hist.accept(1);
+						hist.accept(bins-2);
+
+						assertEquals(bins-2, hist.max());
 					}),
 					dynamicTest("negative offset", () -> {
 						int bins = rand.random(10, 100);
 						long offset = rand.random(Long.MIN_VALUE, -100);
 						H hist = createForRange(offset, offset+bins-1);
-						assertEquals(offset+bins-1, hist.max());
+
+						hist.accept(offset+bins/2);
+						hist.accept(offset+bins-2);
+						hist.accept(offset+1);
+
+						assertEquals(offset+bins-2, hist.max());
 					}),
 					dynamicTest("positive offset", () -> {
 						int bins = rand.random(10, 100);
 						long offset = rand.random(1, Long.MAX_VALUE/2);
 						H hist = createForRange(offset, offset+bins-1);
-						assertEquals(offset+bins-1, hist.max());
+
+						hist.accept(offset+bins/2);
+						hist.accept(offset+bins-2);
+						hist.accept(offset+1);
+
+						assertEquals(offset+bins-2, hist.max());
 					})
 			);
 		}
