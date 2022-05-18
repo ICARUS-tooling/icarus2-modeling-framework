@@ -584,7 +584,7 @@ public abstract class AbstractDriver implements Driver {
 
 		return factory.newImplementationLoader()
 				.manifest(manifest.getImplementationManifest().get())
-				.environment(this)
+				.environment(Driver.class, this)
 				.message("Module manifest "+getName(manifest))
 				.instantiate(resultClass);
 	}

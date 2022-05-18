@@ -506,7 +506,7 @@ public class ContextFactory {
 
 			Rasterizer rasterizer = loader
 					.manifest(rasterizerManifest.getImplementationManifest().get())
-					.environment(layer)
+					.environment(FragmentLayer.class, layer)
 					.message("Rasterizer for layer '"+getName(layer)+"'")
 					.instantiate(Rasterizer.class);
 
