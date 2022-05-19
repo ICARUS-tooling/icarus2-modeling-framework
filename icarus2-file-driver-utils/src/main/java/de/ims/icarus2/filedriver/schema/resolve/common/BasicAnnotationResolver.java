@@ -79,6 +79,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		ValueType valueType = annotationManifest.getValueType();
 
 		switch (valueType.getName()) {
+		case ValueType.STRING_TYPE_LABEL: return new StringAnnotationResolver(
+				annotationStorage::setString, annotationManifest, annotationKey);
 		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver(
 				annotationStorage::setInteger, annotationManifest, annotationKey);
 		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver(
@@ -118,6 +120,8 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 		ValueType valueType = annotationManifest.getValueType();
 
 		switch (valueType.getName()) {
+		case ValueType.STRING_TYPE_LABEL: return new StringAnnotationResolver(
+				(AnnotationConsumer<String>) annotationConsumer, annotationManifest, annotationKey);
 		case ValueType.INTEGER_TYPE_LABEL: return new IntAnnotationResolver(
 				(AnnotationConsumer<Integer>) annotationConsumer, annotationManifest, annotationKey);
 		case ValueType.LONG_TYPE_LABEL: return new LongAnnotationResolver(
@@ -180,6 +184,41 @@ public abstract class BasicAnnotationResolver<E extends Object> implements Resol
 			value = valueType.persist(value);
 
 			annotationConsumer.apply(context.currentItem(), annotationKey, value);
+
+			return context.currentItem();
+		}
+	}
+
+	public static class StringAnnotationResolver extends BasicAnnotationResolver<String> {
+
+		private final ValueVerifier.ObjectVerifier verifier;
+
+		public StringAnnotationResolver(AnnotationConsumer<String> annotationConsumer,
+				AnnotationManifest annotationManifest, String annotationKey) {
+			super(annotationConsumer, annotationManifest, annotationKey);
+
+			verifier = ObjectVerifier.forAnnotation(annotationManifest);
+		}
+
+		/**
+		 * @throws ValueConversionException
+		 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#process(java.lang.String)
+		 */
+		@Override
+		public Item process(ResolverContext context) throws ValueConversionException {
+			Object value = valueType.parse(context.rawData(), BasicAnnotationResolver.class.getClassLoader());
+
+			if(verifier!=null) {
+				VerificationResult verificationResult = verifier.verify(value);
+				if(verificationResult.isError()) {
+					verificationResult.throwException(context.rawData().toString());
+				}
+			}
+
+			// Now that we have verified the correctness of our value we can use a persistent form
+			value = valueType.persist(value);
+
+			annotationConsumer.apply(context.currentItem(), annotationKey, (String)value);
 
 			return context.currentItem();
 		}
