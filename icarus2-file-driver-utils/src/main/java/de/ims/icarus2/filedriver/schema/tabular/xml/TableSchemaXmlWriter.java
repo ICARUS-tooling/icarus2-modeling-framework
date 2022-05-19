@@ -163,6 +163,14 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 		// Component
 		writeMemberSchema(TableSchemaXmlConstants.TAG_COMPONENT, schema.getComponentSchema());
 
+		// External groups
+		String[] groups = schema.getExternalGroupIds();
+		if(groups.length>0) {
+			for(String group : groups) {
+				writeElement(TableSchemaXmlConstants.TAG_EXTERNAL_GROUP, group);
+			}
+		}
+
 		// Begin delimiter
 		writeAttributeSchema(TableSchemaXmlConstants.TAG_BEGIN_DELIMITER, schema.getBeginDelimiter());
 

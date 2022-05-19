@@ -29,6 +29,7 @@ public final class TableSchemaXmlConstants {
 
 	public static final String TAG_TABLE = "table";
 	public static final String TAG_BLOCK = "block";
+	public static final String TAG_EXTERNAL_GROUP = "externalGroup";
 	public static final String TAG_NESTED_BLOCKS = "nestedBlocks";
 	public static final String TAG_OPTION = "option";
 	public static final String TAG_ATTRIBUTE = "attribute";

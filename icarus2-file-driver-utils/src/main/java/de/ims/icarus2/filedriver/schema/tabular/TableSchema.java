@@ -112,11 +112,18 @@ public interface TableSchema extends Schema {
 
 		/**
 		 * Returns the {@link LayerManifest#getId() layer-id} of the {@link ItemLayer}
-		 * containers created for this block should be placed in.
+		 * that containers created for this block should be placed in.
 		 *
 		 * @return
 		 */
 		String getLayerId();
+
+		/**
+		 * Returns the ids of additional {@link LayerGroup layer groups} in the
+		 * context besides the group which hosts the {@link #getLayerId() primary layer}
+		 * of this block.
+		 */
+		String[] getExternalGroupIds();
 
 		/**
 		 * Specification of nested elements.

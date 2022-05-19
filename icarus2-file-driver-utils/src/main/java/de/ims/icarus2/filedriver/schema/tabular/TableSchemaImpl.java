@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.schema.tabular;
 
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static java.util.Objects.requireNonNull;
 
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.google.common.base.Objects;
@@ -33,6 +35,7 @@ import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.lang.ClassUtils;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * @author Markus Gärtner
@@ -115,10 +118,12 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 	private static AttributeSchema[] EMPTY_ATTRIBUTES = {};
 	private static BlockSchema[] EMPTY_BLOCKS = {};
 	private static ColumnSchema[] EMPTY_COLUMNS = {};
+	private static String[] EMPTY_STRINGS = {};
 
 	public static class BlockSchemaImpl implements BlockSchema {
 
 		private String layerId;
+		private final Set<String> externalGroupIds = new ObjectOpenHashSet<>();
 		private String separator;
 		private MemberSchema componentSchema;
 		private AttributeSchema beginDelimiter, endDelimiter;
@@ -136,6 +141,20 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		@Override
 		public String getLayerId() {
 			return layerId;
+		}
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getExternalGroupIds()
+		 */
+		@Override
+		public String[] getExternalGroupIds() {
+
+			String[] result = EMPTY_STRINGS;
+
+			if(externalGroupIds!=null) {
+				result = externalGroupIds.toArray(EMPTY_STRINGS);
+			}
+
+			return result;
 		}
 
 		/**
@@ -310,6 +329,14 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 			requireNonNull(block);
 
 			nestedBlocks.add(block);
+
+			return this;
+		}
+
+		public BlockSchemaImpl addExternalGroupId(String id) {
+			checkNotEmpty(id);
+
+			externalGroupIds.add(id);
 
 			return this;
 		}

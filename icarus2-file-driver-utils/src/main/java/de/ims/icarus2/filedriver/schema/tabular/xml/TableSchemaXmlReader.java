@@ -241,6 +241,7 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 		case TableSchemaXmlConstants.TAG_SEPARATOR:
 		case TableSchemaXmlConstants.TAG_DESCRIPTION:
 		case TableSchemaXmlConstants.TAG_PATTERN:
+		case TableSchemaXmlConstants.TAG_EXTERNAL_GROUP:
 			break;
 
 		// "Wrapper" tags
@@ -330,6 +331,10 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 
 		case TableSchemaXmlConstants.TAG_PATTERN:
 			peek(AttributeSchemaImpl.class).setPattern(getText());
+			break;
+
+		case TableSchemaXmlConstants.TAG_EXTERNAL_GROUP:
+			peek(BlockSchemaImpl.class).addExternalGroupId(getText());
 			break;
 
 		case TableSchemaXmlConstants.TAG_DESCRIPTION:
