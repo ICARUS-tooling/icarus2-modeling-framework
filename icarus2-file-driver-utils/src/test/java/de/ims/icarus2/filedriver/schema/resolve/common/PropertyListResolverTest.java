@@ -136,7 +136,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 				assertThat(resolver.process(context)).isSameAs(item);
 
 				if(type==ValueType.STRING)
-					verify(storage).setValue(eq(item), eq(key), eq(values[i]));
+					verify(storage).setString(eq(item), eq(key), eq((String)values[i]));
 			}
 
 			resolver.close();
