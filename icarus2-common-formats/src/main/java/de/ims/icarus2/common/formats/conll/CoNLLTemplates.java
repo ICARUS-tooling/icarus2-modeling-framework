@@ -40,6 +40,7 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 public final class CoNLLTemplates {
 
 	public static final String CONLL09_TEMPLATE = "common.format.conll09";
+	public static final String CONLL09_SCHEMA_TEMPLATE = "common.format.conll09.schema";
 
 	private CoNLLTemplates() { /* no-op */ }
 

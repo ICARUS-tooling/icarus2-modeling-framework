@@ -20,17 +20,11 @@
 <imf:manifest  xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">	
 	<imf:templates>
-	
-		<imf:annotation id="common.tags.stts">
-			<imf:valueSet>
-				<imf:value id="dummy"><imf:content>DUMMY</imf:content></imf:value>
-			</imf:valueSet>
-		</imf:annotation>
-	
-		<imf:context id="common.format.conll09" independent="true" foundationLayer="token" primaryLayer="sentence">
+
+		<imf:context id="common.format.conll09.spec" independent="true" foundationLayer="token" primaryLayer="sentence">
 			<imf:version>1.0</imf:version>
 			<imf:documentation>
-				<imf:content>Format for data used in the CoNLL-2009 Shared Task: Syntactic and Semantic Dependencies in Multiple Languages</imf:content>
+				<imf:content>Format for data used in the CoNLL-2009 Shared Task: Syntactic and Semantic Dependencies in Multiple Languages. This template only defines the layers used in the CoNLL09 format.</imf:content>
 				<imf:resource name="Task website with description" id="url">https://ufal.mff.cuni.cz/conll2009-st/task-description.html</imf:resource>
 			</imf:documentation>
 			
@@ -64,7 +58,7 @@
 				</imf:structureLayer>
 				<imf:annotationLayer id="predictedPos" layerType="anno:part-of-speech" defaultKey="ppos">
 					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="ppos" templateId="common.tags.stts" />
+					<imf:annotation key="ppos" />
 				</imf:annotationLayer>
 				<imf:annotationLayer id="predictedLemma" layerType="anno:lemma" defaultKey="plemma">
 					<imf:baseLayer layerId="token"/>
@@ -93,7 +87,7 @@
 				</imf:structureLayer>
 				<imf:annotationLayer id="goldPos" layerType="anno:part-of-speech" defaultKey="pos">
 					<imf:baseLayer layerId="token"/>
-					<imf:annotation key="pos" templateId="common.tags.stts" />
+					<imf:annotation key="pos" />
 				</imf:annotationLayer>
 				<imf:annotationLayer id="goldLemma" layerType="anno:lemma" defaultKey="lemma">
 					<imf:baseLayer layerId="token"/>
@@ -110,6 +104,9 @@
 					<imf:annotation key="deprel" valueType="string" />
 				</imf:annotationLayer>
 			</imf:layerGroup>
+		</imf:context>
+		
+		<imf:context  id="common.format.conll09" templateId="common.format.conll09.spec">
 			
 			<imf:driver id="common.drivers.conll09">
 				<imf:properties>
@@ -123,6 +120,85 @@
 				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />			
 				<imf:module id="de.ims.icarus2.filedriver.converter">
 					<imf:implementation classname="de.ims.icarus2.common.formats.conll.CoNLL2009Converter" />
+				</imf:module>
+				<imf:mapping sourceLayer="sentence" targetLayer="token" relation="one-to-many" coverage="total-monotonic" id="sent2tok" />
+				<imf:mapping sourceLayer="token" targetLayer="sentence" relation="many-to-one" coverage="total-monotonic" id="tok2sent" inverseMapping="sent2tok" />
+				<imf:mapping sourceLayer="sentence" targetLayer="goldDependency" relation="one-to-one" coverage="total-monotonic" id="sent2syntax" />
+				<imf:mapping sourceLayer="sentence" targetLayer="predictedDependency" relation="one-to-one" coverage="total-monotonic" id="sent2psyntax" />
+			</imf:driver>
+		</imf:context>
+		
+		<imf:context  id="common.format.conll09.schema" templateId="common.format.conll09.spec">
+			
+			<imf:driver id="common.drivers.conll09">
+				<imf:properties>
+					<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">false</imf:property>
+					<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
+				</imf:properties>	
+				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />				
+				<imf:module id="de.ims.icarus2.filedriver.converter">
+					<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
+						<imf:properties>
+							<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
+							<imf:property name="de.ims.icarus2.filedriver.schema.content"><![CDATA[
+								<its:table xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+									xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema" 
+									id="conll09.tbl" name="CoNLL09 Tabular Format"  groupId="sentenceGroup">
+									<its:block layerId="sentence">
+										<its:component memberType="container"/>
+										<its:endDelimiter>
+											<its:pattern>EMPTY_LINE</its:pattern>
+										</its:endDelimiter>
+										<its:externalGroup>goldGroup</its:externalGroup>
+										<its:externalGroup>predictedGroup</its:externalGroup>
+										<its:block layerId="token" noEntryLabel="_">
+											<its:separator>WHITESPACES</its:separator>
+											<its:endDelimiter>
+												<its:pattern>EMPTY_LINE</its:pattern>
+											</its:endDelimiter>
+											<its:columns>
+												<its:column name="ID" ignore="true"/>
+												<its:column name="FORM" layerId="form"/>
+												<its:column name="LEMMA" layerId="goldLemma"/>
+												<its:column name="PLEMMA" layerId="predictedLemma"/>
+												<its:column name="POS" layerId="goldPos"/>
+												<its:column name="PPOS" layerId="predictedPos"/>
+												<its:column name="FEAT" layerId="goldFeatures">
+													<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.PropertyListResolver">
+														<its:option name="separator">|</its:option>
+														<its:option name="assignmentSymbol">=</its:option>
+													</its:resolver>
+												</its:column>
+												<its:column name="PFEAT" layerId="predictedFeatures"/>
+												<its:column name="HEAD" layerId="goldDependency">
+													<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver">
+														<its:option name="offset">-1</its:option>
+														<its:option name="root">0</its:option>
+													</its:resolver>
+													<its:substitute type="addition" name="edge" memberType="edge" />
+												</its:column>
+												<its:column name="PHEAD" layerId="predictedDependency">
+													<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver">
+														<its:option name="offset">-1</its:option>
+														<its:option name="root">0</its:option>
+													</its:resolver>
+													<its:substitute type="addition" name="pedge" memberType="edge" />
+												</its:column>
+												<its:column name="DEPREL" layerId="goldDependencyRelation">
+													<its:substitute type="target" name="edge" memberType="edge" />
+												</its:column>
+												<its:column name="PDEPREL" layerId="predictedDependencyRelation">
+													<its:substitute type="target" name="pedge" memberType="edge" />
+												</its:column>
+											</its:columns>
+											<its:component memberType="item"/>
+										</its:block>
+									</its:block>
+								</its:table>
+								]]>
+							</imf:property>
+						</imf:properties>
+					</imf:implementation>
 				</imf:module>
 				<imf:mapping sourceLayer="sentence" targetLayer="token" relation="one-to-many" coverage="total-monotonic" id="sent2tok" />
 				<imf:mapping sourceLayer="token" targetLayer="sentence" relation="many-to-one" coverage="total-monotonic" id="tok2sent" inverseMapping="sent2tok" />
