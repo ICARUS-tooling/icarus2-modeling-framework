@@ -99,7 +99,7 @@ public class DependencyStructureResolver implements BatchResolver {
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode,
 			Function<ItemLayer, InputCache> caches, Options options) {
-		dependencyLayer = converter.getDriver().getContext().getLayer(options.getString(ResolverOptions.LAYER));
+		dependencyLayer = (StructureLayer) options.get(ResolverOptions.LAYER);
 		if(dependencyLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No layer assigned to this resolver "+getClass());
@@ -140,7 +140,7 @@ public class DependencyStructureResolver implements BatchResolver {
 
 	/**
 	 * Stores the given information, expanding the internal buffer
-	 * arrays if required
+	 * arrays if required (and allowed).
 	 */
 	private void saveHeadInfo(int index, Edge edge, int head) {
 		if(dynamicBufferSize && index>=edges.length) {
@@ -168,7 +168,7 @@ public class DependencyStructureResolver implements BatchResolver {
 		int head = ROOT_POINTER;
 
 		if(rootLabel==null || !StringUtil.equals(data, rootLabel)) {
-			head = StringPrimitives.parseInt(data) - offset;
+			head = StringPrimitives.parseInt(data) + offset;
 			if(head<0)
 				throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
 						"Illegal 'head' value for dependency: "+data+" (resulting in head index "+head+")");

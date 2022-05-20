@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
@@ -155,9 +157,9 @@ public interface Driver extends ItemLayerManager {
 	 * if both layers are unrelated, that is there exists no hierarchical dependency
 	 * between the two
 	 */
-	Mapping getMapping(ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer);
+	@Nullable Mapping getMapping(ItemLayerManifestBase<?> sourceLayer, ItemLayerManifestBase<?> targetLayer);
 
-	default Mapping getMapping(ItemLayer sourceLayer, ItemLayer targetLayer) {
+	default @Nullable Mapping getMapping(ItemLayer sourceLayer, ItemLayer targetLayer) {
 		return getMapping(sourceLayer.getManifest(), targetLayer.getManifest());
 	}
 

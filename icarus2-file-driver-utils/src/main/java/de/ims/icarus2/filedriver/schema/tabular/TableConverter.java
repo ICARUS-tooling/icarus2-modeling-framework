@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
@@ -46,6 +47,8 @@ import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -73,6 +76,7 @@ import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverFactory;
+import de.ims.icarus2.filedriver.schema.resolve.ResolverOptions;
 import de.ims.icarus2.filedriver.schema.resolve.common.BasicAnnotationResolver;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeTarget;
@@ -86,7 +90,13 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.Driver;
+import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
+import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
+import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
+import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -244,6 +254,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 	private static final int DEFAULT_TEMP_CHUNK_COUNT = 500;
 
+	private static List<LayerGroup> getGroups(BlockHandler blockHandler) {
+		List<LayerGroup> layerGroups = list(blockHandler.getItemLayer().getLayerGroup());
+		CollectionUtils.feedItems(layerGroups, blockHandler.getExternalGroups());
+		return layerGroups;
+	}
+
 	/**
 	 * @see de.ims.icarus2.filedriver.Converter#scanFile(int, de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage)
 	 */
@@ -255,9 +271,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		@SuppressWarnings("resource")
 		BlockHandler blockHandler = blockHandlerPool.get();
 
-		LayerGroup layerGroup = blockHandler.getItemLayer().getLayerGroup();
+		List<LayerGroup> layerGroups = getGroups(blockHandler);
 
-		Map<Layer, Analyzer> analyzers = createAnalyzers(layerGroup, fileIndex);
+		Map<Layer, Analyzer> analyzers = createAnalyzers(layerGroups, fileIndex);
 
 		Map<ItemLayer, ItemLookup> lookups = new Object2ObjectOpenHashMap<>();
 
@@ -288,7 +304,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 *  receive caches, but override the actual implementation with our "empty"
 		 *  cache that only holds the data until an analysis is done.
 		 */
-		final Map<ItemLayer, InputCache> caches = createCaches(layerGroup, cacheGen);
+		final Map<ItemLayer, InputCache> caches = createCaches(layerGroups, cacheGen);
 
 		/*
 		 * We only need bare component suppliers without back-end storage
@@ -452,19 +468,21 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 *
 	 * For now this implementation only produces analyzers for item and structure layers.
 	 */
-	protected Map<Layer, Analyzer> createAnalyzers(LayerGroup group, int fileIndex) {
+	protected Map<Layer, Analyzer> createAnalyzers(List<LayerGroup> groups, int fileIndex) {
 		LazyMap<Layer, Analyzer> result = LazyMap.lazyHashMap();
 		FileDataStates states = getDriver().getFileStates();
 
-		group.forEachLayer(layer -> {
-			if(ModelUtils.isStructureLayer(layer.getManifest())) {
-				result.add(layer, new DefaultStructureLayerAnalyzer(states, (StructureLayer) layer, fileIndex));
-			} else if(ModelUtils.isItemLayer(layer)) {
-				result.add(layer, new DefaultItemLayerAnalyzer(states, (ItemLayer) layer, fileIndex));
-			}
+		for(LayerGroup group : groups) {
+			group.forEachLayer(layer -> {
+				if(ModelUtils.isStructureLayer(layer.getManifest())) {
+					result.add(layer, new DefaultStructureLayerAnalyzer(states, (StructureLayer) layer, fileIndex));
+				} else if(ModelUtils.isItemLayer(layer)) {
+					result.add(layer, new DefaultItemLayerAnalyzer(states, (ItemLayer) layer, fileIndex));
+				}
 
-			//TODO also handle annotation layers
-		});
+				//TODO also handle annotation layers
+			});
+		}
 
 		return result.getAsMap();
 	}
@@ -481,8 +499,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		@SuppressWarnings("resource")
 		BlockHandler blockHandler = blockHandlerPool.get();
 
+		List<LayerGroup> layerGroups = getGroups(blockHandler);
+
 		// Collect basic caches
-		Map<ItemLayer, InputCache> caches = createCaches(blockHandler.getItemLayer().getLayerGroup(), null);
+		Map<ItemLayer, InputCache> caches = createCaches(layerGroups, null);
 
 		/*
 		 * We need component suppliers that are connected to the caches, do not use mapping
@@ -601,7 +621,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 	}
 
-	protected Layer findLayer(String layerId) {
+	protected <L extends Layer> L findLayer(String layerId) {
 		return getDriver().getContext().getLayer(layerId);
 	}
 
@@ -626,7 +646,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 							ManifestUtils.getName(blockHandler.getItemLayer())));
 
 		// Collect basic caches
-		Map<ItemLayer, InputCache> caches = createCaches(itemLayer.getLayerGroup(), null);
+		Map<ItemLayer, InputCache> caches = createCaches(getGroups(blockHandler), null);
 
 		/*
 		 * We need component suppliers that are connected to the caches, use proper mapping,
@@ -668,49 +688,51 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @param cacheGen
 	 * @return
 	 */
-	protected Map<ItemLayer, InputCache> createCaches(LayerGroup group, BiFunction<ItemLayer, Graph<Layer>, InputCache> cacheGen) {
+	protected Map<ItemLayer, InputCache> createCaches(List<LayerGroup> groups, BiFunction<ItemLayer, Graph<Layer>, InputCache> cacheGen) {
 
 		final Map<ItemLayer, InputCache> caches = new Object2ObjectOpenHashMap<>();
 
-		final Context context = group.getContext();
+		for(LayerGroup group : groups) {
+			final Context context = group.getContext();
 
-		// Find all (indirect) dependencies of the group within entire context
-		final Graph<Layer> graph = Graph.layerGraph(group, Graph.layersForContext(context));
+			// Find all (indirect) dependencies of the group within entire context
+			final Graph<Layer> graph = Graph.layerGraph(group, Graph.layersForContext(context));
 
-		graph.walkGraph(group.getLayers(), false, layer -> {
+			graph.walkGraph(group.getLayers(), false, layer -> {
 
-			// Only care about item layers that are located within our current context
-			if(layer.getContext()==context && (ModelUtils.isItemLayer(layer))) {
-				ItemLayer itemLayer = (ItemLayer)layer;
-				InputCache cache;
-
-				/*
-				 *  If we're supplied a cache generator function -> use it
-				 *
-				 *  Otherwise we'll create a link to related annotation
-				 *  layers (storages) that should get cleaned when a cache
-				 *  gets discarded before committing.
-				 */
-				if(cacheGen==null) {
-					Consumer<InputCache> cleanupAction = new AnnotationCleaner()
-							.addStoragesFromLayers(graph.incomingNodes(itemLayer));
+				// Only care about item layers that are located within our current context
+				if(layer.getContext()==context && (ModelUtils.isItemLayer(layer))) {
+					ItemLayer itemLayer = (ItemLayer)layer;
+					InputCache cache;
 
 					/*
-					 * Let driver component decide on actual cache implementation.
+					 *  If we're supplied a cache generator function -> use it
 					 *
-					 * We request optimistic caches here so that the linking of freshly
-					 * loaded items/containers can be done directly.
+					 *  Otherwise we'll create a link to related annotation
+					 *  layers (storages) that should get cleaned when a cache
+					 *  gets discarded before committing.
 					 */
-					cache = getDriver().getLayerBuffer(itemLayer).newCache(cleanupAction, true);
-				} else {
-					cache = cacheGen.apply(itemLayer, graph);
+					if(cacheGen==null) {
+						Consumer<InputCache> cleanupAction = new AnnotationCleaner()
+								.addStoragesFromLayers(graph.incomingNodes(itemLayer));
+
+						/*
+						 * Let driver component decide on actual cache implementation.
+						 *
+						 * We request optimistic caches here so that the linking of freshly
+						 * loaded items/containers can be done directly.
+						 */
+						cache = getDriver().getLayerBuffer(itemLayer).newCache(cleanupAction, true);
+					} else {
+						cache = cacheGen.apply(itemLayer, graph);
+					}
+					caches.put(itemLayer, cache);
+
 				}
-				caches.put(itemLayer, cache);
 
-			}
-
-			return true;
-		});
+				return true;
+			});
+		}
 
 		return caches;
 	}
@@ -1597,20 +1619,16 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		public Item process(InputResolverContext context) {
-			Item newItem = null;
-			try {
-				newItem = context.getPendingItem();
-				if(newItem==null)
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							"Missing new item");
-				if(newItem.getMemberType()!=requiredType)
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							Messages.mismatch("Invalid member-type of new item", requiredType, newItem.getMemberType()));
+			Item newItem = context.getPendingItem();
+			if(newItem==null)
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						"Missing new item");
+			if(newItem.getMemberType()!=requiredType)
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						Messages.mismatch("Invalid member-type of new item", requiredType, newItem.getMemberType()));
 
-				context.mapItem(name, newItem);
-			} finally {
-				context.clearPendingItem();
-			}
+			context.mapItem(name, newItem);
+
 			return newItem;
 		}
 	}
@@ -1642,20 +1660,16 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		public Item process(InputResolverContext context) {
-			Item newItem = null;
-			try {
-				newItem = context.getPendingItem();
-				if(newItem==null)
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							"Missing new item");
-				if(newItem.getMemberType()!=requiredType)
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-							Messages.mismatch("Invalid member-type of new item", requiredType, newItem.getMemberType()));
+			Item newItem = context.getPendingItem();
+			if(newItem==null)
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						"Missing new item");
+			if(newItem.getMemberType()!=requiredType)
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+						Messages.mismatch("Invalid member-type of new item", requiredType, newItem.getMemberType()));
 
-				context.replaceCurrentItem(newItem);
-			} finally {
-				context.clearPendingItem();
-			}
+			context.replaceCurrentItem(newItem);
+
 			return newItem;
 		}
 	}
@@ -2418,6 +2432,113 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 	}
 
+	private class MappingHandler implements BatchResolver, IndexSet {
+
+		private WritableMapping mapping, reverseMapping;
+		private MappingWriter writer, reverseWriter;
+		private final IndexBuffer buffer;
+		private long sourceIndex;
+
+		MappingHandler(WritableMapping mapping, WritableMapping reverseMapping) {
+			this.mapping = mapping;
+			this.reverseMapping = reverseMapping;
+			buffer = new IndexBuffer(1024); //TODO better starting size?
+		}
+
+		public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+			if(mapping!=null) {
+				writer = mapping.newWriter();
+				writer.begin();
+			}
+			if(reverseMapping!=null) {
+				reverseWriter = reverseMapping.newWriter();
+				reverseWriter.begin();
+			}
+		}
+
+		@Override
+		public Item process(ResolverContext context) throws IcarusApiException {
+			long targetIndex = context.currentItem().getIndex();
+			buffer.add(targetIndex);
+//			System.out.printf("adding target index: %d%n",_long(targetIndex));
+			return null;
+		}
+
+		@Override
+		public void beginBatch(ResolverContext context) {
+			sourceIndex = context.currentContainer().getIndex();
+//			System.out.printf("assigned source index: %d%n",_long(sourceIndex));
+		}
+
+		@Override
+		public void endBatch(ResolverContext context) {
+//			System.out.printf("mapping %s to %s%n",this, buffer);
+			if(reverseWriter!=null) {
+				reverseWriter.map(buffer, this);
+			}
+			if(writer!=null) {
+				writer.map(this, buffer);
+			}
+			buffer.clear();
+		}
+
+		@Override
+		public String toString() {
+			return String.valueOf(sourceIndex);
+		}
+
+		@Override
+		public void close() {
+			if(reverseWriter!=null) {
+				reverseWriter.end();
+				reverseWriter.close();
+				reverseWriter = null;
+			}
+			if(writer!=null) {
+				writer.end();
+				writer.close();
+				writer = null;
+			}
+		}
+
+		@Override
+		public int size() {
+			return 1;
+		}
+
+		@Override
+		public long indexAt(int index) {
+			checkArgument(index==0);
+			return sourceIndex;
+		}
+
+		@Override
+		public IndexValueType getIndexValueType() {
+			return IndexValueType.LONG;
+		}
+
+		@Override
+		public boolean isSorted() {
+			return true;
+		}
+
+		@Override
+		public boolean sort() {
+			return true;
+		}
+
+		@Override
+		public IndexSet subSet(int fromIndex, int toIndex) {
+			return this;
+		}
+
+		@Override
+		public IndexSet externalize() {
+			return new SingletonIndexSet(sourceIndex);
+		}
+
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -2468,11 +2589,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			if(resolver==null) {
 				// No nested resolver declared -> use layerId and annotationKey info
-				AnnotationLayer layer = (AnnotationLayer) findLayer(columnSchema.getLayerId());
+				AnnotationLayer layer = findLayer(columnSchema.getLayerId());
 				String key = columnSchema.getAnnotationKey();
 				if(key==null) {
 					key = layer.getManifest().getDefaultKey().orElseThrow(
-							ModelException.create(ModelErrorCode.DRIVER_ERROR, ""));
+							ModelException.create(ModelErrorCode.DRIVER_ERROR, "Must define either a custom resolver, "
+									+ "annotation key or the designated layer needs a defaultKey assigned"));
 				}
 				resolver = BasicAnnotationResolver.forAnnotation(layer, key);
 			}
@@ -2549,7 +2671,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 				// Opportunity to add new items to context
 				if(postprocessingHandler!=null && processedItem!=providedItem) {
-					processedItem = postprocessingHandler.process(context);
+					context.setPendingItem(processedItem);
+					try {
+						processedItem = postprocessingHandler.process(context);
+					} finally {
+						context.clearPendingItem();
+					}
 				}
 			}
 
@@ -2576,10 +2703,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public ColumnSchema getColumnSchema() {
 			return columnSchema;
 		}
-	}
 
-	private static Options resolverOptions(ResolverSchema resolver) {
-		return resolver==null ? Options.NONE : resolver.getOptions();
+		private Options resolverOptions(ResolverSchema resolver) {
+			Options options = new Options();
+			if(resolver!=null) {
+				options.putAll(resolver.getOptions());
+			}
+			options.put(ResolverOptions.LAYER, findLayer(columnSchema.getLayerId()));
+			return options;
+		}
 	}
 
 	private static String getSeparator(BlockHandler blockSchema, TableSchema tableSchema) {
@@ -2624,6 +2756,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		private final ItemLayer itemLayer;
 
+		private final LayerGroup[] externalGroups;
+
 		private final BlockHandler[] nestedBlockHandlers;
 
 		/**
@@ -2641,6 +2775,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private final int requiredColumnCount;
 
 		private final ContextProcessor<Void> fallbackHandler;
+
+		private final MappingHandler mappingHandler;
 
 		/**
 		 * Subset of column handlers that work in batch mode
@@ -2711,7 +2847,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			blockId = idGen.getAndIncrement();
 
-			itemLayer = (ItemLayer) findLayer(blockSchema.getLayerId());
+			itemLayer = findLayer(blockSchema.getLayerId());
+
+			final String[] externalGroupIds = blockSchema.getExternalGroupIds();
+			if(externalGroupIds.length>0) {
+				Map<String, LayerGroup> groups = getDriver().getContext().getLayerGroups().stream()
+						.collect(Collectors.toMap(g -> ManifestUtils.requireId(g.getManifest()), g -> g));
+				externalGroups = Stream.of(blockSchema.getExternalGroupIds())
+						.map(groups::get)
+						.toArray(LayerGroup[]::new);
+			} else {
+				externalGroups = new LayerGroup[0];
+			}
 
 			noEntryLabel = blockSchema.getNoEntryLabel();
 			trimWhitespaces = blockSchema.getOptions().getBoolean("trimWhitespaces", false);
@@ -2777,6 +2924,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			List<ColumnHandler> regularHandlers = new ArrayList<>();
 			List<ColumnHandler> batchHandlers = new ArrayList<>();
 
+			mappingHandler = createMappingHandler(this, parent);
+
 			for(int i=0; i<columnSchemas.length; i++) {
 				ColumnSchema columnSchema = columnSchemas[i];
 				if(columnSchema.isIgnoreColumn()) {
@@ -2794,7 +2943,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				//	TODO sort regular handlers based on whether they declare substitutes etc
 			}
 			columnHandlers = regularHandlers.toArray(new ColumnHandler[regularHandlers.size()]);
-			this.batchHandlers = batchHandlers.isEmpty() ? null : batchHandlers.toArray(new ColumnHandler[batchHandlers.size()]);
+			this.batchHandlers = batchHandlers.isEmpty() ? null : CollectionUtils.toArray(batchHandlers, ColumnHandler[]::new);
 
 			if(blockSchema.getFallbackColumn()!=null) {
 				fallbackHandler = new ColumnHandler(this, blockSchema.getFallbackColumn(), -1);
@@ -2833,6 +2982,28 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			attributeHandlers = null;
 		}
 
+		private MappingHandler createMappingHandler(BlockHandler block, @Nullable BlockHandler parent) {
+			if(parent==null) {
+				return null;
+			}
+
+			Mapping mapping = getDriver().getMapping(parent.itemLayer, block.itemLayer);
+			if(!WritableMapping.class.isInstance(mapping)) {
+				mapping = null;
+			}
+
+			Mapping reverseMapping = getDriver().getMapping(block.itemLayer, parent.itemLayer);
+			if(!WritableMapping.class.isInstance(reverseMapping)) {
+				reverseMapping = null;
+			}
+
+			if(mapping==null && reverseMapping==null) {
+				return null;
+			}
+
+			return new MappingHandler((WritableMapping)mapping, (WritableMapping)reverseMapping);
+		}
+
 		public BlockHandler getParent() {
 			return parent;
 		}
@@ -2845,6 +3016,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return itemLayer;
 		}
 
+		public LayerGroup[] getExternalGroups() {
+			return externalGroups;
+		}
+
 		public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
 			CollectionUtils.forEach(columnHandlers, c -> c.prepareForReading(converter, mode, caches));
 			CollectionUtils.forEach(nestedBlockHandlers, b -> b.prepareForReading(converter, mode, caches));
@@ -2853,6 +3028,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			prepareProcessorForReading(beginDelimiter, converter, mode, caches);
 			prepareProcessorForReading(endDelimiter, converter, mode, caches);
 			prepareProcessorForReading(fallbackHandler, converter, mode, caches);
+
+			if(mappingHandler!=null) {
+				mappingHandler.prepareForReading(converter, mode, caches);;
+			}
 		}
 
 		public void reset() {
@@ -2873,6 +3052,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			closeProcessor(beginDelimiter);
 			closeProcessor(endDelimiter);
 			closeProcessor(fallbackHandler);
+
+			if(mappingHandler!=null) {
+				mappingHandler.close();
+			}
 		}
 
 		/**
@@ -2946,6 +3129,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					batchHandlers[i].startBatch(context);
 				}
 			}
+			if(mappingHandler!=null) {
+				mappingHandler.beginBatch(context);
+			}
 		}
 
 		public void endContent(InputResolverContext context) {
@@ -2955,6 +3141,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				for(int i=0; i<batchHandlers.length; i++) {
 					batchHandlers[i].endBatch(context);
 				}
+			}
+			if(mappingHandler!=null) {
+				mappingHandler.endBatch(context);
 			}
 
 			//TODO maybe clean up container and item?
@@ -3204,6 +3393,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				} else {
 					// Only for non-top-level items do we need to add them to their host container
 					host.addItem(item);
+				}
+
+				if(mappingHandler!=null) {
+					mappingHandler.process(context);
 				}
 
 				processColumns(lines, context);

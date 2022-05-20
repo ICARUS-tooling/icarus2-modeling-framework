@@ -580,7 +580,7 @@ public class MappingImplSpanManyToOne extends AbstractStoredMapping<SimpleHeader
 			if(!isContinuous(sourceIndices))
 				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Can only map from spans");
 
-			map(sourceIndices.firstIndex(), sourceIndices.firstIndex(),
+			map(sourceIndices.firstIndex(), sourceIndices.lastIndex(),
 					targetIndices.firstIndex(), targetIndices.lastIndex());
 		}
 

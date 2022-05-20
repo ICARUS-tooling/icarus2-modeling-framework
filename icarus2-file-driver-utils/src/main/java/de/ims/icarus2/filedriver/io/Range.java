@@ -28,6 +28,7 @@ public class Range {
 	private long max = UNSET_LONG;
 
 	public Range update(long value) {
+//		System.out.printf("%s min=%s max=%d value=%d%n",this,_long(min),_long(max),_long(value));
 		if(min==UNSET_LONG || value<min) {
 			min = value;
 		}
