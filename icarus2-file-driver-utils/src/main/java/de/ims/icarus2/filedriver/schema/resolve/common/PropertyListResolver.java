@@ -21,13 +21,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.filedriver.ComponentSupplier;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
@@ -111,10 +111,10 @@ public class PropertyListResolver implements Resolver {
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.util.Options)
 	 */
 	@Override
-	public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
+	public void prepareForReading(Converter converter, ReadMode mode, ResolverContext context, Options options) {
 		requireNonNull(converter);
 		requireNonNull(mode);
-		requireNonNull(caches);
+		requireNonNull(context);
 		requireNonNull(options);
 
 		annotationLayer = (AnnotationLayer) options.get(ResolverOptions.LAYER);
@@ -230,6 +230,11 @@ public class PropertyListResolver implements Resolver {
 	private static class ProxyContext implements ResolverContext {
 		private ResolverContext source;
 		private CharSequence data;
+
+		@Override
+		public ItemLayer getPrimaryLayer() {
+			return source.getPrimaryLayer();
+		}
 		@Override
 		public Container currentContainer() {
 			return source.currentContainer();
@@ -253,6 +258,14 @@ public class PropertyListResolver implements Resolver {
 		@Override
 		public ObjLongConsumer<? super Item> getTopLevelAction() {
 			return source.getTopLevelAction();
+		}
+		@Override
+		public ComponentSupplier getComponentSupplier(ItemLayer layer) {
+			return source.getComponentSupplier(layer);
+		}
+		@Override
+		public InputCache getCache(ItemLayer layer) {
+			return source.getCache(layer);
 		}
 	}
 }

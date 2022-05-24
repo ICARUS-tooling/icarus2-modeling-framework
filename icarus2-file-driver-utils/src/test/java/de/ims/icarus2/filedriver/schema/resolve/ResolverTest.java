@@ -19,7 +19,6 @@ package de.ims.icarus2.filedriver.schema.resolve;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.mock;
 
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
@@ -53,7 +52,7 @@ public interface ResolverTest<R extends Resolver> extends ApiGuardedTest<R>, Gen
 	default Stream<DynamicNode> testPrepareForReading() {
 		return supportedReadModes().map(mode -> dynamicTest(mode.name(), () -> {
 			R resolver = create();
-			resolver.prepareForReading(mock(Converter.class), mode, mock(Function.class), defaultOptions());
+			resolver.prepareForReading(mock(Converter.class), mode, mock(ResolverContext.class), defaultOptions());
 		}));
 	}
 

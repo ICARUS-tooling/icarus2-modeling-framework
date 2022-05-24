@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicNode;
@@ -120,7 +119,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 			PropertyListResolver resolver = create();
 			String key = "key1";
 
-			resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(Function.class),
+			resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(ResolverContext.class),
 					createOptions(false, pair(key, type)));
 
 			Object[] values = getTestValues(type);
@@ -147,7 +146,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 	void testUnknownKey() throws Exception {
 		PropertyListResolver resolver = create();
 
-		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(Function.class),
+		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(ResolverContext.class),
 				createOptions(true));
 
 		String key = "key1";
@@ -170,7 +169,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 	void testBatchAssignments() throws Exception {
 		PropertyListResolver resolver = create();
 
-		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(Function.class),
+		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(ResolverContext.class),
 				createOptions(true));
 
 		String[] keys = {"key1", "key2"};
@@ -198,7 +197,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 	void testMissingAssignmentSymbol() {
 		PropertyListResolver resolver = create();
 
-		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(Function.class),
+		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(ResolverContext.class),
 				createOptions(true));
 
 		ResolverContext context = mock(ResolverContext.class);
@@ -215,7 +214,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 
 		assertModelException(GlobalErrorCode.INVALID_INPUT,
 				() -> resolver.prepareForReading(mock(Converter.class),
-						ReadMode.SCAN, mock(Function.class),
+						ReadMode.SCAN, mock(ResolverContext.class),
 						Options.none()));
 	}
 
@@ -223,7 +222,7 @@ class PropertyListResolverTest implements ResolverTest<PropertyListResolver> {
 	void testNoHandler() {
 		PropertyListResolver resolver = create();
 
-		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(Function.class),
+		resolver.prepareForReading(mock(Converter.class), ReadMode.SCAN, mock(ResolverContext.class),
 				createOptions(false));
 
 		ResolverContext context = mock(ResolverContext.class);

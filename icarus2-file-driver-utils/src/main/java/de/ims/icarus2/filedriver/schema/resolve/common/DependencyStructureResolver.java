@@ -17,7 +17,6 @@
 package de.ims.icarus2.filedriver.schema.resolve.common;
 
 import java.util.Arrays;
-import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -55,7 +54,6 @@ public class DependencyStructureResolver implements BatchResolver {
 	public static final String OPTION_ROOT_LABEL = "root";
 
 	private StructureLayer dependencyLayer;
-	private Container rootContainer;
 
 	private ObjLongConsumer<Item> structureSaveAction;
 
@@ -98,19 +96,18 @@ public class DependencyStructureResolver implements BatchResolver {
 	 */
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode,
-			Function<ItemLayer, InputCache> caches, Options options) {
+			ResolverContext context, Options options) {
 		dependencyLayer = (StructureLayer) options.get(ResolverOptions.LAYER);
 		if(dependencyLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No layer assigned to this resolver "+getClass());
-		rootContainer = dependencyLayer.getProxyContainer();
 
 		ItemLayer sentenceLayer = dependencyLayer.getBoundaryLayer();
 
 		structureBuilder = StructureBuilder.builder(
 				dependencyLayer.getManifest().getRootStructureManifest().orElseThrow(
 						ManifestException.error("No root structure manifest available")));
-		structureBuilder.host(rootContainer);
+		structureBuilder.host(dependencyLayer.getProxyContainer());
 
 		FileDriver driver = converter.getDriver();
 
@@ -129,7 +126,7 @@ public class DependencyStructureResolver implements BatchResolver {
 		heads = new int[maxItemCount];
 
 		// Link with back-end storage
-		InputCache cache = caches.apply(dependencyLayer);
+		InputCache cache = context.getCache(dependencyLayer);
 		structureSaveAction = cache::offer;
 
 		// Read options
@@ -229,7 +226,6 @@ public class DependencyStructureResolver implements BatchResolver {
 		StaticStructure dependencyTree = structureBuilder.build();
 
 		dependencyTree.setAlive(true);
-		dependencyTree.setContainer(rootContainer);
 
 		/*
 		 * Push structure into back-end storage.

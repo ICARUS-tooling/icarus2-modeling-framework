@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.schema.tabular;
 
+import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -349,13 +350,14 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 		};
 
-		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, topLevelItemAction);
+		InputResolverContext inputContext = new InputResolverContext(
+				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction);
 		long index = 0L;
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
 		// Notify handler stack about incoming SCAN operation
-		blockHandler.prepareForReading(this, ReadMode.SCAN, caches::get);
+		blockHandler.prepareForReading(this, ReadMode.SCAN, inputContext);
 
 		// Use default report builder mechanism and link analyzers to it
 		ReportBuilder<ReportItem> reportBuilder = ReportBuilder.builder(tableSchema);
@@ -541,14 +543,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 		};
 
-		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, topLevelItemAction);
+		InputResolverContext inputContext = new InputResolverContext(
+				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction);
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
 		long index = 0L;
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
 		// Notify stack about incoming read operation
-		blockHandler.prepareForReading(this, ReadMode.FILE, caches::get);
+		blockHandler.prepareForReading(this, ReadMode.FILE, inputContext);
 
 		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
 
@@ -661,7 +664,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			.consumers(layer -> caches.get(layer)::offer)
 			.build();
 
-		InputResolverContext inputContext = new InputResolverContext(componentSuppliers, null); //TODO verify that we don't need a dedicated action for top-level items here!
+		InputResolverContext inputContext = new InputResolverContext(
+				blockHandler.itemLayer, componentSuppliers, caches, null); //TODO verify that we don't need a dedicated action for top-level items here!
 
 		// Result instance that is linked to our caches
 		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
@@ -674,7 +678,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				.loadResult(loadResult)
 				.encoding(encoding)
 				.characterChunkSize(characterChunkSize)
-				.caches(caches::get)
 				.chunkIndex(getDriver().getChunkIndex(itemLayer))
 				.build();
 	}
@@ -735,6 +738,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		return caches;
+	}
+
+	private static void closeNullAware(@Nullable Resolver resolver) {
+		if(resolver!=null) {
+			resolver.close();
+		}
+	}
+
+	private static void closeNullAware(@Nullable ContextProcessor<?> processor) {
+		if(processor!=null) {
+			processor.close();
+		}
 	}
 
 	public static class AnnotationCleaner implements Consumer<InputCache> {
@@ -936,7 +951,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			lineIterator = new SubSequenceLineIterator(characterBuffer);
 
-			rootBlockHandler.prepareForReading(builder.getConverter(), ReadMode.CHUNK, builder.getCaches());
+			rootBlockHandler.prepareForReading(builder.getConverter(), ReadMode.CHUNK, context);
 		}
 
 		/**
@@ -1046,7 +1061,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private InputResolverContext context;
 		private Charset encoding;
 		private int characterChunkSize=0;
-		private Function<ItemLayer, InputCache> caches;
 
 		public TableCursorBuilder(TableConverter converter) {
 			super(converter);
@@ -1088,15 +1102,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return thisAsCast();
 		}
 
-		public TableCursorBuilder caches(Function<ItemLayer, InputCache> caches) {
-			requireNonNull(caches);
-			checkState("Caches already set", this.caches==null);
-
-			this.caches = caches;
-
-			return thisAsCast();
-		}
-
 		public BlockHandler getRootBlockHandler() {
 			checkState("Root block handler missing", rootBlockHandler!=null);
 
@@ -1121,12 +1126,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return characterChunkSize;
 		}
 
-		public Function<ItemLayer, InputCache> getCaches() {
-			checkState("Caches missing", caches!=null);
-
-			return caches;
-		}
-
 		/**
 		 * @see de.ims.icarus2.filedriver.AbstractConverter.CursorBuilder#validate()
 		 */
@@ -1138,7 +1137,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			checkState("Context missing", context!=null);
 			checkState("Encoding missing", encoding!=null);
 			checkState("Character chunk size missing", characterChunkSize>0);
-			checkState("Caches missing", caches!=null);
 		}
 
 		/**
@@ -1204,6 +1202,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		private boolean consumed;
 
+		private final ItemLayer primaryLayer;
+
 		private final Map<String, Item> namedSubstitues = new Object2ObjectOpenHashMap<>();
 
 		private int columnIndex;
@@ -1213,11 +1213,17 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private List<UnresolvedAttribute> pendingAttributes = new ArrayList<>();
 
 		private final Map<ItemLayer, ComponentSupplier> componentSuppliers;
+		private final Map<ItemLayer, InputCache> caches;
 
 		private final ObjLongConsumer<? super Item> topLevelAction;
 
-		public InputResolverContext(Map<ItemLayer, ComponentSupplier> componentSuppliers, ObjLongConsumer<? super Item> topLevelAction) {
+		public InputResolverContext(ItemLayer primaryLayer,
+				Map<ItemLayer, ComponentSupplier> componentSuppliers,
+				Map<ItemLayer, InputCache> caches,
+				ObjLongConsumer<? super Item> topLevelAction) {
+			this.primaryLayer = requireNonNull(primaryLayer);
 			this.componentSuppliers = requireNonNull(componentSuppliers);
+			this.caches = requireNonNull(caches);
 			this.topLevelAction = topLevelAction;
 		}
 
@@ -1238,6 +1244,14 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			reset();
 
 			componentSuppliers.values().forEach(ComponentSupplier::close);
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.resolve.ResolverContext#getPrimaryLayer()
+		 */
+		@Override
+		public ItemLayer getPrimaryLayer() {
+			return primaryLayer;
 		}
 
 		/**
@@ -1373,8 +1387,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return consumed;
 		}
 
+		@Override
 		public ComponentSupplier getComponentSupplier(ItemLayer layer) {
-			return componentSuppliers.get(layer);
+			requireNonNull(layer);
+			return requireNonNull(componentSuppliers.get(layer),
+					"no component supplier available for layer: "+getName(layer));
+		}
+
+		@Override
+		public InputCache getCache(ItemLayer layer) {
+			requireNonNull(layer);
+			return requireNonNull(caches.get(layer),
+					"no cache available for layer: "+getName(layer));
 		}
 
 		@Override
@@ -1396,7 +1420,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	public interface ContextProcessor<O extends Object> extends Closeable {
 		O process(InputResolverContext context) throws IcarusApiException;
 
-		default void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+		default void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
 			// no-op
 		}
 
@@ -1491,9 +1515,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		public void prepareForReading(Converter converter, ReadMode mode,
-				Function<ItemLayer, InputCache> caches) {
+				InputResolverContext context) {
 			if(resolver!=null) {
-				resolver.prepareForReading(converter, mode, caches, attributeSchema.getResolver().getOptions());
+				resolver.prepareForReading(converter, mode, context, attributeSchema.getResolver().getOptions());
 			}
 		}
 
@@ -1502,9 +1526,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		public void close() {
-			if(resolver!=null) {
-				resolver.close();
-			}
+			closeNullAware(resolver);
 		}
 
 		/**
@@ -2445,7 +2467,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			buffer = new IndexBuffer(1024); //TODO better starting size?
 		}
 
-		public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+		public void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
 			if(mapping!=null) {
 				writer = mapping.newWriter();
 				writer.begin();
@@ -2625,9 +2647,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
 		 */
 		@Override
-		public void prepareForReading(Converter converter, ReadMode mode,
-				Function<ItemLayer, InputCache> caches) {
-			resolver.prepareForReading(converter, mode, caches, resolverOptions(columnSchema.getResolver()));
+		public void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
+			resolver.prepareForReading(converter, mode, context, resolverOptions(columnSchema.getResolver()));
 		}
 
 		/**
@@ -2635,7 +2656,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		@Override
 		public void close() {
-			resolver.close();
+			closeNullAware(resolver);
+			closeNullAware(preprocessingHandler);
+			closeNullAware(postprocessingHandler);
 		}
 
 		public boolean isBatchHandler() {
@@ -2728,16 +2751,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		return separator;
 	}
 
-	private static void closeProcessor(ContextProcessor<?> processor) {
-		if(processor!=null) {
-			processor.close();
-		}
-	}
-
 	private static void prepareProcessorForReading(ContextProcessor<?> processor,
-			Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
+			Converter converter, ReadMode mode, InputResolverContext context) {
 		if(processor!=null) {
-			processor.prepareForReading(converter, mode, caches);
+			processor.prepareForReading(converter, mode, context);
 		}
 	}
 
@@ -3020,17 +3037,17 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return externalGroups;
 		}
 
-		public void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches) {
-			CollectionUtils.forEach(columnHandlers, c -> c.prepareForReading(converter, mode, caches));
-			CollectionUtils.forEach(nestedBlockHandlers, b -> b.prepareForReading(converter, mode, caches));
-			CollectionUtils.forEach(attributeHandlers, a -> a.prepareForReading(converter, mode, caches));
+		public void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
+			CollectionUtils.forEach(columnHandlers, c -> c.prepareForReading(converter, mode, context));
+			CollectionUtils.forEach(nestedBlockHandlers, b -> b.prepareForReading(converter, mode, context));
+			CollectionUtils.forEach(attributeHandlers, a -> a.prepareForReading(converter, mode, context));
 
-			prepareProcessorForReading(beginDelimiter, converter, mode, caches);
-			prepareProcessorForReading(endDelimiter, converter, mode, caches);
-			prepareProcessorForReading(fallbackHandler, converter, mode, caches);
+			prepareProcessorForReading(beginDelimiter, converter, mode, context);
+			prepareProcessorForReading(endDelimiter, converter, mode, context);
+			prepareProcessorForReading(fallbackHandler, converter, mode, context);
 
 			if(mappingHandler!=null) {
-				mappingHandler.prepareForReading(converter, mode, caches);;
+				mappingHandler.prepareForReading(converter, mode, context);
 			}
 		}
 
@@ -3049,13 +3066,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			CollectionUtils.forEach(nestedBlockHandlers, BlockHandler::close);
 			CollectionUtils.forEach(attributeHandlers, ContextProcessor::close);
 
-			closeProcessor(beginDelimiter);
-			closeProcessor(endDelimiter);
-			closeProcessor(fallbackHandler);
-
-			if(mappingHandler!=null) {
-				mappingHandler.close();
-			}
+			closeNullAware(beginDelimiter);
+			closeNullAware(endDelimiter);
+			closeNullAware(fallbackHandler);
+			closeNullAware(mappingHandler);
 		}
 
 		/**

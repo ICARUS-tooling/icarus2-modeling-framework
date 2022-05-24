@@ -18,14 +18,19 @@ package de.ims.icarus2.filedriver.schema.resolve;
 
 import java.util.function.ObjLongConsumer;
 
+import de.ims.icarus2.filedriver.ComponentSupplier;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 
 /**
  * @author Markus Gärtner
  *
  */
 public interface ResolverContext {
+
+	ItemLayer getPrimaryLayer();
 
 	/**
 	 * Returns the currently active host container
@@ -65,4 +70,8 @@ public interface ResolverContext {
 	}
 
 	ObjLongConsumer<? super Item> getTopLevelAction();
+
+	ComponentSupplier getComponentSupplier(ItemLayer layer);
+
+	InputCache getCache(ItemLayer layer);
 }

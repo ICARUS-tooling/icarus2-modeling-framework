@@ -16,17 +16,13 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve;
 
-import java.util.function.Function;
-
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.Schema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
-import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.util.Options;
 
 /**
@@ -43,7 +39,7 @@ public interface Resolver {
 	 * @param options implementation specific options that have been parsed directly from the underlying {@link Schema}
 	 *
 	 */
-	default void prepareForReading(Converter converter, ReadMode mode, Function<ItemLayer, InputCache> caches, Options options) {
+	default void prepareForReading(Converter converter, ReadMode mode, ResolverContext context, Options options) {
 		// no-op
 	}
 
