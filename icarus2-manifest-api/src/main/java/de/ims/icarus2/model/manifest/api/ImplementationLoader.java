@@ -145,7 +145,7 @@ public abstract class ImplementationLoader<L extends ImplementationLoader<L>> ex
 		return thisAsCast();
 	}
 
-	public <T> @Nullable T getEnvironment(Class<T> clazz) {
+	public @Nullable <T> T getEnvironment(Class<T> clazz) {
 		requireNonNull(clazz);
 		if(environment==null) {
 			return null;

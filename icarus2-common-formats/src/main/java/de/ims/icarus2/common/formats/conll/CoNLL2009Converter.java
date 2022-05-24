@@ -473,7 +473,7 @@ public class CoNLL2009Converter extends AbstractConverter {
 		return getDriver().getLayerBuffer(ref.layer).newCache(IcarusUtils.DO_NOTHING(), true);
 	}
 
-	private <T extends Analyzer> @Nullable T analyzer(LayerRef<?, T> ref, int fileIndex, ReadMode mode, ReportItemCollector log) {
+	private @Nullable <T extends Analyzer> T analyzer(LayerRef<?, T> ref, int fileIndex, ReadMode mode, ReportItemCollector log) {
 		if(mode==ReadMode.SCAN) {
 			T analyzer = ref.gen_analyzer.apply(fileIndex);
 			analyzer.init(log);
