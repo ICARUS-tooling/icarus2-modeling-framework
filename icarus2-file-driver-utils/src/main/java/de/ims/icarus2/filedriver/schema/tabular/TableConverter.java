@@ -1373,8 +1373,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return consumed;
 		}
 
-		public ComponentSupplier getComponentSupplier(BlockHandler blockHandler) {
-			return componentSuppliers.get(blockHandler.getItemLayer());
+		public ComponentSupplier getComponentSupplier(ItemLayer layer) {
+			return componentSuppliers.get(layer);
 		}
 
 		@Override
@@ -2247,10 +2247,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 
 			if(!layer.getBaseLayers().isEmpty()) {
-				/** Creates a supplier for element sof the specified layer */
+				/** Creates a supplier for elements of the specified layer */
 				// Currently we only supply top-level elements, so the root container is sufficient
 				//TODO add parameters to control whether nested containers are desired
-				final Function<ItemLayer, Supplier<Container>> baseContainerCrator = itemLayer -> {
+				final Function<ItemLayer, Supplier<Container>> baseContainerCreator = itemLayer -> {
 					final Container container;
 					if(mode==ReadMode.SCAN) {
 						// When scanning, items don't get actually stored persistently
@@ -2266,7 +2266,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				Supplier<Container>[] suppliers = new Supplier[layer.getBaseLayers().entryCount()];
 				boolean dynamic = false;
 				for (int i = 0; i < suppliers.length; i++) {
-					Supplier<Container> supplier = containerSuppliers.computeIfAbsent(layer.getBaseLayers().entryAt(i), baseContainerCrator);
+					Supplier<Container> supplier = containerSuppliers.computeIfAbsent(layer.getBaseLayers().entryAt(i), baseContainerCreator);
 					suppliers[i] = supplier;
 					dynamic |= supplier instanceof ContainerSupplierProxy;
 				}
@@ -3315,7 +3315,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				final boolean isProxyContainer = host.isProxy();
 				final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 
-				ComponentSupplier componentSupplier = context.getComponentSupplier(this);
+				ComponentSupplier componentSupplier = context.getComponentSupplier(getItemLayer());
 				componentSupplier.reset(index);
 				if(!componentSupplier.next())
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
@@ -3368,7 +3368,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			final boolean isProxyContainer = host.isProxy();
 			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 
-			ComponentSupplier componentSupplier = context.getComponentSupplier(this);
+			ComponentSupplier componentSupplier = context.getComponentSupplier(getItemLayer());
 			componentSupplier.reset(hostIndex);
 
 			// Prepare for beginning of content (notify batch resolvers)
