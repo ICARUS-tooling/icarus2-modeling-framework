@@ -38,7 +38,7 @@ import de.ims.icarus2.test.random.RandomGenerator;
  *
  */
 @RandomizedTest
-class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSet> {
+class SingletonIndexSetTest implements RandomAccessIndexSetTest<FixedSingletonIndexSet> {
 
 	static RandomGenerator rand;
 
@@ -46,21 +46,21 @@ class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSe
 	class Constructors {
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet#SingletonIndexSet(long)}.
+		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.FixedSingletonIndexSet#SingletonIndexSet(long)}.
 		 */
 		@Test
 		void testSingletonIndexSet() {
-			assertNotNull(SingletonIndexSet.of(rand.random(0, Long.MAX_VALUE)));
+			assertNotNull(FixedSingletonIndexSet.of(rand.random(0, Long.MAX_VALUE)));
 		}
 
 		/**
-		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet#SingletonIndexSet(long)}.
+		 * Test method for {@link de.ims.icarus2.model.api.driver.indices.standard.FixedSingletonIndexSet#SingletonIndexSet(long)}.
 		 */
 		@ParameterizedTest
 		@ValueSource(longs = {-1, Long.MIN_VALUE})
 		void testSingletonIndexSetInvalidIndex(long index) {
 			assertModelException(GlobalErrorCode.INVALID_INPUT,
-					() -> new SingletonIndexSet(index));
+					() -> new FixedSingletonIndexSet(index));
 		}
 	}
 
@@ -76,8 +76,8 @@ class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSe
 						.label(type.name())
 						.sorted(true)
 						.indices(type.maxValue()-1)
-						.set(config -> new SingletonIndexSet(config.getIndices()[0]))
-						.features(SingletonIndexSet.features));
+						.set(config -> new FixedSingletonIndexSet(config.getIndices()[0]))
+						.features(FixedSingletonIndexSet.features));
 	}
 
 	/**
@@ -85,15 +85,15 @@ class SingletonIndexSetTest implements RandomAccessIndexSetTest<SingletonIndexSe
 	 */
 	@Override
 	public Class<?> getTestTargetClass() {
-		return SingletonIndexSet.class;
+		return FixedSingletonIndexSet.class;
 	}
 
 	/**
 	 * @see de.ims.icarus2.test.Testable#createTestInstance(de.ims.icarus2.test.TestSettings)
 	 */
 	@Override
-	public SingletonIndexSet createTestInstance(TestSettings settings) {
-		return settings.process(new SingletonIndexSet(rand.random(0, Long.MAX_VALUE)));
+	public FixedSingletonIndexSet createTestInstance(TestSettings settings) {
+		return settings.process(new FixedSingletonIndexSet(rand.random(0, Long.MAX_VALUE)));
 	}
 
 }

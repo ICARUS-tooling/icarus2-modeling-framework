@@ -41,7 +41,7 @@ import de.ims.icarus2.model.api.driver.ChunkInfo;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
-import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.FixedSingletonIndexSet;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.item.manager.ItemLayerManager;
@@ -265,7 +265,7 @@ public class ItemStreamBuffer {
 						indices.subSet(cursor+1, size-1));
 			}
 			// Now reset indices to the current cursor
-			indices = new SingletonIndexSet(indices.indexAt(cursor));
+			indices = new FixedSingletonIndexSet(indices.indexAt(cursor));
 			buffer.add(item);
 			cursor = 0;
 		} else {

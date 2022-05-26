@@ -43,7 +43,7 @@ import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
 import de.ims.icarus2.model.api.driver.indices.func.IterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
-import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.FixedSingletonIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SynchronizedIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.RequestHint;
@@ -498,10 +498,10 @@ public class IndexUtils {
 	/**
 	 * Wraps a single index value into an array of {@link IndexSet} instances.
 	 * The result will be an empty array iff the given {@code index} is {@code -1}
-	 * or an array of exactly size {@code 1} containing a single {@link SingletonIndexSet}.
+	 * or an array of exactly size {@code 1} containing a single {@link FixedSingletonIndexSet}.
 	 */
 	public static IndexSet[] wrap(long index) {
-		return index==IcarusUtils.UNSET_LONG ? EMPTY : new IndexSet[]{new SingletonIndexSet(index)};
+		return index==IcarusUtils.UNSET_LONG ? EMPTY : new IndexSet[]{new FixedSingletonIndexSet(index)};
 	}
 
 	public static IndexSet span(long from, long to) {
