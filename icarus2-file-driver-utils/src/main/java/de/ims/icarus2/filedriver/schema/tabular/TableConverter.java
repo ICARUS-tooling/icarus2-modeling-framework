@@ -91,10 +91,8 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.Driver;
-import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
-import de.ims.icarus2.model.api.driver.indices.standard.SingletonIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.MutableSingletonIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
@@ -431,6 +429,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				index++;
 			}
 
+			blockHandler.complete();
+
 			// If nothing went wrong we still need to make sure that pending data is properly analyzed
 			caches.values().forEach(InputCache::commit);
 
@@ -586,6 +586,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				// Next chunk
 				index++;
 			}
+
+			blockHandler.complete();
 		} finally {
 			blockHandler.close();
 			blockHandlerPool.recycle(blockHandler);
@@ -617,6 +619,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			inputContext.setIndex(tableCursor.getCurrentIndex());
 
 			blockHandler.readChunk(lines, inputContext);
+
+			blockHandler.complete();
 
 			return inputContext.currentItem();
 		} finally {
@@ -749,6 +753,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	private static void closeNullAware(@Nullable ContextProcessor<?> processor) {
 		if(processor!=null) {
 			processor.close();
+		}
+	}
+
+	private static void completeNullAware(@Nullable Resolver resolver) {
+		if(resolver!=null) {
+			resolver.complete();
+		}
+	}
+
+	private static void completeNullAware(@Nullable ContextProcessor<?> processor) {
+		if(processor!=null) {
+			processor.complete();
 		}
 	}
 
@@ -1421,6 +1437,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		O process(InputResolverContext context) throws IcarusApiException;
 
 		default void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
+			// no-op
+		}
+
+		default void complete() {
 			// no-op
 		}
 
@@ -2454,17 +2474,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 	}
 
-	private class MappingHandler implements BatchResolver, IndexSet {
+	private class MappingHandler implements BatchResolver {
 
-		private WritableMapping mapping, reverseMapping;
+		private final WritableMapping mapping, reverseMapping;
 		private MappingWriter writer, reverseWriter;
-		private final IndexBuffer buffer;
-		private long sourceIndex;
+		private final IndexBuffer targetIndices;
+		private final MutableSingletonIndexSet sourceIndex;
 
 		MappingHandler(WritableMapping mapping, WritableMapping reverseMapping) {
 			this.mapping = mapping;
 			this.reverseMapping = reverseMapping;
-			buffer = new IndexBuffer(1024); //TODO better starting size?
+			targetIndices = new IndexBuffer(1024); //TODO better starting size?
+			sourceIndex = new MutableSingletonIndexSet();
 		}
 
 		public void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
@@ -2481,14 +2502,14 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		@Override
 		public Item process(ResolverContext context) throws IcarusApiException {
 			long targetIndex = context.currentItem().getIndex();
-			buffer.add(targetIndex);
+			targetIndices.add(targetIndex);
 //			System.out.printf("adding target index: %d%n",_long(targetIndex));
 			return null;
 		}
 
 		@Override
 		public void beginBatch(ResolverContext context) {
-			sourceIndex = context.currentContainer().getIndex();
+			sourceIndex.setIndex(context.currentContainer().getIndex());
 //			System.out.printf("assigned source index: %d%n",_long(sourceIndex));
 		}
 
@@ -2496,69 +2517,40 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public void endBatch(ResolverContext context) {
 //			System.out.printf("mapping %s to %s%n",this, buffer);
 			if(reverseWriter!=null) {
-				reverseWriter.map(buffer, this);
+				reverseWriter.map(targetIndices, sourceIndex);
 			}
 			if(writer!=null) {
-				writer.map(this, buffer);
+				writer.map(sourceIndex, targetIndices);
 			}
-			buffer.clear();
+			targetIndices.clear();
 		}
 
 		@Override
 		public String toString() {
-			return String.valueOf(sourceIndex);
+			return String.valueOf(sourceIndex.getIndex());
+		}
+
+		@Override
+		public void complete() {
+			if(reverseWriter!=null) {
+				reverseWriter.end();
+			}
+			if(writer!=null) {
+				writer.end();
+			}
 		}
 
 		@Override
 		public void close() {
 			if(reverseWriter!=null) {
-				reverseWriter.end();
 				reverseWriter.close();
 				reverseWriter = null;
 			}
 			if(writer!=null) {
-				writer.end();
 				writer.close();
 				writer = null;
 			}
 		}
-
-		@Override
-		public int size() {
-			return 1;
-		}
-
-		@Override
-		public long indexAt(int index) {
-			checkArgument(index==0);
-			return sourceIndex;
-		}
-
-		@Override
-		public IndexValueType getIndexValueType() {
-			return IndexValueType.LONG;
-		}
-
-		@Override
-		public boolean isSorted() {
-			return true;
-		}
-
-		@Override
-		public boolean sort() {
-			return true;
-		}
-
-		@Override
-		public IndexSet subSet(int fromIndex, int toIndex) {
-			return this;
-		}
-
-		@Override
-		public IndexSet externalize() {
-			return new SingletonIndexSet(sourceIndex);
-		}
-
 	}
 
 	/**
@@ -2649,6 +2641,13 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		@Override
 		public void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
 			resolver.prepareForReading(converter, mode, context, resolverOptions(columnSchema.getResolver()));
+		}
+
+		@Override
+		public void complete() {
+			completeNullAware(resolver);
+			completeNullAware(preprocessingHandler);
+			completeNullAware(postprocessingHandler);
 		}
 
 		/**
@@ -3053,6 +3052,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		public void reset() {
 			//TODO
+		}
+
+		public void complete() {
+
+			CollectionUtils.forEach(columnHandlers, ColumnHandler::complete);
+			CollectionUtils.forEach(nestedBlockHandlers, BlockHandler::complete);
+			CollectionUtils.forEach(attributeHandlers, ContextProcessor::complete);
+
+			completeNullAware(beginDelimiter);
+			completeNullAware(endDelimiter);
+			completeNullAware(fallbackHandler);
+			completeNullAware(mappingHandler);
 		}
 
 		/**

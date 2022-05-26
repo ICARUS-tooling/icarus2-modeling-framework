@@ -208,6 +208,13 @@ public class PropertyListResolver implements Resolver {
 		return item;
 	}
 
+	@Override
+	public void complete() {
+		if(fixedPropertyResolvers!=null) {
+			fixedPropertyResolvers.values().forEach(Resolver::complete);
+		}
+	}
+
 	/**
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#close()
 	 */

@@ -56,6 +56,11 @@ public interface Resolver {
 	 */
 	Item process(ResolverContext context) throws IcarusApiException;
 
+	/** Do final completion work. Will be called  */
+	default void complete() {
+
+	}
+
 	/**
 	 * Optional method for subclasses to release internal resources.
 	 * <p>
