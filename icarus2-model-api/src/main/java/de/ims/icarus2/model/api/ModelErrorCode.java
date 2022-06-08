@@ -111,6 +111,12 @@ public enum ModelErrorCode implements ErrorCode {
 	DRIVER_METADATA_MISSING(407),
 
 	/**
+	 * The (physical) content of a corpus resource is missing. This can include incorrect
+	 * path definitions to a file or unresolvable remote connections.
+	 */
+	DRIVER_MISSING_CONTENT(409),
+
+	/**
 	 * The content of a corpus resource is invalid.
 	 */
 	DRIVER_INVALID_CONTENT(410),

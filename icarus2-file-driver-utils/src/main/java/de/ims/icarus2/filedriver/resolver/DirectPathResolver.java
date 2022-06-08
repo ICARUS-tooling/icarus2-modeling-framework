@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.io.PathResolver;
 import de.ims.icarus2.model.api.io.ResourcePath;
@@ -100,6 +101,10 @@ public class DirectPathResolver implements PathResolver {
 			// Use the class loader assigned to the manifest's location
 			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
 			URL url = classLoader.getResource(rootPath);
+			if(url==null)
+				throw new ModelException(ModelErrorCode.DRIVER_MISSING_CONTENT,
+						"Missing resource: "+rootPath);
+
 			Path path;
 
 			try {
