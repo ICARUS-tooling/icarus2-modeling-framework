@@ -269,7 +269,7 @@ public class ModelTestUtils {
 	}
 
 	public static Container mockUsableContainer() {
-		return stubFlags(mock(Container.class), true, true, true);
+		return stubFlags(mock(Container.class), true, false, false);
 	}
 
 	public static Container mockContainer(long itemCount) {

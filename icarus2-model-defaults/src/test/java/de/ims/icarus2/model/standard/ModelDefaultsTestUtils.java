@@ -17,6 +17,7 @@
 package de.ims.icarus2.model.standard;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.ensureIntegerValueRange;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +31,10 @@ import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.manifest.api.ContainerManifest;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
+import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureManifest;
+import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.standard.members.container.DefaultContainer;
 import de.ims.icarus2.model.standard.members.container.ItemStorage;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
@@ -38,6 +42,8 @@ import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
 import de.ims.icarus2.model.standard.members.structure.DefaultStructure;
 import de.ims.icarus2.model.standard.members.structure.EdgeStorage;
 import de.ims.icarus2.test.util.Pair;
+import de.ims.icarus2.util.collections.LookupList;
+import de.ims.icarus2.util.collections.set.DataSet;
 
 /**
  * @author Markus Gärtner
@@ -154,5 +160,57 @@ public class ModelDefaultsTestUtils {
 		structure.setItemStorage(itemStorage);
 		structure.setEdgeStorage(edgeStorage);
 		return structure;
+	}
+
+	public static Container makeFillableContainer(Container host, long index) {
+		final LookupList<Item> storage = new LookupList<>();
+
+		return new AbstractImmutableContainer() {
+
+			@Override
+			public boolean isLocked() { return false; }
+
+			@Override
+			public boolean isDirty() { return false; }
+
+			@Override
+			public boolean isAlive() { return true; }
+
+			@Override
+			public long getIndex() { return index; }
+
+			@Override
+			public long getId() { return index; }
+
+			@Override
+			public Container getContainer() { return host; }
+
+			@Override
+			public boolean isItemsComplete() { return true; }
+
+			@Override
+			public long indexOfItem(Item item) { return storage.indexOf(item); }
+
+			@Override
+			public ContainerManifestBase<?> getManifest() { return null; }
+
+			@Override
+			public long getItemCount() { return storage.size(); }
+
+			@Override
+			public Item getItemAt(long index) { return storage.get(ensureIntegerValueRange(index)); }
+
+			@Override
+			public void addItem(long index, Item item) { storage.add(ensureIntegerValueRange(index), item); }
+
+			@Override
+			public ContainerType getContainerType() { return ContainerType.LIST; }
+
+			@Override
+			public Container getBoundaryContainer() { return null; }
+
+			@Override
+			public DataSet<Container> getBaseContainers() { return DataSet.emptySet(); }
+		};
 	}
 }
