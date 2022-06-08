@@ -18,13 +18,22 @@ package de.ims.icarus2.filedriver.schema.resolve;
 
 import java.util.function.ObjLongConsumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.filedriver.ComponentSupplier;
+import de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver;
+import de.ims.icarus2.filedriver.schema.tabular.TableConverter;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 
 /**
+ * Interface between an instance of {@link TableConverter} or similar framework member
+ * and individual {@link Resolver resolvers}. An instance of this context holds all the
+ * information and state of the active (de)serialization process.
+ *
  * @author Markus Gärtner
  *
  */
@@ -69,9 +78,33 @@ public interface ResolverContext {
 		// no-op
 	}
 
+	/**
+	 * Returns the singular handler for lop-level members of the primary layer.
+	 */
+	@Nullable
 	ObjLongConsumer<? super Item> getTopLevelAction();
 
+	/**
+	 * Returns a {@link ComponentSupplier} that is pre-configured for the given
+	 * {@link ItemLayer layer}. Note that the returned supplier should be considered
+	 * mutually exclusive with a {@link #getCache(ItemLayer)} obtained for the same
+	 * layer. This is due to the fact that component suppliers are expected to be
+	 * configured such that they already populate the underlying cache for their
+	 * respective backing layer(s).
+	 */
 	ComponentSupplier getComponentSupplier(ItemLayer layer);
 
+	/**
+	 * Returns the {@link InputCache} associated with the given {@link ItemLayer layer}.
+	 * This cache can be used to store members for the layer that have been created "outside"
+	 * the core framework. For instance, the {@link DependencyStructureResolver} produces
+	 * {@link Structure} instances that represent dependency trees on its own, but still
+	 * has to register them with the underlying storage via the respective {@link InputCache cache}.
+	 * <p>
+	 * Note that this approach should <b>only</b> be used when a resolver or other
+	 * component does <b>not</b> obtain its corpus members from a {@link #getComponentSupplier(ItemLayer) component supplier}!
+	 * Otherwise members could potentially be added to storage multiple times and also
+	 * metadata colelcted during scanning will be corrupted.
+	 */
 	InputCache getCache(ItemLayer layer);
 }

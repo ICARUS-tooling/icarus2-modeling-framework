@@ -2153,7 +2153,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 */
 	public static class ComponentSuppliersFactory extends AbstractBuilder<ComponentSuppliersFactory, Map<ItemLayer, ComponentSupplier>> {
 
-		//FIXME change final mapping from block-id to manifest-UID and include ALL relevant layers, so that resolvers can dock on caches
+		//FIXME change final mapping from block-id to manifest-UID (-> why exactly did we want to do this?)
 
 		private Function<ItemLayer, ObjLongConsumer<Item>> consumers;
 
@@ -2276,114 +2276,140 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				}
 			}
 
-			ItemLayer layer = blockHandler.getItemLayer();
-
-			ComponentSupplier.Builder builder = ComponentSupplier.builder();
-			builder.componentLayer(layer);
-			builder.componentType(blockHandler.getSchema().getComponentSchema().getMemberType());
-			builder.memberFactory(memberFactory);
-
-			ObjLongConsumer<Item> consumer = consumers==null ? null : consumers.apply(layer);
-			if(consumer!=null) {
-				builder.componentConsumer(consumer);
-			}
-
-			if(!layer.getBaseLayers().isEmpty()) {
-				/** Creates a supplier for elements of the specified layer */
-				// Currently we only supply top-level elements, so the root container is sufficient
-				//TODO add parameters to control whether nested containers are desired
-				final Function<ItemLayer, Supplier<Container>> baseContainerCreator = itemLayer -> {
-					final Container container;
-					if(mode==ReadMode.SCAN) {
-						// When scanning, items don't get actually stored persistently
-						container = new TempContainer(lookups.get(itemLayer));
-					} else {
-						// For live reading we can already rely on the underlying storage to work
-						container = itemLayer.getProxyContainer();
+			final List<ItemLayer> layers = new ObjectArrayList<>();
+			layers.add(blockHandler.getItemLayer());
+			ColumnHandler[] columnHandlers = blockHandler.columnHandlers;
+			if(columnHandlers!=null) {
+				for(ColumnHandler handler : columnHandlers) {
+					if(handler.resolver!=null && handler.resolver.requiresComponentSupplier()) {
+						layers.add(handler.getLayer());
 					}
-					return () -> container;
-				};
-
-				@SuppressWarnings("unchecked")
-				Supplier<Container>[] suppliers = new Supplier[layer.getBaseLayers().entryCount()];
-				boolean dynamic = false;
-				for (int i = 0; i < suppliers.length; i++) {
-					Supplier<Container> supplier = containerSuppliers.computeIfAbsent(layer.getBaseLayers().entryAt(i), baseContainerCreator);
-					suppliers[i] = supplier;
-					dynamic |= supplier instanceof ContainerSupplierProxy;
-				}
-
-				if(dynamic) {
-					// Requires dynamic construction of base containers
-					builder.baseContainerSupplier(new BaseContainerSupplier(suppliers));
-				} else {
-					// Compute base layers once and then reuse the result
-					final DataSet<Container> baseContainers = new BaseContainerSupplier(suppliers).get();
-					builder.baseContainerSupplier(() -> baseContainers);
 				}
 			}
 
-			// In SCAN mode we only read items, analyze and then immediately discard them
-			if(mode==ReadMode.CHUNK) {
+			for(ItemLayer layer : layers) {
 
-				BlockHandler parent = blockHandler.getParent();
-
-				if(parent!=null) {
-					ItemLayer sourceLayer = parent.getItemLayer();
-					ItemLayer targetLayer = layer;
-					Mapping mapping = converter.getDriver().getMapping(sourceLayer, targetLayer);
-					if(mapping==null)
-						throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-								"Missing mapping from "+ModelUtils.getUniqueId(sourceLayer)+" to "+ModelUtils.getUniqueId(targetLayer));
+				ComponentSupplier.Builder builder = ComponentSupplier.builder();
+				builder.componentLayer(layer);
+				if(layer==blockHandler.getItemLayer()) {
+					// For the primary layer of each block we rely on the explicit component declaration
+					builder.componentType(blockHandler.getSchema().getComponentSchema().getMemberType());
+				} else {
 					/*
-					 *  NOTE: this fetches the largest container size for the parent layer.
-					 *  This might be significantly higher than the buffer sizer we need for
-					 *  the given combination (parentLayer -> baseLayer) but is an easy upper
-					 *  boundary and the overhead should be manageable.
+					 *  In case of "external" layers that are populated by resolvers, we simply
+					 *  distinguish between items and containers. This takes care of all the use
+					 *  cases where a resolver only populates a given segment or attaches annotations
+					 *  to an item.
+					 *  For all the more complex cases such as (syntactic) structures or fragmentation
+					 *  the responsibility of creating, preparing, populating and storing new members
+					 *  falls solely to the resolver itself!
 					 */
-					int bufferSize = converter.getRecommendedIndexBufferSize(sourceLayer.getManifest());
-
-					builder.mapping(mapping);
-					builder.bufferSize(bufferSize);
+					builder.componentType(layer.getBaseLayers().isEmpty() ? MemberType.ITEM : MemberType.CONTAINER);
 				}
-			}
+				builder.memberFactory(memberFactory);
 
-			// Outside of CHUNK mode we can use metadata to determine begin indices for our continuous item streams
-			if(fileIndex!=-1 && mode!=ReadMode.CHUNK) {
-				FileDataStates states = converter.getDriver().getFileStates();
-
-				long firstIndex;
-
-				FileInfo fileInfo = states.getFileInfo(fileIndex);
-				firstIndex = fileInfo.getBeginIndex(layer.getManifest());
-				if(firstIndex==IcarusUtils.UNSET_LONG && fileIndex>0) {
-					FileInfo previousInfo = states.getFileInfo(fileIndex-1);
-					firstIndex = previousInfo.getEndIndex(layer.getManifest()) + 1;
+				ObjLongConsumer<Item> consumer = consumers==null ? null : consumers.apply(layer);
+				if(consumer!=null) {
+					builder.componentConsumer(consumer);
 				}
 
-				if(firstIndex==IcarusUtils.UNSET_LONG) {
-					firstIndex = 0L;
-				}
+				if(!layer.getBaseLayers().isEmpty()) {
+					/** Creates a supplier for elements of the specified layer */
+					// Currently we only supply top-level elements, so the root container is sufficient
+					//TODO add parameters to control whether nested containers are desired
+					final Function<ItemLayer, Supplier<Container>> baseContainerCreator = itemLayer -> {
+						final Container container;
+						if(mode==ReadMode.SCAN) {
+							// When scanning, items don't get actually stored persistently
+							container = new TempContainer(lookups.get(itemLayer));
+						} else {
+							// For live reading we can already rely on the underlying storage to work
+							container = itemLayer.getProxyContainer();
+						}
+						return () -> container;
+					};
 
+					@SuppressWarnings("unchecked")
+					Supplier<Container>[] suppliers = new Supplier[layer.getBaseLayers().entryCount()];
+					boolean dynamic = false;
+					for (int i = 0; i < suppliers.length; i++) {
+						Supplier<Container> supplier = containerSuppliers.computeIfAbsent(layer.getBaseLayers().entryAt(i), baseContainerCreator);
+						suppliers[i] = supplier;
+						dynamic |= supplier instanceof ContainerSupplierProxy;
+					}
 
-				if(mode==ReadMode.SCAN) {
-					// In scan mode we can't predict max index
-					MutableLong index = new MutableLong(firstIndex);
-					builder.indexSupplier(index::getAndIncrement);
-				} else {
-					builder.firstIndex(firstIndex);
-					// If available we use information about last index in file
-					long lastIndex = fileInfo.getEndIndex(layer.getManifest());
-					if(lastIndex!=IcarusUtils.UNSET_LONG) {
-						builder.lastIndex(lastIndex);
+					if(dynamic) {
+						// Requires dynamic construction of base containers
+						builder.baseContainerSupplier(new BaseContainerSupplier(suppliers));
+					} else {
+						// Compute base layers once and then reuse the result
+						final DataSet<Container> baseContainers = new BaseContainerSupplier(suppliers).get();
+						builder.baseContainerSupplier(() -> baseContainers);
 					}
 				}
+
+				// In SCAN mode we only read items, analyze and then immediately discard them
+				if(mode==ReadMode.CHUNK) {
+
+					BlockHandler parent = blockHandler.getParent();
+
+					if(parent!=null) {
+						ItemLayer sourceLayer = parent.getItemLayer();
+						ItemLayer targetLayer = layer;
+						Mapping mapping = converter.getDriver().getMapping(sourceLayer, targetLayer);
+						if(mapping==null)
+							throw new ModelException(ModelErrorCode.DRIVER_ERROR,
+									"Missing mapping from "+ModelUtils.getUniqueId(sourceLayer)+" to "+ModelUtils.getUniqueId(targetLayer));
+						/*
+						 *  NOTE: this fetches the largest container size for the parent layer.
+						 *  This might be significantly higher than the buffer sizer we need for
+						 *  the given combination (parentLayer -> baseLayer) but is an easy upper
+						 *  boundary and the overhead should be manageable.
+						 */
+						int bufferSize = converter.getRecommendedIndexBufferSize(sourceLayer.getManifest());
+
+						builder.mapping(mapping);
+						builder.bufferSize(bufferSize);
+					}
+				}
+
+				// Outside of CHUNK mode we can use metadata to determine begin indices for our continuous item streams
+				if(fileIndex!=-1 && mode!=ReadMode.CHUNK) {
+					FileDataStates states = converter.getDriver().getFileStates();
+
+					long firstIndex;
+
+					FileInfo fileInfo = states.getFileInfo(fileIndex);
+					firstIndex = fileInfo.getBeginIndex(layer.getManifest());
+					if(firstIndex==IcarusUtils.UNSET_LONG && fileIndex>0) {
+						FileInfo previousInfo = states.getFileInfo(fileIndex-1);
+						firstIndex = previousInfo.getEndIndex(layer.getManifest()) + 1;
+					}
+
+					if(firstIndex==IcarusUtils.UNSET_LONG) {
+						firstIndex = 0L;
+					}
+
+
+					if(mode==ReadMode.SCAN) {
+						// In scan mode we can't predict max index
+						MutableLong index = new MutableLong(firstIndex);
+						builder.indexSupplier(index::getAndIncrement);
+					} else {
+						builder.firstIndex(firstIndex);
+						// If available we use information about last index in file
+						long lastIndex = fileInfo.getEndIndex(layer.getManifest());
+						if(lastIndex!=IcarusUtils.UNSET_LONG) {
+							builder.lastIndex(lastIndex);
+						}
+					}
+				}
+
+				ComponentSupplier componentSupplier = builder.build();
+				componentSupplier.setHost(layer.getProxyContainer());
+
+				componentSuppliers.put(layer, componentSupplier);
 			}
-
-			ComponentSupplier componentSupplier = builder.build();
-			componentSupplier.setHost(layer.getProxyContainer());
-
-			componentSuppliers.put(blockHandler.getItemLayer(), componentSupplier);
 		}
 
 	}
@@ -2565,6 +2591,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private final Resolver resolver;
 		private Resolver replacementResolver;
 		private final int columnIndex;
+		private final boolean ignoreEmptyLabels;
 
 		/**
 		 * Handler to be called on the provided item <b>before</b> the actual
@@ -2600,6 +2627,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			// Per default try to instantiate nested resolver based on schema definition
 			Resolver resolver = createResolver(columnSchema.getResolver());
+			// In case we need to fall back to a BasicAnnotationResolver we can ignore empty labels
+			ignoreEmptyLabels = resolver==null;
 
 			if(resolver==null) {
 				// No nested resolver declared -> use layerId and annotationKey info
@@ -2666,7 +2695,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		@Override
 		public Void process(InputResolverContext context) throws IcarusApiException {
-			if(noEntryLabel==null || !StringUtil.equals(noEntryLabel, context.rawData())) {
+			if(ignoreEmptyLabels || noEntryLabel==null || !StringUtil.equals(noEntryLabel, context.rawData())) {
 				// Original item
 				Item providedItem = context.currentItem();
 
@@ -2726,12 +2755,16 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return columnSchema;
 		}
 
+		private <L extends Layer> L getLayer() {
+			return findLayer(columnSchema.getLayerId());
+		}
+
 		private Options resolverOptions(ResolverSchema resolver) {
 			Options options = new Options();
 			if(resolver!=null) {
 				options.putAll(resolver.getOptions());
 			}
-			options.put(ResolverOptions.LAYER, findLayer(columnSchema.getLayerId()));
+			options.put(ResolverOptions.LAYER, getLayer());
 			return options;
 		}
 	}
@@ -3462,14 +3495,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				context.setData(characterCursor);
 
 				// Only traverse columns that do not ignore their content
-				for(ColumnHandler columnHandler : columnHandlers) {
+				for (int i = 0; i < columnHandlers.length; i++) {
+					ColumnHandler columnHandler = columnHandlers[i];
 					int columnIndex = columnHandler.getColumnIndex();
 
 					// Point the cursor to the respective offsets
 					moveCursorToColumn(columnIndex);
 
 					// Skip "empty" columns
-					if(noEntryLabel!=null && StringUtil.equals(noEntryLabel, characterCursor)) {
+					if(columnHandler.ignoreEmptyLabels && noEntryLabel!=null && StringUtil.equals(noEntryLabel, characterCursor)) {
 						continue;
 					}
 

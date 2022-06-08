@@ -17,6 +17,7 @@
 package de.ims.icarus2.filedriver.schema.resolve;
 
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.filedriver.ComponentSupplier;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.Schema;
@@ -56,9 +57,22 @@ public interface Resolver {
 	 */
 	Item process(ResolverContext context) throws IcarusApiException;
 
-	/** Do final completion work. Will be called  */
+	/** Do final completion work. Will be called TODO */
 	default void complete() {
+		// no-op
+	}
 
+	/**
+	 * Signals the rest of the framework that this resolver requires a pre-configured
+	 * {@link ComponentSupplier} for its designated layer in order to work properly.
+	 * If this method returns {@code true} the resolver is guaranteed to receive a valid
+	 * {@link ComponentSupplier} when querying the {@link ResolverContext} in its
+	 * {@link #prepareForReading(Converter, ReadMode, ResolverContext, Options)} call.
+	 *
+	 * @return
+	 */
+	default boolean requiresComponentSupplier() {
+		return false;
 	}
 
 	/**
