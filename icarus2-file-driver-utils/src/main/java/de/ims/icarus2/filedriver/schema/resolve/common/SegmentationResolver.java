@@ -20,12 +20,14 @@
 package de.ims.icarus2.filedriver.schema.resolve.common;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
+import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
-import java.util.function.ObjLongConsumer;
 
 import javax.annotation.Nullable;
+
+import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
@@ -44,12 +46,11 @@ import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
+import de.ims.icarus2.model.manifest.api.LayerManifest.TargetLayerManifest;
 import de.ims.icarus2.model.manifest.util.Messages;
-import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.StringUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -77,7 +78,6 @@ public class SegmentationResolver implements Resolver {
 
 	private MappingWriter writer, reverseWriter;
 
-	private ObjLongConsumer<Item> segmentSaveAction;
 	private final IndexBuffer targetIndices;
 	private final MutableSingletonIndexSet sourceIndex;
 	private final List<Item> items;
@@ -89,7 +89,6 @@ public class SegmentationResolver implements Resolver {
 
 	private Strategy strategy;
 	private boolean probing;
-	private boolean segmentActive = false;
 
 
 	public SegmentationResolver() {
@@ -98,13 +97,37 @@ public class SegmentationResolver implements Resolver {
 		items = new ObjectArrayList<>();
 	}
 
+	private ItemLayerManifestBase<?> extractExpectedLayerManifest() {
+		ItemLayerManifestBase<?> segmentManifest = segmentLayer.getManifest();
+		List<TargetLayerManifest> baseManifests = segmentManifest.getBaseLayerManifests();
+		if(baseManifests.isEmpty())
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Manifest declares no base layers: "+getName(segmentManifest));
+		if(baseManifests.size()>1)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"Manifest declares more than one base layer: "+getName(segmentManifest));
+		return (ItemLayerManifestBase<?>) baseManifests.get(0).getResolvedLayerManifest().orElseThrow(
+				ModelException.create(GlobalErrorCode.INVALID_INPUT, "Unresolvable base manifest for "+getName(segmentManifest)));
+	}
+
+	/**
+	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#requiresComponentSupplier()
+	 */
+	@Override
+	public boolean requiresComponentSupplier() { return true; }
+
 	/**
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function, de.ims.icarus2.util.Options)
 	 */
 	@Override
 	public void prepareForReading(Converter converter, ReadMode mode, ResolverContext context,
 			Options options) {
-		segmentLayer = (StructureLayer) options.get(ResolverOptions.LAYER);
+		requireNonNull(converter);
+		requireNonNull(mode);
+		requireNonNull(context);
+		requireNonNull(options);
+
+		segmentLayer = (ItemLayer) options.get(ResolverOptions.LAYER);
 		if(segmentLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
 					"No layer assigned to this resolver "+getClass());
@@ -133,6 +156,10 @@ public class SegmentationResolver implements Resolver {
 
 			strategy = new Alternating();
 		} else if(segmentBegin!=null && segmentEnd!=null) {
+			if(StringUtil.equals(segmentBegin, segmentEnd))
+				throw new ModelException(converter.getDriver().getCorpus(), ModelErrorCode.DRIVER_ERROR,
+						String.format("%s '%s' and '%s' markers must be different, got '%s' for both", getClass().getName(),
+								OPTION_SEGMENT_BEGIN, OPTION_SEGMENT_END, segmentBegin));
 			strategy = new Discontinuous();
 		} else if(segmentBegin!=null) {
 			strategy = new Beginning();
@@ -144,9 +171,7 @@ public class SegmentationResolver implements Resolver {
 							+ " '%s' or '%s' to be provided with a non-empty string", getClass().getName(),
 							OPTION_AUTO_SEGMENT, OPTION_SEGMENT_BEGIN, OPTION_SEGMENT_END));
 
-		// Link with back-end storage
-		InputCache cache = context.getCache(segmentLayer);
-		segmentSaveAction = cache::offer;
+		expectedLayerManifest = extractExpectedLayerManifest();
 
 		probing = true;
 	}
@@ -176,7 +201,7 @@ public class SegmentationResolver implements Resolver {
 
 		if(targetLayer.getManifest()!=expectedLayerManifest)
 			throw new ModelException(ModelErrorCode.DRIVER_ERROR, Messages.mismatch(
-					"",
+					"Foreign manifest encountered",
 					getName(expectedLayerManifest), getName(targetLayer.getManifest())));
 
 		Mapping mapping = driver.getMapping(segmentLayer, targetLayer);
@@ -195,10 +220,9 @@ public class SegmentationResolver implements Resolver {
 
 	private void beginSegment(Item item) {
 		requireNonNull(item);
-		assert !segmentActive() : "segment already active";
+		checkState("segment already active", !segmentActive());
 
 		// We only mark segment as active and store item temporarilly
-		segmentActive = true;
 		items.add(item);
 	}
 
@@ -209,7 +233,7 @@ public class SegmentationResolver implements Resolver {
 	}
 
 	private void endSegment(@Nullable Item item) {
-		assert segmentActive() : "no segment active";
+		checkState("no segment active", segmentActive());
 
 		if(item!=null) {
 			items.add(item);
@@ -239,19 +263,19 @@ public class SegmentationResolver implements Resolver {
 
 		targetIndices.clear();
 		items.clear();
-
-		segmentSaveAction.accept(segment, sourceIndex.getIndex());
-
-		segmentActive = false;
 	}
 
 	private void intermediateElement(Item item) {
-		assert segmentActive() : "no segment active";
+		checkState("no segment active", segmentActive());
 		items.add(item);
 	}
 
+	private void discardSegment() {
+		items.clear();
+	}
+
 	private boolean segmentActive() {
-		return segmentActive;
+		return !items.isEmpty();
 	}
 
 	/**
@@ -259,8 +283,10 @@ public class SegmentationResolver implements Resolver {
 	 */
 	@Override
 	public void close() {
-		componentSupplier.close();
-		componentSupplier = null;
+		if(componentSupplier!=null) {
+			componentSupplier.close();
+			componentSupplier = null;
+		}
 		strategy = null;
 
 		if(reverseWriter!=null) {
@@ -284,10 +310,22 @@ public class SegmentationResolver implements Resolver {
 		}
 	}
 
+	// Access methods for testing
+
+	@VisibleForTesting
+	Strategy getStrategy() {
+		return strategy;
+	}
+
+	@VisibleForTesting
+	boolean isProbing() {
+		return probing;
+	}
+
 	interface Strategy {
 		void process(Item item, CharSequence value);
 
-		default void complete() { /* no-op */ }
+		void complete();
 	}
 
 	/** Treat any change in annotations as boundary for segments */
@@ -335,6 +373,11 @@ public class SegmentationResolver implements Resolver {
 				intermediateElement(item);
 			}
 		}
+
+		@Override
+		public void complete() {
+			discardSegment();
+		}
 	}
 
 	/** Use only a start marker. A new marker implicitly ends the previous segment. */
@@ -342,10 +385,12 @@ public class SegmentationResolver implements Resolver {
 		@Override
 		public void process(Item item, CharSequence value) {
 			if(segmentSingleton!=null && StringUtil.equals(segmentSingleton, value)) {
+				endSegmentIfActive();
 				assert !segmentActive();
 				beginSegment(item);
 				endSegment(null);
 			} else if(StringUtil.equals(segmentBegin, value)) {
+				endSegmentIfActive();
 				assert !segmentActive();
 				beginSegment(item);
 			} else if(segmentActive()) {
@@ -368,8 +413,8 @@ public class SegmentationResolver implements Resolver {
 				beginSegment(item);
 				endSegment(null);
 			} else if(StringUtil.equals(segmentEnd, value)) {
-				assert !segmentActive();
-				beginSegment(item);
+				assert segmentActive();
+				endSegment(item);
 			} else if(segmentActive()) {
 				intermediateElement(item);
 			} else {
@@ -380,7 +425,7 @@ public class SegmentationResolver implements Resolver {
 
 		@Override
 		public void complete() {
-			endSegmentIfActive();
+			discardSegment();
 		}
 	}
 }
