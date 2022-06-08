@@ -255,6 +255,15 @@ public class ArrayConverters {
 
 	}
 
+	public static class StringMatrixConverter extends MatrixConverterBase {
+
+		@Override
+		protected Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException {
+			return raw;
+		}
+
+	}
+
 	public static class IntegerArrayConverter extends ArrayConverterBase {
 
 		@Override
