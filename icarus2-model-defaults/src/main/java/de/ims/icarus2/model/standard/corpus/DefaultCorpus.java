@@ -513,7 +513,8 @@ public class DefaultCorpus implements Corpus {
 			}
 
 			if(!buffer.isEmpty()) {
-				buffer.setFormattedMessage("%d error during closing of corpus '%s'", getName(this));
+				buffer.setFormattedMessage("%d errors during closing of corpus '%s'",
+						_int(buffer.getExceptionCount()), getName(this));
 				throw new AccumulatingException(buffer);
 			}
 		} finally {
