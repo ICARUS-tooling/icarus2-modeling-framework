@@ -25,11 +25,12 @@ import java.net.URL;
  * @author Markus Gärtner
  *
  */
-public class CoNLLTestUtils {
+public class CoNLLUtils {
 
 	public static final String CORPUS_NAME = "icarus.conll09";
 
+	/** Returns the URL for the small example corpus shipped with ICARUS2 */
 	public static URL getCorpusUrl() {
-		return CoNLLTestUtils.class.getResource(CORPUS_NAME);
+		return CoNLLUtils.class.getResource(CORPUS_NAME);
 	}
 }

@@ -131,7 +131,7 @@ class CoNLL2009SchemaConverterTest {
 							.setId("root")
 							.addLocationManifest(factory.create(LocationManifest.class)
 									.setRootPathType(PathType.FILE)
-									.setRootPath(Paths.get(CoNLLTestUtils.getCorpusUrl().toURI()).toString()))
+									.setRootPath(Paths.get(CoNLLUtils.getCorpusUrl().toURI()).toString()))
 							.setTemplateId(CoNLLTemplates.CONLL09_SCHEMA_TEMPLATE))
 					.setId("test")
 					.setName("Test Corpus");
