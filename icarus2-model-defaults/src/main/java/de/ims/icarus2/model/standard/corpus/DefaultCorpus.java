@@ -932,7 +932,7 @@ public class DefaultCorpus implements Corpus {
 		 */
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			PagedCorpusView view = (PagedCorpusView) e.getSource();
+			OwnableCorpusPart view = (OwnableCorpusPart) e.getSource();
 			if(!view.isActive()) {
 				synchronized (this) {
 					removePart(view);
