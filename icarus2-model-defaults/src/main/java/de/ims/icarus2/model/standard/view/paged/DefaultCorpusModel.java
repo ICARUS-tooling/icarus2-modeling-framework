@@ -270,7 +270,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	}
 
 	protected final void checkClean(Item item) {
-		if(!item.isDirty())
+		if(item.isDirty())
 			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE, "Item is dirty: "+getName(item));
 	}
 
