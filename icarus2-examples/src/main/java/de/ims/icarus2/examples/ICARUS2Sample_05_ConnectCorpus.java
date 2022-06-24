@@ -18,19 +18,19 @@ package de.ims.icarus2.examples;
 
 import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.registry.CorpusManager;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
+import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.Options;
 
 /**
  * @author Markus Gärtner
@@ -69,16 +69,19 @@ public class ICARUS2Sample_05_ConnectCorpus {
 
 		// Finally do something with the corpus...
 
-		ItemLayer sentenceLayer = corpus.getPrimaryLayer();
-		corpus.getRootContext().getDriver().load(new IndexSet[] {IndexUtils.span(0, 9)}, sentenceLayer);
+		try(StreamedCorpusView view = corpus.createStream(corpus.createCompleteScope(), AccessMode.READ, Options.none())) {
 
-		AnnotationStorage annoForm = corpus.<AnnotationLayer>getLayer("form", true).getAnnotationStorage();
-		sentenceLayer.getProxyContainer().forEachItem(sentence -> {
-			((Container)sentence).forEachItem(item -> {
-				System.out.print(annoForm.getString(item, "form"));
-				System.out.print(" ");
-			});
-			System.out.println();
-		});
+			AnnotationLayer formLayer = view.fetchLayer("form");
+			AnnotationStorage annoForm = formLayer.getAnnotationStorage();
+
+			while(view.advance()) {
+				Container sentence = view.currentItem();
+				sentence.forEachItem(item -> {
+					System.out.print(annoForm.getString(item, "form"));
+					System.out.print(" ");
+				});
+				System.out.println();
+			}
+		}
 	}
 }
