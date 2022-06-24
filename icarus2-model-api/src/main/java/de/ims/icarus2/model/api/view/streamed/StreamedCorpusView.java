@@ -87,8 +87,10 @@ public interface StreamedCorpusView extends CorpusView, OwnableCorpusPart {
 	 *
 	 * @throws ModelException with {@link ModelErrorCode#STREAM_NO_ITEM}
 	 * in case there is no active item available currently.
+	 * @throws ClassCastException if the current item cannot be cast to
+	 * the desired type.
 	 */
-	Item currentItem();
+	<I extends Item> I currentItem();
 
 	// Support part
 

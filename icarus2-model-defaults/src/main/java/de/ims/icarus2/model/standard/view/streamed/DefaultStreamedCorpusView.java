@@ -130,10 +130,11 @@ public class DefaultStreamedCorpusView extends AbstractCorpusView implements Str
 		return buffer.hasItem();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Item currentItem() {
+	public <I extends Item> I currentItem() {
 		checkHasItem();
-		return buffer.currentItem();
+		return (I) buffer.currentItem();
 	}
 
 	/**
