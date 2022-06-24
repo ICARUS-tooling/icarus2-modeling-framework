@@ -36,7 +36,6 @@ import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.raster.Position;
 import de.ims.icarus2.model.api.view.Scope;
-import de.ims.icarus2.model.api.view.paged.PagedCorpusView.PageControl;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.api.ValueSet;
@@ -161,8 +160,7 @@ public interface CorpusModel extends Part<PagedCorpusView>, Changeable {
 	 * Note that this method will fail for all layers except the one designated as the
 	 * <i>primary layer</i> of the {@link Scope} responsible for the vertical filtering
 	 * of this model's view. The returned container will contain a number of elements
-	 * equal to the current {@link PageControl#getPageSize() page count} of the enclosing
-	 * view.
+	 * equal to the current page count of the enclosing view.
 	 *
 	 * @param layer
 	 * @return
