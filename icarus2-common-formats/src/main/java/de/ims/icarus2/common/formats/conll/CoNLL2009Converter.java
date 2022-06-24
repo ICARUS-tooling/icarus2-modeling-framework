@@ -76,6 +76,7 @@ import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
@@ -247,10 +248,20 @@ public class CoNLL2009Converter extends AbstractConverter {
 		return layer;
 	}
 
+	private <T extends Item> LongFunction<T> makeAlive(LongFunction<T> orig_gen) {
+		return index -> {
+			T result = orig_gen.apply(index);
+			if(result instanceof ManagedItem) {
+				((ManagedItem)result).setAlive(true);
+			}
+			return result;
+		};
+	}
+
 	private ItemRef<ItemLayer, Item> resolveToken(Context ctx, ModuleManifest manifest, LayerConfig config) {
 		final ItemLayer layer = resolveLayer(ctx, manifest, config);
 		final Container host = layer.getProxyContainer();
-		final LongFunction<Item> supplier = index -> memberFactory.newItem(host, index);
+		final LongFunction<Item> supplier = makeAlive(index -> memberFactory.newItem(host, index));
 		final FileDriver driver = getDriver();
 		final IntFunction<ItemLayerAnalyzer> gen_analyzer = fileIndex
 				-> new DefaultItemLayerAnalyzer(driver.getFileStates(), layer, fileIndex);
@@ -264,7 +275,7 @@ public class CoNLL2009Converter extends AbstractConverter {
 				ManifestException.missing(layerManifest, "root container"));
 		final DataSet<Container> baseContainers = DataSets.createDataSet(i_token.layer.getProxyContainer());
 		final Container host = layer.getProxyContainer();
-		final LongFunction<Container> supplier = index -> memberFactory.newContainer(mf, host, baseContainers, null, index);
+		final LongFunction<Container> supplier = makeAlive(index -> memberFactory.newContainer(mf, host, baseContainers, null, index));
 		final FileDriver driver = getDriver();
 		final IntFunction<ItemLayerAnalyzer> gen_analyzer = fileIndex
 				-> new DefaultItemLayerAnalyzer(driver.getFileStates(), layer, fileIndex);
@@ -466,7 +477,11 @@ public class CoNLL2009Converter extends AbstractConverter {
 			builder.addEdge(edge);
 			depRelAnno.setter.accept(edge, depRels.get(i));
 		}
-		return builder.build();
+		Structure structure = builder.build();
+		if(structure instanceof ManagedItem) {
+			((ManagedItem)structure).setAlive(true);
+		}
+		return structure;
 	}
 
 	private InputCache cache(LayerRef<? extends ItemLayer, ?> ref) {

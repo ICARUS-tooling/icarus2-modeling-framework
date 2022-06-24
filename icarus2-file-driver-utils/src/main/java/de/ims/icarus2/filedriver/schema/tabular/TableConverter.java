@@ -105,7 +105,6 @@ import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.members.item.manager.ItemLookup;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
@@ -323,17 +322,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		final MutableInteger chunksTillPurge = new MutableInteger(DEFAULT_TEMP_CHUNK_COUNT);
 
 		ObjLongConsumer<Item> topLevelItemAction = (item, index) -> {
-			/*
-			 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
-			 *
-			 *  Our assumption is that subclasses or factory code that gets called from within
-			 *  the creation process already assigns other flags than ALIVE. Therefore this is
-			 *  the only flag we need to worry about here. It is also the only one that MUST be
-			 *  set in order for a blank item to get assigned VALID chunk state!
-			 */
-			if(item instanceof ManagedItem) {
-				((ManagedItem)item).setAlive(true);
-			}
 
 			/*
 			 *  We "abuse" caches to collect all the items created for a single chunk here.
@@ -521,18 +509,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
 
 		final ObjLongConsumer<Item> topLevelItemAction = (item, index) -> {
-
-			/*
-			 *  It's the drivers responsibility to set proper flags on an item, so we do it here.
-			 *
-			 *  Our assumption is that subclasses or factory code that gets called from within
-			 *  the creation process already assigns other flags than ALIVE. Therefore this is
-			 *  the only flag we need to worry about here. It is also the only one that MUST be
-			 *  set in order for a blank item to get assigned VALID chunk state!
-			 */
-			if(item instanceof ManagedItem) {
-				((ManagedItem)item).setAlive(true);
-			}
 
 			ChunkState state = ChunkState.forItem(item);
 			loadResult.accept(index, item, state);

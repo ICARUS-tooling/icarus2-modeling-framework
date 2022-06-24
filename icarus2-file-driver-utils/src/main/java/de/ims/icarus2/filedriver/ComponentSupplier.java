@@ -44,6 +44,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.item.Item.ManagedItem;
 import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
@@ -290,27 +291,35 @@ public interface ComponentSupplier extends AutoCloseable {
 		 */
 		protected Item newComponent(Container host, long id) {
 			ItemLayerManifestBase<?> manifest = componentLayer.getManifest();
+			Item result;
 			switch (componentType) {
 			case CONTAINER: {
 				DataSet<Container> baseContainers = fetchBaseContainers(host, id);
 				ContainerManifestBase<?> containerManifest = manifest.getRootContainerManifest()
 						.orElseThrow(ManifestException.missing(manifest, "root container"));
-				return memberFactory.newContainer(containerManifest,
+				result = memberFactory.newContainer(containerManifest,
 						host, baseContainers, null, id); //TODO for now we ignore boundary containers!!!
-			}
+			} break;
 			case STRUCTURE: {
 				DataSet<Container> baseContainers = fetchBaseContainers(host, id);
 				StructureManifest structureManifest = ((StructureLayerManifest)manifest).getRootStructureManifest()
 						.orElseThrow(ManifestException.missing(manifest, "root structure"));
-				return memberFactory.newStructure(structureManifest,
+				result = memberFactory.newStructure(structureManifest,
 						host, baseContainers, null, id); //TODO for now we ignore boundary containers!!!
-			}
+			} break;
 			case ITEM:
-				return memberFactory.newItem(host, id);
+				result = memberFactory.newItem(host, id);
+				break;
 
 			default:
 				throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Current component type not supported: "+componentType);
 			}
+
+			if(result instanceof ManagedItem) {
+				((ManagedItem)result).setAlive(true);
+			}
+
+			return result;
 		}
 
 		protected @Nullable DataSet<Container> fetchBaseContainers(Container host, long id) {
