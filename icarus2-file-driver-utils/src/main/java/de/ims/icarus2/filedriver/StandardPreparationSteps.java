@@ -30,8 +30,8 @@ import java.util.List;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
-import de.ims.icarus2.filedriver.FileDataStates.ElementInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
+import de.ims.icarus2.filedriver.FileDataStates.GlobalInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.filedriver.FileDriver.PreparationStep;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
@@ -307,8 +307,8 @@ public enum StandardPreparationSteps implements PreparationStep {
 			String totalSizeString = String.valueOf(totalBytes);
 			String savedTotalSize = metadataRegistry.getValue(totalSizeKey);
 
-			ElementInfo globalInfo = driver.getFileStates().getGlobalInfo();
-			globalInfo.setProperty(totalSizeKey, totalSizeString);
+			GlobalInfo globalInfo = driver.getFileStates().getGlobalInfo();
+			globalInfo.setSize(totalBytes);
 
 			boolean totalBytesValid = true;
 

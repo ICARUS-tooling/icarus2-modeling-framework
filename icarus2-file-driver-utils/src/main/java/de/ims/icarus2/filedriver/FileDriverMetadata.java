@@ -329,7 +329,7 @@ public class FileDriverMetadata {
 		 * modules like {@link ChunkIndex} instances which might only be feasible for
 		 * rather large sets of data.
 		 */
-		SIZE("size", ValueType.LONG),
+		SIZE("bytes", ValueType.LONG),
 
 		;
 
@@ -374,7 +374,7 @@ public class FileDriverMetadata {
 		/**
 		 * Size of the data file in bytes.
 		 */
-		SIZE("size", ValueType.LONG, false),
+		SIZE("bytes", ValueType.LONG, false),
 
 		/**
 		 * FLag indicating whether the file has been scanned completely

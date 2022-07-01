@@ -16,21 +16,25 @@
  */
 package de.ims.icarus2.filedriver;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
@@ -42,7 +46,6 @@ import de.ims.icarus2.util.LongCounter;
 import de.ims.icarus2.util.stat.Histogram;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * Centralized storage of (virtual) metadata for resources managed by
@@ -55,7 +58,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public class FileDataStates {
 
-	private final ElementInfo globalInfo = new ElementInfo();
+	private final GlobalInfo globalInfo = new GlobalInfo();
 
 	// File states and meta info
 	private final Int2ObjectMap<FileInfo> fileInfos = new Int2ObjectOpenHashMap<>();
@@ -93,7 +96,7 @@ public class FileDataStates {
 		//TODO populate other maps/lookups!!!
 	}
 
-	public ElementInfo getGlobalInfo() {
+	public GlobalInfo getGlobalInfo() {
 		return globalInfo;
 	}
 
@@ -129,6 +132,18 @@ public class FileDataStates {
 		return info;
 	}
 
+	public interface Syncable {
+
+		void syncTo(MetadataRegistry registry);
+
+		void syncFrom(MetadataRegistry registry);
+	}
+
+	private static boolean verify(MetadataRegistry registry, String key, long value) {
+		long savedValue = registry.getLongValue(key, UNSET_LONG);
+		return savedValue==UNSET_LONG || savedValue==value;
+	}
+
 	/**
 	 * Basic info type that only provides a set of {@link ElementFlag flags}
 	 * and simple properties for the associated resource.
@@ -136,25 +151,25 @@ public class FileDataStates {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class ElementInfo {
+	public abstract static class ElementInfo {
 		private EnumSet<ElementFlag> state = EnumSet.noneOf(ElementFlag.class);
-		private Map<String, String> properties;
+//		private Map<String, String> properties;
 
-		public String getProperty(String key) {
-			return properties==null ? null : properties.get(key);
-		}
-
-		public void setProperty(String key, String value) {
-			if(value==null) {
-				return;
-			}
-
-			if(properties==null) {
-				properties = new Object2ObjectOpenHashMap<>();
-			}
-
-			properties.put(key, value);
-		}
+//		public String getProperty(String key) {
+//			return properties==null ? null : properties.get(key);
+//		}
+//
+//		public void setProperty(String key, String value) {
+//			if(value==null) {
+//				return;
+//			}
+//
+//			if(properties==null) {
+//				properties = new Object2ObjectOpenHashMap<>();
+//			}
+//
+//			properties.put(key, value);
+//		}
 
 		public void updateFlag(ElementFlag flag, boolean active) {
 			if(active) {
@@ -210,11 +225,39 @@ public class FileDataStates {
 		}
 	}
 
+	public static class GlobalInfo extends ElementInfo implements Syncable {
+
+		private long size;
+
+
+		@Override
+		public void syncTo(MetadataRegistry registry) {
+			registry.setLongValue(DriverKey.SIZE.getKey(), size);
+		}
+
+		@Override
+		public void syncFrom(MetadataRegistry registry) {
+			size = registry.getLongValue(DriverKey.SIZE.getKey(), 0);
+		}
+
+		public boolean verifySize(MetadataRegistry registry) {
+			return verify(registry, DriverKey.SIZE.getKey(), size);
+		}
+
+		public long getSize() {
+			return size;
+		}
+
+		public void setSize(long size) {
+			this.size = size;
+		}
+	}
+
 	/**
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class FileInfo extends ElementInfo {
+	public static class FileInfo extends ElementInfo implements Syncable {
 
 		private final int index;
 		private Path path;
@@ -226,6 +269,18 @@ public class FileDataStates {
 
 		private FileInfo(int index) {
 			this.index = index;
+		}
+
+		@Override
+		public void syncTo(MetadataRegistry registry) {
+			registry.setValue(FileKey.PATH.getKey(index), path.toString());
+			registry.setLongValue(FileKey.SIZE.getKey(index), size);
+		}
+
+		@Override
+		public void syncFrom(MetadataRegistry registry) {
+			setSize(registry.getLongValue(FileKey.SIZE.getKey(index), 0));
+			setPath(Paths.get(registry.getValue(FileKey.PATH.getKey(index))));
 		}
 
 		public int getIndex() {
@@ -249,11 +304,11 @@ public class FileDataStates {
 		}
 
 		public void setPath(Path file) {
-			this.path = file;
+			this.path = requireNonNull(file);
 		}
 
 		public void setChecksum(FileChecksum checksum) {
-			this.checksum = checksum;
+			this.checksum = requireNonNull(checksum);
 		}
 
 		private LayerCoverage getCoverage(ItemLayerManifestBase<?> layer, boolean createIfMissing) {
