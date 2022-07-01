@@ -16,25 +16,27 @@
  */
 package de.ims.icarus2.examples;
 
-import static de.ims.icarus2.model.util.ModelUtils.getName;
-
 import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
-import de.ims.icarus2.filedriver.FileDriver;
 import de.ims.icarus2.model.api.corpus.Corpus;
+import de.ims.icarus2.model.api.layer.AnnotationLayer;
+import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 import de.ims.icarus2.model.standard.registry.DefaultCorpusManager;
+import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.Options;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class ICARUS2Sample_05_ConnectCorpus {
+public class ICARUS2Sample_07_StreamedView {
 
 	public static void main(String[] args) throws Exception {
 
@@ -56,33 +58,37 @@ public class ICARUS2Sample_05_ConnectCorpus {
 			.build()
 			.addSource(ManifestLocation.builder()
 					.input()
-					.url(ICARUS2Sample_05_ConnectCorpus.class.getResource("ConnectCorpus01.imf.xml"))
+					.url(ICARUS2Sample_07_StreamedView.class.getResource("ConnectCorpus01.imf.xml"))
 					.build())
 			.readAndRegisterAll();
 
 		// Connect to the corpus resource
 		CorpusManifest corpusManifest = manifestRegistry.getCorpusManifest("corpus.test.connect")
 				.orElseThrow(ManifestException.error("Missing test corpus"));
-		// Per default file drivers don't automatically load all their data upon connecting,
-		// so we change that setting here
-		corpusManifest.getRootContextManifest()
-			.flatMap(ContextManifest::getDriverManifest)
-			.flatMap(m -> m.getProperty(FileDriver.OptionKey.LOAD_ON_CONNECT.getKey()))
-			.ifPresent(p -> p.setValue(Boolean.TRUE));
-		// Obtain live corpus now
 		Corpus corpus = corpusManager.connect(corpusManifest);
 
-		// Ensure drivers are connected (and thanks to above settings the corpus data is laoded)
-		corpus.connectAll();
-
 		/*
-		 * Finally do something with the corpus...
-		 *
-		 * To not take away content from subsequent code examples we opt
-		 * for dumping this corpus' metadata. This will show some
+		 * Obtain stream and iterate elements.
+		 * We use the complete scope which automatically uses the corpus' primary
+		 * layer as basis of elements in the 'currentItem()' method below.
+		 * By customizing the scope we can change what elements to iterate and what
+		 * layers will be available. Note however that the default stream implementation
+		 * delegates the bulk of the decisions to the underlying driver(s) and so
+		 * more data might be loaded than actually intended with the selected scope.
 		 */
+		try(StreamedCorpusView view = corpus.createStream(corpus.createCompleteScope(), AccessMode.READ, Options.none())) {
 
-		System.out.printf("Metadata for corpus '%s':%n", getName(corpusManifest));
-		corpus.getMetadataRegistry().forEachEntry((key, value) -> System.out.printf("%s -> %s%n", key, value));
+			AnnotationLayer formLayer = view.fetchLayer("form");
+			AnnotationStorage annoForm = formLayer.getAnnotationStorage();
+
+			while(view.advance()) {
+				Container sentence = view.currentItem();
+				sentence.forEachItem(item -> {
+					System.out.print(annoForm.getString(item, "form"));
+					System.out.print(" ");
+				});
+				System.out.println();
+			}
+		}
 	}
 }

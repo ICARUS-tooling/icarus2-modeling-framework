@@ -444,6 +444,27 @@ public class DefaultCorpus implements Corpus {
 		return (L) layer;
 	}
 
+	/**
+	 * Forces every driver to be properly connected to its respective
+	 * context.
+	 *
+	 * @see de.ims.icarus2.model.api.corpus.Corpus#connectAll()
+	 */
+	@Override
+	public void connectAll() {
+		lock.lock();
+		try {
+			synchronized (rootContexts) {
+				rootContexts.values().forEach(ContextProxy::getDriver);
+			}
+			synchronized (customContexts) {
+				customContexts.values().forEach(ContextProxy::getDriver);
+			}
+		} finally {
+			lock.unlock();
+		}
+	}
+
 	//TODO somewhere say a few words about the design decision of using InterruptedException as indicator for user originated cancellation
 	@Override
 	public void close() throws AccumulatingException, InterruptedException {
@@ -610,6 +631,8 @@ public class DefaultCorpus implements Corpus {
 				throw new ModelException(this, ManifestErrorCode.MANIFEST_DUPLICATE_ID,
 						"Duplicate context id: "+id);
 
+			context.addNotify(this);
+
 			virtualContexts.put(id, context);
 
 			corpusEventManager.fireContextAdded(context);
@@ -626,6 +649,8 @@ public class DefaultCorpus implements Corpus {
 			if(!virtualContexts.remove(id, context))
 				throw new ModelException(this, GlobalErrorCode.INVALID_INPUT,
 						"Unknown context: "+id);
+
+			context.removeNotify(this);
 
 			corpusEventManager.fireContextRemoved(context);
 		}

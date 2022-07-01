@@ -175,6 +175,16 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	GenerationControl getGenerationControl();
 
 	/**
+	 * Ensures that drivers of all contexts currently available as part of this corpus
+	 * are properly connected. Depending on their drivers' settings this might cause
+	 * them to already load underlying data!
+	 * <p>
+	 * Note that this method does <b>not</b> affect {@link #getVirtualContexts() virtual}
+	 * contexts, as their content is not meant to be managed by the corpus hosting them.
+	 */
+	void connectAll();
+
+	/**
 	 * Creates a new {@link Scope} that contains all the layers of this corpus and
 	 * uses the {@link Context#getPrimaryLayer() primary layer} of the
 	 * {@link #getRootContext() root context} as {@code primary layer}.
