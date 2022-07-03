@@ -108,12 +108,11 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 		this.layer = requireNonNull(layer);
 		this.fileIndex = fileIndex;
 
-		Hierarchy<ContainerManifestBase<?>> hierarchy = layer.getManifest().getContainerHierarchy()
-				.orElseThrow(ManifestException.noElement(layer.getManifest(), "container-hierarchy"));
-		assert !hierarchy.isEmpty();
-
-
-		if(hierarchy.getDepth()==1) {
+		Hierarchy<ContainerManifestBase<?>> hierarchy = layer.getManifest().getContainerHierarchy().orElse(null);
+		if(hierarchy==null || hierarchy.isEmpty()) {
+			statsLookup = null;
+			stats = new ContainerStats[0];
+		} else if(hierarchy.getDepth()==1) {
 			final ContainerStats rootStats = createStats(hierarchy.getRoot(), 0);
 			statsLookup = c -> rootStats;
 			stats = new ContainerStats[] {rootStats};
@@ -192,7 +191,7 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	public void accept(Item item, long index) {
 		elementCount++;
 
-		if(ModelUtils.isContainerOrStructure(item)) {
+		if(stats.length>0 && ModelUtils.isContainerOrStructure(item)) {
 			Container container = (Container) item;
 			collectStats(container, statsLookup.apply(container));
 		}
