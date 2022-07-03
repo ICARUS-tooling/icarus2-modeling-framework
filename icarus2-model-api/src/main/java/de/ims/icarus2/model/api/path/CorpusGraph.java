@@ -165,7 +165,7 @@ public class CorpusGraph {
 						tryCreateEdge(baseLayer, DependencyType.STRONG);
 					}
 
-					if(ModelUtils.isItemLayer(layer)) {
+					if(ModelUtils.isAnyItemLayer(layer)) {
 						ItemLayerManifestBase<?> itemLayer = (ItemLayerManifestBase<?>) layer;
 						tryCreateEdge(itemLayer.getBoundaryLayerManifest().orElse(null), DependencyType.BOUNDARY);
 						tryCreateEdge(itemLayer.getFoundationLayerManifest().orElse(null), DependencyType.FOUNDATION);
