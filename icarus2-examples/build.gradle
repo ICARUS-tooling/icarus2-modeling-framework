@@ -3,5 +3,7 @@ description = 'Examples on how to use the framework'
 
 // internal dependencies
 dependencies {
+	implementation project(':icarus2-manifest-api')
+	implementation project(':icarus2-model-api')
 	implementation project(':icarus2-common-formats')
 }
