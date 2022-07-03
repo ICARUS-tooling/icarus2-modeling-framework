@@ -284,7 +284,7 @@ public class FileDriver extends AbstractDriver {
 
 		Options options = new Options();
 
-		for(LayerManifest<?> layer : manifest.getLayerManifests(ModelUtils::isItemLayer)) {
+		for(LayerManifest<?> layer : manifest.getLayerManifests(ModelUtils::isAnyItemLayer)) {
 			//TODO access states and create optimized layers?
 		}
 

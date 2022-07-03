@@ -327,15 +327,16 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 			registry.setBooleanValue(FileKey.SCANNED.getKey(index), isFlagSet(ElementFlag.SCANNED));
 
 			for (int i = 0; i < layers.length; i++) {
+				ItemLayerManifestBase<?> layer = layers[i];
 				LayerCoverage coverage = getCoverage(layers[i], false);
 				if(coverage==null) {
-					registry.setValue(FileKey.ITEMS.getKey(index), null);
-					registry.setValue(FileKey.BEGIN.getKey(index), null);
-					registry.setValue(FileKey.END.getKey(index), null);
+					registry.setValue(FileKey.ITEMS.getKey(index, layer), null);
+					registry.setValue(FileKey.BEGIN.getKey(index, layer), null);
+					registry.setValue(FileKey.END.getKey(index, layer), null);
 				} else {
-					registry.changeLongValue(FileKey.ITEMS.getKey(index), coverage.count, UNSET_LONG);
-					registry.changeLongValue(FileKey.BEGIN.getKey(index), coverage.first, UNSET_INT);
-					registry.changeLongValue(FileKey.END.getKey(index), coverage.last, UNSET_INT);
+					registry.changeLongValue(FileKey.ITEMS.getKey(index, layer), coverage.count, UNSET_LONG);
+					registry.changeLongValue(FileKey.BEGIN.getKey(index, layer), coverage.first, UNSET_INT);
+					registry.changeLongValue(FileKey.END.getKey(index, layer), coverage.last, UNSET_INT);
 				}
 			}
 		}
@@ -351,9 +352,10 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 			updateFlag(ElementFlag.SCANNED, registry.getBooleanValue(FileKey.SCANNED.getKey(index), false));
 
 			for (int i = 0; i < layers.length; i++) {
-				long count = registry.getLongValue(FileKey.ITEMS.getKey(index), UNSET_LONG);
-				long first = registry.getLongValue(FileKey.BEGIN.getKey(index), UNSET_LONG);
-				long last = registry.getLongValue(FileKey.END.getKey(index), UNSET_LONG);
+				ItemLayerManifestBase<?> layer = layers[i];
+				long count = registry.getLongValue(FileKey.ITEMS.getKey(index, layer), UNSET_LONG);
+				long first = registry.getLongValue(FileKey.BEGIN.getKey(index, layer), UNSET_LONG);
+				long last = registry.getLongValue(FileKey.END.getKey(index, layer), UNSET_LONG);
 
 				if(count==UNSET_LONG && first==UNSET_LONG && last==UNSET_LONG) {
 					removeCoverage(layers[i]);
@@ -464,7 +466,7 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 		private final Int2ObjectMap<ContainerInfo> containerInfos = new Int2ObjectOpenHashMap<>();
 
 		// Total number of elements in top-level container
-		private long size = UNSET_LONG;
+		private long size = 0;
 
 		/*
 		 *  We use "true" as default value to catch an explicitly saved value
@@ -483,7 +485,7 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 
 		@Override
 		public void syncTo(MetadataRegistry registry) {
-			registry.changeLongValue(ItemLayerKey.ITEMS.getKey(layer), size, UNSET_LONG);
+			registry.changeLongValue(ItemLayerKey.ITEMS.getKey(layer), size, 0);
 			registry.setBooleanValue(ItemLayerKey.SCANNED.getKey(layer), isFlagSet(ElementFlag.SCANNED));
 			registry.setBooleanValue(ItemLayerKey.USE_CHUNK_INDEX.getKey(layer), useChunkIndex);
 
@@ -492,7 +494,7 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 
 		@Override
 		public void syncFrom(MetadataRegistry registry) {
-			setSize(registry.getLongValue(ItemLayerKey.ITEMS.getKey(layer), UNSET_LONG));
+			setSize(registry.getLongValue(ItemLayerKey.ITEMS.getKey(layer), 0));
 			updateFlag(ElementFlag.SCANNED, registry.getBooleanValue(ItemLayerKey.SCANNED.getKey(layer), false));
 			setUseChunkIndex(registry.getBooleanValue(ItemLayerKey.USE_CHUNK_INDEX.getKey(layer), true));
 			//TODO

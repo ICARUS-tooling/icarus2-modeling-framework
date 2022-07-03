@@ -212,11 +212,16 @@ public final class ModelUtils {
 	 * @param manifest
 	 * @return
 	 */
-	public static boolean isItemLayer(LayerManifest<?> manifest) {
+	public static boolean isAnyItemLayer(LayerManifest<?> manifest) {
 		ManifestType type = manifest.getManifestType();
 		return type==ManifestType.ITEM_LAYER_MANIFEST
 				|| type==ManifestType.STRUCTURE_LAYER_MANIFEST
 				|| type==ManifestType.FRAGMENT_LAYER_MANIFEST;
+	}
+
+	public static boolean isItemLayer(LayerManifest<?> manifest) {
+		ManifestType type = manifest.getManifestType();
+		return type==ManifestType.ITEM_LAYER_MANIFEST;
 	}
 
 	public static boolean isStructureLayer(LayerManifest<?> manifest) {

@@ -321,7 +321,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = getContextManifest(driver);
-			List<ItemLayerManifestBase<?>> layers = manifest.getLayerManifests(ModelUtils::isItemLayer);
+			List<ItemLayerManifestBase<?>> layers = manifest.getLayerManifests(ModelUtils::isAnyItemLayer);
 
 			int fileCount = dataFiles.getResourceCount();
 
@@ -478,6 +478,10 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 				ChunkIndexInfo chunkIndexInfo = driver.getFileStates().getChunkIndexInfo(layer);
 
+				if(chunkIndexInfo.getPath()==null) {
+					continue;
+				}
+
 				if(!resourceProvider.exists(chunkIndexInfo.getPath())) {
 					layerInfo.setFlag(ElementFlag.MISSING);
 					// Signal error, since non-editable data MUST be present
@@ -575,9 +579,9 @@ public enum StandardPreparationSteps implements PreparationStep {
 			int fileCount = dataFiles.getResourceCount();
 			int invalidLayers = 0;
 
-			env.put(LAST_END_INDEX_KEY, _long(UNSET_LONG));
 
 			for(ItemLayerManifestBase<?> layer : layers) {
+				env.put(LAST_END_INDEX_KEY, _long(UNSET_LONG));
 
 				LayerInfo layerInfo = driver.getFileStates().getLayerInfo(layer);
 
@@ -590,9 +594,9 @@ public enum StandardPreparationSteps implements PreparationStep {
 						invalidLayers++;
 					}
 				}
+				env.remove(LAST_END_INDEX_KEY);
 			}
 
-			env.remove(LAST_END_INDEX_KEY);
 
 			return invalidLayers==0;
 		}
