@@ -25,9 +25,11 @@ import static de.ims.icarus2.test.TestUtils.assertPredicate;
 import static de.ims.icarus2.test.TestUtils.constant;
 import static de.ims.icarus2.test.TestUtils.inject_genericInserter;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -173,16 +175,27 @@ public interface HierarchyTest<E extends Object, H extends Hierarchy> extends Lo
 	}
 
 	/**
-	 * Test method for {@link de.ims.icarus2.model.manifest.api.Hierarchy#forEachItem(java.util.function.Consumer)}.
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.Hierarchy#forEachItem(java.util.function.ObjIntConsumer)}.
 	 */
 	@SuppressWarnings("unchecked")
 	@Test
 	default void testForEachItem() {
-		TestUtils.assertForEach(createUnlocked(),
-				mockItem(),
-				mockItem(),
-				Hierarchy::forEachItem,
-				Hierarchy::add);
+		H hierarchy = createUnlocked();
+		E item1 = mockItem();
+		E item2 = mockItem();
+
+		hierarchy.add(item1);
+		hierarchy.add(item2);
+
+		hierarchy.forEachItem((item, level) -> {
+			if(item==item1) {
+				assertThat(level).isEqualTo(0);
+			} else if(item==item2) {
+				assertThat(level).isEqualTo(1);
+			} else {
+				fail("unknown element");
+			}
+		});
 	}
 
 	/**

@@ -20,6 +20,7 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.checkNonEmpty;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -58,11 +58,9 @@ import de.ims.icarus2.apiguard.Guarded.MethodType;
 import de.ims.icarus2.apiguard.Mandatory;
 import de.ims.icarus2.filedriver.Converter.ConverterProperty;
 import de.ims.icarus2.filedriver.Converter.LoadResult;
-import de.ims.icarus2.filedriver.FileDataStates.ElementInfo;
+import de.ims.icarus2.filedriver.FileDataStates.ChunkIndexInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
-import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
-import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
 import de.ims.icarus2.filedriver.io.BufferedIOResource.BlockCache;
@@ -563,6 +561,9 @@ public class FileDriver extends AbstractDriver {
 			// Creates context and mappings
 			super.doConnect();
 
+			// We sync as early as possible to allow fail-fast in case of metadata issues
+			states.syncFrom(getMetadataRegistry());
+
 			final List<PreparationStep> steps = computeStepList();
 			final int stepCount = steps.size();
 
@@ -605,9 +606,13 @@ public class FileDriver extends AbstractDriver {
 				}
 			}
 
+			// Set global flag to mark driver unusable (report will contain errors, so we throw an exception further down)
 			if(!driverIsValid) {
 				states.getGlobalInfo().setFlag(ElementFlag.UNUSABLE);
 			}
+
+			// All preparation steps done, now we can sync back the (new) metadata
+			states.syncTo(getMetadataRegistry());
 
 			reportBuilder.addInfo("Finished connecting to corpus");
 
@@ -822,15 +827,9 @@ public class FileDriver extends AbstractDriver {
 		// Query global settings for file size threshold
 		long fileSizeThreshold = getFileSizeThresholdForChunking();
 		if(fileSizeThreshold!=IcarusUtils.UNSET_LONG) {
-			long totalSize = 0L;
+			long totalSize = getFileStates().getGlobalInfo().getSize();
 
-			ElementInfo globalInfo = getFileStates().getGlobalInfo();
-			String savedTotalSize = globalInfo.getProperty(DriverKey.SIZE.getKey());
-			if(savedTotalSize!=null) { //TODO maybe if there's no value stored we should traverse file metadata to compute total size?
-				totalSize = Long.parseLong(savedTotalSize);
-			}
-
-			if(totalSize!=0L && totalSize>=fileSizeThreshold) {
+			if(totalSize>=fileSizeThreshold) {
 				return true;
 			}
 		}
@@ -888,7 +887,7 @@ public class FileDriver extends AbstractDriver {
 		}
 
 		ContextManifest contextManifest = ManifestUtils.requireHost(getManifest());
-		ChunkIndexStorage.Builder builder = new ChunkIndexStorage.Builder();
+		ChunkIndexStorage.Builder builder = ChunkIndexStorage.builder();
 
 		// Traverse layer groups and create a chunk index for each group's primary layer
 		contextManifest.forEachGroupManifest(manifest -> {
@@ -906,43 +905,29 @@ public class FileDriver extends AbstractDriver {
 		return builder.build();
 	}
 
-	protected ChunkIndex createChunkIndex(LayerGroupManifest groupManifest) {
+	protected @Nullable ChunkIndex createChunkIndex(LayerGroupManifest groupManifest) {
 		ItemLayerManifestBase<?> layerManifest = groupManifest.getPrimaryLayerManifest()
 				.orElseThrow(ManifestException.missing(getManifest(), "resolvable primary layer"));
-		MetadataRegistry metadataRegistry = getMetadataRegistry();
+		LayerInfo layerInfo = getFileStates().getLayerInfo(layerManifest);
 
 		// First check if we should skip the specified group
 
-		String useChunkIndexKey = ItemLayerKey.USE_CHUNK_INDEX.getKey(layerManifest);
-		/*
-		 *  We use "true" as default value to catch an explicitly saved value
-		 *  of "false". This way if no entry exists for this key we automatically
-		 *  continue to creating the respective metadata later in this method.
-		 */
-		boolean savedUseChunkIndex = metadataRegistry.getBooleanValue(useChunkIndexKey, true);
-
 		// Honor metadata information about skipping chunking for this layer!
-		if(!savedUseChunkIndex) {
+		if(!layerInfo.isUseChunkIndex()) {
 			return null;
 		}
 
-		// Fetch combined size of all files
-		long totalFileSize = 0L;
-		ElementInfo globalInfo = getFileStates().getGlobalInfo();
-		String savedTotalSize = globalInfo.getProperty(DriverKey.SIZE.getKey());
-		if(savedTotalSize!=null) {
-			totalFileSize = Long.parseLong(savedTotalSize);
-		}
+		ChunkIndexInfo chunkIndexInfo = getFileStates().getChunkIndexInfo(layerManifest);
 
+		// Fetch combined size of all files
+		long totalFileSize =  getFileStates().getGlobalInfo().getSize();
 
 		//*******************************************
 		//  Physical file of chunk index
 		//*******************************************
-		Path path = null;
-		String pathKey = ChunkIndexKey.PATH.getKey(layerManifest);
-		String savedPath = metadataRegistry.getValue(pathKey);
+		Path path = chunkIndexInfo.getPath();
 
-		if(savedPath==null) {
+		if(path==null) {
 
 			// Check driver settings first
 			Optional<Path> folder = OptionKey.CHUNK_INDICES_FOLDER.getValue(getManifest());
@@ -960,14 +945,11 @@ public class FileDriver extends AbstractDriver {
 			}
 
 			// Use a file named after the layer itself inside whatever folder we should use
-			String filename = layerManifest.getId()+FileDriverUtils.CHUNK_INDEX_FILE_ENDING;
+			String filename = ManifestUtils.requireId(layerManifest)+FileDriverUtils.CHUNK_INDEX_FILE_ENDING;
 			path = folder.get().resolve(filename);
-			savedPath = path.toString();
 
-			// Make sure to persist the file file to metadata for future lookups
-			metadataRegistry.setValue(pathKey, savedPath);
-		} else {
-			path = Paths.get(savedPath);
+			// Make sure to persist the file path to metadata for future lookups
+			chunkIndexInfo.setPath(path);
 		}
 
 		checkState("Failed to obtain valid file for chunk index: "+layerManifest, path!=null);
@@ -975,11 +957,8 @@ public class FileDriver extends AbstractDriver {
 		//*******************************************
 		//  ValueType for chunk entries
 		//*******************************************
-		IndexValueType valueType = null;
-		String valueTypeKey = ChunkIndexKey.VALUE_TYPE.getKey(layerManifest);
-		String savedValueType = metadataRegistry.getValue(valueTypeKey);
-
-		if(savedValueType==null) {
+		IndexValueType valueType = chunkIndexInfo.getValueType();
+		if(valueType==null) {
 
 			// If possible try to estimate the required value type
 			if(totalFileSize!=0L) {
@@ -1016,11 +995,7 @@ public class FileDriver extends AbstractDriver {
 				valueType = IndexValueType.LONG;
 			}
 
-			savedValueType = valueType.getStringValue();
-
-			metadataRegistry.setValue(valueTypeKey, savedValueType);
-		} else {
-			valueType = FileDriverUtils.toValueType(savedValueType);
+			chunkIndexInfo.setValueType(valueType);
 		}
 
 		checkState("Failed to obtain value type for chunk index: "+layerManifest, valueType!=null);
@@ -1028,10 +1003,9 @@ public class FileDriver extends AbstractDriver {
 		//*******************************************
 		//  Size of block cache
 		//*******************************************
-		String cacheSizeKey = ChunkIndexKey.CACHE_SIZE.getKey(layerManifest);
-		int cacheSize = metadataRegistry.getIntValue(cacheSizeKey, IcarusUtils.UNSET_INT);
+		int cacheSize = chunkIndexInfo.getCacheSize();
 
-		if(cacheSize==IcarusUtils.UNSET_INT) {
+		if(cacheSize==UNSET_INT) {
 			// Fetch default value from global config
 			String key = FileDriverUtils.PROPERTY_CHUNKING_CACHE_SIZE;
 			String value = getCorpus().getManager().getProperty(key);
@@ -1043,7 +1017,7 @@ public class FileDriver extends AbstractDriver {
 				cacheSize = BlockCache.MIN_CAPACITY;
 			}
 
-			metadataRegistry.setIntValue(cacheSizeKey, cacheSize);
+			chunkIndexInfo.setCacheSize(cacheSize);
 		}
 
 		checkState("Failed to obtain cache size for chunk index: "+layerManifest, cacheSize>=0);
@@ -1051,10 +1025,9 @@ public class FileDriver extends AbstractDriver {
 		//*******************************************
 		//  Size of blocks for buffering in 2^blockPower frames
 		//*******************************************
-		String blockPowerKey = ChunkIndexKey.BLOCK_POWER.getKey(layerManifest);
-		int blockPower = metadataRegistry.getIntValue(blockPowerKey, IcarusUtils.UNSET_INT);
+		int blockPower = chunkIndexInfo.getBlockPower();
 
-		if(blockPower==IcarusUtils.UNSET_INT) {
+		if(blockPower==UNSET_INT) {
 			// Fetch default block power from global config
 			String key = FileDriverUtils.PROPERTY_CHUNKING_BLOCK_POWER;
 			String value = getCorpus().getManager().getProperty(key);
@@ -1067,7 +1040,7 @@ public class FileDriver extends AbstractDriver {
 				blockPower = 12;
 			}
 
-			metadataRegistry.setIntValue(blockPowerKey, blockPower);
+			chunkIndexInfo.setBlockPower(blockPower);
 		}
 
 		checkState("Failed to obtain block power for chunk index: "+layerManifest, blockPower>0);
@@ -1076,16 +1049,15 @@ public class FileDriver extends AbstractDriver {
 		//  BlockCache used for buffering
 		//*******************************************
 		BlockCache blockCache = null;
-		String blockCackeKey = ChunkIndexKey.BLOCK_CACHE.getKey(layerManifest);
-		String savedBlockCache = metadataRegistry.getValue(blockCackeKey);
+		String blockCacheHint = chunkIndexInfo.getBlockCache();
 
-		if(savedBlockCache==null) {
+		if(blockCacheHint==null) {
 			// Per default we'll always use a cache with least-recently-used purging policy
-			savedBlockCache = FileDriverUtils.HINT_LRU_CACHE;
+			blockCacheHint = FileDriverUtils.HINT_LRU_CACHE;
 
-			metadataRegistry.setValue(blockCackeKey, savedBlockCache);
+			chunkIndexInfo.setBlockCache(blockCacheHint);
 		}
-		blockCache = FileDriverUtils.toBlockCache(savedBlockCache);
+		blockCache = FileDriverUtils.toBlockCache(blockCacheHint);
 
 		checkState("Failed to obtain block cache for chunk index: "+layerManifest, blockCache!=null);
 
@@ -1108,8 +1080,8 @@ public class FileDriver extends AbstractDriver {
 		Map lookup = (Map) converter.getPropertyValue(ConverterProperty.EXTIMATED_CHUNK_SIZES);
 		String key = groupManifest.getId().orElseThrow(ManifestException.missing(groupManifest, "id"));
 		Integer value = (Integer) lookup.get(key);
-		int converterEstimation = value!=null ? value.intValue() : IcarusUtils.UNSET_INT;
-		if(converterEstimation!=IcarusUtils.UNSET_INT) {
+		int converterEstimation = value!=null ? value.intValue() : UNSET_INT;
+		if(converterEstimation!=UNSET_INT) {
 			return converterEstimation;
 		}
 
@@ -1120,7 +1092,7 @@ public class FileDriver extends AbstractDriver {
 		// Check metadata
 		//TODO
 
-		return IcarusUtils.UNSET_INT;
+		return UNSET_INT;
 	}
 
 	/**

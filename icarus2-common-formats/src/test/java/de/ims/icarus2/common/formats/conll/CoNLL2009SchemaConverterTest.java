@@ -39,6 +39,7 @@ import de.ims.icarus2.common.formats.conll.CoNLL2009Converter.LayerConfig;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.ElementFlag;
 import de.ims.icarus2.filedriver.FileDataStates;
+import de.ims.icarus2.filedriver.FileDataStates.ContainerInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.filedriver.FileDataStates.NumericalStats;
@@ -249,8 +250,9 @@ class CoNLL2009SchemaConverterTest {
 			@Test
 			void testSentenceInfo()  throws Exception{
 				ItemLayer layer = getLayer(CoNLL2009Converter.CoNLL09Config.SENTENCE);
-				LayerInfo info = fileStates.getLayerInfo(layer.getManifest());
-				assertThat(info.getSize())
+				LayerInfo layerIinfo = fileStates.getLayerInfo(layer.getManifest());
+				ContainerInfo info = layerIinfo.getRootContainerInfo();
+				assertThat(layerIinfo.getSize())
 					.as("total sentence count")
 					.isEqualTo(10);
 				assertThat(info.getEncounteredContainerTypes())

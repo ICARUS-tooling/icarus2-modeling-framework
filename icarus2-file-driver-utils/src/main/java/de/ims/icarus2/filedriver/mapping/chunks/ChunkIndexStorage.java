@@ -37,6 +37,8 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 public class ChunkIndexStorage {
 
+	public static Builder builder() { return new Builder(); }
+
 	private final Int2ObjectMap<ChunkIndex> chunkIndexMap = new Int2ObjectOpenHashMap<>();
 	private final Set<ChunkIndex> chunkIndices = new ReferenceOpenHashSet<>();
 
@@ -83,6 +85,8 @@ public class ChunkIndexStorage {
 	public static class Builder {
 
 		private final Int2ObjectMap<ChunkIndex> chunkIndexMap = new Int2ObjectOpenHashMap<>();
+
+		private Builder() { /* no-op */ }
 
 		public Builder add(ItemLayerManifestBase<?> layer, ChunkIndex chunkIndex) {
 			requireNonNull(layer);

@@ -586,6 +586,10 @@ public class FileDriverMetadata {
 		}
 	}
 
+	public static interface ContainerKeyBase<L extends ItemLayerManifestBase<?>> {
+		String getKey(L layer, int level);
+	}
+
 	/**
 	 * Metadata keys for {@link ContainerManifest containers}.
 	 * <p>
@@ -595,7 +599,7 @@ public class FileDriverMetadata {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static enum ContainerKey implements MetadataKey {
+	public static enum ContainerKey implements MetadataKey, ContainerKeyBase<ItemLayerManifestBase<?>> {
 
 		/**
 		 * Number of instances of a particular {@link ContainerType type} of container in the current level
@@ -670,6 +674,7 @@ public class FileDriverMetadata {
 			return suffix;
 		}
 
+		@Override
 		public String getKey(ItemLayerManifestBase<?> layer, int level) {
 			if(isTypeSubKey)
 				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,
@@ -703,7 +708,8 @@ public class FileDriverMetadata {
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static enum StructureKey implements MetadataKey {
+	public static enum StructureKey implements MetadataKey, ContainerKeyBase<StructureLayerManifest> {
+
 		COUNT("count", ValueType.LONG, true),
 		// Edge counts
 		TOTAL_EDGE_COUNT("totalEdgeCount", ValueType.LONG, false),
@@ -745,6 +751,7 @@ public class FileDriverMetadata {
 			return suffix;
 		}
 
+		@Override
 		public String getKey(StructureLayerManifest layer, int level) {
 			if(isTypeSubKey)
 				throw new ModelException(GlobalErrorCode.UNSUPPORTED_OPERATION,

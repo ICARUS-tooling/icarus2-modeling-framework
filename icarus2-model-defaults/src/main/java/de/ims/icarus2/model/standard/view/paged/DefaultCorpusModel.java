@@ -275,7 +275,7 @@ public class DefaultCorpusModel extends AbstractPart<PagedCorpusView> implements
 	}
 
 	protected final void checkUnlocked(Item item) {
-		if(!item.isLocked())
+		if(item.isLocked())
 			throw new ModelException(ModelErrorCode.MODEL_CORRUPTED_STATE, "Item is locked: "+getName(item));
 	}
 

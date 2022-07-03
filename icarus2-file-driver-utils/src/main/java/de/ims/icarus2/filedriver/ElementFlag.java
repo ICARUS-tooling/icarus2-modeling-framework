@@ -55,11 +55,15 @@ public enum ElementFlag {
 	 * Part of the metadata for the element has been collected.
 	 * This state is usable mainly for cases of layer data being
 	 * distributed across several files.
+	 * <p>
+	 * This flag is persisted into metadata.
 	 */
 	PARTIALLY_SCANNED,
 
 	/**
 	 * All metadata of the element has been collected. Element is fully prepared and usable.
+	 * <p>
+	 * This flag is persisted into metadata.
 	 */
 	SCANNED,
 

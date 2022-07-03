@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.filedriver;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_DOUBLE;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
@@ -23,29 +25,43 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ChunkIndexKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ContainerKeyBase;
 import de.ims.icarus2.filedriver.FileDriverMetadata.DriverKey;
 import de.ims.icarus2.filedriver.FileDriverMetadata.FileKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.ItemLayerKey;
+import de.ims.icarus2.filedriver.FileDriverMetadata.StructureKey;
 import de.ims.icarus2.filedriver.io.sets.ResourceSet;
 import de.ims.icarus2.model.api.ModelException;
+import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.members.structure.Structure;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.StructureLayerManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
-import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
+import de.ims.icarus2.util.Syncable;
+import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.stat.Histogram;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * Centralized storage of (virtual) metadata for resources managed by
@@ -56,7 +72,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * @author Markus Gärtner
  *
  */
-public class FileDataStates {
+public class FileDataStates implements Syncable<MetadataRegistry> {
 
 	private final GlobalInfo globalInfo = new GlobalInfo();
 
@@ -65,6 +81,11 @@ public class FileDataStates {
 
 	// Layer states and meta info
 	private final Int2ObjectMap<LayerInfo> layerInfos = new Int2ObjectOpenHashMap<>();
+	// Layer states and meta info
+	private final Int2ObjectMap<ChunkIndexInfo> chunkIndexInfos = new Int2ObjectOpenHashMap<>();
+
+	@SuppressWarnings("rawtypes")
+	private final ItemLayerManifestBase[] layers;
 
 	/**
 	 * Initializes all {@link ElementInfo elements} based on data from the
@@ -78,22 +99,48 @@ public class FileDataStates {
 	 */
 	public FileDataStates(FileDriver driver) {
 
-		// Collect data files
-		ResourceSet dataFiles = driver.getDataFiles();
-		for(int fileIndex=0; fileIndex<dataFiles.getResourceCount(); fileIndex++) {
-			fileInfos.put(fileIndex, new FileInfo(fileIndex));
-		}
+		List<ItemLayerManifestBase<?>> layers = new ObjectArrayList<>();
 
 		// Collect layers
 		ContextManifest contextManifest = ManifestUtils.requireHost(driver.getManifest());
 		for(LayerManifest<?> layerManifest : contextManifest.getLayerManifests()) {
 
 			if(ManifestUtils.isAnyItemLayerManifest(layerManifest)) {
-				layerInfos.put(layerManifest.getUID(), new LayerInfo((ItemLayerManifestBase<?>)layerManifest));
+				ItemLayerManifestBase<?> itemLayer = (ItemLayerManifestBase<?>)layerManifest;
+				layerInfos.put(layerManifest.getUID(), new LayerInfo(itemLayer));
+				layers.add(itemLayer);
+			}
+			//TODO do we need to allow chunking for structure layers?
+			if(ManifestUtils.isItemLayerManifest(layerManifest)) {
+				chunkIndexInfos.put(layerManifest.getUID(), new ChunkIndexInfo((ItemLayerManifestBase<?>)layerManifest));
 			}
 		}
 
+		// Collect data files
+		ResourceSet dataFiles = driver.getDataFiles();
+		for(int fileIndex=0; fileIndex<dataFiles.getResourceCount(); fileIndex++) {
+			fileInfos.put(fileIndex, new FileInfo(fileIndex));
+		}
+
 		//TODO populate other maps/lookups!!!
+
+		this.layers = CollectionUtils.toArray(layers, ItemLayerManifestBase[]::new);
+	}
+
+	@Override
+	public void syncTo(MetadataRegistry registry) {
+		globalInfo.syncTo(registry);
+		fileInfos.forEach((index, info) -> info.syncTo(registry));
+		layerInfos.forEach((index, info) -> info.syncTo(registry));
+		chunkIndexInfos.forEach((index, info) -> info.syncTo(registry));
+	}
+
+	@Override
+	public void syncFrom(MetadataRegistry registry) {
+		globalInfo.syncFrom(registry);
+		fileInfos.forEach((index, info) -> info.syncFrom(registry));
+		layerInfos.forEach((index, info) -> info.syncFrom(registry));
+		chunkIndexInfos.forEach((index, info) -> info.syncFrom(registry));
 	}
 
 	public GlobalInfo getGlobalInfo() {
@@ -127,16 +174,18 @@ public class FileDataStates {
 		LayerInfo info = layerInfos.get(layerManifest.getUID());
 		if(info==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
-					"No info available for layer: "+layerManifest.getId());
+					"No info available for layer: "+layerManifest.getUniqueId());
 
 		return info;
 	}
 
-	public interface Syncable {
+	public ChunkIndexInfo getChunkIndexInfo(LayerManifest<?> layerManifest) {
+		ChunkIndexInfo info = chunkIndexInfos.get(layerManifest.getUID());
+		if(info==null)
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+					"No info available for chunk index of layer: "+layerManifest.getUniqueId());
 
-		void syncTo(MetadataRegistry registry);
-
-		void syncFrom(MetadataRegistry registry);
+		return info;
 	}
 
 	private static boolean verify(MetadataRegistry registry, String key, long value) {
@@ -153,6 +202,7 @@ public class FileDataStates {
 	 */
 	public abstract static class ElementInfo {
 		private EnumSet<ElementFlag> state = EnumSet.noneOf(ElementFlag.class);
+
 //		private Map<String, String> properties;
 
 //		public String getProperty(String key) {
@@ -225,19 +275,20 @@ public class FileDataStates {
 		}
 	}
 
-	public static class GlobalInfo extends ElementInfo implements Syncable {
+	/** Manages data for {@link DriverKey} entries. */
+	public class GlobalInfo extends ElementInfo implements Syncable<MetadataRegistry> {
 
-		private long size;
+		private long size = UNSET_LONG;
 
 
 		@Override
 		public void syncTo(MetadataRegistry registry) {
-			registry.setLongValue(DriverKey.SIZE.getKey(), size);
+			registry.changeLongValue(DriverKey.SIZE.getKey(), size, UNSET_LONG);
 		}
 
 		@Override
 		public void syncFrom(MetadataRegistry registry) {
-			size = registry.getLongValue(DriverKey.SIZE.getKey(), 0);
+			setSize(registry.getLongValue(DriverKey.SIZE.getKey(), UNSET_LONG));
 		}
 
 		public boolean verifySize(MetadataRegistry registry) {
@@ -253,17 +304,14 @@ public class FileDataStates {
 		}
 	}
 
-	/**
-	 * @author Markus Gärtner
-	 *
-	 */
-	public static class FileInfo extends ElementInfo implements Syncable {
+	/** Manages data for {@link FileKey} entries. */
+	public class FileInfo extends ElementInfo implements Syncable<MetadataRegistry> {
 
 		private final int index;
-		private Path path;
+		private Path path = null;
 
-		private FileChecksum checksum;
-		private long size;
+		private FileChecksum checksum = null;
+		private long size = UNSET_LONG;
 
 		private Int2ObjectMap<LayerCoverage> stats = new Int2ObjectOpenHashMap<>();
 
@@ -273,14 +321,49 @@ public class FileDataStates {
 
 		@Override
 		public void syncTo(MetadataRegistry registry) {
-			registry.setValue(FileKey.PATH.getKey(index), path.toString());
-			registry.setLongValue(FileKey.SIZE.getKey(index), size);
+			registry.setValue(FileKey.PATH.getKey(index), path==null ? null : path.toString());
+			registry.setValue(FileKey.CHECKSUM.getKey(index), checksum==null ? null : checksum.toString());
+			registry.changeLongValue(FileKey.SIZE.getKey(index), size, UNSET_LONG);
+			registry.setBooleanValue(FileKey.SCANNED.getKey(index), isFlagSet(ElementFlag.SCANNED));
+
+			for (int i = 0; i < layers.length; i++) {
+				LayerCoverage coverage = getCoverage(layers[i], false);
+				if(coverage==null) {
+					registry.setValue(FileKey.ITEMS.getKey(index), null);
+					registry.setValue(FileKey.BEGIN.getKey(index), null);
+					registry.setValue(FileKey.END.getKey(index), null);
+				} else {
+					registry.changeLongValue(FileKey.ITEMS.getKey(index), coverage.count, UNSET_LONG);
+					registry.changeLongValue(FileKey.BEGIN.getKey(index), coverage.first, UNSET_INT);
+					registry.changeLongValue(FileKey.END.getKey(index), coverage.last, UNSET_INT);
+				}
+			}
 		}
 
 		@Override
 		public void syncFrom(MetadataRegistry registry) {
-			setSize(registry.getLongValue(FileKey.SIZE.getKey(index), 0));
-			setPath(Paths.get(registry.getValue(FileKey.PATH.getKey(index))));
+			path = null;
+			checksum = null;
+
+			Optional.ofNullable(registry.getValue(FileKey.PATH.getKey(index))).map(Paths::get).ifPresent(this::setPath);
+			Optional.ofNullable(registry.getValue(FileKey.CHECKSUM.getKey(index))).map(FileChecksum::parse).ifPresent(this::setChecksum);
+			setSize(registry.getLongValue(FileKey.SIZE.getKey(index), UNSET_LONG));
+			updateFlag(ElementFlag.SCANNED, registry.getBooleanValue(FileKey.SCANNED.getKey(index), false));
+
+			for (int i = 0; i < layers.length; i++) {
+				long count = registry.getLongValue(FileKey.ITEMS.getKey(index), UNSET_LONG);
+				long first = registry.getLongValue(FileKey.BEGIN.getKey(index), UNSET_LONG);
+				long last = registry.getLongValue(FileKey.END.getKey(index), UNSET_LONG);
+
+				if(count==UNSET_LONG && first==UNSET_LONG && last==UNSET_LONG) {
+					removeCoverage(layers[i]);
+				} else {
+					LayerCoverage coverage = getCoverage(layers[i], true);
+					coverage.count = count;
+					coverage.first = first;
+					coverage.last = last;
+				}
+			}
 		}
 
 		public int getIndex() {
@@ -316,26 +399,33 @@ public class FileDataStates {
 			LayerCoverage cov = stats.get(key);
 
 			if(cov==null && createIfMissing) {
-				cov = new LayerCoverage(IcarusUtils.UNSET_LONG, IcarusUtils.UNSET_LONG, 0L);
+				cov = new LayerCoverage();
 				stats.put(key, cov);
 			}
 
 			return cov;
 		}
 
+		private void removeCoverage(ItemLayerManifestBase<?> layer) {
+			LayerCoverage coverage = stats.remove(layer.getUID());
+			if(coverage!=null) {
+				coverage.clear();
+			}
+		}
+
 		public long getItemCount(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? IcarusUtils.UNSET_LONG : cov.count;
+			return cov==null ? UNSET_LONG : cov.count;
 		}
 
 		public long getBeginIndex(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? IcarusUtils.UNSET_LONG : cov.first;
+			return cov==null ? UNSET_LONG : cov.first;
 		}
 
 		public long getEndIndex(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
-			return cov==null ? IcarusUtils.UNSET_LONG : cov.last;
+			return cov==null ? UNSET_LONG : cov.last;
 		}
 
 		public void setItemCount(ItemLayerManifestBase<?> layer, long itemCount) {
@@ -359,19 +449,101 @@ public class FileDataStates {
 	}
 
 	private static class LayerCoverage {
-		long first, last, count;
+		long first = UNSET_LONG, last = UNSET_LONG, count = UNSET_LONG;
 
-		LayerCoverage(long first, long last, long count) {
-			this.first = first;
-			this.last = last;
-			this.count = count;
+		void clear() {
+			first = last = count = UNSET_LONG;
 		}
 	}
 
+	/** Manages data for {@link ItemLayerKey} entries. */
+	public static class LayerInfo extends ElementInfo implements Syncable<MetadataRegistry> {
+
+		private final ItemLayerManifestBase<?> layer;
+
+		private final Int2ObjectMap<ContainerInfo> containerInfos = new Int2ObjectOpenHashMap<>();
+
+		// Total number of elements in top-level container
+		private long size = UNSET_LONG;
+
+		/*
+		 *  We use "true" as default value to catch an explicitly saved value
+		 *  of "false". This way if no entry exists for this key we automatically
+		 *  continue to creating the respective metadata later during driver connection.
+		 */
+		private boolean useChunkIndex = true;
+
+		public LayerInfo(ItemLayerManifestBase<?> layer) {
+			this.layer = requireNonNull(layer);
+
+			layer.getContainerHierarchy().ifPresent(h -> h.forEachItem((container, level) -> {
+				containerInfos.put(container.getUID(), new ContainerInfo(container, level));
+			}));
+		}
+
+		@Override
+		public void syncTo(MetadataRegistry registry) {
+			registry.changeLongValue(ItemLayerKey.ITEMS.getKey(layer), size, UNSET_LONG);
+			registry.setBooleanValue(ItemLayerKey.SCANNED.getKey(layer), isFlagSet(ElementFlag.SCANNED));
+			registry.setBooleanValue(ItemLayerKey.USE_CHUNK_INDEX.getKey(layer), useChunkIndex);
+
+			//TODO
+		}
+
+		@Override
+		public void syncFrom(MetadataRegistry registry) {
+			setSize(registry.getLongValue(ItemLayerKey.ITEMS.getKey(layer), UNSET_LONG));
+			updateFlag(ElementFlag.SCANNED, registry.getBooleanValue(ItemLayerKey.SCANNED.getKey(layer), false));
+			setUseChunkIndex(registry.getBooleanValue(ItemLayerKey.USE_CHUNK_INDEX.getKey(layer), true));
+			//TODO
+		}
+
+		public ItemLayerManifestBase<?> getLayer() {
+			return layer;
+		}
+
+		// TOTAL SIZE
+
+		public long getSize() {
+			return size;
+		}
+
+		public void setSize(long size) {
+			this.size = size;
+		}
+
+		// CHUNK INDEX
+
+		public boolean isUseChunkIndex() {
+			return useChunkIndex;
+		}
+
+		public void setUseChunkIndex(boolean useChunkIndex) {
+			this.useChunkIndex = useChunkIndex;
+		}
+
+		public ContainerInfo getRootContainerInfo() {
+			return getContainerInfo(layer.getContainerHierarchy().map(Hierarchy::getRoot)
+					.orElseThrow(ManifestException.noElement(layer, "container")));
+		}
+
+		public ContainerInfo getContainerInfo(ContainerManifestBase<?> container) {
+			ContainerInfo info = containerInfos.get(container.getUID());
+			if(info==null)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT,
+						"No info available for container: "+container.getUniqueId());
+
+			return info;
+		}
+	}
+
+	private static final ContainerType[] c_types = ContainerType.values();
+	private static final StructureType[] s_types = StructureType.values();
+
 	public static class NumericalStats {
-		private long min = IcarusUtils.UNSET_LONG;
-		private long max = IcarusUtils.UNSET_LONG;
-		private double avg = IcarusUtils.UNSET_DOUBLE;
+		private long min = UNSET_LONG;
+		private long max = UNSET_LONG;
+		private double avg = UNSET_DOUBLE;
 		public long getMin() {
 			return min;
 		}
@@ -390,47 +562,128 @@ public class FileDataStates {
 		public void setAvg(double avg) {
 			this.avg = avg;
 		}
-		public void reset() {
-			min = IcarusUtils.UNSET_LONG;
-			max = IcarusUtils.UNSET_LONG;
-			avg = IcarusUtils.UNSET_DOUBLE;
-		}
 		public void copyFrom(Histogram source) {
-			reset();
+			clear();
 			if(source.entries()>0L) {
 				min = source.min();
 				max = source.max();
 				avg = source.average();
 			}
 		}
+		void clear() {
+			min = max = UNSET_LONG;
+			avg = UNSET_DOUBLE;
+		}
+		boolean isUndefined() {
+			return min==UNSET_LONG && max==UNSET_LONG && avg==UNSET_DOUBLE;
+		}
 	}
 
-	public static class LayerInfo extends ElementInfo {
-		private final ItemLayerManifestBase<?> layer;
+	public static class ContainerInfo implements Syncable<MetadataRegistry> {
 
-		// Total number of elements in top-level container
-		private long size = IcarusUtils.UNSET_LONG;
+		private final ContainerManifestBase<?> container;
+		private final int level;
 
 		private LongCounter<ContainerType> containerTypeCount;
 		private LongCounter<StructureType> structureTypeCount;
-		private NumericalStats itemCount, spanSize, edgeCount, height, branching, roots;
+		// Container stats
+		private NumericalStats itemCount;
+		private NumericalStats spanSize;
+		// Structure stats
+		private NumericalStats edgeCount;
+		private NumericalStats height;
+		private NumericalStats branching;
+		private NumericalStats roots;
 
-		public LayerInfo(ItemLayerManifestBase<?> layer) {
-			this.layer = requireNonNull(layer);
+		public ContainerInfo(ContainerManifestBase<?> container, int level) {
+			this.container = container;
+			this.level = level;
 		}
 
-		public ItemLayerManifestBase<?> getLayer() {
-			return layer;
+		@Override
+		public void syncTo(MetadataRegistry registry) {
+			ItemLayerManifestBase<?> layer = ManifestUtils.requireHost(container);
+
+			for (int i = 0; i < c_types.length; i++) {
+				registry.changeLongValue(ContainerKey.COUNT.getKey(layer, level, c_types[i]),
+						getCountForContainerType(c_types[i]), 0L);
+			}
+
+			syncStatsTo(registry, layer, itemCount, ContainerKey.MIN_ITEM_COUNT, ContainerKey.MAX_ITEM_COUNT, ContainerKey.AVG_ITEM_COUNT);
+			syncStatsTo(registry, layer, spanSize, ContainerKey.MIN_SPAN, ContainerKey.MAX_SPAN, ContainerKey.AVG_SPAN);
+
+			if(ManifestUtils.isStructureLayerManifest(layer)) {
+				StructureLayerManifest s_layer = (StructureLayerManifest)layer;
+
+				for (int i = 0; i < s_types.length; i++) {
+					registry.changeLongValue(StructureKey.COUNT.getKey(s_layer, level, s_types[i]),
+							getCountForStructureType(s_types[i]), 0L);
+				}
+
+				syncStatsTo(registry, s_layer, edgeCount, StructureKey.MIN_EDGE_COUNT, StructureKey.MAX_EDGE_COUNT, StructureKey.AVG_EDGE_COUNT);
+				syncStatsTo(registry, s_layer, height, StructureKey.MIN_HEIGHT, StructureKey.MAX_HEIGHT, StructureKey.AVG_HEIGHT);
+				syncStatsTo(registry, s_layer, branching, StructureKey.MIN_BRANCHING_FACTOR, StructureKey.MAX_BRANCHING_FACTOR, StructureKey.AVG_BRANCHING_FACTOR);
+				syncStatsTo(registry, s_layer, roots, StructureKey.MIN_ROOTS, StructureKey.MAX_ROOTS, StructureKey.AVG_ROOTS);
+			}
 		}
 
-		// TOTAL SIZE
-
-		public long getSize() {
-			return size==IcarusUtils.UNSET_LONG ? 0L : size;
+		private <L extends ItemLayerManifestBase<?>> void syncStatsTo(MetadataRegistry registry,
+				L layer, NumericalStats stats,
+				ContainerKeyBase<L> MIN, ContainerKeyBase<L> MAX, ContainerKeyBase<L> AVG) {
+			if(stats==null || stats.isUndefined()) {
+				registry.setValue(MIN.getKey(layer, level), null);
+				registry.setValue(MAX.getKey(layer, level), null);
+				registry.setValue(AVG.getKey(layer, level), null);
+			} else {
+				registry.changeLongValue(MIN.getKey(layer, level), stats.getMin(), UNSET_LONG);
+				registry.changeLongValue(MAX.getKey(layer, level), stats.getMax(), UNSET_LONG);
+				registry.changeDoubleValue(AVG.getKey(layer, level), stats.getAvg(), UNSET_DOUBLE);
+			}
 		}
 
-		public void setSize(long size) {
-			this.size = size;
+		@Override
+		public void syncFrom(MetadataRegistry registry) {
+			ItemLayerManifestBase<?> layer = ManifestUtils.requireHost(container);
+
+			for (int i = 0; i < c_types.length; i++) {
+				setCountForContainerType(c_types[i], registry.getLongValue(ContainerKey.COUNT.getKey(layer, level, c_types[i]), 0));
+			}
+
+			itemCount = syncStatsFrom(registry, layer, itemCount, ContainerKey.MIN_ITEM_COUNT, ContainerKey.MAX_ITEM_COUNT, ContainerKey.AVG_ITEM_COUNT);
+			spanSize = syncStatsFrom(registry, layer, spanSize, ContainerKey.MIN_SPAN, ContainerKey.MAX_SPAN, ContainerKey.AVG_SPAN);
+
+			if(ManifestUtils.isStructureLayerManifest(layer)) {
+				StructureLayerManifest s_layer = (StructureLayerManifest)layer;
+
+				for (int i = 0; i < s_types.length; i++) {
+					setCountForStructureType(s_types[i], registry.getLongValue(StructureKey.COUNT.getKey(s_layer, level, s_types[i]), 0));
+				}
+
+				edgeCount = syncStatsFrom(registry, s_layer, edgeCount, StructureKey.MIN_EDGE_COUNT, StructureKey.MAX_EDGE_COUNT, StructureKey.AVG_EDGE_COUNT);
+				height = syncStatsFrom(registry, s_layer, height, StructureKey.MIN_HEIGHT, StructureKey.MAX_HEIGHT, StructureKey.AVG_HEIGHT);
+				branching = syncStatsFrom(registry, s_layer, branching, StructureKey.MIN_BRANCHING_FACTOR, StructureKey.MAX_BRANCHING_FACTOR, StructureKey.AVG_BRANCHING_FACTOR);
+				roots = syncStatsFrom(registry, s_layer, roots, StructureKey.MIN_ROOTS, StructureKey.MAX_ROOTS, StructureKey.AVG_ROOTS);
+			}
+
+		}
+
+		private <L extends ItemLayerManifestBase<?>> NumericalStats syncStatsFrom(MetadataRegistry registry,
+				L layer, NumericalStats stats,
+				ContainerKeyBase<L> MIN, ContainerKeyBase<L> MAX, ContainerKeyBase<L> AVG) {
+			long min = registry.getLongValue(MIN.getKey(layer, level), UNSET_LONG);
+			long max = registry.getLongValue(MAX.getKey(layer, level), UNSET_LONG);
+			double avg = registry.getDoubleValue(AVG.getKey(layer, level), UNSET_DOUBLE);
+
+			if(min!=UNSET_LONG || max!=UNSET_LONG || Double.compare(avg, UNSET_DOUBLE)!=0) {
+				if(stats==null) {
+					stats = new NumericalStats();
+				}
+				stats.min = min;
+				stats.max = max;
+				stats.avg = avg;
+			}
+
+			return stats;
 		}
 
 		// CONTAINER TYPE
@@ -443,18 +696,22 @@ public class FileDataStates {
 		}
 
 		public long getCountForContainerType(ContainerType type) {
+			requireNonNull(type);
 			return containerTypeCount==null ? 0L : containerTypeCount.getCount(type);
 		}
 
 		public void setCountForContainerType(ContainerType type, long count) {
+			requireNonNull(type);
 			containerTypeCount().setCount(type, count);
 		}
 
 		public void addCountForContainerType(ContainerType type, long count) {
+			requireNonNull(type);
 			containerTypeCount().add(type, count);
 		}
 
 		public void addCountsForContainerTypes(LongCounter<ContainerType> counts) {
+			requireNonNull(counts);
 			if(!counts.isEmpty()) {
 				containerTypeCount().addAll(counts);
 			}
@@ -478,14 +735,17 @@ public class FileDataStates {
 		}
 
 		public long getCountForStructureType(StructureType type) {
+			requireNonNull(type);
 			return structureTypeCount==null ? 0L : structureTypeCount.getCount(type);
 		}
 
 		public void setCountForStructureType(StructureType type, long count) {
+			requireNonNull(type);
 			structureTypeCount().setCount(type, count);
 		}
 
 		public void addCountForStructureType(StructureType type, long count) {
+			requireNonNull(type);
 			structureTypeCount().add(type, count);
 		}
 
@@ -498,6 +758,7 @@ public class FileDataStates {
 		}
 
 		public void addCountsForStructureTypes(LongCounter<StructureType> counts) {
+			requireNonNull(counts);
 			if(!counts.isEmpty()) {
 				structureTypeCount().addAll(counts);
 			}
@@ -598,5 +859,108 @@ public class FileDataStates {
 
 			return roots;
 		}
+
+	}
+
+	/** Manages data for {@link ChunkIndexKey} entries. */
+	public class ChunkIndexInfo implements Syncable<MetadataRegistry> {
+
+		private final ItemLayerManifestBase<?> layer;
+
+		private Path path = null;
+		private IndexValueType valueType = null;
+		private int blockPower = UNSET_INT;
+		private String blockCache = null;
+		private int cacheSize = UNSET_INT;
+		private int minChunkSize = UNSET_INT;
+		private int maxChunkSize = UNSET_INT;
+
+		public ChunkIndexInfo(ItemLayerManifestBase<?> layer) {
+			this.layer = layer;
+		}
+
+		@Override
+		public void syncTo(MetadataRegistry registry) {
+			registry.setValue(ChunkIndexKey.PATH.getKey(layer), path==null ? null : path.toString());
+			registry.setValue(ChunkIndexKey.BLOCK_CACHE.getKey(layer), blockCache==null ? null : blockCache.toString());
+			registry.setValue(ChunkIndexKey.VALUE_TYPE.getKey(layer), valueType==null ? null : valueType.getStringValue());
+			registry.changeIntValue(ChunkIndexKey.BLOCK_POWER.getKey(layer), blockPower, UNSET_INT);
+			registry.changeIntValue(ChunkIndexKey.CACHE_SIZE.getKey(layer), cacheSize, UNSET_INT);
+			registry.changeIntValue(ChunkIndexKey.MIN_CHUNK_SIZE.getKey(layer), minChunkSize, UNSET_INT);
+			registry.changeIntValue(ChunkIndexKey.MAX_CHUNK_SIZE.getKey(layer), maxChunkSize, UNSET_INT);
+		}
+
+		@Override
+		public void syncFrom(MetadataRegistry registry) {
+			path = null;
+			valueType = null;
+			blockCache = null;
+
+			Optional.ofNullable(registry.getValue(ChunkIndexKey.PATH.getKey(layer))).map(Paths::get).ifPresent(this::setPath);
+			Optional.ofNullable(registry.getValue(ChunkIndexKey.BLOCK_CACHE.getKey(layer))).ifPresent(this::setBlockCache);
+			Optional.ofNullable(registry.getValue(ChunkIndexKey.VALUE_TYPE.getKey(layer))).map(IndexValueType::parseIndexValueType).ifPresent(this::setValueType);
+
+			setBlockPower(registry.getIntValue(ChunkIndexKey.BLOCK_POWER.getKey(layer), UNSET_INT));
+			setCacheSize(registry.getIntValue(ChunkIndexKey.CACHE_SIZE.getKey(layer), UNSET_INT));
+			setMinChunkSize(registry.getIntValue(ChunkIndexKey.MIN_CHUNK_SIZE.getKey(layer), UNSET_INT));
+			setMaxChunkSize(registry.getIntValue(ChunkIndexKey.MAX_CHUNK_SIZE.getKey(layer), UNSET_INT));
+		}
+
+		public Path getPath() {
+			return path;
+		}
+
+		public IndexValueType getValueType() {
+			return valueType;
+		}
+
+		public int getBlockPower() {
+			return blockPower;
+		}
+
+		public String getBlockCache() {
+			return blockCache;
+		}
+
+		public int getCacheSize() {
+			return cacheSize;
+		}
+
+		public int getMinChunkSize() {
+			return minChunkSize;
+		}
+
+		public int getMaxChunkSize() {
+			return maxChunkSize;
+		}
+
+		public void setPath(Path path) {
+			this.path = path;
+		}
+
+		public void setValueType(IndexValueType valueType) {
+			this.valueType = requireNonNull(valueType);
+		}
+
+		public void setBlockPower(int blockPower) {
+			this.blockPower = blockPower;
+		}
+
+		public void setBlockCache(String blockCache) {
+			this.blockCache = requireNonNull(blockCache);
+		}
+
+		public void setCacheSize(int cacheSize) {
+			this.cacheSize = cacheSize;
+		}
+
+		public void setMinChunkSize(int minChunkSize) {
+			this.minChunkSize = minChunkSize;
+		}
+
+		public void setMaxChunkSize(int maxChunkSize) {
+			this.maxChunkSize = maxChunkSize;
+		}
+
 	}
 }

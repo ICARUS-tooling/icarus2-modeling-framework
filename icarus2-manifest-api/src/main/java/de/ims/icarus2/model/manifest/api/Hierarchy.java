@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.ObjIntConsumer;
 
 import javax.annotation.Nullable;
 
@@ -73,7 +73,7 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 
 	/**
 	 * Returns the level of specified {@code item} or {@code -1}
-	 * if the item is not contained in this heirarchy.
+	 * if the item is not contained in this hierarchy.
 	 *
 	 * @param item
 	 * @return
@@ -84,16 +84,16 @@ public interface Hierarchy<E extends Object> extends Lockable, Iterable<E> {
 		return getDepth()==0;
 	}
 
-	default void forEachItem(Consumer<? super E> action) {
+	default void forEachItem(ObjIntConsumer<? super E> action) {
 		requireNonNull(action);
 		for(int i=0; i<getDepth(); i++) {
-			action.accept(atLevel(i));
+			action.accept(atLevel(i), i);
 		}
 	}
 
 	default List<E> getItems() {
 		return LazyCollection.<E>lazyList()
-				.addFromForEach(this::forEachItem)
+				.addFromForEach(this::forEach)
 				.getAsList();
 	}
 

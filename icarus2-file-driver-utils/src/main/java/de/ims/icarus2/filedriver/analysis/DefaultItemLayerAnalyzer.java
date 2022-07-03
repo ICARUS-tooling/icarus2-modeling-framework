@@ -19,14 +19,19 @@ package de.ims.icarus2.filedriver.analysis;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.Function;
+
 import de.ims.icarus2.filedriver.FileDataStates;
+import de.ims.icarus2.filedriver.FileDataStates.ContainerInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
+import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -34,6 +39,8 @@ import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
 import de.ims.icarus2.util.stat.Histogram;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * @author Markus Gärtner
@@ -59,34 +66,71 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	 */
 	private long elementCount = 0L;
 
-	/**
-	 * Total number of containers encountered for given layer during
-	 * analysis. Does not take into account numbers from other files.
-	 *
-	 * Summed up {@link Container#getItemCount() size} of all containers
-	 * in the given layer during analysis.
-	 *
-	 * Smallest {@link Container#getItemCount() size} of a container
-	 * encountered during analysis.
-	 *
-	 * Largest {@link Container#getItemCount() size} of a container
-	 * encountered during analysis.
-	 */
-	private final Histogram containerSizes = Histogram.openHistogram(100);
+	private final Function<Container, ContainerStats> statsLookup;
+	private final ContainerStats[] stats;
 
-	private final Histogram spanSizes = Histogram.openHistogram(100);
+	protected static class ContainerStats {
 
-	/**
-	 * Individual counts for every {@link ContainerType type} of
-	 * container encountered during analysis.
-	 */
-	private LongCounter<ContainerType> containerTypeCount = new LongCounter<>();
+		private final ContainerManifestBase<?> manifest;
+		private final int level;
+
+		/**
+		 * Total number of containers encountered for given layer during
+		 * analysis. Does not take into account numbers from other files.
+		 *
+		 * Summed up {@link Container#getItemCount() size} of all containers
+		 * in the given layer during analysis.
+		 *
+		 * Smallest {@link Container#getItemCount() size} of a container
+		 * encountered during analysis.
+		 *
+		 * Largest {@link Container#getItemCount() size} of a container
+		 * encountered during analysis.
+		 */
+		private final Histogram containerSizes = Histogram.openHistogram(100);
+		private final Histogram spanSizes = Histogram.openHistogram(100);
+		/**
+		 * Individual counts for every {@link ContainerType type} of
+		 * container encountered during analysis.
+		 */
+		private LongCounter<ContainerType> containerTypeCount = new LongCounter<>();
+
+		protected ContainerStats(ContainerManifestBase<?> manifest, int level) {
+			this.manifest = requireNonNull(manifest);
+			this.level = level;
+		}
+
+	}
 
 	public DefaultItemLayerAnalyzer(FileDataStates states, ItemLayer layer, int fileIndex) {
 		super(states);
 
 		this.layer = requireNonNull(layer);
 		this.fileIndex = fileIndex;
+
+		Hierarchy<ContainerManifestBase<?>> hierarchy = layer.getManifest().getContainerHierarchy()
+				.orElseThrow(ManifestException.noElement(layer.getManifest(), "container-hierarchy"));
+		assert !hierarchy.isEmpty();
+
+
+		if(hierarchy.getDepth()==1) {
+			final ContainerStats rootStats = createStats(hierarchy.getRoot(), 0);
+			statsLookup = c -> rootStats;
+			stats = new ContainerStats[] {rootStats};
+		} else {
+			stats = new ContainerStats[hierarchy.getDepth()];
+			Int2ObjectMap<ContainerStats> map = new Int2ObjectOpenHashMap<>();
+			hierarchy.forEachItem((c, level) -> {
+				ContainerStats s = createStats(c, level);
+				map.put(c.getUID(), s);
+				stats[level] = s;
+			});
+			statsLookup = c -> requireNonNull(map.get(c.getManifest().getUID()), "missing container stats");
+		}
+	}
+
+	protected ContainerStats createStats(ContainerManifestBase<?> manifest, int level) {
+		return new ContainerStats(manifest, level);
 	}
 
 	protected ItemLayer getLayer() {
@@ -125,13 +169,20 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 		LayerInfo layerInfo = states.getLayerInfo(layer.getManifest());
 		layerInfo.setSize(layerInfo.getSize() + elementCount);
 
-		layerInfo.getItemCountStats().copyFrom(containerSizes);
-
-		if(!containerTypeCount.isEmpty()) {
-			layerInfo.addCountsForContainerTypes(containerTypeCount);
+		for (int i = 0; i < stats.length; i++) {
+			ContainerStats cs = stats[i];
+			ContainerInfo ci = layerInfo.getContainerInfo(cs.manifest);
+			writeContainerStats(cs, ci);
 		}
+	}
 
-		layerInfo.getSpanSizeStats().copyFrom(spanSizes);
+	protected void writeContainerStats(ContainerStats stats, ContainerInfo info) {
+		info.getItemCountStats().copyFrom(stats.containerSizes);
+		info.getSpanSizeStats().copyFrom(stats.spanSizes);
+
+		if(!stats.containerTypeCount.isEmpty()) {
+			info.addCountsForContainerTypes(stats.containerTypeCount);
+		}
 	}
 
 	/**
@@ -143,15 +194,19 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 
 		if(ModelUtils.isContainerOrStructure(item)) {
 			Container container = (Container) item;
-			containerSizes.accept(container.getItemCount());
-//			System.out.printf("entry %d, size=%d span=%d%n",_long(elementCount),_long(container.getItemCount()),_long(container.getSpan()));
-
-			long spanSize = container.getSpan();
-			if(spanSize!=IcarusUtils.UNSET_LONG) {
-				spanSizes.accept(spanSize);
-			}
-
-			containerTypeCount.increment(container.getContainerType());
+			collectStats(container, statsLookup.apply(container));
 		}
+	}
+
+	protected void collectStats(Container container, ContainerStats stats) {
+		stats.containerSizes.accept(container.getItemCount());
+//		System.out.printf("entry %d, size=%d span=%d%n",_long(elementCount),_long(container.getItemCount()),_long(container.getSpan()));
+
+		long spanSize = container.getSpan();
+		if(spanSize!=IcarusUtils.UNSET_LONG) {
+			stats.spanSizes.accept(spanSize);
+		}
+
+		stats.containerTypeCount.increment(container.getContainerType());
 	}
 }

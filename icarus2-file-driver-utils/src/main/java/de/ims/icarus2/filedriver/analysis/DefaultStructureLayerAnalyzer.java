@@ -17,11 +17,14 @@
 package de.ims.icarus2.filedriver.analysis;
 
 import de.ims.icarus2.filedriver.FileDataStates;
-import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
+import de.ims.icarus2.filedriver.FileDataStates.ContainerInfo;
 import de.ims.icarus2.model.api.layer.StructureLayer;
-import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.structure.Structure;
+import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
+import de.ims.icarus2.model.manifest.api.StructureManifest;
 import de.ims.icarus2.model.manifest.api.StructureType;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.LongCounter;
 import de.ims.icarus2.util.stat.Histogram;
@@ -32,78 +35,79 @@ import de.ims.icarus2.util.stat.Histogram;
  */
 public class DefaultStructureLayerAnalyzer extends DefaultItemLayerAnalyzer {
 
-	private Histogram structureSizes = Histogram.openHistogram(100);
-	private Histogram rootCounts = Histogram.openHistogram(100);
+	private static class StructureStats extends ContainerStats {
 
-	private Histogram treeHeights = Histogram.openHistogram(100);
-	private Histogram branching = Histogram.openHistogram(100);
+		private Histogram structureSizes = Histogram.openHistogram(100);
+		private Histogram rootCounts = Histogram.openHistogram(100);
+		private Histogram treeHeights = Histogram.openHistogram(100);
+		private Histogram branching = Histogram.openHistogram(100);
+		private LongCounter<StructureType> structureTypeCount = new LongCounter<>();
 
-	private LongCounter<StructureType> structureTypeCount = new LongCounter<>();
+		protected StructureStats(StructureManifest manifest, int level) {
+			super(manifest, level);
+		}
+
+	}
 
 	public DefaultStructureLayerAnalyzer(FileDataStates states, StructureLayer layer, int fileIndex) {
 		super(states, layer, fileIndex);
 	}
 
-	/**
-	 * @see de.ims.icarus2.filedriver.analysis.DefaultItemLayerAnalyzer#getLayer()
-	 */
 	@Override
 	protected StructureLayer getLayer() {
 		return (StructureLayer) super.getLayer();
 	}
 
-	/**
-	 * @see de.ims.icarus2.filedriver.analysis.DefaultItemLayerAnalyzer#writeStates(de.ims.icarus2.filedriver.FileDataStates)
-	 */
 	@Override
-	protected void writeStates(FileDataStates states) {
-		super.writeStates(states);
-
-		LayerInfo layerInfo = states.getLayerInfo(getLayer().getManifest());
-
-		layerInfo.getEdgeCountStats().copyFrom(structureSizes);
-		layerInfo.getRootStats().copyFrom(rootCounts);
-		layerInfo.getHeightStats().copyFrom(treeHeights);
-		layerInfo.getBranchingStats().copyFrom(branching);
+	protected ContainerStats createStats(ContainerManifestBase<?> manifest, int level) {
+		if(ManifestUtils.isStructureManifest(manifest)) {
+			return new StructureStats((StructureManifest) manifest, level);
+		}
+		return super.createStats(manifest, level);
 	}
 
-	/**
-	 * Flag used during the traversal of a structure's nodes
-	 */
-	private boolean includeHeightStats = false;
-
-	/**
-	 * @see java.util.function.ObjLongConsumer#accept(java.lang.Object, long)
-	 */
 	@Override
-	public void accept(Item item, long index) {
-		super.accept(item, index);
+	protected void writeContainerStats(ContainerStats stats, ContainerInfo info) {
+		super.writeContainerStats(stats, info);
 
-		if(ModelUtils.isStructure(item)) {
-			Structure structure = (Structure) item;
+		if(stats.getClass()==StructureStats.class) {
+			StructureStats sstats = (StructureStats) stats;
 
-			structureSizes.accept(structure.getEdgeCount());
-			rootCounts.accept(structure.getOutgoingEdgeCount(structure.getVirtualRoot()));
+			info.getEdgeCountStats().copyFrom(sstats.structureSizes);
+			info.getRootStats().copyFrom(sstats.rootCounts);
+			info.getHeightStats().copyFrom(sstats.treeHeights);
+			info.getBranchingStats().copyFrom(sstats.branching);
+		}
+	}
+
+	@Override
+	protected void collectStats(Container container, ContainerStats stats) {
+		super.collectStats(container, stats);
+
+		if(ModelUtils.isStructure(container) && stats.getClass()==StructureStats.class) {
+			Structure structure = (Structure) container;
+			StructureStats sstats = (StructureStats) stats;
+
+			sstats.structureSizes.accept(structure.getEdgeCount());
+			sstats.rootCounts.accept(structure.getOutgoingEdgeCount(structure.getVirtualRoot()));
 
 			// Refresh info flag for height checks
-			includeHeightStats = isHeightAwareStructure(structure);
+			boolean includeHeightStats = isHeightAwareStructure(structure);
 
 			// Collect per-node info
-			structure.forEachNode(this::collectNodeInfo);
+			structure.forEachNode((s, node) -> {
+				sstats.branching.accept(structure.getOutgoingEdgeCount(node));
+				if(includeHeightStats) {
+					sstats.treeHeights.accept(structure.getHeight(node));
+				}
+			});
 
-			structureTypeCount.increment(structure.getStructureType());
+			sstats.structureTypeCount.increment(structure.getStructureType());
 		}
 	}
 
 	private static boolean isHeightAwareStructure(Structure structure) {
 		return structure.getStructureType()==StructureType.TREE
 				|| structure.getStructureType()==StructureType.CHAIN;
-	}
-
-	private void collectNodeInfo(Structure structure, Item node) {
-		branching.accept(structure.getOutgoingEdgeCount(node));
-		if(includeHeightStats) {
-			treeHeights.accept(structure.getHeight(node));
-		}
 	}
 }

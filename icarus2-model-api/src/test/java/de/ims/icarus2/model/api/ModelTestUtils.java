@@ -138,7 +138,7 @@ public class ModelTestUtils {
 	}
 
 	public static Item mockUsableItem() {
-		return stubFlags(stubType(mock(Item.class), MemberType.ITEM), true, true, true);
+		return stubFlags(stubType(mock(Item.class), MemberType.ITEM), true, false, false);
 	}
 
 	public static Item mockItem(Container host) {
@@ -177,7 +177,7 @@ public class ModelTestUtils {
 	}
 
 	public static Edge mockUsableEdge() {
-		return stubFlags(mockEdge(), true, true, true);
+		return stubFlags(mockEdge(), true, false, false);
 	}
 
 	public static Edge mockEdge(Structure structure) {
@@ -215,7 +215,7 @@ public class ModelTestUtils {
 	}
 
 	public static Fragment mockUsableFragment() {
-		return stubFlags(mockFragment(), true, true, true);
+		return stubFlags(mockFragment(), true, false, false);
 	}
 
 	@SuppressWarnings("boxing")
@@ -357,7 +357,7 @@ public class ModelTestUtils {
 	}
 
 	public static Structure mockUsableStructure() {
-		return stubFlags(mockStructure(), true, true, true);
+		return stubFlags(mockStructure(), true, false, false);
 	}
 
 	@SuppressWarnings("boxing")

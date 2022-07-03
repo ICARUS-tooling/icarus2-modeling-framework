@@ -175,8 +175,16 @@ public class ManifestUtils {
 		return manifest.getManifestType()==ManifestType.ITEM_LAYER_MANIFEST;
 	}
 
+	public static boolean isStructureLayerManifest(Manifest manifest) {
+		return manifest.getManifestType()==ManifestType.STRUCTURE_LAYER_MANIFEST;
+	}
+
 	public static boolean isAnnotationLayerManifest(Manifest manifest) {
 		return manifest.getManifestType()==ManifestType.ANNOTATION_LAYER_MANIFEST;
+	}
+
+	public static boolean isStructureManifest(Manifest manifest) {
+		return manifest.getManifestType()==ManifestType.STRUCTURE_MANIFEST;
 	}
 
 	//TODO methods for checking other types so we can use them as method references in lambdas
