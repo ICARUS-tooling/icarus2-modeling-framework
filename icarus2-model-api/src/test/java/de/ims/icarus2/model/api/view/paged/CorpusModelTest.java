@@ -29,9 +29,11 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableFragment;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockUsableStructure;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
+import static de.ims.icarus2.model.api.ModelTestUtils.stubDead;
+import static de.ims.icarus2.model.api.ModelTestUtils.stubDirty;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubEdgeCount;
-import static de.ims.icarus2.model.api.ModelTestUtils.stubFlags;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubItemCount;
+import static de.ims.icarus2.model.api.ModelTestUtils.stubLocked;
 import static de.ims.icarus2.model.api.ModelTestUtils.stubOffsets;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
@@ -725,7 +727,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					reset();
 					preventLoad = true;
 					setup();
-					Item item = stubFlags(mockArgument(), false, true, true);
+					Item item = stubDead(mockArgument());
 					assertModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
 							() -> action.accept(this, (E) item));
 				}));
@@ -739,7 +741,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					reset();
 					preventLoad = true;
 					setup();
-					Item item = stubFlags(mockArgument(), true, false, true);
+					Item item = stubDirty(mockArgument());
 					assertModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
 							() -> action.accept(this, (E) item));
 				}));
@@ -753,7 +755,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 					reset();
 					preventLoad = true;
 					setup();
-					Item item = stubFlags(mockArgument(), true, true, false);
+					Item item = stubLocked(mockArgument());
 					assertModelException(ModelErrorCode.MODEL_CORRUPTED_STATE,
 							() -> action.accept(this, (E) item));
 				}));
@@ -783,7 +785,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getRootContainer(de.ims.icarus2.model.api.layer.ItemLayer)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetRootContainerItemLayer() {
+	default List<DynamicTest> testGetRootContainer_ItemLayer() {
 		return new ModelTest<>(this, ItemLayer.class)
 				.action((t, layer) -> {
 					t.loadPage();
@@ -1111,7 +1113,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addItem(de.ims.icarus2.model.api.members.container.Container, de.ims.icarus2.model.api.members.item.Item)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddItemContainerItem() {
+	default List<DynamicTest> testAddItem_ContainerItem() {
 		Item item = mockItem();
 		Container container = mockUsableContainer();
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -1136,7 +1138,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testAddItemContainerLongItem(RandomGenerator rand) {
+	default List<DynamicTest> testAddItem_ContainerLongItem(RandomGenerator rand) {
 		Item item = mockItem();
 		long size = rand.random(0, Long.MAX_VALUE);
 		long index = rand.random(0, size);
@@ -1193,7 +1195,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testRemoveItemContainerLong(RandomGenerator rand) {
+	default List<DynamicTest> testRemoveItem_ContainerLong(RandomGenerator rand) {
 		long itemCount = rand.random(10, Long.MAX_VALUE/2);
 		long index = rand.random(0, itemCount);
 		Item item = mockItem();
@@ -1223,7 +1225,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	@SuppressWarnings("boxing")
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testRemoveItemContainerItem(RandomGenerator rand) {
+	default List<DynamicTest> testRemoveItem_ContainerItem(RandomGenerator rand) {
 		long itemCount = rand.random(10, Long.MAX_VALUE/2);
 		long index = rand.random(0, itemCount);
 		Item item = mockItem();
@@ -1339,7 +1341,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	@SuppressWarnings("boxing")
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testGetEdgeCountStructure(RandomGenerator rand) {
+	default List<DynamicTest> testGetEdgeCount_Structure(RandomGenerator rand) {
 		long count = rand.random(0, Long.MAX_VALUE);
 		Structure structure = mockUsableStructure();
 		when(structure.getEdgeCount()).thenReturn(count);
@@ -1361,7 +1363,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testGetEdgeAtStructureLong(RandomGenerator rand) {
+	default List<DynamicTest> testGetEdgeAt_StructureLong(RandomGenerator rand) {
 		Edge edge = mockEdge();
 		long index = rand.random(0, Long.MAX_VALUE);
 		Structure structure = mockUsableStructure();
@@ -1431,7 +1433,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	@SuppressWarnings("boxing")
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testGetEdgeCountStructureItem(RandomGenerator rand) {
+	default List<DynamicTest> testGetEdgeCount_StructureItem(RandomGenerator rand) {
 		long count = rand.random(0, Long.MAX_VALUE);
 		Item item = mockItem();
 		Structure structure = mockUsableStructure();
@@ -1455,7 +1457,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	@SuppressWarnings("boxing")
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testGetEdgeCountStructureItemBoolean(RandomGenerator rand) {
+	default List<DynamicTest> testGetEdgeCount_StructureItemBoolean(RandomGenerator rand) {
 		long count = rand.random(0, Long.MAX_VALUE);
 		boolean isSource = rand.nextBoolean();
 		Item item = mockItem();
@@ -1479,7 +1481,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testGetEdgeAtStructureItemLongBoolean(RandomGenerator rand) {
+	default List<DynamicTest> testGetEdgeAt_StructureItemLongBoolean(RandomGenerator rand) {
 		long index = rand.random(0, Long.MAX_VALUE);
 		boolean isSource = rand.nextBoolean();
 		Edge edge = mockEdge();
@@ -1688,7 +1690,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#addEdge(de.ims.icarus2.model.api.members.structure.Structure, de.ims.icarus2.model.api.members.item.Edge)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testAddEdgeStructureEdge() {
+	default List<DynamicTest> testAddEdge_StructureEdge() {
 		Edge edge = mockEdge();
 		Structure structure = mockUsableStructure();
 		MutableObject<AtomicChange> change = new MutableObject<>();
@@ -1713,7 +1715,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testAddEdgeStructureLongEdge(RandomGenerator rand) {
+	default List<DynamicTest> testAddEdge_StructureLongEdge(RandomGenerator rand) {
 		Edge edge = mockEdge();
 		long edgeCount = rand.random(0, Long.MAX_VALUE);
 		long index = rand.random(0, edgeCount);
@@ -1770,7 +1772,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testRemoveEdgeStructureLong(RandomGenerator rand) {
+	default List<DynamicTest> testRemoveEdge_StructureLong(RandomGenerator rand) {
 		long edgeCount = rand.random(10, Long.MAX_VALUE);
 		long index = rand.random(0, edgeCount);
 		Edge edge = mockEdge();
@@ -1800,7 +1802,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	@SuppressWarnings("boxing")
 	@TestFactory
 	@RandomizedTest
-	default List<DynamicTest> testRemoveEdgeStructureEdge(RandomGenerator rand) {
+	default List<DynamicTest> testRemoveEdge_StructureEdge(RandomGenerator rand) {
 		long edgeCount = rand.random(10, Long.MAX_VALUE);
 		long index = rand.random(0, edgeCount);
 		Edge edge = mockEdge();
@@ -1982,7 +1984,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 * Test method for {@link de.ims.icarus2.model.api.view.paged.CorpusModel#getItem(de.ims.icarus2.model.api.members.item.Fragment)}.
 	 */
 	@TestFactory
-	default List<DynamicTest> testGetItemFragment() {
+	default List<DynamicTest> testGetItem_Fragment() {
 		Item item = mockItem();
 		Fragment fragment = mockUsableFragment();
 		when(fragment.getItem()).thenReturn(item);
@@ -2474,7 +2476,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testHasAnnotationsAnnotationLayer() {
+	default List<DynamicTest> testHasAnnotations_AnnotationLayer() {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);
@@ -2495,7 +2497,7 @@ public interface CorpusModelTest<M extends CorpusModel>
 	 */
 	@SuppressWarnings("boxing")
 	@TestFactory
-	default List<DynamicTest> testHasAnnotationsAnnotationLayerItem() {
+	default List<DynamicTest> testHasAnnotations_AnnotationLayerItem() {
 		AnnotationLayer layer = mock(AnnotationLayer.class);
 		AnnotationStorage storage = mock(AnnotationStorage.class);
 		when(layer.getAnnotationStorage()).thenReturn(storage);

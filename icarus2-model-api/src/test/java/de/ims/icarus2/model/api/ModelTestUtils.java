@@ -20,6 +20,7 @@ import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.SharedTestUtils.mockSequence;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,11 +119,47 @@ public class ModelTestUtils {
 		return item;
 	}
 
-	@SuppressWarnings("boxing")
-	public static <I extends Item> I stubFlags(I item, boolean alive, boolean dirty, boolean locked) {
-		when(item.isAlive()).thenReturn(alive);
-		when(item.isDirty()).thenReturn(dirty);
-		when(item.isLocked()).thenReturn(locked);
+//	@SuppressWarnings("boxing")
+//	public static <I extends Item> I stubFlags(I item, boolean alive, boolean dirty, boolean locked) {
+//		when(item.isAlive()).thenReturn(alive);
+//		when(item.isDirty()).thenReturn(dirty);
+//		when(item.isLocked()).thenReturn(locked);
+//		return item;
+//	}
+
+	public static <T extends Item> T stubAlive(T item) {
+		assertMock(item);
+		when(_boolean(item.isAlive())).thenReturn(Boolean.TRUE);
+		return item;
+	}
+
+	public static <T extends Item> T stubDead(T item) {
+		assertMock(item);
+		when(_boolean(item.isAlive())).thenReturn(Boolean.FALSE);
+		return item;
+	}
+
+	public static <T extends Item> T stubClean(T item) {
+		assertMock(item);
+		when(_boolean(item.isDirty())).thenReturn(Boolean.FALSE);
+		return item;
+	}
+
+	public static <T extends Item> T stubDirty(T item) {
+		assertMock(item);
+		when(_boolean(item.isDirty())).thenReturn(Boolean.TRUE);
+		return item;
+	}
+
+	public static <T extends Item> T stubLocked(T item) {
+		assertMock(item);
+		when(_boolean(item.isLocked())).thenReturn(Boolean.TRUE);
+		return item;
+	}
+
+	public static <T extends Item> T stubUnlocked(T item) {
+		assertMock(item);
+		when(_boolean(item.isLocked())).thenReturn(Boolean.FALSE);
 		return item;
 	}
 
@@ -138,7 +175,7 @@ public class ModelTestUtils {
 	}
 
 	public static Item mockUsableItem() {
-		return stubFlags(stubType(mock(Item.class), MemberType.ITEM), true, false, false);
+		return stubAlive(stubType(mock(Item.class), MemberType.ITEM));
 	}
 
 	public static Item mockItem(Container host) {
@@ -177,7 +214,7 @@ public class ModelTestUtils {
 	}
 
 	public static Edge mockUsableEdge() {
-		return stubFlags(mockEdge(), true, false, false);
+		return stubAlive(mockEdge());
 	}
 
 	public static Edge mockEdge(Structure structure) {
@@ -215,7 +252,7 @@ public class ModelTestUtils {
 	}
 
 	public static Fragment mockUsableFragment() {
-		return stubFlags(mockFragment(), true, false, false);
+		return stubAlive(mockFragment());
 	}
 
 	@SuppressWarnings("boxing")
@@ -269,7 +306,7 @@ public class ModelTestUtils {
 	}
 
 	public static Container mockUsableContainer() {
-		return stubFlags(mock(Container.class), true, false, false);
+		return stubAlive(mock(Container.class));
 	}
 
 	public static Container mockContainer(long itemCount) {
@@ -357,7 +394,7 @@ public class ModelTestUtils {
 	}
 
 	public static Structure mockUsableStructure() {
-		return stubFlags(mockStructure(), true, false, false);
+		return stubAlive(mockStructure());
 	}
 
 	@SuppressWarnings("boxing")
