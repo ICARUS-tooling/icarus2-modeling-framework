@@ -9,6 +9,7 @@ dependencies {
   
 	testImplementation project(path: ':icarus2-shared-utils', configuration: 'tests')
 	testImplementation project(path: ':icarus2-model-api', configuration: 'tests')
+	testImplementation project(path: ':icarus2-model-defaults', configuration: 'tests')
 	testImplementation project(path: ':icarus2-manifest-api', configuration: 'tests')
 }
 
