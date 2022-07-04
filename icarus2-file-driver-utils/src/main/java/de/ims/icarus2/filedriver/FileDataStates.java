@@ -710,7 +710,11 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 
 		public void setCountForContainerType(ContainerType type, long count) {
 			requireNonNull(type);
-			containerTypeCount().setCount(type, count);
+			if(count<=0) {
+				containerTypeCount().remove(type);
+			} else {
+				containerTypeCount().setCount(type, count);
+			}
 		}
 
 		public void addCountForContainerType(ContainerType type, long count) {

@@ -38,6 +38,10 @@ public class LongCounter<T extends Object> {
 		counts.putAll(source.counts);
 	}
 
+	public long remove(T data) {
+		return counts.removeLong(data);
+	}
+
 	public void addAll(LongCounter<? extends T> source) {
 		source.counts.object2LongEntrySet().forEach(e -> {
 			add(e.getKey(), e.getLongValue());
