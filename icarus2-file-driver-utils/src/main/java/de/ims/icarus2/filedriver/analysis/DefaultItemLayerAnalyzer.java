@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.filedriver.analysis;
 
-import static de.ims.icarus2.util.lang.Primitives._int;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.Function;
@@ -25,7 +25,6 @@ import de.ims.icarus2.filedriver.FileDataStates;
 import de.ims.icarus2.filedriver.FileDataStates.ContainerInfo;
 import de.ims.icarus2.filedriver.FileDataStates.FileInfo;
 import de.ims.icarus2.filedriver.FileDataStates.LayerInfo;
-import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -33,8 +32,6 @@ import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.Hierarchy;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
-import de.ims.icarus2.model.manifest.api.ManifestException;
-import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.LongCounter;
@@ -64,7 +61,8 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	 * Total number of elements encountered for given layer during
 	 * analysis. Does not take into account numbers from other files.
 	 */
-	private long elementCount = 0L;
+	private long elementCount = UNSET_LONG;
+	private long firstIndex = UNSET_LONG, lastIndex = UNSET_LONG;
 
 	private final Function<Container, ContainerStats> statsLookup;
 	private final ContainerStats[] stats;
@@ -145,28 +143,28 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 
 		// Refresh file info
 		FileInfo fileInfo = states.getFileInfo(fileIndex);
-		long beginIndex = fileInfo.getBeginIndex(layerManifest);
-		if(beginIndex==IcarusUtils.UNSET_LONG) {
-			if(fileIndex==0) {
-				beginIndex = 0L;
-			} else {
-				FileInfo previousInfo = states.getFileInfo(fileIndex-1);
-				long previousEndIndex = previousInfo.getEndIndex(layerManifest);
-				if(previousEndIndex==IcarusUtils.UNSET_LONG)
-					throw new ManifestException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-							String.format("Missing information of end index for layer %s in file %d",
-									ManifestUtils.getName(layerManifest), _int(fileIndex)));
-
-				beginIndex = previousEndIndex+1;
-			}
-		}
-		long endIndex = beginIndex + elementCount - 1;
-
-		fileInfo.setCoverage(layerManifest, elementCount, beginIndex, endIndex);
+//		long beginIndex = fileInfo.getBeginIndex(layerManifest);
+//		if(beginIndex==IcarusUtils.UNSET_LONG) {
+//			if(fileIndex==0) {
+//				beginIndex = 0L;
+//			} else {
+//				FileInfo previousInfo = states.getFileInfo(fileIndex-1);
+//				long previousEndIndex = previousInfo.getEndIndex(layerManifest);
+//				if(previousEndIndex==IcarusUtils.UNSET_LONG)
+//					throw new ManifestException(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
+//							String.format("Missing information of end index for layer %s in file %d",
+//									ManifestUtils.getName(layerManifest), _int(fileIndex)));
+//
+//				beginIndex = previousEndIndex+1;
+//			}
+//		}
+//		long endIndex = beginIndex + elementCount - 1;
 
 		// Refresh layer info
 		LayerInfo layerInfo = states.getLayerInfo(layer.getManifest());
 		layerInfo.setSize(layerInfo.getSize() + elementCount);
+
+		fileInfo.setCoverage(layerManifest, elementCount, firstIndex, lastIndex);
 
 		for (int i = 0; i < stats.length; i++) {
 			ContainerStats cs = stats[i];
@@ -189,7 +187,19 @@ public class DefaultItemLayerAnalyzer extends AbstractFileDriverAnalyzer impleme
 	 */
 	@Override
 	public void accept(Item item, long index) {
-		elementCount++;
+		if(elementCount==UNSET_LONG) {
+			elementCount = 1;
+		} else {
+			elementCount++;
+		}
+
+		if(firstIndex==UNSET_LONG) {
+			firstIndex = index;
+		}
+		assert index>=firstIndex;
+		lastIndex = index;
+
+//		System.out.printf("item=%s index=%d first=%d, last=%d, count=%d%n", item, _long(index), _long(firstIndex), _long(lastIndex), _long(elementCount));
 
 		if(stats.length>0 && ModelUtils.isContainerOrStructure(item)) {
 			Container container = (Container) item;

@@ -2356,10 +2356,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					long firstIndex;
 
 					FileInfo fileInfo = states.getFileInfo(fileIndex);
-					firstIndex = fileInfo.getBeginIndex(layer.getManifest());
+					firstIndex = fileInfo.getFirstIndex(layer.getManifest());
 					if(firstIndex==IcarusUtils.UNSET_LONG && fileIndex>0) {
 						FileInfo previousInfo = states.getFileInfo(fileIndex-1);
-						firstIndex = previousInfo.getEndIndex(layer.getManifest()) + 1;
+						firstIndex = previousInfo.getLastIndex(layer.getManifest()) + 1;
 					}
 
 					if(firstIndex==IcarusUtils.UNSET_LONG) {
@@ -2374,7 +2374,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					} else {
 						builder.firstIndex(firstIndex);
 						// If available we use information about last index in file
-						long lastIndex = fileInfo.getEndIndex(layer.getManifest());
+						long lastIndex = fileInfo.getLastIndex(layer.getManifest());
 						if(lastIndex!=IcarusUtils.UNSET_LONG) {
 							builder.lastIndex(lastIndex);
 						}

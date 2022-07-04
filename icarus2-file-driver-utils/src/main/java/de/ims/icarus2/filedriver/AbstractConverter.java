@@ -314,12 +314,12 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 
 		if(mode==ReadMode.FILE) {
 			FileInfo info = getDriver().getFileStates().getFileInfo(fileIndex);
-			return info.getBeginIndex(layer.getManifest());
+			return info.getFirstIndex(layer.getManifest());
 		} else if(fileIndex==0) {
 			return 0;
 		} else {
 			FileInfo info = getDriver().getFileStates().getFileInfo(fileIndex-1);
-			return info.getEndIndex(layer.getManifest()) + 1;
+			return info.getLastIndex(layer.getManifest()) + 1;
 		}
 	}
 

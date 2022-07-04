@@ -730,9 +730,9 @@ public class FileDriver extends AbstractDriver {
             int mid = (low + high) >>> 1;
 			FileInfo info = states.getFileInfo(mid);
 
-            if (info.getEndIndex(layer) < index)
+            if (info.getLastIndex(layer) < index)
                 low = mid + 1;
-            else if (info.getBeginIndex(layer) > index)
+            else if (info.getFirstIndex(layer) > index)
                 high = mid - 1;
             else
                 return mid; // file found

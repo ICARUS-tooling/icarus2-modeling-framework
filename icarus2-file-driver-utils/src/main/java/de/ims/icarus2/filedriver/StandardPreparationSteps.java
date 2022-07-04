@@ -45,6 +45,7 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.Options;
@@ -486,7 +487,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 					layerInfo.setFlag(ElementFlag.MISSING);
 					// Signal error, since non-editable data MUST be present
 					reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-							"Missing file for chunk index  of layer {}: {}", layer.getId(), chunkIndexInfo.getPath());
+							"Missing file for chunk index  of layer {}: {}", ManifestUtils.requireId(layer), chunkIndexInfo.getPath());
 					invalidLayers++;
 				}
 			}
@@ -524,43 +525,45 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 			// Load current metadata
 			long itemCount = fileInfo.getItemCount(layer);
-			long beginIndex = fileInfo.getBeginIndex(layer);
-			long endIndex = fileInfo.getEndIndex(layer);
+			long firstIndex = fileInfo.getFirstIndex(layer);
+			long endIndex = fileInfo.getLastIndex(layer);
 
-			if(itemCount==UNSET_LONG && beginIndex==UNSET_LONG && endIndex==UNSET_LONG) {
+			String id = ManifestUtils.requireId(layer);
+
+			if(itemCount==UNSET_LONG && firstIndex==UNSET_LONG && endIndex==UNSET_LONG) {
 				// Nothing saved for the layer+file, so ignore it
 				return true;
 			}
 
-			if(itemCount==UNSET_LONG || beginIndex==UNSET_LONG || endIndex==UNSET_LONG) {
+			if(itemCount==UNSET_LONG || firstIndex==UNSET_LONG || endIndex==UNSET_LONG) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-						"Indicies partly missing in metadata for layer {} in file {}", layer.getId(), _int(fileIndex));
+						"Indicies partly missing in metadata for layer '{}' in file '{}", id, _int(fileIndex));
 				return false;
 			}
 
 			boolean isValid = true;
 
 			// Verify correct span definition and total number of items
-			if(itemCount!=(endIndex-beginIndex+1)) {
+			if(itemCount!=(endIndex-firstIndex+1)) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-						"Total number of items declared for layer {} in file {}  does not match defined span {} to {}",
-						layer.getId(), _int(fileIndex), _long(beginIndex), _long(endIndex));
+						"Total number of items declared for layer '{}' in file '{}'  does not match defined span {} to {}",
+						id, _int(fileIndex), _long(firstIndex), _long(endIndex));
 				isValid = false;
 			}
 
 			// Make sure the index values form a continuous span over all files
-			if(lastEndIndex!=UNSET_LONG && beginIndex!=(lastEndIndex+1)) {
+			if(lastEndIndex!=UNSET_LONG && firstIndex!=(lastEndIndex+1)) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-						"Non-continuous item indices for layer {} in file {}: expected {} as begin index, but got {}",
-						layer.getId(), _int(fileIndex), _long(lastEndIndex+1), _long(beginIndex));
+						"Non-continuous item indices for layer '{}' in file '{}': expected {} as begin index, but got {}",
+						id, _int(fileIndex), _long(lastEndIndex+1), _long(firstIndex));
 				isValid = false;
 			}
 
 			// First file must always start at item index 0!!!
-			if(lastEndIndex==UNSET_LONG && fileIndex==0 && beginIndex!=0L) {
+			if(lastEndIndex==UNSET_LONG && fileIndex==0 && firstIndex!=0L) {
 				reportBuilder.addError(ModelErrorCode.DRIVER_METADATA_CORRUPTED,
-						"First file for layer {} in set must start at item index 0 - got start value {}",
-						layer.getId(), _long(beginIndex));
+						"First file for layer '{}' in set must start at item index 0 - got start value {}",
+						id, _long(firstIndex));
 				isValid = false;
 			}
 

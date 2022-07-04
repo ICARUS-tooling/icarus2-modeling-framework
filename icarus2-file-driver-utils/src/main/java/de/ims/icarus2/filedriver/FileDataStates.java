@@ -420,12 +420,12 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 			return cov==null ? UNSET_LONG : cov.count;
 		}
 
-		public long getBeginIndex(ItemLayerManifestBase<?> layer) {
+		public long getFirstIndex(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
 			return cov==null ? UNSET_LONG : cov.first;
 		}
 
-		public long getEndIndex(ItemLayerManifestBase<?> layer) {
+		public long getLastIndex(ItemLayerManifestBase<?> layer) {
 			LayerCoverage cov = getCoverage(layer, false);
 			return cov==null ? UNSET_LONG : cov.last;
 		}
@@ -434,19 +434,19 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 			getCoverage(layer, true).count = itemCount;
 		}
 
-		public void setBeginIndex(ItemLayerManifestBase<?> layer, long beginIndex) {
-			getCoverage(layer, true).first = beginIndex;
+		public void setFirstIndex(ItemLayerManifestBase<?> layer, long firstIndex) {
+			getCoverage(layer, true).first = firstIndex;
 		}
 
-		public void setEndIndex(ItemLayerManifestBase<?> layer, long endIndex) {
-			getCoverage(layer, true).last = endIndex;
+		public void setLastIndex(ItemLayerManifestBase<?> layer, long lastIndex) {
+			getCoverage(layer, true).last = lastIndex;
 		}
 
-		public void setCoverage(ItemLayerManifestBase<?> layer, long itemCount, long beginIndex, long endIndex) {
+		public void setCoverage(ItemLayerManifestBase<?> layer, long itemCount, long firstIndex, long lastIndex) {
 			LayerCoverage coverage = getCoverage(layer, true);
 			coverage.count = itemCount;
-			coverage.first = beginIndex;
-			coverage.last = endIndex;
+			coverage.first = firstIndex;
+			coverage.last = lastIndex;
 		}
 	}
 
