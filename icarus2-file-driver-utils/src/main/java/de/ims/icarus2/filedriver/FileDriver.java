@@ -589,7 +589,7 @@ public class FileDriver extends AbstractDriver {
 
 				try {
 					valid = step.apply(this, reportBuilder, env);
-				} catch(Exception e) {
+				} catch(IcarusApiException e) {
 					// Redundant error handling: Collect error for report AND send directly to logger
 					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
 							"Preparation step {} of {} failed: {} - {}",
@@ -599,6 +599,8 @@ public class FileDriver extends AbstractDriver {
 							_int(i+1), _int(stepCount), step.name(), e);
 					valid = false;
 				}
+
+				//TODO catch+rethrow InterruptedException from step and do some cleanup
 
 				if(!valid) {
 					driverIsValid = false;
@@ -765,6 +767,7 @@ public class FileDriver extends AbstractDriver {
 		 *
 		 *  If there are no chunk indices present and we need them -> create a new storage
 		 */
+		final boolean useChunkIndex;
 		Lock globalLock = getGlobalLock();
 		globalLock.lock();
 		try {
@@ -779,10 +782,12 @@ public class FileDriver extends AbstractDriver {
 
 				chunkIndexStorage = newStorage;
 			}
+			useChunkIndex = chunkIndexStorage!=null;
 		} finally {
 			globalLock.unlock();
 		}
 
+		getFileStates().forEachLayerInfo(info -> info.setUseChunkIndex(useChunkIndex));
 
 		LockableFileObject fileObject = getFileObject(fileIndex);
 		StampedLock lock = fileObject.getLock();
@@ -982,7 +987,7 @@ public class FileDriver extends AbstractDriver {
 					 *  we will most likely shift into the next higher value space and potentially
 					 *  "waste" some space.
 					 */
-					if(estimatedChunkCount<Integer.MAX_VALUE && getCorpus().getManifest().isEditable()) {
+					if(estimatedChunkCount>0 && estimatedChunkCount<Integer.MAX_VALUE && getCorpus().getManifest().isEditable()) {
 						estimatedChunkCount <<= 2;
 					}
 
@@ -1877,7 +1882,7 @@ public class FileDriver extends AbstractDriver {
 		 * @return {@code true} iff this step executed successfully
 		 * @throws Exception
 		 */
-		boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception;
+		boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException, InterruptedException;
 
 		Collection<? extends PreparationStep> getPreconditions();
 

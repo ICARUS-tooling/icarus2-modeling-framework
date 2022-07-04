@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -186,6 +187,10 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 					"No info available for chunk index of layer: "+layerManifest.getUniqueId());
 
 		return info;
+	}
+
+	public void forEachLayerInfo(Consumer<? super LayerInfo> action) {
+		layerInfos.values().forEach(action);
 	}
 
 	private static boolean verify(MetadataRegistry registry, String key, long value) {
@@ -489,7 +494,7 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 			registry.setBooleanValue(ItemLayerKey.SCANNED.getKey(layer), isFlagSet(ElementFlag.SCANNED));
 			registry.setBooleanValue(ItemLayerKey.USE_CHUNK_INDEX.getKey(layer), useChunkIndex);
 
-			//TODO
+			containerInfos.forEach((i, info) -> info.syncTo(registry));
 		}
 
 		@Override
@@ -497,7 +502,8 @@ public class FileDataStates implements Syncable<MetadataRegistry> {
 			setSize(registry.getLongValue(ItemLayerKey.ITEMS.getKey(layer), 0));
 			updateFlag(ElementFlag.SCANNED, registry.getBooleanValue(ItemLayerKey.SCANNED.getKey(layer), false));
 			setUseChunkIndex(registry.getBooleanValue(ItemLayerKey.USE_CHUNK_INDEX.getKey(layer), true));
-			//TODO
+
+			containerInfos.forEach((i, info) -> info.syncFrom(registry));
 		}
 
 		public ItemLayerManifestBase<?> getLayer() {
