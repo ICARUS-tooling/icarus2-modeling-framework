@@ -127,11 +127,7 @@ Assuming the file at path `myCorpus.imf.xml` contains the following XML data, we
 	<imf:templates>
 		<imf:context id="exampleContext">
 			<imf:layerGroup primaryLayer="sentences" id="surface">
-				<imf:itemLayer id="tokens">
-					<imf:hierarchy>
-						<imf:container containerType="list" />
-					</imf:hierarchy>
-				</imf:itemLayer>
+				<imf:itemLayer id="tokens" />
 				<imf:itemLayer id="sentences">
 					<imf:hierarchy>
 						<imf:container containerType="list" />
@@ -162,6 +158,8 @@ Inheritance is supported on a vast number of attributes in the manifest framewor
 Once a manifest is constructed either programmatically or by parsing a manifest XML file, it can be processed further. Imagine for example an annotation tool that wishes to improve its usability by providing specialized UI components to the user depending on the annotation constraints of the current resource. Examining an `AnnotationLayerManifest` allows client code to decide on required UI functionality without having to consult additional information or hard-code the settings into the application. Assuming a given `ManifestBuilder` and a list to store finished annotation manifests in, the following code generates common types of annotation definitions (categorial, bounded numerical, free text):
 
 ```java
+ManifestBuilder builder = ...
+
 annotationManifests.add(builder.create(AnnotationManifest.class, "anno1",
 			Options.of(ManifestFactory.OPTION_VALUE_TYPE, ValueType.STRING))
 		.setKey("stringValues")

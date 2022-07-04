@@ -29,11 +29,7 @@
 			</imf:documentation>
 			
 			<imf:layerGroup name="Sentence Group" primaryLayer="sentence" id="sentenceGroup">
-				<imf:itemLayer id="token" layerType="item:token">
-					<imf:hierarchy>
-						<imf:container containerType="span" />
-					</imf:hierarchy>
-				</imf:itemLayer>
+				<imf:itemLayer id="token" layerType="item:token" />
 				<imf:itemLayer id="sentence" layerType="item:sentence">
 					<imf:baseLayer layerId="token"/>
 					<imf:foundationLayer layerId="token"/>
