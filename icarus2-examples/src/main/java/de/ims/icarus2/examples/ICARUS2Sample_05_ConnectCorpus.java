@@ -19,10 +19,8 @@ package de.ims.icarus2.examples;
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 
 import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
-import de.ims.icarus2.filedriver.FileDriver;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.registry.CorpusManager;
-import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -63,16 +61,11 @@ public class ICARUS2Sample_05_ConnectCorpus {
 		// Connect to the corpus resource
 		CorpusManifest corpusManifest = manifestRegistry.getCorpusManifest("corpus.test.connect")
 				.orElseThrow(ManifestException.error("Missing test corpus"));
-		// Per default file drivers don't automatically load all their data upon connecting,
-		// so we change that setting here
-		corpusManifest.getRootContextManifest()
-			.flatMap(ContextManifest::getDriverManifest)
-			.flatMap(m -> m.getProperty(FileDriver.OptionKey.LOAD_ON_CONNECT.getKey()))
-			.ifPresent(p -> p.setValue(Boolean.TRUE));
+
 		// Obtain live corpus now
 		Corpus corpus = corpusManager.connect(corpusManifest);
 
-		// Ensure drivers are connected (and thanks to above settings the corpus data is laoded)
+		// Ensure drivers are connected
 		corpus.connectAll();
 
 		/*
