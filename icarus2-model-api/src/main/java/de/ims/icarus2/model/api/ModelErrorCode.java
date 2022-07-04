@@ -128,6 +128,12 @@ public enum ModelErrorCode implements ErrorCode {
 	DRIVER_NOT_EDITABLE(411),
 
 	/**
+	 * Models a general exception when it comes to accessing corpus resources. Usually this means
+	 * a corpus file path cannot be resolved or some other form of I/O error occurred.
+	 */
+	DRIVER_RESOURCE(412),
+
+	/**
 	 * A general error occurred when interacting with a member of the index or mapping
 	 * framework, such as a {@link IndexSet} or {@link Mapping}.
 	 */

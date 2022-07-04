@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.ReportBuilder;
 import de.ims.icarus2.filedriver.FileDataStates.ChunkIndexInfo;
@@ -64,7 +65,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 	CHECK_FILE_METADATA {
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			ResourceSet dataFiles = driver.getDataFiles();
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
@@ -133,7 +134,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 	CHECK_FILE_EXISTENCE {
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			ResourceSet dataFiles = driver.getDataFiles();
 			ContextManifest manifest = getContextManifest(driver);
@@ -153,7 +154,11 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 					// If context is editable, we allow for missing files and create them here
 					if(manifest.isEditable()) {
-						resourceProvider.create(path, false);
+						try {
+							resourceProvider.create(path, false);
+						} catch (IOException e) {
+							throw new IcarusApiException(ModelErrorCode.DRIVER_RESOURCE, "Unable to create resource: "+path, e);
+						}
 					} else {
 						fileInfo.setFlag(ElementFlag.MISSING);
 						// Signal error, since non-editable data MUST be present
@@ -184,7 +189,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 	CHECK_FILE_CHECKSUM {
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
@@ -241,7 +246,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 	CHECK_TOTAL_SIZE {
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
@@ -317,7 +322,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 
 		@Override
 		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env)
-				throws Exception {
+				throws IcarusApiException {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceSet dataFiles = driver.getDataFiles();
@@ -359,10 +364,11 @@ public enum StandardPreparationSteps implements PreparationStep {
 	 */
 	PREPARE_MODULES {
 		/**
+		 * @throws InterruptedException
 		 * @see de.ims.icarus2.filedriver.FileDriver.PreparationStep#apply(de.ims.icarus2.filedriver.FileDriver, de.ims.icarus2.ReportBuilder, de.ims.icarus2.util.Options)
 		 */
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException, InterruptedException {
 
 			MutableInteger exceptionCounter = new MutableInteger();
 
@@ -401,7 +407,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 	SCAN_FILES {
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ContextManifest manifest = getContextManifest(driver);
@@ -460,7 +466,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 	CHECK_LAYER_CHUNK_INDEX {
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			MetadataRegistry metadataRegistry = driver.getMetadataRegistry();
 			ResourceProvider resourceProvider = driver.getResourceProvider();
@@ -573,7 +579,7 @@ public enum StandardPreparationSteps implements PreparationStep {
 		}
 
 		@Override
-		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws Exception {
+		public boolean apply(FileDriver driver, ReportBuilder<ReportItem> reportBuilder, Options env) throws IcarusApiException {
 
 			ContextManifest manifest = getContextManifest(driver);
 			ResourceSet dataFiles = driver.getDataFiles();
