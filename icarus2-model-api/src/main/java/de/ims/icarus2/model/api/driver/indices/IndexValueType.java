@@ -778,6 +778,10 @@ public enum IndexValueType implements StringResource {
 		if(value==IcarusUtils.UNSET_LONG) {
 			return null;
 		}
+		// We consider a reportedly "empty" layer to be not yet properly scanned!
+		if(value==0L) {
+			return null;
+		}
 
 		if(value<=BYTE.maxValue()) {
 			return BYTE;

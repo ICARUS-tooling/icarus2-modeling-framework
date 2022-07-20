@@ -43,14 +43,6 @@ public interface DriverModule extends Identifiable, Part<Driver> {
 	boolean isReady();
 
 	/**
-	 * Called after a module has been {@link #addNotify(Driver) added} to the
-	 * driver. This allows configuration based on the settings in the associated
-	 * {@link ModuleManifest} definition.
-	 * @param manifest
-	 */
-	void readManifest(ModuleManifest manifest);
-
-	/**
 	 * Returns whether or not the module is carrying out an extensive background
 	 * task. Being busy means that each call to {@link #prepare(ModuleMonitor)}
 	 * is going to result in an exception. On the other hand only a busy module
@@ -68,7 +60,7 @@ public interface DriverModule extends Identifiable, Part<Driver> {
 	 */
 	ModuleState getState();
 
-	void prepare(ModuleMonitor monitor) throws InterruptedException;
+	void prepare(ModuleManifest manifest, ModuleMonitor monitor) throws InterruptedException;
 
 	void reset(ModuleMonitor monitor) throws InterruptedException;
 
@@ -76,4 +68,15 @@ public interface DriverModule extends Identifiable, Part<Driver> {
 	 * In case the module is busy, cancels the current task.
 	 */
 	void cancel();
+
+	/**
+	 * Marker interface to signal that a implementing module should be preloaded
+	 * as soon as possible
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public interface PreloadedModule extends DriverModule {
+		// marker interface
+	}
 }

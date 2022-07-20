@@ -115,6 +115,18 @@ public interface ModuleSpecTest extends ManifestFragmentTest<ModuleSpec>,
 	}
 
 	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#getModuleClassName()}.
+	 */
+	@Test
+	default void testGetModuleClass() {
+		assertOptGetter(create(),
+				"my.own.Class", "another.epic.but.weird.Thing",
+				NO_DEFAULT(),
+				ModuleSpec::getModuleClassName,
+				ModuleSpec::setModuleClassName);
+	}
+
+	/**
 	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#setMultiplicity(de.ims.icarus2.util.Multiplicity)}.
 	 */
 	@Test
@@ -141,6 +153,17 @@ public interface ModuleSpecTest extends ManifestFragmentTest<ModuleSpec>,
 		assertLockableSetter(settings(),
 				ModuleSpec::setExtensionPointUid,
 				"uid1",
+				NO_NPE_CHECK, NO_CHECK);
+	}
+
+	/**
+	 * Test method for {@link de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#setModuleClassName(Class)}.
+	 */
+	@Test
+	default void testSetModuleClass() {
+		assertLockableSetter(settings(),
+				ModuleSpec::setModuleClassName,
+				"not.the.class.you.were.looking.For",
 				NO_NPE_CHECK, NO_CHECK);
 	}
 

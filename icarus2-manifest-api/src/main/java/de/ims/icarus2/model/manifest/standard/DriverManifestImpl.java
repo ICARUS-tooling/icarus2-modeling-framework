@@ -393,6 +393,7 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		private boolean customizable = DEFAULT_IS_CUSTOMIZABLE;
 		private Optional<Multiplicity> multiplicity = Optional.empty();
 		private Optional<String> extensionPointUid = Optional.empty();
+		private Optional<String> moduleClass = Optional.empty();
 		private Optional<Documentation> documentation = Optional.empty();
 
 		private final Set<Category> categories = new ObjectOpenCustomHashSet<>(Category.HASH_STRATEGY);
@@ -458,6 +459,14 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 		@Override
 		public Optional<String> getExtensionPointUid() {
 			return extensionPointUid;
+		}
+
+		/**
+		 * @see de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec#getModuleClassName()
+		 */
+		@Override
+		public Optional<String> getModuleClassName() {
+			return moduleClass;
 		}
 
 		@Override
@@ -532,6 +541,22 @@ public class DriverManifestImpl extends AbstractForeignImplementationManifest<Dr
 
 		protected void setExtensionPointUid0(String extensionPointUid) {
 			this.extensionPointUid = Optional.ofNullable(extensionPointUid);
+		}
+
+		/**
+		 * @param moduleClassName the moduleClass to set
+		 */
+		@Override
+		public ModuleSpec setModuleClassName(@Nullable String moduleClassName) {
+			checkNotLocked();
+
+			setModuleClassName0(moduleClassName);
+
+			return this;
+		}
+
+		protected void setModuleClassName0(String moduleClassName) {
+			this.moduleClass = Optional.ofNullable(moduleClassName);
 		}
 
 		/**

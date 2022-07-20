@@ -18,7 +18,6 @@ package de.ims.icarus2.model.api.driver;
 
 import java.util.Collection;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
@@ -48,6 +47,7 @@ import de.ims.icarus2.model.api.view.Scope;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -285,11 +285,13 @@ public interface Driver extends ItemLayerManager {
 		return result.getAsList();
 	}
 
-	default Collection<DriverModule> getModules(Predicate<? super DriverModule> p) {
-		LazyCollection<DriverModule> result = LazyCollection.lazyList();
+	Collection<DriverModule> getModules(ModuleSpec spec);
+
+	default <T extends DriverModule> Collection<T> getModules(Class<T> type) {
+		LazyCollection<T> result = LazyCollection.lazyList();
 
 		forEachModule(m -> {
-			if(p.test(m)) result.add(m);
+			if(type.isInstance(m)) result.add(type.cast(m));
 		});
 
 		return result.getAsList();
@@ -305,16 +307,9 @@ public interface Driver extends ItemLayerManager {
 		return result.booleanValue();
 	}
 
-	default void prepareModules(ModuleMonitor monitor) throws InterruptedException, IcarusApiException {
-
-		Collection<DriverModule> modules = getModules();
-
-		for(DriverModule module : modules) {
-			if(!module.isReady() && !module.isBusy()) {
-				module.prepare(monitor);
-			}
-		}
-	}
+	void prepareModule(@Nullable ModuleMonitor monitor, DriverModule module) throws InterruptedException, IcarusApiException;
+	void prepareModules(@Nullable ModuleMonitor monitor) throws InterruptedException, IcarusApiException;
+	void prepareModules(@Nullable ModuleMonitor monitor, ModuleSpec spec) throws InterruptedException, IcarusApiException;
 
 	// Connected (live) phase
 

@@ -23,6 +23,7 @@ import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest.PrerequisiteManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.ImplementationManifest;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
@@ -235,6 +236,12 @@ public enum ManifestErrorCode implements ErrorCode {
 	 * {@link ManifestLocation location}.
 	 */
 	MANIFEST_INVALID_LOCATION(627),
+
+	/**
+	 * An endpoint declaring an explicit multiplicity (such as {@link ModuleSpec}} received an invalid
+	 * number of docked-on implementations.
+	 */
+	MANIFEST_MULTIPLICITY_VIOLATION(628),
 
 	;
 

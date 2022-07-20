@@ -813,6 +813,10 @@ public class ManifestGenerator {
 		container.addFieldChange(spec::setCustomizable, "customizable",
 				Boolean.valueOf(!ModuleSpec.DEFAULT_IS_CUSTOMIZABLE));
 		container.addFieldChange(spec::setExtensionPointUid, "extensionPointUid", index("extension"));
+		container.addChange(with("modelClass", String.class.getName()), () -> {
+			spec.setExtensionPointUid(null); // need to clear extension-point field first
+			spec.setModuleClassName(String.class.getName());
+		});
 	}
 
 	private void prepareOption(Option option,

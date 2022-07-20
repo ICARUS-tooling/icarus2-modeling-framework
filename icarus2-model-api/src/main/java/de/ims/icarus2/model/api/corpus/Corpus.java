@@ -24,12 +24,16 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context.VirtualContext;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.mods.DriverModule;
+import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
 import de.ims.icarus2.model.api.edit.CorpusUndoListener;
 import de.ims.icarus2.model.api.edit.CorpusUndoManager;
@@ -183,6 +187,21 @@ public interface Corpus extends ManifestOwner<CorpusManifest> {
 	 * contexts, as their content is not meant to be managed by the corpus hosting them.
 	 */
 	void connectAll();
+
+	/**
+	 * Iterates over all modules of all drivers that are responsible for data
+	 * in this corpus and makes sure they are all {@link DriverModule#isReady() ready}.
+	 *
+	 * @param monitor
+	 * @throws InterruptedException
+	 * @throws IcarusApiException
+	 */
+	default void prepareAll(@Nullable ModuleMonitor monitor) throws InterruptedException, IcarusApiException {
+		for(Context context : getContexts()) {
+			Driver driver = context.getDriver();
+			driver.prepareModules(monitor);
+		}
+	}
 
 	/**
 	 * Creates a new {@link Scope} that contains all the layers of this corpus and

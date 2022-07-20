@@ -27,6 +27,7 @@ import de.ims.icarus2.model.api.corpus.GenerationControl;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
+import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.edit.UndoableCorpusEdit;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -132,6 +133,19 @@ public enum ModelErrorCode implements ErrorCode {
 	 * a corpus file path cannot be resolved or some other form of I/O error occurred.
 	 */
 	DRIVER_RESOURCE(412),
+
+	/**
+	 * Loading (i.e. instantiating) one or more {@link DriverModule}(s) failed and the driver
+	 * is unable to properly connect to the corpus.
+	 */
+	DRIVER_MODULE_LOADING(413),
+
+	/**
+	 * {@link DriverModule#prepare(de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest, de.ims.icarus2.model.api.driver.mods.ModuleMonitor) Preparing}
+	 * one or more {@link DriverModule}(s) failed and the driver is unable to properly connect to
+	 * the corpus.
+	 */
+	DRIVER_MODULE_PREPARATION(414),
 
 	/**
 	 * A general error occurred when interacting with a member of the index or mapping

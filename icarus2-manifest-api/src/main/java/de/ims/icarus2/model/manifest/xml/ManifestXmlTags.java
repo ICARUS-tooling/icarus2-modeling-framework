@@ -97,6 +97,7 @@ public class ManifestXmlTags {
 	public static final String MAPPING = "mapping";
 	public static final String MODULE = "module";
 	public static final String MODULE_SPEC = "moduleSpec";
+	public static final String CLASS = "class";
 
 	public static final String LOCATIONS = "locations";
 	public static final String LOCATION = "location";

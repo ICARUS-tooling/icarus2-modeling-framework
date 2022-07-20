@@ -39,8 +39,6 @@ import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.driver.Driver;
-import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.edit.CorpusEditManager;
 import de.ims.icarus2.model.api.edit.change.AtomicChange;
 import de.ims.icarus2.model.api.io.ResourcePath;
@@ -601,26 +599,6 @@ public final class ModelUtils {
 					"Invalid value for axis "+axis+" on position "+p+" - max size "+size); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
-	/**
-	 * Iterates over all modules of all drivers that are responsible for data
-	 * int the given corpus and makes sure they are all {@link DriverModule#isReady() ready}.
-	 *
-	 * @param corpus
-	 * @throws InterruptedException
-	 */
-	public static void prepareCorpus(Corpus corpus) throws InterruptedException {
-		for(Context context : corpus.getContexts()) {
-			Driver driver = context.getDriver();
-			if(!driver.isReady()) {
-				for(DriverModule module : driver.getModules()) {
-					if(!module.isReady()) {
-						module.prepare(null);
-					}
-				}
-			}
-		}
-	}
-
 	public static Path pathToFile(ResourcePath path) {
 		requireNonNull(path);
 		if(path.getType()!=LocationType.LOCAL)
@@ -645,7 +623,7 @@ public final class ModelUtils {
 			return Files.newInputStream(pathToFile(path));
 
 		case REMOTE:
-			return new URL(path.getPath()).openStream();
+			return pathToURL(path).openStream();
 
 		default:
 			throw new IllegalArgumentException("Cannot handle source type: "+path.getType()); //$NON-NLS-1$

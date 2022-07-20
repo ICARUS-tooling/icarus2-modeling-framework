@@ -29,6 +29,7 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.driver.mods.ModuleState;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.id.Identity;
@@ -106,7 +107,9 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	}
 
 	@Override
-	public void prepare(ModuleMonitor monitor) throws InterruptedException {
+	public void prepare(ModuleManifest manifest, ModuleMonitor monitor) throws InterruptedException {
+		requireNonNull(manifest);
+
 		if(isReady())
 			throw new ModelException(GlobalErrorCode.ILLEGAL_STATE, "Module is already prepared");
 		if(!busy.compareAndSet(false, true))
@@ -114,7 +117,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 
 		try {
 			cancelled = false;
-			boolean result = doPrepare(monitor);
+			boolean result = doPrepare(manifest, monitor);
 
 			if(!cancelled) {
 				ready.set(result);
@@ -134,7 +137,7 @@ public abstract class AbstractDriverModule extends AbstractPart<Driver> implemen
 	 * @return
 	 * @throws InterruptedException
 	 */
-	protected abstract boolean doPrepare(ModuleMonitor monitor) throws InterruptedException;
+	protected abstract boolean doPrepare(ModuleManifest manifest, ModuleMonitor monitor) throws InterruptedException;
 
 	@Override
 	public void reset(ModuleMonitor monitor) throws InterruptedException {

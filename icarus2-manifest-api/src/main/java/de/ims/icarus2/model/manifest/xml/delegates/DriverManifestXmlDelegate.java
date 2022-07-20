@@ -284,8 +284,9 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 			ModuleSpec spec = getInstance();
 
 			Optional<String> extensionPointUid = spec.getExtensionPointUid();
+			Optional<String> moduleClass = spec.getModuleClassName();
 
-			if(!extensionPointUid.isPresent()) {
+			if(!extensionPointUid.isPresent() && !moduleClass.isPresent()) {
 				serializer.startEmptyElement(ManifestXmlTags.MODULE_SPEC);
 			} else {
 				serializer.startElement(ManifestXmlTags.MODULE_SPEC);
@@ -309,6 +310,10 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 				serializer.startElement(ManifestXmlTags.EXTENSION_POINT);
 				serializer.writeTextOrCData(extensionPointUid);
 				serializer.endElement(ManifestXmlTags.EXTENSION_POINT);
+			} else if(moduleClass.isPresent()) {
+				serializer.startElement(ManifestXmlTags.CLASS);
+				serializer.writeTextOrCData(moduleClass);
+				serializer.endElement(ManifestXmlTags.CLASS);
 			}
 
 			serializer.endElement(ManifestXmlTags.MODULE_SPEC);
@@ -357,6 +362,10 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 				// no-op
 			} break;
 
+			case ManifestXmlTags.CLASS: {
+				// no-op
+			} break;
+
 			case ManifestXmlTags.CATEGORIES: {
 				// no-op
 			} break;
@@ -389,6 +398,10 @@ public class DriverManifestXmlDelegate extends AbstractForeignImplementationMani
 
 			case ManifestXmlTags.EXTENSION_POINT: {
 				getInstance().setExtensionPointUid(text);
+			} break;
+
+			case ManifestXmlTags.CLASS: {
+				getInstance().setModuleClassName(text);
 			} break;
 
 			case ManifestXmlTags.CATEGORIES:

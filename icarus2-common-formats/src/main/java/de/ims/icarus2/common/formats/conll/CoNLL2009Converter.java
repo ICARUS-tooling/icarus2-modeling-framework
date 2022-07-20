@@ -68,6 +68,7 @@ import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
+import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
@@ -315,8 +316,11 @@ public class CoNLL2009Converter extends AbstractConverter {
 		return new AnnotationRef(layer, key, gen_analyzer);
 	}
 
+	/**
+	 * @see de.ims.icarus2.model.standard.driver.mods.AbstractDriverModule#doPrepare(de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest, de.ims.icarus2.model.api.driver.mods.ModuleMonitor)
+	 */
 	@Override
-	public void readManifest(ModuleManifest manifest) {
+	protected boolean doPrepare(ModuleManifest manifest, ModuleMonitor monitor) throws InterruptedException {
 		Context context = getDriver().getContext();
 
 		i_token = resolveToken(context, manifest, CoNLL09Config.TOKEN);
@@ -332,6 +336,8 @@ public class CoNLL2009Converter extends AbstractConverter {
 		a_pfeat = resolveAnnotation(context, manifest, CoNLL09Config.PREDICTED_FEATURES);
 		a_deprel = resolveAnnotation(context, manifest, CoNLL09Config.GOLD_DEPENDENCY_RELATION);
 		a_pdeprel = resolveAnnotation(context, manifest, CoNLL09Config.PREDICTED_DEPENDENCY_RELATION);
+
+		return true;
 	}
 
 	/**

@@ -20,12 +20,14 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -45,6 +47,7 @@ import de.ims.icarus2.model.api.driver.id.IdManager;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
+import de.ims.icarus2.model.api.driver.mods.ModuleMonitor;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.meta.AnnotationValueDistribution;
@@ -55,10 +58,13 @@ import de.ims.icarus2.model.manifest.api.AnnotationLayerManifest;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.Manifest;
+import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
+import de.ims.icarus2.model.standard.driver.mods.ModuleManager;
 import de.ims.icarus2.model.standard.members.DefaultLayerMemberFactory;
 import de.ims.icarus2.model.standard.members.item.DefaultItem;
 import de.ims.icarus2.model.standard.members.structure.DefaultEdge;
@@ -119,10 +125,17 @@ public abstract class AbstractDriver implements Driver {
 	private MappingStorage mappings;
 
 	/**
+	 * Optional storage for holding module data
+	 */
+	private ModuleManager modules;
+
+	/**
 	 * Maps {@link Manifest#getUID() ids} of managed layers to their repsective
 	 * {@link IdManager} instances.
 	 */
 	private final Int2ObjectMap<IdManager> idManagers = new Int2ObjectOpenHashMap<IdManager>();
+
+	private final Object NO_SPEC_KEY = new Object();
 
 	protected AbstractDriver(DriverBuilder<?,?> builder) {
 		this(builder.getManifest());
@@ -254,6 +267,13 @@ public abstract class AbstractDriver implements Driver {
 		context.connectNotify(this);
 	}
 
+	private void setModules(ModuleManager modules) {
+		requireNonNull(modules);
+		checkState(this.modules==null);
+
+		this.modules = modules;
+	}
+
 	/**
 	 * Verifies that required internal components have been properly
 	 * initialized. For proper nesting subclasses wishing to add custom
@@ -268,6 +288,7 @@ public abstract class AbstractDriver implements Driver {
 
 		checkState("Missing context", context!=null);
 		checkState("Missing mappings", mappings!=null);
+		checkState("Missing modules manager", modules!=null);
 	}
 
 	/**
@@ -278,7 +299,7 @@ public abstract class AbstractDriver implements Driver {
 	 * <p>
 	 * Note that this method will be called <b>first</b> from {@link #connect(Corpus)}.
 	 * <p>
-	 * The default implementation creates the context and mapping storage to be used later.
+	 * The default implementation creates the context, module and mapping storage(s) to be used later.
 	 * <p>
 	 * For proper nesting of method calls a subclass should make sure to call {@code super.doConnect()}
 	 * <b>before</b> any setup work.
@@ -288,6 +309,7 @@ public abstract class AbstractDriver implements Driver {
 	 */
 	protected void doConnect() throws InterruptedException, IcarusApiException {
 		setContext(createContext());
+		setModules(createModules());
 		setMappings(createMappings());
 	}
 
@@ -328,9 +350,6 @@ public abstract class AbstractDriver implements Driver {
 	 * Creates the basic mappings for this driver implementation.
 	 * <p>
 	 * This method is called exactly once by this driver implementation during the connection phase.
-	 *
-	 * @param manifest
-	 * @return
 	 */
 	protected MappingStorage createMappings() {
 		MappingStorage.Builder builder = new MappingStorage.Builder();
@@ -342,6 +361,34 @@ public abstract class AbstractDriver implements Driver {
 		}
 
 		return builder.build();
+	}
+
+	private ImplementationLoader<?> createModuleLoader(ModuleManifest manifest) {
+		final CorpusMemberFactory factory = getCorpus().getManager().newFactory();
+		ImplementationLoader<?> loader = factory.newImplementationLoader()
+				.manifest(manifest.getImplementationManifest().orElseThrow(ManifestException.missing(manifest, "implementation")))
+				.message("Module "+getName(manifest))
+				.environment(Driver.class, this);
+		prepareModuleLoader(loader);
+		return loader;
+	}
+
+	/** Hook for subclasses to prepare the loader used to instantiate modules. */
+	protected void prepareModuleLoader(ImplementationLoader<?> loader) {
+		// no-op
+	}
+
+	/**
+	 * Creates the storage for holding modules.
+	 * <p>
+	 * This method is called exactly once by this driver implementation during the connection phase.
+	 */
+	protected ModuleManager createModules() {
+		return ModuleManager.builder()
+				.driver(this)
+				//TODO maybe set a fallback monitor that just populates the log?
+				.loaderSource(this::createModuleLoader)
+				.build();
 	}
 
 	/**
@@ -587,6 +634,37 @@ public abstract class AbstractDriver implements Driver {
 				.environment(Driver.class, this)
 				.message("Module manifest "+getName(manifest))
 				.instantiate(resultClass);
+	}
+
+	protected final ModuleManager getModuleManager() {
+		checkState("Modules not loaded yet", modules!=null);
+		return modules;
+	}
+
+	@Override
+	public Collection<DriverModule> getModules(ModuleSpec spec) {
+		return modules.getModules(spec);
+	}
+
+	@Override
+	public void forEachModule(Consumer<? super DriverModule> action) {
+		modules.forEachModule(action);
+	}
+
+	@Override
+	public void prepareModule(@Nullable ModuleMonitor monitor, DriverModule module)
+			throws InterruptedException, IcarusApiException {
+		modules.prepareModule(module, monitor);
+	}
+
+	@Override
+	public void prepareModules(@Nullable ModuleMonitor monitor) throws InterruptedException, IcarusApiException {
+		modules.prepareAllModules(monitor);
+	}
+
+	@Override
+	public void prepareModules(@Nullable ModuleMonitor monitor, ModuleSpec spec) throws InterruptedException, IcarusApiException {
+		modules.prepareModules(spec, monitor);
 	}
 
 	/**

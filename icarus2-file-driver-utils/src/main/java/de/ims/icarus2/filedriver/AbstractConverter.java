@@ -51,6 +51,7 @@ import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
@@ -96,7 +97,7 @@ public abstract class AbstractConverter extends AbstractDriverModule implements 
 //	}
 
 	@Override
-	protected boolean doPrepare(ModuleMonitor monitor) throws InterruptedException {
+	protected boolean doPrepare(ModuleManifest manifest, ModuleMonitor monitor) throws InterruptedException {
 		// Nothing to do here
 		return true;
 	}

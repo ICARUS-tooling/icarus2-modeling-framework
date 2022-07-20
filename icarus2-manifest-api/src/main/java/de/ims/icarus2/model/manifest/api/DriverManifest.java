@@ -292,11 +292,18 @@ public interface DriverManifest extends ForeignImplementationManifest<DriverMani
 		@AccessRestriction(AccessMode.READ)
 		Optional<String> getExtensionPointUid();
 
+		/**
+		 * Specifies the class any module is expected to be assignment compatible with.
+		 * @return
+		 */
+		Optional<String> getModuleClassName();
+
 		// Modification methods
 
 		ModuleSpec setMultiplicity(Multiplicity multiplicity);
 		ModuleSpec setCustomizable(boolean customizable);
 		ModuleSpec setExtensionPointUid(@Nullable String extensionPointUid);
+		ModuleSpec setModuleClassName(@Nullable String moduleClassName);
 	}
 
 	/**

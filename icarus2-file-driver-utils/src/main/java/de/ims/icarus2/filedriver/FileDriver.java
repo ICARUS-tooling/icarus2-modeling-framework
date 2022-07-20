@@ -82,16 +82,16 @@ import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory;
 import de.ims.icarus2.model.api.driver.indices.standard.IndexCollectorFactory.IndexSetBuilder;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingStorage;
-import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.model.api.members.item.Item;
-import de.ims.icarus2.model.api.registry.CorpusMemberFactory;
 import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
+import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleSpec;
+import de.ims.icarus2.model.manifest.api.ImplementationLoader;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.LayerGroupManifest;
 import de.ims.icarus2.model.manifest.api.LayerManifest;
@@ -107,6 +107,9 @@ import de.ims.icarus2.model.standard.driver.BufferedItemManager;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.LayerBuffer;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
+import de.ims.icarus2.model.standard.driver.mods.LoggingModuleMonitor;
+import de.ims.icarus2.model.standard.driver.mods.ModuleManager;
+import de.ims.icarus2.model.standard.driver.mods.SimpleModuleMonitor;
 import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.Graph.TraversalPolicy;
 import de.ims.icarus2.model.util.ModelUtils;
@@ -118,7 +121,6 @@ import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.io.resource.FileResource;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.io.resource.ResourceProvider;
-import de.ims.icarus2.util.lang.Lazy;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -153,11 +155,6 @@ public class FileDriver extends AbstractDriver {
 	private FileDataStates states;
 
 	/**
-	 * Our bridge between physical format and the model instances we manage
-	 */
-	protected final Lazy<Converter> converter;
-
-	/**
 	 * Chunk indices for the primary layers in each layer group of the host driver.
 	 * This is an optional feature and connector implementations are free to decide on their
 	 * own whether or not it makes sense for a certain data set to map chunks at all
@@ -190,6 +187,8 @@ public class FileDriver extends AbstractDriver {
 	 */
 	private final Int2ObjectMap<LockableFileObject> fileObjects;
 
+	private final ModuleSpec converterSpec;
+
 	private static Logger log = LoggerFactory.getLogger(FileDriver.class);
 
 	/**
@@ -206,47 +205,22 @@ public class FileDriver extends AbstractDriver {
 
 		fileObjects = new Int2ObjectOpenHashMap<>(dataFiles.getResourceCount());
 
-		converter = Lazy.create(this::createConverter, true);
+		converterSpec = getManifest().getModuleSpec(FileDriverUtils.PROPERTY_CONVERTER)
+				.orElseThrow(ManifestException.missing(getManifest(), "converter"));
 	}
 
-	protected Converter createConverter() {
-
-		// Fetch the (hopefully) single module manifest describing our converter to be used
-		Set<ModuleManifest> converterManifests = getManifest().getModuleManifests(
-				FileDriverUtils.PROPERTY_CONVERTER);
-
-		if(converterManifests.isEmpty())
-			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-					"No converter modules declared in driver manifest: "+getName(getManifest()));
-		if(converterManifests.size()>1)
-			throw new ModelException(ModelErrorCode.DRIVER_ERROR,
-					"Too many converter modules declared in driver manifest: "+getName(getManifest()));
-
-		ModuleManifest manifest = converterManifests.iterator().next();
-
-		final CorpusMemberFactory factory = getCorpus().getManager().newFactory();
-
-		Converter converter = factory.newImplementationLoader()
-				.manifest(manifest.getImplementationManifest().get())
-				.environment(FileDriver.class, this)
-				.message("Converter for driver "+getName(getManifest()))
-				.instantiate(Converter.class);
-
-
-		//DEBUG
-//		TableSchema tableSchema = (TableSchema) getManifest().getPropertyValue("tableSchema");
-//
-//		Converter converter = new TableConverter(tableSchema); //TODO
-//		converter.init(this);
-
-		converter.addNotify(this);
-		converter.readManifest(manifest);
-
-		return converter;
+	/**
+	 * @see de.ims.icarus2.model.standard.driver.AbstractDriver#prepareModuleLoader(de.ims.icarus2.model.manifest.api.ImplementationLoader)
+	 */
+	@Override
+	protected void prepareModuleLoader(ImplementationLoader<?> loader) {
+		loader.environment(FileDriver.class, this);
 	}
 
 	public Converter getConverter() {
-		return converter.value();
+		ModuleManager modules = getModuleManager();
+		return (Converter) modules.getModule(converterSpec).orElseThrow(
+				ModelException.create(ModelErrorCode.DRIVER_ERROR, "Converter not prepared yet"));
 	}
 
 	public final LockableFileObject getFileObject(int fileIndex) {
@@ -406,11 +380,6 @@ public class FileDriver extends AbstractDriver {
 		return result;
 	}
 
-	@Override
-	public void forEachModule(Consumer<? super DriverModule> action) {
-		action.accept(getConverter());
-	}
-
 	/**
 	 * @see de.ims.icarus2.model.api.driver.Driver#getItemCount(de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
@@ -558,11 +527,23 @@ public class FileDriver extends AbstractDriver {
 			// Slight violation of the super contract since we set this up before delegating to super method!
 			states = new FileDataStates(this);
 
-			// Creates context and mappings
+			// Creates context, mappings and modules
 			super.doConnect();
 
 			// We sync as early as possible to allow fail-fast in case of metadata issues
 			states.syncFrom(getMetadataRegistry());
+
+			// Now make sure all modules are loaded and prepared properly
+			SimpleModuleMonitor monitor = new SimpleModuleMonitor(
+					new LoggingModuleMonitor(log, true, m -> getName(getModuleManager().getManifest(m))));
+			getModuleManager().loadAllModules(monitor);
+			if(monitor.hasFailedModules())
+				throw new ModelException(ModelErrorCode.DRIVER_MODULE_LOADING, "Failed to load modules: "+monitor.getFailedModules().toString());
+
+			monitor.reset();
+			getModuleManager().prepareAllModules(monitor);
+			if(monitor.hasFailedModules())
+				throw new ModelException(ModelErrorCode.DRIVER_MODULE_PREPARATION, "Module preparation failed: "+monitor.getFailedModules().toString());
 
 			final List<PreparationStep> steps = computeStepList();
 			final int stepCount = steps.size();
@@ -679,19 +660,15 @@ public class FileDriver extends AbstractDriver {
 			// Mandatory delegation to super method before we attempt any cleanup work ourselves
 			super.doDisconnect();
 
-			//TODO persist current file states in metadata registry
+			// Now make sure all modules are prepared properly
+			SimpleModuleMonitor monitor = new SimpleModuleMonitor(
+					new LoggingModuleMonitor(log, true, m -> getName(getModuleManager().getManifest(m))));
+			getModuleManager().resetAllModules(monitor);
 
-			// Only attempt to close converter if we actually used it
-			if(converter.created()) {
-				Converter converter = getConverter();
-				try {
-					converter.removeNotify(this);
-				} catch (Exception e) {
-					log.error("Attempt to close converter failed", e);
-				}
-			}
+			// Modules might have stored new metadata, so sync it
+			getFileStates().syncTo(metadataRegistry);
 
-			// Shut down our storage
+			// Shut down our storage (this should only be in-memory cleanup)
 			if(content!=null) {
 				try {
 					content.close();
