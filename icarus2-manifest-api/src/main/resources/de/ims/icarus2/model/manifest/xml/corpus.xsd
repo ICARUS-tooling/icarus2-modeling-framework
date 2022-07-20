@@ -313,13 +313,18 @@
 		</xsd:annotation>
 		<xsd:complexContent>
 			<xsd:extension base="imf:identityType">
-				<xsd:sequence>
-					<xsd:element name="extensionPoint" type="imf:identifierType">
+				<xsd:choice>
+					<xsd:element name="extensionPoint" type="imf:identifierType" minOccurs="0">
 						<xsd:annotation>
 							<xsd:documentation>Links to the definition for legal plugins that can be used as modules for this specification.</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
-				</xsd:sequence>
+					<xsd:element name="class" type="imf:qualifiedClassNameType" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Defines a base class or interface the modules must implement.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:choice>
 				<xsd:attribute name="customizable" type="xsd:boolean">
 					<xsd:annotation>
 						<xsd:documentation>Defines whether or not the behavior of modules for this specification can be configured by the user.</xsd:documentation>
@@ -1144,6 +1149,17 @@
 		<xsd:simpleContent>
 	        <xsd:restriction base="imf:textType">
 	    		<xsd:pattern value="[A-Za-z][:_\-\w]+\w"></xsd:pattern>
+	    	</xsd:restriction>
+		</xsd:simpleContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="qualifiedClassNameType">
+		<xsd:annotation>
+			<xsd:documentation>Type with string content that can be used as a valid identifier.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:simpleContent>
+	        <xsd:restriction base="imf:textType">
+	    		<xsd:pattern value="([a-z][a-z_0-9]*\.)*[A-Z_]($[A-Za-z_]|[\w_])*" />
 	    	</xsd:restriction>
 		</xsd:simpleContent>
 	</xsd:complexType>

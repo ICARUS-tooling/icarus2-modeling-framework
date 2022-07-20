@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.registry.CorpusManager;
@@ -223,6 +224,7 @@ public class DummyCorpus {
 				.manifestRegistry(new DefaultManifestRegistry())
 				.build();
 		ManifestRegistry registry = manager.getManifestRegistry();
+		Template.applyCoreTemplates(registry);
 		ManifestXmlReader reader = ManifestXmlReader.builder()
 				.registry(registry)
 				.useImplementationDefaults()
@@ -270,6 +272,7 @@ public class DummyCorpus {
 				.manifestRegistry(new DefaultManifestRegistry())
 				.build();
 		ManifestRegistry registry = manager.getManifestRegistry();
+		Template.applyCoreTemplates(registry);
 		ManifestXmlReader reader = ManifestXmlReader.builder()
 				.registry(registry)
 				.useImplementationDefaults()

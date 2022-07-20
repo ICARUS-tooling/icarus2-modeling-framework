@@ -21,7 +21,7 @@ import static de.ims.icarus2.util.lang.Primitives._long;
 
 import java.util.Random;
 
-import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
+import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.corpus.CorpusOption;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -60,7 +60,7 @@ public class ICARUS2Sample_06_PagedView {
 
 		// Register our corpus manifest
 		ManifestRegistry manifestRegistry = corpusManager.getManifestRegistry();
-		CoNLLTemplates.registerTeplates(manifestRegistry);
+		Template.applyTemplates(manifestRegistry, Template.CONLL);
 		ManifestXmlReader.builder()
 			.registry(manifestRegistry)
 			.useImplementationDefaults()

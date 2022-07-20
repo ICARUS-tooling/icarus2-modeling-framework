@@ -103,8 +103,10 @@
 		</imf:context>
 		
 		<imf:context  id="common.format.conll09" templateId="common.format.conll09.spec">
-			
-			<imf:driver id="common.drivers.conll09">
+			<imf:documentation>
+				<imf:content>Context template with a dedicated driver for the CoNLL-09 format.</imf:content>
+			</imf:documentation>
+			<imf:driver id="common.drivers.conll09" templateId="commons.driver.file">
 				<imf:properties>
 					<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">false</imf:property>
 					<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
@@ -113,8 +115,8 @@
 					<imf:property name="de.ims.icarus2.conll09.features.delimiter">|</imf:property>
 					<imf:property name="de.ims.icarus2.conll09.features.assign">=</imf:property>
 				</imf:properties>	
-				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />			
-				<imf:module id="de.ims.icarus2.filedriver.converter">
+				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />	
+				<imf:module id="converter" moduleSpecId="commons.modulespec.converter">
 					<imf:implementation classname="de.ims.icarus2.common.formats.conll.CoNLL2009Converter" />
 				</imf:module>
 				<imf:mapping sourceLayer="sentence" targetLayer="token" relation="one-to-many" coverage="total-monotonic" id="sent2tok" />
@@ -125,14 +127,16 @@
 		</imf:context>
 		
 		<imf:context  id="common.format.conll09.schema" templateId="common.format.conll09.spec">
-			
-			<imf:driver id="common.drivers.conll09">
+			<imf:documentation>
+				<imf:content>Context template for the CoNLL-09 format that uses the generic schema-driven converter.</imf:content>
+			</imf:documentation>
+			<imf:driver id="common.drivers.conll09" templateId="commons.driver.file">
 				<imf:properties>
 					<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">false</imf:property>
 					<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
 				</imf:properties>	
-				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />				
-				<imf:module id="de.ims.icarus2.filedriver.converter">
+				<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />	
+				<imf:module id="converter" moduleSpecId="commons.modulespec.converter">
 					<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
 						<imf:properties>
 							<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>

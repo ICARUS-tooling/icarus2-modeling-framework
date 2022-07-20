@@ -65,7 +65,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 		requireNonNull(manifest);
 		requireNonNull(environment);
 
-		if(!Converter.class.isAssignableFrom(resultClass))
+		if(!resultClass.isAssignableFrom(Converter.class))
 			throw new ClassCastException(Messages.mismatch(
 					"Requested result class is not compatible",
 					Converter.class, resultClass));

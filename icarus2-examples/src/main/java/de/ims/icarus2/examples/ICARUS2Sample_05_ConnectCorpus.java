@@ -18,7 +18,7 @@ package de.ims.icarus2.examples;
 
 import static de.ims.icarus2.model.util.ModelUtils.getName;
 
-import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
+import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
@@ -47,7 +47,7 @@ public class ICARUS2Sample_05_ConnectCorpus {
 
 		// Register our corpus manifest
 		ManifestRegistry manifestRegistry = corpusManager.getManifestRegistry();
-		CoNLLTemplates.registerTeplates(manifestRegistry);
+		Template.applyTemplates(manifestRegistry, Template.CONLL);
 		ManifestXmlReader.builder()
 			.registry(manifestRegistry)
 			.useImplementationDefaults()

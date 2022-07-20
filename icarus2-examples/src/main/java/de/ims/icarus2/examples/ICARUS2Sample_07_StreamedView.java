@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.examples;
 
-import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
+import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
@@ -51,7 +51,7 @@ public class ICARUS2Sample_07_StreamedView {
 
 		// Register our corpus manifest
 		ManifestRegistry manifestRegistry = corpusManager.getManifestRegistry();
-		CoNLLTemplates.registerTeplates(manifestRegistry);
+		Template.applyTemplates(manifestRegistry, Template.CONLL);
 		ManifestXmlReader.builder()
 			.registry(manifestRegistry)
 			.useImplementationDefaults()

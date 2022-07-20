@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import de.ims.icarus2.common.formats.conll.CoNLLTemplates;
+import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.io.FileManager;
 import de.ims.icarus2.model.api.registry.CorpusManager;
@@ -67,7 +67,7 @@ public class ICARUS2Sample_08_CustomizeManager {
 
 		// Register our corpus manifest
 		ManifestRegistry manifestRegistry = corpusManager.getManifestRegistry();
-		CoNLLTemplates.registerTeplates(manifestRegistry);
+		Template.applyTemplates(manifestRegistry, Template.CONLL);
 		ManifestXmlReader.builder()
 			.registry(manifestRegistry)
 			.useImplementationDefaults()

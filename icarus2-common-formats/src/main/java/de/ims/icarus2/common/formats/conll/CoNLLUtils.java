@@ -33,4 +33,7 @@ public class CoNLLUtils {
 	public static URL getCorpusUrl() {
 		return CoNLLUtils.class.getResource(CORPUS_NAME);
 	}
+
+	public static final String CONLL09_TEMPLATE = "common.format.conll09";
+	public static final String CONLL09_SCHEMA_TEMPLATE = "common.format.conll09.schema";
 }

@@ -53,7 +53,7 @@ public class FileDriverUtils {
 
 	// GENERAL PROPERTIES
 
-	public static final String PROPERTY_CONVERTER = SHARED_PROPERTY_PREFIX+".converter";
+	public static final String PROPERTY_CONVERTER = "commons.modulespec.converter";
 
 	// CHUNKING PROPERTIES
 

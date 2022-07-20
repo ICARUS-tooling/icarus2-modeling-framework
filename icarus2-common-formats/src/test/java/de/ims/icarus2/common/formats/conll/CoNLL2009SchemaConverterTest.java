@@ -34,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import de.ims.icarus2.IcarusApiException;
+import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.common.formats.conll.CoNLL2009Converter.CoNLL09Config;
 import de.ims.icarus2.common.formats.conll.CoNLL2009Converter.LayerConfig;
 import de.ims.icarus2.filedriver.Converter;
@@ -118,7 +119,7 @@ class CoNLL2009SchemaConverterTest {
 					.build();
 
 			ManifestRegistry registry = manager.getManifestRegistry();
-			CoNLLTemplates.registerTeplates(registry);
+			Template.applyTemplates(registry, Template.CONLL);
 
 			ManifestFactory factory = new DefaultManifestFactory(
 					ManifestLocation.builder()
@@ -133,7 +134,7 @@ class CoNLL2009SchemaConverterTest {
 							.addLocationManifest(factory.create(LocationManifest.class)
 									.setRootPathType(PathType.FILE)
 									.setRootPath(Paths.get(CoNLLUtils.getCorpusUrl().toURI()).toString()))
-							.setTemplateId(CoNLLTemplates.CONLL09_SCHEMA_TEMPLATE))
+							.setTemplateId(CoNLLUtils.CONLL09_SCHEMA_TEMPLATE))
 					.setId("test")
 					.setName("Test Corpus");
 

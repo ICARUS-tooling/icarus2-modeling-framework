@@ -68,8 +68,9 @@
 						<imf:property name="de.ims.icarus2.filedriver.loadOnConnect" valueType="boolean">true</imf:property>
 						<imf:property name="de.ims.icarus2.filedriver.encoding">UTF-8</imf:property>
 					</imf:properties>	
-					<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />				
-					<imf:module id="de.ims.icarus2.filedriver.converter">
+					<imf:implementation classname="de.ims.icarus2.filedriver.DefaultFileDriverFactory" factory="true" />	
+					<imf:moduleSpec id="commons.modulespec.converter" multiplicity="one" />		
+					<imf:module id="converter" moduleSpecId="commons.modulespec.converter">
 						<imf:implementation classname="de.ims.icarus2.filedriver.schema.DefaultSchemaConverterFactory" factory="true">
 							<imf:properties>
 								<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
