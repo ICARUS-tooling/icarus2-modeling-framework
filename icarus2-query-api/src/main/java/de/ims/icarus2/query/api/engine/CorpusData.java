@@ -69,6 +69,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.util.Graph;
+import de.ims.icarus2.model.util.ModelGraph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
@@ -221,7 +222,7 @@ public abstract class CorpusData implements AutoCloseable {
 			}
 
 			// Create a complete dependency graph of all (and only those) layers included in the scope
-			layerGraph = Graph.layerGraph(scope.getLayers(), scope::containsLayer, DependencyType.STRONG);
+			layerGraph = ModelGraph.layerGraph(scope.getLayers(), scope::containsLayer, DependencyType.STRONG);
 
 			annotationSources = new Reference2ObjectOpenHashMap<>();
 

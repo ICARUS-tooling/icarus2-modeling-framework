@@ -50,6 +50,7 @@ import de.ims.icarus2.model.api.view.streamed.StreamedCorpusView;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.util.Graph;
+import de.ims.icarus2.model.util.ModelGraph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.query.api.Query;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -525,7 +526,7 @@ public class QueryEngine implements AutoCloseable {
 
 			// Populate the scope further via transitive dependencies
 			if(!pendingLayers.isEmpty()) {
-				Graph<Layer> graph = Graph.layerGraph(pendingLayers, Graph.acceptAll());
+				Graph<Layer> graph = ModelGraph.layerGraph(pendingLayers, Graph.acceptAll());
 				graph.forEachNode(allLayers::add);
 			}
 

@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -31,14 +30,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import de.ims.icarus2.model.api.corpus.Context;
-import de.ims.icarus2.model.api.corpus.Corpus;
-import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.DependencyType;
-import de.ims.icarus2.model.api.layer.FragmentLayer;
-import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.layer.Layer;
-import de.ims.icarus2.model.api.layer.LayerGroup;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -51,151 +42,24 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
  */
 public class Graph<E extends Object> {
 
-	private final static int TYPE_UNKNOWN = 0;
-	private final static int TYPE_CONTEXT = 1;
-	private final static int TYPE_GROUP = 2;
-	private final static int TYPE_LAYER = 3;
-
 	private static final Predicate<Object> ACCEPT_ALL = o -> true;
 	@SuppressWarnings("unchecked")
-	public static <E extends Object> Predicate<E> acceptAll() {
+	public static <E> Predicate<E> acceptAll() {
 		return (Predicate<E>) ACCEPT_ALL;
 	}
 
 	private static final Predicate<Object> ACCEPT_NONE = o -> true;
 	@SuppressWarnings("unchecked")
-	public static <E extends Object> Predicate<E> acceptNone() {
+	public static <E> Predicate<E> acceptNone() {
 		return (Predicate<E>) ACCEPT_NONE;
 	}
 
-	public static <E extends Object> Predicate<E> acceptRoots(Graph<E> graph) {
+	public static <E> Predicate<E> acceptRoots(Graph<E> graph) {
 		return o -> graph.incomingCount(o)==0;
 	}
 
-	public static <E extends Object> Predicate<E> acceptLeafs(Graph<E> graph) {
+	public static <E> Predicate<E> acceptLeafs(Graph<E> graph) {
 		return o -> graph.outgoingCount(o)==0;
-	}
-
-	public static Predicate<LayerGroup> groupsForContext(Context context)  {
-		requireNonNull(context);
-
-		return group -> group.getContext()==context;
-	}
-
-	public static Predicate<Layer> layersForContext(Context context)  {
-		requireNonNull(context);
-
-		return layer -> layer.getContext()==context;
-	}
-
-	public static Predicate<Layer> layersForGroup(LayerGroup group)  {
-		requireNonNull(group);
-
-		return layer -> layer.getLayerGroup()==group;
-	}
-
-	// CONTEXTS factories
-
-	public static Graph<Context> contextGraph(Context rootContext, Predicate<? super Context> filter, DependencyType...dependencies) {
-		Graph<Context> graph = new Graph<>(Context.class, TYPE_CONTEXT);
-		graph.fillWithMapper(Collections.singleton(rootContext), contextMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<Context> contextGraph(Collection<? extends Context> rootContexts, Predicate<? super Context> filter, DependencyType...dependencies) {
-		Graph<Context> graph = new Graph<>(Context.class, TYPE_CONTEXT);
-		graph.fillWithMapper(rootContexts, contextMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<Context> contextGraph(Corpus corpus, Predicate<? super Context> filter, DependencyType...dependencies) {
-		Graph<Context> graph = new Graph<>(Context.class, TYPE_CONTEXT);
-		graph.fillWithMapper(corpus.getRootContexts(), contextMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	// GROUPS factories
-
-	public static Graph<LayerGroup> groupGraph(LayerGroup rootGroup, Predicate<? super LayerGroup> filter, DependencyType...dependencies) {
-		Graph<LayerGroup> graph = new Graph<>(LayerGroup.class, TYPE_GROUP);
-		graph.fillWithMapper(Collections.singleton(rootGroup), groupMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<LayerGroup> groupGraph(Collection<? extends LayerGroup> rootGroups, Predicate<? super LayerGroup> filter, DependencyType...dependencies) {
-		Graph<LayerGroup> graph = new Graph<>(LayerGroup.class, TYPE_GROUP);
-		graph.fillWithMapper(rootGroups, groupMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<LayerGroup> groupGraph(Context rootContext, Predicate<? super LayerGroup> filter, DependencyType...dependencies) {
-		Graph<LayerGroup> graph = new Graph<>(LayerGroup.class, TYPE_GROUP);
-		graph.fillWithMapper(rootContext.getLayerGroups(), groupMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<LayerGroup> groupGraph(Corpus corpus, Predicate<? super LayerGroup> filter, DependencyType...dependencies) {
-		LazyCollection<LayerGroup> roots = LazyCollection.lazySet();
-		Consumer<Context> collector = c -> roots.add(c.getPrimaryLayer().getLayerGroup()); //TODO do we rly want to limit groups to a subset?
-
-		corpus.forEachRootContext(collector);
-		corpus.forEachVirtualContext(collector);
-
-		Graph<LayerGroup> graph = new Graph<>(LayerGroup.class, TYPE_GROUP);
-		graph.fillWithMapper(roots.getAsSet(), groupMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	// LAYERS factories
-
-	public static Graph<Layer> layerGraph(Layer rootLayer, Predicate<? super Layer> filter, DependencyType...dependencies) {
-		Graph<Layer> graph = new Graph<>(Layer.class, TYPE_LAYER);
-		graph.fillWithMapper(Collections.singleton(rootLayer), layerMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<Layer> layerGraph(Collection<? extends Layer> rootLayers, Predicate<? super Layer> filter, DependencyType...dependencies) {
-		Graph<Layer> graph = new Graph<>(Layer.class, TYPE_LAYER);
-		graph.fillWithMapper(rootLayers, layerMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<Layer> layerGraph(LayerGroup rootGroup, Predicate<? super Layer> filter, DependencyType...dependencies) {
-		Graph<Layer> graph = new Graph<>(Layer.class, TYPE_LAYER);
-		graph.fillWithMapper(rootGroup.getLayers(), layerMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	public static Graph<Layer> layerGraph(Context rootContext, Predicate<? super Layer> filter, DependencyType...dependencies) {
-		Graph<Layer> graph = new Graph<>(Layer.class, TYPE_LAYER);
-		graph.fillWithMapper(rootContext.getLayers(), layerMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-
-	}
-
-	public static Graph<Layer> layerGraph(Corpus rootCorpus, Predicate<? super Layer> filter, DependencyType...dependencies) {
-		Graph<Layer> graph = new Graph<>(Layer.class, TYPE_LAYER);
-		graph.fillWithMapper(rootCorpus.getLayers(), layerMapper(graph, toLookup(dependencies)), filter);
-		return graph;
-	}
-
-	/**
-	 * Converts an array of {@link DependencyType} instances into a lookup
-	 * {@link Set}. If the provided array is {@code null} or empty, the returned
-	 * set will contain all possible type {@link DependencyType#values() values}.
-	 *
-	 * @param dependencies
-	 * @return
-	 */
-	private static Set<DependencyType> toLookup(DependencyType[] dependencies) {
-		if(dependencies==null || dependencies.length==0) {
-			return EnumSet.allOf(DependencyType.class);
-		}
-
-		Set<DependencyType> result = EnumSet.noneOf(DependencyType.class);
-		CollectionUtils.feedItems(result, dependencies);
-
-		return result;
 	}
 
 	// UTILITY FILLERS
@@ -211,9 +75,9 @@ public class Graph<E extends Object> {
 	 *
 	 * @param childFunc
 	 */
-	public static <E extends Object> Graph<E> genericGraphFromSupplier(Class<E> contentClass, Supplier<? extends E> startingPoints,
+	public static <E> Graph<E> genericGraphFromSupplier(Class<E> contentClass, Supplier<? extends E> startingPoints,
 			Function<E, Collection<? extends E>> childFunc, Predicate<? super E> filter) {
-		Graph<E> graph = new Graph<E>(contentClass, TYPE_UNKNOWN);
+		Graph<E> graph = new Graph<E>(contentClass);
 
 		graph.fillWithFunction(startingPoints, childFunc, filter);
 
@@ -229,9 +93,9 @@ public class Graph<E extends Object> {
 	 * @param filter
 	 * @return
 	 */
-	public static <E extends Object> Graph<E> genericGraphFromCollection(Class<E> contentClass, Collection<? extends E> startingPoints,
+	public static <E> Graph<E> genericGraphFromCollection(Class<E> contentClass, Collection<? extends E> startingPoints,
 			Function<E, Collection<? extends E>> childFunc, Predicate<? super E> filter) {
-		Graph<E> graph = new Graph<E>(contentClass, TYPE_UNKNOWN);
+		Graph<E> graph = new Graph<E>(contentClass);
 
 		graph.fillWithFunction(startingPoints, childFunc, filter);
 
@@ -247,21 +111,25 @@ public class Graph<E extends Object> {
 	 * @param filter
 	 * @return
 	 */
-	public static <E extends Object> Graph<E> genericGraphFromArray(Class<E> contentClass, E[] startingPoints,
+	public static <E> Graph<E> genericGraphFromArray(Class<E> contentClass, E[] startingPoints,
 			Function<E, E[]> childFunc, Predicate<? super E> filter) {
-		Graph<E> graph = new Graph<E>(contentClass, TYPE_UNKNOWN);
+		Graph<E> graph = new Graph<E>(contentClass);
 
 		graph.fillWithFunction(startingPoints, childFunc, filter);
+
+		return graph;
+	}
+
+	public static <E> Graph<E> genericGraph(Class<E> contentClass,
+			Collection<? extends E> startingPoints, BiConsumer<E, Consumer<? super E>> mapper, Predicate<? super E> filter) {
+		Graph<E> graph = new Graph<E>(contentClass);
+
+		graph.fillWithMapper(startingPoints, mapper, filter);
 
 		return graph;
 	}
 
 	//TODO add genericGraph factory that uses the fillWithMapper
-
-	/**
-	 * One of the TYPE_CONTEXT, TYPE_GROUP, TYPE_LAYER constants
-	 */
-	private final int type;
 
 	private final Class<E> contentClass;
 
@@ -269,10 +137,11 @@ public class Graph<E extends Object> {
 
 	// CONSTRUCTORS
 
-	Graph(Class<E> contentClass, int type) {
+	private Graph(Class<E> contentClass) {
 		this.contentClass = requireNonNull(contentClass);
-		this.type = type;
 	}
+
+
 
 	// FILL METHODS
 
@@ -298,61 +167,6 @@ public class Graph<E extends Object> {
 
 		node(from, true).addOutgoing(to);
 		node(to, true).addIncoming(from);
-	}
-
-	public static BiConsumer<Layer, Consumer<? super Layer>> layerMapper(Graph<Layer> graph, Set<DependencyType> dependencies) {
-		return (source, action) -> {
-			if(dependencies.contains(DependencyType.STRONG)) {
-				source.getBaseLayers().forEach(action);
-			}
-
-			if(ModelUtils.isItemLayer(source)) {
-				ItemLayer itemLayer = (ItemLayer) source;
-				ItemLayer foundationLayer = itemLayer.getFoundationLayer();
-
-				if(foundationLayer!=null && dependencies.contains(DependencyType.FOUNDATION)) {
-					action.accept(foundationLayer);
-				}
-
-				ItemLayer boundaryLayer = itemLayer.getBoundaryLayer();
-
-				if(boundaryLayer!=null && dependencies.contains(DependencyType.BOUNDARY)) {
-					action.accept(boundaryLayer);
-				}
-
-				if(ModelUtils.isFragmentLayer(source)) {
-					FragmentLayer fragmentLayer = (FragmentLayer) source;
-					AnnotationLayer valueLayer = fragmentLayer.getValueLayer();
-
-					if(valueLayer!=null && dependencies.contains(DependencyType.VALUE)) {
-						action.accept(valueLayer);
-					}
-				}
-			}
-		};
-	}
-
-	public static BiConsumer<LayerGroup, Consumer<? super LayerGroup>> groupMapper(Graph<LayerGroup> graph, Set<DependencyType> dependencies) {
-		return (source, action) -> {
-			source.forEachDependency(d -> {
-				if(dependencies.contains(d.getType())) {
-					action.accept(d.getTarget());
-				}
-			});
-		};
-	}
-
-	public static BiConsumer<Context, Consumer<? super Context>> contextMapper(Graph<Context> graph, Set<DependencyType> dependencies) {
-		return (source, action) -> {
-			source.forEachLayerGroup(g -> {
-				g.forEachDependency(d -> {
-					Context target = d.getTarget().getContext();
-					if(source!=target && dependencies.contains(d.getType())) {
-						action.accept(target);
-					}
-				});
-			});
-		};
 	}
 
 	/**
@@ -573,18 +387,6 @@ public class Graph<E extends Object> {
 
 	public Class<E> getContentClass() {
 		return contentClass;
-	}
-
-	public boolean isContextGraph() {
-		return type==TYPE_CONTEXT;
-	}
-
-	public boolean isGroupGraph() {
-		return type==TYPE_GROUP;
-	}
-
-	public boolean isLayerGraph() {
-		return type==TYPE_LAYER;
 	}
 
 	private void setFlagForNodes(int flag, boolean active) {

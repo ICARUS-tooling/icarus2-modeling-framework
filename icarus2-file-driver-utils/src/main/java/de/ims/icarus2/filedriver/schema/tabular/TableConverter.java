@@ -110,7 +110,6 @@ import de.ims.icarus2.model.api.registry.LayerMemberFactory;
 import de.ims.icarus2.model.manifest.api.ContainerManifestBase;
 import de.ims.icarus2.model.manifest.api.ContainerType;
 import de.ims.icarus2.model.manifest.api.ContextManifest;
-import de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest;
 import de.ims.icarus2.model.manifest.api.ItemLayerManifestBase;
 import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
@@ -119,6 +118,7 @@ import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.standard.members.container.AbstractImmutableContainer;
 import de.ims.icarus2.model.util.Graph;
+import de.ims.icarus2.model.util.ModelGraph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.IcarusUtils;
@@ -205,15 +205,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		encoding = driver.getEncoding();
 		memberFactory = driver.newMemberFactory();
-
-	}
-
-	/**
-	 * @see de.ims.icarus2.model.api.driver.mods.DriverModule#readManifest(de.ims.icarus2.model.manifest.api.DriverManifest.ModuleManifest)
-	 */
-	@Override
-	public void readManifest(ModuleManifest manifest) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -679,7 +670,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			final Context context = group.getContext();
 
 			// Find all (indirect) dependencies of the group within entire context
-			final Graph<Layer> graph = Graph.layerGraph(group, Graph.layersForContext(context));
+			final Graph<Layer> graph = ModelGraph.layerGraph(group, ModelGraph.layersForContext(context));
 
 			graph.walkGraph(group.getLayers(), false, layer -> {
 
