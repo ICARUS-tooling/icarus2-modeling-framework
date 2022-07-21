@@ -20,6 +20,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
@@ -93,25 +94,19 @@ public class LazyStore<F extends Object, K extends Object> {
 		}
 	}
 
-	public synchronized @Nullable F tryLookup(K key) {
+	public synchronized Optional<F> tryLookup(K key) {
 		requireNonNull(key);
 		ensureLookup();
 
-		return lookup.get(adjust(key));
+		return Optional.ofNullable(lookup.get(adjust(key)));
 	}
 
 	public synchronized F lookup(K key) {
-		F value = tryLookup(key);
-		if(value==null)
-			throw new IllegalArgumentException("Unknown key: "+key);
-		return value;
+		return tryLookup(key).orElseThrow(() -> new IllegalArgumentException("Unknown key: "+key));
 	}
 
 	public synchronized F lookup(K key, Function<K, ? extends RuntimeException> exGen) {
-		F value = tryLookup(key);
-		if(value==null)
-			throw exGen.apply(key);
-		return value;
+		return tryLookup(key).orElseThrow(() -> exGen.apply(key));
 	}
 
 	public synchronized boolean hasKey(K key) {

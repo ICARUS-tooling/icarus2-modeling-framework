@@ -90,7 +90,7 @@ public enum DefaultLayerType implements LayerType, StringResource {
 	private static final LazyStore<DefaultLayerType, String> _lookup =
 			LazyStore.forStringResource(DefaultLayerType.class, true);
 
-	public static Optional<LayerType> forId(String id) {
-		return Optional.ofNullable(_lookup.tryLookup(id));
+	public static Optional<? extends LayerType> forId(String id) {
+		return _lookup.tryLookup(id);
 	}
 }

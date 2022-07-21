@@ -156,7 +156,7 @@ public abstract class HorizontalMarker {
 			= name -> EvaluationUtils.forUnknownIdentifier(name, "marker");
 
 		public static Type parseName(String s) {
-			Type type = sequenceStore.tryLookup(s);
+			Type type = sequenceStore.tryLookup(s).orElse(null);
 			if(type==null) {
 				type = treeHierarchyStore.lookup(s, ERROR);
 			}
