@@ -25,11 +25,6 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +34,10 @@ import de.ims.icarus2.model.api.registry.MetadataRegistry;
 import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.io.resource.IOResource;
 import de.ims.icarus2.util.xml.jaxb.JAXBGate;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Markus Gärtner
@@ -81,11 +80,13 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	 */
 	@Override
 	public void open() {
-		try {
-			loadBuffer();
-		} catch (Exception e) {
-			log.error("Failed to load value storage from file", e); //$NON-NLS-1$
-			//FIXME propagate error?
+		if(getResource().getAccessMode().isRead()) {
+			try {
+				loadBuffer();
+			} catch (Exception e) {
+				log.error("Failed to load value storage from file", e); //$NON-NLS-1$
+				//FIXME propagate error?
+			}
 		}
 	}
 
@@ -151,7 +152,7 @@ public class JAXBMetadataRegistry extends JAXBGate<JAXBMetadataRegistry.StorageB
 	 * mapping was loaded.
 	 */
 	private synchronized boolean checkStorage() {
-		if(entries.isEmpty()) {
+		if(entries.isEmpty() && getResource().getAccessMode().isRead()) {
 			try {
 				loadBuffer();
 			} catch (Exception e) {

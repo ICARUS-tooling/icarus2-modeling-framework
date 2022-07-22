@@ -87,11 +87,13 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	 */
 	@Override
 	public synchronized void open() {
-		try {
-			load();
-		} catch (IOException e) {
-			log.error("Failed to load value storage", e);
-			//FIXME propagate error?
+		if(resource.getAccessMode().isRead()) {
+			try {
+				load();
+			} catch (IOException e) {
+				log.error("Failed to load value storage", e);
+				//FIXME propagate error?
+			}
 		}
 	}
 
@@ -134,7 +136,8 @@ public class PlainMetadataRegistry implements MetadataRegistry {
 	 * mapping was loaded.
 	 */
 	private synchronized boolean checkStorage() {
-		if(entries.isEmpty()) {
+		// Attempt automatic reload only when underlying resource allows read access
+		if(entries.isEmpty() && resource.getAccessMode().isRead()) {
 			try {
 				load();
 			} catch (IOException e) {
