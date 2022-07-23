@@ -138,6 +138,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 		return result;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Optional<LayerType> getLayerType(String name) {
 		requireNonNull(name);
@@ -147,7 +148,7 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 			if(type!=null) {
 				return Optional.of(type);
 			}
-			return DefaultLayerType.forId(name);
+			return (Optional<LayerType>) DefaultLayerType.forId(name);
 		}
 	}
 
