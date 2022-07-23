@@ -98,6 +98,7 @@ subprojects {
 		json
 		apiguardian
 		jaxb
+		cli
 		
 		// GUI related stuff
 		jgoodies
@@ -173,6 +174,10 @@ subprojects {
 		jaxb "com.sun.xml.bind:jaxb-impl:${versions.jaxb}"
 		// https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-core
 		jaxb "com.sun.xml.bind:jaxb-core:${versions.jaxb}"
+		
+		// https://mvnrepository.com/artifact/info.picocli/picocli
+		cli "info.picocli:picocli:${versions.picocli}"
+		
 			
 		// TEST ENVIRONMENT
 		

@@ -31,6 +31,7 @@ import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.standard.io.DefaultFileStructure;
+import de.ims.icarus2.model.standard.registry.metadata.Format;
 import de.ims.icarus2.model.standard.registry.metadata.JAXBMetadataRegistry;
 import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
 import de.ims.icarus2.util.annotations.TestableImplementation;
@@ -70,22 +71,6 @@ import de.ims.icarus2.util.io.resource.IOResource;
 public abstract class CorpusCentralFileMetadataPolicy<O extends Object> implements MetadataStoragePolicy<O> {
 
 	public static final String CORPUS_FILENAME = "corpus";
-
-	public enum Format {
-		XML(JAXBMetadataRegistry.DEFAULT_FILE_ENDING),
-		PLAIN(PlainMetadataRegistry.DEFAULT_FILE_ENDING),
-		;
-
-		private final String fileSuffix;
-
-		private Format(String fileSuffix) {
-			this.fileSuffix = fileSuffix;
-		}
-
-		public String getFileSuffix() {
-			return fileSuffix;
-		}
-	}
 
 	private final Format format;
 
