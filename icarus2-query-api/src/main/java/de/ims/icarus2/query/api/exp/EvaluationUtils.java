@@ -442,31 +442,31 @@ public class EvaluationUtils {
 		return value!=null;
 	}
 
-	/** Clones the given array of expressions into integer {@link Expression<?>}[] */
+	/** Runs {@link #checkIntegerType(Expression)} for each expression in the argument list. */
 	public static Expression<?>[] ensureInteger(Expression<?>...expressions) {
 		Stream.of(expressions).forEach(EvaluationUtils::checkIntegerType);
 		return expressions;
 	}
 
-	/** Clones the given array of expressions into floating point {@link Expression<?>}[] */
+	/** Runs {@link #checkFloatingPointType(Expression)} for each expression in the argument list. */
 	public static Expression<?>[] ensureFloatingPoint(Expression<?>...expressions) {
 		Stream.of(expressions).forEach(EvaluationUtils::checkFloatingPointType);
 		return expressions;
 	}
 
-	/** Clones the given array of expressions into {@link Expression<?>}[] */
+	/** Runs {@link #checkNumericalType(Expression)} for each expression in the argument list. */
 	public static Expression<?>[] ensureNumeric(Expression<?>...expressions) {
 		Stream.of(expressions).forEach(EvaluationUtils::checkNumericalType);
 		return expressions;
 	}
 
-	/** Clones the given array of expressions into {@link BooleanExpression}[] */
+	/** Runs {@link #checkBooleanType(Expression)} for each expression in the argument list. */
 	public static Expression<?>[] ensureBoolean(Expression<?>...expressions) {
 		Stream.of(expressions).forEach(EvaluationUtils::checkBooleanType);
 		return expressions;
 	}
 
-	/** Clones the given array of expressions into {@link TextExpression}[] */
+	/** Runs {@link #checkTextType(Expression)} for each expression in the argument list. */
 	public static Expression<?>[] ensureText(Expression<?>...expressions) {
 		Stream.of(expressions).forEach(EvaluationUtils::checkTextType);
 		return expressions;
