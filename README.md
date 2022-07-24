@@ -24,14 +24,9 @@ At its very core is a framework for describing corpus composition and content vi
 	<imf:templates>
 		<imf:context id="exampleContext">
 			<imf:layerGroup primaryLayer="sentences" id="surface">
-				<imf:itemLayer id="tokens">
-					<imf:hierarchy>
-						<imf:container containerType="list" />
-					</imf:hierarchy>
-				</imf:itemLayer>
+				<imf:itemLayer id="tokens" />
 				<imf:itemLayer id="sentences">
 					<imf:hierarchy>
-						<imf:container containerType="list" />
 						<imf:container containerType="span" />
 					</imf:hierarchy>
 				</imf:itemLayer>
