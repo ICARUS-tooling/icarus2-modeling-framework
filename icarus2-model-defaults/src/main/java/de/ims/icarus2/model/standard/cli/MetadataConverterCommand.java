@@ -53,7 +53,7 @@ import picocli.CommandLine.Spec;
 		version = "1.0",
 		showDefaultValues = true
 )
-public class MetadataConverter implements Callable<Integer> {
+public class MetadataConverterCommand implements Callable<Integer> {
 
 	private static final String FORMATS = "XML or PLAIN";
 
@@ -158,7 +158,7 @@ public class MetadataConverter implements Callable<Integer> {
 	}
 
 	public static void main(String[] args) {
-		int exitCode = new CommandLine(new MetadataConverter()).execute(args);
+		int exitCode = new CommandLine(new MetadataConverterCommand()).execute(args);
 		System.exit(exitCode);
 	}
 

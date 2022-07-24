@@ -57,7 +57,7 @@ import picocli.CommandLine;
  * @author Markus Gärtner
  *
  */
-class MetadataConverterTest {
+class MetadataConverterCommandTest {
 
 	private static final Format[] FORMATS = Format.values();
 	private static final Charset[] ENCODINGS = {
@@ -248,7 +248,7 @@ class MetadataConverterTest {
 
 	@Test
 	void testHelp() {
-		new CommandLine(new MetadataConverter()).execute("-h");
+		new CommandLine(new MetadataConverterCommand()).execute("-h");
 	}
 
 	private static final String KEY_1 = "some.random.key";
@@ -332,7 +332,7 @@ class MetadataConverterTest {
 		List<String> args = new ObjectArrayList<>();
 		config.applyTo(args::add);
 
-		return new CommandLine(new MetadataConverter()).execute(CollectionUtils.toArray(args, String[]::new));
+		return new CommandLine(new MetadataConverterCommand()).execute(CollectionUtils.toArray(args, String[]::new));
 	}
 
 	static MetadataRegistry makeRegistry(IOResource resource, Format format, Charset encoding) {
