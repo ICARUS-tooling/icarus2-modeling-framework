@@ -16,13 +16,10 @@
  */
 package de.ims.icarus2.model.standard.cli;
 
-import static de.ims.icarus2.util.lang.Primitives._int;
-
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 
 import com.google.common.io.Files;
 
@@ -31,6 +28,7 @@ import de.ims.icarus2.model.standard.registry.metadata.Format;
 import de.ims.icarus2.model.standard.registry.metadata.JAXBMetadataRegistry;
 import de.ims.icarus2.model.standard.registry.metadata.PlainMetadataRegistry;
 import de.ims.icarus2.util.AccessMode;
+import de.ims.icarus2.util.cli.CliCommand;
 import de.ims.icarus2.util.io.resource.FileResource;
 import de.ims.icarus2.util.io.resource.IOResource;
 import picocli.CommandLine;
@@ -53,7 +51,7 @@ import picocli.CommandLine.Spec;
 		version = "1.0",
 		showDefaultValues = true
 )
-public class MetadataConverterCommand implements Callable<Integer> {
+public class MetadataConverterCommand extends CliCommand {
 
 	private static final String FORMATS = "XML or PLAIN";
 
@@ -80,9 +78,6 @@ public class MetadataConverterCommand implements Callable<Integer> {
 
 	@Option(names = {"-v", "--verbose"}, description = "Print human readable info during process")
 	private boolean verbose;
-
-	private Integer FAILED = _int(1);
-	private Integer SUCCESS = _int(0);
 
 	private boolean tryDeriveFormat(Path file, boolean isSource) {
 		String suffix = Files.getFileExtension(file.getFileName().toString());
