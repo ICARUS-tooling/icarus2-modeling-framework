@@ -33,7 +33,7 @@ import de.ims.icarus2.query.api.engine.matcher.Matcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchAccumulator;
-import de.ims.icarus2.query.api.engine.result.MatchBuffer;
+import de.ims.icarus2.query.api.engine.result.MatchBuilder;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 import de.ims.icarus2.query.api.engine.result.MatchSink;
 import de.ims.icarus2.query.api.engine.result.MatchSource;
@@ -149,11 +149,11 @@ public abstract class LaneBridge implements MatchCollector, Matcher<Container>,
 
 		public static Builder builder() { return new Builder(); }
 
-		private final MatchBuffer buffer;
+		private final MatchBuilder buffer;
 
 		private Uncached(Builder builder) {
 			super(builder);
-			buffer = new MatchBuffer(builder.bufferSize());
+			buffer = new MatchBuilder(builder.bufferSize());
 		}
 
 		@Override

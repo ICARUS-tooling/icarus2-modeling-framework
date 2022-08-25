@@ -27,14 +27,14 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  * @author Markus Gärtner
  *
  */
-public class MatchBuffer implements MatchSource, MatchSink {
+public class MatchBuilder implements MatchSource, MatchSink {
 
 	private long index = UNSET_LONG;
 	private int[] m_node;
 	private int[] m_index;
 	private int size = 0;
 
-	public MatchBuffer(int initialSize) {
+	public MatchBuilder(int initialSize) {
 		m_node = new int[initialSize];
 		m_index = new int[initialSize];
 	}
