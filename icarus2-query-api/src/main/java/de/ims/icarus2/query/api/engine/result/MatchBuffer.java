@@ -79,7 +79,7 @@ public class MatchBuffer implements MatchSource, MatchSink {
 
 	@Override
 	public Match toMatch() {
-		return DefaultMatch.of(index, size, m_node, m_index);
+		return MatchImpl.of(index, size, m_node, m_index);
 	}
 
 	@Override

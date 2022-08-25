@@ -33,7 +33,7 @@ import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
  *
  */
 @NotThreadSafe
-public final class DefaultMultiMatch implements MultiMatch {
+public final class MultiMatchImpl implements MultiMatch {
 
 	/** Total number of mappings for individual matches. */
 	private final int[] sizes;
@@ -59,7 +59,7 @@ public final class DefaultMultiMatch implements MultiMatch {
 	 * @param m_node combined list of all mapping ids
 	 * @param m_index combined list of all mapping targets
 	 */
-	public DefaultMultiMatch(int[] sizes, int[] offsets, long[] indices, int[] m_node, int[] m_index) {
+	public MultiMatchImpl(int[] sizes, int[] offsets, long[] indices, int[] m_node, int[] m_index) {
 		checkArgument("size mismatch", sizes.length==offsets.length && offsets.length == indices.length);
 		checkArgument("shared buffer size mismatch", m_node.length == m_index.length);
 
@@ -110,7 +110,7 @@ public final class DefaultMultiMatch implements MultiMatch {
 		if(obj==this) {
 			return true;
 		} else if(obj instanceof MultiMatch) {
-			if(obj instanceof DefaultMultiMatch && obj.hashCode()!=hashCode()) {
+			if(obj instanceof MultiMatchImpl && obj.hashCode()!=hashCode()) {
 				return false;
 			}
 			//TODO

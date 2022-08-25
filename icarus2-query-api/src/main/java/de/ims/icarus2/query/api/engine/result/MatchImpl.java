@@ -27,24 +27,24 @@ import java.util.Arrays;
  * @author Markus Gärtner
  *
  */
-public final class DefaultMatch implements Match {
+public final class MatchImpl implements Match {
 
 	private static final int[] EMPTY = {};
 
-	public static DefaultMatch empty(long index) {
-		return new DefaultMatch(index, EMPTY, EMPTY);
+	public static MatchImpl empty(long index) {
+		return new MatchImpl(index, EMPTY, EMPTY);
 	}
 
-	public static DefaultMatch of(long index, int[] m_node, int[] m_index) {
-		return new DefaultMatch(index, m_node, m_index);
+	public static MatchImpl of(long index, int[] m_node, int[] m_index) {
+		return new MatchImpl(index, m_node, m_index);
 	}
 
-	public static DefaultMatch of(long index, int size, int[] m_node, int[] m_index) {
-		return new DefaultMatch(index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
+	public static MatchImpl of(long index, int size, int[] m_node, int[] m_index) {
+		return new MatchImpl(index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
 	}
 
-	public static DefaultMatch of(long index, int offset, int size, int[] m_node, int[] m_index) {
-		return new DefaultMatch(index, Arrays.copyOfRange(m_node, offset, offset+size),
+	public static MatchImpl of(long index, int offset, int size, int[] m_node, int[] m_index) {
+		return new MatchImpl(index, Arrays.copyOfRange(m_node, offset, offset+size),
 				Arrays.copyOfRange(m_index, offset, offset+size));
 	}
 
@@ -54,7 +54,7 @@ public final class DefaultMatch implements Match {
 
 	private int hash = UNSET_INT;
 
-	private DefaultMatch(long index, int[] m_node, int[] m_index) {
+	private MatchImpl(long index, int[] m_node, int[] m_index) {
 		this.index = index;
 		this.m_node = m_node;
 		this.m_index = m_index;
@@ -82,8 +82,8 @@ public final class DefaultMatch implements Match {
 	public boolean equals(Object obj) {
 		if(obj==this) {
 			return true;
-		} else if(obj instanceof DefaultMatch) {
-			DefaultMatch other = (DefaultMatch) obj;
+		} else if(obj instanceof MatchImpl) {
+			MatchImpl other = (MatchImpl) obj;
 			return index==other.index
 					&& Arrays.equals(m_node, other.m_node)
 					&& Arrays.equals(m_index, other.m_index);

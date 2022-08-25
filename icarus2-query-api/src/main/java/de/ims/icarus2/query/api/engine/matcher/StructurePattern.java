@@ -82,7 +82,7 @@ import de.ims.icarus2.query.api.engine.matcher.mark.LevelMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
-import de.ims.icarus2.query.api.engine.result.DefaultMatch;
+import de.ims.icarus2.query.api.engine.result.MatchImpl;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
 import de.ims.icarus2.query.api.engine.result.MatchSink;
@@ -2895,7 +2895,7 @@ public class StructurePattern {
 
 		@Override
 		public Match toMatch() {
-			return DefaultMatch.of(index, entry, m_node, m_index);
+			return MatchImpl.of(index, entry, m_node, m_index);
 		}
 
 		@Override

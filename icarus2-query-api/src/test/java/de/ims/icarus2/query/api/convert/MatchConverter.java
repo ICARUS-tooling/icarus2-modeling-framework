@@ -29,7 +29,7 @@ import org.junit.jupiter.params.converter.ArgumentConverter;
 import org.junit.platform.commons.util.AnnotationUtils;
 
 import de.ims.icarus2.query.api.annotation.MatchFormat;
-import de.ims.icarus2.query.api.engine.result.DefaultMatch;
+import de.ims.icarus2.query.api.engine.result.MatchImpl;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.test.util.convert.ComponentConverter;
 
@@ -113,7 +113,7 @@ public class MatchConverter implements ComponentConverter, ArgumentConverter {
 		String[] mappings = s.substring(header+1).split(format.delimiter());
 
 		if(mappings.length==0) {
-			return DefaultMatch.empty(index);
+			return MatchImpl.empty(index);
 		}
 
 		int[] m_node = new int[mappings.length];
@@ -130,6 +130,6 @@ public class MatchConverter implements ComponentConverter, ArgumentConverter {
 			m_index[i] = Integer.parseInt(m.substring(sep+format.assignment().length()));
 		}
 
-		return DefaultMatch.of(index, m_node, m_index);
+		return MatchImpl.of(index, m_node, m_index);
 	}
 }

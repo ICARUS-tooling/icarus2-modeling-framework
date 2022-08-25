@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 
 import de.ims.icarus2.query.api.engine.result.Match;
-import de.ims.icarus2.query.api.engine.result.DefaultMatch;
+import de.ims.icarus2.query.api.engine.result.MatchImpl;
 import de.ims.icarus2.util.collections.ArrayUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -50,7 +50,7 @@ public class MatchMaker {
 	public MatchMaker match(int...indices) {
 		int[] mappingIds = new int[indices.length];
 		ArrayUtils.fillAscending(mappingIds);
-		return match(DefaultMatch.of(index, mappingIds, indices));
+		return match(MatchImpl.of(index, mappingIds, indices));
 	}
 
 	public Match[] make() {

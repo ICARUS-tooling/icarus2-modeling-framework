@@ -153,7 +153,7 @@ public class MatchAccumulator implements MatchSource, MatchSink {
 		checkState("Cursor not at a valid position", cursor!=UNSET_INT);
 		Entry entry = entries.get(cursor);
 		Block block = blocks.get(entry.block);
-		return DefaultMatch.of(entry.index, entry.offset, entry.size, block.m_nodes, block.m_indices);
+		return MatchImpl.of(entry.index, entry.offset, entry.size, block.m_nodes, block.m_indices);
 	}
 
 	@Override

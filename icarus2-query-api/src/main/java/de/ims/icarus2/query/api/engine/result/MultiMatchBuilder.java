@@ -68,7 +68,7 @@ public class MultiMatchBuilder implements MatchSink {
 	 * of {@link Match} data buffered in this builder. {@link #reset() Resets} the
 	 * builder afterwards to . */
 	public MultiMatch build() {
-		MultiMatch match = new DefaultMultiMatch(sizes.toIntArray(), offsets.toIntArray(),
+		MultiMatch match = new MultiMatchImpl(sizes.toIntArray(), offsets.toIntArray(),
 				indices.toLongArray(), m_node.toIntArray(), m_index.toIntArray());
 		reset();
 		return match;
