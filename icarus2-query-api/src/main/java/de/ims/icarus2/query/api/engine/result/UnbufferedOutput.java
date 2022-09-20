@@ -75,8 +75,8 @@ public abstract class UnbufferedOutput<T> extends AbstractOutput {
 	public void discard() {
 		try {
 			resultSink.discard();
-		} catch (InterruptedException e1) {
-			log.error("Disrupted while discarding result sink data");
+		} catch (InterruptedException e) {
+			log.error("Disrupted while discarding result sink data", e);
 		}
 	}
 
@@ -85,7 +85,7 @@ public abstract class UnbufferedOutput<T> extends AbstractOutput {
 		try {
 			resultSink.finish();
 		} catch (InterruptedException e) {
-			log.info("Finalizing of result sink got interrupted");
+			log.info("Finalizing of result sink got interrupted", e);
 			discard();
 		}
 	}
