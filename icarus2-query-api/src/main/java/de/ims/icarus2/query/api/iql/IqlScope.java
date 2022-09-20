@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -38,8 +40,12 @@ public class IqlScope extends IqlUnique {
 	/**
 	 * Defines the members of this scope.
 	 */
-	@JsonProperty(value=IqlTags.LAYERS, required=true)
+	@JsonProperty(value=IqlTags.LAYERS)
 	private List<IqlLayer> layers = new ArrayList<>();
+
+	@JsonProperty(value=IqlTags.FULL)
+	@JsonInclude(Include.NON_DEFAULT)
+	private boolean full = false;
 
 	@Override
 	public IqlType getType() { return IqlType.SCOPE; }
@@ -47,8 +53,14 @@ public class IqlScope extends IqlUnique {
 	@Override
 	public void checkIntegrity() {
 		super.checkIntegrity();
-		checkCollectionNotEmpty(layers, IqlTags.LAYERS);
+		if(!full) {
+			checkCollectionNotEmpty(layers, IqlTags.LAYERS);
+		}
 	}
+
+	public boolean isFull() { return full; }
+
+	public void setFull(boolean full) { this.full = full; }
 
 	public List<IqlLayer> getLayers() { return CollectionUtils.unmodifiableListProxy(layers); }
 

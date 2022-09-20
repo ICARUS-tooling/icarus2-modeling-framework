@@ -79,6 +79,7 @@ import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
 import de.ims.icarus2.query.api.iql.IqlProperty;
 import de.ims.icarus2.query.api.iql.IqlQuery;
+import de.ims.icarus2.query.api.iql.IqlScope;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.query.api.iql.IqlUtils;
 import de.ims.icarus2.util.AbstractBuilder;
@@ -488,7 +489,12 @@ public class QueryEngine implements AutoCloseable {
 			Set<Layer> pendingLayers = new ReferenceOpenHashSet<>();
 
 			if(stream.getScope().isPresent()) {
-				rawLayers = stream.getScope().get().getLayers();
+				IqlScope scope = stream.getScope().get();
+				if(scope.isFull()) {
+					return corpus.createCompleteScope();
+				}
+
+				rawLayers = scope.getLayers();
 			} else {
 				addTransitive = true;
 				rawLayers = stream.getLayers();

@@ -184,4 +184,6 @@ public final class IqlTags {
 	public static final String ARGUMENTS = IQL_NS_PREFIX+"arguments";
 
 	public static final String EXPRESSION_TYPE = IQL_NS_PREFIX+"expressionType";
+
+	public static final String FULL = IQL_NS_PREFIX+"full";
 }
