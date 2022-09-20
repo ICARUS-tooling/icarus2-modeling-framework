@@ -28,10 +28,16 @@ import java.net.URL;
 public class CoNLLUtils {
 
 	public static final String CORPUS_NAME = "icarus.conll09";
+	public static final String MANIFEST_NAME = "icarus_corpus.imf.xml";
 
 	/** Returns the URL for the small example corpus shipped with ICARUS2 */
 	public static URL getCorpusUrl() {
 		return CoNLLUtils.class.getResource(CORPUS_NAME);
+	}
+
+	/** Returns the URL for the manifest that describes the {@link #getClass() example corpus} */
+	public static URL getManifestUrl() {
+		return CoNLLUtils.class.getResource(MANIFEST_NAME);
 	}
 
 	public static final String CONLL09_TEMPLATE = "common.format.conll09";
