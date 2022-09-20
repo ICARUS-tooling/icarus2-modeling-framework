@@ -17,7 +17,6 @@
 package de.ims.icarus2.model.standard.view.streamed;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static de.ims.icarus2.test.util.Triple.triple;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -52,7 +51,6 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
-import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualDriver;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualItemLayerManager;
@@ -77,11 +75,9 @@ class DefaultStreamedCorpusViewTest implements StreamedCorpusViewTest<DefaultStr
 
 	@BeforeEach
 	void setUp() {
-		try(ManifestBuilder builder = new ManifestBuilder(MANIFEST_FACTORY)) {
-			corpusManifest = createDefaultCorpusManifest();
+		corpusManifest = createDefaultCorpusManifest();
 
-			corpusManager = createDefaultCorpusManager(corpusManifest);
-		}
+		corpusManager = createDefaultCorpusManager(corpusManifest);
 	}
 
 	/**

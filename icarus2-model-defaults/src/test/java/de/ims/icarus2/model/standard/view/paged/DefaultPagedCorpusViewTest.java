@@ -17,7 +17,6 @@
 package de.ims.icarus2.model.standard.view.paged;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +39,6 @@ import de.ims.icarus2.model.manifest.api.ContextManifest;
 import de.ims.icarus2.model.manifest.api.CorpusManifest;
 import de.ims.icarus2.model.manifest.api.DriverManifest;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
-import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 import de.ims.icarus2.model.standard.corpus.DefaultCorpus;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualDriver;
 import de.ims.icarus2.model.standard.driver.virtual.VirtualItemLayerManager;
@@ -64,11 +62,9 @@ class DefaultPagedCorpusViewTest implements PagedCorpusViewTest<DefaultPagedCorp
 
 	@BeforeEach
 	void setUp() {
-		try(ManifestBuilder builder = new ManifestBuilder(MANIFEST_FACTORY)) {
-			corpusManifest = createDefaultCorpusManifest();
+		corpusManifest = createDefaultCorpusManifest();
 
-			corpusManager = createDefaultCorpusManager(corpusManifest);
-		}
+		corpusManager = createDefaultCorpusManager(corpusManifest);
 	}
 
 	/**
