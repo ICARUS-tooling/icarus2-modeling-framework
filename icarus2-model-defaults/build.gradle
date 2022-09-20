@@ -12,6 +12,5 @@ dependencies {
 
 configurations {
 	// external dependencies managed by root build.gradle
-	implementation.extendsFrom(cli)
 	testImplementation.extendsFrom(uuid)
 }
