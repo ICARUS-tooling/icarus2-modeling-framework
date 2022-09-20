@@ -63,6 +63,7 @@ public final class IOUtil {
 	public static final int MB = KB * 1024;
 	public static final int GB = MB * 1024;
 
+	public static final String DEFAULT_CHARSET_NAME = StandardCharsets.UTF_8.name();
 
 	private static final Logger log = LoggerFactory.getLogger(IOUtil.class);
 
@@ -208,7 +209,7 @@ public final class IOUtil {
 
     public static void copyStream(final InputStream in, final OutputStream out,
             int bufferSize) throws IOException {
-    	if(bufferSize==0) {
+    	if(bufferSize<=0) {
     		bufferSize = DEFAULT_BUFFER_SIZE;
     	}
         byte[] buf = new byte[bufferSize];
@@ -216,6 +217,7 @@ public final class IOUtil {
         while ((len = in.read(buf)) != -1) {
             out.write(buf, 0, len);
         }
+        out.flush();
     }
 
     /**
@@ -335,7 +337,7 @@ public final class IOUtil {
 		return new BufferedReader(new InputStreamReader(is, cs));
 	}
 
-	public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+	public static final Charset UTF8_CHARSET = StandardCharsets.UTF_8;
 
 	public static final String CHARSET_OPTION = "charset";
 	public static final String CHARSET_NAME_OPTION = "charsetName";

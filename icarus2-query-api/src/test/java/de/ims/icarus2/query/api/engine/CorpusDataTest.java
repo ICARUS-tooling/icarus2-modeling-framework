@@ -37,6 +37,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -88,7 +89,7 @@ class CorpusDataTest {
 	class ForCorpusBacked {
 
 
-		private CorpusData.CorpusBacked create(int...setup) throws SAXException, IOException, InterruptedException {
+		private CorpusData.CorpusBacked create(int...setup) throws SAXException, IOException, InterruptedException, IcarusApiException {
 			Corpus corpus = DummyCorpus.createDummyCorpus(DummyType.FULL, setup);
 			return CorpusBacked.builder()
 					.scope(corpus.createCompleteScope())

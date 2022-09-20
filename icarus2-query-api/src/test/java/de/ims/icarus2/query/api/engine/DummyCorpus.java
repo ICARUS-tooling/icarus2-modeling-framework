@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.common.formats.Template;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.Driver;
@@ -204,8 +205,9 @@ public class DummyCorpus {
 	 * @throws IOException
 	 * @throws SAXException
 	 * @throws InterruptedException
+	 * @throws IcarusApiException
 	 */
-	public static Corpus createDummyCorpus(DummyType type, int...setup) throws SAXException, IOException, InterruptedException {
+	public static Corpus createDummyCorpus(DummyType type, int...setup) throws SAXException, IOException, InterruptedException, IcarusApiException {
 		VirtualResourceProvider resourceProvider = new VirtualResourceProvider();
 		Path file = Paths.get("test_corpus");
 		createCorpusFile(resourceProvider, file, type, setup);
@@ -246,8 +248,9 @@ public class DummyCorpus {
 	 *
 	 * @param manifestPath path to the manifest file, usable for {@link Class#getResource(String)}
 	 * @param corpusContent actual content of the corpus, in a form the associated {@link Driver} can read
+	 * @throws IcarusApiException
 	 */
-	public static Corpus createDummyCorpus(String manifestPath, String corpusContent) throws SAXException, IOException, InterruptedException {
+	public static Corpus createDummyCorpus(String manifestPath, String corpusContent) throws SAXException, IOException, InterruptedException, IcarusApiException {
 		VirtualResourceProvider resourceProvider = new VirtualResourceProvider();
 		Path file = Paths.get("test_corpus");
 		resourceProvider.create(file, false);
