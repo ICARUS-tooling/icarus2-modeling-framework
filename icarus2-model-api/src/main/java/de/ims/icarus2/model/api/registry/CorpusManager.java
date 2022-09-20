@@ -18,6 +18,7 @@ package de.ims.icarus2.model.api.registry;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
@@ -338,29 +339,29 @@ public interface CorpusManager {
 	 *
 	 * @return
 	 */
-	Collection<CorpusManifest> getLiveCorpora();
+	List<CorpusManifest> getLiveCorpora();
 
-	Collection<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p);
+	List<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p);
 
-	Collection<CorpusManifest> getCorpora(CorpusState state);
+	List<CorpusManifest> getCorpora(CorpusState state);
 
-	default Collection<CorpusManifest> getConnectedCorpora() {
+	default List<CorpusManifest> getConnectedCorpora() {
 		return getCorpora(CorpusState.CONNECTED);
 	}
 
-	default Collection<CorpusManifest> getConnectingCorpora() {
+	default List<CorpusManifest> getConnectingCorpora() {
 		return getCorpora(CorpusState.CONNECTING);
 	}
 
-	default Collection<CorpusManifest> getDisconnectingCorpora() {
+	default List<CorpusManifest> getDisconnectingCorpora() {
 		return getCorpora(CorpusState.DISCONNECTING);
 	}
 
-	default Collection<CorpusManifest> getBadCorpora() {
+	default List<CorpusManifest> getBadCorpora() {
 		return getCorpora(CorpusState.BAD);
 	}
 
-	default Collection<CorpusManifest> getDisabledCorpora() {
+	default List<CorpusManifest> getDisabledCorpora() {
 		return getCorpora(CorpusState.DISABLED);
 	}
 

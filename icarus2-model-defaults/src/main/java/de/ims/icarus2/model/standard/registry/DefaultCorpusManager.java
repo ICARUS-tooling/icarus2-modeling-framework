@@ -777,7 +777,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	 * @see de.ims.icarus2.model.api.registry.CorpusManager#getLiveCorpora()
 	 */
 	@Override
-	public Collection<CorpusManifest> getLiveCorpora() {
+	public List<CorpusManifest> getLiveCorpora() {
 
 		long stamp = lock.readLock();
 		try {
@@ -791,7 +791,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	@Override
-	public Collection<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p) {
+	public List<CorpusManifest> getCorpora(Predicate<? super CorpusManifest> p) {
 		requireNonNull(p);
 
 		long stamp = lock.readLock();
@@ -802,7 +802,7 @@ public class DefaultCorpusManager implements CorpusManager {
 				return Collections.emptyList();
 			}
 
-			Collection<CorpusManifest> result = null;
+			List<CorpusManifest> result = null;
 
 			int visited = 0;
 			for(String id : corpora) {
@@ -828,7 +828,7 @@ public class DefaultCorpusManager implements CorpusManager {
 	}
 
 	@Override
-	public Collection<CorpusManifest> getCorpora(CorpusState state) {
+	public List<CorpusManifest> getCorpora(CorpusState state) {
 		requireNonNull(state);
 
 		long stamp = lock.readLock();
@@ -841,7 +841,7 @@ public class DefaultCorpusManager implements CorpusManager {
 				return Collections.emptyList();
 			}
 
-			Collection<CorpusManifest> result = null;
+			List<CorpusManifest> result = null;
 
 			int visited = 0;
 			for(Entry<String, CorpusState> entry : entries) {
