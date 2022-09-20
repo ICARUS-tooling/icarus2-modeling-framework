@@ -18,12 +18,14 @@ package de.ims.icarus2.model.manifest.xml;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 
 import de.ims.icarus2.model.manifest.api.Manifest;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
@@ -87,21 +89,23 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 		}
 	}
 
-	public ManifestXmlWriter writeAll() throws Exception {
+	public ManifestXmlWriter writeAll() throws IOException, XMLStreamException {
 		synchronized (manifests) {
 			if(!manifests.isEmpty()) {
 				try(XmlSerializer serializer = newSerializer(manifestLocation.getOutput())) {
 
-					String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
-
 					serializer.startDocument();
-					serializer.startElement(rootTag);
+
+					serializer.startElement(ManifestXmlTags.MANIFEST);
 
 					ManifestXmlUtils.writeDefaultXsiInfo(serializer);
 
+					String rootTag = manifestLocation.isTemplate() ? ManifestXmlTags.TEMPLATES : ManifestXmlTags.CORPORA;
+					serializer.startElement(rootTag);
 					writeInline(serializer);
-
 					serializer.endElement(rootTag);
+
+					serializer.endElement(ManifestXmlTags.MANIFEST);
 					serializer.endDocument();
 				}
 			}
@@ -109,7 +113,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 		return this;
 	}
 
-	public void writeInline(XmlSerializer serializer) throws Exception {
+	public void writeInline(XmlSerializer serializer) throws XMLStreamException {
 		synchronized (manifests) {
 			if(manifests.isEmpty()) {
 				// Nothing to do here
@@ -121,7 +125,7 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void write0(XmlSerializer serializer) throws Exception {
+	protected void write0(XmlSerializer serializer) throws XMLStreamException {
 		for(Iterator<Manifest> it = manifests.iterator(); it.hasNext();) {
 			Manifest manifest = it.next();
 
@@ -154,9 +158,10 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 	 *
 	 * @param out
 	 * @return
+	 * @throws XMLStreamException
 	 * @throws Exception
 	 */
-	protected XmlSerializer newSerializer(Writer out) throws Exception {
+	protected XmlSerializer newSerializer(Writer out) throws XMLStreamException {
 		return defaultCreateSerializer(out);
 	}
 
@@ -165,9 +170,10 @@ public class ManifestXmlWriter extends ManifestXmlProcessor {
 	 *
 	 * @param out
 	 * @return
+	 * @throws XMLStreamException
 	 * @throws Exception
 	 */
-	public static XmlSerializer defaultCreateSerializer(Writer out) throws Exception {
+	public static XmlSerializer defaultCreateSerializer(Writer out) throws XMLStreamException {
 
 		XMLOutputFactory factory = XMLOutputFactory.newFactory();
 
