@@ -26,18 +26,21 @@ import java.util.Set;
 
 import org.xml.sax.SAXException;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ManifestLocation;
 import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
+import de.ims.icarus2.util.function.ThrowingConsumer;
 
 /**
  * @author Markus Gärtner
  *
  */
-public enum Template {
+public enum Template implements ThrowingConsumer<ManifestRegistry, IcarusApiException> {
 	CORE("templates.base.xml"),
 	CONLL("conll/templates.conll.xml"),
 	;
@@ -67,18 +70,18 @@ public enum Template {
 	 * Any exceptions encountered will be wrapped in a {@link IcarusRuntimeException}
 	 * of code {@link ManifestErrorCode#MANIFEST_ERROR}.
 	 */
-	public static ManifestRegistry createRegistry(Template...templates) {
+	public static ManifestRegistry createRegistry(Template...templates) throws IcarusApiException {
 		ManifestRegistry registry = new DefaultManifestRegistry();
 		try {
 			applyTemplates(registry, templates);
 		} catch (IOException e) {
-			throw new IcarusRuntimeException(ManifestErrorCode.MANIFEST_ERROR,
+			throw new IcarusApiException(ManifestErrorCode.MANIFEST_ERROR,
 					"Failed to read templates", e);
 		}
 		return registry;
 	}
 
-	public static void applyCoreTemplates(ManifestRegistry registry) throws IOException {
+	public static void applyCoreTemplates(ManifestRegistry registry) throws IcarusApiException, IOException {
 		requireNonNull(registry);
 
 		ManifestXmlReader reader = ManifestXmlReader.builder()
@@ -90,11 +93,11 @@ public enum Template {
 		try {
 			reader.readAndRegisterAll();
 		} catch (SAXException e) {
-			throw new IcarusRuntimeException(ManifestErrorCode.MANIFEST_ERROR, "Unexpected error while loading core templates", e);
+			throw new IcarusApiException(ManifestErrorCode.MANIFEST_ERROR, "Unexpected error while loading core templates", e);
 		}
 	}
 
-	public static void applyTemplates(ManifestRegistry registry, Template...templates) throws IOException {
+	public static void applyTemplates(ManifestRegistry registry, Template...templates) throws IcarusApiException, IOException {
 		requireNonNull(registry);
 		requireNonNull(templates);
 		checkArgument(templates.length>0);
@@ -114,6 +117,7 @@ public enum Template {
 			// Just brute-force by finding the first template each round that has all its dependencies parsed already
 			for(Template tpl : pending) {
 				if(hasNoPendingDependencies(tpl, pending)) {
+					// Not a really nice design. We prevent the ConcurrentModificationException by exiting the loop
 					pending.remove(tpl);
 					addTemplate(reader, tpl);
 					found = true;
@@ -128,7 +132,7 @@ public enum Template {
 		try {
 			reader.readAndRegisterAll();
 		} catch (SAXException e) {
-			throw new IcarusRuntimeException(ManifestErrorCode.MANIFEST_ERROR, "Unexpected error while loading templates", e);
+			throw new IcarusApiException(ManifestErrorCode.MANIFEST_ERROR, "Unexpected error while loading templates", e);
 		}
 	}
 
@@ -164,4 +168,14 @@ public enum Template {
 	private static URL toUrl(String path) {
 		return Template.class.getResource(path);
 	}
+
+	@Override
+	public void accept(ManifestRegistry registry) throws IcarusApiException {
+		try {
+			applyTemplates(registry, this);
+		} catch (IOException e) {
+			throw new IcarusApiException(GlobalErrorCode.IO_ERROR, "Failed to read template: "+this, e);
+		}
+	}
+
 }
