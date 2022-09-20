@@ -35,14 +35,17 @@ public final class MatchImpl implements Match {
 		return new MatchImpl(index, EMPTY, EMPTY);
 	}
 
+	/** Create a new [{@link Match}, using the given data without copying */
 	public static MatchImpl of(long index, int[] m_node, int[] m_index) {
 		return new MatchImpl(index, m_node, m_index);
 	}
 
+	/** Create a new [{@link Match}, using the given data, while copying the relevant parts */
 	public static MatchImpl of(long index, int size, int[] m_node, int[] m_index) {
 		return new MatchImpl(index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
 	}
 
+	/** Create a new [{@link Match}, using the given data, while copying the relevant sections */
 	public static MatchImpl of(long index, int offset, int size, int[] m_node, int[] m_index) {
 		return new MatchImpl(index, Arrays.copyOfRange(m_node, offset, offset+size),
 				Arrays.copyOfRange(m_index, offset, offset+size));
@@ -105,11 +108,14 @@ public final class MatchImpl implements Match {
 		sb.append('{');
 		sb.append(index);
 		sb.append(": ");
-		for (int i = 0; i < m_node.length; i++) {
+		final int size = m_node.length;
+		for (int i = 0; i < size; i++) {
 			if(i>0) {
 				sb.append(", ");
 			}
-			sb.append(m_node[i]).append("->").append(m_index[i]);
+			sb.append(m_node[i])
+				.append("->")
+				.append(m_index[i]);
 		}
 		sb.append('}');
 		return sb.toString();

@@ -54,7 +54,7 @@ public interface QueryJob {
 	JobController execute(ExecutorService executorService, int workerLimit);
 
 	/**
-	 * Similar to {@link #execute(ExecutorService, int)} but internally picks a
+	 * Similar to {@link #execute(ExecutorService, int)} method, but internally picks a
 	 * suitable executor service based on the specified worker limit.
 	 */
 	default JobController execute(int workerLimit) {

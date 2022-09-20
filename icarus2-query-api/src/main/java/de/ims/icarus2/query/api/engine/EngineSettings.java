@@ -39,7 +39,7 @@ public class EngineSettings implements Cloneable {
 	}
 
 	public void setInt(IntField field, int value) {
-		checkArgument(field+" must ve positive", value>0);
+		checkArgument(field+" must not be negative", value>=0);
 		intValues[field.ordinal()] = value;
 	}
 
@@ -72,6 +72,8 @@ public class EngineSettings implements Cloneable {
 		INITIAL_SECONDARY_BUFFER_SIZE(1<<12),
 		/** maximum number of worker threads to use in parallel */
 		WORKER_LIMIT(UNSET_INT),
+		/** Timeout in seconds */
+		TIMEOUT(UNSET_INT),
 		;
 
 		private final int defaultValue;
