@@ -25,9 +25,9 @@ import javax.annotation.Nullable;
 
 import de.ims.icarus2.test.TestUtils;
 
-public class Pair<E_1 extends Object, E_2 extends Object> {
+public class Pair<FIRST, SECOND> {
 
-	public static <E_1, E_2> Pair<E_1, E_2> pair(E_1 first, E_2 second) {
+	public static <FIRST, SECOND> Pair<FIRST, SECOND> pair(FIRST first, SECOND second) {
 		return new Pair<>(first, second);
 	}
 
@@ -35,8 +35,8 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 //		return new Pair<>(Integer.valueOf(first), Integer.valueOf(second));
 //	}
 
-	public static <E_1, E_2> Pair<E_1, E_2> nullablePair(
-			@Nullable E_1 first, @Nullable E_2 second) {
+	public static <FIRST, SECOND> Pair<FIRST, SECOND> nullablePair(
+			@Nullable FIRST first, @Nullable SECOND second) {
 		return new Pair<>(first, second, true);
 	}
 
@@ -75,14 +75,14 @@ public class Pair<E_1 extends Object, E_2 extends Object> {
 		return new Pair<>(first, second);
 	}
 
-	public final E_1 first;
-	public final E_2 second;
+	public final FIRST first;
+	public final SECOND second;
 
-	public Pair(E_1 first, E_2 second) {
+	public Pair(FIRST first, SECOND second) {
 		this(first, second, false);
 	}
 
-	private Pair(E_1 first, E_2 second, boolean allowNull) {
+	private Pair(FIRST first, SECOND second, boolean allowNull) {
 		this.first = allowNull ? first : requireNonNull(first);
 		this.second = allowNull ? second : requireNonNull(second);
 	}

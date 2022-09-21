@@ -17,7 +17,7 @@
 package de.ims.icarus2.util.io.resource;
 
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -204,7 +204,7 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 			assertTrue(iterator.hasNext());
 
 			Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
-			assertCollectionEquals(children, file1, file2);
+			assertThat(children).containsOnly(file1, file2);
 		} finally {
 			cleanup(provider, file1, file2);
 		}
@@ -231,7 +231,7 @@ public interface ResourceProviderTest<P extends ResourceProvider> extends ApiGua
 			assertTrue(iterator.hasNext());
 
 			Set<Path> children = CollectionUtils.<Path>aggregateAsSet(iterator::forEachRemaining);
-			assertCollectionEquals(children, file2);
+			assertThat(children).containsOnly(file2);
 		} finally {
 			cleanup(provider, file1, file2);
 		}

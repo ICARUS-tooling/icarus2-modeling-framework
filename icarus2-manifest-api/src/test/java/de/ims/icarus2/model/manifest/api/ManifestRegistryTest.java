@@ -28,8 +28,6 @@ import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookupContains;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeOptLookup;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeRemove;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.assertSetter;
@@ -38,6 +36,7 @@ import static de.ims.icarus2.test.TestUtils.settings;
 import static de.ims.icarus2.test.TestUtils.unwrapGetter;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -109,8 +108,8 @@ public interface ManifestRegistryTest
 	}
 
 	@SuppressWarnings("boxing")
-	public static Manifest mockTemplate(String id, Class<? extends Manifest> clazz) {
-		Manifest template = mockTypedManifest(clazz);
+	public static <M extends Manifest> M mockTemplate(String id, Class<M> clazz) {
+		M template = mockTypedManifest(clazz);
 		stubId(template, id);
 		when(template.isTemplate()).thenReturn(Boolean.TRUE);
 		when(template.getManifestType()).thenReturn(ManifestType.DUMMY_MANIFEST);
@@ -209,7 +208,7 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getLayerTypes(null));
 
-		assertCollectionEmpty(registry.getLayerTypes(pAll));
+		assertThat(registry.getLayerTypes(pAll)).isEmpty();
 
 		LayerType type1 = mockLayerType("type1");
 		LayerType type2 = mockLayerType("type2");
@@ -225,12 +224,11 @@ public interface ManifestRegistryTest
 		registry.addLayerType(type5);
 		registry.addLayerType(type6);
 
-		assertCollectionEquals(registry.getLayerTypes(pAll),
-				type1, type2, type3, type4, type5, type6);
+		assertThat(registry.getLayerTypes(pAll)).containsOnly(type1, type2, type3, type4, type5, type6);
 
-		assertCollectionEmpty(registry.getLayerTypes(pNone));
+		assertThat(registry.getLayerTypes(pNone)).isEmpty();
 
-		assertCollectionEquals(registry.getLayerTypes(pId5), type5);
+		assertThat(registry.getLayerTypes(pId5)).containsOnly(type5);
 	}
 
 	/**
@@ -328,7 +326,7 @@ public interface ManifestRegistryTest
 	default void testGetCorpusSources() {
 		ManifestRegistry registry = createTestInstance(settings());
 
-		assertCollectionEmpty(registry.getCorpusSources());
+		assertThat(registry.getCorpusSources()).isEmpty();
 
 		ManifestLocation location1 = mockManifestLocation(true);
 		ManifestLocation location2 = mockManifestLocation(true);
@@ -336,7 +334,7 @@ public interface ManifestRegistryTest
 
 		registry.addCorpusManifest(mockCorpusManifest("orpus1", location1));
 
-		assertCollectionEquals(registry.getCorpusSources(), location1);
+		assertThat(registry.getCorpusSources()).containsOnly(location1);
 
 		registry.addCorpusManifest(mockCorpusManifest("corpus2", location1));
 		registry.addCorpusManifest(mockCorpusManifest("corpus3", location2));
@@ -344,14 +342,13 @@ public interface ManifestRegistryTest
 		registry.addCorpusManifest(mockCorpusManifest("corpus5", location2));
 		registry.addCorpusManifest(mockCorpusManifest("corpus6", location3));
 
-		assertCollectionEquals(registry.getCorpusSources(),
-				location1, location2, location3);
+		assertThat(registry.getCorpusSources()).containsOnly(location1, location2, location3);
 
 		for(CorpusManifest manifest : registry.getCorpusManifests()) {
 			registry.removeCorpusManifest(manifest);
 		}
 
-		assertCollectionEmpty(registry.getCorpusSources());
+		assertThat(registry.getCorpusSources()).isEmpty();
 	}
 
 	/**
@@ -572,7 +569,7 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getCorpusManifests(null));
 
-		assertCollectionEmpty(registry.getCorpusManifests(pAll));
+		assertThat(registry.getCorpusManifests(pAll)).isEmpty();
 
 		CorpusManifest corpus1 = mockCorpusManifest("corpus1", location1);
 		CorpusManifest corpus2 = mockCorpusManifest("corpus2", location1);
@@ -588,15 +585,13 @@ public interface ManifestRegistryTest
 		registry.addCorpusManifest(corpus5);
 		registry.addCorpusManifest(corpus6);
 
-		assertCollectionEquals(registry.getCorpusManifests(pAll),
-				corpus1, corpus2, corpus3, corpus4, corpus5, corpus6);
+		assertThat(registry.getCorpusManifests(pAll)).containsOnly(corpus1, corpus2, corpus3, corpus4, corpus5, corpus6);
 
-		assertCollectionEmpty(registry.getCorpusManifests(pNone));
+		assertThat(registry.getCorpusManifests(pNone)).isEmpty();
 
-		assertCollectionEquals(registry.getCorpusManifests(pLoc2),
-				corpus3, corpus4, corpus5);
+		assertThat(registry.getCorpusManifests(pLoc2)).containsOnly(corpus3, corpus4, corpus5);
 
-		assertCollectionEquals(registry.getCorpusManifests(pId5), corpus5);
+		assertThat(registry.getCorpusManifests(pId5)).containsOnly(corpus5);
 	}
 
 	/**
@@ -608,7 +603,7 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getCorpusManifestsForSource(null));
 
-		assertCollectionEmpty(registry.getCorpusManifestsForSource(mockManifestLocation(true)));
+		assertThat(registry.getCorpusManifestsForSource(mockManifestLocation(true))).isEmpty();
 
 		ManifestLocation location1 = mockManifestLocation(false);
 		ManifestLocation location2 = mockManifestLocation(false);
@@ -628,10 +623,10 @@ public interface ManifestRegistryTest
 		registry.addCorpusManifest(corpus5);
 		registry.addCorpusManifest(corpus6);
 
-		assertCollectionEquals(registry.getCorpusManifestsForSource(location1), corpus1, corpus2);
-		assertCollectionEquals(registry.getCorpusManifestsForSource(location2), corpus3, corpus4, corpus5);
-		assertCollectionEquals(registry.getCorpusManifestsForSource(location3), corpus6);
-		assertCollectionEmpty(registry.getCorpusManifestsForSource(mockManifestLocation(true)));
+		assertThat(registry.getCorpusManifestsForSource(location1)).containsOnly(corpus1, corpus2);
+		assertThat(registry.getCorpusManifestsForSource(location2)).containsOnly(corpus3, corpus4, corpus5);
+		assertThat(registry.getCorpusManifestsForSource(location3)).containsOnly(corpus6);
+		assertThat(registry.getCorpusManifestsForSource(mockManifestLocation(true))).isEmpty();
 	}
 
 	/**
@@ -775,7 +770,7 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getTemplates(null));
 
-		assertCollectionEmpty(registry.getTemplates(pAll));
+		assertThat(registry.getTemplates(pAll)).isEmpty();
 
 		ManifestType type1 = ManifestType.CONTEXT_MANIFEST;
 		ManifestType type2 = ManifestType.ITEM_LAYER_MANIFEST;
@@ -791,14 +786,14 @@ public interface ManifestRegistryTest
 		registry.addTemplates(list(template1, template2, template3,
 				template4, template5, template6));
 
-		assertCollectionEquals(registry.getTemplates(pAll), template1, template2, template3,
+		assertThat(registry.getTemplates(pAll)).containsOnly(template1, template2, template3,
 				template4, template5, template6);
 
-		assertCollectionEmpty(registry.getTemplates(pNone));
+		assertThat(registry.getTemplates(pNone)).isEmpty();
 
-		assertCollectionEquals(registry.getTemplates(pDriver), template6);
+		assertThat(registry.getTemplates(pDriver)).containsOnly(template6);
 
-		assertCollectionEquals(registry.getTemplates(pId5), template5);
+		assertThat(registry.getTemplates(pId5)).containsOnly(template5);
 	}
 
 	/**
@@ -823,7 +818,7 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getTemplatesOfType(null));
 
-		assertCollectionEmpty(registry.getTemplatesOfType(ManifestType.CONTEXT_MANIFEST));
+		assertThat(registry.getTemplatesOfType(ManifestType.CONTEXT_MANIFEST)).isEmpty();
 
 		ManifestType type1 = ManifestType.CONTEXT_MANIFEST;
 		ManifestType type2 = ManifestType.ITEM_LAYER_MANIFEST;
@@ -839,10 +834,10 @@ public interface ManifestRegistryTest
 		registry.addTemplates(list(template1, template2, template3,
 				template4, template5, template6));
 
-		assertCollectionEquals(registry.getTemplatesOfType(type1), template1, template2);
-		assertCollectionEquals(registry.getTemplatesOfType(type2), template3, template4, template5);
-		assertCollectionEquals(registry.getTemplatesOfType(type3), template6);
-		assertCollectionEmpty(registry.getTemplatesOfType(ManifestType.FRAGMENT_LAYER_MANIFEST));
+		assertThat(registry.getTemplatesOfType(type1)).containsOnly(template1, template2);
+		assertThat(registry.getTemplatesOfType(type2)).containsOnly(template3, template4, template5);
+		assertThat(registry.getTemplatesOfType(type3)).containsOnly(template6);
+		assertThat(registry.getTemplatesOfType(ManifestType.FRAGMENT_LAYER_MANIFEST)).isEmpty();
 	}
 
 	/**
@@ -854,26 +849,26 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getTemplatesOfClass(null));
 
-		assertCollectionEmpty(registry.getTemplatesOfClass(Manifest.class));
+		assertThat(registry.getTemplatesOfClass(Manifest.class)).isEmpty();
 
-		Class<? extends Manifest> clazz1 = ContextManifest.class;
-		Class<? extends Manifest> clazz2 = ItemLayerManifest.class;
-		Class<? extends Manifest> clazz3 = DriverManifest.class;
+		Class<ContextManifest> clazz1 = ContextManifest.class;
+		Class<ItemLayerManifest> clazz2 = ItemLayerManifest.class;
+		Class<DriverManifest> clazz3 = DriverManifest.class;
 
-		Manifest template1 = mockTemplate("template1", clazz1);
-		Manifest template2 = mockTemplate("template2", clazz1);
-		Manifest template3 = mockTemplate("template3", clazz2);
-		Manifest template4 = mockTemplate("template4", clazz2);
-		Manifest template5 = mockTemplate("template5", clazz2);
-		Manifest template6 = mockTemplate("template6", clazz3);
+		ContextManifest template1 = mockTemplate("template1", clazz1);
+		ContextManifest template2 = mockTemplate("template2", clazz1);
+		ItemLayerManifest template3 = mockTemplate("template3", clazz2);
+		ItemLayerManifest template4 = mockTemplate("template4", clazz2);
+		ItemLayerManifest template5 = mockTemplate("template5", clazz2);
+		DriverManifest template6 = mockTemplate("template6", clazz3);
 
 		registry.addTemplates(list(template1, template2, template3,
 				template4, template5, template6));
 
-		assertCollectionEquals(registry.getTemplatesOfClass(clazz1), template1, template2);
-		assertCollectionEquals(registry.getTemplatesOfClass(clazz2), template3, template4, template5);
-		assertCollectionEquals(registry.getTemplatesOfClass(clazz3), template6);
-		assertCollectionEmpty(registry.getTemplatesOfClass(FragmentLayerManifest.class));
+		assertThat(registry.getTemplatesOfClass(clazz1)).containsOnly(template1, template2);
+		assertThat(registry.getTemplatesOfClass(clazz2)).containsOnly(template3, template4, template5);
+		assertThat(registry.getTemplatesOfClass(clazz3)).containsOnly(template6);
+		assertThat(registry.getTemplatesOfClass(FragmentLayerManifest.class)).isEmpty();
 	}
 
 	/**
@@ -885,7 +880,7 @@ public interface ManifestRegistryTest
 
 		assertNPE(() -> registry.getTemplatesForSource(null));
 
-		assertCollectionEmpty(registry.getTemplatesForSource(mockManifestLocation(true)));
+		assertThat(registry.getTemplatesForSource(mockManifestLocation(true))).isEmpty();
 
 		ManifestLocation location1 = mockManifestLocation(true);
 		ManifestLocation location2 = mockManifestLocation(true);
@@ -901,10 +896,10 @@ public interface ManifestRegistryTest
 		registry.addTemplates(list(template1, template2, template3,
 				template4, template5, template6));
 
-		assertCollectionEquals(registry.getTemplatesForSource(location1), template1, template2);
-		assertCollectionEquals(registry.getTemplatesForSource(location2), template3, template4, template5);
-		assertCollectionEquals(registry.getTemplatesForSource(location3), template6);
-		assertCollectionEmpty(registry.getTemplatesForSource(mockManifestLocation(true)));
+		assertThat(registry.getTemplatesForSource(location1)).containsOnly(template1, template2);
+		assertThat(registry.getTemplatesForSource(location2)).containsOnly(template3, template4, template5);
+		assertThat(registry.getTemplatesForSource(location3)).containsOnly(template6);
+		assertThat(registry.getTemplatesForSource(mockManifestLocation(true))).isEmpty();
 	}
 
 	/**
@@ -914,7 +909,7 @@ public interface ManifestRegistryTest
 	default void testGetRootContextTemplates() {
 		ManifestRegistry registry = createTestInstance(settings());
 
-		assertCollectionEmpty(registry.getRootContextTemplates());
+		assertThat(registry.getRootContextTemplates()).isEmpty();
 
 		ContextManifest root1 = mockContextTemplate("context1", true);
 		ContextManifest root2 = mockContextTemplate("context2", true);
@@ -923,7 +918,7 @@ public interface ManifestRegistryTest
 
 		registry.addTemplates(list(root1, context1, root2, context2));
 
-		assertCollectionEquals(registry.getRootContextTemplates(), root1, root2);
+		assertThat(registry.getRootContextTemplates()).containsOnly(root1, root2);
 	}
 
 	/**
@@ -933,7 +928,7 @@ public interface ManifestRegistryTest
 	default void testGetTemplateSources() {
 		ManifestRegistry registry = createTestInstance(settings());
 
-		assertCollectionEmpty(registry.getTemplateSources());
+		assertThat(registry.getTemplateSources()).isEmpty();
 
 		ManifestLocation location1 = mockManifestLocation(true);
 		ManifestLocation location2 = mockManifestLocation(true);
@@ -941,7 +936,7 @@ public interface ManifestRegistryTest
 
 		registry.addTemplate(mockTemplate("template1", location1));
 
-		assertCollectionEquals(registry.getTemplateSources(), location1);
+		assertThat(registry.getTemplateSources()).containsOnly(location1);
 
 		registry.addTemplate(mockTemplate("template2", location1));
 		registry.addTemplate(mockTemplate("template3", location2));
@@ -949,14 +944,13 @@ public interface ManifestRegistryTest
 		registry.addTemplate(mockTemplate("template5", location2));
 		registry.addTemplate(mockTemplate("template6", location3));
 
-		assertCollectionEquals(registry.getTemplateSources(),
-				location1, location2, location3);
+		assertThat(registry.getTemplateSources()).containsOnly(location1, location2, location3);
 
 		for(Manifest template : registry.getTemplates()) {
 			registry.removeTemplate(template);
 		}
 
-		assertCollectionEmpty(registry.getTemplateSources());
+		assertThat(registry.getTemplateSources()).isEmpty();
 	}
 
 	/**

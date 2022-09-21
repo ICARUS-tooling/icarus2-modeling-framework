@@ -19,10 +19,10 @@ package de.ims.icarus2.util.collections;
 import static de.ims.icarus2.SharedTestUtils.assertIcarusException;
 import static de.ims.icarus2.test.TestUtils.DO_NOTHING;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -304,7 +304,7 @@ class LookupListTest implements ApiGuardedTest<LookupList> {
 		 */
 		@Test
 		void testToArray() {
-			assertArrayEmpty(instance.toArray());
+			assertThat(instance.toArray()).isEmpty();
 		}
 
 		/**

@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.util.tree;
 
-import static de.ims.icarus2.test.TestUtils.assertListEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -116,7 +116,7 @@ class TreeUtilsTest {
 
 				TreeUtils.traversePreOrder(tree, node -> buffer.add(node.getData()));
 
-				assertListEquals(buffer, "root", "1", "2");
+				assertThat(buffer).containsExactly("root", "1", "2");
 			}
 
 			@Test
@@ -139,7 +139,7 @@ class TreeUtilsTest {
 
 				TreeUtils.traversePreOrder(tree, node -> buffer.add(node.getData()));
 
-				assertListEquals(buffer, "root", "1", "1.1", "1.2", "2", "2.1", "2.1.1", "2.1.2",
+				assertThat(buffer).containsExactly("root", "1", "1.1", "1.2", "2", "2.1", "2.1.1", "2.1.2",
 						"2.1.3", "2.2");
 			}
 		}
@@ -167,7 +167,7 @@ class TreeUtilsTest {
 
 				TreeUtils.traversePostOrder(tree, node -> buffer.add(node.getData()));
 
-				assertListEquals(buffer, "1", "2", "root");
+				assertThat(buffer).containsExactly("1", "2", "root");
 			}
 
 			@Test
@@ -190,7 +190,7 @@ class TreeUtilsTest {
 
 				TreeUtils.traversePostOrder(tree, node -> buffer.add(node.getData()));
 
-				assertListEquals(buffer, "1.1", "1.2", "1", "2.1.1", "2.1.2",
+				assertThat(buffer).containsExactly("1.1", "1.2", "1", "2.1.1", "2.1.2",
 						"2.1.3", "2.1", "2.2", "2", "root");
 			}
 		}

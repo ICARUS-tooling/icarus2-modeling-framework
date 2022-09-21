@@ -17,7 +17,7 @@
 package de.ims.icarus2.model.manifest.types;
 
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertManifestException;
-import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -208,7 +208,7 @@ class ValueTypeTest {
 	 */
 	@Test
 	void testValueTypes() {
-		assertCollectionNotEmpty(ValueType.valueTypes());
+		assertThat(ValueType.valueTypes()).isNotEmpty();
 	}
 
 	/**
@@ -217,7 +217,7 @@ class ValueTypeTest {
 	@Test
 	void testBasicValueTypes() {
 		Collection<ValueType> types = ValueType.basicValueTypes();
-		assertCollectionNotEmpty(types);
+		assertThat(types).isNotEmpty();
 
 		types.forEach(type -> assertTrue(type.isBasicType(), "Not a proper basic type: "+type));
 	}
@@ -228,7 +228,7 @@ class ValueTypeTest {
 	@Test
 	void testSserializableValueTypes() {
 		Collection<ValueType> types = ValueType.serializableValueTypes();
-		assertCollectionNotEmpty(types);
+		assertThat(types).isNotEmpty();
 
 		types.forEach(type -> assertTrue(type.isSerializable(), "Not a proper serializable type: "+type));
 	}

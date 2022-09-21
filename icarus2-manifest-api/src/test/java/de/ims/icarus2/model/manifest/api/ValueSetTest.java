@@ -23,9 +23,9 @@ import static de.ims.icarus2.test.TestUtils.assertAccumulativeArrayGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeCount;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeLookup;
-import static de.ims.icarus2.test.TestUtils.assertListEquals;
 import static de.ims.icarus2.test.TestUtils.assertListIndexOf;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -115,7 +115,7 @@ public interface ValueSetTest extends LockableTest<ValueSet>, TypedManifestTest<
 								ValueSet::getValuesAsList,
 								ValueSet::addValue);
 
-						assertListEquals(instance.getValuesAsList(), values[0], values[1]);
+						assertThat(instance.getValuesAsList()).containsExactly(values[0], values[1]);
 					}));
 	}
 

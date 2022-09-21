@@ -19,7 +19,6 @@ package de.ims.icarus2.test;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -72,7 +71,6 @@ import de.ims.icarus2.test.func.TriConsumer;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.test.util.IdentitySet;
 import de.ims.icarus2.test.util.Pair;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 /**
  * Collection of useful testing methods.
@@ -411,13 +409,13 @@ public class TestUtils {
 		return () -> String.format(s, params);
 	}
 
-	public static <T extends Object> T assertMock(T mock) {
+	public static <T> T assertMock(T mock) {
 		assertNotNull(mock, TestMessages.mockIsNull);
 		assertTrue(isMock(mock), msg(TestMessages.notAMock, mock));
 		return mock;
 	}
 
-	public static <T extends Object> T assertMock(Optional<T> mock) {
+	public static <T> T assertMock(Optional<T> mock) {
 		return assertMock(mock.orElse(null));
 	}
 
@@ -469,7 +467,7 @@ public class TestUtils {
 		return () -> fail(msg);
 	}
 
-	public static <T extends Object> void assertPairwiseNotEquals(
+	public static <T> void assertPairwiseNotEquals(
 			@SuppressWarnings("unchecked") T...items) {
 		assertNotNull(items);
 		assertTrue(items.length>1, msg(TestMessages.insufficientElements, "")); //TODO
@@ -481,7 +479,7 @@ public class TestUtils {
 		}
 	}
 
-	public static <T extends Object> void assertPairwiseNotEquals(
+	public static <T> void assertPairwiseNotEquals(
 			BiPredicate<? super T, ? super T> equals, @SuppressWarnings("unchecked") T...items) {
 		assertNotNull(equals);
 		assertNotNull(items);
@@ -494,7 +492,7 @@ public class TestUtils {
 		}
 	}
 
-	public static <V extends Object> void assertPresent(Optional<V> value) {
+	public static <V> void assertPresent(Optional<V> value) {
 		assertNotNull(value);
 		assertTrue(value.isPresent());
 	}
@@ -509,28 +507,27 @@ public class TestUtils {
 		assertFalse(value.isPresent());
 	}
 
-	public static <V extends Object> void assertNotPresent(Optional<V> value, String msg) {
+	public static <V> void assertNotPresent(Optional<V> value, String msg) {
 		assertNotNull(value, msg);
 		assertFalse(value.isPresent(), msg);
 	}
 
-	public static <V extends Object> void assertOptionalEquals(V expected, Optional<?> actual) {
+	public static <V> void assertOptionalEquals(V expected, Optional<?> actual) {
 		assertNotNull(actual);
 		assertEquals(expected, actual.orElse(null));
 	}
 
-	public static <V extends Object> void assertOptionalEquals(V expected, Optional<V> actual, String msg) {
+	public static <V> void assertOptionalEquals(V expected, Optional<V> actual, String msg) {
 		assertNotNull(actual, msg);
 		assertEquals(expected, actual.orElse(null), msg);
 	}
 
-	public static <T extends Object, V extends Object> Function<T, V> unwrapGetter(Function<T, Optional<V>> getter) {
+	public static <T, V> Function<T, V> unwrapGetter(Function<T, Optional<V>> getter) {
 		return obj -> getter.apply(obj)
 				.orElse(null);
 	}
 
-	public static <T extends Object, K extends Object, V extends Object>
-			BiFunction<T, K, V> unwrapLookup(BiFunction<T, K, Optional<V>> lookup) {
+	public static <T, K, V> BiFunction<T, K, V> unwrapLookup(BiFunction<T, K, Optional<V>> lookup) {
 		return (obj, key) -> lookup.apply(obj, key)
 				.orElse(null);
 	}
@@ -543,7 +540,7 @@ public class TestUtils {
 	 * @param expected
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K extends Object, A extends Consumer<? super K>> void assertForEachSorted(Consumer<A> loop, K...expected) {
+	public static <K, A extends Consumer<? super K>> void assertForEachSorted(Consumer<A> loop, K...expected) {
 		List<K> actual = new ArrayList<>();
 
 		Consumer<K> action = actual::add;
@@ -565,7 +562,7 @@ public class TestUtils {
 	 * @param expected
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K extends Object, A extends Consumer<? super K>> void assertForEachUnsorted(Consumer<A> loop, K...expected) {
+	public static <K, A extends Consumer<? super K>> void assertForEachUnsorted(Consumer<A> loop, K...expected) {
 		IdentitySet<K> actual = new IdentitySet<>();
 
 		Consumer<K> action = actual::add;
@@ -587,7 +584,7 @@ public class TestUtils {
 	 * @param expected
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K extends Object, A extends Consumer<? super K>> void assertForEachEmpty(Consumer<A> loop) {
+	public static <K, A extends Consumer<? super K>> void assertForEachEmpty(Consumer<A> loop) {
 		Set<K> actual = new HashSet<>();
 
 		Consumer<K> action = actual::add;
@@ -597,12 +594,12 @@ public class TestUtils {
 		assertTrue(actual.isEmpty());
 	}
 
-	public static <K extends Object, A extends Consumer<? super K>> void assertForEachNPE(Consumer<A> loop) {
+	public static <K, A extends Consumer<? super K>> void assertForEachNPE(Consumer<A> loop) {
 		assertNPE(() -> loop.accept(null));
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <K extends Object, A extends Predicate<? super K>> void assertForEachUntilSentinel(
+	public static <K, A extends Predicate<? super K>> void assertForEachUntilSentinel(
 			Consumer<A> loop, K sentinel, int expectedCalls) {
 		AtomicInteger count = new AtomicInteger(-1);
 		AtomicBoolean sentinelFound = new AtomicBoolean(false);
@@ -623,7 +620,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <K extends Object, A extends Predicate<? super K>> void assertForEachUntilPred(
+	public static <K, A extends Predicate<? super K>> void assertForEachUntilPred(
 			Consumer<A> loop, A pred, int expectedCalls) {
 		LongAdder count = new LongAdder();
 		Predicate<? super K> sum = v -> {
@@ -634,54 +631,6 @@ public class TestUtils {
 		loop.accept((A)sum);
 
 		assertEquals(expectedCalls, count.intValue());
-	}
-
-	public static <E extends Object> void assertCollectionEquals(
-			Collection<? extends E> expected, Collection<? extends E> actual) {
-		assertEquals(expected.size(), actual.size());
-
-		for(E element : expected) {
-			assertTrue(actual.contains(element), "Missing element: "+element);
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <E extends Object> void assertCollectionEquals(Collection<? extends E> actual, E...expected) {
-		assertEquals(expected.length, actual.size(), "collection size mismatch");
-
-		for(E element : expected) {
-			assertTrue(actual.contains(element), "Missing element: "+element);
-		}
-	}
-
-	public static <E extends Object> void assertCollectionEmpty(Collection<? extends E> col) {
-		assertNotNull(col);
-		assertTrue(col.isEmpty());
-	}
-
-	public static <E extends Object> void assertCollectionNotEmpty(Collection<? extends E> col) {
-		assertNotNull(col);
-		assertFalse(col.isEmpty());
-	}
-
-	public static <E extends Object> void assertListEquals(
-			List<? extends E> expected, List<? extends E> actual) {
-		assertEquals(expected.size(), actual.size());
-
-		for(int i=0; i<expected.size(); i++) {
-			assertEquals(expected.get(i), actual.get(i),
-					"Mismatch at index "+i+": expected "+expected.get(i)+" - got "+actual.get(i));
-		}
-	}
-
-	public static <E extends Object> void assertListEquals(
-			List<? extends E> actual, @SuppressWarnings("unchecked") E...expected) {
-		assertEquals(expected.length, actual.size());
-
-		for(int i=0; i<expected.length; i++) {
-			assertEquals(expected[i], actual.get(i),
-					"Mismatch at index "+i+": expected "+expected[i]+" - got "+actual.get(i));
-		}
 	}
 
 	@SuppressWarnings("boxing")
@@ -696,28 +645,6 @@ public class TestUtils {
 			assertEquals(expected[i], itemAt.apply(list, i),
 					"Mismatch at index "+i+": expected "+expected[i]+" - got "+itemAt.apply(list, i));
 		}
-	}
-
-	public static <E extends Object> void assertArrayEmpty(E[] array) {
-		assertNotNull(array);
-		assertTrue(array.length==0);
-	}
-
-	public static <E extends Object> void assertArrayNotEmpty(E[] array) {
-		assertNotNull(array);
-		assertTrue(array.length>0);
-	}
-
-	public static <T> Predicate<? super T> only(@SuppressWarnings("unchecked") T...items) {
-		Set<T> buffer = new ReferenceOpenHashSet<>();
-		Collections.addAll(buffer, items);
-		return buffer::contains;
-	}
-
-	public static <T> Predicate<? super T> noneOf(@SuppressWarnings("unchecked") T...items) {
-		Set<T> buffer = new ReferenceOpenHashSet<>();
-		Collections.addAll(buffer, items);
-		return item -> !buffer.contains(item);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -735,7 +662,7 @@ public class TestUtils {
 		return (E) values[pos];
 	}
 
-	private static <E extends Object> E[] filterUniques(E[] data) {
+	private static <E> E[] filterUniques(E[] data) {
 		if(data.length<2) {
 			return data;
 		}
@@ -917,7 +844,7 @@ public class TestUtils {
 	 * @param clazz
 	 * @return
 	 */
-	public static <T extends Object> boolean isPrimitiveWrapperClass(Class<T> clazz) {
+	public static <T> boolean isPrimitiveWrapperClass(Class<T> clazz) {
 		return clazz==Long.class || clazz==Integer.class
 				|| clazz==Short.class || clazz==Byte.class
 				|| clazz==Float.class || clazz==Double.class
@@ -993,7 +920,7 @@ public class TestUtils {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K extends Object> Supplier<K> NO_DEFAULT() {
+	public static <K> Supplier<K> NO_DEFAULT() {
 		return (Supplier<K>) NO_DEFAULT;
 	}
 
@@ -1004,7 +931,7 @@ public class TestUtils {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K extends Object> Supplier<K> UNKNOWN_DEFAULT() {
+	public static <K> Supplier<K> UNKNOWN_DEFAULT() {
 		return (Supplier<K>) UNKNOWN_DEFAULT;
 	}
 
@@ -1016,7 +943,7 @@ public class TestUtils {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K extends Object> Supplier<K> IGNORE_DEFAULT() {
+	public static <K> Supplier<K> IGNORE_DEFAULT() {
 		return (Supplier<K>) IGNORE_DEFAULT;
 	}
 
@@ -1025,7 +952,7 @@ public class TestUtils {
 	 * @param value
 	 * @return
 	 */
-	public static <K extends Object> Supplier<K> DEFAULT(K value) {
+	public static <K> Supplier<K> DEFAULT(K value) {
 		return () -> value;
 	}
 
@@ -1038,7 +965,7 @@ public class TestUtils {
 		return () -> Boolean.valueOf(value);
 	}
 
-	public static <K extends Object> K[] NO_ILLEGAL() {
+	public static <K> K[] NO_ILLEGAL() {
 		return null;
 	}
 
@@ -1046,7 +973,7 @@ public class TestUtils {
 	 * The identity function {@code f(x) = x}.
 	 * @return
 	 */
-	public static <K extends Object> Function<K, K> IDENTITY() {
+	public static <K> Function<K, K> IDENTITY() {
 		return k -> k;
 	}
 
@@ -1057,7 +984,7 @@ public class TestUtils {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Object> T NO_VALUE() {
+	public static <T> T NO_VALUE() {
 		return (T) null_obj;
 	}
 
@@ -1065,7 +992,7 @@ public class TestUtils {
 		return msg + " - " + String.valueOf(value);
 	}
 
-	public static <T extends Object> Consumer<T> DO_NOTHING() {
+	public static <T> Consumer<T> DO_NOTHING() {
 		return obj -> {
 			// no-op
 		};
@@ -1075,7 +1002,7 @@ public class TestUtils {
 	// SETTER ASSERTIONS
 	//-------------------------------------------
 
-	public static <T extends Object, K extends Object> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
+	public static <T, K> void assertSetter(T instance, BiConsumer<T, K> setter, K value,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			assertNPE(() -> setter.accept(instance, null));
@@ -1106,7 +1033,7 @@ public class TestUtils {
 	 * @see #assertGetter(Object, Object, Object, Supplier, Function, BiConsumer)
 	 * @see #ILLEGAL_STATE_CHECK
 	 */
-	public static <T extends Object, K extends Object> void assertRestrictedSetter(
+	public static <T, K> void assertRestrictedSetter(
 			T instance, BiConsumer<T, K> setter,
 			K value1, K value2,
 			boolean checkNPE,
@@ -1123,7 +1050,7 @@ public class TestUtils {
 					forValue("Testing restricted setter call", value2));
 	}
 
-	public static <T extends Object, K extends Object> void assertSetterBatch(T instance, BiConsumer<T, K> setter, K[] values,
+	public static <T, K> void assertSetterBatch(T instance, BiConsumer<T, K> setter, K[] values,
 			boolean checkNPE, BiConsumer<Executable, String> legalityCheck, @SuppressWarnings("unchecked") K...illegalValues) {
 		if(checkNPE) {
 			assertNPE(() -> setter.accept(instance, null));
@@ -1141,16 +1068,16 @@ public class TestUtils {
 		}
 	}
 
-	public static <T extends Object> void assertSetter(T instance, BiConsumer<T, Boolean> setter) {
+	public static <T> void assertSetter(T instance, BiConsumer<T, Boolean> setter) {
 		setter.accept(instance, Boolean.TRUE);
 		setter.accept(instance, Boolean.FALSE);
 	}
 
-	public static <T extends Object> void assertSwitchSetter(T instance, Consumer<T> setter) {
+	public static <T> void assertSwitchSetter(T instance, Consumer<T> setter) {
 		setter.accept(instance);
 	}
 
-	public static <T extends Object, K extends Object> void assertAccumulativeAdd(
+	public static <T, K> void assertAccumulativeAdd(
 			T instance, BiConsumer<T, K> adder,
 			K[] illegalValues, BiConsumer<Executable, String> legalityCheck, boolean checkNPE,
 			BiConsumer<Executable, String> duplicateCheck, @SuppressWarnings("unchecked") K...values) {
@@ -1180,7 +1107,7 @@ public class TestUtils {
 		}
 	}
 
-	public static <T extends Object, K extends Object, C extends Collection<K>> void assertAccumulativeRemove(
+	public static <T, K, C extends Collection<K>> void assertAccumulativeRemove(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			Function<T, C> getter, boolean checkNPE,
 			BiConsumer<Executable, String> invalidRemoveCheck, @SuppressWarnings("unchecked") K...values) {
@@ -1195,11 +1122,11 @@ public class TestUtils {
 			assertNPE(() -> remover.accept(instance, null));
 		}
 
-		assertCollectionEquals(getter.apply(instance), values);
+		assertThat(getter.apply(instance)).containsOnly(values);
 
 		remover.accept(instance, values[0]);
 
-		assertCollectionEquals(getter.apply(instance), Arrays.copyOfRange(values, 1, values.length));
+		assertThat(getter.apply(instance)).containsOnly(Arrays.copyOfRange(values, 1, values.length));
 
 		K first = values[0];
 
@@ -1222,7 +1149,7 @@ public class TestUtils {
 	// GETTER ASSERTIONS
 	//-------------------------------------------
 
-	public static <T extends Object, K extends Object> void assertGetter(
+	public static <T, K> void assertGetter(
 			T instance, K value1, K value2, Supplier<? extends K> defaultValue,
 			Function<T,K> getter, BiConsumer<T, K> setter) {
 		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
@@ -1242,7 +1169,7 @@ public class TestUtils {
 		}
 	}
 
-	public static <T extends Object> void assertGetterSwitch(
+	public static <T> void assertGetterSwitch(
 			T instance, boolean defaultValue,
 			Function<T, Boolean> getter, Consumer<T> setter) {
 		assertEquals(Boolean.valueOf(defaultValue), getter.apply(instance), "unexpected default value");
@@ -1251,7 +1178,7 @@ public class TestUtils {
 		assertEquals(Boolean.valueOf(!defaultValue), getter.apply(instance), "not honoring switch");
 	}
 
-	public static <T extends Object, K extends Object> void assertRestrictedGetter(
+	public static <T, K> void assertRestrictedGetter(
 			T instance, K value1,
 			BiConsumer<Executable, String> restrictionCheck,
 			Function<T,K> getter, BiConsumer<T, K> setter) {
@@ -1263,7 +1190,7 @@ public class TestUtils {
 		assertEquals(value1, getter.apply(instance), "not honoring value change");
 	}
 
-	public static <T extends Object, K extends Object> void assertOptGetter(
+	public static <T, K> void assertOptGetter(
 			T instance, K value1, K value2, Supplier<? extends K> defaultValue,
 			Function<T,Optional<K>> getter, BiConsumer<T, K> setter) {
 		if(defaultValue==null || defaultValue==NO_DEFAULT()) {
@@ -1281,60 +1208,58 @@ public class TestUtils {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertAccumulativeGetter(
+	public static <T, K> void assertAccumulativeGetter(
 			T instance, K value1, K value2, Function<T,? extends Collection<? extends K>> getter, BiConsumer<T, K> adder) {
 		assertTrue(getter.apply(instance).isEmpty());
 
 		adder.accept(instance, value1);
-		assertCollectionEquals(getter.apply(instance), value1);
+		assertThat(getter.apply(instance)).containsOnly(value1);
 
 		adder.accept(instance, value2);
-		assertCollectionEquals(getter.apply(instance), value1, value2);
+		assertThat(getter.apply(instance)).containsOnly(value1, value2);
 	}
 
-	public static <T extends Object, K extends Object> void assertAccumulativeArrayGetter(
+	public static <T, K> void assertAccumulativeArrayGetter(
 			T instance, K value1, K value2, Function<T, K[]> getter, BiConsumer<T, K> adder) {
-		assertArrayEmpty(getter.apply(instance));
+		assertThat(getter.apply(instance)).isEmpty();
 
 		adder.accept(instance, value1);
-		assertArrayEquals(new Object[] {value1}, getter.apply(instance));
+		assertThat(getter.apply(instance)).containsExactly(value1);
 
 		adder.accept(instance, value2);
-		assertArrayEquals(new Object[] {value1, value2}, getter.apply(instance));
+		assertThat(getter.apply(instance)).containsExactly(value1, value2);
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertAccumulativeFlagGetter(
+	@SafeVarargs
+	public static <T, K> void assertAccumulativeFlagGetter(
 			T instance, BiPredicate<T,K> getter, BiConsumer<T, K> adder, BiConsumer<T, K> remover, K...values) {
 
 		values = filterUniques(values);
 
 		for(K value : values) {
-			assertFalse(getter.test(instance, value));
+			assertThat(getter.test(instance, value)).isFalse();
 
 			adder.accept(instance, value);
-			assertTrue(getter.test(instance, value));
+			assertThat(getter.test(instance, value)).isTrue();
 		}
 
 		for(K value : values) {
-			assertTrue(getter.test(instance, value));
+			assertThat(getter.test(instance, value)).isTrue();
 
 			remover.accept(instance, value);
-			assertFalse(getter.test(instance, value));
+			assertThat(getter.test(instance, value)).isFalse();
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertAccumulativeLocalGetter(
+	public static <T, K> void assertAccumulativeLocalGetter(
 			T instance, K value1, K value2, Function<T,? extends Collection<K>> getter, BiConsumer<T, K> adder) {
-		assertTrue(getter.apply(instance).isEmpty());
+		assertThat(getter.apply(instance).isEmpty()).isTrue();
 
 		adder.accept(instance, value1);
-		assertCollectionEquals(getter.apply(instance), value1);
+		assertThat(getter.apply(instance)).containsOnly(value1);
 	}
 
-	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookup(
+	public static <T, K, I> void assertAccumulativeLookup(
 			T instance, K value1, K value2, BiFunction<T, I, K> lookup,
 			boolean checkNPE, BiConsumer<Executable, String> invalidLookupCheck,
 			BiConsumer<T, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
@@ -1374,7 +1299,7 @@ public class TestUtils {
 	 * @param <K> type of values added to object
 	 * @param <I> type of intermediary key representatio nfor lookup
 	 */
-	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeOptLookup(
+	public static <T, K, I> void assertAccumulativeOptLookup(
 			T instance, K value1, K value2, BiFunction<T, I, Optional<K>> lookup,
 			boolean checkNPE,
 			BiConsumer<T, K> adder, Function<K, I> keyGen, @SuppressWarnings("unchecked") I...invalidLookups) {
@@ -1399,7 +1324,7 @@ public class TestUtils {
 		assertOptionalEquals(value2, lookup.apply(instance, keyGen.apply(value2)));
 	}
 
-	public static <T extends Object, K extends Object, I extends Object> void assertAccumulativeLookupContains(
+	public static <T, K, I> void assertAccumulativeLookupContains(
 			T instance, K value1, K value2, BiPredicate<T, I> check,
 			boolean checkNPE, BiConsumer<T, K> adder, Function<K, I> keyGen) {
 
@@ -1418,7 +1343,7 @@ public class TestUtils {
 	}
 
 	@SafeVarargs
-	public static <T extends Object, K extends Object> void assertAccumulativeCount(
+	public static <T, K> void assertAccumulativeCount(
 			T instance,
 			BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			Function<T, Integer> counter, K...values) {
@@ -1446,7 +1371,7 @@ public class TestUtils {
 		}
 	}
 
-	public static <T extends Object, K extends Object> void assertAccumulativeFilter(
+	public static <T, K> void assertAccumulativeFilter(
 			T instance,
 			BiConsumer<T, K> adder, BiFunction<T, Predicate<? super K>,? extends Collection<K>> getter,
 			Predicate<? super K> filter,
@@ -1468,16 +1393,16 @@ public class TestUtils {
 
 		Collection<K> filtered = getter.apply(instance, filter);
 
-		assertCollectionEquals(expectedValues, filtered);
+		assertThat(filtered).hasSameElementsAs(expectedValues);
 	}
 
-	public static <T extends Object, K extends Object> Consumer<Consumer<? super K>> wrapForEach(
+	public static <T, K> Consumer<Consumer<? super K>> wrapForEach(
 			T instance, BiConsumer<T,Consumer<? super K>> forEach) {
 		return action -> forEach.accept(instance, action);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertForEach(
+	public static <T, K> void assertForEach(
 			T instance, K value1, K value2, BiConsumer<T,Consumer<? super K>> forEach, BiConsumer<T, K> adder) {
 
 		Consumer<Consumer<? super K>> loop = wrapForEach(instance, forEach);
@@ -1493,13 +1418,13 @@ public class TestUtils {
 		assertForEachUnsorted(loop, value1, value2);
 	}
 
-	public static <T extends Object, K extends Object> Consumer<Predicate<? super K>> wrapForEachUntil(
+	public static <T, K> Consumer<Predicate<? super K>> wrapForEachUntil(
 			T instance, BiConsumer<T,Predicate<? super K>> forEachUntil) {
 		return action -> forEachUntil.accept(instance, action);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertForEachUntil(
+	public static <T, K> void assertForEachUntil(
 			T instance, BiConsumer<T, Predicate<? super K>> forEachUntil,
 			BiConsumer<T, K> adder, K... values) {
 
@@ -1526,7 +1451,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T extends Object, K extends Object> void assertForEachLocal(
+	public static <T, K> void assertForEachLocal(
 			T instance, K value1, K value2, BiConsumer<T,Consumer<? super K>> forEachLocal, BiConsumer<T, K> adder) {
 
 		Consumer<Consumer<? super K>> loop = wrapForEach(instance, forEachLocal);
@@ -1546,7 +1471,7 @@ public class TestUtils {
 	 * @see #assertGetter(Class, Object, Object, Object, Function, BiConsumer)
 	 *
 	 */
-	public static <T extends Object, K extends Object> void assertIsLocal(
+	public static <T, K> void assertIsLocal(
 			T instance, K value1, K value2, Predicate<T> isLocalCheck, BiConsumer<T, K> setter) {
 		assertFalse(isLocalCheck.test(instance));
 
@@ -1554,7 +1479,7 @@ public class TestUtils {
 		assertTrue(isLocalCheck.test(instance));
 	}
 
-	public static <T extends Object, K extends Object> void assertAccumulativeIsLocal(
+	public static <T, K> void assertAccumulativeIsLocal(
 			T instance, K value1, K value2, BiPredicate<T, K> isLocalCheck, BiConsumer<T, K> adder) {
 
 		assertNPE(() -> isLocalCheck.test(instance, null));
@@ -1568,7 +1493,7 @@ public class TestUtils {
 		assertTrue(isLocalCheck.test(instance, value2));
 	}
 
-	public static <T extends Object, K extends Object> void assertAccumulativeHasLocal(
+	public static <T, K> void assertAccumulativeHasLocal(
 			T instance, K value1, K value2, Predicate<T> isLocalCheck, BiConsumer<T, K> adder) {
 
 		assertFalse(isLocalCheck.test(instance));
@@ -1580,7 +1505,7 @@ public class TestUtils {
 		assertTrue(isLocalCheck.test(instance));
 	}
 
-	public static <T extends Object> void assertFlagGetter(
+	public static <T> void assertFlagGetter(
 			T instance, Boolean defaultValue, Predicate<T> getter, BiConsumer<T, Boolean> setter) {
 		if(defaultValue!=null) {
 			assertEquals(defaultValue, Boolean.valueOf(getter.test(instance)));
@@ -1592,13 +1517,13 @@ public class TestUtils {
 		assertFalse(getter.test(instance));
 	}
 
-	public static <T extends Object, K extends Object> void assertListSize(
+	public static <T, K> void assertListSize(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			Function<T, Integer> counter, @SuppressWarnings("unchecked") K...values) {
 		assertAccumulativeCount(instance, adder, remover, counter, values);
 	}
 
-	public static <T extends Object, K extends Object> void assertListIndexOf(
+	public static <T, K> void assertListIndexOf(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			BiFunction<T, K, Integer> indexOf, RandomGenerator rand, @SuppressWarnings("unchecked") K...values) {
 
@@ -1627,7 +1552,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("boxing")
-	public static <T extends Object, K extends Object> void assertListAtIndex(
+	public static <T, K> void assertListAtIndex(
 			T instance, BiConsumer<T, K> adder, BiConsumer<T, K> remover,
 			BiFunction<T, Integer, K> atIndex, RandomGenerator rand, @SuppressWarnings("unchecked") K...values) {
 
@@ -1656,7 +1581,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("boxing")
-	public static <T extends Object, K extends Object> void assertListInsertAt(
+	public static <T, K> void assertListInsertAt(
 			T instance, TriConsumer<T, K, Integer> inserter,
 			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
 
@@ -1682,7 +1607,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("boxing")
-	public static <T extends Object, K extends Object> void assertListRemoveAt(
+	public static <T, K> void assertListRemoveAt(
 			T instance, BiConsumer<T, K> adder,
 			BiConsumer<T, Integer> remover,
 			BiFunction<T, Integer, K> atIndex, @SuppressWarnings("unchecked") K...values) {
@@ -1712,7 +1637,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("boxing")
-	private static <T extends Object, K extends Object> void assertListEquals(
+	private static <T, K> void assertListEquals(
 			T instance, List<K> list, BiFunction<T, Integer, K> atIndex) {
 		for(int i=0; i<list.size(); i++) {
 			assertEquals(list.get(i), atIndex.apply(instance, i),
@@ -1721,7 +1646,7 @@ public class TestUtils {
 	}
 
 	@SuppressWarnings("boxing")
-	public static <T extends Object, K extends Object> void assertPredicate(
+	public static <T, K> void assertPredicate(
 			T instance, BiFunction<T, K, Boolean> modifier,
 			Predicate<T> predicate, Function<? super K, String> msgGen, @SuppressWarnings("unchecked") K... values) {
 
@@ -1736,14 +1661,14 @@ public class TestUtils {
 	//  INJECTIONS
 	//-------------------------
 
-	public static <M extends Object, K extends Object, T extends Object> BiConsumer<M, K> inject_genericSetter(
+	public static <M, K, T> BiConsumer<M, K> inject_genericSetter(
 			BiConsumer<M, T> setter, Function<K, T> transform) {
 		return (m, val) -> {
 			setter.accept(m, transform.apply(val));
 		};
 	}
 
-	public static <M extends Object, K extends Object> BiConsumer<M, K> inject_genericInserter(
+	public static <M, K> BiConsumer<M, K> inject_genericInserter(
 			TriConsumer<M, K, Integer> inserter, Supplier<Integer> indices) {
 		return (m, val) -> {
 			inserter.accept(m, val, indices.get());
@@ -1760,7 +1685,7 @@ public class TestUtils {
 	 *
 	 * @return
 	 */
-	public static <M extends Object, T extends Object, K extends Object> Function<M, List<K>> transform_genericCollectionGetter(
+	public static <M, T, K> Function<M, List<K>> transform_genericCollectionGetter(
 			Function<M, ? extends Collection<T>> getter, Function<T, K> transform) {
 		return m -> {
 			List<K> result = new ArrayList<>();
@@ -1771,21 +1696,21 @@ public class TestUtils {
 		};
 	}
 
-	public static <M extends Object, T extends Object, K extends Object> Function<M, K> transform_genericValue(
+	public static <M, T, K> Function<M, K> transform_genericValue(
 			Function<M, T> getter, Function<T, K> transform) {
 		return m -> {
 			return transform.apply(getter.apply(m));
 		};
 	}
 
-	public static <M extends Object, T extends Object, K extends Object> Function<M, Optional<K>> transform_genericOptValue(
+	public static <M, T, K> Function<M, Optional<K>> transform_genericOptValue(
 			Function<M, Optional<T>> getter, Function<T, K> transform) {
 		return m -> {
 			return getter.apply(m).map(transform);
 		};
 	}
 
-	public static <T extends Object, K extends Object>
+	public static <T, K>
 			BiConsumer<T, Collection<K>> wrap_batchConsumer(BiConsumer<T, K> action) {
 		return (m, items) -> {
 			for(K item : items) {
@@ -1799,14 +1724,14 @@ public class TestUtils {
 	//  SUPPLIERS
 	//-------------------------
 
-	public static <V extends Object> Supplier<V> constant(V value) {
+	public static <V> Supplier<V> constant(V value) {
 		return () -> value;
 	}
 
 	public static Predicate<Object> TRUE = x -> true;
 	public static Predicate<Object> FALSE = x -> false;
 
-	public static <E extends Object> void makeTests(List<E> args,
+	public static <E> void makeTests(List<E> args,
 			Function<E, String> labelGen,
 			Predicate<? super E> check, Predicate<? super E> oracle,
 			Consumer<? super DynamicTest> collector) {

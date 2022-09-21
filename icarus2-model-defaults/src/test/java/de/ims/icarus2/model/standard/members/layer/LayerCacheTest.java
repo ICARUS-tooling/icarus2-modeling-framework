@@ -16,9 +16,9 @@
  */
 package de.ims.icarus2.model.standard.members.layer;
 
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -95,7 +95,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		void testFromLayers(int size, RandomGenerator rng) {
 			Layer[] layers = randomLayers(rng.randomInts(size, 0, Integer.MAX_VALUE));
 			LayerCache cache = LayerCache.fromLayers(layers);
-			assertCollectionEquals(cache.layerCollection(), layers);
+			assertThat(cache.layerCollection()).containsOnly(layers);
 		}
 
 		/**
@@ -107,7 +107,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		void testFromCollection(int size, RandomGenerator rng) {
 			Layer[] layers = randomLayers(rng.randomInts(size, 0, Integer.MAX_VALUE));
 			LayerCache cache = LayerCache.fromCollection(set(layers));
-			assertCollectionEquals(cache.layerCollection(), layers);
+			assertThat(cache.layerCollection()).containsOnly(layers);
 		}
 
 		/**
@@ -191,7 +191,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		 */
 		@Test
 		void testLayerCollection() {
-			assertCollectionEquals(cache.layerCollection(), layers);
+			assertThat(cache.layerCollection()).containsOnly(layers);
 		}
 
 		/**
@@ -199,7 +199,7 @@ class LayerCacheTest implements GenericTest<LayerCache> {
 		 */
 		@Test
 		void testLayers() {
-			assertCollectionEquals(set(cache.layers()), layers);
+			assertThat(set(cache.layers())).containsOnly(layers);
 		}
 
 	}

@@ -16,17 +16,8 @@
  */
 package de.ims.icarus2.util.collections.set;
 
-import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
-import static de.ims.icarus2.test.TestUtils.assertListEquals;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +54,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	@RandomizedTest
 	default void testEntryCount(RandomGenerator rand) {
 		Object[] items = randomContent(rand);
-		assertEquals(items.length, createFilled(items).entryCount());
+		assertThat(createFilled(items).entryCount()).isEqualTo(items.length);
 	}
 
 	/**
@@ -71,7 +62,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testEntryCountEmpty() {
-		assertEquals(0, createEmpty().entryCount());
+		assertThat(createEmpty().entryCount()).isEqualTo(0);
 	}
 
 	/**
@@ -80,7 +71,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	@Test
 	@RandomizedTest
 	default void testIsEmpty(RandomGenerator rand) {
-		assertFalse(createFilled(randomContent(rand)).isEmpty());
+		assertThat(createFilled(randomContent(rand)).isEmpty()).isFalse();
 	}
 
 	/**
@@ -88,7 +79,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testIsEmptyEmpty() {
-		assertTrue(createEmpty().isEmpty());
+		assertThat(createEmpty().isEmpty()).isTrue();
 	}
 
 	/**
@@ -100,7 +91,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		for (int i = 0; i < items.length; i++) {
-			assertSame(items[i], set.entryAt(i));
+			assertThat(set.entryAt(i)).isSameAs(items[i]);
 		}
 	}
 
@@ -121,7 +112,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		for (int i = 0; i < items.length; i++) {
-			assertTrue(set.contains(items[i]));
+			assertThat(set.contains(items[i])).isTrue();
 		}
 	}
 
@@ -131,7 +122,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	@Test
 	@RandomizedTest
 	default void testContainsForeign(RandomGenerator rand) {
-		assertFalse(createFilled(randomContent(rand)).contains(new Object()));
+		assertThat(createFilled(randomContent(rand)).contains(new Object())).isFalse();
 	}
 
 	/**
@@ -139,7 +130,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testContainsEmpty() {
-		assertFalse(createEmpty().contains(new Object()));
+		assertThat(createEmpty().contains(new Object())).isFalse();
 	}
 
 	/**
@@ -150,7 +141,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	default void testToSet(RandomGenerator rand) {
 		Object[] items = randomContent(rand);
 		S set = createFilled(items);
-		assertCollectionEquals(set.toSet(), items);
+		assertThat(set.toSet()).containsOnly(items);
 	}
 
 	/**
@@ -158,7 +149,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testToSetEmpty() {
-		assertCollectionEmpty(createEmpty().toSet());
+		assertThat(createEmpty().toSet()).isEmpty();
 	}
 
 	/**
@@ -169,7 +160,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	default void testToList(RandomGenerator rand) {
 		Object[] items = randomContent(rand);
 		S set = createFilled(items);
-		assertListEquals(set.toList(), items);
+		assertThat(set.toList()).containsExactly(items);
 	}
 
 	/**
@@ -177,7 +168,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testToListEmpty() {
-		assertCollectionEmpty(createEmpty().toList());
+		assertThat(createEmpty().toList()).isEmpty();
 	}
 
 	/**
@@ -188,7 +179,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	default void testToArray(RandomGenerator rand) {
 		Object[] items = randomContent(rand);
 		S set = createFilled(items);
-		assertArrayEquals(items, set.toArray());
+		assertThat(set.toArray()).containsExactly(items);
 	}
 
 	/**
@@ -196,7 +187,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testToArrayEmpty() {
-		assertArrayEmpty(createEmpty().toArray());
+		assertThat(createEmpty()).isEmpty();
 	}
 
 	/**
@@ -208,19 +199,15 @@ public interface DataSetTest<S extends DataSet<Object>>
 		Object[] items = randomContent(rand);
 		S set = createFilled(items);
 		// Direct fit
-		assertArrayEquals(items, set.toArray(new Object[items.length]));
+		assertThat(set.toArray(new Object[items.length])).containsExactly(items);
 		// Growing
-		assertArrayEquals(items, set.toArray(new Object[0]));
+		assertThat(set.toArray(new Object[0])).containsExactly(items);
 
 		// Null-marker in array with extra capacity
 		Object[] target = new Object[items.length*2];
 		Object[] result = set.toArray(target);
-		assertSame(target, result);
-
-		for (int i = 0; i < items.length; i++) {
-			assertSame(items[i], result[i]);
-		}
-		assertNull(result[items.length]);
+		assertThat(result).isSameAs(target).startsWith(target);
+		assertThat(result[items.length]).isNull();
 	}
 
 	/**
@@ -228,8 +215,8 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testToArrayTArrayEmpty() {
-		assertArrayEmpty(createEmpty().toArray(new Object[0]));
-		assertNull(createEmpty().toArray(new Object[10])[0]);
+		assertThat(createEmpty().toArray(new Object[0])).isEmpty();
+		assertThat(createEmpty().toArray(new Object[10])[0]).isNull();
 	}
 
 	/**
@@ -237,7 +224,7 @@ public interface DataSetTest<S extends DataSet<Object>>
 	 */
 	@Test
 	default void testEmptySet() {
-		assertTrue(DataSet.emptySet().isEmpty());
+		assertThat(DataSet.emptySet().isEmpty()).isTrue();
 	}
 
 }

@@ -16,9 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.util.collections.CollectionUtils.set;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -70,11 +68,10 @@ class ContainerTypeTest {
 	 */
 	@Test
 	void testGetCompatibleTypes() {
-		assertCollectionEquals(set(ContainerType.LIST.getCompatibleTypes()),
+		assertThat(ContainerType.LIST.getCompatibleTypes()).containsOnly(
 				ContainerType.SPAN, ContainerType.SINGLETON);
-		assertCollectionEquals(set(ContainerType.SPAN.getCompatibleTypes()),
-				ContainerType.SINGLETON);
-		assertArrayEquals(new Object[0], ContainerType.SINGLETON.getCompatibleTypes());
+		assertThat(ContainerType.SPAN.getCompatibleTypes()).containsOnly(ContainerType.SINGLETON);
+		assertThat(ContainerType.SINGLETON.getCompatibleTypes()).isEmpty();
 	}
 
 	/**
@@ -82,11 +79,10 @@ class ContainerTypeTest {
 	 */
 	@Test
 	void testGetIncompatibleTypes() {
-		assertCollectionEquals(set(ContainerType.SINGLETON.getIncompatibleTypes()),
+		assertThat(ContainerType.SINGLETON.getIncompatibleTypes()).containsOnly(
 				ContainerType.SPAN, ContainerType.LIST);
-		assertCollectionEquals(set(ContainerType.SPAN.getIncompatibleTypes()),
-				ContainerType.LIST);
-		assertArrayEquals(new Object[0], ContainerType.LIST.getIncompatibleTypes());
+		assertThat(ContainerType.SPAN.getIncompatibleTypes()).containsOnly(ContainerType.LIST);
+		assertThat(ContainerType.LIST.getIncompatibleTypes()).isEmpty();
 	}
 
 	/**
@@ -97,7 +93,7 @@ class ContainerTypeTest {
 		ByteSet usedIds = new ByteArraySet();
 		for(ContainerType type : ContainerType.values()) {
 			byte id = type.id();
-			assertFalse(usedIds.contains(id), "duplicate id: "+id);
+			assertThat(usedIds.contains(id)).as("duplicate id: "+id).isFalse();
 			usedIds.add(id);
 		}
 	}

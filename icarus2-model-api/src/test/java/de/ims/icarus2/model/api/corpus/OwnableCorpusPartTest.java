@@ -17,9 +17,8 @@
 package de.ims.icarus2.model.api.corpus;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -187,7 +186,7 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 	@Test
 	default void testGetOwnersEmpty() {
 		try(P part = create()) {
-			assertCollectionEmpty(part.getOwners());
+			assertThat(part.getOwners()).isEmpty();
 		}
 	}
 
@@ -202,10 +201,10 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 			assumeTrue(owner1!=owner2);
 
 			part.acquire(owner1);
-			assertCollectionEquals(part.getOwners(), owner1);
+			assertThat(part.getOwners()).containsOnly(owner1);
 
 			part.acquire(owner2);
-			assertCollectionEquals(part.getOwners(), owner1, owner2);
+			assertThat(part.getOwners()).containsOnly(owner1, owner2);
 		}
 	}
 
@@ -223,10 +222,10 @@ public interface OwnableCorpusPartTest<P extends OwnableCorpusPart>
 			part.acquire(owner2);
 
 			part.release(owner1);
-			assertCollectionEquals(part.getOwners(), owner2);
+			assertThat(part.getOwners()).containsOnly(owner2);
 
 			part.release(owner2);
-			assertCollectionEmpty(part.getOwners());
+			assertThat(part.getOwners()).isEmpty();;
 		}
 	}
 

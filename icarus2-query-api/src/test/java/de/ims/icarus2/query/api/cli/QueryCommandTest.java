@@ -20,6 +20,7 @@
 package de.ims.icarus2.query.api.cli;
 
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
@@ -50,6 +51,7 @@ import de.ims.icarus2.model.manifest.standard.DefaultManifestFactory;
 import de.ims.icarus2.model.manifest.standard.DefaultManifestRegistry;
 import de.ims.icarus2.model.manifest.util.ManifestBuilder;
 import de.ims.icarus2.model.manifest.xml.ManifestXmlWriter;
+import de.ims.icarus2.query.api.QueryAssertions;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.io.MatchCodec.MatchReader;
 import de.ims.icarus2.query.api.engine.result.io.TabularMatchCodec;
@@ -217,6 +219,12 @@ class QueryCommandTest {
 
 		List<Match> matches = readMatches(config.outputFile);
 		assertThat(matches).isNotEmpty();
+		assertThat(matches).element(0, as(QueryAssertions.MATCH))
+			.hasIndex(3)
+			.hasOnlyMapping(0, 0);
+		assertThat(matches).element(1, as(QueryAssertions.MATCH))
+			.hasIndex(4)
+			.hasOnlyMapping(0, 0);
 	}
 
 }

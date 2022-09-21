@@ -26,9 +26,9 @@ import de.ims.icarus2.test.TestUtils;
  * @author Markus Gärtner
  *
  */
-public final class Triple<E_1, E_2, E_3> {
+public final class Triple<FIRST, SECOND, THIRD> {
 
-	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> triple(E_1 first, E_2 second, E_3 third) {
+	public static <FIRST, SECOND, THIRD> Triple<FIRST, SECOND, THIRD> triple(FIRST first, SECOND second, THIRD third) {
 		return new Triple<>(first, second, third, false);
 	}
 
@@ -37,24 +37,24 @@ public final class Triple<E_1, E_2, E_3> {
 		return new Triple<>(first, second, third, false);
 	}
 
-	public static <E_1, E_2, E_3> Triple<E_1, E_2, E_3> nullableTriple(E_1 first, E_2 second, E_3 third) {
+	public static <FIRST, SECOND, THIRD> Triple<FIRST, SECOND, THIRD> nullableTriple(FIRST first, SECOND second, THIRD third) {
 		return new Triple<>(first, second, third, true);
 	}
 
-	public final E_1 first;
-	public final E_2 second;
-	public final E_3 third;
+	public final FIRST first;
+	public final SECOND second;
+	public final THIRD third;
 
 	/**
 	 * @param first
 	 * @param second
 	 * @param third
 	 */
-	public Triple(E_1 first, E_2 second, E_3 third) {
+	public Triple(FIRST first, SECOND second, THIRD third) {
 		this(first, second, third, false);
 	}
 
-	private Triple(E_1 first, E_2 second, E_3 third, boolean allowNull) {
+	private Triple(FIRST first, SECOND second, THIRD third, boolean allowNull) {
 		this.first = allowNull ? first : requireNonNull(first);
 		this.second = allowNull ? second : requireNonNull(second);
 		this.third = allowNull ? third : requireNonNull(third);

@@ -16,9 +16,7 @@
  */
 package de.ims.icarus2.model.manifest.api;
 
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.util.collections.CollectionUtils.set;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -153,13 +151,10 @@ class StructureTypeTest {
 	 */
 	@Test
 	void testGetCompatibleTypes() {
-		assertCollectionEquals(set(StructureType.GRAPH.getCompatibleTypes()),
-				StructureType.TREE, StructureType.CHAIN, StructureType.SET);
-		assertCollectionEquals(set(StructureType.TREE.getCompatibleTypes()),
-				StructureType.CHAIN, StructureType.SET);
-		assertCollectionEquals(set(StructureType.CHAIN.getCompatibleTypes()),
-				StructureType.SET);
-		assertArrayEquals(new Object[0], StructureType.SET.getCompatibleTypes());
+		assertThat(StructureType.GRAPH.getCompatibleTypes()).containsOnly(StructureType.TREE, StructureType.CHAIN, StructureType.SET);
+		assertThat(StructureType.TREE.getCompatibleTypes()).containsOnly(StructureType.CHAIN, StructureType.SET);
+		assertThat(StructureType.CHAIN.getCompatibleTypes()).containsOnly(StructureType.SET);
+		assertThat(StructureType.SET.getCompatibleTypes()).isEmpty();
 	}
 
 	/**
@@ -167,13 +162,10 @@ class StructureTypeTest {
 	 */
 	@Test
 	void testGetIncompatibleTypes() {
-		assertCollectionEquals(set(StructureType.SET.getIncompatibleTypes()),
-				StructureType.CHAIN, StructureType.TREE, StructureType.GRAPH);
-		assertCollectionEquals(set(StructureType.CHAIN.getIncompatibleTypes()),
-				StructureType.TREE, StructureType.GRAPH);
-		assertCollectionEquals(set(StructureType.TREE.getIncompatibleTypes()),
-				StructureType.GRAPH);
-		assertArrayEquals(new Object[0], StructureType.GRAPH.getIncompatibleTypes());
+		assertThat(StructureType.SET.getIncompatibleTypes()).containsOnly(StructureType.CHAIN, StructureType.TREE, StructureType.GRAPH);
+		assertThat(StructureType.CHAIN.getIncompatibleTypes()).containsOnly(StructureType.TREE, StructureType.GRAPH);
+		assertThat(StructureType.TREE.getIncompatibleTypes()).containsOnly(StructureType.GRAPH);
+		assertThat(StructureType.GRAPH.getIncompatibleTypes()).isEmpty();
 	}
 
 	/**

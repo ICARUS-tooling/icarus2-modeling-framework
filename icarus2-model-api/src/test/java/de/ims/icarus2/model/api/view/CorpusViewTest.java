@@ -18,8 +18,8 @@ package de.ims.icarus2.model.api.view;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.MANIFEST_FACTORY;
-import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -137,7 +137,7 @@ public interface CorpusViewTest<V extends CorpusView> extends GenericTest<V> {
 	@TestFactory
 	default Stream<DynamicTest>  testGetAccessMode() {
 		Set<AccessMode> supportedModes = getSupportedAccessModes();
-		assertCollectionNotEmpty(supportedModes);
+		assertThat(supportedModes).isNotEmpty();
 
 		return Stream.concat(
 				supportedModes.stream()

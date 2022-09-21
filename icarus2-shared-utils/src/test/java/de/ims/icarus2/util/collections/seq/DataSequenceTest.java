@@ -16,12 +16,10 @@
  */
 package de.ims.icarus2.util.collections.seq;
 
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
-import static de.ims.icarus2.test.TestUtils.assertListEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +96,7 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	default void testGetEntries(RandomGenerator rand) {
 		Object[] items = randomContent(rand);
 		S seq = createFilled(items);
-		assertListEquals(seq.getEntries(), items);
+		assertThat(seq.getEntries()).containsExactly(items);
 	}
 
 	/**
@@ -106,7 +104,7 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	 */
 	@Test
 	default void testGetEntriesEmpty() {
-		assertCollectionEmpty(createEmpty().getEntries());
+		assertThat(createEmpty().getEntries()).isEmpty();
 	}
 
 	/**
@@ -114,7 +112,7 @@ public interface DataSequenceTest<S extends DataSequence<Object>>
 	 */
 	@Test
 	default void testEmptySequence() {
-		assertTrue(DataSequence.emptySequence().entryCount()==0L);
+		assertThat(DataSequence.emptySequence().entryCount()).isEqualTo(0);
 	}
 
 }

@@ -16,12 +16,9 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
-import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,9 +61,9 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.features.contains(Feature.INDETERMINATE_SIZE)) {
-						assertEquals(UNSET_LONG, config.set.size());
+						assertThat(config.set).hasUndefinedSize();
 					} else {
-						assertEquals(config.indices.length, config.set.size());
+						assertThat(config.set).hasSize(config.indices.length);
 					}
 				}));
 	}
@@ -82,9 +79,9 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.indices.length==0) {
-						assertTrue(config.set.isEmpty(), "Expecting to be empty");
+						assertThat(config.set).isEmpty();
 					} else if(!config.features.contains(Feature.INDETERMINATE_SIZE)) {
-						assertFalse(config.set.isEmpty(), "Expected to not be empty");
+						assertThat(config.set).isNotEmpty();
 					}
 				}));
 	}
@@ -99,7 +96,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.map(Config::validate)
 				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
-					assertEquals(config.valueType, config.set.getIndexValueType());
+					assertThat(config.set).hasValueType(config.set.getIndexValueType());
 				}));
 	}
 
@@ -114,9 +111,9 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
 					if(config.sorted) {
-						assertTrue(config.set.isSorted(), "Expected to be sorted");
+						assertThat(config.set).isSorted();
 					} else {
-						assertFalse(config.set.isSorted(), "Expected not to be sorted");
+						assertThat(config.set).isNotSorted();
 					}
 				}));
 	}
@@ -467,9 +464,9 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 						assertTrue(config.set.externalize().isEmpty());
 					} else {
 						IndexSet set = config.set.externalize();
-						assertNotNull(set);
-						assertFalse(set.hasFeature(Feature.INDETERMINATE_SIZE));
-						assertIndicesEqualsExact(config.set, set);
+						assertThat(set)
+							.hasNotFeature(Feature.INDETERMINATE_SIZE)
+							.hasSameIndicesAs(config.set);
 					}
 				}));
 	}
@@ -484,7 +481,7 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.map(Config::validate)
 				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
-					assertCollectionEquals(config.features, config.set.getFeatures());
+					assertThat(config.set).hasExacltyFeatures(config.features);
 				}));
 	}
 
@@ -498,12 +495,12 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.map(Config::validate)
 				.flatMap(Config::withSubSets)
 				.map(config -> dynamicTest(config.label, () -> {
-					assertTrue(config.set.hasFeatures(config.features.toArray(new Feature[0])));
+					assertThat(config.set).hasAllFeatures(config.features);
 
 					Set<Feature> negative = EnumSet.allOf(Feature.class);
 					negative.removeAll(config.features);
 
-					assertFalse(config.set.hasFeatures(negative.toArray(new Feature[0])));
+					assertThat(config.set).hasNoFeatures(negative);
 				}));
 	}
 
@@ -519,9 +516,9 @@ public interface IndexSetTest<S extends IndexSet> extends ApiGuardedTest<S> {
 				.map(config -> dynamicTest(config.label, () -> {
 					for(Feature feature : Feature.values()) {
 						if(config.features.contains(feature)) {
-							assertTrue(config.set.hasFeature(feature), "Expected to have feature: "+feature);
+							assertThat(config.set).hasFeature(feature);
 						} else {
-							assertFalse(config.set.hasFeature(feature), "Not expected to have feature: "+feature);
+							assertThat(config.set).hasNotFeature(feature);
 						}
 					}
 				}));

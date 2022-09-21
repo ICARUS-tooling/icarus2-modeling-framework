@@ -25,7 +25,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockPosition;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.getTestValues;
 import static de.ims.icarus2.test.TestUtils.abort;
-import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.test.util.Pair.nullablePair;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.ArrayUtils.swap;
@@ -37,6 +36,7 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -180,7 +180,7 @@ class SerializableAtomicModelChangeTest {
 			return createData().map(p -> dynamicTest("data: "+p.first, () -> {
 				B source = p.second;
 				List<Pair<String,C>> changes = createBulkChanges(source);
-				assertCollectionNotEmpty(changes);
+				assertThat(changes).isNotEmpty();
 				int count = changes.size();
 
 				/** Lists the states before and after each change */
@@ -268,7 +268,7 @@ class SerializableAtomicModelChangeTest {
 			return createData().map(p -> dynamicTest("data: "+p.first, () -> {
 				B source = p.second;
 				List<Pair<String,C>> changes = createBulkChanges(source);
-				assertCollectionNotEmpty(changes);
+				assertThat(changes).isNotEmpty();
 				int count = changes.size();
 
 				// Lists the states before and after each change

@@ -19,6 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.func;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -69,36 +70,30 @@ class DualIntersectionOfLongTest {
 		return tmp.toLongArray();
 	}
 
-	private static final long[] EMPTY = {};
-
 	@Test
 	void leftEmpty() {
-		assertArrayEquals(EMPTY,
-				intersect(
+		assertThat(intersect(
 				LongStream.of(),
-				LongStream.of(1, 2, 3, 4, 5)
-		));
+				LongStream.of(1, 2, 3, 4, 5))).isEmpty();
 	}
 
 	@Test
 	void rightEmpty() {
-		assertArrayEquals(EMPTY,
-				intersect(
+		assertThat(intersect(
 				LongStream.of(1, 2, 3, 4, 5),
-				LongStream.of()
-		));
+				LongStream.of())).isEmpty();
 	}
 
 	@Test
 	void empty() {
-		assertArrayEquals(EMPTY,
-				intersect(
+		assertThat(intersect(
 				LongStream.of(),
-				LongStream.of()));
+				LongStream.of())).isEmpty();
 	}
 
 	@Test
 	void twoIdentical() {
+		//TPDP
 		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
 				intersect(
 				LongStream.of(1, 2, 3, 4, 5),

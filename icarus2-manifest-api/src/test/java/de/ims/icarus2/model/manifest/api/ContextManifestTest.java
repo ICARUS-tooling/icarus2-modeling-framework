@@ -27,7 +27,6 @@ import static de.ims.icarus2.test.TestUtils.NO_ILLEGAL;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeFilter;
 import static de.ims.icarus2.test.TestUtils.assertAccumulativeGetter;
-import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.assertPresent;
@@ -36,6 +35,7 @@ import static de.ims.icarus2.test.TestUtils.transform_genericCollectionGetter;
 import static de.ims.icarus2.test.TestUtils.wrapForEach;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -125,7 +125,7 @@ public interface ContextManifestTest extends EmbeddedMemberManifestTest<ContextM
 	@Override
 	default ContextManifest createWithBindingEndpoints(TestSettings settings,
 			Set<LayerPrerequisite> bindingEndpoints) {
-		assertCollectionNotEmpty(bindingEndpoints);
+		assertThat(bindingEndpoints).isNotEmpty();
 
 		ContextManifest manifest = createUnlocked(settings);
 

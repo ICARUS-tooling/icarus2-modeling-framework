@@ -16,9 +16,8 @@
  */
 package de.ims.icarus2.model.manifest.api.binding;
 
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
-import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -89,8 +88,7 @@ public interface BindableTest<B extends Bindable> extends GenericTest<B> {
 		// Test with unset endpoints, so expect empty set
 		B instance = createTestInstance(settings());
 		Set<LayerPrerequisite> bindingEndpoints = instance.getBindingEndpoints();
-		assertNotNull(bindingEndpoints);
-		assertCollectionEmpty(bindingEndpoints);
+		assertThat(bindingEndpoints).isEmpty();
 
 		// Test with predefined collection of endpoints
 		Set<Multiplicity> supportedMultiplicities = getSupportedBindingMultiplicities();
@@ -101,8 +99,7 @@ public interface BindableTest<B extends Bindable> extends GenericTest<B> {
 		}
 		B filledInstance = createWithBindingEndpoints(settings(), origBindings);
 		Set<LayerPrerequisite> newEndpoints = filledInstance.getBindingEndpoints();
-		assertCollectionNotEmpty(newEndpoints);
-		assertEquals(origBindings.size(), newEndpoints.size());
+		assertThat(newEndpoints).hasSameSizeAs(origBindings);
 		// Complicated assertion, as we can't use plain equals() on those endpoints
 		Map<String, LayerPrerequisite> lookup = new HashMap<>();
 		for(LayerPrerequisite binding : origBindings) {

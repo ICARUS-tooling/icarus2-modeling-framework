@@ -21,10 +21,10 @@ import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockManifestRegist
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.test.TestUtils.ILLEGAL_STATE_CHECK;
 import static de.ims.icarus2.test.TestUtils.NPE_CHECK;
-import static de.ims.icarus2.test.TestUtils.assertCollectionNotEmpty;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedGetter;
 import static de.ims.icarus2.test.TestUtils.assertRestrictedSetter;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -163,7 +163,7 @@ public interface ManifestXmlDelegateTest<M extends TypedManifest, D extends Mani
 		final ManifestGenerator generator = new ManifestGenerator(factory);
 
 		List<Config> configurations = configurations();
-		assertCollectionNotEmpty(configurations);
+		assertThat(configurations).isNotEmpty();
 
 		/*
 		 * Create 1 test case per configuration.

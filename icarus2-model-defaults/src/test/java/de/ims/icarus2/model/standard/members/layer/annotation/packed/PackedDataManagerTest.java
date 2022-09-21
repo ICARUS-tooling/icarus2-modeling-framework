@@ -20,7 +20,6 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.assertUnsupportedType;
 import static de.ims.icarus2.test.TestTags.CONCURRENT;
 import static de.ims.icarus2.test.TestUtils.RUNS;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.filledArray;
 import static de.ims.icarus2.test.util.Triple.nullableTriple;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
@@ -447,7 +446,7 @@ class PackedDataManagerTest {
 								Set<Object> sources = list.stream()
 										.map(PackageHandle::getSource)
 										.collect(Collectors.toSet());
-								assertCollectionEquals(list, manager.lookupHandles(sources).values());
+								assertThat(manager.lookupHandles(sources).values()).hasSameElementsAs(list);
 							}));
 				}
 			}
@@ -963,7 +962,7 @@ class PackedDataManagerTest {
 									Set<Object> sources = list.stream()
 											.map(PackageHandle::getSource)
 											.collect(Collectors.toSet());
-									assertCollectionEquals(list, manager.lookupHandles(sources).values());
+									assertThat(manager.lookupHandles(sources).values()).hasSameElementsAs(list);
 								}));
 					}
 

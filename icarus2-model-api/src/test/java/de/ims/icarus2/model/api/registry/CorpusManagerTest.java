@@ -20,11 +20,10 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.mockTypedManifest;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubId;
 import static de.ims.icarus2.model.manifest.ManifestTestUtils.stubName;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
 import static de.ims.icarus2.test.TestUtils.assertMock;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.test.TestUtils.settings;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -201,7 +200,7 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 
 		manager.shutdown();
 
-		assertCollectionEmpty(manager.getLiveCorpora());
+		assertThat(manager.getLiveCorpora()).isEmpty();
 	}
 
 	/**
@@ -402,13 +401,13 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		M manager = createCustomManager(DEFAULT_PRODUCER, settings());
 
 		// Initially no live corpora
-		assertCollectionEmpty(manager.getLiveCorpora());
+		assertThat(manager.getLiveCorpora()).isEmpty();
 
 		// Now initiate a dummy
 		CorpusManifest manifest = mockManifest(manager);
 		assertNotNull(manager.connect(manifest));
 
-		assertCollectionEquals(manager.getLiveCorpora(), manifest);
+		assertThat(manager.getLiveCorpora()).containsExactly(manifest);
 	}
 
 	/**
@@ -428,10 +427,9 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		manager.connect(manifest2);
 		manager.connect(manifest3);
 
-		assertCollectionEmpty(manager.getCorpora(m -> false));
-		assertCollectionEquals(manager.getCorpora(m -> true), manifest1, manifest2, manifest3);
-		assertCollectionEquals(manager.getCorpora(m -> m.getId().get().startsWith("corpus2")),
-				manifest2, manifest3);
+		assertThat(manager.getCorpora(m -> false)).isEmpty();
+		assertThat(manager.getCorpora(m -> true)).containsOnly(manifest1, manifest2, manifest3);
+		assertThat(manager.getCorpora(m -> m.getId().get().startsWith("corpus2"))).containsOnly(manifest2, manifest3);
 	}
 
 	/**
@@ -450,7 +448,7 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		assertNPE(() -> manager.getCorpora((CorpusState)null));
 
 		for(CorpusState state : CorpusState.values()) {
-			assertCollectionEmpty(manager.getCorpora(state));
+			assertThat(manager.getCorpora(state)).isEmpty();
 		}
 
 		CorpusManifest connectedManifest = mockManifest(manager, "connected", "Connected Corpus");
@@ -472,9 +470,9 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		 * Corpora in the 'conencting' or 'disconnecting' state cannot be
 		 * queried without a concurrent testing scenario.
 		 */
-		assertCollectionEquals(manager.getCorpora(CorpusState.CONNECTED), connectedManifest);
-		assertCollectionEquals(manager.getCorpora(CorpusState.BAD), badManifest);
-		assertCollectionEquals(manager.getCorpora(CorpusState.DISABLED), disabledManifest);
+		assertThat(manager.getCorpora(CorpusState.CONNECTED)).containsExactly(connectedManifest);
+		assertThat(manager.getCorpora(CorpusState.BAD)).containsExactly(badManifest);
+		assertThat(manager.getCorpora(CorpusState.DISABLED)).containsExactly(disabledManifest);
 		//TODO actually test for mere 'enabled' (which also includes the disconnected ones) corpora
 	}
 
@@ -486,13 +484,13 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		M manager = createCustomManager(DEFAULT_PRODUCER, settings());
 
 		// Initially no live corpora
-		assertCollectionEmpty(manager.getConnectedCorpora());
+		assertThat(manager.getConnectedCorpora()).isEmpty();
 
 		// Now initiate a dummy
 		CorpusManifest manifest = mockManifest(manager);
 		assertNotNull(manager.connect(manifest));
 
-		assertCollectionEquals(manager.getConnectedCorpora(), manifest);
+		assertThat(manager.getConnectedCorpora()).containsExactly(manifest);
 	}
 
 	/**
@@ -522,12 +520,12 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		CorpusManifest manifest = mockManifest(manager);
 
 		// Initially no bad corpora
-		assertCollectionEmpty(manager.getBadCorpora());
+		assertThat(manager.getBadCorpora()).isEmpty();
 
 		assertModelException(GlobalErrorCode.DELEGATION_FAILED,
 				() -> manager.connect(manifest));
 
-		assertCollectionEquals(manager.getBadCorpora(), manifest);
+		assertThat(manager.getBadCorpora()).containsExactly(manifest);
 	}
 
 	/**
@@ -539,12 +537,12 @@ public interface CorpusManagerTest<M extends CorpusManager> extends GenericTest<
 		CorpusManifest manifest = mockManifest(manager);
 
 		// Initially no live corpora
-		assertCollectionEmpty(manager.getDisabledCorpora());
+		assertThat(manager.getDisabledCorpora()).isEmpty();
 
 		// Now disable some corpus
 		assertTrue(manager.disableCorpus(manifest));
 
-		assertCollectionEquals(manager.getDisabledCorpora(), manifest);
+		assertThat(manager.getDisabledCorpora()).containsExactly(manifest);
 	}
 
 	/**

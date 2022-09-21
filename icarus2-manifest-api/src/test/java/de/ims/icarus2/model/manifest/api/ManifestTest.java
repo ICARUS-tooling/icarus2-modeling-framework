@@ -25,6 +25,7 @@ import static de.ims.icarus2.test.TestUtils.assertNotPresent;
 import static de.ims.icarus2.test.TestUtils.assertOptionalEquals;
 import static de.ims.icarus2.test.TestUtils.settings;
 import static de.ims.icarus2.test.TestUtils.wrapForEach;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -236,7 +237,6 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	default <K extends Object> void assertDerivativeAccumulativeGetter(
 			TestSettings settings, K value1, K value2, Function<M, ? extends Collection<K>> getter, BiConsumer<M, K> adder) {
 
@@ -247,11 +247,11 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			adder.accept(template, value1);
 			M derived = createDerived(settings, template);
 
-			TestUtils.assertCollectionEquals(getter.apply(derived), value1);
+			assertThat(getter.apply(derived)).containsOnly(value1);
 
 			adder.accept(derived, value2);
-			TestUtils.assertCollectionEquals(getter.apply(derived), value1, value2);
-			TestUtils.assertCollectionEquals(getter.apply(template), value1);
+			assertThat(getter.apply(derived)).containsOnly(value1, value2);
+			assertThat(getter.apply(template)).containsOnly(value1);
 		}
 	}
 
@@ -269,8 +269,8 @@ public interface ManifestTest <M extends Manifest> extends ManifestFragmentTest<
 			assertTrue(getter.apply(derived).isEmpty());
 
 			adder.accept(derived, value2);
-			TestUtils.assertCollectionEquals(getter.apply(derived), value2);
-			TestUtils.assertCollectionEquals(getter.apply(template), value1);
+			assertThat(getter.apply(derived)).containsOnly(value2);
+			assertThat(getter.apply(template)).containsOnly(value1);
 		}
 	}
 

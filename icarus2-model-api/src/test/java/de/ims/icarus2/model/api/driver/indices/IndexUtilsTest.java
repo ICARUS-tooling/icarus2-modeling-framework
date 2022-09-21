@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
@@ -29,11 +30,9 @@ import static de.ims.icarus2.model.api.driver.indices.IndexUtils.unwrap;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrapSpan;
 import static de.ims.icarus2.test.TestUtils.K10;
-import static de.ims.icarus2.test.TestUtils.assertArrayEmpty;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,70 +64,6 @@ import de.ims.icarus2.test.random.RandomGenerator;
  *
  */
 class IndexUtilsTest {
-
-	private static void assertIndices(IndexSet actual, long...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(expected.length, actual.size());
-
-		for (int i = 0; i < expected.length; i++) {
-			assertEquals(expected[i], actual.indexAt(i));
-		}
-	}
-
-	private static void assertIndices(IndexSet[] actual, long...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(1, actual.length);
-
-		assertIndices(actual[0], expected);
-	}
-
-	private static void assertIndices(IndexSet actual, int...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(expected.length, actual.size());
-
-		for (int i = 0; i < expected.length; i++) {
-			assertEquals(expected[i], Math.toIntExact(actual.indexAt(i)));
-		}
-	}
-
-	private static void assertIndices(IndexSet[] actual, int...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(1, actual.length);
-
-		assertIndices(actual[0], expected);
-	}
-
-	private static void assertIndices(IndexSet actual, short...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(expected.length, actual.size());
-
-		for (int i = 0; i < expected.length; i++) {
-			assertEquals(expected[i], actual.indexAt(i)); //TODO add exact cast check
-		}
-	}
-
-	private static void assertIndices(IndexSet[] actual, short...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(1, actual.length);
-
-		assertIndices(actual[0], expected);
-	}
-
-	private static void assertIndices(IndexSet actual, byte...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(expected.length, actual.size());
-
-		for (int i = 0; i < expected.length; i++) {
-			assertEquals(expected[i], actual.indexAt(i)); //TODO add exact cast check
-		}
-	}
-
-	private static void assertIndices(IndexSet[] actual, byte...expected) {
-		assertTrue(expected.length>0);
-		assertEquals(1, actual.length);
-
-		assertIndices(actual[0], expected);
-	}
 
 	class DominantType {
 
@@ -386,7 +321,7 @@ class IndexUtilsTest {
 				when(items[i].getIndex()).thenReturn(indices[i]);
 			}
 
-			assertIndices(IndexUtils.toIndices(Arrays.asList(items), false), indices);
+			assertThat(IndexUtils.toIndices(Arrays.asList(items), false)).containsExactlyIndices(indices);
 
 			//TODO include tests for the 'forceSorted' flag?
 		}
@@ -397,9 +332,9 @@ class IndexUtilsTest {
 		@TestFactory
 		Stream<DynamicTest> testWrapLong() {
 			return Stream.of(
-					dynamicTest("unset index", () -> assertArrayEmpty(wrap(UNSET_LONG))),
-					dynamicTest("0", () -> assertIndices(wrap(0), 0)),
-					dynamicTest("positive", () -> assertIndices(wrap(Long.MAX_VALUE/2), Long.MAX_VALUE/2))
+					dynamicTest("unset index", () -> assertThat(wrap(UNSET_LONG)).isEmpty()),
+					dynamicTest("0", () -> assertThat(wrap(0)).onlyElement().containsExactlyIndices(0)),
+					dynamicTest("positive", () -> assertThat(wrap(Long.MAX_VALUE/2)).onlyElement().containsExactlyIndices(Long.MAX_VALUE/2))
 					);
 		}
 
@@ -417,9 +352,9 @@ class IndexUtilsTest {
 					dynamicTest("begin > end", () -> assertModelException(
 							GlobalErrorCode.INVALID_INPUT, () -> span(2, 1))),
 					// Legal values,
-					dynamicTest("1-1", () -> assertIndices(span(1, 1), 1)),
-					dynamicTest("0-1", () -> assertIndices(span(0, 1), 0, 1)),
-					dynamicTest("1-3", () -> assertIndices(span(1, 3), 1, 2, 3))
+					dynamicTest("1-1", () -> assertThat(span(1, 1)).containsExactlyIndices(1)),
+					dynamicTest("0-1", () -> assertThat(span(0, 1)).containsExactlyIndices(0, 1)),
+					dynamicTest("1-3", () -> assertThat(span(1, 3)).containsExactlyIndices(1, 2, 3))
 			);
 		}
 
@@ -437,9 +372,9 @@ class IndexUtilsTest {
 					dynamicTest("begin > end", () -> assertModelException(
 							GlobalErrorCode.INVALID_INPUT, () -> wrapSpan(2, 1))),
 					// Legal values,
-					dynamicTest("1-1", () -> assertIndices(wrapSpan(1, 1), 1)),
-					dynamicTest("0-1", () -> assertIndices(wrapSpan(0, 1), 0, 1)),
-					dynamicTest("1-3", () -> assertIndices(wrapSpan(1, 3), 1, 2, 3))
+					dynamicTest("1-1", () -> assertThat(wrapSpan(1, 1)).onlyElement().containsExactlyIndices(1)),
+					dynamicTest("0-1", () -> assertThat(wrapSpan(0, 1)).onlyElement().containsExactlyIndices(0, 1)),
+					dynamicTest("1-3", () -> assertThat(wrapSpan(1, 3)).onlyElement().containsExactlyIndices(1, 2, 3))
 			);
 		}
 
@@ -452,10 +387,10 @@ class IndexUtilsTest {
 			assertNPE(() -> IndexUtils.wrap((long[])null));
 			assertIAE(() -> IndexUtils.wrap(new long[0]));
 
-			assertIndices(IndexUtils.wrap(new long[] {1}), 1);
+			assertThat(IndexUtils.wrap(new long[] {1})).onlyElement().containsExactlyIndices(1);
 
 			long[] indices = rand.randomLongs(K10, 0, Long.MAX_VALUE);
-			assertIndices(IndexUtils.wrap(indices), indices);
+			assertThat(IndexUtils.wrap(indices)).onlyElement().containsExactlyIndices(indices);
 		}
 
 		/**
@@ -467,10 +402,13 @@ class IndexUtilsTest {
 			assertNPE(() -> IndexUtils.wrap((int[])null));
 			assertIAE(() -> IndexUtils.wrap(new int[0]));
 
-			assertIndices(IndexUtils.wrap(new int[] {1}), 1);
+			assertThat(IndexUtils.wrap(new int[] {1})).onlyElement().containsExactlyIndices(1);
 
 			int[] indices = rand.randomInts(K10, 0, Integer.MAX_VALUE);
-			assertIndices(IndexUtils.wrap(indices), indices);
+			assertThat(IndexUtils.wrap(indices))
+				.hasSize(1)
+				.element(0)
+				.containsExactlyIndices(indices);
 		}
 
 		/**
@@ -482,10 +420,13 @@ class IndexUtilsTest {
 			assertNPE(() -> IndexUtils.wrap((short[])null));
 			assertIAE(() -> IndexUtils.wrap(new short[0]));
 
-			assertIndices(IndexUtils.wrap(new short[] {1}), 1);
+			assertThat(IndexUtils.wrap(new short[] {1})).onlyElement().containsExactlyIndices(1);
 
 			short[] indices = rand.randomShorts(K10, (short)0, Short.MAX_VALUE);
-			assertIndices(IndexUtils.wrap(indices), indices);
+			assertThat(IndexUtils.wrap(indices))
+				.hasSize(1)
+				.element(0)
+				.containsExactlyIndices(indices);
 		}
 
 		/**
@@ -497,10 +438,13 @@ class IndexUtilsTest {
 			assertNPE(() -> IndexUtils.wrap((byte[])null));
 			assertIAE(() -> IndexUtils.wrap(new byte[0]));
 
-			assertIndices(IndexUtils.wrap(new byte[] {1}), 1);
+			assertThat(IndexUtils.wrap(new byte[] {1})).onlyElement().containsExactlyIndices(1);
 
 			byte[] indices = rand.randomBytes(100, (byte)0, Byte.MAX_VALUE);
-			assertIndices(IndexUtils.wrap(indices), indices);
+			assertThat(IndexUtils.wrap(indices))
+				.hasSize(1)
+				.element(0)
+				.containsExactlyIndices(indices);
 		}
 
 		/**
@@ -508,11 +452,11 @@ class IndexUtilsTest {
 		 */
 		@Test
 		void testWrapIndexSet() {
-			assertArrayEmpty(IndexUtils.wrap((IndexSet)null));
-			assertArrayEmpty(IndexUtils.wrap(IndexUtils.EMPTY_SET));
+			assertThat(IndexUtils.wrap((IndexSet)null)).isEmpty();
+			assertThat(IndexUtils.wrap(IndexUtils.EMPTY_SET)).isEmpty();
 
 			IndexSet indices = span(2, 10);
-			assertArrayEquals(new Object[] {indices}, IndexUtils.wrap(indices));
+			assertThat(IndexUtils.wrap(indices)).containsExactly(indices);
 		}
 
 		/**
@@ -529,7 +473,7 @@ class IndexUtilsTest {
 		@Test
 		@RandomizedTest
 		void testExternalize(RandomGenerator rand) {
-			assertArrayEmpty(IndexUtils.externalize());
+			assertThat(IndexUtils.externalize()).isEmpty();
 
 			int size = rand.random(10, 20);
 			IndexSet[] sources = new IndexSet[size];
@@ -541,7 +485,7 @@ class IndexUtilsTest {
 				when(sources[i].externalize()).thenReturn(targets[i]);
 			}
 
-			assertArrayEquals(targets, IndexUtils.externalize(sources));
+			assertThat(IndexUtils.externalize(sources)).containsExactly(targets);
 		}
 
 	}

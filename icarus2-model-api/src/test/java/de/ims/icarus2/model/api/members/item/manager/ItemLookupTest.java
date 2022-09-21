@@ -19,9 +19,9 @@ package de.ims.icarus2.model.api.members.item.manager;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItems;
 import static de.ims.icarus2.test.TestUtils.assertIOOB;
-import static de.ims.icarus2.test.TestUtils.assertListEquals;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,7 +34,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
@@ -170,7 +169,7 @@ public interface ItemLookupTest<L extends ItemLookup> extends ApiGuardedTest<L> 
 		Consumer<Item> action = tmp::add;
 		lookup.forEachItem(action);
 
-		assertListEquals(Arrays.asList(items), tmp);
+		assertThat(items).containsExactlyElementsOf(tmp);
 	}
 
 	/**

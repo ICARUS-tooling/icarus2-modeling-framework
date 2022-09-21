@@ -18,10 +18,10 @@ package de.ims.icarus2.model.standard.members.structure.builder;
 
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -328,7 +328,7 @@ interface StaticTreeEdgeStorageTest<T extends StaticTreeEdgeStorage> extends Imm
 					for (int i = 0; i < tree.getEdgeCount(config.structure); i++) {
 						assertTrue(edges.remove(tree.getEdgeAt(config.structure, i)));
 					}
-					assertCollectionEmpty(edges);
+					assertThat(edges).isEmpty();
 				}));
 	}
 

@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.util.collections;
 
-import static de.ims.icarus2.test.TestUtils.assertCollectionEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -89,7 +89,7 @@ public interface IterableTest<T, S extends Iterable<T>> {
 		S seq = createFilled(items);
 		List<T> tmp = new ArrayList<>();
 		seq.forEach(tmp::add);
-		assertCollectionEquals(tmp, items);
+		assertThat(tmp).containsOnly(items);
 	}
 
 	/**

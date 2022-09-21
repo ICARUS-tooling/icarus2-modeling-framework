@@ -20,10 +20,10 @@ import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertUnsupportedOperation;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockEdge;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockItem;
-import static de.ims.icarus2.test.TestUtils.assertCollectionEmpty;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.collections.CollectionUtils.set;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -232,7 +232,7 @@ interface StaticChainEdgeStorageTest<C extends StaticChainEdgeStorage>
 					for (int i = 0; i < chain.getEdgeCount(config.structure); i++) {
 						assertTrue(edges.remove(chain.getEdgeAt(config.structure, i)));
 					}
-					assertCollectionEmpty(edges);
+					assertThat(edges).isEmpty();
 				}));
 	}
 

@@ -37,6 +37,8 @@ import de.ims.icarus2.model.manifest.xml.ManifestXmlReader;
 import de.ims.icarus2.util.function.ThrowingConsumer;
 
 /**
+ * Programmatic entry point for the management and application of existing templates.
+ *
  * @author Markus Gärtner
  *
  */
