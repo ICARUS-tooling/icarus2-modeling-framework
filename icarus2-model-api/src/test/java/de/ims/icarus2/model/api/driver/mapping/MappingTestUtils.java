@@ -17,7 +17,6 @@
 package de.ims.icarus2.model.api.driver.mapping;
 
 import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
-import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.test.util.Triple.triple;
@@ -49,19 +48,6 @@ import it.unimi.dsi.fastutil.longs.LongList;
  *
  */
 public class MappingTestUtils {
-
-//	public static class LongPair {
-//		public final int first, second;
-//
-//		LongPair(int first, int second) {
-//			this.first = first;
-//			this.second = second;
-//		}
-//	}
-//
-//	public static LongPair paur(int first, int second) {
-//		return new LongPair(first, second);
-//	}
 
 	/** Picks a random value inside the specified range (inclusive, exclusive) */
 	private static int rand(RandomGenerator rng, Pair<Integer, Integer>  range) {
@@ -477,7 +463,7 @@ public class MappingTestUtils {
 		assertThat(indices2)
 			.as("Bulk lookup of %s", entry)
 			.hasSize(1).doesNotContainNull();
-		assertThat(indices2).containsExactlyIndices(indices);
+		assertThat(indices2).containsAllIndices(indices);
 
 		// Collector tests
 		LongList valueBuffer1 = new LongArrayList();
@@ -505,35 +491,35 @@ public class MappingTestUtils {
 			.as("Single reverse lookup (explicit, begin) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(source, source, wrap(targetFrom), settings))
 			.as("Bulk reverse lookup (explicit, begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 		assertThat(reader.find(source, source, targetTo, settings))
 			.as("Single reverse lookup (explicit, end) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(source, source, wrap(targetTo), settings))
 			.as("Bulk reverse lookup (explicit, end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 
 		// Reverse lookup (unbounded source range)
 		assertThat(reader.find(Math.max(0, source-1), source, targetFrom, settings))
 			.as("Single reverse lookup (open, begin) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(Math.max(0, source-1), source, wrap(targetFrom), settings))
 			.as("Bulk reverse lookup (open, begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 		assertThat(reader.find(Math.max(0, source-1), source, targetTo, settings))
 			.as("Single reverse lookup (open, end) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(Math.max(0, source-1), source, wrap(targetTo), settings))
 			.as("Bulk reverse lookup (open, end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 
 		assertThat(reader.find(source, Integer.MAX_VALUE, targetFrom, settings))
 			.as("Single reverse lookup (unbounded, begin) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(targetFrom), settings))
 			.as("Bulk reverse lookup (unbounded, begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 		assertThat(reader.find(source, Integer.MAX_VALUE, targetTo, settings))
 			.as("Single reverse lookup (unbounded, end) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(targetTo), settings))
 			.as("Bulk reverse lookup (unbounded, end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 	}
 
 	public static <M extends WritableMapping, N extends Number> void assert1to1Mapping(M mapping,
@@ -624,19 +610,19 @@ public class MappingTestUtils {
 			.as("Single reverse lookup (explicit) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(source, source, wrap(target), settings))
 			.as("Bulk reverse lookup (explicit) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 
 		// Reverse lookup
 		assertThat(reader.find(Math.max(0, source-1), source, target, settings))
 			.as("Single reverse lookup (open begin) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(Math.max(0, source-1), source, wrap(target), settings))
 			.as("Bulk reverse lookup (open begin) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 		assertThat(reader.find(source, Integer.MAX_VALUE, target, settings))
 			.as("Single reverse lookup (open end) of %s", entry).isEqualTo(source);
 		assertThat(reader.find(source, Integer.MAX_VALUE, wrap(target), settings))
 			.as("Bulk reverse lookup (open end) of %s", entry)
-			.hasSize(1).allMatch(matcher(source));
+			.onlyElement().containsExactlyIndices(source);
 	}
 
 	public static <M extends WritableMapping, N extends Number> void assertNto1SpanMapping(M mapping,
@@ -761,12 +747,10 @@ public class MappingTestUtils {
 		// Bulk lookups
 		assertThat(reader.lookup(sourceFrom, settings))
 			.as("Bulk lookup (single source) of begin of %s", entry)
-			.hasSize(1)
-			.allMatch(matcher(target));
+			.onlyElement().containsExactlyIndices(target);
 		assertThat(reader.lookup(sourceTo, settings))
 			.as("Bulk lookup (single source) of end of %s", entry)
-			.hasSize(1)
-			.allMatch(matcher(target));
+			.onlyElement().containsExactlyIndices(target);
 
 		// Collector tests
 		List<Long> valueBuffer1 = new LongArrayList();

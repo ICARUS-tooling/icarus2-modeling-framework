@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.EMPTY;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.TestUtils.mockDelegate;
@@ -291,8 +291,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 
 		assertThat(reader.lookup(sourceFrom, settings))
 			.as("Lookup for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
-			.hasSize(1)
-			.allMatch(matcher(targetIndex));
+			.onlyElement().containsExactlyIndices(targetIndex);
 		List<Long> collector1 = new LongArrayList();
 		assertThat(reader.lookup(sourceFrom, collector1::add, settings))
 			.as("Collector for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
@@ -301,8 +300,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 
 		assertThat(reader.lookup(sourceTo, settings))
 			.as("Lookup for end of %s", triple(sourceFrom, sourceTo, targetIndex))
-			.hasSize(1)
-			.allMatch(matcher(targetIndex));
+			.onlyElement().containsExactlyIndices(targetIndex);
 		List<Long> collector2 = new LongArrayList();
 		assertThat(reader.lookup(sourceTo, collector2::add, settings))
 			.as("Collector for end of %s", triple(sourceFrom, sourceTo, targetIndex))
@@ -311,8 +309,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 
 		assertThat(reader.lookup(wrap(sourceFrom), settings))
 			.as("Batch lookup for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
-			.hasSize(1)
-			.allMatch(matcher(targetIndex));
+			.onlyElement().containsExactlyIndices(targetIndex);
 		List<Long> collector3 = new LongArrayList();
 		assertThat(reader.lookup(wrap(sourceFrom), collector3::add, settings))
 			.as("Batch collector for begin of %s", triple(sourceFrom, sourceTo, targetIndex))
@@ -321,8 +318,7 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 
 		assertThat(reader.lookup(wrap(sourceTo), settings))
 			.as("Batch lookup for end of %s", triple(sourceFrom, sourceTo, targetIndex))
-			.hasSize(1)
-			.allMatch(matcher(targetIndex));
+			.onlyElement().containsExactlyIndices(targetIndex);
 		List<Long> collector4 = new LongArrayList();
 		assertThat(reader.lookup(wrap(sourceTo), collector4::add, settings))
 			.as("Batch collector for end of %s", triple(sourceFrom, sourceTo, targetIndex))

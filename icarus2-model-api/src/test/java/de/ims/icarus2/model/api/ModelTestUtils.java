@@ -39,7 +39,6 @@ import static org.mockito.Mockito.when;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
 import java.util.function.LongConsumer;
-import java.util.function.Predicate;
 
 import org.junit.jupiter.api.function.Executable;
 
@@ -589,19 +588,19 @@ public class ModelTestUtils {
 		return new ArrayIndexSet(indexValueType, randomArray(indexValueType, size, rand));
 	}
 
-	public static Predicate<? super IndexSet> matcher(long...indices) {
-		return set -> {
-			if(set.size()!=indices.length) {
-				return false;
-			}
-			for (int i = 0; i < indices.length; i++) {
-				if(set.indexAt(i)!=indices[i]) {
-					return false;
-				}
-			}
-			return true;
-		};
-	}
+//	public static Predicate<? super IndexSet> matcher(long...indices) {
+//		return set -> {
+//			if(set.size()!=indices.length) {
+//				return false;
+//			}
+//			for (int i = 0; i < indices.length; i++) {
+//				if(set.indexAt(i)!=indices[i]) {
+//					return false;
+//				}
+//			}
+//			return true;
+//		};
+//	}
 
 	private static final IndexValueType defaultType = IndexValueType.LONG;
 

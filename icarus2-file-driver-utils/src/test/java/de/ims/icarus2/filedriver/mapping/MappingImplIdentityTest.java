@@ -17,7 +17,6 @@
 package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
-import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
@@ -115,8 +114,9 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 
 				IndexSet[] indices = reader.lookup(value, settings);
 				// Single lookup
-				assertThat(indices).hasSize(1)
-					.as("Single lookup for %d", value).allMatch(matcher(value));
+				assertThat(indices)
+					.as("Single lookup for %d", value)
+					.onlyElement().containsExactlyIndices(value);
 
 				// Boundaries
 				assertThat(reader.getBeginIndex(value, settings))

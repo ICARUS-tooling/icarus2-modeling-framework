@@ -17,7 +17,6 @@
 package de.ims.icarus2.filedriver.mapping;
 
 import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
-import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.sorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.count;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.merge;
@@ -148,8 +147,9 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 				long expected = func.applyAsLong(value);
 				IndexSet[] indices = reader.lookup(value, settings);
 				// Single lookup
-				assertThat(indices).hasSize(1)
-					.as("Single lookup for %d", value).allMatch(matcher(expected));
+				assertThat(indices)
+					.as("Single lookup for %d", value)
+					.onlyElement().containsExactlyIndices(expected);
 
 				// Boundaries
 				assertThat(reader.getBeginIndex(value, settings))
