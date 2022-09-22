@@ -30,6 +30,14 @@ import org.junit.jupiter.params.converter.ConvertWith;
 import de.ims.icarus2.test.util.convert.ArrayConverters;
 
 /**
+ * Allows conversion of arbitrarily deep matrix structures into
+ * multidimensional int arrays.
+ * <p>
+ * Format of the String representation to be parsed can be controlled
+ * via an explicit {@link ArrayFormat} annotation. If such an annotation
+ * is not present, the converter will use the default values defined in
+ * {@link ArrayFormat}.
+ *
  * @author Markus Gärtner
  *
  */
