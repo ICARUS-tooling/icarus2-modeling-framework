@@ -469,6 +469,6 @@ public class QueryCommand extends CliCommand {
 	}
 
 	public static void main(String[] args) {
-		new CommandLine(new QueryCommand()).usage(System.out);
+		new CommandLine(new QueryCommand()).execute(args);
 	}
 }

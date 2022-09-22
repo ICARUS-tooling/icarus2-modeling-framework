@@ -32,8 +32,12 @@ import java.util.function.Consumer;
 import javax.xml.stream.XMLStreamException;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.common.formats.Template;
@@ -52,6 +56,7 @@ import de.ims.icarus2.query.api.QueryAssertions;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.io.MatchCodec.MatchReader;
 import de.ims.icarus2.query.api.engine.result.io.TabularMatchCodec;
+import de.ims.icarus2.test.annotations.IntMatrixArg;
 import de.ims.icarus2.util.cli.CliCommand;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.io.IOUtil;
@@ -179,12 +184,12 @@ class QueryCommandTest {
 		}
 	}
 
-	void execute(Config config, int expectedStatus) {
+	private void execute(Config config, int expectedStatus) {
 		int status = new CommandLine(new QueryCommand()).execute(config.toArgs());
 		assertThat(status).as("Execution status").isEqualTo(expectedStatus);
 	}
 
-	List<Match> readMatches(Path file) throws IOException {
+	private List<Match> readMatches(Path file) throws IOException {
 		List<Match> buffer = new ObjectArrayList<>();
 		try(MatchReader reader = new TabularMatchCodec().newReader(new FileResource(file))) {
 			reader.readAll(buffer::add);
@@ -193,23 +198,54 @@ class QueryCommandTest {
 	}
 
 	@Test
-	void test() throws IOException {
+	void testHelp() {
+		QueryCommand.main(new String[] { "--help" });
+	}
+
+
+	@Nested
+	class ForInvalidInput {
+		//TODO add tests to verify error handling/output
+	}
+
+	/**
+	 * Root for tests with a pre-configured config object.
+	 * <p>
+	 * Already fills the templates with CONLL
+	 */
+	@Nested
+	class WithConfig {
 		Config config = new Config();
-		config.manifestFile = TEST_MANIFEST;
-		config.templates.add("de.ims.icarus2.common.formats.Template$CONLL");
-		config.outputFile = Files.createTempFile(folder, "test_", ".out.txt");
-		config.payload = "FIND [form==\"He\"]";
 
-		execute(config, CliCommand.SUCCESS.intValue());
+		@BeforeEach
+		void setUp() throws IOException {
+			config.manifestFile = TEST_MANIFEST;
+			config.templates.add("de.ims.icarus2.common.formats.Template$CONLL");
+			config.outputFile = Files.createTempFile(folder, "test_", ".out.txt");
+		}
 
-		List<Match> matches = readMatches(config.outputFile);
-		assertThat(matches).isNotEmpty();
-		assertThat(matches).element(0, as(QueryAssertions.MATCH))
-			.hasIndex(3)
-			.hasOnlyMapping(0, 0);
-		assertThat(matches).element(1, as(QueryAssertions.MATCH))
-			.hasIndex(4)
-			.hasOnlyMapping(0, 0);
+		@ParameterizedTest
+		@CsvSource({
+			"'[form==\"He\"]', {{3;0;0}{4;0;0}}",
+			"'[form==\"supercalifragilisticexpialidocious\"]', {}",
+		})
+		void testFlatPayload(String payload, @IntMatrixArg long[][] hits) throws IOException {
+			config.payload = "FIND "+payload;
+
+			execute(config, CliCommand.SUCCESS.intValue());
+
+			List<Match> matches = readMatches(config.outputFile);
+			assertThat(matches).hasSize(hits.length);
+
+			for (int i = 0; i < hits.length; i++) {
+				long[] hit = hits[i];
+				assertThat(matches).element(i, as(QueryAssertions.MATCH))
+					.hasIndex(hit[0])
+					.hasOnlyMapping(hit[1], hit[2]);
+			}
+		}
+
+		//TODO
 	}
 
 }
