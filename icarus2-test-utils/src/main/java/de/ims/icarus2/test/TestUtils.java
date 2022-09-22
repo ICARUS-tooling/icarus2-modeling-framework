@@ -1208,15 +1208,16 @@ public class TestUtils {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T, K> void assertAccumulativeGetter(
 			T instance, K value1, K value2, Function<T,? extends Collection<? extends K>> getter, BiConsumer<T, K> adder) {
 		assertTrue(getter.apply(instance).isEmpty());
 
 		adder.accept(instance, value1);
-		assertThat(getter.apply(instance)).containsOnly(value1);
+		assertThat((Collection<K>)getter.apply(instance)).containsOnly(value1);
 
 		adder.accept(instance, value2);
-		assertThat(getter.apply(instance)).containsOnly(value1, value2);
+		assertThat((Collection<K>)getter.apply(instance)).containsOnly(value1, value2);
 	}
 
 	public static <T, K> void assertAccumulativeArrayGetter(
