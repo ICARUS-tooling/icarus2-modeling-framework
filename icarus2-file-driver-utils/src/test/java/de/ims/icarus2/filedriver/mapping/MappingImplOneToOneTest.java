@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
@@ -433,7 +433,7 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 						IndexBuffer buffer = new IndexBuffer(config.valueType, size);
 						assertThat(reader.find(0, Long.MAX_VALUE, target, buffer, RequestSettings.none())).isTrue();
 						assertThat(buffer.size()).isEqualTo(span);
-						assertIndicesEqualsExact(target[0], buffer);
+						assertThat(buffer).hasSameIndicesAs(target[0]);
 					} finally {
 						reader.end();
 					}
@@ -477,7 +477,7 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 						IndexBuffer buffer = new IndexBuffer(config.valueType, size);
 						assertThat(reader.find(0, Long.MAX_VALUE, target, buffer, RequestSettings.none())).isTrue();
 						assertThat(buffer.size()).isEqualTo(span1 + span2);
-						assertIndicesEqualsExact(target, wrap(buffer));
+						assertThat(wrap(buffer)).containsExactlyIndices(target);
 					} finally {
 						reader.end();
 					}

@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEquals;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.sorted;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.count;
@@ -51,6 +51,7 @@ import de.ims.icarus2.filedriver.mapping.MappingImplFunctionOneToOne.Builder;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
@@ -210,7 +211,7 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 						assertThat(merged.size()).isEqualTo(count(indices));
 
 						// Batch lookup
-						assertIndicesEquals(expected, reader.lookup(indices, settings));
+						assertThat(reader.lookup(indices, settings)).containsAllIndices(expected);
 
 						// Batch begin/end
 						assertThat(reader.getBeginIndex(indices, settings)).isEqualTo(merged.firstIndex());
@@ -219,7 +220,7 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 						// Batch collector
 						LongList list1 = new LongArrayList();
 						reader.lookup(indices, list1::add, settings);
-						assertIndicesEquals(expected, list1.iterator());
+						assertThat(list1.toLongArray()).containsOnly(IndexUtils.asArray(IndexUtils.asIterator(expected)));
 
 						// Batch reverse lookup
 						assertThatExceptionOfType(OptionalMethodNotSupported.class)

@@ -19,7 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.func;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -71,63 +71,39 @@ class DualMergeOfLongTest {
 
 	@Test
 	void leftEmpty() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(),
-				LongStream.of(1, 2, 3, 4, 5)
-		));
+		assertThat(merge(LongStream.of(), LongStream.of(1, 2, 3, 4, 5)))
+				.containsExactly(1, 2, 3, 4, 5);
 	}
 
 	@Test
 	void rightEmpty() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(1, 2, 3, 4, 5),
-				LongStream.of()
-		));
+		assertThat(merge(LongStream.of(1, 2, 3, 4, 5), LongStream.of()))
+				.containsExactly(1, 2, 3, 4, 5);
 	}
 
 	@Test
 	void empty() {
-		assertArrayEquals(new long[] {}, merge(
-				LongStream.of(),
-				LongStream.of()));
+		assertThat(merge(LongStream.of(), LongStream.of())).isEmpty();
 	}
 
 	@Test
 	void twoSplitMerge1() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(1, 2, 3),
-				LongStream.of(4, 5)
-		));
+		assertThat(merge(LongStream.of(1, 2, 3), LongStream.of(4, 5))).containsExactly(1, 2, 3, 4, 5);
 	}
 
 	@Test
 	void twoSplitMerge2() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(4, 5),
-				LongStream.of(1, 2, 3)
-		));
+		assertThat(merge(LongStream.of(4, 5), LongStream.of(1, 2, 3))).containsExactly(1, 2, 3, 4, 5);
 	}
 
 	@Test
 	void mixedMergeUnique() {
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				merge(
-				LongStream.of(1, 3, 5),
-				LongStream.of(2, 4)
-		));
+		assertThat(merge(LongStream.of(1, 3, 5), LongStream.of(2, 4))).containsExactly(1, 2, 3, 4, 5);
 	}
 
 	@Test
 	void mixedMergeDoubles() {
-		assertArrayEquals(new long[] {1, 2, 3, 3, 4, 4, 5},
-				merge(
-				LongStream.of(1, 3, 4, 5),
-				LongStream.of(2, 3, 4)
-		));
+		assertThat(merge(LongStream.of(1, 3, 4, 5), LongStream.of(2, 3, 4))).containsExactly(1, 2, 3, 3, 4, 4, 5);
 	}
 
 	@Test

@@ -16,13 +16,12 @@
  */
 package de.ims.icarus2.model.api.driver.indices;
 
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.alternateIoobAsserter;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertAlternateIOOB;
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertOverflow;
 import static de.ims.icarus2.model.api.ModelTestUtils.overflowAsserter;
-import static de.ims.icarus2.model.api.driver.indices.IndexUtils.wrap;
 import static de.ims.icarus2.test.TestUtils.noOp;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -999,15 +998,14 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else if(exportable) {
 						tests.add(dynamicTest("complete", () -> {
 							IndexSet[] splits = config.set.split(size);
-							assertEquals(1, splits.length);
-							assertIndicesEqualsExact(config.set, splits[0]);
+							assertThat(splits).onlyElement().hasSameIndicesAs(config.set);
 						}));
 
 						tests.add(dynamicTest("singletons", () -> {
 							IndexSet[] splits = config.set.split(1);
 							assertEquals(size, splits.length);
 							for (int i = 0; i < size; i++) {
-								assertEquals(config.indices[i], splits[i].indexAt(0));
+								assertThat(splits[i]).containsExactlyIndices(config.indices[i]);
 							}
 						}));
 
@@ -1017,7 +1015,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 							if(chunkSize>1 && size>1) {
 								assertTrue(splits.length>1);
 							}
-							assertIndicesEqualsExact(wrap(config.set), splits);
+							assertThat(splits).containsExactlyIndices(config.set);
 						}));
 					} else {
 						tests.add(dynamicTest("not supported", () ->
@@ -1046,8 +1044,7 @@ public interface RandomAccessIndexSetTest<S extends IndexSet> extends IndexSetTe
 					} else if(config.features.contains(Feature.EXPORTABLE)) {
 
 						tests.add(dynamicTest("complete", () ->
-								assertIndicesEqualsExact(config.set,
-										config.set.subSet(0, size-1))));
+								assertThat(config.set.subSet(0, size-1)).hasSameIndicesAs(config.set)));
 
 						tests.add(dynamicTest("singleton", () -> {
 							int index = config.rand().random(0, size);

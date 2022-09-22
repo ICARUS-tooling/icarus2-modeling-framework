@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.randomIndices;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
@@ -983,10 +983,7 @@ class IndexCollectorFactoryTest {
 
 						IndexSet[] actual = builder.build();
 
-						assertEquals(expected.length, actual.length, "Result size mismatch");
-						for (int i = 0; i < expected.length; i++) {
-							assertIndicesEqualsExact(expected[i], actual[i]);
-						}
+						assertThat(actual).containsExactlyIndices(expected);
 					}));
 				}
 			}

@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.filedriver.mapping;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.matcher;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
@@ -38,6 +38,7 @@ import org.junit.jupiter.api.TestFactory;
 import de.ims.icarus2.filedriver.mapping.MappingImplIdentity.Builder;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
@@ -149,7 +150,7 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			IndexSet[] indices = {set1, set2, set3};
 
 			// Batch lookup
-			assertIndicesEqualsExact(indices, reader.lookup(indices, settings));
+			assertThat(reader.lookup(indices, settings)).containsExactlyIndices(indices);
 
 			// Batch begin/end
 			assertThat(reader.getBeginIndex(indices, settings)).isEqualTo(firstIndex(indices));
@@ -158,15 +159,15 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			// Batch collector
 			LongList list1 = new LongArrayList();
 			reader.lookup(indices, list1::add, settings);
-			assertIndicesEqualsExact(indices, list1.iterator());
+			assertThat(IndexUtils.asArray(list1.iterator())).containsExactly(IndexUtils.asArray(indices));
 
 			// Batch reverse lookup
-			assertIndicesEqualsExact(indices, reader.find(0, Long.MAX_VALUE, indices, settings));
+			assertThat(reader.find(0, Long.MAX_VALUE, indices, settings)).containsExactlyIndices(indices);
 
 			// Batch reverse collector
 			LongList list2 = new LongArrayList();
 			reader.find(0, Long.MAX_VALUE, indices, list2::add, settings);
-			assertIndicesEqualsExact(indices, list2.iterator());
+			assertThat(IndexUtils.asArray(list2.iterator())).containsExactly(IndexUtils.asArray(indices));
 		});
 	}
 

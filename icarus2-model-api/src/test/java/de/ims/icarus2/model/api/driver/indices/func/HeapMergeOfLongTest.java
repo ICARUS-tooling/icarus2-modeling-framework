@@ -19,7 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.func;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -88,12 +88,12 @@ class HeapMergeOfLongTest {
 
 	@Test
 	void empty() {
-		assertArrayEquals(new long[0], merge(
+		assertThat(merge(
 				LongStream.of(),
 				LongStream.of(),
 				LongStream.of(),
 				LongStream.of()
-		));
+		)).isEmpty();
 	}
 
 	@TestFactory
@@ -107,65 +107,57 @@ class HeapMergeOfLongTest {
 					long value = rand.nextLong();
 					streams[index] = LongStream.of(value);
 
-					assertArrayEquals(new long[] {value}, merge(streams));
+					assertThat(merge(streams)).containsExactly(value);
 				}));
 	}
 
 	@Test
 	void disjointStreams() {
-		assertArrayEquals(LongStream.rangeClosed(1, 9).toArray(), merge(
+		assertThat(merge(
 				LongStream.of(1, 2),
 				LongStream.of(5, 6),
 				LongStream.of(3, 4),
 				LongStream.of(7, 8, 9)
-		));
+		)).containsExactly(LongStream.rangeClosed(1, 9).toArray());
 	}
 
 	@Test
 	void overlappingStreams() {
-		assertArrayEquals(new long[] {
-				1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9
-		}, merge(
+		assertThat(merge(
 				LongStream.of(1, 2, 5, 8),
 				LongStream.of(5, 6, 9),
 				LongStream.of(1, 3, 4),
 				LongStream.of(3, 7, 8, 9)
-		));
+		)).containsExactly(1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9);
 	}
 
 	@Test
 	void overlappingArrays() {
-		assertArrayEquals(new long[] {
-				1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9
-		}, merge(HeapMergeOfLong.fromArrays(
+		assertThat(merge(HeapMergeOfLong.fromArrays(
 				new long[] {1, 2, 5, 8},
 				new long[] {5, 6, 9},
 				new long[] {1, 3, 4},
 				new long[] {3, 7, 8, 9}
-		)));
+		))).containsExactly(1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9);
 	}
 
 	@Test
 	void overlappingIndexSetArray() {
-		assertArrayEquals(new long[] {
-				1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9
-		}, merge(HeapMergeOfLong.fromIndices(
+		assertThat(merge(HeapMergeOfLong.fromIndices(
 				set(1, 2, 5, 8),
 				set(5, 6, 9),
 				set(1, 3, 4),
 				set(3, 7, 8, 9)
-		)));
+		))).containsExactly(1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9);
 	}
 
 	@Test
 	void overlappingIndexSetCollection() {
-		assertArrayEquals(new long[] {
-				1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9
-		}, merge(HeapMergeOfLong.fromIndices(Arrays.asList(
+		assertThat(merge(HeapMergeOfLong.fromIndices(Arrays.asList(
 				set(1, 2, 5, 8),
 				set(5, 6, 9),
 				set(1, 3, 4),
 				set(3, 7, 8, 9)
-		))));
+		)))).containsExactly(1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9);
 	}
 }

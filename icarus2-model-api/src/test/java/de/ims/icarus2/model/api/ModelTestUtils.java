@@ -25,7 +25,6 @@ import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -676,46 +675,6 @@ public class ModelTestUtils {
 		LongSet set = new LongOpenHashSet(source.size());
 		source.forEachIndex((LongConsumer)set::add);
 		return set;
-	}
-
-	public static void assertIndicesEqualsExact(IndexSet expected, IndexSet actual) {
-		assertEquals(expected.size(), actual.size(), "Size mismatch");
-
-		for (int i = 0; i < expected.size(); i++) {
-			assertEquals(expected.indexAt(i), actual.indexAt(i), "Mismatch at index "+i);
-		}
-	}
-
-	public static void assertIndicesEquals(IndexSet expected, IndexSet actual) {
-		assertEquals(expected.size(), actual.size(), "Size mismatch");
-
-		LongSet setExp = asSet(expected);
-		LongSet setAct = asSet(actual);
-
-		setExp.removeAll(setAct);
-		assertTrue(setExp.isEmpty(), "Total leftover indices: "+setExp.size());
-	}
-
-	public static void assertIndicesEqualsExact(IndexSet[] expected, IndexSet[] actual) {
-		assertEquals(IndexUtils.count(expected),
-				IndexUtils.count(actual), "Size mismatch");
-
-		OfLong itAct = IndexUtils.asIterator(actual);
-		assertIndicesEqualsExact(expected, itAct);
-	}
-
-	public static void assertIndicesEqualsExact(IndexSet[] expected, OfLong actual) {
-		OfLong itExp = IndexUtils.asIterator(expected);
-		OfLong itAct = actual;
-
-		int idx = 0;
-		while(itExp.hasNext() && itAct.hasNext()) {
-			assertEquals(itExp.nextLong(), itAct.nextLong(), "Mismatch at index "+idx);
-			idx++;
-		}
-
-		assertFalse(itExp.hasNext());
-		assertFalse(itAct.hasNext());
 	}
 
 	public static void assertIndicesEquals(IndexSet[] expected, IndexSet[] actual) {

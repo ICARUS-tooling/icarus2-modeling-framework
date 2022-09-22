@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.standard;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.RUNS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -251,8 +251,7 @@ class ArrayIndexSetTest implements RandomAccessIndexSetTest<ArrayIndexSet> {
 						long[] indices = rand.randomLongs(randomSize(), 0, type.maxValue());
 						IndexSet source = set(type, indices);
 						ArrayIndexSet set = ArrayIndexSet.copyOf(source);
-						assertIndicesEqualsExact(source, set);
-						assertEquals(type, set.getIndexValueType());
+						assertThat(set).hasValueType(type).hasSameIndicesAs(source);
 					}));
 		}
 

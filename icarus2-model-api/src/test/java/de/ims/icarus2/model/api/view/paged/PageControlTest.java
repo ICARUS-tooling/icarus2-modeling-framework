@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.view.paged;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.meAsserter;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
@@ -36,6 +36,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Disabled;
@@ -155,19 +156,25 @@ public interface PageControlTest<C extends PageControl> extends PartTest<PagedCo
 						() -> {
 							C control = createSinglePageView();
 							assertTrue(control.load());
-							assertIndicesEqualsExact(range(0, 9), control.getIndices());
+							assertThat(control.getIndices()).containsExactlyIndices(LongStream.rangeClosed(0, 9).toArray());
 						}),
 				dynamicTest("loaded [1/2 page]",
 						() -> {
 							C control = createDualPageView();
 							assertTrue(control.load());
-							assertIndicesEqualsExact(range(0, 4), control.getIndices());
+							assertThat(control.getIndices()).containsExactlyIndices(LongStream.rangeClosed(0, 4).toArray());
+						}),
+				dynamicTest("loaded [1/2 page] - explicit",
+						() -> {
+							C control = createDualPageView();
+							assertTrue(control.loadPage(0));
+							assertThat(control.getIndices()).containsExactlyIndices(LongStream.rangeClosed(0, 4).toArray());
 						}),
 				dynamicTest("loaded [2/2 page]",
 						() -> {
 							C control = createDualPageView();
 							assertTrue(control.loadPage(1));
-							assertIndicesEqualsExact(range(5, 9), control.getIndices());
+							assertThat(control.getIndices()).containsExactlyIndices(LongStream.rangeClosed(5, 9).toArray());
 						})
 		);
 	}

@@ -19,7 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.func;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.util.collections.ArrayUtils.fillAscending;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -64,14 +64,14 @@ class DuplicateFilterTest {
 
 	@Test
 	void singularValues() {
-		assertArrayEquals(new long[] {1}, filter(1, 1, 1, 1, 1));
+		assertThat(filter(1, 1, 1, 1, 1)).containsExactly(1);
 	}
 
 	@Test
 	@RandomizedTest
 	void sortedUnique(RandomGenerator rand) {
 		long[] values = fillAscending(new long[rand.random(10, 100)], rand.random(0, Long.MAX_VALUE/2));
-		assertArrayEquals(values, filter(values));
+		assertThat(filter(values)).containsExactly(values);
 	}
 
 	@Test

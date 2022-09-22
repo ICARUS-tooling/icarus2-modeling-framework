@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.ModelTestUtils.sorted;
@@ -47,7 +47,7 @@ class IndexSetMergerTest {
 
 	static void assertMerge(IndexSet expected, IndexSet...sets) {
 		IndexSet result = new IndexSetMerger().add(sets).mergeAllToSingle();
-		assertIndicesEqualsExact(expected, result);
+		assertThat(result).hasSameIndicesAs(expected);
 	}
 
 	@Test

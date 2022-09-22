@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.api.driver.indices.func;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,7 +51,7 @@ class IterativeIntersectionTest {
 
 	private void assertIntersection(IndexSet expected, IndexSet...sets) {
 		IndexSet result = new IterativeIntersection().add(sets).intersectAll();
-		assertIndicesEqualsExact(expected, result);
+		assertThat(result).hasSameIndicesAs(expected);
 	}
 
 	private static IndexSet set(long...values) {

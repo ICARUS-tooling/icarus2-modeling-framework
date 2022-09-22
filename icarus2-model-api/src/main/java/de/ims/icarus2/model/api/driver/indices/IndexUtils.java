@@ -42,8 +42,8 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.driver.indices.func.IndexSetMerger;
 import de.ims.icarus2.model.api.driver.indices.func.IterativeIntersection;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
-import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.FixedSingletonIndexSet;
+import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.indices.standard.SpanIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.SynchronizedIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.RequestHint;
@@ -53,6 +53,8 @@ import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.function.LongBiPredicate;
 import de.ims.icarus2.util.stream.AbstractFencedSpliterator;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 
 /**
  * @author Markus Gärtner
@@ -493,6 +495,16 @@ public class IndexUtils {
 
 	public static long[] asArray(IndexSet source) {
 		return asLongStream(source).toArray();
+	}
+
+	public static long[] asArray(IndexSet[] source) {
+		return asArray(asIterator(source));
+	}
+
+	public static long[] asArray(OfLong it) {
+		LongList buffer = new LongArrayList();
+		it.forEachRemaining((LongConsumer)buffer::add);
+		return buffer.toLongArray();
 	}
 
 	/**

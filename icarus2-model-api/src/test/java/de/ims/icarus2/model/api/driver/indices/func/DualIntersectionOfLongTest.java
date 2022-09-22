@@ -20,7 +20,6 @@ import static de.ims.icarus2.test.TestUtils.assertNPE;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -72,51 +71,34 @@ class DualIntersectionOfLongTest {
 
 	@Test
 	void leftEmpty() {
-		assertThat(intersect(
-				LongStream.of(),
-				LongStream.of(1, 2, 3, 4, 5))).isEmpty();
+		assertThat(intersect(LongStream.of(), LongStream.of(1, 2, 3, 4, 5))).isEmpty();
 	}
 
 	@Test
 	void rightEmpty() {
-		assertThat(intersect(
-				LongStream.of(1, 2, 3, 4, 5),
-				LongStream.of())).isEmpty();
+		assertThat(intersect(LongStream.of(1, 2, 3, 4, 5), LongStream.of())).isEmpty();
 	}
 
 	@Test
 	void empty() {
-		assertThat(intersect(
-				LongStream.of(),
-				LongStream.of())).isEmpty();
+		assertThat(intersect(LongStream.of(), LongStream.of())).isEmpty();
 	}
 
 	@Test
 	void twoIdentical() {
-		//TPDP
-		assertArrayEquals(new long[] {1, 2, 3, 4, 5},
-				intersect(
-				LongStream.of(1, 2, 3, 4, 5),
-				LongStream.of(1, 2, 3, 4, 5)
-		));
+		assertThat(intersect(LongStream.of(1, 2, 3, 4, 5), LongStream.of(1, 2, 3, 4, 5)))
+				.containsExactly(1, 2, 3, 4, 5);
 	}
 
 	@Test
 	void oneIntersect() {
-		assertArrayEquals(new long[] {2, 3, 4},
-				intersect(
-				LongStream.of(1, 2, 3, 4, 5),
-				LongStream.of(2, 3, 4, 6)
-		));
+		assertThat(intersect(LongStream.of(1, 2, 3, 4, 5), LongStream.of(2, 3, 4, 6)))
+				.containsExactly(2, 3, 4);
 	}
 
 	@Test
 	void twoIntersect() {
-		assertArrayEquals(new long[] {1, 5},
-				intersect(
-				LongStream.of(1, 3, 5),
-				LongStream.of(1, 2, 4, 5)
-		));
+		assertThat(intersect(LongStream.of(1, 3, 5), LongStream.of(1, 2, 4, 5))).containsExactly(1, 5);
 	}
 
 	@Test

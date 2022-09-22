@@ -19,6 +19,7 @@ package de.ims.icarus2.model.api.driver.indices.func;
 import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.test.TestUtils.assertIAE;
 import static de.ims.icarus2.test.TestUtils.assertNPE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -115,69 +116,61 @@ class HeapIntersectionOfLongTest {
 	@RandomizedTest
 	void shared(RandomGenerator rand) {
 		long value = rand.nextLong();
-		assertArrayEquals(new long[] {value}, intersect(
+		assertThat(intersect(
 				LongStream.of(value),
 				LongStream.of(value),
 				LongStream.of(value),
 				LongStream.of(value)
-		));
+		)).containsExactly(value);
 	}
 
 	@Test
 	void disjointStreams() {
-		assertArrayEquals(new long[0], intersect(
+		assertThat(intersect(
 				LongStream.of(1, 2),
 				LongStream.of(5, 6),
 				LongStream.of(3, 4),
 				LongStream.of(7, 8, 9)
-		));
+		)).isEmpty();
 	}
 
 	@Test
 	void overlappingStreams() {
-		assertArrayEquals(new long[] {
-				2, 9
-		}, intersect(
+		assertThat(intersect(
 				LongStream.of(1, 2,       5,       8, 9),
 				LongStream.of(   2,       5, 6, 7,    9),
 				LongStream.of(1, 2, 3, 4,             9),
 				LongStream.of(   2, 3,    5,       8, 9)
-		));
+		)).containsExactly(2, 9);
 	}
 
 	@Test
 	void overlappingArrays() {
-		assertArrayEquals(new long[] {
-				2, 9
-		}, intersect(HeapIntersectionOfLong.fromArrays(
+		assertThat(intersect(HeapIntersectionOfLong.fromArrays(
 				new long[] {1, 2,       5,       8, 9},
 				new long[] {   2,       5, 6, 7,    9},
 				new long[] {1, 2, 3, 4,             9},
 				new long[] {   2, 3,    5,       8, 9}
-		)));
+		))).containsExactly(2, 9);
 	}
 
 	@Test
 	void overlappingIndexSetArray() {
-		assertArrayEquals(new long[] {
-				2, 9
-		}, intersect(HeapIntersectionOfLong.fromIndices(
+		assertThat(intersect(HeapIntersectionOfLong.fromIndices(
 				set(1, 2,       5,       8, 9),
 				set(   2,       5, 6, 7,    9),
 				set(1, 2, 3, 4,             9),
 				set(   2, 3,    5,       8, 9)
-		)));
+		))).containsExactly(2, 9);
 	}
 
 	@Test
 	void overlappingIndexSetCollection() {
-		assertArrayEquals(new long[] {
-				2, 9
-		}, intersect(HeapIntersectionOfLong.fromIndices(Arrays.asList(
+		assertThat(intersect(HeapIntersectionOfLong.fromIndices(Arrays.asList(
 				set(1, 2,       5,       8, 9),
 				set(   2,       5, 6, 7,    9),
 				set(1, 2, 3, 4,             9),
 				set(   2, 3,    5,       8, 9)
-		))));
+		)))).containsExactly(2, 9);
 	}
 }

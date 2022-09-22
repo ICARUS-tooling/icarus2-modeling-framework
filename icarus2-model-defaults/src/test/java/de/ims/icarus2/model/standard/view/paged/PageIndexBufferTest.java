@@ -16,7 +16,7 @@
  */
 package de.ims.icarus2.model.standard.view.paged;
 
-import static de.ims.icarus2.model.api.ModelTestUtils.assertIndicesEqualsExact;
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.model.api.ModelTestUtils.assertModelException;
 import static de.ims.icarus2.model.api.ModelTestUtils.mockIndices;
 import static de.ims.icarus2.model.api.ModelTestUtils.range;
@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
@@ -133,27 +134,34 @@ class PageIndexBufferTest {
 	@TestFactory
 	List<DynamicNode> testCreatePage() {
 		return Arrays.asList(
-				dynamicTest("size==page_size [single set]", () -> assertIndicesEqualsExact(
-						range(0,9), new PageIndexBuffer(wrapSpan(0, 9), 10).createPage(0))),
+				dynamicTest("size==page_size [single set]",
+						() -> assertThat(new PageIndexBuffer(wrapSpan(0, 9), 10).createPage(0))
+						.containsExactlyIndices(LongStream.rangeClosed(0, 9).toArray())),
 
-				dynamicTest("size==page_size [multi sets]", () -> assertIndicesEqualsExact(
-						range(0,9), new PageIndexBuffer(new IndexSet[] {
+				dynamicTest("size==page_size [multi sets]",
+						() -> assertThat(new PageIndexBuffer(new IndexSet[] {
 								range(0, 3), range(4, 6), range(7, 9)
-						}, 10).createPage(0))),
+						}, 10).createPage(0))
+						.containsExactlyIndices(LongStream.rangeClosed(0, 9).toArray())),
 
-				dynamicTest("size>page_size [single set, 1/2]", () -> assertIndicesEqualsExact(
-						range(0,4), new PageIndexBuffer(wrapSpan(0, 9), 5).createPage(0))),
-				dynamicTest("size>page_size [single set, 2/2]", () -> assertIndicesEqualsExact(
-						range(5,9), new PageIndexBuffer(wrapSpan(0, 9), 5).createPage(1))),
+				dynamicTest("size>page_size [single set, 1/2]",
+						() -> assertThat(new PageIndexBuffer(wrapSpan(0, 9), 5).createPage(0))
+						.containsExactlyIndices(LongStream.rangeClosed(0, 4).toArray())),
 
-				dynamicTest("size==page_size [multi sets, 1/2]", () -> assertIndicesEqualsExact(
-						range(0,4), new PageIndexBuffer(new IndexSet[] {
+				dynamicTest("size>page_size [single set, 2/2]",
+						() -> assertThat(new PageIndexBuffer(wrapSpan(0, 9), 5).createPage(1))
+						.containsExactlyIndices(LongStream.rangeClosed(5, 9).toArray())),
+
+				dynamicTest("size==page_size [multi sets, 1/2]",
+						() -> assertThat(new PageIndexBuffer(new IndexSet[] {
 								range(0, 3), range(4, 6), range(7, 9)
-						}, 5).createPage(0))),
-				dynamicTest("size==page_size [multi sets, 2/2]", () -> assertIndicesEqualsExact(
-						range(5,9), new PageIndexBuffer(new IndexSet[] {
+						}, 5).createPage(0))
+						.containsExactlyIndices(LongStream.rangeClosed(0, 4).toArray())),
+
+				dynamicTest("size==page_size [multi sets, 2/2]",
+						() -> assertThat(new PageIndexBuffer(new IndexSet[] {
 								range(0, 3), range(4, 6), range(7, 9)
-						}, 5).createPage(1)))
+						}, 5).createPage(1)).containsExactlyIndices(LongStream.rangeClosed(5, 9).toArray()))
 		);
 	}
 
