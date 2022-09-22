@@ -511,30 +511,6 @@ public class ModelTestUtils {
 		return stubEdges(structure, DEFAULT_MAKE_EDGE);
 	}
 
-	//TODO do we actually want a factory method for live structures here?
-//	@SuppressWarnings({ "boxing", "unchecked" })
-//	public static Structure mockNonVirtualTree(int[][] children, int[] roots, int [] heights, int[] depths, int[] descendants) {
-//		final int size = children.length;
-//		Structure s = mockStructure(size, size);
-//
-//		final int[] heads = new int[size];
-//		Arrays.fill(heads, UNSET_INT);
-//
-//		stubEdges(s, IntStream.range(0, size)
-//				// Collect all parent->child pairs
-//				.mapToObj(parent -> Pair.<Integer,int[]>pair(parent, children[parent]))
-//				.flatMap(p -> IntStream.of(p.second).mapToObj(c -> Pair.pair(p.first.intValue(), c)))
-//				// Ensure we store the head information
-//				.map(p -> {heads[p.second] = p.first; return p; })
-//				.toArray(Pair[]::new));
-//
-//		doReturn(_int(1)).when(s.getIncomingEdgeCount(any()));
-//
-//		doAnswer(invoc -> {
-//
-//		}).when(s.geto);
-//	}
-
 	public static final Item ITEM = mockItem();
 	public static final DataSequence<Item> ITEM_SEQUENCE = mockSequence(1, ITEM);
 	public static final Edge EDGE = mockEdge();
@@ -587,20 +563,6 @@ public class ModelTestUtils {
 	public static IndexSet randomIndices(IndexValueType indexValueType, int size, RandomGenerator rand) {
 		return new ArrayIndexSet(indexValueType, randomArray(indexValueType, size, rand));
 	}
-
-//	public static Predicate<? super IndexSet> matcher(long...indices) {
-//		return set -> {
-//			if(set.size()!=indices.length) {
-//				return false;
-//			}
-//			for (int i = 0; i < indices.length; i++) {
-//				if(set.indexAt(i)!=indices[i]) {
-//					return false;
-//				}
-//			}
-//			return true;
-//		};
-//	}
 
 	private static final IndexValueType defaultType = IndexValueType.LONG;
 

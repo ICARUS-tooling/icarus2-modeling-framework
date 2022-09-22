@@ -242,29 +242,6 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 				RUBlockCache::newLeastRecentlyUsedCache, "LRU", 128);
 	}
 
-//	private void writeMapping(MappingImplSpanManyToOne mapping,
-//			int sourceFrom, int sourceTo, int targetIndex) {
-//		// Our mapping
-//		try(MappingWriter writer = mapping.newWriter()) {
-//			writer.begin();
-//			try {
-//				writer.map(sourceFrom, sourceTo, targetIndex, targetIndex);
-//			} finally {
-//				writer.end();
-//			}
-//		}
-//
-//		// Inverse mapping
-//		try(MappingWriter writer = ((WritableMapping)mapping.getInverseMapping()).newWriter()) {
-//			writer.begin();
-//			try {
-//				writer.map(targetIndex, targetIndex, sourceFrom, sourceTo);
-//			} finally {
-//				writer.end();
-//			}
-//		}
-//	}
-
 	private void assertSpan(MappingReader reader, int sourceFrom, int sourceTo, int targetIndex) throws  Exception{
 		RequestSettings settings = RequestSettings.none();
 

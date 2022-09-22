@@ -14,9 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- */
 package de.ims.icarus2.query.api.cli;
 
 import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
@@ -147,18 +144,6 @@ class QueryCommandTest {
 
 	@BeforeAll
 	static void setUpCorpus() throws IOException, XMLStreamException, IcarusApiException {
-//		<imf:manifest xmlns:imf="http://www.ims.uni-stuttgart.de/icarus/xml/manifest"
-//				xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-//				<imf:corpora>
-//					<imf:corpus editable="false" id="exampleCorpus" name="Example Corpus - Icarus Wiki Entry">
-//						<imf:rootContext id="context0" independent="true" name="Main Context" templateId="common.format.conll09">
-//							<imf:location>
-//								<imf:path type="resource">/de/ims/icarus2/common/formats/conll/icarus.conll09</imf:path>
-//							</imf:location>
-//						</imf:rootContext>
-//					</imf:corpus>
-//				</imf:corpora>
-//			</imf:manifest>
 
 		TEST_CORPUS = folder.resolve("corpus.conll").toAbsolutePath();
 		TEST_MANIFEST = folder.resolve("manifest.imf.xml").toAbsolutePath();
