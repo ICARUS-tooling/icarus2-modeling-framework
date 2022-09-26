@@ -441,7 +441,7 @@ class SerializableAtomicModelChangeTest {
 				pair("empty", mockContainer(0)),
 				pair("singleton", mockContainer(1)),
 				pair("dual", mockContainer(2)),
-				pair("random", mockContainer(randomSize()))
+				pair("random[10..30]", mockContainer(randomSize()))
 			);
 		}
 
