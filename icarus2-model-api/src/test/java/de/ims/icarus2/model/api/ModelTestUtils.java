@@ -23,7 +23,6 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -680,19 +679,5 @@ public class ModelTestUtils {
 
 	public static Executable alternateIoobAsserter(Executable executable) {
 		return () -> assertAlternateIOOB(executable);
-	}
-
-	public static void assertTreeProperties(Structure s, Item node, int inc, int out,
-			int height, int depth, int descendants) {
-		assertTreeProperties("", s, node, inc, out, height, depth, descendants);
-	}
-
-	public static void assertTreeProperties(String msg, Structure s, Item node, int inc, int out,
-			int height, int depth, int descendants) {
-		assertThat(s.getIncomingEdgeCount(node)).as(msg+"Incoming edges").isEqualTo(inc);
-		assertThat(s.getOutgoingEdgeCount(node)).as(msg+"Outgoing edges").isEqualTo(out);
-		assertThat(s.getHeight(node)).as(msg+"Node height").isEqualTo(height);
-		assertThat(s.getDepth(node)).as(msg+"Node depth").isEqualTo(depth);
-		assertThat(s.getDescendantCount(node)).as(msg+"Descendant count").isEqualTo(descendants);
 	}
 }

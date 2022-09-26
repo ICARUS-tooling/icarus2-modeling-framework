@@ -22,7 +22,6 @@ package de.ims.icarus2.model.api;
 import static java.util.Objects.requireNonNull;
 
 import de.ims.icarus2.model.api.members.item.Edge;
-import de.ims.icarus2.model.api.members.structure.Structure;
 
 /**
  * @author Markus Gärtner
@@ -30,11 +29,15 @@ import de.ims.icarus2.model.api.members.structure.Structure;
  */
 public class EdgeInStructureAssert extends AbstractEdgeAssert<EdgeInStructureAssert> {
 
-	private final Structure structure;
+	private final StructureAssert structure;
 
-	public EdgeInStructureAssert(Structure structure, Edge actual) {
+	EdgeInStructureAssert(StructureAssert structure, Edge actual) {
 		super(actual, EdgeInStructureAssert.class);
 		this.structure = requireNonNull(structure);
+	}
+
+	public StructureAssert structure() {
+		return structure;
 	}
 
 	public ItemInStructureAssert source() {

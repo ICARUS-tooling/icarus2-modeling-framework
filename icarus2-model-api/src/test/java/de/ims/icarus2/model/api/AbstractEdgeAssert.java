@@ -59,5 +59,21 @@ public class AbstractEdgeAssert<A extends AbstractEdgeAssert<A>> extends Abstrac
 		return myself;
 	}
 
+	public A isLoop() {
+		sourceIsNotNull();
+		targetIsNotNull();
+		if(actual.getSource() != actual.getTarget())
+			throw failure("Edge is not a loop: %s -> %s", actual.getSource(), actual.getTarget());
+		return myself;
+	}
+
+	public A isNoLoop() {
+		sourceIsNotNull();
+		targetIsNotNull();
+		if(actual.getSource() == actual.getTarget())
+			throw failure("Edge is a loop: %s -> %s", actual.getSource(), actual.getTarget());
+		return myself;
+	}
+
 	//TODO
 }

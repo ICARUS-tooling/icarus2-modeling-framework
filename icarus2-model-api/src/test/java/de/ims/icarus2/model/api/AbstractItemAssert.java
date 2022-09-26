@@ -47,5 +47,37 @@ public class AbstractItemAssert<A extends AbstractItemAssert<A,I>, I extends Ite
 		return myself;
 	}
 
+	public ContainerAssert container() {
+		containerIsNotNull();
+		return new ContainerAssert(actual.getContainer());
+	}
+
+	@SuppressWarnings("boxing")
+	public A hasIndexOf(long expected) {
+		isNotNull();
+		long index = actual.getIndex();
+		if(index!=expected)
+			throw failureWithActualExpected(index, expected, "Expected item %s to have index %d, but got %d", actual, expected, index);
+		return myself;
+	}
+
+	@SuppressWarnings("boxing")
+	public A hasBeginIndexOf(long expected) {
+		isNotNull();
+		long index = actual.getBeginOffset();
+		if(index!=expected)
+			throw failureWithActualExpected(index, expected, "Expected item %s to have begin index %d, but got %d", actual, expected, index);
+		return myself;
+	}
+
+	@SuppressWarnings("boxing")
+	public A hasEndIndexOf(long expected) {
+		isNotNull();
+		long index = actual.getEndOffset();
+		if(index!=expected)
+			throw failureWithActualExpected(index, expected, "Expected item %s to have begin index %d, but got %d", actual, expected, index);
+		return myself;
+	}
+
 	//TODO
 }

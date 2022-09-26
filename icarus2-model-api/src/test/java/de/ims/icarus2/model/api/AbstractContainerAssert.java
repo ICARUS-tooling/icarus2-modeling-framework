@@ -31,5 +31,29 @@ public class AbstractContainerAssert<A extends AbstractContainerAssert<A, C>, C 
 		super(actual, selfType);
 	}
 
+	@SuppressWarnings("boxing")
+	public A isEmpty() {
+		isNotNull();
+		if(actual.getItemCount()>0)
+			throw failure("Expected container %s to be empty, but contains %d items", actual, actual.getItemCount());
+		return myself;
+	}
+
+	public A isNotEmpty() {
+		isNotNull();
+		if(actual.getItemCount()==0)
+			throw failure("Expected container %s not to be empty", actual);
+		return myself;
+	}
+
+	@SuppressWarnings("boxing")
+	public A hasItemCountOf(long expected) {
+		isNotNull();
+		long size = actual.getItemCount();
+		if(size!=expected)
+			throw failureWithActualExpected(size, expected, "Expected container %s to have size %d, but got %d", actual, expected, size);
+		return myself;
+	}
+
 	//TODO
 }

@@ -15,14 +15,20 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.model.api;
+
+import de.ims.icarus2.model.api.members.item.Fragment;
 
 /**
  * @author Markus Gärtner
  *
  */
-public class FragmentAssert {
+public class FragmentAssert extends AbstractItemAssert<FragmentAssert, Fragment> {
+
+	public FragmentAssert(Fragment actual) {
+		super(actual, FragmentAssert.class);
+	}
 
 }

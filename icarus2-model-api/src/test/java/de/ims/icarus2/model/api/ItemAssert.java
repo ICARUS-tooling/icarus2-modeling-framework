@@ -30,6 +30,4 @@ public class ItemAssert extends AbstractItemAssert<ItemAssert, Item> {
 	public ItemAssert(Item actual) {
 		super(actual, ItemAssert.class);
 	}
-
-	//TODO
 }

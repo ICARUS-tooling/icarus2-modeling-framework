@@ -31,12 +31,16 @@ public class StructureAssert extends AbstractContainerAssert<StructureAssert, St
 		super(actual, StructureAssert.class);
 	}
 
+	Structure actual() {
+		return actual;
+	}
+
 	@SuppressWarnings("boxing")
 	public ItemInStructureAssert node(long index) {
 		isNotNull();
 		if(index>=actual.getItemCount())
 			throw failure("Node index %d out of bounds. Structure only holds %d nodes.", index, actual.getItemCount());
-		return new ItemInStructureAssert(actual, actual.getItemAt(index));
+		return new ItemInStructureAssert(this, actual.getItemAt(index));
 	}
 
 	@SuppressWarnings("boxing")
@@ -44,7 +48,31 @@ public class StructureAssert extends AbstractContainerAssert<StructureAssert, St
 		isNotNull();
 		if(index>=actual.getEdgeCount())
 			throw failure("Edge index %d out of bounds. Structure only holds %d edges.", index, actual.getEdgeCount());
-		return new EdgeInStructureAssert(actual, actual.getEdgeAt(index));
+		return new EdgeInStructureAssert(this, actual.getEdgeAt(index));
+	}
+
+	public ItemInStructureAssert root() {
+		isNotNull();
+		return new ItemInStructureAssert(this, actual.getVirtualRoot());
+	}
+
+	public ItemInStructureAssert firstNode() {
+		isNotNull();
+		return new ItemInStructureAssert(this, actual.getFirstItem());
+	}
+
+	public ItemInStructureAssert lastNode() {
+		isNotNull();
+		return new ItemInStructureAssert(this, actual.getLastItem());
+	}
+
+	@SuppressWarnings("boxing")
+	public StructureAssert hasEdgeCountOf(long expected) {
+		isNotNull();
+		long size = actual.getEdgeCount();
+		if(size!=expected)
+			throw failureWithActualExpected(size, expected, "Expected structure %s to have %d edges, but got %d", actual, expected, size);
+		return myself;
 	}
 
 	//TODO

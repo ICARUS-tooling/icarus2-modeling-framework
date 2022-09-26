@@ -22,6 +22,11 @@ package de.ims.icarus2.model.api;
 import org.assertj.core.api.InstanceOfAssertFactory;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
+import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.model.api.members.item.Edge;
+import de.ims.icarus2.model.api.members.item.Fragment;
+import de.ims.icarus2.model.api.members.item.Item;
+import de.ims.icarus2.model.api.members.structure.Structure;
 
 /**
  * @author Markus Gärtner
@@ -39,6 +44,27 @@ public final class ModelAssertions {
 		return new IndexSetArrayAssert(actual);
 	}
 
+	public static ItemAssert assertThat(Item actual) {
+		return new ItemAssert(actual);
+	}
+
+	public static ContainerAssert assertThat(Container actual) {
+		return new ContainerAssert(actual);
+	}
+
+	public static StructureAssert assertThat(Structure actual) {
+		return new StructureAssert(actual);
+	}
+
+	public static EdgeAssert assertThat(Edge actual) {
+		return new EdgeAssert(actual);
+	}
+
+	public static FragmentAssert assertThat(Fragment actual) {
+		return new FragmentAssert(actual);
+	}
+
+
 	// Assertion Factories
 
 	public static final InstanceOfAssertFactory<IndexSet, IndexSetAssert> INDEX_SET =
@@ -46,4 +72,19 @@ public final class ModelAssertions {
 
 	public static final InstanceOfAssertFactory<IndexSet[], IndexSetArrayAssert> INDEX_SETS =
 			new InstanceOfAssertFactory<>(IndexSet[].class, ModelAssertions::assertThat);
+
+	public static final InstanceOfAssertFactory<Item, ItemAssert> ITEM =
+			new InstanceOfAssertFactory<>(Item.class, ModelAssertions::assertThat);
+
+	public static final InstanceOfAssertFactory<Container, ContainerAssert> CONTAINER =
+			new InstanceOfAssertFactory<>(Container.class, ModelAssertions::assertThat);
+
+	public static final InstanceOfAssertFactory<Structure, StructureAssert> STRUCTURE =
+			new InstanceOfAssertFactory<>(Structure.class, ModelAssertions::assertThat);
+
+	public static final InstanceOfAssertFactory<Edge, EdgeAssert> EDGE =
+			new InstanceOfAssertFactory<>(Edge.class, ModelAssertions::assertThat);
+
+	public static final InstanceOfAssertFactory<Fragment, FragmentAssert> FRAGMENT =
+			new InstanceOfAssertFactory<>(Fragment.class, ModelAssertions::assertThat);
 }
