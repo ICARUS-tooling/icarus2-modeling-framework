@@ -56,10 +56,7 @@ import de.ims.icarus2.filedriver.mapping.MappingImplSpanManyToOne.Builder;
 import de.ims.icarus2.filedriver.mapping.StoredMappingTest.AbstractConfig;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexCollector;
-import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
-import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.MappingReaderTest;
@@ -352,13 +349,6 @@ class MappingImplSpanManyToOneTest implements WritableMappingTest<MappingImplSpa
 			try(MappingReader reader = mapping.newReader()) {
 				reader.begin();
 				try {
-					RequestSettings settings = RequestSettings.none();
-					int span1 = to1-from1+1;
-					int span2 = to2-from2+1;
-					IndexSet[] target = new IndexSet[] {
-							IndexUtils.span(from1, to1), IndexUtils.span(from2, to2)};
-					IndexBuffer buffer = new IndexBuffer(config.valueType, span1+span2);
-
 					assertSpan(reader, from1, to1, target1);
 					assertSpan(reader, from2, to2, target2);
 				} finally {

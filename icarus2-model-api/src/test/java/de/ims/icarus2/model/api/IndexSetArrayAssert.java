@@ -25,6 +25,7 @@ import org.assertj.core.api.AbstractObjectArrayAssert;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexUtils;
+import de.ims.icarus2.test.assertions.LongIteratorAssert;
 import it.unimi.dsi.fastutil.longs.LongArraySet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
@@ -136,6 +137,11 @@ public class IndexSetArrayAssert extends AbstractObjectArrayAssert<IndexSetArray
 			failure("Leftover expected values: %s", Arrays.toString(setExp.toLongArray()));
 
 		return myself;
+	}
+
+	public LongIteratorAssert asIterator() {
+		isNotEmpty();
+		return new LongIteratorAssert(IndexUtils.asIterator(actual));
 	}
 
 	//TODO

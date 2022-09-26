@@ -4,4 +4,6 @@ description = 'Collection of drivers for widely used corpus storage/serializatio
 // internal dependencies
 dependencies {
 	api project(':icarus2-file-driver-utils')
+	
+	testImplementation project(path: ':icarus2-model-api', configuration: 'tests')
 }

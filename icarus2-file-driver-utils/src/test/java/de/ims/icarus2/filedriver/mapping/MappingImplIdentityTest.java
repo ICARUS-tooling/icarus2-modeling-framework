@@ -21,6 +21,7 @@ import static de.ims.icarus2.model.api.ModelTestUtils.set;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.firstIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.lastIndex;
 import static de.ims.icarus2.model.api.driver.indices.IndexUtils.span;
+import static de.ims.icarus2.test.assertions.SharedAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -159,7 +160,7 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			// Batch collector
 			LongList list1 = new LongArrayList();
 			reader.lookup(indices, list1::add, settings);
-			assertThat(IndexUtils.asArray(list1.iterator())).containsExactly(IndexUtils.asArray(indices));
+			assertThat(list1.iterator()).hasSameIndices(IndexUtils.asIterator(indices));
 
 			// Batch reverse lookup
 			assertThat(reader.find(0, Long.MAX_VALUE, indices, settings)).containsExactlyIndices(indices);
@@ -167,7 +168,7 @@ class MappingImplIdentityTest implements MappingTest<MappingImplIdentity, Mappin
 			// Batch reverse collector
 			LongList list2 = new LongArrayList();
 			reader.find(0, Long.MAX_VALUE, indices, list2::add, settings);
-			assertThat(IndexUtils.asArray(list2.iterator())).containsExactly(IndexUtils.asArray(indices));
+			assertThat(list2.iterator()).hasSameIndices(IndexUtils.asIterator(indices));
 		});
 	}
 

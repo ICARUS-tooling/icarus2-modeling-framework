@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.common.formats.conll;
 
+import static de.ims.icarus2.model.api.ModelAssertions.assertThat;
 import static de.ims.icarus2.util.lang.Primitives._int;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
@@ -50,7 +51,6 @@ import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.Driver;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.driver.mapping.MappingReader;
 import de.ims.icarus2.model.api.driver.mapping.RequestSettings;
@@ -566,8 +566,7 @@ class CoNLL2009SchemaConverterTest {
 						assertThat(reader.getBeginIndex(sentenceIndex, settings)).as("begin index").isEqualTo(sentenceIndex);
 						assertThat(reader.getEndIndex(sentenceIndex, settings)).as("end index").isEqualTo(sentenceIndex);
 						IndexSet[] indices = reader.lookup(sentenceIndex, settings);
-						assertThat(indices).hasSize(1);
-						assertThat(IndexUtils.asArray(indices[0])).as("indices").containsExactly(sentenceIndex);
+						assertThat(indices).as("indices").onlyElement().containsExactlyIndices(sentenceIndex);
 					}
 				} finally {
 					reader.end();
@@ -585,8 +584,7 @@ class CoNLL2009SchemaConverterTest {
 						assertThat(reader.getBeginIndex(sentenceIndex, settings)).as("begin index").isEqualTo(sentenceIndex);
 						assertThat(reader.getEndIndex(sentenceIndex, settings)).as("end index").isEqualTo(sentenceIndex);
 						IndexSet[] indices = reader.lookup(sentenceIndex, settings);
-						assertThat(indices).hasSize(1);
-						assertThat(IndexUtils.asArray(indices[0])).as("indices").containsExactly(sentenceIndex);
+						assertThat(indices).as("indices").onlyElement().containsExactlyIndices(sentenceIndex);
 					}
 				} finally {
 					reader.end();
@@ -616,8 +614,7 @@ class CoNLL2009SchemaConverterTest {
 						assertThat(reader.getBeginIndex(tokenIndex, settings)).as("begin index for %d",_int(tokenIndex)).isEqualTo(sentenceIndex);
 						assertThat(reader.getEndIndex(tokenIndex, settings)).as("end index for %d",_int(tokenIndex)).isEqualTo(sentenceIndex);
 						IndexSet[] indices = reader.lookup(tokenIndex, settings);
-						assertThat(indices).hasSize(1);
-						assertThat(IndexUtils.asArray(indices[0])).as("indices for %d",_int(tokenIndex)).containsExactly(sentenceIndex);
+						assertThat(indices).as("indices for %d",_int(tokenIndex)).onlyElement().containsExactlyIndices(sentenceIndex);
 					}
 				} finally {
 					reader.end();
@@ -647,10 +644,9 @@ class CoNLL2009SchemaConverterTest {
 					assertThat(reader.getBeginIndex(sentenceIndex, settings)).as("begin index").isEqualTo(tokenStart);
 					assertThat(reader.getEndIndex(sentenceIndex, settings)).as("end index").isEqualTo(tokenEnd);
 					IndexSet[] indices = reader.lookup(sentenceIndex, settings);
-					assertThat(indices).hasSize(1);
 					long[] expected = new long[length];
 					ArrayUtils.fillAscending(expected, tokenStart);
-					assertThat(IndexUtils.asArray(indices[0])).as("indices").containsExactly(expected);
+					assertThat(indices).as("indices").onlyElement().containsExactlyIndices(expected);
 				} finally {
 					reader.end();
 				}

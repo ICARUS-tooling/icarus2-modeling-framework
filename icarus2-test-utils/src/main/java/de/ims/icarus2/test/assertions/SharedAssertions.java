@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.test.assertions;
 
+import java.util.Iterator;
+
 import de.ims.icarus2.test.util.Pair;
 import de.ims.icarus2.test.util.Triple;
 
@@ -34,5 +36,9 @@ public class SharedAssertions {
 
 	public static <FIRST, SECOND, THIRD> TripleAssert<FIRST, SECOND, THIRD> assertThat(Triple<FIRST, SECOND, THIRD> actual) {
 		return new TripleAssert<>(actual);
+	}
+
+	public static LongIteratorAssert assertThat(Iterator<? extends Long> actual) {
+		return new LongIteratorAssert(actual);
 	}
 }

@@ -220,7 +220,7 @@ class MappingImplFunctionOneToOneTest implements MappingTest<MappingImplFunction
 						// Batch collector
 						LongList list1 = new LongArrayList();
 						reader.lookup(indices, list1::add, settings);
-						assertThat(list1.toLongArray()).containsOnly(IndexUtils.asArray(IndexUtils.asIterator(expected)));
+						assertThat(list1.toLongArray()).containsOnly(IndexUtils.asArray(expected));
 
 						// Batch reverse lookup
 						assertThatExceptionOfType(OptionalMethodNotSupported.class)

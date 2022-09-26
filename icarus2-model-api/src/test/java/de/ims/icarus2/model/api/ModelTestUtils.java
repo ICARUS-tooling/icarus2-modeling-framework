@@ -36,9 +36,7 @@ import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
-import java.util.function.LongConsumer;
 
 import org.junit.jupiter.api.function.Executable;
 
@@ -48,7 +46,6 @@ import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.corpus.Corpus;
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
-import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.VirtualIndexSet;
@@ -69,9 +66,6 @@ import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArraySet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -630,33 +624,6 @@ public class ModelTestUtils {
 			when(sets[i].size()).thenReturn(sizes[i]);
 		}
 		return sets;
-	}
-
-	public static LongSet asSet(IndexSet source) {
-		LongSet set = new LongOpenHashSet(source.size());
-		source.forEachIndex((LongConsumer)set::add);
-		return set;
-	}
-
-	public static void assertIndicesEquals(IndexSet[] expected, IndexSet[] actual) {
-		assertEquals(IndexUtils.count(expected),
-				IndexUtils.count(actual), "Size mismatch");
-
-		OfLong itAct = IndexUtils.asIterator(actual);
-		assertIndicesEquals(expected, itAct);
-	}
-
-	public static void assertIndicesEquals(IndexSet[] expected, OfLong actual) {
-		OfLong itExp = IndexUtils.asIterator(expected);
-		OfLong itAct = actual;
-
-		LongSet setExp = new LongArraySet(expected.length);
-		itExp.forEachRemaining((LongConsumer)setExp::add);
-		LongSet setAct = new LongArraySet();
-		itAct.forEachRemaining((LongConsumer)setAct::add);
-
-		setExp.removeAll(setAct);
-		assertTrue(setExp.isEmpty(), "Total leftover indices: "+setExp.size());
 	}
 
 	public static <T extends ModelException> Executable meAsserter(

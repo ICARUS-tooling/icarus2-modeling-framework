@@ -23,13 +23,20 @@ import static de.ims.icarus2.util.lang.Primitives.strictToShort;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
+import java.util.function.LongConsumer;
 
 import org.assertj.core.api.AbstractAssert;
 
 import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexSet.Feature;
+import de.ims.icarus2.model.api.driver.indices.IndexUtils;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
+import de.ims.icarus2.test.assertions.LongIteratorAssert;
+import it.unimi.dsi.fastutil.longs.LongArraySet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 /**
  * @author Markus Gärtner
@@ -220,6 +227,48 @@ public class IndexSetAssert extends AbstractAssert<IndexSetAssert, IndexSet> {
 						"Mismatch at index %d: expected %d, but got %d", i, indices[i], actual.indexAt(i));
 		}
 		return myself;
+	}
+
+	@SuppressWarnings("boxing")
+	public IndexSetAssert containsExactlyIndices(OfLong indices) {
+		isNotNull();
+		OfLong itExp = indices;
+		OfLong itAct = IndexUtils.asIterator(actual);
+
+		int idx = 0;
+		while(itExp.hasNext() && itAct.hasNext()) {
+			long exp = itExp.nextLong();
+			long act = itAct.nextLong();
+			if(exp != act)
+				throw failureWithActualExpected(act, exp, "Mismatch at index %d - expected %d, got %d", idx, exp, act);
+			idx++;
+		}
+
+		if(itExp.hasNext())
+			failure("Leftover expected values: %s", Arrays.toString(IndexUtils.asArray(itExp)));
+		if(itAct.hasNext())
+			failure("Leftover actual values: %s", Arrays.toString(IndexUtils.asArray(itAct)));
+
+		return myself;
+	}
+
+	public IndexSetAssert containsAllIndices(OfLong expected) {
+		isNotNull();
+
+		LongSet setExp = new LongArraySet();
+		expected.forEachRemaining((LongConsumer)setExp::add);
+
+		actual.forEachIndex((LongConsumer)setExp::remove);
+
+		if(!setExp.isEmpty())
+			failure("Leftover expected values: %s", Arrays.toString(setExp.toLongArray()));
+
+		return myself;
+	}
+
+	public LongIteratorAssert asIterator() {
+		isNotNull();
+		return new LongIteratorAssert(actual.iterator());
 	}
 
 	//TODO

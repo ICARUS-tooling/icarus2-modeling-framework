@@ -432,8 +432,7 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 						IndexSet[] target = wrap(IndexUtils.span(from, to));
 						IndexBuffer buffer = new IndexBuffer(config.valueType, size);
 						assertThat(reader.find(0, Long.MAX_VALUE, target, buffer, RequestSettings.none())).isTrue();
-						assertThat(buffer.size()).isEqualTo(span);
-						assertThat(buffer).hasSameIndicesAs(target[0]);
+						assertThat(buffer).hasSize(span).hasSameIndicesAs(target[0]);
 					} finally {
 						reader.end();
 					}
@@ -476,8 +475,7 @@ public class MappingImplOneToOneTest implements WritableMappingTest<MappingImplO
 								IndexUtils.span(from1, to1), IndexUtils.span(from2, to2)};
 						IndexBuffer buffer = new IndexBuffer(config.valueType, size);
 						assertThat(reader.find(0, Long.MAX_VALUE, target, buffer, RequestSettings.none())).isTrue();
-						assertThat(buffer.size()).isEqualTo(span1 + span2);
-						assertThat(wrap(buffer)).containsExactlyIndices(target);
+						assertThat(buffer).hasSize(span1 + span2).containsExactlyIndices(IndexUtils.asIterator(target));
 					} finally {
 						reader.end();
 					}
