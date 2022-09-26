@@ -577,7 +577,7 @@ public class QueryEngine implements AutoCloseable {
 	 */
 	static class ExtensionRegistry {
 
-
+		//TODO add actual methods for data resolution
 	}
 
 	public static class Builder extends AbstractBuilder<Builder, QueryEngine> {
