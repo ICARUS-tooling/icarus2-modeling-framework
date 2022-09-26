@@ -211,7 +211,8 @@ class QueryCommandTest {
 	/**
 	 * Root for tests with a pre-configured config object.
 	 * <p>
-	 * Already fills the templates with CONLL
+	 * Already fills the templates with CONLL, the manifest file with the
+	 * default test corpus and the output file with a new temporary file.
 	 */
 	@Nested
 	class WithConfig {
@@ -238,6 +239,7 @@ class QueryCommandTest {
 			assertThat(matches).hasSize(hits.length);
 
 			for (int i = 0; i < hits.length; i++) {
+				// [index, m_node, m_index]
 				long[] hit = hits[i];
 				assertThat(matches).element(i, as(QueryAssertions.MATCH))
 					.hasIndex(hit[0])
