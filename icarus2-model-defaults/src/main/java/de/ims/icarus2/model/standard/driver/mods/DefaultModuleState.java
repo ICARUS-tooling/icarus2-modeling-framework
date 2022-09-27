@@ -80,48 +80,56 @@ public class DefaultModuleState extends StaticIdentity implements ModuleState {
 		return arguments;
 	}
 
-	public void setIndeterminate(boolean indeterminate) {
+	public DefaultModuleState setIndeterminate(boolean indeterminate) {
 		this.indeterminate = indeterminate;
+		return this;
 	}
 
-	public void setProgress(int progress) {
+	public DefaultModuleState setProgress(int progress) {
 		checkArgument(progress>=0);
 		this.progress = progress;
+		return this;
 	}
 
-	public void setGoal(int goal) {
+	public DefaultModuleState setGoal(int goal) {
 		checkArgument(goal>=0);
 		this.goal = goal;
+		return this;
 	}
 
-	public void setArguments(Object[] arguments) {
+	public DefaultModuleState setArguments(Object[] arguments) {
 		this.arguments = arguments;
+		return this;
 	}
 
-	public void setFormatted(String id, Object...args) {
+	public DefaultModuleState setFormatted(String id, Object...args) {
 		setId(id);
 		setName(null);
 		setDescription(null);
 		setArguments(args);
+		return this;
 	}
 
-	public void setState(String id) {
+	public DefaultModuleState setState(String id) {
 		setId(id);
 		setName(null);
 		setDescription(null);
 		setArguments(null);
+		return this;
 	}
 
-	public void setState(String id, String name, String description, Object...args) {
+	public DefaultModuleState setState(String id, String name, String description, Object...args) {
 		setId(id);
 		setName(name);
 		setDescription(description);
 		setArguments(args);
+		return this;
 	}
 
-	public void setProgress(int progress, int goal) {
+	public DefaultModuleState setProgress(int progress, int goal) {
 		setGoal(goal);
 		setProgress(progress);
+		return this;
 	}
 
 	public void step() {
