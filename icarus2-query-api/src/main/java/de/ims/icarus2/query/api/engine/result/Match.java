@@ -25,6 +25,10 @@ import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 
 /**
+ * A match encapsulates the information from a successful query evaluation on a single lane.
+ * Note that matches are designed very lightweight and only carry numerical index and mapping
+ * data that requires external resources to properly interpret.
+ *
  * @author Markus Gärtner
  *
  */
@@ -71,9 +75,11 @@ public interface Match extends MatchSource {
 	/** Fetch the positional index for the mapping at given index */
 	int getIndex(int index);
 
+	/** The default implementation returns this {@link Match} object. */
 	@Override
 	default Match toMatch() { return this; }
 
+	/** The default implementation returns {@link MatchType#SINGLE}. */
 	default MatchType getType() { return MatchType.SINGLE; }
 
 	enum MatchType {

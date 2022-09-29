@@ -20,6 +20,8 @@
 package de.ims.icarus2.query.api.engine.result;
 
 /**
+ * Describes the basic contract of match producing members in the query framework.
+ *
  * @author Markus Gärtner
  *
  */
