@@ -29,7 +29,7 @@ import de.ims.icarus2.query.api.exp.Expression;
 
 /**
  * Matches a single UoI (typically a {@link Container})
- * as either filte ror global constraint.
+ * as either filter or global constraint.
  *
  * @author Markus Gärtner
  *
