@@ -22,6 +22,9 @@ import de.ims.icarus2.util.Part;
 import de.ims.icarus2.util.id.Identifiable;
 
 /**
+ * Models a  single module for a {@link Driver} that can be used to
+ * perform specific tasks.
+ *
  * @author Markus Gärtner
  *
  */

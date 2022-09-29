@@ -19,10 +19,18 @@ package de.ims.icarus2;
 import de.ims.icarus2.util.id.DuplicateIdentifierException;
 
 /**
+ * <b>Implementation note:</b>
+ * <p>
+ * Any class implementing this interface must make sure that all instances created are
+ * properly {@link #register(ErrorCode...) registered} without exception! This can be
+ * done as part of the respective constructor method or in bulk via a static code fragment.
+ *
  * @author Markus Gärtner
  *
  */
 public interface ErrorCode {
+
+	//TODO rework the exception framework so that ErrorCode instances are capable of signaling whether or not they can be used in a RuntimeException or require proper Exception context, such as I/O stuff
 
 	/**
 	 * Returns the global error code for this error.
