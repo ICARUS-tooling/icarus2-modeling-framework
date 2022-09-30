@@ -117,7 +117,9 @@ public interface QueryJob {
 		boolean isFinished();
 
 		/** Returns all the accumulated exceptions from workers or an empty list if nothing
-		 * has gone wrong so far. */
+		 * has gone wrong so far. The returned list is not owned by the controller and can
+		 * be freely used by client code. It also only represents a snapshot of the current
+		 * error state in case the controller isn't {@link #isFinished() finished}! */
 		List<Throwable> getExceptions();
 	}
 
