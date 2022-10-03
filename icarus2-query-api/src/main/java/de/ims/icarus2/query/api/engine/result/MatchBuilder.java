@@ -19,6 +19,7 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 
 import de.ims.icarus2.util.collections.CollectionUtils;
@@ -29,6 +30,7 @@ import de.ims.icarus2.util.collections.CollectionUtils;
  */
 public class MatchBuilder implements MatchSource, MatchSink {
 
+	private int lane = UNSET_INT;
 	private long index = UNSET_LONG;
 	private int[] m_node;
 	private int[] m_index;
@@ -72,19 +74,20 @@ public class MatchBuilder implements MatchSource, MatchSink {
 	public int getIndex(int index) { return m_index[index]; }
 
 	@Override
-	public void consume(long index, int offset, int size, int[] m_node, int[] m_index) {
+	public void consume(int lane, long index, int offset, int size, int[] m_node, int[] m_index) {
+		this.lane = lane;
 		this.index = index;
 		map(offset, size, m_node, m_index);
 	}
 
 	@Override
 	public Match toMatch() {
-		return MatchImpl.of(index, size, m_node, m_index);
+		return MatchImpl.of(lane, index, size, m_node, m_index);
 	}
 
 	@Override
 	public void drainTo(MatchSink sink) {
-		sink.consume(index, 0, size, m_node, m_index);
+		sink.consume(lane, index, 0, size, m_node, m_index);
 	}
 
 }

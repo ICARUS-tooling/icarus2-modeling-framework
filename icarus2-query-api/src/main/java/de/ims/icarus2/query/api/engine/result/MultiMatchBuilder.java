@@ -19,6 +19,8 @@
  */
 package de.ims.icarus2.query.api.engine.result;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
+
 import de.ims.icarus2.query.api.engine.result.Match.MultiMatch;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -45,7 +47,8 @@ public class MultiMatchBuilder implements MatchSink {
 	private int offset = 0;
 
 	@Override
-	public void consume(long index, int offset, int size, int[] m_node, int[] m_index) {
+	public void consume(int lane, long index, int offset, int size, int[] m_node, int[] m_index) {
+		checkArgument("matches must be added in order of their lane ids", lane==sizes.size());
 		offsets.add(this.offset);
 		sizes.add(size);
 		indices.add(index);
@@ -65,8 +68,8 @@ public class MultiMatchBuilder implements MatchSink {
 	}
 
 	/** Creates and returns a {@link MultiMatch} representing the current aggregation
-	 * of {@link Match} data buffered in this builder. {@link #reset() Resets} the
-	 * builder afterwards to . */
+	 * of {@link Match} data buffered in this builder. Automatically {@link #reset() resets}
+	 * the builder afterwards to a blank state. */
 	public MultiMatch build() {
 		MultiMatch match = new MultiMatchImpl(sizes.toIntArray(), offsets.toIntArray(),
 				indices.toLongArray(), m_node.toIntArray(), m_index.toIntArray());

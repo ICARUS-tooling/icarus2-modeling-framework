@@ -31,33 +31,35 @@ public final class MatchImpl implements Match {
 
 	private static final int[] EMPTY = {};
 
-	public static MatchImpl empty(long index) {
-		return new MatchImpl(index, EMPTY, EMPTY);
+	public static MatchImpl empty(int lane, long index) {
+		return new MatchImpl(lane, index, EMPTY, EMPTY);
 	}
 
 	/** Create a new [{@link Match}, using the given data without copying */
-	public static MatchImpl of(long index, int[] m_node, int[] m_index) {
-		return new MatchImpl(index, m_node, m_index);
+	public static MatchImpl of(int lane, long index, int[] m_node, int[] m_index) {
+		return new MatchImpl(lane, index, m_node, m_index);
 	}
 
 	/** Create a new [{@link Match}, using the given data, while copying the relevant parts */
-	public static MatchImpl of(long index, int size, int[] m_node, int[] m_index) {
-		return new MatchImpl(index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
+	public static MatchImpl of(int lane, long index, int size, int[] m_node, int[] m_index) {
+		return new MatchImpl(lane, index, Arrays.copyOf(m_node, size), Arrays.copyOf(m_index, size));
 	}
 
 	/** Create a new [{@link Match}, using the given data, while copying the relevant sections */
-	public static MatchImpl of(long index, int offset, int size, int[] m_node, int[] m_index) {
-		return new MatchImpl(index, Arrays.copyOfRange(m_node, offset, offset+size),
+	public static MatchImpl of(int lane, long index, int offset, int size, int[] m_node, int[] m_index) {
+		return new MatchImpl(lane, index, Arrays.copyOfRange(m_node, offset, offset+size),
 				Arrays.copyOfRange(m_index, offset, offset+size));
 	}
 
+	private final int lane;
 	private final long index;
 	private final int[] m_node;
 	private final int[] m_index;
 
 	private int hash = UNSET_INT;
 
-	private MatchImpl(long index, int[] m_node, int[] m_index) {
+	private MatchImpl(int lane, long index, int[] m_node, int[] m_index) {
+		this.lane = lane;
 		this.index = index;
 		this.m_node = m_node;
 		this.m_index = m_index;
@@ -78,7 +80,7 @@ public final class MatchImpl implements Match {
 
 	@Override
 	public void drainTo(MatchSink sink) {
-		sink.consume(index, 0, m_node.length, m_node, m_index);
+		sink.consume(lane, index, 0, m_node.length, m_node, m_index);
 	}
 
 	@Override
@@ -87,7 +89,8 @@ public final class MatchImpl implements Match {
 			return true;
 		} else if(obj instanceof MatchImpl) {
 			MatchImpl other = (MatchImpl) obj;
-			return index==other.index
+			return lane==other.lane
+					&& index==other.index
 					&& Arrays.equals(m_node, other.m_node)
 					&& Arrays.equals(m_index, other.m_index);
 		}
@@ -97,27 +100,17 @@ public final class MatchImpl implements Match {
 	@Override
 	public int hashCode() {
 		if(hash==UNSET_INT) {
-			hash = (int) index * Arrays.hashCode(m_node) * Arrays.hashCode(m_index);
+			hash = (lane+1) * (int) (index+1) * Arrays.hashCode(m_node) * Arrays.hashCode(m_index);
 		}
 		return hash;
 	}
 
+	/**
+	 * {lane index: m_node->m_index, }
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append('{');
-		sb.append(index);
-		sb.append(": ");
-		final int size = m_node.length;
-		for (int i = 0; i < size; i++) {
-			if(i>0) {
-				sb.append(", ");
-			}
-			sb.append(m_node[i])
-				.append("->")
-				.append(m_index[i]);
-		}
-		sb.append('}');
-		return sb.toString();
+		return Match.toString(this);
 	}
 }

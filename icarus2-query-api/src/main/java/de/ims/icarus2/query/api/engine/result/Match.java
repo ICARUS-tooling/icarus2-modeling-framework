@@ -34,6 +34,34 @@ import de.ims.icarus2.model.api.ModelException;
  */
 public interface Match extends MatchSource {
 
+	/**
+	 * Provides a default method for creating a simple strint representation of
+	 * a normal {@link Match}.
+	 * <p>
+	 * {lane index: m_node->m_index, }
+	 *
+	 * @param match
+	 * @return
+	 */
+	public static String toString(Match match) {
+		StringBuilder sb = new StringBuilder();
+		sb.append('{');
+		sb.append(match.getLane());
+		sb.append(match.getIndex());
+		sb.append(": ");
+		final int size = match.getMapCount();
+		for (int i = 0; i < size; i++) {
+			if(i>0) {
+				sb.append(", ");
+			}
+			sb.append(match.getNode(i))
+				.append("->")
+				.append(match.getIndex(i));
+		}
+		sb.append('}');
+		return sb.toString();
+	}
+
 	public static boolean matchesEqual(Match m1, Match m2) {
 		if(m1.getType()!=m2.getType())
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Cannot compare matches of different type");
@@ -66,6 +94,11 @@ public interface Match extends MatchSource {
 		return 0;
 	}
 
+	/** Returns the index of the associated lane.
+	 * @see MappingContext#getLane(int) */
+	default int getLane() {
+		return 0;
+	}
 	/** Get the global index of the container this match refers to. */
 	long getIndex();
 	/** Returns the number of mappings inside this match */
@@ -106,6 +139,11 @@ public interface Match extends MatchSource {
 
 		/** Returns the index of the current lane */
 		int getCurrentLane();
+
+		@Override
+		default int getLane() {
+			return getCurrentLane();
+		}
 
 		/** Returns the total number of lanes present in this match.
 		 * Note that this number is <b>always</b> equal to the number of

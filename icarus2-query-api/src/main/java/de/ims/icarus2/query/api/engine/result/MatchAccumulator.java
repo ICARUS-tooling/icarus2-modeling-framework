@@ -131,13 +131,14 @@ public class MatchAccumulator implements MatchSource, MatchSink {
 	 * @see de.ims.icarus2.query.api.engine.result.MatchSink#consume(long, int, int, int[], int[])
 	 */
 	@Override
-	public void consume(long index, int offset, int size, int[] m_node, int[] m_index) {
+	public void consume(int lane, long index, int offset, int size, int[] m_node, int[] m_index) {
 		Entry entry = nextEntry();
 		Block block = prepareBlock(size);
 
 		System.arraycopy(m_node, offset, block.m_nodes, nextOffset, size);
 		System.arraycopy(m_index, offset, block.m_indices, nextOffset, size);
 
+		entry.lane = lane;
 		entry.size = size;
 		entry.index = index;
 		entry.offset = nextOffset;
@@ -153,7 +154,7 @@ public class MatchAccumulator implements MatchSource, MatchSink {
 		checkState("Cursor not at a valid position", cursor!=UNSET_INT);
 		Entry entry = entries.get(cursor);
 		Block block = blocks.get(entry.block);
-		return MatchImpl.of(entry.index, entry.offset, entry.size, block.m_nodes, block.m_indices);
+		return MatchImpl.of(entry.lane, entry.index, entry.offset, entry.size, block.m_nodes, block.m_indices);
 	}
 
 	@Override
@@ -161,7 +162,7 @@ public class MatchAccumulator implements MatchSource, MatchSink {
 		checkState("Cursor not at a valid position", cursor!=UNSET_INT);
 		Entry entry = entries.get(cursor);
 		Block block = blocks.get(entry.block);
-		sink.consume(entry.index, entry.offset, entry.size, block.m_nodes, block.m_indices);
+		sink.consume(entry.lane, entry.index, entry.offset, entry.size, block.m_nodes, block.m_indices);
 	}
 
 	public int getMatchCount() {
@@ -175,6 +176,7 @@ public class MatchAccumulator implements MatchSource, MatchSink {
 	}
 
 	private static class Entry {
+		int lane;
 		long index;
 		int offset;
 		int size;

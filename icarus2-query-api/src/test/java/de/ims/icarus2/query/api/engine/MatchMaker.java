@@ -35,9 +35,11 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 public class MatchMaker {
 
 	private final long index;
+	private final int lane;
 	private final List<Match> matches = new ObjectArrayList<>();
 
-	public MatchMaker(long index) {
+	public MatchMaker(int lane, long index) {
+		this.lane = lane;
 		this.index = index;
 	}
 
@@ -50,7 +52,7 @@ public class MatchMaker {
 	public MatchMaker match(int...indices) {
 		int[] mappingIds = new int[indices.length];
 		ArrayUtils.fillAscending(mappingIds);
-		return match(MatchImpl.of(index, mappingIds, indices));
+		return match(MatchImpl.of(lane, index, mappingIds, indices));
 	}
 
 	public Match[] make() {

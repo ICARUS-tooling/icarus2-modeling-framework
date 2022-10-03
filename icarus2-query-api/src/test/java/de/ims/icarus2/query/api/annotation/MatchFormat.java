@@ -42,6 +42,9 @@ public @interface MatchFormat {
 	/** Symbol separating the index value from the list of mappings */
 	String header() default ":";
 
+	/** Symbol separating the optional lane declaration from the index value */
+	String laneSep() default " ";
+
 	/** Assignment symbol for individual mappings */
 	String assignment() default "->";
 }

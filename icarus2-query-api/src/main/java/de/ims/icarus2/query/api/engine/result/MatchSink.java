@@ -27,5 +27,5 @@ public interface MatchSink {
 
 	/** Consume mapping for target at given index of specified size.
 	 * @param offset TODO*/
-	void consume(long index, int offset, int size, int[] m_node, int[] m_index);
+	void consume(int lane, long index, int offset, int size, int[] m_node, int[] m_index);
 }

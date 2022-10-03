@@ -90,7 +90,7 @@ public final class MultiMatchImpl implements MultiMatch {
 
 	@Override
 	public void drainTo(MatchSink sink) {
-		sink.consume(indices[cursor], offsets[cursor], sizes[cursor], m_node, m_index);
+		sink.consume(cursor, indices[cursor], offsets[cursor], sizes[cursor], m_node, m_index);
 	}
 
 	@Override

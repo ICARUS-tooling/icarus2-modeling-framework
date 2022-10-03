@@ -65,10 +65,10 @@ class LaneBridgeTest {
 		public void testSingle() throws Exception {
 
 			LaneData lane = new LaneData(0);
-			lane.add(maker(0).match(1).match(2).make());
-			lane.add(maker(1).match(4).make());
+			lane.add(lane.maker(0).match(1).match(2).make());
+			lane.add(lane.maker(1).match(4).make());
 			lane.addNoMatch(2);
-			lane.add(maker(3).match(5).match(2).make());
+			lane.add(lane.maker(3).match(5).match(2).make());
 
 			Stack<Pair<Long, Container>> pending = lane.expectedCalls(lane.indicesWithMatches());
 //			System.out.println(pending);
@@ -90,16 +90,16 @@ class LaneBridgeTest {
 		public void testDualLane() throws Exception {
 
 			LaneData lane1 = new LaneData(0);
-			lane1.add(maker(0).match(1).match(2).make());
-			lane1.add(maker(1).match(4).make());
+			lane1.add(lane1.maker(0).match(1).match(2).make());
+			lane1.add(lane1.maker(1).match(4).make());
 			lane1.addNoMatch(2);
 
 			LaneData lane2 = new LaneData(0);
 			// Mapped from 0 on lane1
-			lane2.add(maker(0).match(0).match(1).make());
+			lane2.add(lane2.maker(0).match(0).match(1).make());
 			lane2.addNoMatch(1);
 			// Mapped from 1 on lane1
-			lane2.add(maker(2).match(1).match(2).make());
+			lane2.add(lane2.maker(2).match(1).match(2).make());
 			lane2.addNoMatch(3);
 
 			LaneMapper laneMapper = LaneMapper.fixedBuilder()
@@ -141,8 +141,6 @@ class LaneBridgeTest {
 		}
 	}
 
-	private static MatchMaker maker(long index) { return new MatchMaker(index); }
-
 	private static Matcher<Container> expectAll(Stack<Pair<Long, Container>> pending) {
 		return new Matcher<Container>() {
 
@@ -169,6 +167,8 @@ class LaneBridgeTest {
 		LaneData(int id) {
 			this.id = id;
 		}
+
+		MatchMaker maker(long index) { return new MatchMaker(id, index); }
 
 		boolean[] matchAll(Matcher<Container> matcher) {
 			boolean[] result = new boolean[targets.size()];

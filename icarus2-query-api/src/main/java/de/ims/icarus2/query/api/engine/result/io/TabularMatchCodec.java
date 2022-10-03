@@ -57,6 +57,7 @@ public class TabularMatchCodec implements MatchCodec {
 		return new ReaderImpl(Channels.newReader(resource.getReadChannel(), IOUtil.DEFAULT_CHARSET_NAME));
 	}
 
+	/** Default separator symbol, \t  */
 	private static final char SEP = '\t';
 
 	public static final class WriterImpl implements MatchCodec.MatchWriter {
@@ -69,6 +70,8 @@ public class TabularMatchCodec implements MatchCodec {
 
 		@Override
 		public void write(Match match) throws IOException {
+			writer.write(String.valueOf(match.getLane()));
+			writer.write(SEP);
 			writer.write(String.valueOf(match.getIndex()));
 			writer.write(SEP);
 			final int size = match.getMapCount();
@@ -120,9 +123,10 @@ public class TabularMatchCodec implements MatchCodec {
 		@Override
 		public Match read() throws IOException {
 			int cols = line.split(SEP);
-			assert cols >=2 : "require at least 2 data columns";
-			assert cols%2==0 : "require an even number of data columns";
+			assert cols >=3 : "require at least 2 data columns";
+			assert cols%2==1 : "require an odd number of data columns";
 			int col = 0;
+			int lane = readInt(col++);
 			long index = readLong(col++);
 			int size = readInt(col++);
 			int[] m_node = new int[size], m_index = new int[size];
@@ -132,7 +136,7 @@ public class TabularMatchCodec implements MatchCodec {
 				m_index[i] = readInt(col++);
 			}
 
-			return MatchImpl.of(index, m_node, m_index);
+			return MatchImpl.of(lane, index, m_node, m_index);
 		}
 
 		@Override

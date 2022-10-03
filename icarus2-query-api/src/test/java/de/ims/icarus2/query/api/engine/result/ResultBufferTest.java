@@ -70,7 +70,7 @@ class ResultBufferTest {
 		MatchImpl(int index) { this.index = index; }
 
 		@Override
-		public void drainTo(MatchSink sink) { sink.consume(index, 0, 0, EMPTY, EMPTY); }
+		public void drainTo(MatchSink sink) { sink.consume(0, index, 0, 0, EMPTY, EMPTY); }
 
 		@Override
 		public long getIndex() { return index; }

@@ -82,9 +82,9 @@ import de.ims.icarus2.query.api.engine.matcher.mark.LevelMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.Marker.RangeMarker;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform;
 import de.ims.icarus2.query.api.engine.matcher.mark.MarkerTransform.MarkerSetup;
-import de.ims.icarus2.query.api.engine.result.MatchImpl;
 import de.ims.icarus2.query.api.engine.result.Match;
 import de.ims.icarus2.query.api.engine.result.MatchCollector;
+import de.ims.icarus2.query.api.engine.result.MatchImpl;
 import de.ims.icarus2.query.api.engine.result.MatchSink;
 import de.ims.icarus2.query.api.engine.result.MatchSource;
 import de.ims.icarus2.query.api.exp.Assignable;
@@ -210,7 +210,6 @@ public class StructurePattern {
 	private final StateMachineSetup setup;
 	/** Position of this pattern in the greater context */
 	private final Role role;
-	private final int id;
 
 	private final IqlNode[] mappedNodes;
 
@@ -218,11 +217,11 @@ public class StructurePattern {
 		source = builder.getSource();
 		context = builder.geContext();
 		role = builder.geRole();
-		id = builder.getId();
 
 		StructureQueryProcessor proc = new StructureQueryProcessor(builder);
 		setup = proc.createStateMachine();
 
+		setup.lane = builder.getId();
 		setup.initialSize = builder.getInitialBufferSize();
 
 		mappedNodes = setup.getMappedNodes();
@@ -231,7 +230,7 @@ public class StructurePattern {
 	public IqlLane getSource() { return source; }
 	public EvaluationContext getContext() { return context; }
 	public Role getRole() { return role; }
-	public int getId() { return id; }
+	public int getId() { return setup.lane; }
 
 	public IqlNode[] getMappedNodes() { return mappedNodes.clone(); }
 	public Set<String> getDeclaredMembers() { return Collections.unmodifiableSet(setup.declaredMembers); }
@@ -304,6 +303,9 @@ public class StructurePattern {
 
 		/** Hint for the starting size of all buffer structures */
 		int initialSize = QueryUtils.BUFFER_STARTSIZE;
+
+		/** Lane index for match creation */
+		int lane;
 
 		/** Flag to indicate whether monitoring of the state machine is supported. */
 		boolean allowMonitor = false;
@@ -2650,6 +2652,9 @@ public class StructurePattern {
 
 		final boolean allowMonitor;
 
+		/** Index of the associated lane, used for match creation. */
+		final int lane;
+
 		/** Flag to signal that the underlying query used tree features. */
 		final boolean allowTrees;
 
@@ -2750,6 +2755,7 @@ public class StructurePattern {
 
 		private State(StateMachineSetup setup, @Nullable MatchCollector matchCollector) {
 			this.matchCollector = matchCollector;
+			lane = setup.lane;
 
 			final int initialSize = setup.initialSize == UNSET_INT ?
 					QueryUtils.BUFFER_STARTSIZE : setup.initialSize;
@@ -2895,12 +2901,12 @@ public class StructurePattern {
 
 		@Override
 		public Match toMatch() {
-			return MatchImpl.of(index, entry, m_node, m_index);
+			return MatchImpl.of(lane, index, entry, m_node, m_index);
 		}
 
 		@Override
 		public void drainTo(MatchSink sink) {
-			sink.consume(index, 0, entry, m_node, m_index);
+			sink.consume(lane, index, 0, entry, m_node, m_index);
 		}
 	}
 
