@@ -162,6 +162,11 @@
 				<xsd:documentation>Hint to ignore this column when reading the corpus.</xsd:documentation>
 			</xsd:annotation>
 		</xsd:attribute>
+		<xsd:attribute name="columnIndex" type="xsd:int">
+			<xsd:annotation>
+				<xsd:documentation>Overrides the column index to be used within the physical corpus representation.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
 		<xsd:attribute name="layerId" type="its:identifierAttr">
 			<xsd:annotation>
 				<xsd:documentation>Layer to store data from this column.</xsd:documentation>

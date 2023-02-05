@@ -202,6 +202,9 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 				.ifPresent(columnSchema::setLayerId);
 			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_NO_ENTRY_LABEL)
 				.ifPresent(columnSchema::setNoEntryLabel);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_COLUMN_NDEX)
+				.map(Integer::valueOf)
+				.ifPresent(columnSchema::setColumnIndex);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_COMPONENT: {

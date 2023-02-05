@@ -2590,7 +2590,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			this.blockHandler = blockHandler;
 			this.columnSchema = columnSchema;
-			this.columnIndex = columnIndex;
+			this.columnIndex = columnSchema.getColumnIndex()==UNSET_INT ? columnIndex : columnSchema.getColumnIndex();
 
 			// Per default try to instantiate nested resolver based on schema definition
 			Resolver resolver = createResolver(columnSchema.getResolver());

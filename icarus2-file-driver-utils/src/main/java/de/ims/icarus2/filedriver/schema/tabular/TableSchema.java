@@ -336,6 +336,14 @@ public interface TableSchema extends Schema {
 		SubstituteSchema getSubstitute(SubstituteType type);
 
 		boolean hasSubstitutes();
+
+		/**
+		 * Allows to override the index from which this column should actually
+		 * draw input data. If this field is not set (i.e. {@code -1} is returned)
+		 * then the position within the list of column definitions is used as index!
+		 * @return
+		 */
+		int getColumnIndex();
 	}
 
 	/**

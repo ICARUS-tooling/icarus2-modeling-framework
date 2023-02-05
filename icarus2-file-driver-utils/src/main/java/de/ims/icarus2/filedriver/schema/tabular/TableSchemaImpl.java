@@ -16,8 +16,11 @@
  */
 package de.ims.icarus2.filedriver.schema.tabular;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkNotEmpty;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.lang.Primitives._boolean;
+import static de.ims.icarus2.util.lang.Primitives._int;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -543,6 +546,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private String name, layerId, annotationKey, noEntryLabel;
 		private Boolean isIgnoreColumn;
 		private ResolverSchema resolver;
+		private int columnIndex = UNSET_INT;
 		private final EnumMap<SubstituteType, SubstituteSchema> substitutes = new EnumMap<>(SubstituteType.class);
 
 		public ColumnSchemaImpl(String name) {
@@ -607,6 +611,16 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		@Override
 		public boolean hasSubstitutes() {
 			return substitutes!=null && !substitutes.isEmpty();
+		}
+
+		@Override
+		public int getColumnIndex() {
+			return columnIndex;
+		}
+
+		public void setColumnIndex(int columnIndex) {
+			checkArgument("Column index must be 0 or greater", columnIndex>=0);
+			this.columnIndex = columnIndex;
 		}
 
 		public ColumnSchemaImpl setName(String name) {
@@ -678,8 +692,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		 */
 		@Override
 		public String toString() {
-			return String.format("Column@[name=%s, layerId=%s, annotationKey=%s, noEntryLabel=%s, ignore=%b, resolver=%s, substitutes=%s]",
-					name, layerId, annotationKey, noEntryLabel, isIgnoreColumn, resolver, substitutes);
+			return String.format("Column@[name=%s, columnIndex=%d, layerId=%s, annotationKey=%s, noEntryLabel=%s, ignore=%b, resolver=%s, substitutes=%s]",
+					name, _int(columnIndex), layerId, annotationKey, noEntryLabel, isIgnoreColumn, resolver, substitutes);
 		}
 
 		/**
@@ -687,7 +701,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		 */
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(name, layerId, annotationKey, noEntryLabel, isIgnoreColumn, resolver, substitutes);
+			return Objects.hashCode(name, _int(columnIndex), layerId, annotationKey, noEntryLabel, isIgnoreColumn, resolver, substitutes);
 		}
 
 		/**
