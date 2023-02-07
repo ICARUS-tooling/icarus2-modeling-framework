@@ -18,8 +18,8 @@
 
 -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/schema"
-	xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema"
+	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/tabular-schema"
+	xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/tabular-schema"
 	xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
 	vc:minVersion="1.0"
 	attributeFormDefault="unqualified"
