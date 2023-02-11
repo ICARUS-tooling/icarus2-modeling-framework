@@ -16,6 +16,7 @@
  */
 package de.ims.icarus2.filedriver.schema;
 
+import static de.ims.icarus2.util.strings.StringUtil.isNullOrEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ import de.ims.icarus2.filedriver.FileDriverUtils;
 import de.ims.icarus2.filedriver.schema.tabular.TableConverter;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema;
 import de.ims.icarus2.filedriver.schema.tabular.xml.TableSchemaXmlReader;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.manifest.ManifestErrorCode;
 import de.ims.icarus2.model.manifest.api.ImplementationLoader;
@@ -45,6 +47,7 @@ import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.util.io.IOUtil;
+import de.ims.icarus2.util.lang.ResourceResolver;
 
 /**
  * Implements a factory that picks or loads a {@link Converter} implementation based
@@ -100,27 +103,31 @@ public class DefaultSchemaConverterFactory implements Factory {
 	private Reader createSchemaReader(ImplementationManifest manifest) throws IOException {
 
 		String name = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_NAME).orElse(null);
-		if(name!=null) {
+		if(!isNullOrEmpty(name)) {
 			//TODO link this with a registry facility to load schemata from
 			throw new UnsupportedOperationException("Resolution of schemate by name not supported yet");
 		}
 
 		// Direct inline declaration
 		String schema = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_CONTENT).orElse(null);
-		if(schema!=null) {
+		if(!isNullOrEmpty(schema)) {
 			return new StringReader(schema);
 		}
 
 		// Resource available from manifest location
 		String resource = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_RESOURCE).orElse(null);
-		if(resource!=null) {
-			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
-			return new InputStreamReader(classLoader.getResourceAsStream(resource), getCharset(manifest));
+		if(!isNullOrEmpty(resource)) {
+			ResourceResolver resourceResolver = manifest.getRegistry().getResourceResolver();
+			InputStream in = resourceResolver.getResourceAsStream(resource);
+			if(in==null)
+				throw new ModelException(ModelErrorCode.DRIVER_RESOURCE,
+						"Unable to access schema resource: "+resource);
+			return new InputStreamReader(in, getCharset(manifest));
 		}
 
 		// Physical file on local file system
 		String path = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_FILE).orElse(null);
-		if(path!=null) {
+		if(!isNullOrEmpty(path)) {
 			// Make sure we allow expansion of variables here
 			path = manifest.getRegistry().getVariableResolver().expand(path);
 			Path file = Paths.get(path);
@@ -135,7 +142,7 @@ public class DefaultSchemaConverterFactory implements Factory {
 		}
 
 		String url = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_URL).orElse(null);
-		if(url!=null) {
+		if(!isNullOrEmpty(url)) {
 			//TODO support compression on this stream as well! (<- difficult to decide?)
 			return new InputStreamReader(new URL(url).openStream(), getCharset(manifest));
 		}

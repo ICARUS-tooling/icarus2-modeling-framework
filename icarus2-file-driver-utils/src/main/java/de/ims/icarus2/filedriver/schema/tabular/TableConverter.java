@@ -1528,6 +1528,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				matcher.reset(context.rawData());
 				if(matcher.find()) {
 					if(resolver!=null) {
+						// We ignore return value here since attribute resolvers can't change the current item
 						resolver.process(context);
 					}
 

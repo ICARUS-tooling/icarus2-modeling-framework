@@ -43,6 +43,7 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.util.io.resource.ResourceProvider;
+import de.ims.icarus2.util.lang.ResourceResolver;
 import de.ims.icarus2.util.strings.VariableResolver;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
@@ -102,8 +103,8 @@ public class DirectPathResolver implements PathResolver {
 
 		if(rootPathType==PathType.RESOURCE) {
 			// Use the class loader assigned to the manifest's location
-			ClassLoader classLoader = manifest.getManifestLocation().getClassLoader();
-			URL url = classLoader.getResource(rootPath);
+			ResourceResolver resourceResolver = manifest.getRegistry().getResourceResolver();
+			URL url = resourceResolver.getResource(rootPath);
 			if(url==null)
 				throw new ModelException(ModelErrorCode.DRIVER_MISSING_CONTENT,
 						"Missing resource: "+rootPath);
