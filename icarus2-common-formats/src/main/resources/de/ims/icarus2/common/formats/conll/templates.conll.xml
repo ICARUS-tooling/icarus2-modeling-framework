@@ -142,7 +142,7 @@
 							<imf:property name="de.ims.icarus2.filedriver.schema.typeId">de.ims.icarus2.filedriver.schema.tabular</imf:property>
 							<imf:property name="de.ims.icarus2.filedriver.schema.content"><![CDATA[
 								<its:table xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-									xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema" 
+									xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/tabular-schema" 
 									id="conll09.tbl" name="CoNLL09 Tabular Format"  groupId="sentenceGroup">
 									<its:block layerId="sentence">
 										<its:component memberType="container"/>

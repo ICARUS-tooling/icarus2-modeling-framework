@@ -72,6 +72,13 @@
 			<xsd:element name="endDelimiter" type="its:attributeType" minOccurs="0" />
 			<xsd:element name="component" type="its:componentType" minOccurs="0" />
 			<xsd:element name="option" type="its:optionType" minOccurs="0" maxOccurs="unbounded" />
+			<xsd:element name="attributes" minOccurs="0">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="attribute" type="its:attributeType" maxOccurs="unbounded" />
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
 			<xsd:choice>
 				<xsd:sequence>
 					<xsd:element name="separator" type="xsd:string" minOccurs="0" />
@@ -84,13 +91,6 @@
 						</xsd:complexType>
 					</xsd:element>
 					<xsd:element name="fallbackColumn" type="its:columnType" minOccurs="0" />
-					<xsd:element name="attributes" minOccurs="0">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="attribute" type="its:attributeType" maxOccurs="unbounded" />
-							</xsd:sequence>
-						</xsd:complexType>
-					</xsd:element>
 				</xsd:sequence>
 				<xsd:sequence>
 					<xsd:element name="block" type="its:blockType" maxOccurs="unbounded"/>
