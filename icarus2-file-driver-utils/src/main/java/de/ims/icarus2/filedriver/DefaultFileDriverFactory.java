@@ -51,6 +51,7 @@ import de.ims.icarus2.model.manifest.api.ImplementationManifest.Factory;
 import de.ims.icarus2.model.manifest.api.LocationManifest;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.ManifestException;
+import de.ims.icarus2.model.manifest.api.ManifestRegistry;
 import de.ims.icarus2.model.manifest.api.PathResolverManifest;
 import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.model.manifest.util.Messages;
@@ -261,6 +262,8 @@ public class DefaultFileDriverFactory implements Factory {
 					.instantiate(PathResolver.class);
 		}
 
-		return DirectPathResolver.forManifest(locationManifest, resourceProvider);
+		ManifestRegistry registry = corpus.getManager().getManifestRegistry();
+
+		return DirectPathResolver.forManifest(locationManifest, resourceProvider, registry.getVariableResolver());
 	}
 }

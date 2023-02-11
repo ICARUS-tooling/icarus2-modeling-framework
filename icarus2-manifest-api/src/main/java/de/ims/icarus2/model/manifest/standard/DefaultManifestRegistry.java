@@ -45,6 +45,7 @@ import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.EventSource;
 import de.ims.icarus2.util.events.SimpleEventListener;
 import de.ims.icarus2.util.events.WeakEventSource;
+import de.ims.icarus2.util.strings.VariableResolver;
 
 /**
  * @author Markus Gärtner
@@ -64,13 +65,22 @@ public final class DefaultManifestRegistry implements ManifestRegistry {
 	private final TemplateManifestLock templateManifestLock = new TemplateManifestLock();
 
 	private final Object lock = new Object();
+	private final VariableResolver variableResolver;
 
 	public DefaultManifestRegistry() {
-		// no-op
+		variableResolver = new VariableResolver();
 	}
 
 	private void fireEvent(EventObject event) {
 		eventSource.fireEvent(event);
+	}
+
+	/**
+	 * @return the variableResolver
+	 */
+	@Override
+	public VariableResolver getVariableResolver() {
+		return variableResolver;
 	}
 
 	@Override

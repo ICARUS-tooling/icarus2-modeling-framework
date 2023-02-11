@@ -43,6 +43,7 @@ import de.ims.icarus2.model.manifest.api.LocationManifest.PathEntry;
 import de.ims.icarus2.model.manifest.api.LocationManifest.PathType;
 import de.ims.icarus2.model.manifest.api.LocationType;
 import de.ims.icarus2.util.io.resource.ResourceProvider;
+import de.ims.icarus2.util.strings.VariableResolver;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
@@ -78,10 +79,12 @@ public class DirectPathResolver implements PathResolver {
 	 * @param manifest
 	 * @return
 	 */
-	public static DirectPathResolver forManifest(LocationManifest manifest, ResourceProvider resourceProvider) {
+	public static DirectPathResolver forManifest(LocationManifest manifest, ResourceProvider resourceProvider,
+			VariableResolver variableResolver) {
 		requireNonNull(manifest);
+		requireNonNull(variableResolver);
 
-		String rootPath = manifest.getRootPath().orElse(null);
+		String rootPath = manifest.getRootPath().map(variableResolver::expand).orElse(null);
 		PathType rootPathType = manifest.getRootPathType().orElse(LocationManifest.DEFAULT_ROOT_PATH_TYPE);
 
 		checkArgument("Can only handle file, resource or folder locations",
@@ -148,6 +151,7 @@ public class DirectPathResolver implements PathResolver {
 						if(value==null || value.isEmpty())
 							throw new ModelException(ManifestErrorCode.MANIFEST_CORRUPTED_STATE,
 									"Empty path");
+						value = variableResolver.expand(value);
 
 						directFiles.add(value);
 						files.add(root.resolve(value).toString());
@@ -155,7 +159,8 @@ public class DirectPathResolver implements PathResolver {
 
 					case PATTERN: {
 						// For pattern entries we collect them and wait for a second pass
-						patterns.add(entry.getValue());
+						String value = variableResolver.expand(entry.getValue());
+						patterns.add(value);
 					} break;
 
 					default:

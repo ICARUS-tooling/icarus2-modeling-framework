@@ -121,6 +121,8 @@ public class DefaultSchemaConverterFactory implements Factory {
 		// Physical file on local file system
 		String path = manifest.<String>getPropertyValue(FileDriverUtils.PROPERTY_SCHEMA_FILE).orElse(null);
 		if(path!=null) {
+			// Make sure we allow expansion of variables here
+			path = manifest.getRegistry().getVariableResolver().expand(path);
 			Path file = Paths.get(path);
 
 			InputStream in = Files.newInputStream(file);
