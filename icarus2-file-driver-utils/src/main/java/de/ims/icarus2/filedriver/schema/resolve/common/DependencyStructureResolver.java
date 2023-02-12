@@ -207,7 +207,8 @@ public class DependencyStructureResolver implements BatchResolver {
 			case UNDEFINED_POINTER: break;
 			case ROOT_POINTER:
 				edges[i].setSource(root);
-				structureBuilder.getRoot().addEdge(edges[i], false);
+				//FIXME: structureBuilder.addEdges(edges, 0, length); will take care of adding edges to root!
+//				structureBuilder.getRoot().addEdge(edges[i], false);
 				break;
 
 			default:
