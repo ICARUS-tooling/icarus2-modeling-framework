@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.util.strings;
 
+import static de.ims.icarus2.util.lang.Primitives._int;
+
 /**
  * Implements a static slice of characters from a given source {@link CharSequence}.
  * Note that 'static' in this contest only refers to the location of the slice within
@@ -47,11 +49,13 @@ public class SubSequence extends AbstractString {
 	 */
 	public SubSequence(CharSequence source, int offset, int len) {
 		if (source == null)
-			throw new NullPointerException("Invalid source"); //$NON-NLS-1$
+			throw new NullPointerException("Invalid source");
 		if(offset<0 || offset>=source.length())
-			throw new IndexOutOfBoundsException("offset"); //$NON-NLS-1$
+			throw new IndexOutOfBoundsException(String.format(
+					"invalid offset %d for source '%s'", _int(offset), source));
 		if(len<0 || offset+len>source.length())
-			throw new IllegalArgumentException("length"); //$NON-NLS-1$
+			throw new IllegalArgumentException(String.format(
+					"invalid length %d for offset %d on source '%s'", _int(len), _int(offset), source));
 
 		this.source = source;
 		this.offset = offset;
