@@ -19,8 +19,6 @@
  */
 package de.ims.icarus2.query.api.engine.filter;
 
-import java.util.Optional;
-
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.model.api.driver.mods.DriverModule;
 import de.ims.icarus2.query.api.QueryException;
@@ -73,7 +71,6 @@ public interface QueryFilter extends DriverModule {
 	 * be told to {@link CandidateSink#ignore() ignore} the filter explicitly.
 	 *
 	 * @param context
-	 * @return a fully prepared {@link FilterJob} or an {@link Optional#empty() empty} optional.
 	 * @throws IcarusApiException in case of serious errors that are outside of the filter's control,
 	 * such as I/O or connection issues.
 	 * @throws QueryException for faulty usage or bugs.

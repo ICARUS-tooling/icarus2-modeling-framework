@@ -42,6 +42,7 @@ import de.ims.icarus2.query.api.engine.matcher.Matcher;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.Role;
 import de.ims.icarus2.query.api.engine.matcher.StructurePattern.StructureMatcher;
+import de.ims.icarus2.query.api.engine.result.MappingContext;
 import de.ims.icarus2.query.api.engine.result.MatchAccumulator;
 import de.ims.icarus2.query.api.engine.result.MatchAggregator;
 import de.ims.icarus2.query.api.exp.EvaluationContext.LaneContext;
@@ -77,6 +78,8 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 	protected final QueryOutput output;
 	protected final int batchSize;
 
+	protected final MappingContext mappingContext;
+
 	protected final List<Closeable> closeables;
 
 	protected SingleStreamJob(Builder builder) {
@@ -86,10 +89,21 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		batchSize = builder.getBatchSize();
 		corpusData = builder.getCorpusData();
 		closeables = new ObjectArrayList<>(builder.getCloseables());
+
+		MappingContext.Builder contextBuilder = MappingContext.builder();
+		for(StructurePattern pattern : builder.patterns) {
+			//TODO should we verify that lane ids and pattern order match?
+			contextBuilder.map(pattern.getSource(), pattern.getMappedNodes());
+		}
+
+		mappingContext = contextBuilder.build();
 	}
 
 	@Override
 	public IqlQuery getSource() { return query; }
+
+	@Override
+	public MappingContext getMappingContext() { return mappingContext; }
 
 	public int getBatchSize() { return batchSize; }
 
@@ -129,8 +143,18 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 		final Container[] buffer = new Container[batchSize];
 		worker.putClientData(KEY_BUFFER, buffer);
 
-		int length;
-		while((length = input.load(buffer)) > 0) {
+		for(;;) {
+			int length;
+			try {
+				length = input.load(buffer);
+			} catch (InterruptedException e) {
+				// treat error on input site as cancelation event
+				worker.cancel();
+				break;
+			}
+			if(length<=0) {
+				break;
+			}
 			for (int i = 0; i < length; i++) {
 				// Abort search when canceled
 				if(worker.isCanceled()) {

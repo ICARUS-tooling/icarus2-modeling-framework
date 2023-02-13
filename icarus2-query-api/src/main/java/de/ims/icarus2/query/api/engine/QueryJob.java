@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import de.ims.icarus2.query.api.engine.result.MappingContext;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 
 /**
@@ -38,6 +39,8 @@ import de.ims.icarus2.query.api.iql.IqlQuery;
 public interface QueryJob {
 
 	IqlQuery getSource();
+
+	MappingContext getMappingContext();
 
 	/**
 	 * Executes this job by scheduling workers on the provided {@link ExecutorService}

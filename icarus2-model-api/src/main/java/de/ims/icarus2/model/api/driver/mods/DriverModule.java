@@ -68,7 +68,8 @@ public interface DriverModule extends Identifiable, Part<Driver> {
 	void reset(ModuleMonitor monitor) throws InterruptedException;
 
 	/**
-	 * In case the module is busy, cancels the current task.
+	 * In case the module is busy, cancels the current task. This method may cause a
+	 * thread interruption if the module is running on a separate thread.
 	 */
 	void cancel();
 

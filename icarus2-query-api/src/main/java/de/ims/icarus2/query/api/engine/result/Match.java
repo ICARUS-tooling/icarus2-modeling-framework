@@ -35,7 +35,7 @@ import de.ims.icarus2.model.api.ModelException;
 public interface Match extends MatchSource {
 
 	/**
-	 * Provides a default method for creating a simple strint representation of
+	 * Provides a default method for creating a simple string representation of
 	 * a normal {@link Match}.
 	 * <p>
 	 * {lane index: m_node->m_index, }

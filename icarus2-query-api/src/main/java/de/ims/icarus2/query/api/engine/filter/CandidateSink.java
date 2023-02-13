@@ -19,6 +19,9 @@
  */
 package de.ims.icarus2.query.api.engine.filter;
 
+import de.ims.icarus2.query.api.engine.result.Match;
+import de.ims.icarus2.query.api.engine.result.PayloadReader;
+import de.ims.icarus2.query.api.engine.result.ResultEntry;
 import de.ims.icarus2.query.api.engine.result.ResultSink;
 
 /**
@@ -56,4 +59,17 @@ public interface CandidateSink extends ResultSink {
 	 * candidates, similar to what {@link #finish()} or {@link #discard()} would do.
 	 */
 	void ignore();
+
+	/**
+	 * This method should not be used for the candidate filtering process.
+	 * <p>
+	 * Any candidates must be sent to the plain {@link #add(de.ims.icarus2.query.api.engine.result.Match)}
+	 * method in the form of simple {@link Match} instances.
+	 *
+	 * @see de.ims.icarus2.query.api.engine.result.ResultSink#add(de.ims.icarus2.query.api.engine.result.ResultEntry, de.ims.icarus2.query.api.engine.result.PayloadReader)
+	 */
+	@Override
+	default void add(ResultEntry entry, PayloadReader payloadReader) {
+		throw new UnsupportedOperationException("Candidates should be provided as plain Match objects!");
+	}
 }
