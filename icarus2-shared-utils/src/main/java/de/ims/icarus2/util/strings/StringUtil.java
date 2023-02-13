@@ -572,6 +572,19 @@ public final class StringUtil {
     	return s==null || s.trim().isEmpty();
     }
 
+    public static boolean isEmpty(CharSequence s) {
+        int len = s.length();
+        int st = 0;
+
+        while ((st < len) && (s.charAt(st) <= ' ')) {
+            st++;
+        }
+        while ((st < len) && (s.charAt(len - 1) <= ' ')) {
+            len--;
+        }
+        return (st > 0) || (len < s.length());
+    }
+
     /**
      *
      * @param obj

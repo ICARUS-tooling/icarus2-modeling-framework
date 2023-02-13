@@ -61,4 +61,5 @@ public final class TableSchemaXmlConstants {
 	public static final String ATTR_ANNOTATION_KEY = "annotationKey";
 	public static final String ATTR_IGNORE = "ignore";
 	public static final String ATTR_TYPE = "type";
+	public static final String ATTR_COLUMN_NDEX = "columnIndex";
 }

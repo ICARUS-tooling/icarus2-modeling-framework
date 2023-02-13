@@ -18,8 +18,8 @@
 
 -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/schema"
-	xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema"
+	targetNamespace="http://www.ims.uni-stuttgart.de/icarus/xml/tabular-schema"
+	xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/tabular-schema"
 	xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
 	vc:minVersion="1.0"
 	attributeFormDefault="unqualified"
@@ -72,6 +72,13 @@
 			<xsd:element name="endDelimiter" type="its:attributeType" minOccurs="0" />
 			<xsd:element name="component" type="its:componentType" minOccurs="0" />
 			<xsd:element name="option" type="its:optionType" minOccurs="0" maxOccurs="unbounded" />
+			<xsd:element name="attributes" minOccurs="0">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="attribute" type="its:attributeType" maxOccurs="unbounded" />
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
 			<xsd:choice>
 				<xsd:sequence>
 					<xsd:element name="separator" type="xsd:string" minOccurs="0" />
@@ -84,13 +91,6 @@
 						</xsd:complexType>
 					</xsd:element>
 					<xsd:element name="fallbackColumn" type="its:columnType" minOccurs="0" />
-					<xsd:element name="attributes" minOccurs="0">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="attribute" type="its:attributeType" maxOccurs="unbounded" />
-							</xsd:sequence>
-						</xsd:complexType>
-					</xsd:element>
 				</xsd:sequence>
 				<xsd:sequence>
 					<xsd:element name="block" type="its:blockType" maxOccurs="unbounded"/>
@@ -160,6 +160,11 @@
 		<xsd:attribute name="ignore" type="xsd:boolean">
 			<xsd:annotation>
 				<xsd:documentation>Hint to ignore this column when reading the corpus.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="columnIndex" type="xsd:int">
+			<xsd:annotation>
+				<xsd:documentation>Overrides the column index to be used within the physical corpus representation.</xsd:documentation>
 			</xsd:annotation>
 		</xsd:attribute>
 		<xsd:attribute name="layerId" type="its:identifierAttr">

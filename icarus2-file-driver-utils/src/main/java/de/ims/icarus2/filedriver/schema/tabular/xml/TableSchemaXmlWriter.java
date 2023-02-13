@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2.filedriver.schema.tabular.xml;
 
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -304,6 +306,9 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_LAYER_ID, schema.getLayerId());
 		if(schema.isIgnoreColumn()!=ColumnSchema.DEFAULT_IGNORE_COLUMN) {
 			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_IGNORE, schema.isIgnoreColumn());
+		}
+		if(schema.getColumnIndex()!=UNSET_INT) {
+			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_COLUMN_NDEX, schema.getColumnIndex());
 		}
 
 		// ELEMENTS

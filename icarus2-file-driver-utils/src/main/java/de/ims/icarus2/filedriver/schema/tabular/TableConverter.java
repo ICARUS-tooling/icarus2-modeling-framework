@@ -384,7 +384,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 					// For now we also abort here
 //					break scan_loop;
-					throw e;
+					throw new ModelException(ModelErrorCode.DRIVER_RESOURCE,
+							String.format("Unexpected error in line %d of file %d",
+									_long(lines.getLineNumber()), _int(fileIndex)), e);
 				} catch(Exception e) {
 					// ""Real" errors will break the scanning process
 
@@ -1490,8 +1492,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			String pattern = attributeSchema.getPattern();
 
 			// The pattern is meant to be matched against the beginning of an input line
-			if(!pattern.startsWith("$")) {
-				pattern = "$"+pattern;
+			if(!pattern.startsWith("^")) {
+				pattern = "^"+pattern;
 			}
 
 			matcher = Pattern.compile(pattern).matcher("");
@@ -1528,6 +1530,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				matcher.reset(context.rawData());
 				if(matcher.find()) {
 					if(resolver!=null) {
+						// We ignore return value here since attribute resolvers can't change the current item
 						resolver.process(context);
 					}
 
@@ -1570,9 +1573,16 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			this.multiline = multiline;
 		}
 
+		private boolean isEmpty(CharSequence s) {
+			if(s.length()==0) {
+				return true;
+			}
+			return StringUtil.isEmpty(s);
+		}
+
 		@Override
 		public ScanResult process(InputResolverContext context) {
-			boolean empty = context.rawData().length()==0;
+			boolean empty = isEmpty(context.rawData());
 
 			if(empty) {
 				return multiline ? ScanResult.PARTLY_MATCHED : ScanResult.MATCHED;
@@ -2590,7 +2600,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			this.blockHandler = blockHandler;
 			this.columnSchema = columnSchema;
-			this.columnIndex = columnIndex;
+			this.columnIndex = columnSchema.getColumnIndex()==UNSET_INT ? columnIndex : columnSchema.getColumnIndex();
 
 			// Per default try to instantiate nested resolver based on schema definition
 			Resolver resolver = createResolver(columnSchema.getResolver());
@@ -3455,7 +3465,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				final int columnCount = splitColumns(rawContent);
 				if(requiredColumnCount>columnCount)
 					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
-							Messages.mismatch("Insufficient columns", _int(requiredColumnCount), _int(columnCount)));
+							Messages.mismatch("Insufficient columns on: '"+rawContent+"' in line "+lines.getLineNumber(), _int(requiredColumnCount), _int(columnCount)));
 
 				// Re-link so the context uses our smaller cursor
 				characterCursor.setSource(rawContent);

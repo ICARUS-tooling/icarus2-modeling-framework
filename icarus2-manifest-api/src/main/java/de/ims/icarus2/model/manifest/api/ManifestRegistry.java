@@ -29,6 +29,8 @@ import de.ims.icarus2.model.manifest.util.ManifestUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.events.EventManager;
 import de.ims.icarus2.util.events.Events;
+import de.ims.icarus2.util.lang.ResourceResolver;
+import de.ims.icarus2.util.strings.VariableResolver;
 
 /**
  * Models the central <i>storage</i> space for all kinds of manifests.
@@ -75,6 +77,20 @@ public interface ManifestRegistry extends EventManager {
 	 *
 	 */
 	void resetUIDs();
+
+	/**
+	 *
+	 * @return the {@link VariableResolver} assigned to this registry to be used for
+	 * resolving/expanding variable declarations in manifests and other resources.
+	 */
+	VariableResolver getVariableResolver();
+
+	/**
+	 *
+	 * @return the {@link ResourceResolver} assigned to this registry to be used for
+	 * resolving resources or embedded data in manifests and other resources.
+	 */
+	ResourceResolver getResourceResolver();
 
 	// Layer type methods
 
