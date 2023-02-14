@@ -26,6 +26,7 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
+import java.awt.im.InputContext;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -136,6 +137,7 @@ import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -247,6 +249,43 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		List<LayerGroup> layerGroups = list(blockHandler.getItemLayer().getLayerGroup());
 		CollectionUtils.feedItems(layerGroups, blockHandler.getExternalGroups());
 		return layerGroups;
+	}
+
+	private void processData(BlockHandler blockHandler, LineIterator lines, InputContext context) {
+		/** Keep track of handlers used to step down to current line */
+		final Stack<BlockHandler> trace = new ObjectArrayList<>();
+	}
+
+	static class Processor {
+
+		private final BlockHandler rootHandler;
+		private final Container rootContainer;
+		private final Consumer<RuntimeException> softErrorHandler;
+
+		public Processor(BlockHandler rootHandler, Container rootContainer,
+				Consumer<RuntimeException> softErrorHandler) {
+			this.rootHandler = requireNonNull(rootHandler);
+			this.rootContainer = requireNonNull(rootContainer);
+			this.softErrorHandler = softErrorHandler;
+		}
+
+		void process(InputResolverContext context, LineIterator lines) {
+
+			long index = 0;
+
+			while(lines.hasLine() || lines.next()) {
+
+				// Clear state of handler and context
+				rootHandler.reset();
+				context.reset();
+
+				// Point the context to the layer's proxy container and requested index
+				context.setContainer(rootContainer);
+				context.setIndex(index);
+
+				//TODO
+			}
+		}
 	}
 
 	/**
@@ -403,7 +442,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 				// Make sure we advance 1 line in case the last one has been consumed as content
 				if(inputContext.isDataConsumed()) {
-					lines.next();
+					advanceLine(lines, inputContext, false);
 				}
 
 				// Next chunk
@@ -547,7 +586,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 				// Make sure we advance 1 line in case the last one has been consumed as content
 				if(inputContext.isDataConsumed()) {
-					lines.next();
+					advanceLine(lines, inputContext, false);
 				}
 
 				index = inputContext.currentIndex();
@@ -601,10 +640,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		return getDriver().getContext().getLayer(layerId);
 	}
 
-	private static void advanceLine(LineIterator lines, InputResolverContext context) {
-		if(!lines.next())
+	private static void advanceLine(LineIterator lines, InputResolverContext context, boolean expectNextLine) {
+		if(lines.next()) {
+			context.setData(lines.getLine());
+		} else if(expectNextLine)
 			throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unexpected end of input");
-		context.setData(lines.getLine());
 	}
 
 	/**
@@ -1449,26 +1489,22 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	private ContextProcessor<ScanResult> createProcessor(AttributeSchema attributeSchema) {
 		requireNonNull(attributeSchema);
 
-		ContextProcessor<ScanResult> result = null;
+		switch (attributeSchema.getType()) {
+		case REGEX: return new RegexAttributeHandler(attributeSchema);
+		case PLAIN: return new PlainAttributeHandler(attributeSchema);
+		case NAME: {
+			switch (attributeSchema.getPattern()) {
+			case AttributeSchema.DELIMITER_EMPTY_LINE: return new EmptyLineDelimiter(attributeSchema, false);
+			case AttributeSchema.DELIMITER_EMPTY_LINES: return new EmptyLineDelimiter(attributeSchema, true);
 
-		switch (attributeSchema.getPattern()) {
-		case AttributeSchema.DELIMITER_EMPTY_LINE:
-			result = new EmptyLineDelimiter(attributeSchema, false);
-			break;
-
-		case AttributeSchema.DELIMITER_EMPTY_LINES:
-			result = new EmptyLineDelimiter(attributeSchema, true);
-			break;
+			default:
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown delimiter name: "+attributeSchema.getPattern());
+			}
+		}
 
 		default:
-			break;
+			throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown pattern type: "+attributeSchema.getType());
 		}
-
-		if(result==null) {
-			result = new AttributeHandler(attributeSchema);
-		}
-
-		return result;
 	}
 
 	/**
@@ -1476,14 +1512,84 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class AttributeHandler implements ContextProcessor<ScanResult> {
+	public class PlainAttributeHandler implements ContextProcessor<ScanResult> {
+
+		private final AttributeSchema attributeSchema;
+
+		private final Resolver resolver;
+		private final String prefix;
+
+		public PlainAttributeHandler(AttributeSchema attributeSchema) {
+			requireNonNull(attributeSchema);
+
+			this.attributeSchema = attributeSchema;
+			resolver = createResolver(attributeSchema.getResolver());
+
+			prefix = requireNonNull(attributeSchema.getPattern());
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
+		 */
+		@Override
+		public void prepareForReading(Converter converter, ReadMode mode,
+				InputResolverContext context) {
+			if(resolver!=null) {
+				resolver.prepareForReading(converter, mode, context, attributeSchema.getResolver().getOptions());
+			}
+		}
+
+		/**
+		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#close()
+		 */
+		@Override
+		public void close() {
+			closeNullAware(resolver);
+		}
+
+		/**
+		 * Check the given {@link ResolverContext#rawData() line} against the internal pattern
+		 * and optionally send it to the resolver if present.
+		 * @param context
+		 * @return
+		 */
+		@Override
+		public ScanResult process(InputResolverContext context) throws IcarusApiException {
+			if(StringUtil.startsWith(context.rawData(), prefix)) {
+				if(resolver!=null) {
+					// We ignore return value here since attribute resolvers can't change the current item
+					resolver.process(context);
+				}
+
+				context.consumeData();
+
+				return ScanResult.MATCHED;
+			}
+			return ScanResult.FAILED;
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return prefix;
+		}
+	}
+
+	/**
+	 *
+	 * @author Markus Gärtner
+	 *
+	 */
+	public class RegexAttributeHandler implements ContextProcessor<ScanResult> {
 
 		private final AttributeSchema attributeSchema;
 
 		private final Resolver resolver;
 		private final Matcher matcher;
 
-		public AttributeHandler(AttributeSchema attributeSchema) {
+		public RegexAttributeHandler(AttributeSchema attributeSchema) {
 			requireNonNull(attributeSchema);
 
 			this.attributeSchema = attributeSchema;
@@ -1585,6 +1691,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			boolean empty = isEmpty(context.rawData());
 
 			if(empty) {
+				context.consumeData();
 				return multiline ? ScanResult.PARTLY_MATCHED : ScanResult.MATCHED;
 			}
 
@@ -2939,7 +3046,14 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				beginDelimiter = createProcessor(blockSchema.getBeginDelimiter());
 			}
 			// End delimiter must always be declared explicitly
-			endDelimiter = createProcessor(blockSchema.getEndDelimiter());
+			if(blockSchema.getEndDelimiter()==null) {
+				if(parent==null)
+					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
+							"BLock schema definition is missing end delimiter declaration: "+blockSchema.getLayerId());
+				endDelimiter = null;
+			} else {
+				endDelimiter = createProcessor(blockSchema.getEndDelimiter());
+			}
 
 			// Column related stuff
 			requiredColumnCount = columnSchemas.length;
@@ -3269,11 +3383,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void scanBegin(LineIterator lines, InputResolverContext context) throws IcarusApiException {
 			while(!isBeginLine(context)) {
-				advanceLine(lines, context);
+				advanceLine(lines, context, true);
 			}
 
 			if(context.isDataConsumed()) {
-				advanceLine(lines, context);
+				advanceLine(lines, context, true);
 			}
 		}
 
@@ -3290,11 +3404,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void scanEnd(LineIterator lines, InputResolverContext context) throws IcarusApiException {
 			while(!isEndLine(context)) {
-				advanceLine(lines, context);
+				advanceLine(lines, context, true);
 			}
 
-			if(context.isDataConsumed() && lines.next()) {
-				context.setData(lines.getLine());
+			if(context.isDataConsumed()) {
+				advanceLine(lines, context, false);
 			}
 		}
 
@@ -3307,7 +3421,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @throws InterruptedException
 		 */
-		public void readChunk(LineIterator lines, InputResolverContext context)
+		public boolean readChunk(LineIterator lines, InputResolverContext context)
 				throws IcarusApiException, InterruptedException {
 
 			long index = context.currentIndex();
@@ -3320,12 +3434,16 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				// Scan for beginning of content
 				scanBegin(lines, context);
 
+				boolean success = tryReadNestedBlocks(lines, context);
+
 				// NOTE: we can either have column content OR nested blocks
-				if(!tryReadNestedBlocks(lines, context)) {
+				if(!success) {
 					// Only when no nested blocks could be used will we parse actual column data
-					readColumnLines(lines, context);
+					success = readColumnLines(lines, context);
 					// No need for scanEnd() since the column reading method takes care of it
 				}
+
+				return success;
 			} finally {
 				context.setIndex(index);
 				context.setContainer(container);
@@ -3345,13 +3463,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private boolean tryReadNestedBlocks(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
 			if(nestedBlockHandlers!=null) {
 
-				long index = context.currentIndex();
 				final Container host = context.currentContainer();
 				final boolean isProxyContainer = host.isProxy();
 				final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
 
 				ComponentSupplier componentSupplier = context.getComponentSupplier(getItemLayer());
-				componentSupplier.reset(index);
+				componentSupplier.reset(context.currentIndex());
 				if(!componentSupplier.next())
 					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
 				Container container = (Container) componentSupplier.currentItem();
@@ -3366,13 +3483,33 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				}
 
 				// Allow all nested block handlers to fully read their content
-				for(int i=0; i<nestedBlockHandlers.length; i++) {
-					// We need to set the current container for every nested block since they can change the field in context
-					context.setContainer(container);
-					context.setIndex(index);
+				block_loop : for(int i=0; i<nestedBlockHandlers.length; i++) {
+					long index = 0L;
 
-					//TODO evaluate if we should support "empty" blocks that do not need to match actual content
-					nestedBlockHandlers[i].readChunk(lines, context);
+					block_repetition : while(lines.hasLine() || lines.next()) {
+						// We need to set the current container for every nested block since they can change the field in context
+						context.setContainer(container);
+						context.setIndex(index);
+
+						//TODO evaluate if we should support "empty" blocks that do not need to match actual content
+						if(!nestedBlockHandlers[i].readChunk(lines, context)) {
+							break block_repetition;
+						}
+
+						/* Exit scan altogether since nested start line cannot match outer
+						 * end pattern.
+						 * This can pose an issue when nested and outer end patterns can
+						 * match the same line(s).
+						 */
+						if(isEndLine(context)) {
+							break block_loop;
+						}
+
+						if(context.isDataConsumed()) {
+							advanceLine(lines, context, false);
+						}
+					}
+
 				}
 
 				// Make sure we also scan till the end of our content
@@ -3396,7 +3533,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @throws InterruptedException
 		 * @throws IcarusApiException
 		 */
-		private void readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
+		private boolean readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
 
 			final long hostIndex = context.currentIndex();
 			Container host = context.currentContainer();
@@ -3453,6 +3590,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(context.isDataConsumed() && lines.next()) {
 				context.setData(lines.getLine());
 			}
+
+			return index>0;
 		}
 
 		private void processColumns(LineIterator lines, InputResolverContext context) throws IcarusApiException {
