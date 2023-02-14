@@ -458,6 +458,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private String pattern;
 		private ResolverSchema resolver;
 		private AttributeTarget target;
+		private PatternType type = DEFAULT_TYPE;
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema#getPattern()
@@ -473,6 +474,17 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		@Override
 		public ResolverSchema getResolver() {
 			return resolver;
+		}
+
+		@Override
+		public PatternType getType() {
+			return type;
+		}
+
+		public AttributeSchemaImpl setType(PatternType type) {
+			requireNonNull(type);
+			this.type = type;
+			return this;
 		}
 
 		public AttributeSchemaImpl setPattern(String pattern) {
@@ -512,8 +524,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		 */
 		@Override
 		public String toString() {
-			return String.format("Attribute@[pattern=%s, target=%s, resolver=%s]",
-					pattern, target, resolver);
+			return String.format("Attribute@[type=%s, pattern=%s, target=%s, resolver=%s]",
+					type, pattern, target, resolver);
 		}
 
 		/**
@@ -521,7 +533,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		 */
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(pattern, resolver, target);
+			return Objects.hashCode(type, pattern, resolver, target);
 		}
 
 		/**
@@ -533,7 +545,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 				return true;
 			} else if(obj instanceof AttributeSchema) {
 				AttributeSchema other = (AttributeSchema) obj;
-				return ClassUtils.equals(pattern, other.getPattern())
+				return ClassUtils.equals(type, other.getType())
+						&& ClassUtils.equals(pattern, other.getPattern())
 						&& ClassUtils.equals(target, other.getTarget())
 						&& ClassUtils.equals(resolver, other.getResolver());
 			}

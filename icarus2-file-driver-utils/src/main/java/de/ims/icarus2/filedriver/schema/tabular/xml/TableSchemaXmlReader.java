@@ -36,6 +36,7 @@ import de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeTarget;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ColumnSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.MemberSchema;
+import de.ims.icarus2.filedriver.schema.tabular.TableSchema.PatternType;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.ResolverSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteSchema;
 import de.ims.icarus2.filedriver.schema.tabular.TableSchema.SubstituteType;
@@ -186,6 +187,9 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TARGET)
 				.map(AttributeTarget::parseAttributeTarget)
 				.ifPresent(attributeSchema::setTarget);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TYPE)
+				.map(PatternType::parsePatternType)
+				.ifPresent(attributeSchema::setType);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_FALLBACK_COLUMN:

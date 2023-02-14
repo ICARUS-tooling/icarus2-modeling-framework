@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.filedriver.FileDriverUtils;
@@ -257,10 +258,50 @@ public interface TableSchema extends Schema {
 		}
 	}
 
+	public enum PatternType implements StringResource {
+		/** Use pattern as input for a {@link Pattern} instance */
+		REGEX("regex"),
+		/** Run a simple {@link String#startsWith(String)} call */
+		PLAIN("plain"),
+		/** Lookup a predefined delimiter by name */
+		NAME("name"),
+		;
+
+		private final String label;
+
+		private PatternType(String label) {
+			this.label = label;
+		}
+
+		/**
+		 * @see de.ims.icarus2.util.strings.StringResource#getStringValue()
+		 */
+		@Override
+		public String getStringValue() {
+			return label;
+		}
+
+		private static Map<String, PatternType> map = new Object2ObjectArrayMap<>();
+		static {
+			for (PatternType target : values()) {
+				map.put(target.label, target);
+			}
+		}
+
+		public static PatternType parsePatternType(String s) {
+			PatternType type = map.get(s);
+			if(type==null)
+				throw new ModelException(GlobalErrorCode.INVALID_INPUT, "Unknown pattern type: "+s);
+			return type;
+		}
+	}
+
 	public interface AttributeSchema {
 
 		public static final String DELIMITER_EMPTY_LINE = "EMPTY_LINE";
 		public static final String DELIMITER_EMPTY_LINES = "EMPTY_LINES";
+
+		public static final PatternType DEFAULT_TYPE = PatternType.PLAIN;
 
 		AttributeTarget getTarget();
 
@@ -274,6 +315,12 @@ public interface TableSchema extends Schema {
 		 * @return
 		 */
 		String getPattern();
+
+		/**
+		 * Signals whether the returned value should be treated as regex, plai text or lookup name.
+		 * @return
+		 */
+		PatternType getType();
 
 		/**
 		 * If the line matched by the {@link #getPattern() pattern} of this attribute
