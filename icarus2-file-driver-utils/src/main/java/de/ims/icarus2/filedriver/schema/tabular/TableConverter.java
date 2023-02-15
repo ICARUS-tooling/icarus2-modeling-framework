@@ -45,7 +45,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -250,32 +249,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		return layerGroups;
 	}
 
-	/**
-	 *
-	 * @param rootHandler
-	 * @param lines
-	 * @param context
-	 * @param softErrorHandler returns {@code true} iff the exception should be ignored
-	 */
-	private void processData(BlockHandler rootHandler, LineIterator lines,
-			InputResolverContext context, Container rootContainer,
-			@Nullable Predicate<RuntimeException> softErrorHandler) {
-
-		long index = 0;
-
-		while(lines.hasLine() || lines.next()) {
-
-			// Clear state of handler and context
-			rootHandler.reset();
-			context.reset();
-
-			// Point the context to the layer's proxy container and requested index
-			context.setContainer(rootContainer);
-			context.setIndex(index);
-
-			//TODO
-		}
-	}
 
 	/**
 	 * @see de.ims.icarus2.filedriver.Converter#scanFile(int, de.ims.icarus2.filedriver.mapping.chunks.ChunkIndexStorage)
@@ -1496,22 +1469,40 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 	}
 
+	static abstract class AttributeHandlerBase implements ContextProcessor<ScanResult> {
+
+		private final AttributeSchema attributeSchema;
+		private final boolean consume;
+
+		protected AttributeHandlerBase(AttributeSchema attributeSchema) {
+			this.attributeSchema = requireNonNull(attributeSchema);
+			this.consume = !attributeSchema.isShared();
+		}
+
+		public AttributeSchema getAttributeSchema() {
+			return attributeSchema;
+		}
+
+		void maybeConsume(ResolverContext context) {
+			if(consume) {
+				context.consumeData();
+			}
+		}
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class PlainAttributeHandler implements ContextProcessor<ScanResult> {
-
-		private final AttributeSchema attributeSchema;
+	public class PlainAttributeHandler extends AttributeHandlerBase {
 
 		private final Resolver resolver;
 		private final String prefix;
 
 		public PlainAttributeHandler(AttributeSchema attributeSchema) {
-			requireNonNull(attributeSchema);
+			super(attributeSchema);
 
-			this.attributeSchema = attributeSchema;
 			resolver = createResolver(attributeSchema.getResolver());
 
 			prefix = requireNonNull(attributeSchema.getPattern());
@@ -1524,7 +1515,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public void prepareForReading(Converter converter, ReadMode mode,
 				InputResolverContext context) {
 			if(resolver!=null) {
-				resolver.prepareForReading(converter, mode, context, attributeSchema.getResolver().getOptions());
+				resolver.prepareForReading(converter, mode, context, getAttributeSchema().getResolver().getOptions());
 			}
 		}
 
@@ -1550,7 +1541,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					resolver.process(context);
 				}
 
-				context.consumeData();
+				maybeConsume(context);
 
 				return ScanResult.MATCHED;
 			}
@@ -1571,17 +1562,13 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class RegexAttributeHandler implements ContextProcessor<ScanResult> {
-
-		private final AttributeSchema attributeSchema;
+	public class RegexAttributeHandler extends AttributeHandlerBase {
 
 		private final Resolver resolver;
 		private final Matcher matcher;
 
 		public RegexAttributeHandler(AttributeSchema attributeSchema) {
-			requireNonNull(attributeSchema);
-
-			this.attributeSchema = attributeSchema;
+			super(attributeSchema);
 			resolver = createResolver(attributeSchema.getResolver());
 
 			String pattern = attributeSchema.getPattern();
@@ -1601,7 +1588,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public void prepareForReading(Converter converter, ReadMode mode,
 				InputResolverContext context) {
 			if(resolver!=null) {
-				resolver.prepareForReading(converter, mode, context, attributeSchema.getResolver().getOptions());
+				resolver.prepareForReading(converter, mode, context, getAttributeSchema().getResolver().getOptions());
 			}
 		}
 
@@ -1629,7 +1616,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 						resolver.process(context);
 					}
 
-					context.consumeData();
+					maybeConsume(context);
 
 					return ScanResult.MATCHED;
 				}
@@ -1656,15 +1643,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @author Markus Gärtner
 	 *
 	 */
-	public class EmptyLineDelimiter implements ContextProcessor<ScanResult> {
+	public class EmptyLineDelimiter extends AttributeHandlerBase {
 
-		private final AttributeSchema attributeSchema;
 		private final boolean multiline;
 
 		public EmptyLineDelimiter(AttributeSchema attributeSchema, boolean multiline) {
-			requireNonNull(attributeSchema);
-
-			this.attributeSchema = attributeSchema;
+			super(attributeSchema);
 			this.multiline = multiline;
 		}
 
@@ -1680,7 +1664,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			boolean empty = isEmpty(context.rawData());
 
 			if(empty) {
-				context.consumeData();
+				maybeConsume(context);
 				return multiline ? ScanResult.PARTLY_MATCHED : ScanResult.MATCHED;
 			}
 
@@ -2954,6 +2938,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private int[] columnOffsets;
 
+		/** Nesting depth of this block. Root block starts at depth 0.. */
+		private final int depth;
+		/** Nesting depth below this block. A block without nested blocks has a height of 0. */
+		private final int height;
+
 		public BlockHandler(BlockSchema blockSchema) {
 			this(blockSchema, null, new MutableInteger(0));
 		}
@@ -3082,12 +3071,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			if(nestedBlockSchemas.length>0) {
 				nestedBlockHandlers = new BlockHandler[nestedBlockSchemas.length];
+				if(nestedBlockHandlers.length > 1)
+					throw new ModelException(GlobalErrorCode.INTERNAL_ERROR, "Currently  cannot support multiple nested blocks on same level!");
 				for(int i=0; i<nestedBlockHandlers.length; i++) {
 					nestedBlockHandlers[i] = new BlockHandler(nestedBlockSchemas[i], this, idGen);
 				}
+				height = nestedBlockHandlers[0].height + 1;
 			} else {
 				nestedBlockHandlers = null;
+				height = 0;
 			}
+
+			depth = parent==null ? 0 : parent.depth + 1;
 
 			/*
 			 * IMPORTANT
@@ -3641,6 +3636,117 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		@Override
 		public int hashCode() {
 			return blockId;
+		}
+	}
+
+	/**
+	 *
+	 * @param rootHandler
+	 * @param lines
+	 * @param context
+	 * @param softErrorHandler returns {@code true} iff the exception should be ignored
+	 */
+	private void processData(BlockHandler rootHandler, LineIterator lines,
+			InputResolverContext context, Container rootContainer,
+			@Nullable Predicate<RuntimeException> softErrorHandler) {
+
+		/** */
+		long index = 0;
+		BlockHandler handler;
+
+		while(lines.hasLine() || lines.next()) {
+
+			// Clear state of handler and context
+			rootHandler.reset();
+			context.reset();
+
+			// Point the context to the layer's proxy container and requested index
+			context.setContainer(rootContainer);
+			context.setIndex(index);
+
+			//TODO
+		}
+	}
+
+	static class Processor {
+		private final BlockHandler rootHandler;
+		private final LineIterator lines;
+		private final InputResolverContext context;
+		private final Container rootContainer;
+
+		/** Last used index on depth n. Root block has depth 0. */
+		private final int[] indices;
+
+		public Processor(BlockHandler rootHandler, Container rootContainer,
+				LineIterator lines, InputResolverContext context) {
+			this.rootHandler = requireNonNull(rootHandler);
+			this.rootContainer = requireNonNull(rootContainer);
+			this.lines = requireNonNull(lines);
+			this.context = requireNonNull(context);
+
+			indices = new int[rootHandler.height + 1];
+		}
+
+		private BlockHandler handler;
+
+
+		public void process() {
+
+			boolean started = false;
+
+			while(lines.hasLine() || lines.next()) {
+
+				if(findStart()) {
+					started = true;
+					maybeAdvance(false);
+				}
+
+				if(!started)
+					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unable to find proper start of content");
+
+				if(findEnd()) {
+					maybeAdvance(isRootHandler());
+					started = false;
+				} else if(readAttribute()) {
+
+				} else {
+					// Check for content
+					readColumns();
+				}
+			}
+		}
+
+		private boolean isRootHandler() {
+			return handler==rootHandler;
+		}
+
+		private boolean isEmptyLine() {
+
+		}
+
+		private void maybeAdvance(boolean expectNext) {
+			if(context.isDataConsumed()) {
+				if(lines.next()) {
+					context.setData(lines.getLine());
+				} else if(expectNext)
+					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unexpected end of input");
+			}
+		}
+
+		private boolean findStart() {
+
+		}
+
+		private boolean findEnd() {
+
+		}
+
+		private boolean readAttribute() {
+
+		}
+
+		private void readColumns() {
+
 		}
 	}
 }
