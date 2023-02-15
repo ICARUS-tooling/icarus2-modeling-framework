@@ -302,6 +302,7 @@ public interface TableSchema extends Schema {
 		public static final String DELIMITER_EMPTY_LINES = "EMPTY_LINES";
 
 		public static final PatternType DEFAULT_TYPE = PatternType.PLAIN;
+		public static final boolean DEFAULT_SHARED = false;
 
 		AttributeTarget getTarget();
 
@@ -330,6 +331,17 @@ public interface TableSchema extends Schema {
 		 * @return
 		 */
 		ResolverSchema getResolver();
+
+		/**
+		 * If {@code true} content matched by this attribute can be effectively shared between
+		 * multiple attributes or delimiters. If {@code false} any content matched for this
+		 * attribute must be immediately consumed!
+		 * <p>
+		 * For instance this supports situations where a nested {@link BlockSchema} can share an
+		 * {@link BlockSchema#getEndDelimiter() end delimiter} with its host.
+		 * @return
+		 */
+		boolean isShared();
 	}
 
 	public interface ColumnSchema extends NamedObject {

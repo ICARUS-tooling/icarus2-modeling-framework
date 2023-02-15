@@ -124,6 +124,11 @@
 					<xsd:element name="pattern" type="xsd:string" minOccurs="0" />
 					<xsd:element name="resolver" type="its:resolverType" minOccurs="0" />
 				</xsd:sequence>
+				<xsd:attribute name="shared" type="xsd:boolean">
+					<xsd:annotation>
+						<xsd:documentation>TODO.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:attribute>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>

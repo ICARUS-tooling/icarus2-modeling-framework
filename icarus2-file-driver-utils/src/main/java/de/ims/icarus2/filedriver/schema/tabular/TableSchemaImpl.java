@@ -459,6 +459,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private ResolverSchema resolver;
 		private AttributeTarget target;
 		private PatternType type = DEFAULT_TYPE;
+		private boolean shared = DEFAULT_SHARED;
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.AttributeSchema#getPattern()
@@ -479,6 +480,15 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		@Override
 		public PatternType getType() {
 			return type;
+		}
+
+		@Override
+		public boolean isShared() {
+			return shared;
+		}
+
+		public void setShared(boolean shared) {
+			this.shared = shared;
 		}
 
 		public AttributeSchemaImpl setType(PatternType type) {
@@ -524,8 +534,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		 */
 		@Override
 		public String toString() {
-			return String.format("Attribute@[type=%s, pattern=%s, target=%s, resolver=%s]",
-					type, pattern, target, resolver);
+			return String.format("Attribute@[type=%s, pattern=%s, shared=%b, target=%s, resolver=%s]",
+					type, pattern, _boolean(shared), target, resolver);
 		}
 
 		/**
@@ -533,7 +543,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		 */
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(type, pattern, resolver, target);
+			return Objects.hashCode(type, pattern, _boolean(shared), resolver, target);
 		}
 
 		/**
@@ -545,7 +555,8 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 				return true;
 			} else if(obj instanceof AttributeSchema) {
 				AttributeSchema other = (AttributeSchema) obj;
-				return ClassUtils.equals(type, other.getType())
+				return shared==other.isShared()
+						&& ClassUtils.equals(type, other.getType())
 						&& ClassUtils.equals(pattern, other.getPattern())
 						&& ClassUtils.equals(target, other.getTarget())
 						&& ClassUtils.equals(resolver, other.getResolver());
