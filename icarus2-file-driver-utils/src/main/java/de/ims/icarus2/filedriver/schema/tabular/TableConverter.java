@@ -26,7 +26,6 @@ import static de.ims.icarus2.util.lang.Primitives._int;
 import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
-import java.awt.im.InputContext;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -46,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -137,7 +137,6 @@ import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
-import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -251,40 +250,30 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		return layerGroups;
 	}
 
-	private void processData(BlockHandler blockHandler, LineIterator lines, InputContext context) {
-		/** Keep track of handlers used to step down to current line */
-		final Stack<BlockHandler> trace = new ObjectArrayList<>();
-	}
+	/**
+	 *
+	 * @param rootHandler
+	 * @param lines
+	 * @param context
+	 * @param softErrorHandler returns {@code true} iff the exception should be ignored
+	 */
+	private void processData(BlockHandler rootHandler, LineIterator lines,
+			InputResolverContext context, Container rootContainer,
+			@Nullable Predicate<RuntimeException> softErrorHandler) {
 
-	static class Processor {
+		long index = 0;
 
-		private final BlockHandler rootHandler;
-		private final Container rootContainer;
-		private final Consumer<RuntimeException> softErrorHandler;
+		while(lines.hasLine() || lines.next()) {
 
-		public Processor(BlockHandler rootHandler, Container rootContainer,
-				Consumer<RuntimeException> softErrorHandler) {
-			this.rootHandler = requireNonNull(rootHandler);
-			this.rootContainer = requireNonNull(rootContainer);
-			this.softErrorHandler = softErrorHandler;
-		}
+			// Clear state of handler and context
+			rootHandler.reset();
+			context.reset();
 
-		void process(InputResolverContext context, LineIterator lines) {
+			// Point the context to the layer's proxy container and requested index
+			context.setContainer(rootContainer);
+			context.setIndex(index);
 
-			long index = 0;
-
-			while(lines.hasLine() || lines.next()) {
-
-				// Clear state of handler and context
-				rootHandler.reset();
-				context.reset();
-
-				// Point the context to the layer's proxy container and requested index
-				context.setContainer(rootContainer);
-				context.setIndex(index);
-
-				//TODO
-			}
+			//TODO
 		}
 	}
 
