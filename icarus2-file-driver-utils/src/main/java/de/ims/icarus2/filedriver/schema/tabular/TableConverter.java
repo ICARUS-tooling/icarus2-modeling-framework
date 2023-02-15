@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -136,6 +137,7 @@ import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -1656,7 +1658,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(s.length()==0) {
 				return true;
 			}
-			return StringUtil.isEmpty(s);
+			return StringUtil.isEmptyOrWhitespaces(s);
 		}
 
 		@Override
@@ -2942,6 +2944,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private final int depth;
 		/** Nesting depth below this block. A block without nested blocks has a height of 0. */
 		private final int height;
+		/** Flag to signal that a valid begin marker for this block has been found. */
+		private boolean started = false;
 
 		public BlockHandler(BlockSchema blockSchema) {
 			this(blockSchema, null, new MutableInteger(0));
@@ -3159,6 +3163,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		public void reset() {
+			started = false;
+
 			//TODO
 		}
 
@@ -3676,6 +3682,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		/** Last used index on depth n. Root block has depth 0. */
 		private final int[] indices;
+		private final Stack<Container> hosts = new ObjectArrayList<>();
 
 		public Processor(BlockHandler rootHandler, Container rootContainer,
 				LineIterator lines, InputResolverContext context) {
@@ -3690,25 +3697,31 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private BlockHandler handler;
 
 
-		public void process() {
+		public void process() throws IcarusApiException {
 
-			boolean started = false;
+			handler = rootHandler;
+			context.setContainer(rootContainer);
 
 			while(lines.hasLine() || lines.next()) {
 
+				context.setData(lines.getLine());
+
+				// First try to find (nested) begin marker
 				if(findStart()) {
-					started = true;
-					maybeAdvance(false);
+					advanceIfConsumed(false);
 				}
 
-				if(!started)
+				if(!handler.started)
 					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unable to find proper start of content");
 
 				if(findEnd()) {
-					maybeAdvance(isRootHandler());
-					started = false;
+					advanceIfConsumed(isRootHandler());
 				} else if(readAttribute()) {
-
+					// Attribute handler might consume data, but we force a new line read anyway
+					lines.next();
+				} else if(isEmptyLine()) {
+					// Just ignore empty lines at this point
+					lines.next();
 				} else {
 					// Check for content
 					readColumns();
@@ -3721,10 +3734,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		private boolean isEmptyLine() {
-
+			CharSequence s = lines.getLine();
+			return s.length()==0 || StringUtil.isEmptyOrWhitespaces(s);
 		}
 
-		private void maybeAdvance(boolean expectNext) {
+		private void advanceIfConsumed(boolean expectNext) {
 			if(context.isDataConsumed()) {
 				if(lines.next()) {
 					context.setData(lines.getLine());
@@ -3733,20 +3747,62 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 		}
 
+		/**
+		 * Tries to find a begin marker in the current line. This can happen if<br>
+		 * a) Current block is not started and a start marker for that block is found.<br>
+		 * b) Current block is started and a start marker for a nested block is found.<br>
+		 * c) In case blocks share their begin delimiters, b) can apply recursively<br>
+		 */
 		private boolean findStart() {
+			if(!handler.started) {
 
+			}
 		}
 
+		private void start() throws InterruptedException {
+			final Container host = context.currentContainer();
+			final boolean isProxyContainer = host.isProxy();
+			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
+
+			ComponentSupplier componentSupplier = context.getComponentSupplier(handler.getItemLayer());
+			componentSupplier.reset(context.currentIndex());
+			if(!componentSupplier.next())
+				throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
+
+			Item item = componentSupplier.currentItem();
+
+			if(isProxyContainer) {
+				if(topLevelAction!=null) {
+					topLevelAction.accept(item, componentSupplier.currentIndex());
+				}
+			} else {
+				// Only for non-top-level items do we need to manually add them to their host container
+				host.addItem(item);
+			}
+		}
+
+		/**
+		 * Tries to find an end marker in the current line. This can happen if<br>
+		 * a) Current block is started and an end marker for current block is found.<br>
+		 * b) In case blocks share their end delimiters, a) can apply repeatedly for parent blocks.<br>
+		 */
 		private boolean findEnd() {
 
 		}
 
 		private boolean readAttribute() {
-
+			if(handler.attributeHandlers!=null) {
+				//TODO
+			}
+			return false;
 		}
 
-		private void readColumns() {
-
+		/**
+		 * Split and process the columns present in current line
+		 * @throws IcarusApiException
+		 */
+		private void readColumns() throws IcarusApiException {
+			handler.processColumns(lines, context);
 		}
 	}
 }

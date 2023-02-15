@@ -572,7 +572,7 @@ public final class StringUtil {
     	return s==null || s.trim().isEmpty();
     }
 
-    public static boolean isEmpty(CharSequence s) {
+    public static boolean isEmptyOrWhitespaces(CharSequence s) {
         int len = s.length();
         int st = 0;
 
