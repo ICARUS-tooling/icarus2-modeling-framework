@@ -16,6 +16,8 @@
  */
 package de.ims.icarus2;
 
+import de.ims.icarus2.util.AccumulatingException;
+
 /**
  * @author Markus Gärtner
  *
@@ -68,6 +70,11 @@ public enum GlobalErrorCode implements ErrorCode {
 	 * does not declare {@link InterruptedException} to be thrown.
 	 */
 	INTERRUPTED(102),
+
+	/**
+	 * Wraps multiple exceptions within an {@link AccumulatingException}.
+	 */
+	ACCUMULATED_ERRORS(103),
 
 	/**
 	 * A general I/O error occurred.

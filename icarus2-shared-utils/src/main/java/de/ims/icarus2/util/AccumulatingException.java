@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.LazyCollection;
 
@@ -39,7 +41,7 @@ import de.ims.icarus2.util.collections.LazyCollection;
  * @author Markus Gärtner
  *
  */
-public class AccumulatingException extends Exception {
+public class AccumulatingException extends IcarusApiException {
 
 	private static final long serialVersionUID = 8864281967856686141L;
 
@@ -48,19 +50,19 @@ public class AccumulatingException extends Exception {
 	private static final Throwable[] EMPTY = {};
 
 	public AccumulatingException(Buffer buffer) {
-		super(buffer.getMessage());
+		super(GlobalErrorCode.ACCUMULATED_ERRORS, buffer.getMessage());
 
 		this.exceptions = buffer.getExceptions();
 	}
 
 	public AccumulatingException(String message, Throwable...exceptions) {
-		super(message);
+		super(GlobalErrorCode.ACCUMULATED_ERRORS, message);
 
 		this.exceptions = exceptions==null ? EMPTY : exceptions.clone();
 	}
 
 	public AccumulatingException(String message, Collection<Throwable> exceptions) {
-		super(message);
+		super(GlobalErrorCode.ACCUMULATED_ERRORS, message);
 
 		this.exceptions = exceptions==null ? EMPTY : CollectionUtils.toArray(exceptions, Throwable[]::new);
 	}
