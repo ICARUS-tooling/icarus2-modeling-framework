@@ -187,12 +187,16 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TARGET)
 				.map(AttributeTarget::parseAttributeTarget)
 				.ifPresent(attributeSchema::setTarget);
-			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TYPE)
-				.map(PatternType::parsePatternType)
-				.ifPresent(attributeSchema::setType);
 			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_SHARED)
 				.map(Boolean::valueOf)
 				.ifPresent(attributeSchema::setShared);
+		} break;
+
+		case TableSchemaXmlConstants.TAG_PATTERN: {
+			AttributeSchemaImpl attributeSchema = peek(AttributeSchemaImpl.class);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_TYPE)
+				.map(PatternType::parsePatternType)
+				.ifPresent(attributeSchema::setType);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_FALLBACK_COLUMN:
@@ -250,7 +254,6 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 		// Text-only tags
 		case TableSchemaXmlConstants.TAG_SEPARATOR:
 		case TableSchemaXmlConstants.TAG_DESCRIPTION:
-		case TableSchemaXmlConstants.TAG_PATTERN:
 		case TableSchemaXmlConstants.TAG_EXTERNAL_GROUP:
 			break;
 

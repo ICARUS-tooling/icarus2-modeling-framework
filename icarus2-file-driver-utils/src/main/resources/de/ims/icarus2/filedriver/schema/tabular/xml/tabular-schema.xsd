@@ -121,16 +121,27 @@
 		<xsd:complexContent>
 			<xsd:extension base="its:attachableType">
 				<xsd:sequence>
-					<xsd:element name="pattern" type="xsd:string" minOccurs="0" />
+					<xsd:element name="pattern" type="its:paternType" minOccurs="0" />
 					<xsd:element name="resolver" type="its:resolverType" minOccurs="0" />
 				</xsd:sequence>
 				<xsd:attribute name="shared" type="xsd:boolean">
 					<xsd:annotation>
 						<xsd:documentation>TODO.</xsd:documentation>
 					</xsd:annotation>
-				</xsd:attribute>
+				</xsd:attribute>			
 			</xsd:extension>
 		</xsd:complexContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="paternType" mixed="true">
+		<xsd:annotation>
+			<xsd:documentation>TODO.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:attribute name="type" type="its:patternTypeAttr">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>	
 	</xsd:complexType>
 	
 	<xsd:complexType name="attachableType">
@@ -345,6 +356,36 @@
     		<xsd:pattern value="([a-z][a-z_0-9]*\.)*[A-Z_]($[A-Za-z_]|[\w_])*" />
     	</xsd:restriction>
     </xsd:simpleType>
+	
+	<xsd:simpleType name="patternTypeAttr">
+		<xsd:annotation>
+			<xsd:documentation>Defines how the pattern content should be interpreted.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="extension">
+				<xsd:annotation>
+					<xsd:documentation>Source is a globally unique extension uid in the form: &lt;plugin-uid&gt;@&lt;extension-id&gt;
+		 
+		 Note that in this case the classname parameter is optional (and in fact it would be redundant, since the extension in question is already required to contain a class parameter!</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="regex">
+				<xsd:annotation>
+					<xsd:documentation>Treat the pattern as a regular expression.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="plain">
+				<xsd:annotation>
+					<xsd:documentation>Just perform a simple string matching..</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="name">
+				<xsd:annotation>
+					<xsd:documentation>Treat the pattern as identifier for a predefined processor implementatoin.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
     
     <xsd:attributeGroup name="category">
     	<xsd:annotation>

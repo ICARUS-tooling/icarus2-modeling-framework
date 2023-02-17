@@ -257,7 +257,7 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 		serializer.writeAttribute(TableSchemaXmlConstants.ATTR_TARGET, schema.getTarget());
 		// Type
 		if(schema.getType()!=AttributeSchema.DEFAULT_TYPE) {
-			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_TYPE, schema.getPattern());
+			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_TYPE, schema.getType());
 		}
 		// Shared
 		if(schema.isShared()!=AttributeSchema.DEFAULT_SHARED) {
