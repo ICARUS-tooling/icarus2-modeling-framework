@@ -21,13 +21,11 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.function.ObjLongConsumer;
 
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
-import de.ims.icarus2.filedriver.ComponentSupplier;
 import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
@@ -36,11 +34,8 @@ import de.ims.icarus2.filedriver.schema.resolve.ResolverOptions;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
-import de.ims.icarus2.model.api.layer.ItemLayer;
-import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
-import de.ims.icarus2.model.standard.driver.BufferedItemManager.InputCache;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.Options;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
@@ -231,48 +226,6 @@ public class PropertyListResolver implements Resolver {
 		if(fixedPropertyResolvers!=null) {
 			fixedPropertyResolvers.values().forEach(Resolver::close);
 			fixedPropertyResolvers.clear();
-		}
-	}
-
-	private static class ProxyContext implements ResolverContext {
-		private ResolverContext source;
-		private CharSequence data;
-
-		@Override
-		public ItemLayer getPrimaryLayer() {
-			return source.getPrimaryLayer();
-		}
-		@Override
-		public Container currentContainer() {
-			return source.currentContainer();
-		}
-		@Override
-		public long currentIndex() {
-			return source.currentIndex();
-		}
-		@Override
-		public Item currentItem() {
-			return source.currentItem();
-		}
-		@Override
-		public CharSequence rawData() {
-			return data;
-		}
-		public void reset(ResolverContext source, CharSequence data) {
-			this.source = source;
-			this.data = data;
-		}
-		@Override
-		public ObjLongConsumer<? super Item> getTopLevelAction() {
-			return source.getTopLevelAction();
-		}
-		@Override
-		public ComponentSupplier getComponentSupplier(ItemLayer layer) {
-			return source.getComponentSupplier(layer);
-		}
-		@Override
-		public InputCache getCache(ItemLayer layer) {
-			return source.getCache(layer);
 		}
 	}
 }
