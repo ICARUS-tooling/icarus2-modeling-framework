@@ -45,7 +45,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -122,6 +121,7 @@ import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelGraph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -137,7 +137,6 @@ import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
-import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -346,74 +345,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		// Flag to keep track whether or not we encountered a "real" error that causes the scan to stop
 		boolean encounteredFatalErrors = false;
 
+		final AccumulatingException.Buffer errors = new AccumulatingException.Buffer();
+
 		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
 
-			LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
+			final LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
+			final Processor processor = new Processor(blockHandler, primaryLayer.getProxyContainer(), lines, inputContext);
 
-			/*
-			 *  Continue as long as there's still content in the file.
-			 *  We need both checks since it's possible that while reading the
-			 *  previous block we had to do some lookahead but didn't consume the
-			 *  current line.
-			 */
-			scan_loop : while(lines.hasLine() || lines.next()) {
-
-				// Clear state of handler and context
-				blockHandler.reset();
-				inputContext.reset();
-
-				// Point the context to the layer's proxy container and requested index
-				inputContext.setContainer(primaryLayer.getProxyContainer());
-				inputContext.setIndex(index);
-
-				/*
-				 *  Technically speaking using exceptions for control flow here isn't
-				 *  the best strategy, but with the call depth redesigning all involved
-				 *  facilities (and duplicating) might be overkill in comparison.
-				 */
-				try {
-					// Delegate actual conversion work (which will advance lines on its own)
-					blockHandler.readChunk(lines, inputContext);
-				} catch(RuntimeException e) {
-					// Only care about "soft" errors here (they won't terminate the scanning process)
-
-					ErrorCode errorCode = ErrorCode.forException(e, GlobalErrorCode.UNKNOWN_ERROR);
-
-					// Report any "soft" problem as error and include physical location
-					reportBuilder.addError(errorCode,
-							"Invalid content in chunk {} in line {}: {}",
-							_long(index), _long(lines.getLineNumber()), e.getMessage());
-					//FIXME this is bad: manifest errors can keep the scan in an endless loop
-
-					// For now we also abort here
-//					break scan_loop;
-					throw new ModelException(ModelErrorCode.DRIVER_RESOURCE,
-							String.format("Unexpected error in line %d of file %d",
-									_long(lines.getLineNumber()), _int(fileIndex)), e);
-				} catch(Exception e) {
-					// ""Real" errors will break the scanning process
-
-					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
-							"Fatal error in chunk {} in line {}: {}",
-							_long(index), _long(lines.getLineNumber()), e.getMessage());
-
-					// Make sure surrounding code knows about the error condition
-					encounteredFatalErrors = true;
-
-					// Potentially corrupted or unusable data, so stop scanning
-					break scan_loop;
-				}
-
-				// Make sure we advance 1 line in case the last one has been consumed as content
-				if(inputContext.isDataConsumed()) {
-					advanceLine(lines, inputContext, false);
-				}
-
-				// Next chunk
-				index++;
-			}
-
-			blockHandler.complete();
+			processor.scan(reportBuilder, errors);
+			encounteredFatalErrors = processor.encounteredFatalErrors;
 
 			// If nothing went wrong we still need to make sure that pending data is properly analyzed
 			caches.values().forEach(InputCache::commit);
@@ -518,7 +458,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		InputResolverContext inputContext = new InputResolverContext(
 				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction);
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
-		long index = 0L;
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
@@ -527,39 +466,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
 
-			LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
+			final LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
+			final Processor processor = new Processor(blockHandler, primaryLayer.getProxyContainer(), lines, inputContext);
 
-			/*
-			 *  Continue as long as there's still content in the file.
-			 *  We need both checks since it's possible that while reading the
-			 *  previous block we had to do some lookahead but didn't consume the
-			 *  current line.
-			 */
-			while(lines.hasLine() || lines.next()) {
-
-				// Clear state of handler and context
-				blockHandler.reset();
-				inputContext.reset();
-
-				// Point the context to the layer's proxy container and requested index
-				inputContext.setContainer(primaryLayer.getProxyContainer());
-				inputContext.setIndex(index);
-
-				// Delegate actual conversion work (which will advance lines on its own)
-				blockHandler.readChunk(lines, inputContext);
-
-				// Make sure we advance 1 line in case the last one has been consumed as content
-				if(inputContext.isDataConsumed()) {
-					advanceLine(lines, inputContext, false);
-				}
-
-				index = inputContext.currentIndex();
-
-				// Next chunk
-				index++;
-			}
-
-			blockHandler.complete();
+			processor.load();
 		} finally {
 			blockHandler.close();
 			blockHandlerPool.recycle(blockHandler);
@@ -590,7 +500,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			inputContext.setContainer(tableCursor.getLayer().getProxyContainer());
 			inputContext.setIndex(tableCursor.getCurrentIndex());
 
-			blockHandler.readChunk(lines, inputContext);
+			new Processor(blockHandler, inputContext.currentContainer(), lines, inputContext).load();
 
 			blockHandler.complete();
 
@@ -2059,6 +1969,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			cb.flip();
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName()+"@[line="+lineNumber+"]";
+		}
+
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.LineIterator#getLineNumber()
 		 */
@@ -2723,6 +2638,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			noEntryLabel = columnSchema.getNoEntryLabel();
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName()+"@"+columnSchema.getLayerId();
+		}
+
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.tabular.TableConverter.ContextProcessor#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function)
 		 */
@@ -2930,6 +2850,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private final boolean trimWhitespaces;
 		private final String noEntryLabel;
 
+		private final MemberType memberType;
+
 		/**
 		 * For every column stores the character based begin and end offset as
 		 * reported by the separatorMatcher splitting.
@@ -2951,11 +2873,13 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			this(blockSchema, null, new MutableInteger(0));
 		}
 
+		@SuppressWarnings("unchecked")
 		private BlockHandler(BlockSchema blockSchema, @Nullable BlockHandler parent, MutableInteger idGen) {
 			requireNonNull(blockSchema);
 
 			this.parent = parent;
 			this.blockSchema = blockSchema;
+			memberType = blockSchema.getComponentSchema().getMemberType();
 
 			final ColumnSchema[] columnSchemas = blockSchema.getColumns();
 			final BlockSchema[] nestedBlockSchemas = blockSchema.getNestedBlocks();
@@ -3106,8 +3030,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			 * regular column content. Needs to be implemented on the next higher
 			 * level of input processing.
 			 */
-			//TODO allow attribute handlers
-			attributeHandlers = null;
+			AttributeSchema[] attributeSchemas = blockSchema.getAttributes();
+			if(attributeSchemas.length>0) {
+				attributeHandlers = new ContextProcessor[attributeSchemas.length];
+				for (int i = 0; i < attributeSchemas.length; i++) {
+					attributeHandlers[i] = createProcessor(attributeSchemas[i]);
+				}
+			} else {
+				attributeHandlers = null;
+			}
 		}
 
 		private MappingHandler createMappingHandler(BlockHandler block, @Nullable BlockHandler parent) {
@@ -3130,6 +3061,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 
 			return new MappingHandler((WritableMapping)mapping, (WritableMapping)reverseMapping);
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName()+"@"+blockSchema.getLayerId();
 		}
 
 		public BlockHandler getParent() {
@@ -3164,6 +3100,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		public void reset() {
 			started = false;
+			pendingAttributeHandler = null;
 
 			//TODO
 		}
@@ -3360,230 +3297,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			characterCursor.setRange(columnOffsets[idx], columnOffsets[idx+1]);
 		}
 
-		/**
-		 * {@link TableConverter#advanceLine(LineIterator, InputResolverContext) advances}
-		 * lines till a line indicating a valid {@link #isBeginLine(InputResolverContext) begin}
-		 * of content data is found.
-		 * <p>
-		 * If in the process the last processed line is consumed, this method will advance an
-		 * additional line.
-		 *
-		 * @param lines
-		 * @param context
-		 */
-		private void scanBegin(LineIterator lines, InputResolverContext context) throws IcarusApiException {
-			while(!isBeginLine(context)) {
-				advanceLine(lines, context, true);
-			}
-
-			if(context.isDataConsumed()) {
-				advanceLine(lines, context, true);
-			}
-		}
-
-		/**
-		 * {@link TableConverter#advanceLine(LineIterator, InputResolverContext) advances}
-		 * lines till a line indicating a valid {@link #isEndLine(InputResolverContext) end}
-		 * of content data is found.
-		 * <p>
-		 * If in the process the last processed line is consumed, this method will try to advance an
-		 * additional line.
-		 *
-		 * @param lines
-		 * @param context
-		 */
-		private void scanEnd(LineIterator lines, InputResolverContext context) throws IcarusApiException {
-			while(!isEndLine(context)) {
-				advanceLine(lines, context, true);
-			}
-
-			if(context.isDataConsumed()) {
-				advanceLine(lines, context, false);
-			}
-		}
-
-		/**
-		 * Reads a collection of {@code lines} for the respective layer.
-		 * <p>
-		 * TODO
-		 *
-		 * @param lines
-		 * @param context
-		 * @throws InterruptedException
-		 */
-		public boolean readChunk(LineIterator lines, InputResolverContext context)
-				throws IcarusApiException, InterruptedException {
-
-			long index = context.currentIndex();
-			Container container = context.currentContainer();
-
-			try {
-				// Initialize with current raw line of content
-				context.setData(lines.getLine());
-
-				// Scan for beginning of content
-				scanBegin(lines, context);
-
-				boolean success = tryReadNestedBlocks(lines, context);
-
-				// NOTE: we can either have column content OR nested blocks
-				if(!success) {
-					// Only when no nested blocks could be used will we parse actual column data
-					success = readColumnLines(lines, context);
-					// No need for scanEnd() since the column reading method takes care of it
-				}
-
-				return success;
-			} finally {
-				context.setIndex(index);
-				context.setContainer(container);
-			}
-		}
-
-		/**
-		 * Creates and adds a new {@link Container} and uses it to host {@link Item items}
-		 * produced by nested blocks.
-		 *
-		 * @param lines
-		 * @param context
-		 * @return
-		 * @throws InterruptedException
-		 * @throws IcarusApiException
-		 */
-		private boolean tryReadNestedBlocks(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
-			if(nestedBlockHandlers!=null) {
-
-				final Container host = context.currentContainer();
-				final boolean isProxyContainer = host.isProxy();
-				final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
-
-				ComponentSupplier componentSupplier = context.getComponentSupplier(getItemLayer());
-				componentSupplier.reset(context.currentIndex());
-				if(!componentSupplier.next())
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
-				Container container = (Container) componentSupplier.currentItem();
-
-				if(isProxyContainer) {
-					if(topLevelAction!=null) {
-						topLevelAction.accept(container, componentSupplier.currentIndex());
-					}
-				} else {
-					// Only for non-top-level items do we need to manually add them to their host container
-					host.addItem(container);
-				}
-
-				// Allow all nested block handlers to fully read their content
-				block_loop : for(int i=0; i<nestedBlockHandlers.length; i++) {
-					long index = 0L;
-
-					block_repetition : while(lines.hasLine() || lines.next()) {
-						// We need to set the current container for every nested block since they can change the field in context
-						context.setContainer(container);
-						context.setIndex(index);
-
-						//TODO evaluate if we should support "empty" blocks that do not need to match actual content
-						if(!nestedBlockHandlers[i].readChunk(lines, context)) {
-							break block_repetition;
-						}
-
-						/* Exit scan altogether since nested start line cannot match outer
-						 * end pattern.
-						 * This can pose an issue when nested and outer end patterns can
-						 * match the same line(s).
-						 */
-						if(isEndLine(context)) {
-							break block_loop;
-						}
-
-						if(context.isDataConsumed()) {
-							advanceLine(lines, context, false);
-						}
-					}
-
-				}
-
-				// Make sure we also scan till the end of our content
-				scanEnd(lines, context);
-
-				// Finally push our new container so that surrounding code can pick it up
-				context.setItem(container);
-
-				return true;
-			}
-
-			return false;
-		}
-
-		/**
-		 * For each content line creates a new {@link Item} and uses it as a target for
-		 * {@link ColumnHandler} instances.
-		 *
-		 * @param lines
-		 * @param context
-		 * @throws InterruptedException
-		 * @throws IcarusApiException
-		 */
-		private boolean readColumnLines(LineIterator lines, InputResolverContext context) throws InterruptedException, IcarusApiException {
-
-			final long hostIndex = context.currentIndex();
-			Container host = context.currentContainer();
-			final boolean isProxyContainer = host.isProxy();
-			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
-
-			ComponentSupplier componentSupplier = context.getComponentSupplier(getItemLayer());
-			componentSupplier.reset(hostIndex);
-
-			// Prepare for beginning of content (notify batch resolvers)
-			beginContent(context);
-
-			long index = 0;
-
-			// Read in content lines until a stop line is detected or the iterator runs out of lines
-			while(!isEndLine(context)) {
-				// Create new nested item
-				if(!componentSupplier.next())
-					throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce nested item");
-				Item item = componentSupplier.currentItem();
-
-				// Link context to new item
-				context.setItem(item);
-				context.setIndex(index);
-				if(isProxyContainer) {
-					if(topLevelAction!=null) {
-						topLevelAction.accept(item, componentSupplier.currentIndex());
-					}
-				} else {
-					// Only for non-top-level items do we need to add them to their host container
-					host.addItem(item);
-				}
-
-				if(mappingHandler!=null) {
-					mappingHandler.process(context);
-				}
-
-				processColumns(lines, context);
-
-				if(!lines.next()) {
-					break;
-				}
-				context.setData(lines.getLine());
-
-				index++;
-			}
-
-			context.setIndex(hostIndex);
-
-			// Finalize content (notify batch resolvers)
-			endContent(context);
-
-			// Ensure that we advance in case the final line got consumed (this should usually happen when reading a content line)
-			if(context.isDataConsumed() && lines.next()) {
-				context.setData(lines.getLine());
-			}
-
-			return index>0;
-		}
-
 		private void processColumns(LineIterator lines, InputResolverContext context) throws IcarusApiException {
 			final CharSequence rawContent = context.rawData();
 
@@ -3645,35 +3358,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 	}
 
-	/**
-	 *
-	 * @param rootHandler
-	 * @param lines
-	 * @param context
-	 * @param softErrorHandler returns {@code true} iff the exception should be ignored
-	 */
-	private void processData(BlockHandler rootHandler, LineIterator lines,
-			InputResolverContext context, Container rootContainer,
-			@Nullable Predicate<RuntimeException> softErrorHandler) {
-
-		/** */
-		long index = 0;
-		BlockHandler handler;
-
-		while(lines.hasLine() || lines.next()) {
-
-			// Clear state of handler and context
-			rootHandler.reset();
-			context.reset();
-
-			// Point the context to the layer's proxy container and requested index
-			context.setContainer(rootContainer);
-			context.setIndex(index);
-
-			//TODO
-		}
-	}
-
 	static class Processor {
 		private final BlockHandler rootHandler;
 		private final LineIterator lines;
@@ -3682,7 +3366,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		/** Last used index on depth n. Root block has depth 0. */
 		private final int[] indices;
-		private final Stack<Container> hosts = new ObjectArrayList<>();
+		/** Holds trace of host containers during processing */
+		private final ObjectArrayList<Container> hosts = new ObjectArrayList<>();
 
 		public Processor(BlockHandler rootHandler, Container rootContainer,
 				LineIterator lines, InputResolverContext context) {
@@ -3695,42 +3380,120 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		private BlockHandler handler;
+		private boolean encounteredFatalErrors;
+
+		private void printf(String format, Object...args) {
+//			System.out.printf(format,args);
+		}
 
 
-		public void process() throws IcarusApiException {
+		public void scan(ReportBuilder<ReportItem> reportBuilder, AccumulatingException.Buffer errors) throws InterruptedException {
 
 			handler = rootHandler;
 			context.setContainer(rootContainer);
+			boolean expectMore = false;
 
 			while(lines.hasLine() || lines.next()) {
 
-				context.setData(lines.getLine());
+				try {
+					expectMore = processLine();
+				} catch(RuntimeException e) {
+					// Only care about "soft" errors here (they won't terminate the scanning process)
 
-				// First try to find (nested) begin marker
-				if(findStart()) {
-					advanceIfConsumed(false);
+					ErrorCode errorCode = ErrorCode.forException(e, GlobalErrorCode.UNKNOWN_ERROR);
+
+					// Report any "soft" problem as error and include physical location
+					reportBuilder.addError(errorCode,
+							"Invalid content in line {}: {}", _long(lines.getLineNumber()), e.getMessage());
+
+					errors.addException(new ModelException(ModelErrorCode.DRIVER_RESOURCE,
+							String.format("Unexpected error in line %d", _long(lines.getLineNumber())), e));
+
+					// Force progress
+					if(!context.isDataConsumed()) {
+						context.consumeData();
+					}
+				} catch(IcarusApiException e) {
+					// ""Real" errors will break the scanning process
+
+					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
+							"Fatal error in line {}: {}", _long(lines.getLineNumber()), e.getMessage());
+
+					errors.addException(new ModelException(ModelErrorCode.DRIVER_RESOURCE,
+							String.format("Fatal error in line %d", _long(lines.getLineNumber())), e));
+
+					// Make sure surrounding code knows about the error condition
+					encounteredFatalErrors = true;
+
+					break;
 				}
 
-				if(!handler.started)
-					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unable to find proper start of content");
-
-				if(findEnd()) {
-					advanceIfConsumed(isRootHandler());
-				} else if(readAttribute()) {
-					// Attribute handler might consume data, but we force a new line read anyway
-					lines.next();
-				} else if(isEmptyLine()) {
-					// Just ignore empty lines at this point
-					lines.next();
-				} else {
-					// Check for content
-					readColumns();
-				}
+				advanceIfConsumed(expectMore);
 			}
+
+			rootHandler.complete();
+		}
+
+
+		public void load() throws InterruptedException, IcarusApiException {
+
+			handler = rootHandler;
+			context.setContainer(rootContainer);
+			boolean expectMore = false;
+
+			while(lines.hasLine() || lines.next()) {
+				expectMore = processLine();
+
+				advanceIfConsumed(expectMore);
+			}
+
+			rootHandler.complete();
+		}
+
+		private boolean processLine() throws IcarusApiException, InterruptedException {
+			assert lines.hasLine() : "no line available";
+			context.setData(lines.getLine());
+
+			printf("[line %d] %s%n", _long(lines.getLineNumber()), context.rawData());
+
+			boolean expectMore = false;
+
+			// Control flow
+			if(isEnd()) {
+				return !isRootHandler();
+			} else if(isStart()) {
+				if(context.isDataConsumed()) {
+					return true;
+				}
+				expectMore = true;
+			} else if(isEmptyLine()) {
+				// Just ignore empty lines at this point
+				context.consumeData();
+			} else if(!handler.started)
+				throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unable to find proper start of content");
+
+			// Actual content
+			if(isMetadata()) {
+				// Attribute handler might consume data, but we force a new line read anyway
+				context.consumeData();
+			} else if(hasColumns()) {
+				// Check for content, read columns and step out again
+				readColumns();
+			}
+
+			return expectMore;
 		}
 
 		private boolean isRootHandler() {
 			return handler==rootHandler;
+		}
+
+		private boolean hasColumns() {
+			return handler.columnHandlers.length>0;
+		}
+
+		private boolean hasChildBlocks() {
+			return handler.nestedBlockHandlers!=null;
 		}
 
 		private boolean isEmptyLine() {
@@ -3752,13 +3515,52 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * a) Current block is not started and a start marker for that block is found.<br>
 		 * b) Current block is started and a start marker for a nested block is found.<br>
 		 * c) In case blocks share their begin delimiters, b) can apply recursively<br>
+		 * <p>
+		 * This method does NOT consume input.
+		 *
+		 * @throws IcarusApiException
+		 * @throws InterruptedException
 		 */
-		private boolean findStart() {
-			if(!handler.started) {
+		private boolean isStart() throws IcarusApiException, InterruptedException {
+			boolean started = false;
 
+			// Cover option a)
+			if(!handler.started && handler.isBeginLine(context)) {
+				start();
+				started = handler.started = true;
 			}
+
+			// Cover options b) and c)
+			while(handler.started && !context.isDataConsumed()
+					&& handler.nestedBlockHandlers!=null) {
+				if(findNestedBegin()) {
+					stepInto();
+					start();
+					started = true;
+				} else {
+					break;
+				}
+			}
+
+			return started;
 		}
 
+		private boolean findNestedBegin() throws IcarusApiException {
+			for (int i = 0; i < handler.nestedBlockHandlers.length; i++) {
+				BlockHandler nested = handler.nestedBlockHandlers[i];
+				if(nested.isBeginLine(context)) {
+					handler = nested;
+					handler.started = true;
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Create a new item/container/structure for the current block and assign it to context
+		 * as current item.
+		 */
 		private void start() throws InterruptedException {
 			final Container host = context.currentContainer();
 			final boolean isProxyContainer = host.isProxy();
@@ -3779,22 +3581,86 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				// Only for non-top-level items do we need to manually add them to their host container
 				host.addItem(item);
 			}
+
+			context.setItem(item);
+
+			if(hasChildBlocks()) {
+				handler.beginContent(context);
+			}
+
+			printf("[started] %s%n", handler);
+		}
+
+		/** Shift current host on the stack and current item (cast to container) to host. */
+		private void stepInto() {
+			printf("[step-into]new=%s trace=%d%n", context.currentContainer(), _int(hosts.size()));
+			hosts.push(context.currentContainer());
+			context.setContainer((Container) context.currentItem());
 		}
 
 		/**
 		 * Tries to find an end marker in the current line. This can happen if<br>
 		 * a) Current block is started and an end marker for current block is found.<br>
 		 * b) In case blocks share their end delimiters, a) can apply repeatedly for parent blocks.<br>
+		 * <p>
+		 * This method does NOT consume input.
+		 * @throws InterruptedException
+		 * @throws IcarusApiException
+		 *
 		 */
-		private boolean findEnd() {
+		private boolean isEnd() throws IcarusApiException, InterruptedException {
+			BlockHandler ending = findHostingEnd();
+			if(ending!=null) {
+				for(;;) {
+					end();
+					if(!hasColumns()) {
+						stepOut();
+					}
+					boolean end = handler==ending;
+					handler = handler.parent;
+					if(end) {
+						break;
+					}
+				}
+			}
 
+			return ending!=null;
 		}
 
-		private boolean readAttribute() {
-			if(handler.attributeHandlers!=null) {
-				//TODO
+		private @Nullable BlockHandler findHostingEnd() throws IcarusApiException {
+			BlockHandler current = handler;
+			BlockHandler ending = null;
+
+			// Cover options a) and b)
+			while(current!=null && !context.isDataConsumed()) {
+				if(current.started && current.isEndLine(context)) {
+					ending = current;
+				}
+				// Go up one level
+				current = current.parent;
 			}
-			return false;
+
+			return ending;
+		}
+
+		private void end() {
+			if(hasChildBlocks()) {
+				handler.endContent(context);
+			}
+			handler.reset();
+
+			printf("[ended] %s%n", handler);
+		}
+
+		/** Shift current host to be current item and shift new host from stack. */
+		private void stepOut() {
+			printf("[step-out] old=%s trace=%d%n", hosts.top(), _int(hosts.size()));
+			context.setItem(context.currentContainer());
+			context.setContainer(hosts.pop());
+		}
+
+		private boolean isMetadata() throws IcarusApiException {
+			return handler.isAttributeLine(context);
 		}
 
 		/**
@@ -3803,6 +3669,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void readColumns() throws IcarusApiException {
 			handler.processColumns(lines, context);
+
+			printf("[columns] %s%n", handler);
+			end();
 		}
 	}
 }
