@@ -121,7 +121,6 @@ import de.ims.icarus2.model.util.Graph;
 import de.ims.icarus2.model.util.ModelGraph;
 import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.AbstractBuilder;
-import de.ims.icarus2.util.AccumulatingException;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutableLong;
@@ -331,7 +330,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		InputResolverContext inputContext = new InputResolverContext(
 				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction);
-		long index = 0L;
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
@@ -345,14 +343,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		// Flag to keep track whether or not we encountered a "real" error that causes the scan to stop
 		boolean encounteredFatalErrors = false;
 
-		final AccumulatingException.Buffer errors = new AccumulatingException.Buffer();
-
 		try(ReadableByteChannel channel = fileObject.getResource().getReadChannel()) {
 
 			final LineIterator lines = new BufferedLineIterator(channel, encoding, characterChunkSize);
 			final Processor processor = new Processor(blockHandler, primaryLayer.getProxyContainer(), lines, inputContext);
 
-			processor.scan(reportBuilder, errors);
+			processor.scan(reportBuilder);
 			encounteredFatalErrors = processor.encounteredFatalErrors;
 
 			// If nothing went wrong we still need to make sure that pending data is properly analyzed
@@ -3365,9 +3361,9 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private final Container rootContainer;
 
 		/** Last used index on depth n. Root block has depth 0. */
-		private final int[] indices;
+		private final long[] indices;
 		/** Holds trace of host containers during processing */
-		private final ObjectArrayList<Container> hosts = new ObjectArrayList<>();
+		private final Container[] hosts;
 
 		public Processor(BlockHandler rootHandler, Container rootContainer,
 				LineIterator lines, InputResolverContext context) {
@@ -3376,7 +3372,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			this.lines = requireNonNull(lines);
 			this.context = requireNonNull(context);
 
-			indices = new int[rootHandler.height + 1];
+			int height = rootHandler.height + 1;
+
+			indices = new long[height];
+			hosts = new Container[height];
 		}
 
 		private BlockHandler handler;
@@ -3387,13 +3386,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 
-		public void scan(ReportBuilder<ReportItem> reportBuilder, AccumulatingException.Buffer errors) throws InterruptedException {
-
-			handler = rootHandler;
-			context.setContainer(rootContainer);
-			boolean expectMore = false;
+		public void scan(ReportBuilder<ReportItem> reportBuilder) throws InterruptedException {
+			init();
 
 			while(lines.hasLine() || lines.next()) {
+				boolean expectMore = false;
 
 				try {
 					expectMore = processLine();
@@ -3406,9 +3403,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					reportBuilder.addError(errorCode,
 							"Invalid content in line {}: {}", _long(lines.getLineNumber()), e.getMessage());
 
-					errors.addException(new ModelException(ModelErrorCode.DRIVER_RESOURCE,
-							String.format("Unexpected error in line %d", _long(lines.getLineNumber())), e));
-
 					// Force progress
 					if(!context.isDataConsumed()) {
 						context.consumeData();
@@ -3418,9 +3412,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 					reportBuilder.addError(ModelErrorCode.DRIVER_ERROR,
 							"Fatal error in line {}: {}", _long(lines.getLineNumber()), e.getMessage());
-
-					errors.addException(new ModelException(ModelErrorCode.DRIVER_RESOURCE,
-							String.format("Fatal error in line %d", _long(lines.getLineNumber())), e));
 
 					// Make sure surrounding code knows about the error condition
 					encounteredFatalErrors = true;
@@ -3436,18 +3427,22 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 
 		public void load() throws InterruptedException, IcarusApiException {
-
-			handler = rootHandler;
-			context.setContainer(rootContainer);
-			boolean expectMore = false;
+			init();
 
 			while(lines.hasLine() || lines.next()) {
-				expectMore = processLine();
+				boolean expectMore = processLine();
 
 				advanceIfConsumed(expectMore);
 			}
 
 			rootHandler.complete();
+		}
+
+		private void init() {
+			handler = rootHandler;
+			context.setContainer(rootContainer);
+			indices[0] = 0L;
+			hosts[0] = rootContainer;
 		}
 
 		private boolean processLine() throws IcarusApiException, InterruptedException {
@@ -3506,7 +3501,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				if(lines.next()) {
 					context.setData(lines.getLine());
 				} else if(expectNext)
-					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unexpected end of input");
+					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
+							"Unexpected end of input at line: "+lines.getLineNumber());
 			}
 		}
 
@@ -3522,6 +3518,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @throws InterruptedException
 		 */
 		private boolean isStart() throws IcarusApiException, InterruptedException {
+			assert handler!=null;
 			boolean started = false;
 
 			// Cover option a)
@@ -3562,6 +3559,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * as current item.
 		 */
 		private void start() throws InterruptedException {
+			assert handler!=null;
 			final Container host = context.currentContainer();
 			final boolean isProxyContainer = host.isProxy();
 			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
@@ -3593,9 +3591,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		/** Shift current host on the stack and current item (cast to container) to host. */
 		private void stepInto() {
-			printf("[step-into]new=%s trace=%d%n", context.currentContainer(), _int(hosts.size()));
-			hosts.push(context.currentContainer());
-			context.setContainer((Container) context.currentItem());
+			assert handler!=null;
+			assert handler!=rootHandler;
+			printf("[step-into] handler=%s trace=%s%n", handler, Arrays.toString(hosts));
+			Container host = (Container) context.currentItem();
+			hosts[handler.depth] = host;
+			context.setContainer(host);
 		}
 
 		/**
@@ -3609,15 +3610,20 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 *
 		 */
 		private boolean isEnd() throws IcarusApiException, InterruptedException {
+			assert handler!=null;
 			BlockHandler ending = findHostingEnd();
 			if(ending!=null) {
 				for(;;) {
-					end();
 					if(!hasColumns()) {
 						stepOut();
 					}
+					end();
+					if(handler.parent==null) {
+						break;
+					}
 					boolean end = handler==ending;
 					handler = handler.parent;
+					assert handler!=null;
 					if(end) {
 						break;
 					}
@@ -3628,6 +3634,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		private @Nullable BlockHandler findHostingEnd() throws IcarusApiException {
+			assert handler!=null;
 			BlockHandler current = handler;
 			BlockHandler ending = null;
 
@@ -3644,6 +3651,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		private void end() {
+			assert handler!=null;
 			if(hasChildBlocks()) {
 				handler.endContent(context);
 			}
@@ -3654,9 +3662,14 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		/** Shift current host to be current item and shift new host from stack. */
 		private void stepOut() {
-			printf("[step-out] old=%s trace=%d%n", hosts.top(), _int(hosts.size()));
+			assert handler!=null;
+			assert handler.height>0;
+			printf("[step-out] handler=%s trace=%s%n", handler, Arrays.toString(hosts));
 			context.setItem(context.currentContainer());
-			context.setContainer(hosts.pop());
+			context.setContainer(hosts[handler.depth]);
+			if(handler.depth>0) {
+				hosts[handler.depth] = null;
+			}
 		}
 
 		private boolean isMetadata() throws IcarusApiException {
@@ -3668,6 +3681,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @throws IcarusApiException
 		 */
 		private void readColumns() throws IcarusApiException {
+			assert handler!=null;
 			handler.processColumns(lines, context);
 
 			printf("[columns] %s%n", handler);
