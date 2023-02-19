@@ -29,6 +29,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
 import de.ims.icarus2.model.standard.members.AbstractMember;
 import de.ims.icarus2.model.standard.members.MemberFlags;
+import de.ims.icarus2.model.util.ModelUtils;
 import de.ims.icarus2.util.IcarusUtils;
 import de.ims.icarus2.util.Recyclable;
 import de.ims.icarus2.util.annotations.TestableImplementation;
@@ -137,9 +138,8 @@ public class DefaultItem extends AbstractMember implements Item, Item.ManagedIte
 	 */
 	@Override
 	public String toString() {
-		//TODO change back to a proper method
-//		return ModelUtils.toString(this);
-		return getMemberType()+"_"+getId();
+		return ModelUtils.toString(this);
+//		return getMemberType()+"_"+getId();
 	}
 
 	/**

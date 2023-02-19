@@ -144,7 +144,7 @@ public final class ModelUtils {
 		ValueType type = manifest.getValueType();
 
 		if(type==ValueType.UNKNOWN)
-			throw new IllegalArgumentException("Manifest declares annotation value type as unknown: "+manifest); //$NON-NLS-1$
+			throw new IllegalArgumentException("Manifest declares annotation value type as unknown: "+manifest);
 
 		return type.isValidValue(value);
 	}
@@ -167,7 +167,7 @@ public final class ModelUtils {
 			return ManifestUtils.requireGrandHost((ContainerManifest)manifest);
 
 		default:
-			throw new IllegalArgumentException("MemberManifest does not provide scope to a context: "+manifest); //$NON-NLS-1$
+			throw new IllegalArgumentException("MemberManifest does not provide scope to a context: "+manifest);
 		}
 	}
 
@@ -347,11 +347,11 @@ public final class ModelUtils {
 			PrerequisiteManifest prerequisite = (PrerequisiteManifest)obj;
 			String id = prerequisite.getLayerId().orElse(null);
 			if(id!=null) {
-				result = "Required layer-id: "+id; //$NON-NLS-1$
+				result = "Required layer-id: "+id;
 			} else {
 				String typeName = prerequisite.getTypeId().orElse(null);
 				if(typeName!=null && !typeName.isEmpty())
-					result = "Required type-id: "+typeName; //$NON-NLS-1$
+					result = "Required type-id: "+typeName;
 				else
 					result = prerequisite.toString();
 			}
@@ -469,13 +469,13 @@ public final class ModelUtils {
 
 		if(type==MemberType.LAYER) {
 			Layer layer = (Layer)m;
-			return "[Layer: "+layer.getName()+"]"; //$NON-NLS-1$ //$NON-NLS-2$
+			return "[Layer: "+layer.getName()+"]";  //$NON-NLS-2$
 		}
 
 		Item item = (Item)m;
 		Layer layer = item.getLayer();
 		long index = item.getIndex();
-		return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+item.getBeginOffset()+"-"+item.getEndOffset()+">]"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+item.getBeginOffset()+"-"+item.getEndOffset()+">]";
 	}
 
 	public static int compare(Item m1, Item m2) {
@@ -496,7 +496,7 @@ public final class ModelUtils {
 
 	public static int compare(Fragment f1, Fragment f2) {
 		if(f1.getLayer()!=f2.getLayer())
-			throw new IllegalArgumentException("Cannot compare fragments from different fragment layers"); //$NON-NLS-1$
+			throw new IllegalArgumentException("Cannot compare fragments from different fragment layers");
 
 		if(f1.getItem()!=f2.getItem()) {
 			return compare(f1.getItem(), f2.getItem());
@@ -567,12 +567,12 @@ public final class ModelUtils {
 
 		if(begin!=null && begin.getDimensionality()!=dimensionality)
 			throw new ModelException(ModelErrorCode.MODEL_INVALID_POSITION,
-					"Begin position dimensionality mismatch: expected " //$NON-NLS-1$
-					+dimensionality+" - got "+begin.getDimensionality()); //$NON-NLS-1$
+					"Begin position dimensionality mismatch: expected "
+					+dimensionality+" - got "+begin.getDimensionality());
 		if(end!=null && end.getDimensionality()!=dimensionality)
 			throw new ModelException(ModelErrorCode.MODEL_INVALID_POSITION,
-					"End position dimensionality mismatch: expected " //$NON-NLS-1$
-					+dimensionality+" - got "+end.getDimensionality()); //$NON-NLS-1$
+					"End position dimensionality mismatch: expected "
+					+dimensionality+" - got "+end.getDimensionality());
 
 		Item item = fragment.getItem();
 
@@ -584,7 +584,7 @@ public final class ModelUtils {
 
 		if(begin!=null && end!=null && rasterizer.getMetric().compare(begin, end)>0)
 			throw new ModelException(ModelErrorCode.MODEL_INVALID_POSITION,
-					"Begin position must not exceed end position: "+begin+" - "+end); //$NON-NLS-1$ //$NON-NLS-2$
+					"Begin position must not exceed end position: "+begin+" - "+end);  //$NON-NLS-2$
 	}
 
 	private static void checkPosition(long size, Position p, int axis) {
@@ -596,13 +596,13 @@ public final class ModelUtils {
 
 		if(value<0 || value>=size)
 			throw new ModelException(ModelErrorCode.MODEL_POSITION_OUT_OF_BOUNDS,
-					"Invalid value for axis "+axis+" on position "+p+" - max size "+size); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+					"Invalid value for axis "+axis+" on position "+p+" - max size "+size);  //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
 	public static Path pathToFile(ResourcePath path) {
 		requireNonNull(path);
 		if(path.getType()!=LocationType.LOCAL)
-			throw new IllegalArgumentException("ResourcePath needs to be a file: "+path.getPath()); //$NON-NLS-1$
+			throw new IllegalArgumentException("ResourcePath needs to be a file: "+path.getPath());
 
 		return Paths.get(path.getPath());
 	}
@@ -610,7 +610,7 @@ public final class ModelUtils {
 	public static URL pathToURL(ResourcePath path) throws MalformedURLException {
 		requireNonNull(path);
 		if(path.getType()!=LocationType.REMOTE)
-			throw new IllegalArgumentException("ResourcePath needs to be a url: "+path.getPath()); //$NON-NLS-1$
+			throw new IllegalArgumentException("ResourcePath needs to be a url: "+path.getPath());
 
 		return new URL(path.getPath());
 	}
@@ -626,7 +626,7 @@ public final class ModelUtils {
 			return pathToURL(path).openStream();
 
 		default:
-			throw new IllegalArgumentException("Cannot handle source type: "+path.getType()); //$NON-NLS-1$
+			throw new IllegalArgumentException("Cannot handle source type: "+path.getType());
 		}
 	}
 }
