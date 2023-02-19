@@ -136,6 +136,7 @@ import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
+import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -2876,6 +2877,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			this.parent = parent;
 			this.blockSchema = blockSchema;
 			memberType = blockSchema.getComponentSchema().getMemberType();
+			depth = parent==null ? 0 : parent.depth + 1;
 
 			final ColumnSchema[] columnSchemas = blockSchema.getColumns();
 			final BlockSchema[] nestedBlockSchemas = blockSchema.getNestedBlocks();
@@ -3005,8 +3007,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				nestedBlockHandlers = null;
 				height = 0;
 			}
-
-			depth = parent==null ? 0 : parent.depth + 1;
 
 			/*
 			 * IMPORTANT
@@ -3363,7 +3363,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		/** Last used index on depth n. Root block has depth 0. */
 		private final long[] indices;
 		/** Holds trace of host containers during processing */
-		private final Container[] hosts;
+		private final Stack<Container> hosts = new ObjectArrayList<>();
 
 		public Processor(BlockHandler rootHandler, Container rootContainer,
 				LineIterator lines, InputResolverContext context) {
@@ -3375,14 +3375,13 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			int height = rootHandler.height + 1;
 
 			indices = new long[height];
-			hosts = new Container[height];
 		}
 
 		private BlockHandler handler;
 		private boolean encounteredFatalErrors;
 
 		private void printf(String format, Object...args) {
-//			System.out.printf(format,args);
+			System.out.printf(format,args);
 		}
 
 
@@ -3441,15 +3440,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private void init() {
 			handler = rootHandler;
 			context.setContainer(rootContainer);
-			indices[0] = 0L;
-			hosts[0] = rootContainer;
+			Arrays.fill(indices, 0L);
 		}
 
 		private boolean processLine() throws IcarusApiException, InterruptedException {
 			assert lines.hasLine() : "no line available";
 			context.setData(lines.getLine());
+			context.setIndex(indices[handler.depth]);
 
-			printf("[line %d] %s%n", _long(lines.getLineNumber()), context.rawData());
+			printf("[line %d] container=%s '%s'%n", _long(lines.getLineNumber()), context.currentContainer(), context.rawData());
 
 			boolean expectMore = false;
 
@@ -3466,6 +3465,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				context.consumeData();
 			} else if(!handler.started)
 				throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unable to find proper start of content");
+
+			context.setIndex(indices[handler.depth]);
 
 			// Actual content
 			if(isMetadata()) {
@@ -3524,34 +3525,46 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			// Cover option a)
 			if(!handler.started && handler.isBeginLine(context)) {
 				start();
-				started = handler.started = true;
+				started = true;
 			}
 
 			// Cover options b) and c)
-			while(handler.started && !context.isDataConsumed()
-					&& handler.nestedBlockHandlers!=null) {
-				if(findNestedBegin()) {
-					stepInto();
+			BlockHandler starting = findNestedBegin();
+			if(starting!=null) {
+				do {
+					handler = handler.nestedBlockHandlers[0];
 					start();
+
+					hosts.push(context.currentContainer());
+					Container host = (Container) context.currentItem();
+					context.setContainer(host);
+					printf("[step-into] handler=%s container=%s trace=%s%n", handler, context.currentContainer(), hosts);
+
 					started = true;
-				} else {
-					break;
-				}
+				} while(handler!=starting);
 			}
 
 			return started;
 		}
 
-		private boolean findNestedBegin() throws IcarusApiException {
-			for (int i = 0; i < handler.nestedBlockHandlers.length; i++) {
-				BlockHandler nested = handler.nestedBlockHandlers[i];
-				if(nested.isBeginLine(context)) {
-					handler = nested;
-					handler.started = true;
-					return true;
+		private @Nullable BlockHandler findNestedBegin() throws IcarusApiException {
+			assert handler!=null;
+			BlockHandler current = handler;
+			BlockHandler starting = null;
+
+			while(current!=null && current.started && !context.isDataConsumed()) {
+				if(current.nestedBlockHandlers==null) {
+					break;
 				}
+				BlockHandler nested = current.nestedBlockHandlers[0];
+				if(!nested.started && nested.isBeginLine(context)) {
+					starting = nested;
+				}
+				// Go down one level
+				current = nested;
 			}
-			return false;
+
+			return starting;
 		}
 
 		/**
@@ -3560,6 +3573,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void start() throws InterruptedException {
 			assert handler!=null;
+			handler.started = true;
 			final Container host = context.currentContainer();
 			final boolean isProxyContainer = host.isProxy();
 			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
@@ -3570,6 +3584,8 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
 
 			Item item = componentSupplier.currentItem();
+
+//			printf("ADD %s to %s at index %d%n", item, host, _long(context.currentIndex()));
 
 			if(isProxyContainer) {
 				if(topLevelAction!=null) {
@@ -3583,20 +3599,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			context.setItem(item);
 
 			if(hasChildBlocks()) {
-				handler.beginContent(context);
+				indices[handler.depth+1] = 0;
+				handler.nestedBlockHandlers[0].beginContent(context);
 			}
 
-			printf("[started] %s%n", handler);
-		}
-
-		/** Shift current host on the stack and current item (cast to container) to host. */
-		private void stepInto() {
-			assert handler!=null;
-			assert handler!=rootHandler;
-			printf("[step-into] handler=%s trace=%s%n", handler, Arrays.toString(hosts));
-			Container host = (Container) context.currentItem();
-			hosts[handler.depth] = host;
-			context.setContainer(host);
+			printf("[started] handler=%s item=%s host=%s%n", handler, item, host);
 		}
 
 		/**
@@ -3614,8 +3621,13 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			BlockHandler ending = findHostingEnd();
 			if(ending!=null) {
 				for(;;) {
+					endContent();
 					if(!hasColumns()) {
-						stepOut();
+						//Shift current host to be current item and shift new host from stack.
+						assert handler.height>0;
+						context.setItem(context.currentContainer());
+						context.setContainer(hosts.pop());
+						printf("[step-out] handler=%s container=%s trace=%s%n", handler, context.currentContainer(), hosts);
 					}
 					end();
 					if(handler.parent==null) {
@@ -3650,26 +3662,19 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return ending;
 		}
 
-		private void end() {
-			assert handler!=null;
+		private void endContent() {
+			printf("[ending] handler=%s depth=%d index=%d%n", handler, _int(handler.depth), _long(indices[handler.depth]));
 			if(hasChildBlocks()) {
-				handler.endContent(context);
+				handler.nestedBlockHandlers[0].endContent(context);
 			}
-			handler.reset();
-
-			printf("[ended] %s%n", handler);
 		}
 
-		/** Shift current host to be current item and shift new host from stack. */
-		private void stepOut() {
+		private void end() {
 			assert handler!=null;
-			assert handler.height>0;
-			printf("[step-out] handler=%s trace=%s%n", handler, Arrays.toString(hosts));
-			context.setItem(context.currentContainer());
-			context.setContainer(hosts[handler.depth]);
-			if(handler.depth>0) {
-				hosts[handler.depth] = null;
-			}
+			handler.reset();
+			indices[handler.depth]++;
+
+			printf("[ended] %s%n", handler);
 		}
 
 		private boolean isMetadata() throws IcarusApiException {
