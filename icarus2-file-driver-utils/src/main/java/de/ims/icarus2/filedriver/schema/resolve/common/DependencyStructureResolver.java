@@ -174,6 +174,8 @@ public class DependencyStructureResolver implements BatchResolver {
 		Edge edge = structureBuilder.newEdge(IcarusUtils.UNSET_LONG);
 		edge.setTarget(context.currentItem());
 
+//		System.out.printf("dep_head: current=%d head=%d%n", _long(context.currentIndex()), _int(head));
+
 		saveHeadInfo(IcarusUtils.ensureIntegerValueRange(context.currentIndex()), edge, head);
 
 		return edge;

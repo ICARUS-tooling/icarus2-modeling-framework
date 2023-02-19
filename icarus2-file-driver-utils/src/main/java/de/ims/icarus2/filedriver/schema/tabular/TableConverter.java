@@ -136,7 +136,6 @@ import de.ims.icarus2.util.collections.set.DataSets;
 import de.ims.icarus2.util.io.IOUtil;
 import de.ims.icarus2.util.strings.FlexibleSubSequence;
 import de.ims.icarus2.util.strings.StringUtil;
-import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -330,7 +329,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		};
 
 		InputResolverContext inputContext = new InputResolverContext(
-				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction);
+				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction, blockHandler.height);
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
 
@@ -453,7 +452,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		};
 
 		InputResolverContext inputContext = new InputResolverContext(
-				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction);
+				blockHandler.itemLayer, componentSuppliers, caches, topLevelItemAction, blockHandler.height);
 		ItemLayer primaryLayer = blockHandler.getItemLayer();
 
 		LockableFileObject fileObject = getDriver().getFileObject(fileIndex);
@@ -511,13 +510,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		return getDriver().getContext().getLayer(layerId);
 	}
 
-	private static void advanceLine(LineIterator lines, InputResolverContext context, boolean expectNextLine) {
-		if(lines.next()) {
-			context.setData(lines.getLine());
-		} else if(expectNextLine)
-			throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unexpected end of input");
-	}
-
 	/**
 	 * @see de.ims.icarus2.filedriver.AbstractConverter#createDelegatingCursor(int, de.ims.icarus2.model.api.layer.ItemLayer)
 	 */
@@ -549,7 +541,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			.build();
 
 		InputResolverContext inputContext = new InputResolverContext(
-				blockHandler.itemLayer, componentSuppliers, caches, null); //TODO verify that we don't need a dedicated action for top-level items here!
+				blockHandler.itemLayer, componentSuppliers, caches, null, blockHandler.height); //TODO verify that we don't need a dedicated action for top-level items here!
 
 		// Result instance that is linked to our caches
 		DynamicLoadResult loadResult = new SimpleLoadResult(caches.values());
@@ -1113,14 +1105,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		private final ObjLongConsumer<? super Item> topLevelAction;
 
+		private final Container[] hosts;
+		private int hostCursor = 0;
+
 		public InputResolverContext(ItemLayer primaryLayer,
 				Map<ItemLayer, ComponentSupplier> componentSuppliers,
 				Map<ItemLayer, InputCache> caches,
-				ObjLongConsumer<? super Item> topLevelAction) {
+				ObjLongConsumer<? super Item> topLevelAction, int depth) {
 			this.primaryLayer = requireNonNull(primaryLayer);
 			this.componentSuppliers = requireNonNull(componentSuppliers);
 			this.caches = requireNonNull(caches);
 			this.topLevelAction = topLevelAction;
+			hosts = new Container[depth];
 		}
 
 		void reset() {
@@ -1212,6 +1208,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			replacements.clear();
 		}
 
+		public void clearItem() {
+			item = null;
+			replacements.clear();
+		}
+
 		public int getColumnIndex() {
 			return columnIndex;
 		}
@@ -1300,6 +1301,21 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		@Override
 		public ObjLongConsumer<? super Item> getTopLevelAction() {
 			return topLevelAction;
+		}
+
+		public void stepInto() {
+			assert hostCursor<hosts.length;
+			System.out.println("stepping into "+item);
+			hosts[hostCursor++] = currentContainer();
+			setContainer((Container) currentItem());
+			clearItem();
+		}
+
+		public void stepOut() {
+			assert hostCursor>0;
+			System.out.println("stepping out of "+container);
+			setItem(currentContainer());
+			setContainer(hosts[--hostCursor]);
 		}
 	}
 
@@ -3341,6 +3357,33 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			}
 		}
 
+//		private void start(InputResolverContext context) throws InterruptedException {
+//			started = true;
+//			final Container host = context.currentContainer();
+//			final boolean isProxyContainer = host.isProxy();
+//			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
+//
+//			ComponentSupplier componentSupplier = context.getComponentSupplier(getItemLayer());
+//			componentSupplier.reset(context.currentIndex());
+//			if(!componentSupplier.next())
+//				throw new ModelException(ModelErrorCode.DRIVER_ERROR, "Failed to produce container for block");
+//
+//			Item item = componentSupplier.currentItem();
+//
+////			printf("ADD %s to %s at index %d%n", item, host, _long(context.currentIndex()));
+//
+//			if(isProxyContainer) {
+//				if(topLevelAction!=null) {
+//					topLevelAction.accept(item, componentSupplier.currentIndex());
+//				}
+//			} else {
+//				// Only for non-top-level items do we need to manually add them to their host container
+//				host.addItem(item);
+//			}
+//
+//			context.setItem(item);
+//		}
+
 		public int getId() {
 			return blockId;
 		}
@@ -3362,8 +3405,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		/** Last used index on depth n. Root block has depth 0. */
 		private final long[] indices;
-		/** Holds trace of host containers during processing */
-		private final Stack<Container> hosts = new ObjectArrayList<>();
+//		private final Stack<Container> hosts = new ObjectArrayList<>();
 
 		public Processor(BlockHandler rootHandler, Container rootContainer,
 				LineIterator lines, InputResolverContext context) {
@@ -3381,7 +3423,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		private boolean encounteredFatalErrors;
 
 		private void printf(String format, Object...args) {
-			System.out.printf(format,args);
+//			System.out.printf(format,args);
 		}
 
 
@@ -3463,6 +3505,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			} else if(isEmptyLine()) {
 				// Just ignore empty lines at this point
 				context.consumeData();
+				return false;
 			} else if(!handler.started)
 				throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT, "Unable to find proper start of content");
 
@@ -3484,6 +3527,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return handler==rootHandler;
 		}
 
+		private boolean isNested() {
+			return handler.parent!=null;
+		}
+
 		private boolean hasColumns() {
 			return handler.columnHandlers.length>0;
 		}
@@ -3493,7 +3540,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		}
 
 		private boolean isEmptyLine() {
-			CharSequence s = lines.getLine();
+			CharSequence s = context.rawData();
 			return s.length()==0 || StringUtil.isEmptyOrWhitespaces(s);
 		}
 
@@ -3524,6 +3571,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			// Cover option a)
 			if(!handler.started && handler.isBeginLine(context)) {
+				handler.started = true;
 				start();
 				started = true;
 			}
@@ -3532,13 +3580,12 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			BlockHandler starting = findNestedBegin();
 			if(starting!=null) {
 				do {
+					// Step into
+					context.stepInto();
+
 					handler = handler.nestedBlockHandlers[0];
 					start();
-
-					hosts.push(context.currentContainer());
-					Container host = (Container) context.currentItem();
-					context.setContainer(host);
-					printf("[step-into] handler=%s container=%s trace=%s%n", handler, context.currentContainer(), hosts);
+					printf("[step-into] handler=%s container=%s%n", handler, context.currentContainer());
 
 					started = true;
 				} while(handler!=starting);
@@ -3558,6 +3605,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				}
 				BlockHandler nested = current.nestedBlockHandlers[0];
 				if(!nested.started && nested.isBeginLine(context)) {
+					nested.started = true;
 					starting = nested;
 				}
 				// Go down one level
@@ -3573,7 +3621,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void start() throws InterruptedException {
 			assert handler!=null;
-			handler.started = true;
 			final Container host = context.currentContainer();
 			final boolean isProxyContainer = host.isProxy();
 			final ObjLongConsumer<? super Item> topLevelAction = context.getTopLevelAction();
@@ -3585,7 +3632,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 			Item item = componentSupplier.currentItem();
 
-//			printf("ADD %s to %s at index %d%n", item, host, _long(context.currentIndex()));
+			System.out.printf("ADD %s to %s at index %d%n", item, host, _long(context.currentIndex()));
 
 			if(isProxyContainer) {
 				if(topLevelAction!=null) {
@@ -3618,17 +3665,20 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private boolean isEnd() throws IcarusApiException, InterruptedException {
 			assert handler!=null;
+			BlockHandler initial = handler;
 			BlockHandler ending = findHostingEnd();
 			if(ending!=null) {
 				for(;;) {
-					endContent();
-					if(!hasColumns()) {
-						//Shift current host to be current item and shift new host from stack.
-						assert handler.height>0;
-						context.setItem(context.currentContainer());
-						context.setContainer(hosts.pop());
-						printf("[step-out] handler=%s container=%s trace=%s%n", handler, context.currentContainer(), hosts);
+					printf("[ending] handler=%s depth=%d index=%d%n", handler, _int(handler.depth), _long(indices[handler.depth]));
+					if(hasChildBlocks()) {
+						handler.nestedBlockHandlers[0].endContent(context);
 					}
+//					if(handler!=initial) {
+						//Shift current host to be current item and shift new host from stack.
+//						assert handler.height>0;
+						context.stepOut();
+						printf("[step-out] handler=%s container=%s%n", handler, context.currentContainer());
+//					}
 					end();
 					if(handler.parent==null) {
 						break;
@@ -3662,13 +3712,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return ending;
 		}
 
-		private void endContent() {
-			printf("[ending] handler=%s depth=%d index=%d%n", handler, _int(handler.depth), _long(indices[handler.depth]));
-			if(hasChildBlocks()) {
-				handler.nestedBlockHandlers[0].endContent(context);
-			}
-		}
-
 		private void end() {
 			assert handler!=null;
 			handler.reset();
@@ -3687,10 +3730,13 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 */
 		private void readColumns() throws IcarusApiException {
 			assert handler!=null;
+			assert context.currentItem()!=null;
+
 			handler.processColumns(lines, context);
 
 			printf("[columns] %s%n", handler);
 			end();
+			context.clearItem();
 		}
 	}
 }
