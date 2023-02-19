@@ -189,7 +189,7 @@ public interface Histogram extends LongConsumer {
 		public void accept(long value) {
 			int rawBin = rawBin(value);
 			if(rawBin>=bins.length && !fixed) {
-				int newCapacity = Math.max(rawBin, bins.length * 2);
+				int newCapacity = Math.max(rawBin+1, bins.length * 2);
 				if(newCapacity<0) { // overflow-conscious
 					newCapacity = MAX_INTEGER_INDEX;
 				}
