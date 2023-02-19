@@ -475,7 +475,11 @@ public final class ModelUtils {
 		Item item = (Item)m;
 		Layer layer = item.getLayer();
 		long index = item.getIndex();
-		return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+item.getBeginOffset()+"-"+item.getEndOffset()+">]";
+		return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+_index(item.getBeginOffset())+"-"+_index(item.getEndOffset())+">]";
+	}
+
+	private static String _index(long index) {
+		return index==UNSET_LONG ? "?" : String.valueOf(index);
 	}
 
 	public static int compare(Item m1, Item m2) {
