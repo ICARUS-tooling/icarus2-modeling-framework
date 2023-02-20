@@ -72,12 +72,16 @@
 								<its:table xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema" id="test.tbl" name="Test Format"  groupId="main">
 									<its:block layerId="sentence">
 										<its:endDelimiter>
-											<its:pattern>EMPTY_LINE</its:pattern>
+											<its:pattern type="name">EMPTY_LINE</its:pattern>
 										</its:endDelimiter>
 										<its:component memberType="container"/>
 										
 										<its:block layerId="token">
 											<its:separator>WHITESPACES</its:separator>
+											<its:endDelimiter shared="true">
+												<its:pattern type="name">EMPTY_LINE</its:pattern>
+											</its:endDelimiter>
+											<its:component memberType="item"/>
 											<its:columns>
 												<its:column name="ID" layerId="anno" annotationKey="counter"/>
 												<its:column name="ANNO1" layerId="anno" annotationKey="anno1"/>
@@ -88,10 +92,6 @@
 													</its:resolver>
 												</its:column>
 											</its:columns>
-											<its:endDelimiter>
-												<its:pattern>EMPTY_LINE</its:pattern>
-											</its:endDelimiter>
-											<its:component memberType="item"/>
 										</its:block>
 									</its:block>
 								</its:table>

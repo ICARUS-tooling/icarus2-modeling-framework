@@ -58,14 +58,14 @@
 									<its:block layerId="token">
 										<its:separator>WHITESPACES</its:separator>
 										<its:endDelimiter>
-											<its:pattern>EMPTY_LINE</its:pattern>
+											<its:pattern type="name">EMPTY_LINE</its:pattern>
 										</its:endDelimiter>
+										<its:component memberType="item"/>
 										<its:columns>
 											<its:column name="ID" layerId="anno" annotationKey="counter"/>
 											<its:column name="ANNO1" layerId="anno" annotationKey="anno1"/>
 											<its:column name="ANNO2" layerId="anno" annotationKey="anno2"/>
 										</its:columns>
-										<its:component memberType="item"/>
 									</its:block>
 								</its:table>
 								]]>
