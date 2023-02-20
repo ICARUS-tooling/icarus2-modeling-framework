@@ -79,16 +79,17 @@
 										xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/schema" 
 										id="test.tbl" name="Schema for Segmentation Test"  groupId="sentenceGroup">
 										<its:block layerId="sentence">
-											<its:component memberType="container"/>
 											<its:endDelimiter>
-												<its:pattern>EMPTY_LINE</its:pattern>
+												<its:pattern type="name">EMPTY_LINE</its:pattern>
 											</its:endDelimiter>
-											<its:externalGroup>segmentationGroup</its:externalGroup>
+											<its:component memberType="container"/>
 											<its:block layerId="token" noEntryLabel="_">
-												<its:separator>WHITESPACES</its:separator>
-												<its:endDelimiter>
-													<its:pattern>EMPTY_LINE</its:pattern>
+												<its:endDelimiter shared="true">
+													<its:pattern type="name">EMPTY_LINE</its:pattern>
 												</its:endDelimiter>
+												<its:component memberType="item"/>
+												<its:separator>WHITESPACES</its:separator>
+												<its:externalGroup>segmentationGroup</its:externalGroup>
 												<its:columns>
 													<its:column name="ID" ignore="true"/>
 													<its:column name="FORM" layerId="form"/>
@@ -108,7 +109,6 @@
 														</its:resolver>
 													</its:column>
 												</its:columns>
-												<its:component memberType="item"/>
 											</its:block>
 										</its:block>
 									</its:table>
