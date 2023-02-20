@@ -444,44 +444,6 @@ public final class ModelUtils {
 		return sb.toString();
 	}
 
-	private static char getTypePrefix(MemberType type) {
-		switch (type) {
-		case ITEM:
-			return 'I';
-		case FRAGMENT:
-			return 'F';
-		case CONTAINER:
-			return 'C';
-		case STRUCTURE:
-			return 'S';
-		case LAYER:
-			return 'L';
-		case EDGE:
-			return 'E';
-
-		default:
-			throw new IllegalArgumentException();
-		}
-	}
-
-	public static String toString(CorpusMember m) {
-		MemberType type = m.getMemberType();
-
-		if(type==MemberType.LAYER) {
-			Layer layer = (Layer)m;
-			return "[Layer: "+layer.getName()+"]";  //$NON-NLS-2$
-		}
-
-		Item item = (Item)m;
-		Layer layer = item.getLayer();
-		long index = item.getIndex();
-		return "["+layer.getName()+"_"+getTypePrefix(type)+"_"+index+"<"+_index(item.getBeginOffset())+"-"+_index(item.getEndOffset())+">]";
-	}
-
-	private static String _index(long index) {
-		return index==UNSET_LONG ? "?" : String.valueOf(index);
-	}
-
 	public static int compare(Item m1, Item m2) {
 		ItemLayer fLayer1 = m1.getLayer().getFoundationLayer();
 		ItemLayer fLayer2 = m2.getLayer().getFoundationLayer();

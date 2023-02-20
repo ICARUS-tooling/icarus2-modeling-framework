@@ -48,7 +48,9 @@ import de.ims.icarus2.model.api.driver.indices.IndexSet;
 import de.ims.icarus2.model.api.driver.indices.IndexValueType;
 import de.ims.icarus2.model.api.driver.indices.standard.ArrayIndexSet;
 import de.ims.icarus2.model.api.driver.indices.standard.VirtualIndexSet;
+import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.layer.Layer;
+import de.ims.icarus2.model.api.layer.StructureLayer;
 import de.ims.icarus2.model.api.members.MemberType;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Edge;
@@ -73,6 +75,13 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
  *
  */
 public class ModelTestUtils {
+
+	private static final ItemLayer ITEM_LAYER = mock(ItemLayer.class);
+	private static final StructureLayer STRUCTURE_LAYER = mock(StructureLayer.class);
+	static {
+		when(ITEM_LAYER.getName()).thenReturn("DUMMY_ITEM_LAYER");
+		when(STRUCTURE_LAYER.getName()).thenReturn("DUMMY_STRUCTURE_LAYER");
+	}
 
 	public static Corpus mockCorpus() {
 		Corpus corpus = mock(Corpus.class, CALLS_REAL_METHODS);
