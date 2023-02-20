@@ -49,7 +49,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -2980,9 +2979,10 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(externalGroupIds.length>0) {
 				Map<String, LayerGroup> groups = getDriver().getContext().getLayerGroups().stream()
 						.collect(Collectors.toMap(g -> ManifestUtils.requireId(g.getManifest()), g -> g));
-				externalGroups = Stream.of(blockSchema.getExternalGroupIds())
-						.map(groups::get)
-						.toArray(LayerGroup[]::new);
+				externalGroups = new LayerGroup[externalGroupIds.length];
+				for (int i = 0; i < externalGroupIds.length; i++) {
+					externalGroups[i] = requireNonNull(groups.get(externalGroupIds[i]), "Unknown group id: "+externalGroupIds[i]);
+				}
 			} else {
 				externalGroups = new LayerGroup[0];
 			}

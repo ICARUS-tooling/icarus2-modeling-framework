@@ -259,6 +259,7 @@ public class QueryProcessor {
 
 			if(ctx.ALL()!=null) {
 				IqlPayload payload = new IqlPayload();
+				payload.setId(idGenerator.generateId(payload));
 				// If we are asked to return ALL we don't need to bother with bindings or constraints
 				payload.setQueryType(QueryType.ALL);
 				return payload;
