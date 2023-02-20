@@ -241,11 +241,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		return new BlockHandler(tableSchema.getRootBlock());
 	}
 
+	private static BlockHandler stepInto(BlockHandler h) {
+		return h.nestedBlockHandlers==null ? null : h.nestedBlockHandlers[0];
+	}
+
 	private static final int DEFAULT_TEMP_CHUNK_COUNT = 500;
 
 	private static List<LayerGroup> getGroups(BlockHandler blockHandler) {
 		List<LayerGroup> layerGroups = list(blockHandler.getItemLayer().getLayerGroup());
-		CollectionUtils.feedItems(layerGroups, blockHandler.getExternalGroups());
+		while(blockHandler!=null) {
+			CollectionUtils.feedItems(layerGroups, blockHandler.getExternalGroups());
+			blockHandler = stepInto(blockHandler);
+		}
 		return layerGroups;
 	}
 

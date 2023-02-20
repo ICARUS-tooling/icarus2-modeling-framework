@@ -1,0 +1,72 @@
+<!--
+
+    ICARUS2 Corpus Modeling Framework
+    Copyright (C) 2014-2023 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<its:table xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:its="http://www.ims.uni-stuttgart.de/icarus/xml/tabular-schema" 
+	id="conll09.tbl" name="CoNLL09 Tabular Format"  groupId="sentenceGroup">
+	<its:block layerId="sentence">
+		<its:endDelimiter>
+			<its:pattern type="name">EMPTY_LINE</its:pattern>
+		</its:endDelimiter>
+		<its:component memberType="container"/>
+		<its:block layerId="token" noEntryLabel="_">
+			<its:endDelimiter shared="true">
+				<its:pattern type="name">EMPTY_LINE</its:pattern>
+			</its:endDelimiter>
+			<its:component memberType="item"/>
+			<its:separator>WHITESPACES</its:separator>
+			<its:externalGroup>goldGroup</its:externalGroup>
+			<its:externalGroup>predictedGroup</its:externalGroup>
+			<its:columns>
+				<its:column name="ID" ignore="true"/>
+				<its:column name="FORM" layerId="form"/>
+				<its:column name="LEMMA" layerId="goldLemma"/>
+				<its:column name="PLEMMA" layerId="predictedLemma"/>
+				<its:column name="POS" layerId="goldPos"/>
+				<its:column name="PPOS" layerId="predictedPos"/>
+				<its:column name="FEAT" layerId="goldFeatures">
+					<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.PropertyListResolver">
+						<its:option name="separator">|</its:option>
+						<its:option name="assignmentSymbol">=</its:option>
+					</its:resolver>
+				</its:column>
+				<its:column name="PFEAT" layerId="predictedFeatures"/>
+				<its:column name="HEAD" layerId="goldDependency">
+					<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver">
+						<its:option name="offset">-1</its:option>
+						<its:option name="root">0</its:option>
+					</its:resolver>
+					<its:substitute type="addition" name="edge" memberType="edge" />
+				</its:column>
+				<its:column name="PHEAD" layerId="predictedDependency">
+					<its:resolver type="de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver">
+						<its:option name="offset">-1</its:option>
+						<its:option name="root">0</its:option>
+					</its:resolver>
+					<its:substitute type="addition" name="pedge" memberType="edge" />
+				</its:column>
+				<its:column name="DEPREL" layerId="goldDependencyRelation">
+					<its:substitute type="target" name="edge" memberType="edge" />
+				</its:column>
+				<its:column name="PDEPREL" layerId="predictedDependencyRelation">
+					<its:substitute type="target" name="pedge" memberType="edge" />
+				</its:column>
+			</its:columns>
+		</its:block>
+	</its:block>
+</its:table>

@@ -16,9 +16,6 @@
  */
 package de.ims.icarus2.filedriver.schema.resolve.common;
 
-import static de.ims.icarus2.util.lang.Primitives._int;
-import static de.ims.icarus2.util.lang.Primitives._long;
-
 import java.util.Arrays;
 import java.util.function.ObjLongConsumer;
 
@@ -177,7 +174,7 @@ public class DependencyStructureResolver implements BatchResolver {
 		Edge edge = structureBuilder.newEdge(IcarusUtils.UNSET_LONG);
 		edge.setTarget(context.currentItem());
 
-		System.out.printf("dep_head: current=%d head=%d%n", _long(context.currentIndex()), _int(head));
+//		System.out.printf("dep_head: current=%d head=%d%n", _long(context.currentIndex()), _int(head));
 
 		saveHeadInfo(IcarusUtils.ensureIntegerValueRange(context.currentIndex()), edge, head);
 
