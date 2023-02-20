@@ -102,7 +102,7 @@ public class MappingContext {
 		public Builder map(IqlLane lane, IqlNode[] nodes) {
 			requireNonNull(lane);
 			requireNonNull(nodes);
-			checkArgument("mapped nodes cnanot be empty", nodes.length>0);
+			checkArgument("mapped nodes cannot be empty", nodes.length>0);
 			this.lanes.add(lane);
 			this.nodes.add(nodes.clone());
 			return this;
