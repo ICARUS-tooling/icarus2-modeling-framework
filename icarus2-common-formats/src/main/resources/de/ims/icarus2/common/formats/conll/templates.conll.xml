@@ -147,14 +147,14 @@
 									<its:block layerId="sentence">
 										<its:component memberType="container"/>
 										<its:endDelimiter>
-											<its:pattern>EMPTY_LINE</its:pattern>
+											<its:pattern type="name">EMPTY_LINE</its:pattern>
 										</its:endDelimiter>
 										<its:externalGroup>goldGroup</its:externalGroup>
 										<its:externalGroup>predictedGroup</its:externalGroup>
 										<its:block layerId="token" noEntryLabel="_">
 											<its:separator>WHITESPACES</its:separator>
 											<its:endDelimiter>
-												<its:pattern>EMPTY_LINE</its:pattern>
+												<its:pattern type="name">EMPTY_LINE</its:pattern>
 											</its:endDelimiter>
 											<its:columns>
 												<its:column name="ID" ignore="true"/>
