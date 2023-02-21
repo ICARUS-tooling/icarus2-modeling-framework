@@ -148,7 +148,7 @@ public abstract class SingleStreamJob implements QueryJob, QueryWorker.Task {
 			try {
 				length = input.load(buffer);
 			} catch (InterruptedException e) {
-				// treat error on input site as cancelation event
+				// treat error on input site as cancellation event
 				worker.cancel();
 				break;
 			}
