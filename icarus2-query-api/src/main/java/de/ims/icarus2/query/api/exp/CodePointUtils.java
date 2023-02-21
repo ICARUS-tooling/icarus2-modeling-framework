@@ -103,8 +103,8 @@ public final class CodePointUtils {
 	/** Runs a basic character-wise equality check of two codepoint sequences */
 	public static boolean equalsCodePoints(CharSequence cs1, CharSequence cs2,
 			IntBiPredicate comparator) {
-		int len1 = cs1.length();
-		int len2 = cs2.length();
+		int len1 = cs1==null ? 0 : cs1.length();
+		int len2 = cs2==null ? 0 : cs2.length();
 		// We do not support 1:m codepoint mappings, so length will stay the same
 		if(len1!=len2) {
 			return false;

@@ -536,6 +536,15 @@ public class QueryEngine implements AutoCloseable {
 				graph.forEachNode(allLayers::add);
 			}
 
+			for(Layer layer : corpus.getLayers(ModelUtils::isAnnotationLayer)) {
+				base_loop : for(ItemLayer base : layer.getBaseLayers()) {
+					if(allLayers.contains(base)) {
+						allLayers.add(layer);
+						break base_loop;
+					}
+				}
+			}
+
 			ScopeBuilder builder = ScopeBuilder.of(corpus);
 			builder.addContexts(allLayers.stream()
 					.map(Layer::getContext)
