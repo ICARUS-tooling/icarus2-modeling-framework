@@ -24,6 +24,7 @@ import static de.ims.icarus2.util.Conditions.checkArgument;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static de.ims.icarus2.util.collections.CollectionUtils.singleton;
+import static de.ims.icarus2.util.lang.Primitives._boolean;
 import static de.ims.icarus2.util.lang.Primitives.strictToInt;
 import static java.util.Objects.requireNonNull;
 
@@ -34,6 +35,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -88,6 +90,7 @@ import de.ims.icarus2.query.api.iql.IqlType;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.collections.CollectionUtils;
 import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.lang.ClassUtils;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -487,6 +490,24 @@ public abstract class CorpusData implements AutoCloseable {
 			public AnnotationLayer getLayer() { return layer; }
 
 			public boolean isNotAlias() { return !isAlias; }
+
+			@Override
+			public boolean equals(Object obj) {
+				if(obj==this) {
+					return true;
+				} else if(obj instanceof AnnotationLink) {
+					AnnotationLink other = (AnnotationLink) obj;
+					return other.isAlias==isAlias
+							&& ClassUtils.equals(manifest, other.manifest)
+							&& ClassUtils.equals(layer, other.layer);
+				}
+				return false;
+			}
+
+			@Override
+			public int hashCode() {
+				return Objects.hash(manifest, layer, _boolean(isAlias));
+			}
 		}
 
 		private class AnnotationCache implements AutoCloseable {
@@ -582,6 +603,7 @@ public abstract class CorpusData implements AutoCloseable {
 				List<AnnotationLink> hits = annotationLookup.getOrDefault(key, Collections.emptyList())
 						.stream()
 						.filter(link -> !identifier.hasHost() || link.getLayer()==expectedLayer)
+						.distinct()
 						.collect(Collectors.toList());
 
 				AnnotationInfo result = null;
@@ -589,7 +611,7 @@ public abstract class CorpusData implements AutoCloseable {
 				if(hits.size()==1) {
 					// Easy mode: only 1 annotation in total linked to key
 					result = fromLink(rawKey, hits.get(0));
-				} if(!hits.isEmpty()) {
+				} else if(!hits.isEmpty()) {
 					// Filter only proper (non aliased) entries
 					List<AnnotationLink> properLinks = hits.stream()
 							.filter(AnnotationLink::isNotAlias)
