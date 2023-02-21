@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 /**
- * 
+ *
  */
 package de.ims.icarus2.filedriver.schema.resolve.common;
 
 import java.util.function.ObjLongConsumer;
 
 import de.ims.icarus2.filedriver.ComponentSupplier;
+import de.ims.icarus2.filedriver.schema.resolve.MappingHandler;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
@@ -67,5 +68,9 @@ class ProxyContext implements ResolverContext {
 	@Override
 	public InputCache getCache(ItemLayer layer) {
 		return source.getCache(layer);
+	}
+	@Override
+	public MappingHandler createMappingHandler(ItemLayer parent, ItemLayer layer) {
+		return source.createMappingHandler(parent, layer);
 	}
 }

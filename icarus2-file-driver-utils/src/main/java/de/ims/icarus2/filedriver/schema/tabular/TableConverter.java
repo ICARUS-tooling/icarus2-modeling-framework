@@ -73,6 +73,7 @@ import de.ims.icarus2.filedriver.analysis.DefaultStructureLayerAnalyzer;
 import de.ims.icarus2.filedriver.analysis.ItemLayerAnalyzer;
 import de.ims.icarus2.filedriver.schema.SchemaBasedConverter;
 import de.ims.icarus2.filedriver.schema.resolve.BatchResolver;
+import de.ims.icarus2.filedriver.schema.resolve.MappingHandler;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverFactory;
@@ -90,10 +91,7 @@ import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.driver.ChunkState;
 import de.ims.icarus2.model.api.driver.Driver;
-import de.ims.icarus2.model.api.driver.indices.standard.IndexBuffer;
-import de.ims.icarus2.model.api.driver.indices.standard.MutableSingletonIndexSet;
 import de.ims.icarus2.model.api.driver.mapping.Mapping;
-import de.ims.icarus2.model.api.driver.mapping.MappingWriter;
 import de.ims.icarus2.model.api.driver.mapping.WritableMapping;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.ItemLayer;
@@ -1183,7 +1181,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 	 * @author Markus Gärtner
 	 *
 	 */
-	public static class InputResolverContext implements ResolverContext, AutoCloseable {
+	public class InputResolverContext implements ResolverContext, AutoCloseable {
 
 		private Container container;
 		private long index;
@@ -1208,7 +1206,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 		private final ObjLongConsumer<? super Item> topLevelAction;
 
-		public InputResolverContext(ItemLayer primaryLayer,
+		private InputResolverContext(ItemLayer primaryLayer,
 				Map<ItemLayer, ComponentSupplier> componentSuppliers,
 				Map<ItemLayer, InputCache> caches,
 				ObjLongConsumer<? super Item> topLevelAction) {
@@ -1401,6 +1399,33 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		public ObjLongConsumer<? super Item> getTopLevelAction() {
 			return topLevelAction;
 		}
+
+		@Override
+		public MappingHandler createMappingHandler(@Nullable ItemLayer parent, ItemLayer layer) {
+			return TableConverter.this.createMappingHandler(parent, layer);
+		}
+	}
+
+	private MappingHandler createMappingHandler(@Nullable ItemLayer parent, ItemLayer layer) {
+		if(parent==null) {
+			return null;
+		}
+
+		Mapping mapping = getDriver().getMapping(parent, layer);
+		if(!WritableMapping.class.isInstance(mapping)) {
+			mapping = null;
+		}
+
+		Mapping reverseMapping = getDriver().getMapping(layer, parent);
+		if(!WritableMapping.class.isInstance(reverseMapping)) {
+			reverseMapping = null;
+		}
+
+		if(mapping==null && reverseMapping==null) {
+			return null;
+		}
+
+		return new MappingHandler((WritableMapping)mapping, (WritableMapping)reverseMapping);
 	}
 
 	/**
@@ -2571,85 +2596,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 
 	}
 
-	private class MappingHandler implements BatchResolver {
-
-		private final WritableMapping mapping, reverseMapping;
-		private MappingWriter writer, reverseWriter;
-		private final IndexBuffer targetIndices;
-		private final MutableSingletonIndexSet sourceIndex;
-
-		MappingHandler(WritableMapping mapping, WritableMapping reverseMapping) {
-			this.mapping = mapping;
-			this.reverseMapping = reverseMapping;
-			targetIndices = new IndexBuffer(1024); //TODO better starting size?
-			sourceIndex = new MutableSingletonIndexSet();
-		}
-
-		public void prepareForReading(Converter converter, ReadMode mode, InputResolverContext context) {
-			if(mapping!=null) {
-				writer = mapping.newWriter();
-				writer.begin();
-			}
-			if(reverseMapping!=null) {
-				reverseWriter = reverseMapping.newWriter();
-				reverseWriter.begin();
-			}
-		}
-
-		@Override
-		public Item process(ResolverContext context) throws IcarusApiException {
-			long targetIndex = context.currentItem().getIndex();
-			targetIndices.add(targetIndex);
-//			System.out.printf("adding target index: %d%n",_long(targetIndex));
-			return null;
-		}
-
-		@Override
-		public void beginBatch(ResolverContext context) {
-			sourceIndex.setIndex(context.currentContainer().getIndex());
-//			System.out.printf("assigned source index: %d%n",_long(sourceIndex));
-		}
-
-		@Override
-		public void endBatch(ResolverContext context) {
-//			System.out.printf("mapping %s to %s%n",this, buffer);
-			if(reverseWriter!=null) {
-				reverseWriter.map(targetIndices, sourceIndex);
-			}
-			if(writer!=null) {
-				writer.map(sourceIndex, targetIndices);
-			}
-			targetIndices.clear();
-		}
-
-		@Override
-		public String toString() {
-			return String.valueOf(sourceIndex.getIndex());
-		}
-
-		@Override
-		public void complete() {
-			if(reverseWriter!=null) {
-				reverseWriter.end();
-			}
-			if(writer!=null) {
-				writer.end();
-			}
-		}
-
-		@Override
-		public void close() {
-			if(reverseWriter!=null) {
-				reverseWriter.close();
-				reverseWriter = null;
-			}
-			if(writer!=null) {
-				writer.close();
-				writer = null;
-			}
-		}
-	}
-
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -3058,7 +3004,11 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			List<ColumnHandler> regularHandlers = new ArrayList<>();
 			List<ColumnHandler> batchHandlers = new ArrayList<>();
 
-			mappingHandler = createMappingHandler(this, parent);
+			if(parent==null) {
+				mappingHandler = null;
+			} else {
+				mappingHandler = createMappingHandler(parent.itemLayer, itemLayer);
+			}
 
 			for(int i=0; i<columnSchemas.length; i++) {
 				ColumnSchema columnSchema = columnSchemas[i];
@@ -3123,28 +3073,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			} else {
 				attributeHandlers = null;
 			}
-		}
-
-		private MappingHandler createMappingHandler(BlockHandler block, @Nullable BlockHandler parent) {
-			if(parent==null) {
-				return null;
-			}
-
-			Mapping mapping = getDriver().getMapping(parent.itemLayer, block.itemLayer);
-			if(!WritableMapping.class.isInstance(mapping)) {
-				mapping = null;
-			}
-
-			Mapping reverseMapping = getDriver().getMapping(block.itemLayer, parent.itemLayer);
-			if(!WritableMapping.class.isInstance(reverseMapping)) {
-				reverseMapping = null;
-			}
-
-			if(mapping==null && reverseMapping==null) {
-				return null;
-			}
-
-			return new MappingHandler((WritableMapping)mapping, (WritableMapping)reverseMapping);
 		}
 
 		@Override
@@ -3224,7 +3152,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 */
-		public boolean isBeginLine(InputResolverContext context) throws IcarusApiException {
+		private boolean isBeginLine(InputResolverContext context) throws IcarusApiException {
 			return beginDelimiter.process(context)!=ScanResult.FAILED;
 		}
 
@@ -3235,7 +3163,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 */
-		public boolean isEndLine(InputResolverContext context) throws IcarusApiException {
+		private boolean isEndLine(InputResolverContext context) throws IcarusApiException {
 			return endDelimiter.process(context)!=ScanResult.FAILED;
 		}
 
@@ -3247,7 +3175,7 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 		 * @param context
 		 * @return
 		 */
-		public boolean isAttributeLine(InputResolverContext context) throws IcarusApiException {
+		private boolean isAttributeLine(InputResolverContext context) throws IcarusApiException {
 			if(attributeHandlers!=null) {
 				ContextProcessor<ScanResult> pendingAttributeHandler = this.pendingAttributeHandler;
 				this.pendingAttributeHandler = null;
@@ -3282,27 +3210,35 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			return false;
 		}
 
-		public void beginContent(InputResolverContext context) {
-			if(batchHandlers!=null) {
-				for(int i=0; i<batchHandlers.length; i++) {
-					batchHandlers[i].startBatch(context);
-				}
-			}
+		private void beginMapping(InputResolverContext context) {
 			if(mappingHandler!=null) {
 				mappingHandler.beginBatch(context);
 			}
 		}
 
-		public void endContent(InputResolverContext context) {
+		private void endMapping(InputResolverContext context) {
+			if(mappingHandler!=null) {
+				mappingHandler.endBatch(context);
+			}
+
+			//TODO maybe clean up container and item?
+		}
+
+		private void beginContent(InputResolverContext context) {
+			if(batchHandlers!=null) {
+				for(int i=0; i<batchHandlers.length; i++) {
+					batchHandlers[i].startBatch(context);
+				}
+			}
+		}
+
+		private void endContent(InputResolverContext context) {
 			//TODO check for pending attributes and complain
 
 			if(batchHandlers!=null) {
 				for(int i=0; i<batchHandlers.length; i++) {
 					batchHandlers[i].endBatch(context);
 				}
-			}
-			if(mappingHandler!=null) {
-				mappingHandler.endBatch(context);
 			}
 
 			//TODO maybe clean up container and item?
@@ -3499,21 +3435,28 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 					host.addItem(container);
 				}
 
-				// Try read attributes
+				// Try read attributes and feed mapping handlers
 				context.setItem(container);
 				readAttributes(lines, context);
+				if(mappingHandler!=null) {
+					mappingHandler.process(context);
+				}
 				context.clearItem();
+
 
 				// Allow all nested block handlers to fully read their content
 				for(int i=0; i<nestedBlockHandlers.length; i++) {
+					BlockHandler nested = nestedBlockHandlers[i];
+					nested.beginMapping(context);
 					while(!isEndLine(context)) {
 						// We need to set the current container for every nested block since they can change the field in context
 						context.setContainer(container);
 						context.setIndex(index);
 
 						//TODO evaluate if we should support "empty" blocks that do not need to match actual content
-						nestedBlockHandlers[i].readChunk(lines, context);
+						nested.readChunk(lines, context);
 					}
+					nested.endMapping(context);
 				}
 
 				// Make sure we also scan till the end of our content

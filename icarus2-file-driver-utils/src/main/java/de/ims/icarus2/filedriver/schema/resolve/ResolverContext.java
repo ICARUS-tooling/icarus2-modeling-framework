@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 import de.ims.icarus2.filedriver.ComponentSupplier;
 import de.ims.icarus2.filedriver.schema.resolve.common.DependencyStructureResolver;
 import de.ims.icarus2.filedriver.schema.tabular.TableConverter;
+import de.ims.icarus2.model.api.driver.mapping.Mapping;
 import de.ims.icarus2.model.api.layer.ItemLayer;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.model.api.members.item.Item;
@@ -107,4 +108,13 @@ public interface ResolverContext {
 	 * metadata colelcted during scanning will be corrupted.
 	 */
 	InputCache getCache(ItemLayer layer);
+
+	/**
+	 * Creates a handler that will feed into a {@link Mapping} from {@code parent} to {@code layer}.
+	 * If {@code parent} is {@code null}, this method will also return {@code null}.
+	 * @param parent
+	 * @param layer
+	 * @return
+	 */
+	@Nullable MappingHandler createMappingHandler(@Nullable ItemLayer parent, ItemLayer layer);
 }
