@@ -3220,8 +3220,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(mappingHandler!=null) {
 				mappingHandler.endBatch(context);
 			}
-
-			//TODO maybe clean up container and item?
 		}
 
 		private void beginContent(InputResolverContext context) {

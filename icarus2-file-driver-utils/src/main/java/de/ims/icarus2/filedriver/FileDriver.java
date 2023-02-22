@@ -105,6 +105,7 @@ import de.ims.icarus2.model.manifest.util.Messages;
 import de.ims.icarus2.model.standard.driver.AbstractDriver;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager;
 import de.ims.icarus2.model.standard.driver.BufferedItemManager.LayerBuffer;
+import de.ims.icarus2.model.standard.driver.BufferedItemManager.TrackingMode;
 import de.ims.icarus2.model.standard.driver.ChunkConsumer;
 import de.ims.icarus2.model.standard.driver.ChunkInfoBuilder;
 import de.ims.icarus2.model.standard.driver.mods.LoggingModuleMonitor;
@@ -430,6 +431,12 @@ public class FileDriver extends AbstractDriver {
 	protected BufferedItemManager createBufferedItemManager() {
 		BufferedItemManager.Builder builder = BufferedItemManager.builder();
 
+		// Honor switch to disable tracking altogether
+		TrackingMode trackingMode = TrackingMode.PRIMARY_ONLY;
+		if(OptionKey.DISABLE_TRACKING.<Boolean>getValue(getManifest()).orElse(Boolean.FALSE).booleanValue()) {
+			trackingMode = TrackingMode.NEVER;
+		}
+
 		for(LayerManifest<?> layerManifest : getContext().getManifest().getLayerManifests(ManifestUtils::isAnyItemLayerManifest)) {
 			ItemLayerManifestBase<?> itemLayerManifest = (ItemLayerManifestBase<?>) layerManifest;
 			//TODO add options to activate recycling and pooling of items
@@ -440,9 +447,9 @@ public class FileDriver extends AbstractDriver {
 				@PreliminaryValue
 				int defaultMinCapacity = 100_000_000;
 				int capacity = (int)Math.min(defaultMinCapacity , layerSize);
-				builder.addBuffer(itemLayerManifest, capacity);
+				builder.addBuffer(itemLayerManifest, trackingMode, capacity);
 			} else {
-				builder.addBuffer(itemLayerManifest);
+				builder.addBuffer(itemLayerManifest, trackingMode);
 			}
 		}
 
@@ -1805,6 +1812,12 @@ public class FileDriver extends AbstractDriver {
 		 * when the driver is connecting.
 		 */
 		LOAD_ON_CONNECT("loadOnConnect", ValueType.BOOLEAN),
+
+		/**
+		 * Disables tracking of item use which in turn would enable the driver to
+		 * unload any corpus members that are no longer in active use.
+		 */
+		DISABLE_TRACKING("disableTracking", ValueType.BOOLEAN),
 		;
 
 		private final String key;

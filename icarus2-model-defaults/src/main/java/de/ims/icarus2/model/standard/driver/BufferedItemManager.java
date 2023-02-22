@@ -519,6 +519,24 @@ public class BufferedItemManager {
 		}
 	};
 
+	public enum TrackingMode {
+		ALWAYS {
+			@Override
+			boolean isTrackItemUse(boolean isPrimary) { return true; }
+		},
+		NEVER {
+			@Override
+			boolean isTrackItemUse(boolean isPrimary) { return false; }
+		},
+		PRIMARY_ONLY {
+			@Override
+			boolean isTrackItemUse(boolean isPrimary) { return isPrimary; }
+		},
+		;
+
+		abstract boolean isTrackItemUse(boolean isPrimary);
+	}
+
 	/**
 	 *
 	 * @author Markus Gärtner
@@ -741,6 +759,8 @@ public class BufferedItemManager {
 	@Api(type=ApiType.BUILDER)
 	public static class Builder extends AbstractBuilder<Builder, BufferedItemManager> {
 
+		private static final boolean DEFAULT_TRACK_ITEM_USE = true;
+
 		private final Int2ObjectMap<LayerBuffer> layerBuffers = new Int2ObjectOpenHashMap<>();
 
 		protected Builder() {
@@ -750,7 +770,8 @@ public class BufferedItemManager {
 		/**
 		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
 		 * that has no {@link ObjLongConsumer action} assigned to dispose items with and has
-		 * an unspecified default starting size for the internal map.
+		 * an unspecified default starting size for the internal map. By default tracking of usage
+		 * is constraint to primary layer members only.
 		 *
 		 * @param itemLayerManifest
 		 * @return
@@ -758,7 +779,25 @@ public class BufferedItemManager {
 		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest) {
 			requireNonNull(itemLayerManifest);
 
-			addBuffer0(itemLayerManifest, -1, null);
+			addBuffer0(itemLayerManifest, TrackingMode.PRIMARY_ONLY, -1, null);
+
+			return thisAsCast();
+		}
+
+		/**
+		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
+		 * that has no {@link ObjLongConsumer action} assigned to dispose items with and has
+		 * an unspecified default starting size for the internal map. Tracking is controlled
+		 * by the specified {@code trackingMode} argument.
+		 *
+		 * @param itemLayerManifest
+		 * @return
+		 */
+		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, TrackingMode trackingMode) {
+			requireNonNull(itemLayerManifest);
+			requireNonNull(trackingMode);
+
+			addBuffer0(itemLayerManifest, trackingMode, -1, null);
 
 			return thisAsCast();
 		}
@@ -766,7 +805,8 @@ public class BufferedItemManager {
 		/**
 		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
 		 * that has no {@link ObjLongConsumer action} assigned to dispose items with and uses
-		 * the given capacity as starting size for the internal map.
+		 * the given capacity as starting size for the internal map. By default tracking of usage
+		 * is constraint to primary layer members only.
 		 *
 		 * @param itemLayerManifest
 		 * @param capacity
@@ -776,50 +816,70 @@ public class BufferedItemManager {
 			requireNonNull(itemLayerManifest);
 			checkArgument(capacity>0);
 
-			addBuffer0(itemLayerManifest, capacity, null);
+			addBuffer0(itemLayerManifest, TrackingMode.PRIMARY_ONLY, capacity, null);
 
 			return thisAsCast();
 		}
 
 		/**
 		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
-		 * with the given {@code disposeItemAction} to dispose items with and that has
-		 * an unspecified default starting size for the internal map.
-		 *
-		 * @param itemLayerManifest
-		 * @param disposeItemAction
-		 * @return
-		 */
-		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, ObjLongConsumer<Item> disposeItemAction) {
-			requireNonNull(itemLayerManifest);
-			requireNonNull(disposeItemAction);
-
-			addBuffer0(itemLayerManifest, -1, disposeItemAction);
-
-			return thisAsCast();
-		}
-
-		/**
-		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
-		 * with the given {@code disposeItemAction} to dispose items with and that uses
-		 * the given capacity as starting size for the internal map.
+		 * that has no {@link ObjLongConsumer action} assigned to dispose items with and uses
+		 * the given capacity as starting size for the internal map. Tracking is controlled
+		 * by the specified {@code trackingMode} argument.
 		 *
 		 * @param itemLayerManifest
 		 * @param capacity
-		 * @param disposeItemAction
 		 * @return
 		 */
-		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
+		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, TrackingMode trackingMode, int capacity) {
 			requireNonNull(itemLayerManifest);
-			requireNonNull(disposeItemAction);
+			requireNonNull(trackingMode);
 			checkArgument(capacity>0);
 
-			addBuffer0(itemLayerManifest, capacity, disposeItemAction);
+			addBuffer0(itemLayerManifest, trackingMode, capacity, null);
 
 			return thisAsCast();
 		}
 
-		private void addBuffer0(ItemLayerManifestBase<?> itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
+//		/**
+//		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
+//		 * with the given {@code disposeItemAction} to dispose items with and that has
+//		 * an unspecified default starting size for the internal map.
+//		 *
+//		 * @param itemLayerManifest
+//		 * @param disposeItemAction
+//		 * @return
+//		 */
+//		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, ObjLongConsumer<Item> disposeItemAction) {
+//			requireNonNull(itemLayerManifest);
+//			requireNonNull(disposeItemAction);
+//
+//			addBuffer0(itemLayerManifest, -1, disposeItemAction);
+//
+//			return thisAsCast();
+//		}
+
+//		/**
+//		 * Adds a new {@link LayerBuffer} for the specified {@link ItemLayerManifestBase<?> layer}
+//		 * with the given {@code disposeItemAction} to dispose items with and that uses
+//		 * the given capacity as starting size for the internal map.
+//		 *
+//		 * @param itemLayerManifest
+//		 * @param capacity
+//		 * @param disposeItemAction
+//		 * @return
+//		 */
+//		public Builder addBuffer(ItemLayerManifestBase<?> itemLayerManifest, int capacity, ObjLongConsumer<Item> disposeItemAction) {
+//			requireNonNull(itemLayerManifest);
+//			requireNonNull(disposeItemAction);
+//			checkArgument(capacity>0);
+//
+//			addBuffer0(itemLayerManifest, capacity, disposeItemAction);
+//
+//			return thisAsCast();
+//		}
+
+		private void addBuffer0(ItemLayerManifestBase<?> itemLayerManifest, TrackingMode trackingMode, int capacity, ObjLongConsumer<Item> disposeItemAction) {
 			int key = keyForLayer(itemLayerManifest);
 
 			if(layerBuffers.containsKey(key))
@@ -831,7 +891,7 @@ public class BufferedItemManager {
 			}
 
 			// Track item use only if the manifest represents a primary layer
-			boolean trackItemUse = itemLayerManifest.isPrimaryLayerManifest();
+			boolean trackItemUse = trackingMode.isTrackItemUse(itemLayerManifest.isPrimaryLayerManifest());
 
 			LayerBuffer buffer = new LayerBuffer(capacity, trackItemUse, disposeItemAction);
 
