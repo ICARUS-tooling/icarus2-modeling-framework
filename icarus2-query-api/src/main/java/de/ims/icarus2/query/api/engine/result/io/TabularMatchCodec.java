@@ -38,6 +38,7 @@ import de.ims.icarus2.util.strings.StringPrimitives;
 /**
  * Writes and reads a match in a TSV format:
  * <ol>
+ * <li>Lane index of the match</li>
  * <li>Index of the match</li>
  * <li>Entry count of the match</li>
  * <li>All the N entries in N*2 columns, with node and index for every entry</li>

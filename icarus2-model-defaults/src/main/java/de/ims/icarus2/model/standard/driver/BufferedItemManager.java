@@ -30,6 +30,8 @@ import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.ObjLongConsumer;
 
+import javax.annotation.Nullable;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.apiguard.Api;
 import de.ims.icarus2.apiguard.Api.ApiType;
@@ -600,7 +602,7 @@ public class BufferedItemManager {
 		 * @param index
 		 * @return
 		 */
-		public Item fetch(long index) {
+		public @Nullable Item fetch(long index) {
 			return entries().get(index);
 		}
 
@@ -684,6 +686,7 @@ public class BufferedItemManager {
 			while(ids.hasNext()) {
 				long index = ids.nextLong();
 				Item item = fetch(index);
+				assert item!=null;
 
 				if(trackItemUse && ((TrackedMember)item).decrementUseCounter()<=0) {
 					remove(index);

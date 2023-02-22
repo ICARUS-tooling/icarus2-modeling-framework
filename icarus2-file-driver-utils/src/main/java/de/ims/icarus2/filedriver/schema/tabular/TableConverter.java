@@ -3447,14 +3447,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				// Allow all nested block handlers to fully read their content
 				for(int i=0; i<nestedBlockHandlers.length; i++) {
 					BlockHandler nested = nestedBlockHandlers[i];
+					// Make sure to set new container prior to first mapping call
+					context.setContainer(container);
+					context.setIndex(index);
 					nested.beginMapping(context);
+
 					while(!isEndLine(context)) {
+						//TODO evaluate if we should support "empty" blocks that do not need to match actual content
+						nested.readChunk(lines, context);
+
 						// We need to set the current container for every nested block since they can change the field in context
 						context.setContainer(container);
 						context.setIndex(index);
-
-						//TODO evaluate if we should support "empty" blocks that do not need to match actual content
-						nested.readChunk(lines, context);
 					}
 					nested.endMapping(context);
 				}

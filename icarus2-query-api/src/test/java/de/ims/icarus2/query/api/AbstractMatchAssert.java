@@ -34,6 +34,24 @@ public class AbstractMatchAssert<A extends AbstractMatchAssert<A,M>, M extends M
 	}
 
 	@SuppressWarnings("boxing")
+	public A hasType(Match.MatchType expected) {
+		isNotNull();
+		Match.MatchType actual = this.actual.getType();
+		if(actual!=expected)
+			throw failureWithActualExpected(actual, expected, "Expected %s as type - got %s", expected, actual);
+		return myself;
+	}
+
+	@SuppressWarnings("boxing")
+	public A hasLane(int expected) {
+		isNotNull();
+		int actual = this.actual.getLane();
+		if(actual!=expected)
+			throw failureWithActualExpected(actual, expected, "Expected %d as lane - got %d", expected, actual);
+		return myself;
+	}
+
+	@SuppressWarnings("boxing")
 	public A hasIndex(long expected) {
 		isNotNull();
 		long actual = this.actual.getIndex();
@@ -82,6 +100,17 @@ public class AbstractMatchAssert<A extends AbstractMatchAssert<A,M>, M extends M
 		if(actualIndex!=expectedIndex)
 			throw failureWithActualExpected(actualIndex, expectedIndex, "Expected %d as target index- got %d", expectedIndex, actualIndex);
 
+		return myself;
+	}
+
+	public A isEqualTo(Match other) {
+		hasType(other.getType());
+		hasLane(other.getLane());
+		hasIndex(other.getIndex());
+		hasMapCount(other.getMapCount());
+		for (int i = 0; i < other.getMapCount(); i++) {
+			hasMappingAt(i, other.getNode(i), other.getIndex(i));
+		}
 		return myself;
 	}
 
