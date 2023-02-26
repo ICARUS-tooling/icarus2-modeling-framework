@@ -251,7 +251,10 @@ public class SegmentationResolver implements Resolver {
 		for (int i = 0; i < size; i++) {
 			Item element = items.get(i);
 			segment.addItem(element);
-			targetIndices.add(element.getIndex());
+			long index = element.getIndex();
+			if(targetIndices.isEmpty() || index>targetIndices.lastIndex()) {
+				targetIndices.add(index);
+			}
 		}
 
 		if(writer!=null) {
@@ -413,7 +416,11 @@ public class SegmentationResolver implements Resolver {
 				beginSegment(item);
 				endSegment(null);
 			} else if(StringUtil.equals(segmentEnd, value)) {
-				assert segmentActive();
+				// We can have end marker work as singleton, so our normal
+				// approach wouldn't create a new segment in time.
+				if(!segmentActive()) {
+					beginSegment(item);
+				}
 				endSegment(item);
 			} else if(segmentActive()) {
 				intermediateElement(item);

@@ -102,6 +102,10 @@ public class ArrayConverters {
 
 			payload = payload.substring(left, right);
 
+			if(payload.isEmpty() || payload.equals(format.empty())) {
+				return Array.newInstance(componentType, 0);
+			}
+
 			final String[] items = payload.split(format.delimiter());
 
 			return convert(items, context, componentType);
