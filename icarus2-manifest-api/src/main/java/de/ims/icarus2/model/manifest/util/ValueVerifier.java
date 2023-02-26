@@ -32,6 +32,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.api.ValueRange;
 import de.ims.icarus2.model.manifest.api.ValueSet;
 import de.ims.icarus2.model.manifest.types.ValueType;
+import de.ims.icarus2.util.Wrapper;
 import it.unimi.dsi.fastutil.doubles.DoubleOpenHashSet;
 import it.unimi.dsi.fastutil.doubles.DoubleSet;
 import it.unimi.dsi.fastutil.floats.FloatOpenHashSet;
@@ -40,7 +41,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * Implements a convenient way of using {@link ValueRange} and {@link ValueSet}
@@ -207,11 +208,18 @@ public abstract class ValueVerifier {
 			}
 
 			if(valueSet!=null) {
-				allowedValues = new ReferenceOpenHashSet<>(valueSet.valueCount());
-				valueSet.forEach(allowedValues::add);
+				allowedValues = new ObjectOpenHashSet<>(valueSet.valueCount());
+				valueSet.forEach(v -> allowedValues.add(unpack(v)));
 			} else {
 				allowedValues = null;
 			}
+		}
+
+		private Object unpack(Object obj) {
+			if(obj instanceof Wrapper) {
+				obj = ((Wrapper<?>)obj).get();
+			}
+			return obj;
 		}
 
 		/**

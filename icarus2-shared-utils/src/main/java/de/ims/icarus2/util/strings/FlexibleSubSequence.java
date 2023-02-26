@@ -72,6 +72,7 @@ public class FlexibleSubSequence extends AbstractString implements AutoCloseable
 		requireNonNull(source);
 
 		this.source = source;
+		resetHash();
 	}
 
 	/**
@@ -88,6 +89,7 @@ public class FlexibleSubSequence extends AbstractString implements AutoCloseable
 		checkState(source!=null);
 		checkArgument(offset>=0 && offset<source.length());
 		this.offset = offset;
+		resetHash();
 	}
 
 	/**
@@ -104,6 +106,7 @@ public class FlexibleSubSequence extends AbstractString implements AutoCloseable
 		checkState(source!=null);
 		checkArgument(length>=0);
 		this.length = length;
+		resetHash();
 	}
 
 	public void setRange(int begin, int end) {
@@ -113,6 +116,7 @@ public class FlexibleSubSequence extends AbstractString implements AutoCloseable
 
 		offset = begin;
 		length = end-begin+1;
+		resetHash();
 	}
 
 	/**

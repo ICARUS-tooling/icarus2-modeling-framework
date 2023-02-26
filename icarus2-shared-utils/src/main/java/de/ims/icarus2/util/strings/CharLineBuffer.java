@@ -78,6 +78,7 @@ public class CharLineBuffer extends Splitable {
 		}
 
 		ignoreLF = false;
+		resetHash();
 	}
 
 	public void close() throws IOException {
@@ -124,6 +125,7 @@ public class CharLineBuffer extends Splitable {
 				break;
 			}
 		}
+		resetHash();
 
 		return !eos || nextChar>0;
 	}
@@ -286,15 +288,18 @@ public class CharLineBuffer extends Splitable {
 
 		private void setIndex0(int index0) {
 			this.index0 = index0;
+			resetHash();
 		}
 
 		private void setIndex1(int index1) {
 			this.index1 = index1;
+			resetHash();
 		}
 
 		@Override
 		public void recycle() {
 			index0 = index1 = -1;
+			resetHash();
 
 			recycleCursor0(this);
 		}
