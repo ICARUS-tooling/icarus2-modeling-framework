@@ -77,7 +77,7 @@ public class IqlStream extends IqlUnique {
 	 * The raw unprocessed query payload as provided by the user.
 	 */
 	@JsonProperty(value=IqlTags.RAW_PAYLOAD)
-	private Optional<String> rawPayload;
+	private Optional<String> rawPayload = Optional.empty();
 
 	/**
 	 * The processed query payload after being parsed by the query engine.
