@@ -1700,6 +1700,7 @@ public class StructurePatternTest {
 
 		ResultConfig map(int nodeId, Interval...indices) {
 			Stream.of(indices)
+				.filter(i -> !i.isEmpty())
 				.flatMapToInt(Interval::stream)
 				.mapToObj(pos -> Pair.pair(nodeId, pos))
 				.forEach(mapping::add);
@@ -10127,19 +10128,20 @@ public class StructurePatternTest {
 				void testBinaryOption(String target,
 						@IntervalArrayArg Interval[] hits1, @IntervalArrayArg Interval[] hits2,
 						@IntervalArrayArg Interval[] visited1, @IntervalArrayArg Interval[] visited2) {
+					int len = Math.max(hits1.length,  hits2.length);
 					matcherTest()
 					.root(disjunction(
 							IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('X'))),
 							IqlTestUtils.node(NO_LABEL, NO_MARKER, constraint(eq_exp('Y')))))
 					.target(target)
-					.expectMatches(hits1.length)
+					.expectMatches(len)
 					.cache(cache(CACHE_0, true)
 							.window(visited1)
 							.hits(target, EQUALS_X))
 					.cache(cache(CACHE_1, true)
 							.window(visited2)
 							.hits(target, EQUALS_Y))
-					.results(hits1.length, (r, i) -> r
+					.results(len, (r, i) -> r
 							.map(NODE_0, hits1[i])
 							.map(NODE_1, hits2[i]))
 					.assertResult();
