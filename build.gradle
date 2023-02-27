@@ -216,7 +216,9 @@ subprojects {
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
     	options.fork = true
-    	options.compilerArgs.addAll(['--release', '8'])
+		if(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_1_9)) {
+			options.compilerArgs.addAll(['--release', '8'])
+		}
  	}
 
 	 // Only relevant when developing with Eclipse IDE
