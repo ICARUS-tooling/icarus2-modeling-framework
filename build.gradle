@@ -454,7 +454,11 @@ subprojects {
         withSourcesJar()
 	}
 	
-	signing {		
+	signing {	
+
+		//def isReleaseVersion = !version.endsWith("SNAPSHOT")
+		required { /*isReleaseVersion &&*/ false && gradle.taskGraph.hasTask("publish") }
+		
         def key = System.getenv("GPG_KEY") ?: System.getProperty("gpgKey") ?: 'no_key'
         def password = System.getenv("GPG_PASSWORD") ?: System.getProperty("gpgPassword") ?: 'no_password'
         
