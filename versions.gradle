@@ -21,7 +21,7 @@ ext {
 	versions.jmh = '1.25.2'
 	versions.jmhAp = '1.25.2'
 	versions.assertj = '3.21.0'
-	versions.antlr = '4.9.3'
+	versions.antlr = '4.12.0'
 	versions.json = '2.10.1'
 	versions.jgoodies = '1.9.0'
 	versions.jgraph = '4.1.0'

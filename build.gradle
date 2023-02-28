@@ -477,6 +477,7 @@ subprojects {
             mavenJava(MavenPublication) {
             	// We manually specify the artifacts so that the shadow.jar is filtered out
                 artifact jar
+                artifact testJar
                 artifact javadocJar
                 artifact sourcesJar
 				
