@@ -137,6 +137,7 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 		private String noEntryLabel;
 		private Boolean columnOrderFixed;
 		private final Options options = new Options();
+		private int requiredColumns = UNSET_INT;
 
 		/**
 		 * @see de.ims.icarus2.filedriver.schema.tabular.TableSchema.BlockSchema#getLayerId()
@@ -372,6 +373,15 @@ public class TableSchemaImpl extends DefaultModifiableIdentity<TableSchemaImpl> 
 			this.separator = separator;
 
 			return this;
+		}
+
+		@Override
+		public int getRequiredColumns() {
+			return requiredColumns;
+		}
+
+		public void setRequiredColumns(int requiredColumns) {
+			this.requiredColumns = requiredColumns;
 		}
 
 		/**

@@ -63,4 +63,5 @@ public final class TableSchemaXmlConstants {
 	public static final String ATTR_TYPE = "type";
 	public static final String ATTR_SHARED = "shared";
 	public static final String ATTR_COLUMN_NDEX = "columnIndex";
+	public static final String ATTR_REQUIRED_COLUMNS = "requiredColumns";
 }

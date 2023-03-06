@@ -178,6 +178,9 @@ public class TableSchemaXmlReader extends XmlHandler implements AutoCloseable {
 			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_COLUMN_ORDER_FIXED)
 				.map(Boolean::valueOf)
 				.ifPresent(blockSchema::setColumnOrderFixed);
+			ManifestXmlUtils.normalize(attributes, TableSchemaXmlConstants.ATTR_REQUIRED_COLUMNS)
+				.map(Integer::valueOf)
+				.ifPresent(blockSchema::setRequiredColumns);
 		} break;
 
 		case TableSchemaXmlConstants.TAG_BEGIN_DELIMITER:

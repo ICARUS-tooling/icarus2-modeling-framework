@@ -154,6 +154,11 @@ public class TableSchemaXmlWriter implements ObjectWriter<TableSchema> {
 			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_COLUMN_ORDER_FIXED, schema.isColumnOrderFixed());
 		}
 
+		// Required columns
+		if(schema.getRequiredColumns()!=UNSET_INT) {
+			serializer.writeAttribute(TableSchemaXmlConstants.ATTR_REQUIRED_COLUMNS, schema.getRequiredColumns());
+		}
+
 		// ELEMENTS
 
 		// Separator

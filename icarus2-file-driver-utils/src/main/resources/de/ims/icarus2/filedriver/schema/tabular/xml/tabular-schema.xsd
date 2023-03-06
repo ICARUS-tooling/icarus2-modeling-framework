@@ -112,6 +112,11 @@
 				<xsd:documentation>TODO.</xsd:documentation>
 			</xsd:annotation>
 		</xsd:attribute>
+		<xsd:attribute name="requiredColumns" type="xsd:integer" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>TODO.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
 	</xsd:complexType>
 	
 	<xsd:complexType name="attributeType">

@@ -167,6 +167,8 @@ public interface TableSchema extends Schema {
 		 */
 		AttributeSchema[] getAttributes();
 
+		int getRequiredColumns();
+
 		/**
 		 *
 		 * @return

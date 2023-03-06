@@ -2989,14 +2989,15 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(blockSchema.getEndDelimiter()==null) {
 				if(parent==null)
 					throw new ModelException(ModelErrorCode.DRIVER_INVALID_CONTENT,
-							"BLock schema definition is missing end delimiter declaration: "+blockSchema.getLayerId());
+							"Block schema definition is missing end delimiter declaration: "+blockSchema.getLayerId());
 				endDelimiter = null;
 			} else {
 				endDelimiter = createProcessor(blockSchema.getEndDelimiter());
 			}
 
 			// Column related stuff
-			requiredColumnCount = columnSchemas.length;
+			requiredColumnCount = blockSchema.getRequiredColumns()==UNSET_INT ?
+					columnSchemas.length : blockSchema.getRequiredColumns();
 
 			// Make sure we have enough space in our column offset buffer
 			columnOffsets = new int[requiredColumnCount*2];
