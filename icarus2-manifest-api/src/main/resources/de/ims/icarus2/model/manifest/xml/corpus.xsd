@@ -1191,101 +1191,107 @@
 		<xsd:annotation>
 			<xsd:documentation>Constants for basic value types and a general pattern for value type identifiers.</xsd:documentation>
 		</xsd:annotation>
-		<xsd:restriction base="xsd:string">
-			<xsd:enumeration value="unknown">
-				<xsd:annotation>
-					<xsd:documentation>Equivalent of the usual "other" type. No direct support is provided for values of this type, but they can be stored and accessed. Currently no support for (de)serialization.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="custom">
-				<xsd:annotation>
-					<xsd:documentation>Slightly more robust type than "unknown". This type assumes plugins or other modules attached to the framework that are able to handle the actual content. Currently no support for (de)serialization.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="extension">
-				<xsd:annotation>
-					<xsd:documentation>Currently unused type.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="enum">
-				<xsd:annotation>
-					<xsd:documentation>Values are constants defined in a Java enum class.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="string">
-				<xsd:annotation>
-					<xsd:documentation>Content is a sequence of UTF-16 characters.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="boolean">
-				<xsd:annotation>
-					<xsd:documentation>Fixed value set of either "true" or "false" while ignoring cases.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="integer">
-				<xsd:annotation>
-					<xsd:documentation>Basic signed 32-bit Java int value.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="long">
-				<xsd:annotation>
-					<xsd:documentation>Basic signed 64-bit Java long value.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="double">
-				<xsd:annotation>
-					<xsd:documentation>Basic double precision (64-bit) Java floating point value.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="float">
-				<xsd:annotation>
-					<xsd:documentation>Basic single precision (32-bit) Java floating point value.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="uri">
-				<xsd:annotation>
-					<xsd:documentation>Simple Uniform Resource Identifier (URI).</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="url">
-				<xsd:annotation>
-					<xsd:documentation>Simple Uniform Resource Locator (URL).</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="file">
-				<xsd:annotation>
-					<xsd:documentation>Path definition on a local or network file system. Note that values for this type can encode operating system dependent path syntax.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="url-resource">
-				<xsd:annotation>
-					<xsd:documentation>A "url" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="link">
-				<xsd:annotation>
-					<xsd:documentation>A "uri" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="image">
-				<xsd:annotation>
-					<xsd:documentation>Either a name of an already registered icon resource or embedded base-64 encoded binary data of an image.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="image-resource">
-				<xsd:annotation>
-					<xsd:documentation>An "image" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<xsd:enumeration value="binary">
-				<xsd:annotation>
-					<xsd:documentation>Raw embedded binary data, usually wrapped into a CDATA section.</xsd:documentation>
-				</xsd:annotation>
-			</xsd:enumeration>
-			<!-- TODO find out why this was here 
-			<xsd:pattern value="[a-z][a-z\-]*[a-z]\[x|[1-9][0-9]*\]" />
-			 -->
-		</xsd:restriction>
+		<xsd:union>
+			<xsd:simpleType>
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="unknown">
+						<xsd:annotation>
+							<xsd:documentation>Equivalent of the usual "other" type. No direct support is provided for values of this type, but they can be stored and accessed. Currently no support for (de)serialization.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="custom">
+						<xsd:annotation>
+							<xsd:documentation>Slightly more robust type than "unknown". This type assumes plugins or other modules attached to the framework that are able to handle the actual content. Currently no support for (de)serialization.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="extension">
+						<xsd:annotation>
+							<xsd:documentation>Currently unused type.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="enum">
+						<xsd:annotation>
+							<xsd:documentation>Values are constants defined in a Java enum class.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="string">
+						<xsd:annotation>
+							<xsd:documentation>Content is a sequence of UTF-16 characters.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="boolean">
+						<xsd:annotation>
+							<xsd:documentation>Fixed value set of either "true" or "false" while ignoring cases.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="integer">
+						<xsd:annotation>
+							<xsd:documentation>Basic signed 32-bit Java int value.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="long">
+						<xsd:annotation>
+							<xsd:documentation>Basic signed 64-bit Java long value.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="double">
+						<xsd:annotation>
+							<xsd:documentation>Basic double precision (64-bit) Java floating point value.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="float">
+						<xsd:annotation>
+							<xsd:documentation>Basic single precision (32-bit) Java floating point value.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="uri">
+						<xsd:annotation>
+							<xsd:documentation>Simple Uniform Resource Identifier (URI).</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="url">
+						<xsd:annotation>
+							<xsd:documentation>Simple Uniform Resource Locator (URL).</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="file">
+						<xsd:annotation>
+							<xsd:documentation>Path definition on a local or network file system. Note that values for this type can encode operating system dependent path syntax.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="url-resource">
+						<xsd:annotation>
+							<xsd:documentation>A "url" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="link">
+						<xsd:annotation>
+							<xsd:documentation>A "uri" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="image">
+						<xsd:annotation>
+							<xsd:documentation>Either a name of an already registered icon resource or embedded base-64 encoded binary data of an image.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="image-resource">
+						<xsd:annotation>
+							<xsd:documentation>An "image" with added title and description information. Currently no support for (de)serialization.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+					<xsd:enumeration value="binary">
+						<xsd:annotation>
+							<xsd:documentation>Raw embedded binary data, usually wrapped into a CDATA section.</xsd:documentation>
+						</xsd:annotation>
+					</xsd:enumeration>
+				</xsd:restriction>
+			</xsd:simpleType>
+			<xsd:simpleType>
+				<xsd:restriction base="xsd:string">
+					<xsd:pattern value="[a-z][a-z\-]*[a-z]\[(x|[1-9][0-9]*)\]" />
+				</xsd:restriction>
+			</xsd:simpleType>
+		</xsd:union>
 	</xsd:simpleType>
 	
 	<xsd:simpleType name="coverageAttr">
