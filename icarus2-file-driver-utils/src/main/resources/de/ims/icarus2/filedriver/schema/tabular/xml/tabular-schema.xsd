@@ -236,7 +236,7 @@
 		</xsd:annotation>
 		<xsd:simpleContent>
 			<xsd:extension base="xsd:string">
-				<xsd:attribute name="name" type="its:simpleNameAttr">
+				<xsd:attribute name="name" type="its:identifierAttr">
 					<xsd:annotation>
 						<xsd:documentation>TODO.</xsd:documentation>
 					</xsd:annotation>
