@@ -325,7 +325,7 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 
 				for(Entry<String, Object> e : mapping.entrySet()) {
 					assertThat(bundle.setValue(e.getKey(), e.getValue()))
-						.isEqualTo(true);
+						.isEqualTo(ModResult.NEW);
 				}
 			}
 
@@ -337,7 +337,7 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 
 				for(Entry<String, Object> e : mapping.entrySet()) {
 					assertThat(bundle.setValue(e.getKey(), e.getValue()))
-						.isEqualTo(false);
+						.isEqualTo(ModResult.UNCHANGED);
 				}
 			}
 
