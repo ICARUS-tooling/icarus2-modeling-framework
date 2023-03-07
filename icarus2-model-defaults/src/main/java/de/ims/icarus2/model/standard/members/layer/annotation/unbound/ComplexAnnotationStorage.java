@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
@@ -283,7 +284,8 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 			current.fromWrapper(value);
 		} else {
 			// Covers both general classes and MutablePrimitive instances
-			bundle.setValue(key, value);
+			if(bundle.setValue(key, value)==ModResult.FAILED)
+				throw new ModelException(ModelErrorCode.MODEL_STORAGE_ERROR, "Failed to set value for key: "+key);
 		}
 	}
 
@@ -400,6 +402,18 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		ensurePrimitive(item, key, ValueType.BOOLEAN).setBoolean(value);
 	}
 
+	public enum ModResult {
+		/** Key already had a corresponding entry and it was different from new value. */
+		CHANGED,
+		/** Existing value was equal to new value. */
+		UNCHANGED,
+		/** No entry existed prior to this modification. */
+		NEW,
+		/** Setting a new value failed, for instance due to missing sotrage space. */
+		FAILED,
+		;
+	}
+
 	/**
 	 * Models a set of key-value pairs describing annotations for a single item.
 	 *
@@ -439,7 +453,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * to calling this method or the previously mapped value did not equal the
 		 * new {@code value} parameter).
 		 */
-		boolean setValue(String key, Object value);
+		ModResult setValue(String key, Object value);
 
 		/**
 		 * Collects and sends all the currently used keys in this
@@ -448,6 +462,17 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @param buffer
 		 */
 		boolean collectKeys(Consumer<String> buffer);
+	}
+
+	private static ModResult forMod(Object oldValue, Object value) {
+		if(oldValue==value) {
+			return ModResult.UNCHANGED;
+		} else if(oldValue==null) {
+			return ModResult.NEW;
+		} else if(oldValue.equals(value)) {
+			return ModResult.UNCHANGED;
+		}
+		return ModResult.CHANGED;
 	}
 
 	public static final class LargeAnnotationBundle extends Object2ObjectOpenHashMap<String, Object> implements AnnotationBundle {
@@ -466,9 +491,9 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
 		 */
 		@Override
-		public boolean setValue(String key, Object value) {
-			put(key, value);
-			return true;
+		public ModResult setValue(String key, Object value) {
+			Object oldValue = put(key, value);
+			return forMod(oldValue, value);
 		}
 
 		/**
@@ -517,16 +542,17 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
 		 */
 		@Override
-		public boolean setValue(String key, Object value) {
+		public ModResult setValue(String key, Object value) {
 			for(int i=0; i<data.length-1; i+=2) {
 				if(data[i]==null || data[i].equals(key)) {
+					Object oldValue = data[i+1];
 					data[i] = key;
 					data[i+1] = value;
-					return true;
+					return forMod(oldValue, value);
 				}
 			}
 
-			return false;
+			return ModResult.FAILED;
 		}
 
 		/**
@@ -597,7 +623,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		 * @see de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationLayer.AnnotationBundle#setByte(java.lang.String, java.lang.Object)
 		 */
 		@Override
-		public boolean setValue(String key, Object value) {
+		public ModResult setValue(String key, Object value) {
 			if(data instanceof Object[]) {
 				Object[] array = (Object[]) data;
 				if(value==null) {
@@ -605,45 +631,45 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 					for(int i=0; i<array.length-1; i+=2) {
 						if(array[i]!=null && array[i].equals(key)) {
 							if(array[i+1] == null) {
-								return false;
+								return ModResult.UNCHANGED;
 							}
 							array[i] = null;
 							array[i+1] = null;
-							return true;
+							return ModResult.CHANGED;
 						}
 					}
-				} else {
-					// Seek and insert or update entry
-					for(int i=0; i<array.length-1; i+=2) {
-						if(array[i]==null || array[i].equals(key)) {
-							if(value.equals(array[i+1])) {
-								return false;
-							}
-							array[i] = key;
-							array[i+1] = value;
-							return true;
+					return ModResult.FAILED;
+				}
+
+				// Seek and insert or update entry
+				for(int i=0; i<array.length-1; i+=2) {
+					if(array[i]==null || array[i].equals(key)) {
+						if(value.equals(array[i+1])) {
+							return ModResult.UNCHANGED;
 						}
-					}
-
-					// No slot found, so we have to grow the buffer
-
-					// If we've already exceeded array space go and transform into map
-					if(array.length>=ARRAY_THRESHOLD) {
-						growToMap();
-						doMapOp(key, value);
-					} else {
-						// Otherwise stay in array form and grow
-						int newSlot = array.length;
-						array = growArray();
-						array[newSlot] = key;
-						array[newSlot+1] = value;
+						array[i] = key;
+						array[i+1] = value;
+						return ModResult.NEW;
 					}
 				}
-			} else {
-				return doMapOp(key, value);
+
+				// No slot found, so we have to grow the buffer
+
+				// If we've already exceeded array space go and transform into map
+				if(array.length>=ARRAY_THRESHOLD) {
+					growToMap();
+					return doMapOp(key, value);
+				}
+
+				// Otherwise stay in array form and grow
+				int newSlot = array.length;
+				array = growArray();
+				array[newSlot] = key;
+				array[newSlot+1] = value;
+				return ModResult.NEW;
 			}
 
-			return false;
+			return doMapOp(key, value);
 		}
 
 		private Object[] growArray() {
@@ -681,18 +707,18 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 			data = array;
 		}
 
-		private boolean doMapOp(String key, Object value) {
-			boolean result;
+		private ModResult doMapOp(String key, Object value) {
+			Object oldValue;
 			@SuppressWarnings("unchecked")
 			Map<String, Object> map = (Map<String, Object>)data;
 			if(value==null) {
-				result = map.remove(key) != null;
+				oldValue = map.remove(key);
 				maybeShrink();
 			} else {
 				//TODO we test for object identity here, not content, maybe change to "!value.equals(map.put(key, value))" ?
-				result = map.put(key, value) != value;
+				oldValue = map.put(key, value);
 			}
-			return result;
+			return forMod(oldValue, value);
 		}
 
 		/**

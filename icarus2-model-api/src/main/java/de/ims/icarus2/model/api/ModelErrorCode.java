@@ -358,6 +358,12 @@ public enum ModelErrorCode implements ErrorCode {
 	MODEL_UNSORTED_INPUT(815),
 
 	/**
+	 * Storing some sort of corpus member or annotation value in the storage backend used
+	 * for the corpus failed. This
+	 */
+	MODEL_STORAGE_ERROR(816),
+
+	/**
 	 * An operation cannot be performed because the target {@link Item} has no
 	 * valid host container assigned to it.
 	 */

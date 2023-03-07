@@ -17,7 +17,6 @@
 package de.ims.icarus2.model.standard.members.layer.annotation;
 
 import java.util.Set;
-import java.util.function.Supplier;
 
 import de.ims.icarus2.model.api.layer.annotation.AnnotationStorage;
 import de.ims.icarus2.model.manifest.api.AnnotationFlag;
@@ -42,7 +41,6 @@ import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyLo
 import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyObjectStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.single.SingleKeyStringStorage;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage;
-import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
 import de.ims.icarus2.util.Options;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
@@ -169,7 +167,6 @@ public class AnnotationStorageFactory {
 	}
 
 	protected AnnotationStorage buildUnboundStorage(AnnotationLayerManifest layerManifest) {
-		Supplier<AnnotationBundle> bundleFactory = ComplexAnnotationStorage.COMPACT_BUNDLE_FACTORY;
-		return new ComplexAnnotationStorage(bundleFactory);
+		return ComplexAnnotationStorage.forManifest(layerManifest);
 	}
 }

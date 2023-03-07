@@ -58,6 +58,7 @@ import de.ims.icarus2.model.api.layer.annotation.MultiKeyAnnotationStorageTest;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.AnnotationBundle;
 import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.GrowingAnnotationBundle;
+import de.ims.icarus2.model.standard.members.layer.annotation.unbound.ComplexAnnotationStorage.ModResult;
 import de.ims.icarus2.test.TargetedTest;
 import de.ims.icarus2.test.TestSettings;
 import de.ims.icarus2.test.random.RandomGenerator;
@@ -372,7 +373,7 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 				mapping.forEach(bundle::setValue);
 
 				for(String key : mapping.keySet()) {
-					assertThat(bundle.setValue(key, null)).isTrue();
+					assertThat(bundle.setValue(key, null)).isEqualTo(ModResult.CHANGED);
 					assertThat(bundle.getValue(key)).isNull();
 				}
 			}
@@ -413,9 +414,9 @@ class ComplexAnnotationStorageTest implements ManagedAnnotationStorageTest<Compl
 				}
 				assertThat(bundle.isMap()).isTrue();
 
-				assertThat(bundle.setValue("key_0", null)).isTrue();
+				assertThat(bundle.setValue("key_0", null)).isEqualTo(ModResult.CHANGED);
 				assertThat(bundle.isMap()).isFalse();
-				assertThat(bundle.setValue("key_1", null)).isTrue();
+				assertThat(bundle.setValue("key_1", null)).isEqualTo(ModResult.CHANGED);
 				assertThat(bundle.isMap()).isFalse();
 			}
 		}
