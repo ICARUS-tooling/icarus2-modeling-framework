@@ -30,6 +30,7 @@ import de.ims.icarus2.filedriver.Converter;
 import de.ims.icarus2.filedriver.Converter.ReadMode;
 import de.ims.icarus2.filedriver.schema.resolve.Resolver;
 import de.ims.icarus2.filedriver.schema.resolve.ResolverContext;
+import de.ims.icarus2.filedriver.schema.resolve.ResolverOptions;
 import de.ims.icarus2.model.api.ModelErrorCode;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.layer.AnnotationLayer;
@@ -51,7 +52,6 @@ public class MetadataResolver implements Resolver {
 
 	public static final String OPTION_PREFIX = "prefix";
 	public static final String OPTION_LAYER_ID = "layerId";
-	public static final String OPTION_LAYER = "layer";
 
 	private String prefix;
 
@@ -86,12 +86,13 @@ public class MetadataResolver implements Resolver {
 		}
 
 		if(annotationLayer==null) {
-			annotationLayer = (AnnotationLayer) options.get(OPTION_LAYER);
+			annotationLayer = (AnnotationLayer) options.get(ResolverOptions.LAYER);
 		}
 
 		if(annotationLayer==null)
 			throw new ModelException(GlobalErrorCode.INVALID_INPUT, String.format(
-					"No annotation layer defined. Use '%s' or '%s' option to provide a layer id or direct layer instance.", OPTION_LAYER_ID, OPTION_PREFIX));
+					"No annotation layer defined. Use '%s' or '%s' option to provide a layer id or direct layer instance.",
+					OPTION_LAYER_ID, ResolverOptions.LAYER));
 
 		prefix = options.getString(OPTION_PREFIX);
 
