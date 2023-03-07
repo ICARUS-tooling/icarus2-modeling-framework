@@ -40,6 +40,7 @@ import de.ims.icarus2.model.manifest.api.ManifestException;
 import de.ims.icarus2.model.manifest.types.ValueType;
 import de.ims.icarus2.model.standard.members.layer.annotation.AbstractObjectMapStorage;
 import de.ims.icarus2.util.MutablePrimitives.GenericTypeAwareMutablePrimitive;
+import de.ims.icarus2.util.MutablePrimitives.MutableInteger;
 import de.ims.icarus2.util.MutablePrimitives.MutablePrimitive;
 import de.ims.icarus2.util.Wrapper;
 import de.ims.icarus2.util.annotations.TestableImplementation;
@@ -83,6 +84,7 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 	 */
 	public static final Supplier<AnnotationBundle> GROWING_BUNDLE_FACTORY = GrowingAnnotationBundle::new;
 
+	private static final MutablePrimitive<?> EMPTY_DUMMY = new MutableInteger(0);
 
 	/** Factory for creating annotation bundles (constructor assigns default implementation) */
 	private Supplier<AnnotationBundle> bundleFactory;
@@ -338,8 +340,11 @@ public class ComplexAnnotationStorage extends AbstractObjectMapStorage<ComplexAn
 		checkKey(key);
 		MutablePrimitive<?> primitive = bundle==null ? null
 				: (MutablePrimitive<?>)bundle.getValue(key);
-		if(primitive==null)
-			throw forUnsupportedGetter(type, key);
+		if(primitive==null) {
+			if(!type.isPrimitiveType())
+				throw forUnsupportedGetter(type, key);
+			primitive = EMPTY_DUMMY;
+		}
 		return primitive;
 	}
 
