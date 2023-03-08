@@ -16,16 +16,27 @@
  */
 package de.ims.icarus2.query.api.iql;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
+import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
 import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
+import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
+import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlElementDisjunction;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
 import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
+import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
+import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerCall;
 import de.ims.icarus2.query.api.iql.IqlMarker.IqlMarkerExpression;
 import de.ims.icarus2.query.api.iql.IqlMarker.MarkerExpressionType;
@@ -204,6 +215,221 @@ public class IqlTestUtils {
 
 	public static IqlQuantifier rangePossessive(int min, int max, boolean discontinuous) {
 		return of(min, max, QuantifierModifier.POSSESSIVE, discontinuous);
+	}
+
+	// ASSERTIONS
+
+	public static void assertExpression(IqlExpression expression, String content) {
+		assertThat(expression.getContent()).isEqualTo(content);
+	}
+
+	public static void assertExpression(Optional<IqlExpression> expression, String content) {
+		assertThat(expression).isNotEmpty();
+		assertExpression(expression.get(), content);
+	}
+
+	public static String quote(String s) {
+		return '\''+s+'\'';
+	}
+
+	@SafeVarargs
+	public	static final void assertBindings(IqlPayload payload, Consumer<IqlBinding>...asserters) {
+		List<IqlBinding> bindings = payload.getBindings();
+		assertThat(bindings).hasSize(asserters.length);
+		for (int i = 0; i < asserters.length; i++) {
+			asserters[i].accept(bindings.get(i));
+		}
+	}
+
+	public static void assertConstraint(IqlPayload payload, Consumer<IqlConstraint> asserter) {
+		if(asserter!=null) {
+			assertThat(payload.getConstraint()).isNotEmpty().get().satisfies(asserter);
+		} else {
+			assertThat(payload.getConstraint()).isEmpty();
+		}
+	}
+
+	public static Consumer<IqlBinding> bindAssert(String target, boolean distinct, String...labels) {
+		return binding -> {
+			assertThat(labels.length>0);
+			assertThat(binding.getTarget()).isEqualTo(target);
+			assertThat(binding.isDistinct()).isEqualTo(distinct);
+			List<IqlReference> refs = binding.getMembers();
+			assertThat(refs).hasSize(labels.length);
+			for (int i = 0; i < labels.length; i++) {
+				assertThat(refs.get(i).getName()).isEqualTo(labels[i]);
+			}
+		};
+	}
+
+	@SafeVarargs
+	public	static final void assertLanes(IqlPayload payload, Consumer<IqlLane>...asserters) {
+		List<IqlLane> lanes = payload.getLanes();
+		assertThat(lanes).hasSize(asserters.length);
+		for (int i = 0; i < asserters.length; i++) {
+			asserters[i].accept(lanes.get(i));
+		}
+	}
+
+	public static void assertProperElement(IqlProperElement element, String label,
+			Consumer<IqlConstraint> constraint) {
+		if(label!=null) {
+			assertThat(element.getLabel()).contains(label);
+		} else {
+			assertThat(element.getLabel()).isEmpty();
+		}
+
+		if(constraint!=null) {
+			assertThat(element.getConstraint()).isNotEmpty().get().satisfies(constraint);
+		} else {
+			assertThat(element.getConstraint()).isEmpty();
+		}
+	}
+
+	public static final Consumer<IqlLane> laneAssert(LaneType type, Consumer<IqlElement> asserter) {
+		return lane -> {
+			assertThat(lane.getLaneType()).isSameAs(type);
+			asserter.accept(lane.getElement());
+		};
+	}
+
+	@SafeVarargs
+	public static final Consumer<IqlElement> sequenceAssert(Consumer<IqlSequence> arrAsserter,
+			Consumer<IqlElement>...asserters) {
+		return element -> {
+			assertThat(element).isInstanceOf(IqlSequence.class);
+			IqlSequence sequence = (IqlSequence)element;
+			arrAsserter.accept(sequence);
+			List<IqlElement> items = sequence.getElements();
+			assertThat(items).hasSize(asserters.length);
+			for (int i = 0; i < asserters.length; i++) {
+				asserters[i].accept(items.get(i));
+			}
+		};
+	}
+
+	public static final Consumer<IqlSequence> arrangementsAssert(NodeArrangement...arrangements) {
+		return sequence -> {
+			assertThat(sequence.getArrangements()).containsExactlyInAnyOrder(arrangements);
+		};
+	}
+
+	public static final Consumer<IqlSequence> noArrangementsAssert() {
+		return sequence -> assertThat(sequence.getArrangements()).isEmpty();
+	}
+
+	public static final Consumer<IqlElement> groupingAssert(Consumer<IqlQuantifier> qAsserter,
+			Consumer<IqlElement> eAsserter) {
+		return element -> {
+			assertThat(element).isInstanceOf(IqlGrouping.class);
+			IqlGrouping grouping = (IqlGrouping)element;
+			if(qAsserter!=null) {
+				List<IqlQuantifier> quantifiers = grouping.getQuantifiers();
+				assertThat(quantifiers).hasSize(1);
+				qAsserter.accept(quantifiers.get(0));
+			}
+			eAsserter.accept(grouping.getElement());
+		};
+	}
+
+	public static Consumer<IqlElement> nodeAssert() {
+		return nodeAssert(null, null);
+	}
+
+	@SafeVarargs
+	public static final Consumer<IqlElement> nodeAssert(String label, Consumer<IqlConstraint> constraint,
+			Consumer<IqlQuantifier>...qAsserters) {
+		return element -> {
+			assertThat(element).isInstanceOf(IqlNode.class);
+			IqlNode node = (IqlNode) element;
+			assertProperElement(node, label, constraint);
+			List<IqlQuantifier> quantifiers = node.getQuantifiers();
+			assertThat(quantifiers).hasSize(qAsserters.length);
+			for (int i = 0; i < qAsserters.length; i++) {
+				qAsserters[i].accept(quantifiers.get(i));
+			}
+		};
+	}
+
+	public static final Consumer<IqlElement> treeAssert
+	(String label, Consumer<IqlConstraint> constraint,
+			Consumer<IqlElement> childAsserter) {
+		return element -> {
+			assertThat(element).isInstanceOf(IqlTreeNode.class);
+			IqlTreeNode tree = (IqlTreeNode) element;
+			assertProperElement(tree, label, constraint);
+			Optional<IqlElement> children = tree.getChildren();
+			assertThat(children.isPresent()).isTrue();
+			childAsserter.accept(children.get());
+		};
+	}
+
+	public static Consumer<IqlElement> edgeAssert(EdgeType edgeType, String label, Consumer<IqlConstraint> constraint,
+			Consumer<IqlElement> sourceAssert, Consumer<IqlElement> targetAssert) {
+		return element -> {
+			assertThat(element).isInstanceOf(IqlEdge.class);
+			IqlEdge edge = (IqlEdge) element;
+			assertProperElement(edge, label, constraint);
+			assertThat(edge.getEdgeType()).isEqualTo(edgeType);
+			sourceAssert.accept(edge.getSource());
+			targetAssert.accept(edge.getTarget());
+		};
+	}
+
+	public static Consumer<IqlConstraint> predAssert(String content) {
+		return constraint -> {
+			assertThat(constraint).isInstanceOf(IqlPredicate.class);
+			assertExpression(((IqlPredicate)constraint).getExpression(), content);
+		};
+	}
+
+	@SafeVarargs
+	public static final Consumer<IqlConstraint> termAssert(BooleanOperation op,
+			Consumer<IqlConstraint>...asserters) {
+		return constraint -> {
+			assertThat(constraint).isInstanceOf(IqlTerm.class);
+			IqlTerm term = (IqlTerm) constraint;
+			assertThat(term.getOperation()).isSameAs(op);
+			List<IqlConstraint> items = term.getItems();
+			assertThat(items).hasSize(asserters.length);
+			for (int i = 0; i < asserters.length; i++) {
+				asserters[i].accept(items.get(i));
+			}
+		};
+	}
+
+	public static Consumer<IqlQuantifier> quantAssert(QuantifierType qType, int val) {
+		return quantifier -> {
+			assertThat(quantifier.getQuantifierType()).isSameAs(qType);
+			assertThat(quantifier.getValue()).hasValue(val);
+		};
+	}
+
+	public static Consumer<IqlQuantifier> quantAssert(int lower, int upper) {
+		return quantifier -> {
+			assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.RANGE);
+			assertThat(quantifier.getValue()).isEmpty();
+			assertThat(quantifier.getLowerBound()).hasValue(lower);
+			assertThat(quantifier.getUpperBound()).hasValue(upper);
+		};
+	}
+
+	public static Consumer<IqlQuantifier> quantAllAssert() {
+		return quantifier -> {
+			assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.ALL);
+			assertThat(quantifier.getValue()).isEmpty();
+			assertThat(quantifier.getLowerBound()).isEmpty();
+			assertThat(quantifier.getUpperBound()).isEmpty();
+		};
+	}
+
+	public static Consumer<IqlQuantifier> quantNoneAssert() {
+		return quantifier -> {
+			assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.EXACT);
+			assertThat(quantifier.getValue()).hasValue(0);
+			assertThat(quantifier.getLowerBound()).isEmpty();
+			assertThat(quantifier.getUpperBound()).isEmpty();
+		};
 	}
 
 }

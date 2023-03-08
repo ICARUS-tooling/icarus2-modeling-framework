@@ -19,6 +19,23 @@
  */
 package de.ims.icarus2.query.api.engine;
 
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.arrangementsAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.assertBindings;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.assertConstraint;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.assertExpression;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.assertLanes;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.bindAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.laneAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.noArrangementsAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.nodeAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.predAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantAllAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.quantNoneAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.quote;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.sequenceAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.termAssert;
+import static de.ims.icarus2.query.api.iql.IqlTestUtils.treeAssert;
 import static de.ims.icarus2.test.util.Pair.pair;
 import static de.ims.icarus2.util.collections.CollectionUtils.list;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,8 +45,6 @@ import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,28 +67,14 @@ import de.ims.icarus2.Report;
 import de.ims.icarus2.Report.ReportItem;
 import de.ims.icarus2.Report.Severity;
 import de.ims.icarus2.query.api.QueryErrorCode;
-import de.ims.icarus2.query.api.iql.IqlBinding;
-import de.ims.icarus2.query.api.iql.IqlConstraint;
 import de.ims.icarus2.query.api.iql.IqlConstraint.BooleanOperation;
-import de.ims.icarus2.query.api.iql.IqlConstraint.IqlPredicate;
-import de.ims.icarus2.query.api.iql.IqlConstraint.IqlTerm;
-import de.ims.icarus2.query.api.iql.IqlElement;
-import de.ims.icarus2.query.api.iql.IqlElement.EdgeType;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlEdge;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlGrouping;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlNode;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlProperElement;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlSequence;
-import de.ims.icarus2.query.api.iql.IqlElement.IqlTreeNode;
 import de.ims.icarus2.query.api.iql.IqlExpression;
 import de.ims.icarus2.query.api.iql.IqlGroup;
 import de.ims.icarus2.query.api.iql.IqlLane;
 import de.ims.icarus2.query.api.iql.IqlLane.LaneType;
 import de.ims.icarus2.query.api.iql.IqlPayload;
 import de.ims.icarus2.query.api.iql.IqlPayload.QueryType;
-import de.ims.icarus2.query.api.iql.IqlQuantifier;
 import de.ims.icarus2.query.api.iql.IqlQuantifier.QuantifierType;
-import de.ims.icarus2.query.api.iql.IqlReference;
 import de.ims.icarus2.query.api.iql.IqlResult;
 import de.ims.icarus2.query.api.iql.IqlSorting;
 import de.ims.icarus2.query.api.iql.IqlSorting.Order;
@@ -90,19 +91,6 @@ public class QueryProcessorTest {
 	@VisibleForTesting
 	public static IqlPayload parsePayload(String rawPayload) {
 		return new QueryProcessor().processPayload(rawPayload);
-	}
-
-	private void assertExpression(IqlExpression expression, String content) {
-		assertThat(expression.getContent()).isEqualTo(content);
-	}
-
-	private void assertExpression(Optional<IqlExpression> expression, String content) {
-		assertThat(expression).isNotEmpty();
-		assertExpression(expression.get(), content);
-	}
-
-	private String qt(String s) {
-		return '\''+s+'\'';
 	}
 
 	@Nested
@@ -176,7 +164,7 @@ public class QueryProcessorTest {
 		})
 		void testSuperfluousExpressionNesting(String rawPayload, String offendingPart) {
 			assertReportHasWarnings(expectReport(rawPayload),
-					pair(QueryErrorCode.SUPERFLUOUS_DECLARATION, list(msgEnds(qt(offendingPart)))));
+					pair(QueryErrorCode.SUPERFLUOUS_DECLARATION, list(msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -188,7 +176,7 @@ public class QueryProcessorTest {
 		})
 		void testInvalidAtMostQuantifier(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
-					pair(QueryErrorCode.INVALID_LITERAL, list(msgEnds(qt(offendingPart)))));
+					pair(QueryErrorCode.INVALID_LITERAL, list(msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -212,7 +200,7 @@ public class QueryProcessorTest {
 					pair(QueryErrorCode.UNSUPPORTED_FEATURE,
 							list(msgContains(type),
 									msgContains("mix tree and graph features"),
-									msgEnds(qt(offendingPart)))));
+									msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -226,7 +214,7 @@ public class QueryProcessorTest {
 					pair(QueryErrorCode.UNSUPPORTED_FEATURE,
 							list(msgContains(type),
 									msgContains("mix tree and graph features"),
-									msgEnds(qt(offendingPart)))));
+									msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -239,7 +227,7 @@ public class QueryProcessorTest {
 		})
 		void testInvalidQuantifierRange(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
-					pair(QueryErrorCode.INVALID_LITERAL, list(msgEnds(qt(offendingPart)))));
+					pair(QueryErrorCode.INVALID_LITERAL, list(msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -249,7 +237,7 @@ public class QueryProcessorTest {
 		})
 		void testCompetingQuantifiers(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
-					pair(QueryErrorCode.UNSUPPORTED_FEATURE, list(msgEnds(qt(offendingPart)))));
+					pair(QueryErrorCode.UNSUPPORTED_FEATURE, list(msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -259,7 +247,7 @@ public class QueryProcessorTest {
 		})
 		void testNonContinuousEdgePart(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
-					pair(QueryErrorCode.NON_CONTINUOUS_TOKEN, list(msgEnds(qt(offendingPart)))));
+					pair(QueryErrorCode.NON_CONTINUOUS_TOKEN, list(msgEnds(quote(offendingPart)))));
 		}
 
 		@ParameterizedTest
@@ -270,7 +258,7 @@ public class QueryProcessorTest {
 		void testDoubleNegation(String rawPayload, String offendingPart) {
 			assertReportHasErrors(expectReport(rawPayload),
 					pair(QueryErrorCode.INCORRECT_USE,
-							list(msgContains("Double negation"), msgContains(qt(offendingPart)))));
+							list(msgContains("Double negation"), msgContains(quote(offendingPart)))));
 		}
 
 		/*
@@ -443,205 +431,6 @@ public class QueryProcessorTest {
 		}
 
 
-		@SafeVarargs
-		private final void assertBindings(IqlPayload payload, Consumer<IqlBinding>...asserters) {
-			List<IqlBinding> bindings = payload.getBindings();
-			assertThat(bindings).hasSize(asserters.length);
-			for (int i = 0; i < asserters.length; i++) {
-				asserters[i].accept(bindings.get(i));
-			}
-		}
-
-		private void assertConstraint(IqlPayload payload, Consumer<IqlConstraint> asserter) {
-			if(asserter!=null) {
-				assertThat(payload.getConstraint()).isNotEmpty().get().satisfies(asserter);
-			} else {
-				assertThat(payload.getConstraint()).isEmpty();
-			}
-		}
-
-		private Consumer<IqlBinding> bind(String target, boolean distinct, String...labels) {
-			return binding -> {
-				assertThat(labels.length>0);
-				assertThat(binding.getTarget()).isEqualTo(target);
-				assertThat(binding.isDistinct()).isEqualTo(distinct);
-				List<IqlReference> refs = binding.getMembers();
-				assertThat(refs).hasSize(labels.length);
-				for (int i = 0; i < labels.length; i++) {
-					assertThat(refs.get(i).getName()).isEqualTo(labels[i]);
-				}
-			};
-		}
-
-		@SafeVarargs
-		private final void assertLanes(IqlPayload payload, Consumer<IqlLane>...asserters) {
-			List<IqlLane> lanes = payload.getLanes();
-			assertThat(lanes).hasSize(asserters.length);
-			for (int i = 0; i < asserters.length; i++) {
-				asserters[i].accept(lanes.get(i));
-			}
-		}
-
-		private void assertProperElement(IqlProperElement element, String label,
-				Consumer<IqlConstraint> constraint) {
-			if(label!=null) {
-				assertThat(element.getLabel()).contains(label);
-			} else {
-				assertThat(element.getLabel()).isEmpty();
-			}
-
-			if(constraint!=null) {
-				assertThat(element.getConstraint()).isNotEmpty().get().satisfies(constraint);
-			} else {
-				assertThat(element.getConstraint()).isEmpty();
-			}
-		}
-
-		private final Consumer<IqlLane> lane(LaneType type, Consumer<IqlElement> asserter) {
-			return lane -> {
-				assertThat(lane.getLaneType()).isSameAs(type);
-				asserter.accept(lane.getElement());
-			};
-		}
-
-		@SafeVarargs
-		private final Consumer<IqlElement> sequence(Consumer<IqlSequence> arrAsserter,
-				Consumer<IqlElement>...asserters) {
-			return element -> {
-				assertThat(element).isInstanceOf(IqlSequence.class);
-				IqlSequence sequence = (IqlSequence)element;
-				arrAsserter.accept(sequence);
-				List<IqlElement> items = sequence.getElements();
-				assertThat(items).hasSize(asserters.length);
-				for (int i = 0; i < asserters.length; i++) {
-					asserters[i].accept(items.get(i));
-				}
-			};
-		}
-
-		private final Consumer<IqlSequence> arrangements(NodeArrangement...arrangements) {
-			return sequence -> {
-				assertThat(sequence.getArrangements()).containsExactlyInAnyOrder(arrangements);
-			};
-		}
-
-		private final Consumer<IqlSequence> noArrangements() {
-			return sequence -> assertThat(sequence.getArrangements()).isEmpty();
-		}
-
-		private final Consumer<IqlElement> grouping(Consumer<IqlQuantifier> qAsserter,
-				Consumer<IqlElement> eAsserter) {
-			return element -> {
-				assertThat(element).isInstanceOf(IqlGrouping.class);
-				IqlGrouping grouping = (IqlGrouping)element;
-				if(qAsserter!=null) {
-					List<IqlQuantifier> quantifiers = grouping.getQuantifiers();
-					assertThat(quantifiers).hasSize(1);
-					qAsserter.accept(quantifiers.get(0));
-				}
-				eAsserter.accept(grouping.getElement());
-			};
-		}
-
-		private Consumer<IqlElement> node() {
-			return node(null, null);
-		}
-
-		@SafeVarargs
-		private final Consumer<IqlElement> node(String label, Consumer<IqlConstraint> constraint,
-				Consumer<IqlQuantifier>...qAsserters) {
-			return element -> {
-				assertThat(element).isInstanceOf(IqlNode.class);
-				IqlNode node = (IqlNode) element;
-				assertProperElement(node, label, constraint);
-				List<IqlQuantifier> quantifiers = node.getQuantifiers();
-				assertThat(quantifiers).hasSize(qAsserters.length);
-				for (int i = 0; i < qAsserters.length; i++) {
-					qAsserters[i].accept(quantifiers.get(i));
-				}
-			};
-		}
-
-		private final Consumer<IqlElement> tree(String label, Consumer<IqlConstraint> constraint,
-				Consumer<IqlElement> childAsserter) {
-			return element -> {
-				assertThat(element).isInstanceOf(IqlTreeNode.class);
-				IqlTreeNode tree = (IqlTreeNode) element;
-				assertProperElement(tree, label, constraint);
-				Optional<IqlElement> children = tree.getChildren();
-				assertThat(children.isPresent()).isTrue();
-				childAsserter.accept(children.get());
-			};
-		}
-
-		private Consumer<IqlElement> edge(EdgeType edgeType, String label, Consumer<IqlConstraint> constraint,
-				Consumer<IqlElement> sourceAssert, Consumer<IqlElement> targetAssert) {
-			return element -> {
-				assertThat(element).isInstanceOf(IqlEdge.class);
-				IqlEdge edge = (IqlEdge) element;
-				assertProperElement(edge, label, constraint);
-				assertThat(edge.getEdgeType()).isEqualTo(edgeType);
-				sourceAssert.accept(edge.getSource());
-				targetAssert.accept(edge.getTarget());
-			};
-		}
-
-		private Consumer<IqlConstraint> pred(String content) {
-			return constraint -> {
-				assertThat(constraint).isInstanceOf(IqlPredicate.class);
-				assertExpression(((IqlPredicate)constraint).getExpression(), content);
-			};
-		}
-
-		@SafeVarargs
-		private final Consumer<IqlConstraint> term(BooleanOperation op,
-				Consumer<IqlConstraint>...asserters) {
-			return constraint -> {
-				assertThat(constraint).isInstanceOf(IqlTerm.class);
-				IqlTerm term = (IqlTerm) constraint;
-				assertThat(term.getOperation()).isSameAs(op);
-				List<IqlConstraint> items = term.getItems();
-				assertThat(items).hasSize(asserters.length);
-				for (int i = 0; i < asserters.length; i++) {
-					asserters[i].accept(items.get(i));
-				}
-			};
-		}
-
-		private Consumer<IqlQuantifier> quant(QuantifierType qType, int val) {
-			return quantifier -> {
-				assertThat(quantifier.getQuantifierType()).isSameAs(qType);
-				assertThat(quantifier.getValue()).hasValue(val);
-			};
-		}
-
-		private Consumer<IqlQuantifier> quant(int lower, int upper) {
-			return quantifier -> {
-				assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.RANGE);
-				assertThat(quantifier.getValue()).isEmpty();
-				assertThat(quantifier.getLowerBound()).hasValue(lower);
-				assertThat(quantifier.getUpperBound()).hasValue(upper);
-			};
-		}
-
-		private Consumer<IqlQuantifier> quantAll() {
-			return quantifier -> {
-				assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.ALL);
-				assertThat(quantifier.getValue()).isEmpty();
-				assertThat(quantifier.getLowerBound()).isEmpty();
-				assertThat(quantifier.getUpperBound()).isEmpty();
-			};
-		}
-
-		private Consumer<IqlQuantifier> quantNone() {
-			return quantifier -> {
-				assertThat(quantifier.getQuantifierType()).isSameAs(QuantifierType.EXACT);
-				assertThat(quantifier.getValue()).hasValue(0);
-				assertThat(quantifier.getLowerBound()).isEmpty();
-				assertThat(quantifier.getUpperBound()).isEmpty();
-			};
-		}
-
 		@Nested
 		class WhenPlain {
 
@@ -659,7 +448,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertConstraint(payload, pred("$token1.val>0"));
+					assertConstraint(payload, predAssert("$token1.val>0"));
 				}
 
 				@Test
@@ -668,10 +457,10 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
-							pred("$token1.val>0"),
-							pred("func() !=true"),
-							pred("$edge.dist()<5+4")));
+					assertConstraint(payload, termAssert(BooleanOperation.CONJUNCTION,
+							predAssert("$token1.val>0"),
+							predAssert("func() !=true"),
+							predAssert("$edge.dist()<5+4")));
 				}
 
 				@Test
@@ -680,10 +469,10 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertConstraint(payload, term(BooleanOperation.DISJUNCTION,
-							pred("$token1.val>0"),
-							pred("func() !=true"),
-							pred("$edge.dist()<5+4")));
+					assertConstraint(payload, termAssert(BooleanOperation.DISJUNCTION,
+							predAssert("$token1.val>0"),
+							predAssert("func() !=true"),
+							predAssert("$edge.dist()<5+4")));
 				}
 
 				@Test
@@ -692,11 +481,11 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload);
-					assertConstraint(payload, term(BooleanOperation.DISJUNCTION,
-							pred("$token1.val>0"),
-							term(BooleanOperation.CONJUNCTION,
-								pred("func() !=true"),
-								pred("$edge.dist()<5+4"))));
+					assertConstraint(payload, termAssert(BooleanOperation.DISJUNCTION,
+							predAssert("$token1.val>0"),
+							termAssert(BooleanOperation.CONJUNCTION,
+								predAssert("func() !=true"),
+								predAssert("$edge.dist()<5+4"))));
 				}
 
 			}
@@ -709,8 +498,8 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH $token FROM layer1 FIND $token.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
-					assertBindings(payload, bind("layer1", false, "token"));
-					assertConstraint(payload, pred("$token.val>0"));
+					assertBindings(payload, bindAssert("layer1", false, "token"));
+					assertConstraint(payload, predAssert("$token.val>0"));
 				}
 
 				@Test
@@ -718,8 +507,8 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH $token1,$token2 FROM layer1 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
-					assertBindings(payload, bind("layer1", false, "token1", "token2"));
-					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
+					assertBindings(payload, bindAssert("layer1", false, "token1", "token2"));
+					assertConstraint(payload, predAssert("$token1.val+$token2.val>0"));
 				}
 
 				@Test
@@ -727,8 +516,8 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH DISTINCT $token1,$token2 FROM layer1 FIND $token1.val+$token2.val>0";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
-					assertBindings(payload, bind("layer1", true, "token1", "token2"));
-					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
+					assertBindings(payload, bindAssert("layer1", true, "token1", "token2"));
+					assertConstraint(payload, predAssert("$token1.val+$token2.val>0"));
 				}
 
 				@Test
@@ -737,9 +526,9 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertPlain(payload);
 					assertBindings(payload,
-							bind("layer1", false, "token1"),
-							bind("layer2", false, "token2"));
-					assertConstraint(payload, pred("$token1.val+$token2.val>0"));
+							bindAssert("layer1", false, "token1"),
+							bindAssert("layer2", false, "token2"));
+					assertConstraint(payload, predAssert("$token1.val+$token2.val>0"));
 				}
 
 			}
@@ -765,7 +554,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert(null, null)));
 				}
 
 				@Test
@@ -774,7 +563,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", null)));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert("node1", null)));
 				}
 
 				@Test
@@ -783,7 +572,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, pred("pos!=\"NNP\""))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert(null, predAssert("pos!=\"NNP\""))));
 				}
 
 				@Test
@@ -792,7 +581,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, node("node1", pred("pos!=\"NNP\""))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert("node1", predAssert("pos!=\"NNP\""))));
 				}
 
 			}
@@ -807,10 +596,10 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							sequence(arrangements(arrangement),
-									node(null, null),
-									node(null, null))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							sequenceAssert(arrangementsAssert(arrangement),
+									nodeAssert(null, null),
+									nodeAssert(null, null))));
 				}
 
 				@TestFactory
@@ -823,10 +612,10 @@ public class QueryProcessorTest {
 												IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 												assertSequence(payload);
 												assertBindings(payload);
-												assertLanes(payload, lane(LaneType.SEQUENCE,
-														sequence(arrangements(arr1, arr2),
-																node(null, null),
-																node(null, null))));
+												assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+														sequenceAssert(arrangementsAssert(arr1, arr2),
+																nodeAssert(null, null),
+																nodeAssert(null, null))));
 											}))));
 				}
 			}
@@ -841,8 +630,8 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							node(null, null, quantAll())));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							nodeAssert(null, null, quantAllAssert())));
 				}
 
 				@ParameterizedTest
@@ -852,8 +641,8 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							node(null, null, quant(QuantifierType.EXACT, quantifier))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							nodeAssert(null, null, quantAssert(QuantifierType.EXACT, quantifier))));
 				}
 
 				@ParameterizedTest
@@ -863,8 +652,8 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							node(null, null, quant(QuantifierType.AT_LEAST, quantifier))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							nodeAssert(null, null, quantAssert(QuantifierType.AT_LEAST, quantifier))));
 				}
 
 				@ParameterizedTest
@@ -874,8 +663,8 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							node(null, null, quant(QuantifierType.AT_MOST, quantifier))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							nodeAssert(null, null, quantAssert(QuantifierType.AT_MOST, quantifier))));
 				}
 
 				@ParameterizedTest
@@ -885,7 +674,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null, quant(QuantifierType.EXACT, 0))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert(null, null, quantAssert(QuantifierType.EXACT, 0))));
 				}
 
 				@ParameterizedTest
@@ -899,7 +688,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null, quant(lower, upper))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert(null, null, quantAssert(lower, upper))));
 				}
 
 				@Test
@@ -908,12 +697,12 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							node(null, null,
-								quant(QuantifierType.EXACT, 2),
-								quant(QuantifierType.EXACT, 10),
-								quant(5, 7),
-								quant(QuantifierType.AT_LEAST, 1000))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							nodeAssert(null, null,
+								quantAssert(QuantifierType.EXACT, 2),
+								quantAssert(QuantifierType.EXACT, 10),
+								quantAssert(5, 7),
+								quantAssert(QuantifierType.AT_LEAST, 1000))));
 				}
 
 				@Test
@@ -922,12 +711,12 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE,
-							node("node1", pred("pos!=\"NNP\""),
-								quant(QuantifierType.EXACT, 2),
-								quant(QuantifierType.EXACT, 10),
-								quant(5, 7),
-								quant(QuantifierType.AT_LEAST, 1000))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE,
+							nodeAssert("node1", predAssert("pos!=\"NNP\""),
+								quantAssert(QuantifierType.EXACT, 2),
+								quantAssert(QuantifierType.EXACT, 10),
+								quantAssert(5, 7),
+								quantAssert(QuantifierType.AT_LEAST, 1000))));
 				}
 
 				@Test
@@ -936,9 +725,9 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
-							noArrangements(),
-							node(null, null), node(null, null), node(null, null))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, sequenceAssert(
+							noArrangementsAssert(),
+							nodeAssert(null, null), nodeAssert(null, null), nodeAssert(null, null))));
 				}
 
 				@Test
@@ -947,12 +736,12 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
-							arrangements(NodeArrangement.ORDERED),
-							node(null, null, quant(QuantifierType.AT_MOST, 4)),
-							node(null, null, quant(2, 10)),
-							node(null, null, quant(QuantifierType.EXACT, 3), quant(QuantifierType.AT_LEAST, 5)),
-							node(null, null, quant(QuantifierType.EXACT, 0)))));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, sequenceAssert(
+							arrangementsAssert(NodeArrangement.ORDERED),
+							nodeAssert(null, null, quantAssert(QuantifierType.AT_MOST, 4)),
+							nodeAssert(null, null, quantAssert(2, 10)),
+							nodeAssert(null, null, quantAssert(QuantifierType.EXACT, 3), quantAssert(QuantifierType.AT_LEAST, 5)),
+							nodeAssert(null, null, quantAssert(QuantifierType.EXACT, 0)))));
 				}
 
 			}
@@ -965,8 +754,8 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH $token FROM layer1 FIND []";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
-					assertBindings(payload, bind("layer1", false, "token"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, node(null, null)));
+					assertBindings(payload, bindAssert("layer1", false, "token"));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert(null, null)));
 				}
 
 				@Test
@@ -974,8 +763,8 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH $token FROM layer1 FIND [$token:]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
-					assertBindings(payload, bind("layer1", false, "token"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, node("token", null)));
+					assertBindings(payload, bindAssert("layer1", false, "token"));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, nodeAssert("token", null)));
 				}
 
 				@Test
@@ -983,10 +772,10 @@ public class QueryProcessorTest {
 					String rawPayload = "WITH $token1,$token2 FROM layer1 FIND UNORDERED [$token1:][$token2:]";
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
-					assertBindings(payload, bind("layer1", false, "token1", "token2"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
-							arrangements(NodeArrangement.UNORDERED),
-							node("token1", null), node("token2", null))));
+					assertBindings(payload, bindAssert("layer1", false, "token1", "token2"));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, sequenceAssert(
+							arrangementsAssert(NodeArrangement.UNORDERED),
+							nodeAssert("token1", null), nodeAssert("token2", null))));
 				}
  			}
 
@@ -1003,16 +792,16 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertSequence(payload);
 					assertBindings(payload,
-							bind("layer1", true, "token1", "token2"),
-							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.SEQUENCE, sequence(
-							noArrangements(),
-							node("token1", pred("pos!=\"NNP\"")),
-							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
-							node("token2", pred("length()>12")))));
-					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
-							pred("$p.contains($token1)"),
-							pred("!$p.contains($token2)")));
+							bindAssert("layer1", true, "token1", "token2"),
+							bindAssert("phrase", false, "p"));
+					assertLanes(payload, laneAssert(LaneType.SEQUENCE, sequenceAssert(
+							noArrangementsAssert(),
+							nodeAssert("token1", predAssert("pos!=\"NNP\"")),
+							nodeAssert(null, null, quantAssert(QuantifierType.AT_LEAST, 4)),
+							nodeAssert("token2", predAssert("length()>12")))));
+					assertConstraint(payload, termAssert(BooleanOperation.CONJUNCTION,
+							predAssert("$p.contains($token1)"),
+							predAssert("!$p.contains($token2)")));
 				}
 
 			}
@@ -1038,7 +827,7 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE, tree(null, null, node())));
+					assertLanes(payload, laneAssert(LaneType.TREE, treeAssert(null, null, nodeAssert())));
 				}
 
 				@Test
@@ -1047,10 +836,10 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE,
-							tree(null, null, sequence(
-									noArrangements(),
-									node(), node()))));
+					assertLanes(payload, laneAssert(LaneType.TREE,
+							treeAssert(null, null, sequenceAssert(
+									noArrangementsAssert(),
+									nodeAssert(), nodeAssert()))));
 				}
 
 				@Test
@@ -1059,8 +848,8 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE,
-							tree(null, null, tree(null, null, node()))));
+					assertLanes(payload, laneAssert(LaneType.TREE,
+							treeAssert(null, null, treeAssert(null, null, nodeAssert()))));
 				}
 			}
 
@@ -1074,8 +863,8 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload);
-					assertLanes(payload, lane(LaneType.TREE,
-							tree(null, null, node(null, null, quantAll()))));
+					assertLanes(payload, laneAssert(LaneType.TREE,
+							treeAssert(null, null, nodeAssert(null, null, quantAllAssert()))));
 				}
 			}
 
@@ -1093,22 +882,22 @@ public class QueryProcessorTest {
 					IqlPayload payload = new QueryProcessor().processPayload(rawPayload);
 					assertTree(payload);
 					assertBindings(payload,
-							bind("layer1", true, "token1", "token2"),
-							bind("phrase", false, "p"));
-					assertLanes(payload, lane(LaneType.TREE, sequence(
-							arrangements(NodeArrangement.ORDERED),
-							tree(null, null, sequence(
-									noArrangements(),
-									node(null, null, quant(QuantifierType.AT_MOST, 5)),
-									node("token1", pred("pos!=\"NNP\"")))),
-							node(null, null, quant(QuantifierType.AT_LEAST, 4)),
-							tree("token2", pred("length()>12"), sequence(
-									arrangements(NodeArrangement.ADJACENT),
-									node(null, pred("pos==\"DET\""), quantNone()),
-									node(null, pred("pos==\"MOD\""), quant(QuantifierType.AT_LEAST, 3)))))));
-					assertConstraint(payload, term(BooleanOperation.CONJUNCTION,
-							pred("$p.contains($token1)"),
-							pred("!$p.contains($token2)")));
+							bindAssert("layer1", true, "token1", "token2"),
+							bindAssert("phrase", false, "p"));
+					assertLanes(payload, laneAssert(LaneType.TREE, sequenceAssert(
+							arrangementsAssert(NodeArrangement.ORDERED),
+							treeAssert(null, null, sequenceAssert(
+									noArrangementsAssert(),
+									nodeAssert(null, null, quantAssert(QuantifierType.AT_MOST, 5)),
+									nodeAssert("token1", predAssert("pos!=\"NNP\"")))),
+							nodeAssert(null, null, quantAssert(QuantifierType.AT_LEAST, 4)),
+							treeAssert("token2", predAssert("length()>12"), sequenceAssert(
+									arrangementsAssert(NodeArrangement.ADJACENT),
+									nodeAssert(null, predAssert("pos==\"DET\""), quantNoneAssert()),
+									nodeAssert(null, predAssert("pos==\"MOD\""), quantAssert(QuantifierType.AT_LEAST, 3)))))));
+					assertConstraint(payload, termAssert(BooleanOperation.CONJUNCTION,
+							predAssert("$p.contains($token1)"),
+							predAssert("!$p.contains($token2)")));
 				}
 
 				//TODO
