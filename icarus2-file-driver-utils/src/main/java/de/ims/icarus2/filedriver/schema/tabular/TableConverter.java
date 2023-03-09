@@ -52,6 +52,9 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ims.icarus2.ErrorCode;
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
@@ -144,6 +147,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  */
 @TestableImplementation(Converter.class)
 public class TableConverter extends AbstractConverter implements SchemaBasedConverter {
+
+	private static final Logger log = LoggerFactory.getLogger(TableConverter.class);
 
 	private TableSchema tableSchema;
 
@@ -560,10 +565,20 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 				index++;
 			}
 
-			blockHandler.complete();
 		} finally {
+			boolean broken = false;
+			try {
+				blockHandler.complete();
+			} catch(Exception e) {
+				log.error("Failed to complete internal helpers", e);
+				broken = true;
+			}
 			blockHandler.close();
-			blockHandlerPool.recycle(blockHandler);
+
+			if(!broken) {
+				blockHandlerPool.recycle(blockHandler);
+			}
+			//TODO refactor scanFile similarly!!
 		}
 
 		return loadResult;
