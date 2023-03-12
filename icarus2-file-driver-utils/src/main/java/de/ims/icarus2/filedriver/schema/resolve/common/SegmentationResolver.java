@@ -23,6 +23,7 @@ import static de.ims.icarus2.model.util.ModelUtils.getName;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -67,6 +68,7 @@ public class SegmentationResolver implements Resolver {
 	public static final String OPTION_SEGMENT_BEGIN = "segmentBegin";
 	public static final String OPTION_SEGMENT_END = "segmentEnd";
 	public static final String OPTION_SEGMENT_SINGLETON = "segmentSingleton";
+	public static final String OPTION_SEGMENT_SEPARATOR = "segmentSep";
 	public static final String OPTION_AUTO_SEGMENT = "autoSegment";
 
 	private ComponentSupplier componentSupplier;
@@ -82,10 +84,11 @@ public class SegmentationResolver implements Resolver {
 	private final MutableSingletonIndexSet sourceIndex;
 	private final List<Item> items;
 
-	private String segmentBegin;
-	private String segmentEnd;
-	private String segmentSingleton;
+	private String[] segmentBegin;
+	private String[] segmentEnd;
+	private String[] segmentSingleton;
 	private boolean autoSegment;
+	private String segmentSep;
 
 	private Strategy strategy;
 	private boolean probing;
@@ -116,6 +119,16 @@ public class SegmentationResolver implements Resolver {
 	@Override
 	public boolean requiresComponentSupplier() { return true; }
 
+	private String[] prep(String s) {
+		if(s==null) {
+			return null;
+		}
+		if(segmentSep==null) {
+			return new String[] {s};
+		}
+		return s.split(segmentSep);
+	}
+
 	/**
 	 * @see de.ims.icarus2.filedriver.schema.resolve.Resolver#prepareForReading(de.ims.icarus2.filedriver.Converter, de.ims.icarus2.filedriver.Converter.ReadMode, java.util.function.Function, de.ims.icarus2.util.Options)
 	 */
@@ -135,9 +148,11 @@ public class SegmentationResolver implements Resolver {
 		driver = converter.getDriver();
 		componentSupplier = context.getComponentSupplier(segmentLayer);
 
-		segmentBegin = options.getString(OPTION_SEGMENT_BEGIN);
-		segmentEnd = options.getString(OPTION_SEGMENT_END);
-		segmentSingleton = options.getString(OPTION_SEGMENT_SINGLETON);
+		segmentSep = options.getString(OPTION_SEGMENT_SEPARATOR);
+
+		segmentBegin = prep(options.getString(OPTION_SEGMENT_BEGIN));
+		segmentEnd = prep(options.getString(OPTION_SEGMENT_END));
+		segmentSingleton = prep(options.getString(OPTION_SEGMENT_SINGLETON));
 		autoSegment = options.getBoolean(OPTION_AUTO_SEGMENT);
 
 		if(autoSegment) {
@@ -156,7 +171,7 @@ public class SegmentationResolver implements Resolver {
 
 			strategy = new Alternating();
 		} else if(segmentBegin!=null && segmentEnd!=null) {
-			if(StringUtil.equals(segmentBegin, segmentEnd))
+			if(Arrays.equals(segmentBegin, segmentEnd))
 				throw new ModelException(converter.getDriver().getCorpus(), ModelErrorCode.DRIVER_ERROR,
 						String.format("%s '%s' and '%s' markers must be different, got '%s' for both", getClass().getName(),
 								OPTION_SEGMENT_BEGIN, OPTION_SEGMENT_END, segmentBegin));
@@ -325,6 +340,17 @@ public class SegmentationResolver implements Resolver {
 		return probing;
 	}
 
+	private static boolean delimiterCheck(String[] items, CharSequence s) {
+		if(items!=null && s!=null) {
+			for (int i = 0; i < items.length; i++) {
+				if(StringUtil.equals(items[i], s)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	interface Strategy {
 		void process(Item item, CharSequence value);
 
@@ -362,14 +388,14 @@ public class SegmentationResolver implements Resolver {
 	class Discontinuous implements Strategy {
 		@Override
 		public void process(Item item, CharSequence value) {
-			if(segmentSingleton!=null && StringUtil.equals(segmentSingleton, value)) {
+			if(segmentSingleton!=null && delimiterCheck(segmentSingleton, value)) {
 				assert !segmentActive();
 				beginSegment(item);
 				endSegment(null);
-			} else if(StringUtil.equals(segmentBegin, value)) {
+			} else if(delimiterCheck(segmentBegin, value)) {
 				assert !segmentActive();
 				beginSegment(item);
-			} else if(StringUtil.equals(segmentEnd, value)) {
+			} else if(delimiterCheck(segmentEnd, value)) {
 				assert segmentActive();
 				endSegment(item);
 			} else if(segmentActive()) {
@@ -387,12 +413,12 @@ public class SegmentationResolver implements Resolver {
 	class Beginning implements Strategy {
 		@Override
 		public void process(Item item, CharSequence value) {
-			if(segmentSingleton!=null && StringUtil.equals(segmentSingleton, value)) {
+			if(segmentSingleton!=null && delimiterCheck(segmentSingleton, value)) {
 				endSegmentIfActive();
 				assert !segmentActive();
 				beginSegment(item);
 				endSegment(null);
-			} else if(StringUtil.equals(segmentBegin, value)) {
+			} else if(delimiterCheck(segmentBegin, value)) {
 				endSegmentIfActive();
 				assert !segmentActive();
 				beginSegment(item);
@@ -411,11 +437,11 @@ public class SegmentationResolver implements Resolver {
 	class Ending implements Strategy {
 		@Override
 		public void process(Item item, CharSequence value) {
-			if(segmentSingleton!=null && StringUtil.equals(segmentSingleton, value)) {
+			if(segmentSingleton!=null && delimiterCheck(segmentSingleton, value)) {
 				assert !segmentActive();
 				beginSegment(item);
 				endSegment(null);
-			} else if(StringUtil.equals(segmentEnd, value)) {
+			} else if(delimiterCheck(segmentEnd, value)) {
 				// We can have end marker work as singleton, so our normal
 				// approach wouldn't create a new segment in time.
 				if(!segmentActive()) {
