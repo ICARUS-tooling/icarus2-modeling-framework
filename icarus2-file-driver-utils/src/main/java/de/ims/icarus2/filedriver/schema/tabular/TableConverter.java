@@ -427,8 +427,18 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			analyzers.values().forEach(Analyzer::finish);
 
 		} finally {
+			boolean broken = false;
+			try {
+				blockHandler.complete();
+			} catch(Exception e) {
+				log.error("Failed to complete internal helpers", e);
+				broken = true;
+			}
 			blockHandler.close();
-			blockHandlerPool.recycle(blockHandler);
+
+			if(!broken) {
+				blockHandlerPool.recycle(blockHandler);
+			}
 
 			// Make sure we commit/discard all "cached" data
 			if(encounteredFatalErrors) {
@@ -578,7 +588,6 @@ public class TableConverter extends AbstractConverter implements SchemaBasedConv
 			if(!broken) {
 				blockHandlerPool.recycle(blockHandler);
 			}
-			//TODO refactor scanFile similarly!!
 		}
 
 		return loadResult;
