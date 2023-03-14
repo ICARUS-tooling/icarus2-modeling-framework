@@ -409,6 +409,7 @@ public class BufferedIOResource implements Flushable {
 	 */
 	private void syncWrite(Task task) throws IOException {
 		long stamp = getLock().writeLock();
+		assert stamp!=0L;
 		try {
 			task.execute();
 		} finally {
@@ -788,6 +789,7 @@ public class BufferedIOResource implements Flushable {
 				record(StatField.WRITE_LOCK);
 				stamp = getLock().writeLock();
 			}
+			assert stamp != 0L;
 		}
 
 		/**
@@ -795,9 +797,11 @@ public class BufferedIOResource implements Flushable {
 		 */
 		@Override
 		public void end() {
-			long stamp = this.stamp;
-			this.stamp = 0L;
-			getLock().unlock(stamp);
+			if(stamp != 0L) {
+				long stamp = this.stamp;
+				this.stamp = 0L;
+				getLock().unlock(stamp);
+			}
 		}
 
 		/**
@@ -862,6 +866,7 @@ public class BufferedIOResource implements Flushable {
 				record(StatField.CACHE_MISS);
 				// Upgrade the lock to write lock if needed
 				stamp = getLock().tryConvertToWriteLock(stamp);
+				assert stamp!=0L;
 				try {
 					// Byte offset of the beginning of the block to be read
 					long offset = offsetForBlock(id);
@@ -897,6 +902,7 @@ public class BufferedIOResource implements Flushable {
 					// If this accessor is read-only, downgrade the lock again
 					if(readOnly) {
 						stamp = getLock().tryConvertToReadLock(stamp);
+						assert stamp!=0L;
 					}
 				}
 			}
