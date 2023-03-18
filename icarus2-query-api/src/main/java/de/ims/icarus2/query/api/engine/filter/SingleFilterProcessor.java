@@ -46,10 +46,12 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 
 	private static final int START_CAPACITY = 1024;
 
-	private final LongArrayList candidates = new LongArrayList(START_CAPACITY);
+	private final LongArrayList candidates;
 
 	private SingleFilterProcessor(Builder builder) {
 		super(builder);
+
+		candidates = new LongArrayList(START_CAPACITY);
 
 		sink = new SinkDelegate();
 		final QueryFilter filter = builder.getFilter();
@@ -59,7 +61,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 				.stream(builder.getStream())
 				.sink(sink)
 				.build();
-		job = new FilterJob(1, filter, context);
+		job = new FilterJob("filter-job-"+getId()+"-1", filter, context);
 	}
 
 	private void maybeStartFilter() {
@@ -74,6 +76,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	public int load(Container[] buffer) {
 		maybeStartFilter();
 		// TODO check whether we already started the filter process
+
 		return 0;
 	}
 

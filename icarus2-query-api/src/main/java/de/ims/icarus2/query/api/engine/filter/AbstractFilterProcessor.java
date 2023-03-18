@@ -23,6 +23,7 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongFunction;
 
@@ -45,12 +46,16 @@ import de.ims.icarus2.util.AbstractBuilder;
  */
 public abstract class AbstractFilterProcessor implements QueryInput {
 
+	private static final AtomicLong idGen = new AtomicLong();
+
 	/** Used to delegate execution to another thread */
 	private final ExecutorService executor;
 	/** Convert index values from filters to actual candidate objects */
 	private final LongFunction<Container> candidateLookup;
 	/** Current lifecycle state */
 	private final AtomicReference<State> state = new AtomicReference<>(State.WAITING);
+
+	private final long id;
 
 	static enum State {
 		WAITING,
@@ -64,9 +69,12 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 
 	protected AbstractFilterProcessor(BuilderBase<?,?> builder) {
 		builder.validate();
+		id = idGen.incrementAndGet();
 		executor = builder.getExecutor();
 		candidateLookup = builder.getCandidateLookup();
 	}
+
+	protected long getId() { return id; }
 
 	protected ExecutorService getExecutor() {
 		return executor;
@@ -94,15 +102,15 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 	static class FilterJob implements Runnable {
 		private final QueryFilter filter;
 		private final FilterContext context;
-		private final int id;
+		private final String label;
 
 		private ThreadVerifier threadVerifier;
 
 		private Throwable exception;
 		private boolean interrupted, finished;
 
-		public FilterJob(int id, QueryFilter filter, FilterContext context) {
-			this.id = id;
+		public FilterJob(String label, QueryFilter filter, FilterContext context) {
+			this.label = requireNonNull(label);
 			this.filter = requireNonNull(filter);
 			this.context = requireNonNull(context);
 		}
@@ -146,7 +154,7 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 		 */
 		@Override
 		public void run() {
-			threadVerifier = ThreadVerifier.forCurrentThread("filter-job-"+id);
+			threadVerifier = ThreadVerifier.forCurrentThread(label);
 			try {
 				filter.filter(context);
 				finished = true;
