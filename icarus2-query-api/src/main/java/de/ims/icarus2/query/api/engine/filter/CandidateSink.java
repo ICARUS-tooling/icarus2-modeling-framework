@@ -19,30 +19,33 @@
  */
 package de.ims.icarus2.query.api.engine.filter;
 
-import de.ims.icarus2.query.api.engine.result.Match;
-import de.ims.icarus2.query.api.engine.result.PayloadReader;
-import de.ims.icarus2.query.api.engine.result.ResultEntry;
-import de.ims.icarus2.query.api.engine.result.ResultSink;
+import de.ims.icarus2.query.api.engine.GenericSink;
 
 /**
- * Extends the {@link ResultSink} interface with a mechanism to signal the absence
+ * Extends the {@link GenericSink} interface with a mechanism to signal the absence
  * of produced candidates in a way that doesn't contradict the original contract.
  * <p>
  * Normally the workflow would go something like this:
  * <br>
  * <pre>
  * {@code
- * ResultSink sink = ...;
+ * GenericSink sink = ...;
  * sink.prepare();
  * // Fill sink here
  * sink.finish();
  * }
  * </pre>
+ * <p>
+ * If no candidates were to be added to the sink, the cases of not having received
+ * any candidates (i.e. the result set is empty) or the inability to evaluate a
+ * given query for candidate construction could not properly differentiated.
+ * To this end the {@link CandidateSink} interface adds the {@link #ignore()} method
+ * for the case that a filter is unable to serve a request.
  *
  * @author Markus Gärtner
  *
  */
-public interface CandidateSink extends ResultSink {
+public interface CandidateSink extends GenericSink {
 
 	/**
 	 * Tells the sink that the filter process has finished and was unable to produce any candidates
@@ -61,15 +64,14 @@ public interface CandidateSink extends ResultSink {
 	void ignore();
 
 	/**
-	 * This method should not be used for the candidate filtering process.
-	 * <p>
-	 * Any candidates must be sent to the plain {@link #add(de.ims.icarus2.query.api.engine.result.Match)}
-	 * method in the form of simple {@link Match} instances.
 	 *
-	 * @see de.ims.icarus2.query.api.engine.result.ResultSink#add(de.ims.icarus2.query.api.engine.result.ResultEntry, de.ims.icarus2.query.api.engine.result.PayloadReader)
+	 * @param candidate
 	 */
-	@Override
-	default void add(ResultEntry entry, PayloadReader payloadReader) {
-		throw new UnsupportedOperationException("Candidates should be provided as plain Match objects!");
-	}
+	void add(long candidate);
+
+	/**
+	 *
+	 * @param candidate
+	 */
+	void add(long[] candidates);
 }
