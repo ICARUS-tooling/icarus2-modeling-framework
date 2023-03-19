@@ -28,8 +28,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.Tripwire;
-import de.ims.icarus2.query.api.engine.result.Match;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
+import de.ims.icarus2.util.collections.BlockingLongBatchArray;
 
 /**
  * @author Markus Gärtner
@@ -44,14 +43,14 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	/** Candidate sink to link between buffer and filter */
 	private final SinkDelegate sink;
 
-	private static final int START_CAPACITY = 1024;
+	private static final int DEFAULT_CAPACITY = 1024;
 
-	private final LongArrayList candidates;
+	private final BlockingLongBatchArray buffer;
 
 	private SingleFilterProcessor(Builder builder) {
 		super(builder);
 
-		candidates = new LongArrayList(START_CAPACITY);
+		buffer = new BlockingLongBatchArray(capacity, fair);
 
 		sink = new SinkDelegate();
 		final QueryFilter filter = builder.getFilter();
@@ -65,7 +64,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	}
 
 	private void maybeStartFilter() {
-		if(trySetState(State.WAITING, State.PREPARED)) {
+		if(trySetState(State.WAITING, State.STARTED)) {
 			getExecutor().execute(job);
 		}
 	}
@@ -73,7 +72,9 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	// QUERY INPUT METHODS
 
 	@Override
-	public int load(Container[] buffer) {
+	public int load(Container[] buffer) throws InterruptedException {
+		requireNonNull(buffer);
+
 		maybeStartFilter();
 		// TODO check whether we already started the filter process
 
@@ -94,7 +95,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			trySetState(State.WAITING, State.PREPARED);
+			trySetState(State.STARTED, State.PREPARED);
 			// nothing extra to do here as we already initialized the buffer
 		}
 
@@ -103,7 +104,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			if(trySetState(State.WAITING, State.PREPARED)) {
+			if(trySetState(State.STARTED, State.PREPARED)) {
 				if(size>START_CAPACITY) {
 					synchronized (candidates) {
 						candidates.size(size);
@@ -139,20 +140,21 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 
 		}
 
-		@VisibleForTesting
-		void add(long value) {
+		@Override
+		public void add(long value) {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
 			candidates.add(value);
 		}
 
+		/**
+		 * @see de.ims.icarus2.query.api.engine.filter.CandidateSink#add(long[])
+		 */
 		@Override
-		public void add(Match match) {
-			if(Tripwire.ACTIVE) {
-				job.checkThread();
-			}
-			add(match.getIndex());
+		public void add(long[] candidates) {
+			// TODO Auto-generated method stub
+
 		}
 	}
 

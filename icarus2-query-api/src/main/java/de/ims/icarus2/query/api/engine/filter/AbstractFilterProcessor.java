@@ -58,13 +58,21 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 	private final long id;
 
 	static enum State {
+		/** Initial state */
 		WAITING,
+		/** Backend process(es) started, but buffers still pending preparation- */
+		STARTED,
+		/** Buffers prepared by backend. */
 		PREPARED,
+		/** Filter process finished without issues. */
 		FINISHED,
+		/** Filter got told to ignore backend data. */
 		IGNORED,
+		/** Filter process failed. */
+		FAILED,
 		;
 
-		boolean isFinished() { return ordinal()>=2; }
+		boolean isFinished() { return ordinal()>FINISHED.ordinal(); }
 	}
 
 	protected AbstractFilterProcessor(BuilderBase<?,?> builder) {
@@ -169,6 +177,29 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 				exception = t;
 			}
 		}
+	}
+
+	public static class Batch {
+		private final long[] candidates;
+		private int cursor, size;
+
+		public Batch(int capacity) {
+			candidates = new long[capacity];
+			cursor = 0;
+			size = 0;
+		}
+
+		public boolean add(long candidate) {
+			if(size>=candidates.length) {
+				return false;
+			}
+
+			candidates[size++] = candidate;
+			return true;
+		}
+
+		//TODO add batch methods
+
 	}
 
 	public static abstract class BuilderBase<B extends BuilderBase<B, P>, P extends AbstractFilterProcessor>
