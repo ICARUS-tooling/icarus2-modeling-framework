@@ -30,6 +30,8 @@ public interface QueryInput extends AutoCloseable {
 	/**
 	 * Loads items into the given {@code buffer} if available, and returns the total number
 	 * of items copied, or {@code 0} if this source is empty.
+	 * <p>
+	 * This method may block the current thread until more items are available.
 	 */
 	int load(Container[] buffer) throws InterruptedException;
 
