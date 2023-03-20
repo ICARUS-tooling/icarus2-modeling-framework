@@ -273,11 +273,29 @@ public class ArrayConverters {
 		}
 	}
 
+	public static class LongArrayConverter extends ArrayConverterBase {
+
+		@Override
+		protected Object convert(String[] items, ParameterContext context, Class<?> componentType)
+				throws ArgumentConversionException {
+			return Stream.of(items).mapToLong(Long::parseLong).toArray();
+		}
+	}
+
 	public static class IntegerMatrixConverter extends MatrixConverterBase {
 
 		@Override
 		protected Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException {
 			return Integer.valueOf(raw);
+		}
+
+	}
+
+	public static class LongMatrixConverter extends MatrixConverterBase {
+
+		@Override
+		protected Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException {
+			return Long.valueOf(raw);
 		}
 
 	}
