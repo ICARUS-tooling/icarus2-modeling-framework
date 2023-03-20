@@ -16,7 +16,7 @@ public interface GenericSink {
 	 * is performed live, i.e. the down stream implementation is not
 	 * using any form of buffering.
 	 * <p>
-	 * The engine guarantees that this method will called a maximum of one times
+	 * The engine guarantees that this method will be called a maximum of one times
 	 * for any {@link GenericSink} instance.
 	 */
 	void prepare();
@@ -28,7 +28,7 @@ public interface GenericSink {
 	 * determine the total number of elements, e.g. from a set result size
 	 * limit in the query.
 	 * <p>
-	 * The engine guarantees that this method will called a maximum of one times
+	 * The engine guarantees that this method will be called a maximum of one times
 	 * for any {@link GenericSink} instance.
 	 * @param size the maximum number of elements to be expected, never 0 or less
 	 */
@@ -41,7 +41,7 @@ public interface GenericSink {
 	 * should make an effort to gracefully discard already consumed elements and
 	 * roll back any save operations made for those.
 	 * <p>
-	 * The engine guarantees that this method will called a maximum of one times
+	 * The engine guarantees that this method will be called a maximum of one times
 	 * for any {@link GenericSink} instance.
 	 */
 	void discard() throws InterruptedException;
@@ -49,7 +49,7 @@ public interface GenericSink {
 	/**
 	 * Called by the engine after the processing terminated successfully.
 	 * <p>
-	 * The engine guarantees that this method will called a maximum of one times
+	 * The engine guarantees that this method will be called a maximum of one times
 	 * for any {@link GenericSink} instance when the last valid element has been
 	 * consumed.
 	 */
