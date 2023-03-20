@@ -28,8 +28,6 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public class BlockingLongBatchQueue implements AutoCloseable {
 
-	public static final int MIN_CAPACITY = 10;
-
     /** The queued items */
     final long[] items;
 
@@ -57,7 +55,7 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     }
 
     public BlockingLongBatchQueue(int capacity, boolean fair) {
-    	checkArgument("Capacity must be at least of size "+MIN_CAPACITY, capacity>=MIN_CAPACITY);
+    	checkArgument("Capacity must be positive: "+capacity, capacity>0);
 
     	// No defensive copying here
     	items = new long[capacity];
