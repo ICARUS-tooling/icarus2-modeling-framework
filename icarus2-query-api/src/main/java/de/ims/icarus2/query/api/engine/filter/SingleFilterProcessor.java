@@ -28,7 +28,7 @@ import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.Tripwire;
-import de.ims.icarus2.util.collections.BlockingLongBatchArray;
+import de.ims.icarus2.util.collections.BlockingLongBatchQueue;
 
 /**
  * @author Markus Gärtner
@@ -43,14 +43,13 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	/** Candidate sink to link between buffer and filter */
 	private final SinkDelegate sink;
 
-	private static final int DEFAULT_CAPACITY = 1024;
+	private final BlockingLongBatchQueue buffer;
 
-	private final BlockingLongBatchArray buffer;
 
 	private SingleFilterProcessor(Builder builder) {
 		super(builder);
 
-		buffer = new BlockingLongBatchArray(capacity, fair);
+		buffer = new BlockingLongBatchQueue(builder.getCapacity(), builder.isFair());
 
 		sink = new SinkDelegate();
 		final QueryFilter filter = builder.getFilter();
@@ -141,11 +140,11 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 		}
 
 		@Override
-		public void add(long value) {
+		public void add(long candidate) {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			candidates.add(value);
+			// TODO Auto-generated method stub
 		}
 
 		/**
@@ -160,7 +159,12 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 
 	public static class Builder extends AbstractFilterProcessor.BuilderBase<Builder, SingleFilterProcessor> {
 
+		private static final int DEFAULT_CAPACITY = 1024;
+		private static final boolean DEFAULT_FAIR = false;
+
 		private QueryFilter filter;
+		private Integer capacity;
+		private Boolean fair;
 
 		private Builder() { /* no-op */ }
 
@@ -171,9 +175,9 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			return this;
 		}
 
-		public QueryFilter getFilter() {
-			return filter;
-		}
+		public QueryFilter getFilter() { return filter; }
+		public int getCapacity() { return capacity==null ? DEFAULT_CAPACITY : capacity.intValue(); }
+		public boolean isFair() { return fair==null ? DEFAULT_FAIR : fair.booleanValue(); }
 
 		@Override
 		protected void validate() {
