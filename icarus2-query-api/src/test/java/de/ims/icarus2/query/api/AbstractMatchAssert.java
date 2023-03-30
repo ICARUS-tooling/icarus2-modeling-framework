@@ -33,7 +33,6 @@ public class AbstractMatchAssert<A extends AbstractMatchAssert<A,M>, M extends M
 		super(actual, selfType);
 	}
 
-	@SuppressWarnings("boxing")
 	public A hasType(Match.MatchType expected) {
 		isNotNull();
 		Match.MatchType actual = this.actual.getType();
