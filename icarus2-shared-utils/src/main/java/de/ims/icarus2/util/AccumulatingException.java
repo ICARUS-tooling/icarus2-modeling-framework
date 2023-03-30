@@ -45,6 +45,10 @@ public class AccumulatingException extends IcarusApiException {
 
 	private static final long serialVersionUID = 8864281967856686141L;
 
+	public static Buffer buffer() {
+		return new Buffer();
+	}
+
 	private final Throwable[] exceptions;
 
 	private static final Throwable[] EMPTY = {};
@@ -121,8 +125,9 @@ public class AccumulatingException extends IcarusApiException {
 			return message;
 		}
 
-		public void setMessage(String message) {
+		public Buffer setMessage(String message) {
 			this.message = message;
+			return this;
 		}
 
 		/**
@@ -132,8 +137,9 @@ public class AccumulatingException extends IcarusApiException {
 		 *
 		 * @param format
 		 */
-		public void setFormattedMessage(String format, Object... args) {
+		public Buffer setFormattedMessage(String format, Object... args) {
 			this.message = String.format(format, args);
+			return this;
 		}
 
 		public boolean isEmpty() {
@@ -144,24 +150,36 @@ public class AccumulatingException extends IcarusApiException {
 			return exceptions==null ? 0 : exceptions.size();
 		}
 
-		public void addException(Throwable t) {
+		public Buffer addException(Throwable t) {
 			if(exceptions==null) {
 				exceptions = new ArrayList<>();
 			}
 
 			exceptions.add(t);
+			return this;
 		}
 
-		public void addExceptionsFrom(AccumulatingException e) {
+		public Buffer addExceptionsFrom(AccumulatingException e) {
 			e.forEachException(this);
+			return this;
 		}
 
-		public void addExceptions(Throwable...ex) {
+		public Buffer addExceptions(Throwable...ex) {
 			if(exceptions==null) {
 				exceptions = new ArrayList<>();
 			}
 
 			CollectionUtils.feedItems(exceptions, ex);
+			return this;
+		}
+
+		public Buffer addExceptions(Collection<? extends Throwable> ex) {
+			if(exceptions==null) {
+				exceptions = new ArrayList<>();
+			}
+
+			exceptions.addAll(ex);
+			return this;
 		}
 
 		public Throwable[] getExceptions() {
