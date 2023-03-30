@@ -4,6 +4,7 @@
 package de.ims.icarus2.util.collections;
 
 import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_INT;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
@@ -12,6 +13,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.annotations.VisibleForTesting;
+
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * Provides a blocking view on a {@code long} array that behaves like
@@ -44,11 +48,13 @@ public class BlockingLongBatchQueue implements AutoCloseable {
 	@VisibleForTesting
     final ReentrantLock lock;
 
-    /** Condition for waiting takes */
+    /** Condition for waiting reads */
     private final Condition notEmpty;
 
-    /** Condition for waiting puts */
+    /** Condition for waiting writes */
     private final Condition notFull;
+
+    private volatile boolean closed;
 
     public BlockingLongBatchQueue(int capacity) {
     	this(capacity, false);
@@ -65,13 +71,25 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     	notFull = lock.newCondition();
     }
 
+    private void checkClosed() {
+    	if(closed)
+    		throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Queue already closed");
+    }
+
     /**
      * @see java.lang.AutoCloseable#close()
      */
     @Override
     public void close() throws InterruptedException {
-    	// TODO Auto-generated method stub
-
+    	closed = true;
+		final ReentrantLock lock = this.lock;
+		lock.lockInterruptibly();
+		try {
+	    	notEmpty.signalAll();
+	    	notFull.signalAll();
+		} finally {
+			lock.unlock();
+		}
     }
 
     /** Circularly decrement i. */
@@ -79,10 +97,12 @@ public class BlockingLongBatchQueue implements AutoCloseable {
         return ((i == 0) ? items.length : i) - 1;
     }
 
+    /** Calculates remaining number of values that can be written to buffer without blocking */
     private int remaining() {
     	return items.length-count;
     }
 
+    /** Calculates remaining number of values to read from given buffer */
     private int remaining(long[] buffer, int offset) {
     	return buffer.length-offset;
     }
@@ -93,21 +113,24 @@ public class BlockingLongBatchQueue implements AutoCloseable {
         assert lock.isHeldByCurrentThread();
         assert count < items.length;
 
-        int itemsToQueue = Math.min(remaining(), remaining(buffer, offset));
-        assert itemsToQueue>0;
+        int itemsToPut = Math.min(remaining(), remaining(buffer, offset));
+        assert itemsToPut>0;
 
-        int batchSize = Math.min(items.length-putIndex, itemsToQueue);
+        final long[] items = this.items;
+        int batchSize = Math.min(items.length-putIndex, itemsToPut);
         System.arraycopy(buffer, offset, items, putIndex, batchSize);
 
-        putIndex += itemsToQueue;
+        putIndex += itemsToPut;
         if(putIndex >= items.length) {
         	putIndex -= items.length;
         	if(putIndex>0) {
                 System.arraycopy(buffer, offset+batchSize, items, 0, putIndex);
         	}
         }
+        count += itemsToPut;
+        notEmpty.signal();
 
-        return itemsToQueue;
+        return itemsToPut;
     }
 
     /** */
@@ -130,16 +153,25 @@ public class BlockingLongBatchQueue implements AutoCloseable {
         assert lock.isHeldByCurrentThread();
         assert count > 0;
 
+        int itemsToTake = Math.min(buffer.length, count);
+        assert itemsToTake>0;
+
         // Copy up to 2 slices from items into buffer
         final long[] items = this.items;
-        @SuppressWarnings("unchecked")
-        E x = (E) items[takeIndex];
-        items[takeIndex] = null;
-        if (++takeIndex == items.length)
-            takeIndex = 0;
-        count--;
+        int batchSize = Math.min(items.length-takeIndex, itemsToTake);
+        System.arraycopy(items, takeIndex, buffer, 0, batchSize);
+
+        takeIndex += itemsToTake;
+        if(takeIndex >= items.length) {
+        	takeIndex -= items.length;
+        	if(takeIndex>0) {
+                System.arraycopy(items, 0, buffer, itemsToTake-takeIndex, takeIndex);
+        	}
+        }
+        count -= itemsToTake;
         notFull.signal();
-        return x;
+
+        return itemsToTake;
     }
 
     /** Remove and return value on head of queue */
@@ -150,7 +182,6 @@ public class BlockingLongBatchQueue implements AutoCloseable {
 
         final long[] items = this.items;
     	long x = items[takeIndex];
-    	items[takeIndex] = UNSET_LONG;
     	if (++takeIndex == items.length)
     		takeIndex = 0;
     	count--;
@@ -163,27 +194,46 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     	checkArgument("Buffer must not be empty", buffer.length>0);
     }
 
+    /**
+     * Reads and returns a single value from this queue, blocking while no values are
+     * available. If the queue gets {@link #close() closed} during the invocation of
+     * this method, {@link -1} is returned.
+     *
+     * @return
+     * @throws InterruptedException
+     */
     public long read() throws InterruptedException {
     	final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == 0) {
+            while (count == 0 && !closed) {
                 notEmpty.await();
             }
-            return dequeue();
+            return count==0 ? UNSET_LONG : dequeue();
         } finally {
             lock.unlock();
         }
     }
 
-    public void write(long value) throws InterruptedException {
+    /**
+     * Adds a single value to this queue.
+     * @param value
+     * @return {@code true} iff this queue has not been {@link #close() closed} and the
+     * given value has been added to the internal buffer.
+     * @throws InterruptedException
+     */
+    public boolean write(long value) throws InterruptedException {
     	final ReentrantLock lock = this.lock;
     	lock.lockInterruptibly();
     	try {
-    		while (count == items.length) {
+    		while (count == items.length && !closed) {
     			notFull.await();
     		}
-    		enqueue(value);
+    		if(!closed) {
+    			enqueue(value);
+    			return true;
+    		}
+        	return false;
     	} finally {
     		lock.unlock();
     	}
@@ -196,7 +246,8 @@ public class BlockingLongBatchQueue implements AutoCloseable {
      * the method will block until new values are available.
      *
      * @param buffer
-     * @return the number
+     * @return the number of elements read into the given {@code buffer} or {@code -1} iff
+     * the queue was {@link #close() closed} during the invocation of this method.
      * @throws InterruptedException
      */
     public int read(long[] buffer) throws InterruptedException {
@@ -205,28 +256,39 @@ public class BlockingLongBatchQueue implements AutoCloseable {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == 0) {
+            while (count == 0 && !closed) {
                 notEmpty.await();
             }
-            return dequeue(buffer);
+            return count==0 ? UNSET_INT : dequeue(buffer);
         } finally {
             lock.unlock();
         }
     }
 
-	public void write(long[] buffer) throws InterruptedException {
+    /**
+     * Writes a series of values to this queue, blocking if the internal buffer grows
+     * full.
+     * @param buffer
+     * @return
+     * @throws InterruptedException
+     */
+	public boolean write(long[] buffer) throws InterruptedException {
 		checkBuffer(buffer);
 
 		final ReentrantLock lock = this.lock;
 		lock.lockInterruptibly();
 		try {
 			int offset = 0;
-			while (offset < buffer.length) {
-				while (count == items.length) {
+			while (offset < buffer.length && !closed) {
+				while (count == items.length && !closed) {
 					notFull.await();
+				}
+				if(closed) {
+					return false;
 				}
 				offset += enqueue(buffer, offset);
 			}
+			return true;
 		} finally {
 			lock.unlock();
 		}
