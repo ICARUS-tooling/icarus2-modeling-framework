@@ -269,7 +269,7 @@ public class ArrayConverters {
 		@Override
 		protected Object convert(String[] items, ParameterContext context, Class<?> componentType)
 				throws ArgumentConversionException {
-			return Stream.of(items).mapToInt(Integer::parseInt).toArray();
+			return Stream.of(items).map(String::trim).mapToInt(Integer::parseInt).toArray();
 		}
 	}
 
@@ -278,7 +278,7 @@ public class ArrayConverters {
 		@Override
 		protected Object convert(String[] items, ParameterContext context, Class<?> componentType)
 				throws ArgumentConversionException {
-			return Stream.of(items).mapToLong(Long::parseLong).toArray();
+			return Stream.of(items).map(String::trim).mapToLong(Long::parseLong).toArray();
 		}
 	}
 
@@ -286,7 +286,7 @@ public class ArrayConverters {
 
 		@Override
 		protected Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException {
-			return Integer.valueOf(raw);
+			return Integer.valueOf(raw.trim());
 		}
 
 	}
@@ -295,7 +295,7 @@ public class ArrayConverters {
 
 		@Override
 		protected Object convertElement(String raw, ParameterContext context) throws ArgumentConversionException {
-			return Long.valueOf(raw);
+			return Long.valueOf(raw.trim());
 		}
 
 	}
