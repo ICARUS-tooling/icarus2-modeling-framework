@@ -1,3 +1,19 @@
+/*
+ * ICARUS2 Corpus Modeling Framework
+ * Copyright (C) 2014-2023 Markus Gärtner <markus.gaertner@ims.uni-stuttgart.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  *
  */
@@ -13,9 +29,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import de.ims.icarus2.GlobalErrorCode;
-import de.ims.icarus2.IcarusRuntimeException;
 
 /**
  * Provides a blocking view on a {@code long} array that behaves like
@@ -54,6 +67,13 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     /** Condition for waiting writes */
     private final Condition notFull;
 
+    /**
+     * Flag to indicate that this queue should no longer accept new write
+     * requests. Once the queue is closed, write methods will no longer be
+     * successful and read methods will no longer block in case the internal
+     * buffer is empty. This means that values written before the queue has
+     * been closed can still be read.
+     */
     private volatile boolean closed;
 
     public BlockingLongBatchQueue(int capacity) {
@@ -71,12 +91,12 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     	notFull = lock.newCondition();
     }
 
-    private void checkClosed() {
-    	if(closed)
-    		throw new IcarusRuntimeException(GlobalErrorCode.ILLEGAL_STATE, "Queue already closed");
-    }
-
     /**
+     * Once the queue is closed, write methods will no longer be
+     * successful and read methods will no longer block in case the internal
+     * buffer is empty. This means that values written before the queue has
+     * been closed can still be read.
+     *
      * @see java.lang.AutoCloseable#close()
      */
     @Override
@@ -103,28 +123,28 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     }
 
     /** Calculates remaining number of values to read from given buffer */
-    private int remaining(long[] buffer, int offset) {
-    	return buffer.length-offset;
+    private int remaining(int len, int offset) {
+    	return len-offset;
     }
 
     /** */
-    private int enqueue(long[] buffer, int offset) {
+    private int enqueue(long[] buffer, int cursor, int offset, int len) {
     	assert lock.getHoldCount() == 1;
         assert lock.isHeldByCurrentThread();
         assert count < items.length;
 
-        int itemsToPut = Math.min(remaining(), remaining(buffer, offset));
+        int itemsToPut = Math.min(remaining(), remaining(len, cursor));
         assert itemsToPut>0;
 
         final long[] items = this.items;
         int batchSize = Math.min(items.length-putIndex, itemsToPut);
-        System.arraycopy(buffer, offset, items, putIndex, batchSize);
+        System.arraycopy(buffer, offset+cursor, items, putIndex, batchSize);
 
         putIndex += itemsToPut;
         if(putIndex >= items.length) {
         	putIndex -= items.length;
         	if(putIndex>0) {
-                System.arraycopy(buffer, offset+batchSize, items, 0, putIndex);
+                System.arraycopy(buffer, offset+cursor+batchSize, items, 0, putIndex);
         	}
         }
         count += itemsToPut;
@@ -148,24 +168,24 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     }
 
 	/**  */
-    private int dequeue(long[] buffer) {
+    private int dequeue(long[] buffer, int offset, int len) {
     	assert lock.getHoldCount() == 1;
         assert lock.isHeldByCurrentThread();
         assert count > 0;
 
-        int itemsToTake = Math.min(buffer.length, count);
+        int itemsToTake = Math.min(len, count);
         assert itemsToTake>0;
 
         // Copy up to 2 slices from items into buffer
         final long[] items = this.items;
         int batchSize = Math.min(items.length-takeIndex, itemsToTake);
-        System.arraycopy(items, takeIndex, buffer, 0, batchSize);
+        System.arraycopy(items, takeIndex, buffer, offset, batchSize);
 
         takeIndex += itemsToTake;
         if(takeIndex >= items.length) {
         	takeIndex -= items.length;
         	if(takeIndex>0) {
-                System.arraycopy(items, 0, buffer, itemsToTake-takeIndex, takeIndex);
+                System.arraycopy(items, 0, buffer, offset+itemsToTake-takeIndex, takeIndex);
         	}
         }
         count -= itemsToTake;
@@ -239,6 +259,10 @@ public class BlockingLongBatchQueue implements AutoCloseable {
     	}
     }
 
+    public int read(long[] buffer) throws InterruptedException {
+    	return read(buffer, 0, buffer.length);
+    }
+
     /**
      * Tries to read values into the given {@code buffer}. If at least {@code 1} value is
      * available, this method will immediately copy as many values as possible into the
@@ -246,11 +270,10 @@ public class BlockingLongBatchQueue implements AutoCloseable {
      * the method will block until new values are available.
      *
      * @param buffer
-     * @return the number of elements read into the given {@code buffer} or {@code -1} iff
-     * the queue was {@link #close() closed} during the invocation of this method.
+     * @return the number of elements read into the given {@code buffer}.
      * @throws InterruptedException
      */
-    public int read(long[] buffer) throws InterruptedException {
+    public int read(long[] buffer, int offset, int len) throws InterruptedException {
     	checkBuffer(buffer);
 
         final ReentrantLock lock = this.lock;
@@ -259,11 +282,50 @@ public class BlockingLongBatchQueue implements AutoCloseable {
             while (count == 0 && !closed) {
                 notEmpty.await();
             }
-            return count==0 ? UNSET_INT : dequeue(buffer);
+            return count==0 ? 0 : dequeue(buffer, offset, len);
         } finally {
             lock.unlock();
         }
     }
+
+    public int tryRead(long[] buffer, boolean abortIfEmpty) throws InterruptedException {
+    	return tryRead(buffer, 0, buffer.length, abortIfEmpty);
+    }
+
+    /**
+     * Similar to {@link #read(long[], int, int)} but will return with a
+     * value of {@link -1} in case the internal buffer is empty and the
+     * {@code abortIfEmpty} parameter is set to {@code true}. This allows
+     * to read data only if no blocking is required.
+     *
+     * @param buffer
+     * @param offset
+     * @param len
+     * @param abortIfEmpty
+     * @return
+     * @throws InterruptedException
+     */
+    public int tryRead(long[] buffer, int offset, int len, boolean abortIfEmpty) throws InterruptedException {
+    	checkBuffer(buffer);
+
+        final ReentrantLock lock = this.lock;
+        lock.lockInterruptibly();
+        try {
+            while (count == 0 && !closed) {
+            	if(abortIfEmpty) {
+            		return UNSET_INT;
+            	}
+                notEmpty.await();
+            }
+            return count==0 ? 0 : dequeue(buffer, offset, len);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+	public boolean write(long[] buffer) throws InterruptedException {
+		return write(buffer, 0, buffer.length);
+	}
 
     /**
      * Writes a series of values to this queue, blocking if the internal buffer grows
@@ -272,23 +334,23 @@ public class BlockingLongBatchQueue implements AutoCloseable {
      * @return
      * @throws InterruptedException
      */
-	public boolean write(long[] buffer) throws InterruptedException {
+	public boolean write(long[] buffer, int offset, int len) throws InterruptedException {
 		checkBuffer(buffer);
 
 		final ReentrantLock lock = this.lock;
 		lock.lockInterruptibly();
 		try {
-			int offset = 0;
-			while (offset < buffer.length && !closed) {
+			int cursor = 0;
+			while (cursor < len && !closed) {
 				while (count == items.length && !closed) {
 					notFull.await();
 				}
 				if(closed) {
 					return false;
 				}
-				offset += enqueue(buffer, offset);
+				cursor += enqueue(buffer, cursor, offset, len);
 			}
-			return true;
+			return cursor>0;
 		} finally {
 			lock.unlock();
 		}
