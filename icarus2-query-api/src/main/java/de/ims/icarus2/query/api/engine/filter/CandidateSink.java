@@ -67,11 +67,15 @@ public interface CandidateSink extends GenericSink {
 	 *
 	 * @param candidate
 	 */
-	void add(long candidate);
+	void add(long candidate) throws InterruptedException;
 
 	/**
 	 *
 	 * @param candidate
 	 */
-	void add(long[] candidates);
+	default void add(long[] candidates) throws InterruptedException {
+		add(candidates, 0, candidates.length);
+	}
+
+	void add(long[] candidates, int offset, int len) throws InterruptedException;
 }
