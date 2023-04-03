@@ -39,12 +39,13 @@ import de.ims.icarus2.query.api.engine.Tripwire;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.util.AbstractBuilder;
+import de.ims.icarus2.util.events.ChangeSource;
 
 /**
  * @author Markus Gärtner
  *
  */
-public abstract class AbstractFilterProcessor implements QueryInput {
+public abstract class AbstractFilterProcessor extends ChangeSource implements QueryInput {
 
 	private static final AtomicLong idGen = new AtomicLong();
 
@@ -112,7 +113,7 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 		private final FilterContext context;
 		private final String label;
 
-		private ThreadVerifier threadVerifier;
+		private volatile ThreadVerifier threadVerifier;
 
 		private Throwable exception;
 		private boolean interrupted, finished;
@@ -121,6 +122,17 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 			this.label = requireNonNull(label);
 			this.filter = requireNonNull(filter);
 			this.context = requireNonNull(context);
+		}
+
+		public void interrupt() {
+			ThreadVerifier tv = threadVerifier;
+
+			finished = true;
+			interrupted = true;
+
+			if(tv!=null) {
+				tv.getThread().interrupt();
+			}
 		}
 
 		/** Signals that the filter process has been interrupted */
@@ -142,7 +154,7 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 		}
 
 		public boolean wasInterrupted() {
-			return finished && exception!=null && InterruptedException.class.isInstance(exception);
+			return finished && interrupted;
 		}
 
 		/**
@@ -165,20 +177,23 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 			threadVerifier = ThreadVerifier.forCurrentThread(label);
 			try {
 				filter.filter(context);
-				finished = true;
 			} catch (QueryException e) {
 				exception = e;
 			} catch (IcarusApiException e) {
 				exception = e;
 			} catch (InterruptedException e) {
+				exception = e;
 				interrupted = true;
 			} catch (Throwable t) {
 				//TODO should we add a mechanism to mark unexpected errors?
 				exception = t;
+			} finally {
+				finished = true;
 			}
 		}
 	}
 
+	@Deprecated
 	public static class Batch {
 		private final long[] candidates;
 		private int cursor, size;
@@ -211,7 +226,40 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 		private IqlStream stream;
 		private IqlQuery query;
 
-		//TODO add builder methods for filling
+		public B executor(ExecutorService executor) {
+			requireNonNull(executor);
+			checkState("Executor service already set", this.executor==null);
+			this.executor = executor;
+			return thisAsCast();
+		}
+
+		public B candidateLookup(LongFunction<Container> candidateLookup) {
+			requireNonNull(candidateLookup);
+			checkState("Candidate lookup already set", this.candidateLookup==null);
+			this.candidateLookup = candidateLookup;
+			return thisAsCast();
+		}
+
+		public B context(Context context) {
+			requireNonNull(context);
+			checkState("Context already set", this.context==null);
+			this.context = context;
+			return thisAsCast();
+		}
+
+		public B stream(IqlStream stream) {
+			requireNonNull(stream);
+			checkState("Stream already set", this.stream==null);
+			this.stream = stream;
+			return thisAsCast();
+		}
+
+		public B query(IqlQuery query) {
+			requireNonNull(query);
+			checkState("Query already set", this.query==null);
+			this.query = query;
+			return thisAsCast();
+		}
 
 		public ExecutorService getExecutor() {
 			return executor;
@@ -235,8 +283,11 @@ public abstract class AbstractFilterProcessor implements QueryInput {
 
 		@Override
 		protected void validate() {
-			// TODO Auto-generated method stub
-			super.validate();
+			checkState("Executor service not set", executor!=null);
+			checkState("Candidate lookup not set", candidateLookup!=null);
+			checkState("Context not set", context!=null);
+			checkState("Stream not set", stream!=null);
+			checkState("Query not set", query!=null);
 		}
 	}
 }
