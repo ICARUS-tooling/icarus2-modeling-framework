@@ -23,11 +23,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import javax.swing.event.ChangeListener;
-
 import org.junit.jupiter.api.Test;
 
 import de.ims.icarus2.test.Testable;
+import de.ims.icarus2.util.events.ChangeListener;
 
 /**
  * @author Markus Gärtner

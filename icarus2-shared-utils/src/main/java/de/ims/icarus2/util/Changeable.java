@@ -16,8 +16,7 @@
  */
 package de.ims.icarus2.util;
 
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import de.ims.icarus2.util.events.ChangeListener;
 
 /**
  * <i>Publisher</i> counter-part of the {@link ChangeListener} interface.

@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import javax.annotation.Nullable;
-import javax.swing.event.ChangeListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +44,7 @@ import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.AbstractPart;
 import de.ims.icarus2.util.AccessMode;
 import de.ims.icarus2.util.collections.LazyCollection;
+import de.ims.icarus2.util.events.ChangeListener;
 import de.ims.icarus2.util.events.ChangeSource;
 import de.ims.icarus2.util.mem.Assessable;
 import de.ims.icarus2.util.mem.Link;

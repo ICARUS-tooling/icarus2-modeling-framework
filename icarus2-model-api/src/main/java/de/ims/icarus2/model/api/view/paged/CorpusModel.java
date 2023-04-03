@@ -18,8 +18,6 @@ package de.ims.icarus2.model.api.view.paged;
 
 import java.util.function.Consumer;
 
-import javax.swing.event.ChangeListener;
-
 import de.ims.icarus2.apiguard.OptionalMethod;
 import de.ims.icarus2.model.api.ModelException;
 import de.ims.icarus2.model.api.corpus.Corpus;
@@ -47,6 +45,7 @@ import de.ims.icarus2.util.access.AccessPolicy;
 import de.ims.icarus2.util.access.AccessRestriction;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.events.ChangeListener;
 
 /**
  * Provides a wrapper around <i>raw</i> read and write methods of

@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import java.util.function.ObjLongConsumer;
 
 import javax.annotation.Nullable;
-import javax.swing.event.ChangeListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,6 +82,7 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LookupList;
 import de.ims.icarus2.util.collections.seq.DataSequence;
 import de.ims.icarus2.util.collections.set.DataSet;
+import de.ims.icarus2.util.events.ChangeListener;
 import de.ims.icarus2.util.events.ChangeSource;
 import de.ims.icarus2.util.lang.Lazy;
 import de.ims.icarus2.util.mem.Assessable;

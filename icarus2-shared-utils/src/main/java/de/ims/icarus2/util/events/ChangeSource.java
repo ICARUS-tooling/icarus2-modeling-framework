@@ -18,13 +18,10 @@ package de.ims.icarus2.util.events;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Arrays;
-
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.EventListenerList;
+import java.util.List;
 
 import de.ims.icarus2.util.Changeable;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
  * @author Markus Gärtner
@@ -35,28 +32,25 @@ public class ChangeSource implements Changeable, AutoCloseable {
 	protected final Object source;
 
 	public ChangeSource(Object source) {
-		if (source == null)
-			throw new NullPointerException("Invalid source");
-
-		this.source = source;
+		this.source = requireNonNull(source);
 	}
 
 	public ChangeSource() {
 		source = null;
 	}
 
-	protected EventListenerList listenerList = new EventListenerList();
+	protected final List<ChangeListener> changeListeners = new ObjectArrayList<>();
 
 	@Override
 	public void addChangeListener(ChangeListener listener) {
 		requireNonNull(listener);
-		listenerList.add(ChangeListener.class, listener);
+		changeListeners.add(listener);
 	}
 
 	@Override
 	public void removeChangeListener(ChangeListener listener) {
 		requireNonNull(listener);
-		listenerList.remove(ChangeListener.class, listener);
+		changeListeners.remove(listener);
 	}
 
 	public Object getSource() {
@@ -64,27 +58,19 @@ public class ChangeSource implements Changeable, AutoCloseable {
 	}
 
 	public void fireStateChanged() {
-		Object[] pairs = listenerList.getListenerList();
-
 		ChangeEvent event = null;
 
-		for (int i = pairs.length - 2; i >= 0; i -= 2) {
-			if (pairs[i] == ChangeListener.class) {
-				if (event == null) {
-					event = new ChangeEvent(getSource());
-				}
-
-				((ChangeListener) pairs[i + 1]).stateChanged(event);
+		for (ChangeListener listener : changeListeners) {
+			if (event == null) {
+				event = new ChangeEvent(getSource());
 			}
+
+			listener.stateChanged(event);
 		}
 	}
 
-	/**
-	 * @see java.lang.AutoCloseable#close()
-	 */
 	@Override
-	public void close() throws Exception {
-		// Violation of the original method contract, since we modify internal data from the listener list!
-		Arrays.fill(listenerList.getListenerList(), null);
+	public void close() {
+		changeListeners.clear();
 	}
 }

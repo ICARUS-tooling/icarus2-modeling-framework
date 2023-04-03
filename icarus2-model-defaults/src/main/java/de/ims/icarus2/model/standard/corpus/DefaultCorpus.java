@@ -36,9 +36,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +99,8 @@ import de.ims.icarus2.util.annotations.TestableImplementation;
 import de.ims.icarus2.util.collections.LazyCollection;
 import de.ims.icarus2.util.collections.set.DataSet;
 import de.ims.icarus2.util.data.ContentType;
+import de.ims.icarus2.util.events.ChangeEvent;
+import de.ims.icarus2.util.events.ChangeListener;
 import de.ims.icarus2.util.events.EventObject;
 import de.ims.icarus2.util.events.Events;
 import de.ims.icarus2.util.events.SimpleEventListener;
