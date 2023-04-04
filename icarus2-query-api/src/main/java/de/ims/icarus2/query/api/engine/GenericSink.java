@@ -35,7 +35,7 @@ public interface GenericSink {
 	 * The engine guarantees that this method will be called a maximum of one times
 	 * for any {@link GenericSink} instance.
 	 */
-	void prepare();
+	void prepare() throws InterruptedException;
 
 	/**
 	 * Initialize the sink to expect a given number of elements to be consumed
@@ -48,7 +48,7 @@ public interface GenericSink {
 	 * for any {@link GenericSink} instance.
 	 * @param size the maximum number of elements to be expected, never 0 or less
 	 */
-	void prepare(int size);
+	void prepare(int size) throws InterruptedException;
 
 	/**
 	 * Called when the process was terminated prematurely, either due to

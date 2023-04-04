@@ -28,6 +28,8 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.QueryOutput;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
 
@@ -62,7 +64,12 @@ public abstract class UnbufferedOutput<T> extends AbstractOutput {
 
 	protected UnbufferedOutput(ResultSink resultSink) {
 		this.resultSink = requireNonNull(resultSink);
-		resultSink.prepare();
+		try {
+			resultSink.prepare();
+		} catch (InterruptedException e) {
+			log.warn("Failed to prepare result sink", e);
+			throw new QueryException(GlobalErrorCode.INTERRUPTED, "Failed to prepare result sink", e);
+		}
 	}
 
 	@Override

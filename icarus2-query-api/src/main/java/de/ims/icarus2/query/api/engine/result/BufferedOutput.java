@@ -73,8 +73,8 @@ public abstract class BufferedOutput<T> extends AbstractOutput {
 	@Override
 	protected void finish() {
 		buffer.finish();
-		resultSink.prepare(buffer.size());
 		try {
+			resultSink.prepare(buffer.size());
 			toSink();
 			resultSink.finish();
 		} catch (InterruptedException e) {
