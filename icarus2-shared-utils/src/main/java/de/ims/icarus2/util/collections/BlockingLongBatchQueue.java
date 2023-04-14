@@ -46,7 +46,7 @@ import com.google.common.annotations.VisibleForTesting;
 public class BlockingLongBatchQueue implements AutoCloseable {
 
     /** The queued items */
-    final long[] items;
+    long[] items;
 
     /** items index for next take, poll, peek or remove */
     int takeIndex;
@@ -106,6 +106,23 @@ public class BlockingLongBatchQueue implements AutoCloseable {
 		lock.lockInterruptibly();
 		try {
 	    	notEmpty.signalAll();
+	    	notFull.signalAll();
+		} finally {
+			lock.unlock();
+		}
+    }
+
+    public int capacity() {
+    	return items.length;
+    }
+
+    public void resize(int capacity) throws InterruptedException {
+    	checkArgument("Capacity must be positive", capacity>0);
+		final ReentrantLock lock = this.lock;
+		lock.lockInterruptibly();
+		try {
+			items = new long[capacity];
+			count = takeIndex = putIndex = 0;
 	    	notFull.signalAll();
 		} finally {
 			lock.unlock();
