@@ -19,16 +19,22 @@
  */
 package de.ims.icarus2.query.api.engine.filter;
 
+import static de.ims.icarus2.util.Conditions.checkArgument;
+import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.LongFunction;
+
 import com.google.common.annotations.VisibleForTesting;
 
+import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.Tripwire;
 import de.ims.icarus2.util.collections.BlockingLongBatchQueue;
+import de.ims.icarus2.util.io.IOUtil;
 
 /**
  * @author Markus Gärtner
@@ -43,13 +49,17 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	/** Candidate sink to link between buffer and filter */
 	private final SinkDelegate sink;
 
-	private final BlockingLongBatchQueue buffer;
+	private final BlockingLongBatchQueue queue;
 
+	private final ThreadLocal<long[]> readBuffer;
+
+	private volatile boolean broken = false;
 
 	private SingleFilterProcessor(Builder builder) {
 		super(builder);
 
-		buffer = new BlockingLongBatchQueue(builder.getCapacity(), builder.isFair());
+		queue = new BlockingLongBatchQueue(builder.getCapacity(), builder.isFair());
+		readBuffer = ThreadLocal.withInitial(() -> new long[IOUtil.DEFAULT_BUFFER_SIZE]);
 
 		sink = new SinkDelegate();
 		final QueryFilter filter = builder.getFilter();
@@ -68,22 +78,82 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 		}
 	}
 
+	/** Uses the {@link #getCandidateLookup() candidate lookup} to translate
+	 * from the {@code indices} array to values in the {@code items} buffer. */
+	private void translate(long[] indices, Container[] items, int len) {
+		assert len<=indices.length;
+		assert len<=items.length;
+
+		LongFunction<Container> lookup = getCandidateLookup();
+		for (int i = 0; i < len; i++) {
+			items[i] = lookup.apply(indices[i]);
+		}
+	}
+
 	// QUERY INPUT METHODS
 
 	@Override
 	public int load(Container[] buffer) throws InterruptedException {
 		requireNonNull(buffer);
+		checkNotEmpty(buffer);
+
+		// Escalate errors from filter process
+		if(job.isFinished()) {
+			// If job was canceled we just re-throw the exception
+			if(job.isInterrupted())
+				throw (InterruptedException) job.getException();
+			// Otherwise wrap the exception
+			if(job.getException()!=null)
+				throw new QueryException(GlobalErrorCode.DELEGATION_FAILED, "Filter process failed", job.getException());
+		}
+
+		if(getState().isFinished()) {
+			return 0;
+		}
 
 		maybeStartFilter();
-		// TODO check whether we already started the filter process
 
-		return 0;
+		long[] indices = readBuffer.get();
+		int limit = Math.min(buffer.length, indices.length);
+
+		// Read 1 chunk, this may block the current thread
+		int count = queue.read(indices, 0, limit);
+		if(count==0) {
+			// Exit early in case the queue is effectively closed
+			return 0;
+		}
+
+		// Try to read further chunks if we can do so without blocking
+		int remaining;
+		while((remaining = limit - count) > 0) {
+			int read = queue.tryRead(indices, count, remaining, true);
+			if(read>0) {
+				count += read;
+			} else {
+				break;
+			}
+		}
+
+		// Now translate indices into containers for consumer
+		translate(indices, buffer, count);
+
+		return count;
+	}
+
+	private void closeQueueSilently() {
+		try {
+			queue.close();
+		} catch (InterruptedException e) {
+			throw new QueryException(GlobalErrorCode.INTERRUPTED, "Failed to close internal buffer queue");
+		}
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
+		super.close();
 
+		closeQueueSilently();
+		job.interrupt();
 	}
 
 	@VisibleForTesting
@@ -95,20 +165,16 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 				job.checkThread();
 			}
 			trySetState(State.STARTED, State.PREPARED);
-			// nothing extra to do here as we already initialized the buffer
 		}
 
 		@Override
-		public void prepare(int size) {
+		public void prepare(int size) throws InterruptedException {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
+			checkArgument("Buffer size must be positive", size > 0);
 			if(trySetState(State.STARTED, State.PREPARED)) {
-				if(size>START_CAPACITY) {
-					synchronized (candidates) {
-						candidates.size(size);
-					}
-				}
+				queue.resize(size);
 			}
 		}
 
@@ -117,8 +183,10 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			// TODO Auto-generated method stub
-
+			broken = true;
+			queue.close();
+			trySetState(State.PREPARED, State.FINISHED);
+			fireStateChanged();
 		}
 
 		@Override
@@ -126,8 +194,10 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
+			queue.close();
 			if(!trySetState(State.PREPARED, State.FINISHED))
-				throw new QueryException(QueryErrorCode.INCORRECT_USE, "");
+				throw new QueryException(QueryErrorCode.INCORRECT_USE, "Lifecycle violation - sink must be prepared and run without errors before it can be finished.");
+			fireStateChanged();
 		}
 
 		@Override
@@ -135,31 +205,30 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			// TODO Auto-generated method stub
 
+			closeQueueSilently();
+			if(!trySetState(State.STARTED, State.IGNORED))
+				throw new QueryException(QueryErrorCode.INCORRECT_USE, "Lifecycle violation: Expected STARTED state for closing sink - got "+getState());
+			fireStateChanged();
 		}
 
 		@Override
-		public void add(long candidate) {
+		public void add(long candidate) throws InterruptedException {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			// TODO Auto-generated method stub
+			queue.write(candidate);
 		}
 
-		/**
-		 * @see de.ims.icarus2.query.api.engine.filter.CandidateSink#add(long[])
-		 */
 		@Override
-		public void add(long[] candidates) {
-			// TODO Auto-generated method stub
-
+		public void add(long[] candidates, int offset, int len) throws InterruptedException {
+			queue.write(candidates, offset, len);
 		}
 	}
 
 	public static class Builder extends AbstractFilterProcessor.BuilderBase<Builder, SingleFilterProcessor> {
 
-		private static final int DEFAULT_CAPACITY = 1024;
+		private static final int DEFAULT_CAPACITY = IOUtil.DEFAULT_BUFFER_SIZE;
 		private static final boolean DEFAULT_FAIR = false;
 
 		private QueryFilter filter;
@@ -172,6 +241,18 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			requireNonNull(filter);
 			checkState("Filter already set", this.filter==null);
 			this.filter = filter;
+			return this;
+		}
+
+		public Builder capacity(int capacity) {
+			checkState("Capacity already set", this.capacity==null);
+			this.capacity = Integer.valueOf(capacity);
+			return this;
+		}
+
+		public Builder fair(boolean fair) {
+			checkState("Fair already set", this.fair==null);
+			this.fair = Boolean.valueOf(fair);
 			return this;
 		}
 
@@ -190,6 +271,5 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 		protected SingleFilterProcessor create() {
 			return new SingleFilterProcessor(this);
 		}
-
 	}
 }
