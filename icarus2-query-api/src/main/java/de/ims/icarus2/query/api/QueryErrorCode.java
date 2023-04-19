@@ -29,6 +29,7 @@ import de.ims.icarus2.Report;
 import de.ims.icarus2.model.api.registry.CorpusManager;
 import de.ims.icarus2.query.api.engine.QueryJob;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
+import de.ims.icarus2.query.api.engine.filter.QueryFilter;
 import de.ims.icarus2.query.api.exp.EvaluationContext;
 import de.ims.icarus2.query.api.iql.IqlQueryElement;
 
@@ -205,6 +206,12 @@ public enum QueryErrorCode implements ErrorCode {
 	 * its associated {@link QueryJob.JobController}.
 	 */
 	RECYCLED_JOB(307),
+
+	/**
+	 * An implementation of {@link QueryFilter} failed to produce candidates in
+	 * an ordered stream.
+	 */
+	UNORDERED_CANDIDATES(308),
 	;
 
 	private static volatile ErrorCodeScope SCOPE;
