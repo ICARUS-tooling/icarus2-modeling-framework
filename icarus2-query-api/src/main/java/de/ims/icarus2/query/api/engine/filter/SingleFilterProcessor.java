@@ -157,7 +157,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	}
 
 	@VisibleForTesting
-	class SinkDelegate implements CandidateSink {
+	class SinkDelegate extends OrderedSink {
 
 		@Override
 		public void prepare() {
@@ -213,7 +213,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 		}
 
 		@Override
-		public void add(long candidate) throws InterruptedException {
+		protected void addImpl(long candidate) throws InterruptedException {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
@@ -221,7 +221,10 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 		}
 
 		@Override
-		public void add(long[] candidates, int offset, int len) throws InterruptedException {
+		protected void addImpl(long[] candidates, int offset, int len) throws InterruptedException {
+			if(Tripwire.ACTIVE) {
+				job.checkThread();
+			}
 			queue.write(candidates, offset, len);
 		}
 	}

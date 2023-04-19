@@ -20,6 +20,8 @@
 package de.ims.icarus2.query.api.engine.filter;
 
 import static de.ims.icarus2.util.Conditions.checkState;
+import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
+import static de.ims.icarus2.util.lang.Primitives._long;
 import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.ExecutorService;
@@ -32,6 +34,7 @@ import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.IcarusRuntimeException;
 import de.ims.icarus2.model.api.corpus.Context;
 import de.ims.icarus2.model.api.members.container.Container;
+import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.QueryInput;
 import de.ims.icarus2.query.api.engine.ThreadVerifier;
@@ -106,6 +109,43 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 
 	protected final void setState(State next) {
 		state.set(next);
+	}
+
+	protected static abstract class OrderedSink implements CandidateSink {
+
+		private long last = UNSET_LONG;
+
+		private static void checkOrdered(long value, long last) {
+			if(value<0L)
+				throw new QueryException(GlobalErrorCode.INVALID_INPUT, "Candidate values must not be negatve: "+value);
+			if(last!=UNSET_LONG && value<=last)
+				throw new QueryException(QueryErrorCode.UNORDERED_CANDIDATES,
+						String.format("Unordered candidate stream: previous value %d - got %d", _long(last), _long(value)));
+		}
+
+		protected abstract void addImpl(long value) throws InterruptedException;
+
+		@Override
+		public final void add(long candidate) throws InterruptedException {
+			checkOrdered(candidate, last);
+			addImpl(candidate);
+			last = candidate;
+		}
+
+		protected abstract void addImpl(long[] candidates, int offset, int len) throws InterruptedException;
+
+		@Override
+		public final void add(long[] candidates, int offset, int len) throws InterruptedException {
+			requireNonNull(candidates);
+			long last0 = last;
+			for (int i = 0; i < len; i++) {
+				long v = candidates[offset + i];
+				checkOrdered(v, last0);
+				last0 = v;
+			}
+			addImpl(candidates, offset, len);
+			last = last0;
+		}
 	}
 
 	static class FilterJob implements Runnable {
