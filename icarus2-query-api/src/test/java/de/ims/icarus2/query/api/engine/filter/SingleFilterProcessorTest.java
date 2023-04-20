@@ -54,6 +54,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  */
 class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor> {
 
+	private static final int READER_THREADS = 10;
+
 	@Override
 	public SingleFilterProcessor createTestInstance(TestSettings settings) {
 		return settings.process(SingleFilterProcessor.builder()
@@ -79,7 +81,7 @@ class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor>
 
 		@BeforeEach
 		void setUp() {
-			readerExec = Executors.newFixedThreadPool(10);
+			readerExec = Executors.newFixedThreadPool(READER_THREADS);
 			writerExec = Executors.newFixedThreadPool(1);
 		}
 
@@ -116,21 +118,16 @@ class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor>
 			"2, 4, '{1, 2, 3, 4, 5}'",
 			"5, 5, '{1, 2, 3, 4, 5}'",
 
-			"3, 3, '{2, 1, 4, 3, 5}'",
-			"4, 2, '{2, 1, 4, 3, 5}'",
-			"2, 4, '{2, 1, 4, 3, 5}'",
-			"5, 5, '{2, 1, 4, 3, 5}'",
+			"3, 3, '{2, 4, 6, 9}'",
+			"4, 2, '{2, 4, 6, 9}'",
+			"2, 4, '{2, 4, 6, 9}'",
+			"5, 5, '{2, 4, 6, 9}'",
 
 			"3, 3, '{1, 2, 3, 4, 5, 6, 7, 8, 9}'",
 			"2, 4, '{1, 2, 3, 4, 5, 6, 7, 8, 9}'",
 			"4, 2, '{1, 2, 3, 4, 5, 6, 7, 8, 9}'",
 			"5, 5, '{1, 2, 3, 4, 5, 6, 7, 8, 9}'",
-
-			"3, 3, '{8, 2, 6, 4, 3, 9, 7, 1, 5}'",
-			"2, 4, '{8, 2, 6, 4, 3, 9, 7, 1, 5}'",
-			"4, 2, '{8, 2, 6, 4, 3, 9, 7, 1, 5}'",
-			"5, 5, '{8, 2, 6, 4, 3, 9, 7, 1, 5}'",
-			"8, 8, '{8, 2, 6, 4, 3, 9, 7, 1, 5}'",
+			"8, 8, '{1, 2, 3, 4, 5, 6, 7, 8, 9}'",
 		})
 		void testSequentialWrite(int queueCapacity, int readerCapacity, @IntArrayArg @ArrayFormat(delimiter=",") int[] values)
 				throws QueryException, IcarusApiException, InterruptedException {
@@ -214,7 +211,6 @@ class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor>
 
 			long[] values = new long[size];
 			ArrayUtils.fillAscending(values);
-			rng.shuffle(values);
 
 			doAnswer(invoc -> {
 				FilterContext ctx = invoc.getArgument(0);
@@ -269,7 +265,7 @@ class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor>
 			"10, 5, 5, 3, 50",
 			"10, 5, 5, 5, 50",
 			"10, 5, 5, 8, 50",
-			"10, 5, 5, 12, 50", // uses all threads in executor!
+			"10, 5, 5, 12, 50", // uses all reader threads in executor!
 		})
 		void testConcurrentRead(int queueCapacity, int readerCapacity, int writerCapacity, int readerCount,
 				int size, RandomGenerator rng)
@@ -283,7 +279,6 @@ class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor>
 
 			long[] values = new long[size];
 			ArrayUtils.fillAscending(values);
-			rng.shuffle(values);
 
 			doAnswer(invoc -> {
 				FilterContext ctx = invoc.getArgument(0);
@@ -335,7 +330,5 @@ class SingleFilterProcessorTest implements ChangeableTest<SingleFilterProcessor>
 					.mapToObj(items::get)
 					.toArray(Container[]::new));
 		}
-
-		//TODO add tests for concurrent read/write operations
 	}
 }

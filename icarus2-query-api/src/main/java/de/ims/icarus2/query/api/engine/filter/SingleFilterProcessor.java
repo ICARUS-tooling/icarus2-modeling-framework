@@ -107,6 +107,10 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 				throw new QueryException(GlobalErrorCode.DELEGATION_FAILED, "Filter process failed", job.getException());
 		}
 
+		if(broken) {
+			return 0;
+		}
+
 		if(getState().isFinished()) {
 			return 0;
 		}
@@ -231,12 +235,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 
 	public static class Builder extends AbstractFilterProcessor.BuilderBase<Builder, SingleFilterProcessor> {
 
-		private static final int DEFAULT_CAPACITY = IOUtil.DEFAULT_BUFFER_SIZE;
-		private static final boolean DEFAULT_FAIR = false;
-
 		private QueryFilter filter;
-		private Integer capacity;
-		private Boolean fair;
 
 		private Builder() { /* no-op */ }
 
@@ -247,21 +246,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			return this;
 		}
 
-		public Builder capacity(int capacity) {
-			checkState("Capacity already set", this.capacity==null);
-			this.capacity = Integer.valueOf(capacity);
-			return this;
-		}
-
-		public Builder fair(boolean fair) {
-			checkState("Fair already set", this.fair==null);
-			this.fair = Boolean.valueOf(fair);
-			return this;
-		}
-
 		public QueryFilter getFilter() { return filter; }
-		public int getCapacity() { return capacity==null ? DEFAULT_CAPACITY : capacity.intValue(); }
-		public boolean isFair() { return fair==null ? DEFAULT_FAIR : fair.booleanValue(); }
 
 		@Override
 		protected void validate() {

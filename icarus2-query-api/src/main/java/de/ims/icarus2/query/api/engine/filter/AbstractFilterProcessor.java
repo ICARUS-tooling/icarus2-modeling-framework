@@ -43,6 +43,7 @@ import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.util.AbstractBuilder;
 import de.ims.icarus2.util.events.ChangeSource;
+import de.ims.icarus2.util.io.IOUtil;
 
 /**
  * @author Markus Gärtner
@@ -216,17 +217,29 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 		public void run() {
 			threadVerifier = ThreadVerifier.forCurrentThread(label);
 			try {
-				filter.filter(context);
-			} catch (QueryException e) {
-				exception = e;
-			} catch (IcarusApiException e) {
-				exception = e;
-			} catch (InterruptedException e) {
-				exception = e;
-				interrupted = true;
-			} catch (Throwable t) {
-				//TODO should we add a mechanism to mark unexpected errors?
-				exception = t;
+				try {
+					filter.filter(context);
+				} catch (QueryException e) {
+					exception = e;
+				} catch (IcarusApiException e) {
+					exception = e;
+				} catch (InterruptedException e) {
+					exception = e;
+					interrupted = true;
+				} catch (Throwable t) {
+					//TODO should we add a mechanism to mark unexpected errors?
+					exception = t;
+				}
+
+				if(exception!=null) {
+					try {
+						context.getSink().discard();
+					} catch (InterruptedException e) {
+						e.addSuppressed(exception);
+						exception = e;
+						interrupted = true;
+					}
+				}
 			} finally {
 				finished = true;
 			}
@@ -260,11 +273,16 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 	public static abstract class BuilderBase<B extends BuilderBase<B, P>, P extends AbstractFilterProcessor>
 		extends AbstractBuilder<B, P> {
 
+		private static final int DEFAULT_CAPACITY = IOUtil.DEFAULT_BUFFER_SIZE;
+		private static final boolean DEFAULT_FAIR = false;
+
 		private ExecutorService executor;
 		private LongFunction<Container> candidateLookup;
 		private Context context;
 		private IqlStream stream;
 		private IqlQuery query;
+		private Integer capacity;
+		private Boolean fair;
 
 		public B executor(ExecutorService executor) {
 			requireNonNull(executor);
@@ -300,6 +318,22 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 			this.query = query;
 			return thisAsCast();
 		}
+
+		public B capacity(int capacity) {
+			checkState("Capacity already set", this.capacity==null);
+			this.capacity = Integer.valueOf(capacity);
+			return thisAsCast();
+		}
+
+		public B fair(boolean fair) {
+			checkState("Fair already set", this.fair==null);
+			this.fair = Boolean.valueOf(fair);
+			return thisAsCast();
+		}
+
+		public int getCapacity() { return capacity==null ? DEFAULT_CAPACITY : capacity.intValue(); }
+		public boolean isFair() { return fair==null ? DEFAULT_FAIR : fair.booleanValue(); }
+
 
 		public ExecutorService getExecutor() {
 			return executor;
