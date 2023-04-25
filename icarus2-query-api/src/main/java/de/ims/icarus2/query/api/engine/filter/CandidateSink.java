@@ -78,4 +78,6 @@ public interface CandidateSink extends GenericSink {
 	}
 
 	void add(long[] candidates, int offset, int len) throws InterruptedException;
+
+	//TODO add mechanic to check for active sink?
 }
