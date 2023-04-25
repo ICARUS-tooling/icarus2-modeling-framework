@@ -24,8 +24,6 @@ import static de.ims.icarus2.util.Conditions.checkNotEmpty;
 import static de.ims.icarus2.util.Conditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import java.util.function.LongFunction;
-
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
@@ -34,7 +32,6 @@ import de.ims.icarus2.query.api.QueryErrorCode;
 import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.engine.Tripwire;
 import de.ims.icarus2.util.collections.BlockingLongBatchQueue;
-import de.ims.icarus2.util.io.IOUtil;
 
 /**
  * @author Markus Gärtner
@@ -51,15 +48,12 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 
 	private final BlockingLongBatchQueue queue;
 
-	private final ThreadLocal<long[]> readBuffer;
-
 	private volatile boolean broken = false;
 
 	private SingleFilterProcessor(Builder builder) {
 		super(builder);
 
 		queue = new BlockingLongBatchQueue(builder.getCapacity(), builder.isFair());
-		readBuffer = ThreadLocal.withInitial(() -> new long[IOUtil.DEFAULT_BUFFER_SIZE]);
 
 		sink = new SinkDelegate();
 		final QueryFilter filter = builder.getFilter();
@@ -75,18 +69,6 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	private void maybeStartFilter() {
 		if(trySetState(State.WAITING, State.STARTED)) {
 			getExecutor().execute(job);
-		}
-	}
-
-	/** Uses the {@link #getCandidateLookup() candidate lookup} to translate
-	 * from the {@code indices} array to values in the {@code items} buffer. */
-	private void translate(long[] indices, Container[] items, int len) {
-		assert len<=indices.length;
-		assert len<=items.length;
-
-		LongFunction<Container> lookup = getCandidateLookup();
-		for (int i = 0; i < len; i++) {
-			items[i] = lookup.apply(indices[i]);
 		}
 	}
 
@@ -117,7 +99,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 
 		maybeStartFilter();
 
-		long[] indices = readBuffer.get();
+		long[] indices = getBuffer();
 		int limit = Math.min(buffer.length, indices.length);
 
 		// Read 1 chunk, this may block the current thread
@@ -144,7 +126,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 		return count;
 	}
 
-	private void closeQueueSilently() {
+	private void closeQueueInterruptibly() {
 		try {
 			queue.close();
 		} catch (InterruptedException e) {
@@ -156,7 +138,7 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 	public void close() {
 		super.close();
 
-		closeQueueSilently();
+		closeQueueInterruptibly();
 		job.interrupt();
 	}
 
@@ -188,8 +170,11 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 				job.checkThread();
 			}
 			broken = true;
-			queue.close();
-			trySetState(State.PREPARED, State.FINISHED);
+			try {
+				queue.close();
+			} finally {
+				trySetState(State.PREPARED, State.FINISHED);
+			}
 			fireStateChanged();
 		}
 
@@ -198,9 +183,12 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-			queue.close();
-			if(!trySetState(State.PREPARED, State.FINISHED))
-				throw new QueryException(QueryErrorCode.INCORRECT_USE, "Lifecycle violation - sink must be prepared and run without errors before it can be finished.");
+			try {
+				queue.close();
+			} finally {
+				if(!trySetState(State.PREPARED, State.FINISHED))
+					throw new QueryException(QueryErrorCode.INCORRECT_USE, "Lifecycle violation - sink must be prepared and run without errors before it can be finished.");
+			}
 			fireStateChanged();
 		}
 
@@ -209,10 +197,12 @@ public class SingleFilterProcessor extends AbstractFilterProcessor {
 			if(Tripwire.ACTIVE) {
 				job.checkThread();
 			}
-
-			closeQueueSilently();
-			if(!trySetState(State.STARTED, State.IGNORED))
-				throw new QueryException(QueryErrorCode.INCORRECT_USE, "Lifecycle violation: Expected STARTED state for closing sink - got "+getState());
+			try {
+				closeQueueInterruptibly();
+			} finally {
+				if(!trySetState(State.STARTED, State.IGNORED))
+					throw new QueryException(QueryErrorCode.INCORRECT_USE, "Lifecycle violation: Expected STARTED state for closing sink - got "+getState());
+			}
 			fireStateChanged();
 		}
 

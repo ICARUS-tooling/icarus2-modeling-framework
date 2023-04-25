@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongFunction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ims.icarus2.GlobalErrorCode;
 import de.ims.icarus2.IcarusApiException;
 import de.ims.icarus2.IcarusRuntimeException;
@@ -51,6 +54,8 @@ import de.ims.icarus2.util.io.IOUtil;
  */
 public abstract class AbstractFilterProcessor extends ChangeSource implements QueryInput {
 
+	private static final Logger log = LoggerFactory.getLogger(AbstractFilterProcessor.class);
+
 	private static final AtomicLong idGen = new AtomicLong();
 
 	/** Used to delegate execution to another thread */
@@ -59,25 +64,32 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 	private final LongFunction<Container> candidateLookup;
 	/** Current lifecycle state */
 	private final AtomicReference<State> state = new AtomicReference<>(State.WAITING);
+	/** Buffers for the {@link QueryInput#load(Container[])} method */
+	private final ThreadLocal<long[]> readBuffer;
 
 	private final long id;
 
 	static enum State {
 		/** Initial state */
-		WAITING,
+		WAITING(false),
 		/** Backend process(es) started, but buffers still pending preparation- */
-		STARTED,
+		STARTED(false),
 		/** Buffers prepared by backend. */
-		PREPARED,
-		/** Filter process finished without issues. */
-		FINISHED,
+		PREPARED(false),
+		/** Filter process finished without issues. This includes orderly cancellation. */
+		FINISHED(false),
 		/** Filter got told to ignore backend data. */
-		IGNORED,
+		IGNORED(true),
 		/** Filter process failed. */
-		FAILED,
+		FAILED(true),
 		;
 
+		private final boolean fail;
+		private State(boolean fail) { this.fail = fail; }
+
 		boolean isFinished() { return ordinal()>FINISHED.ordinal(); }
+
+		public boolean isFail() { return fail; }
 	}
 
 	protected AbstractFilterProcessor(BuilderBase<?,?> builder) {
@@ -85,7 +97,12 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 		id = idGen.incrementAndGet();
 		executor = builder.getExecutor();
 		candidateLookup = builder.getCandidateLookup();
+
+		readBuffer = ThreadLocal.withInitial(() -> new long[IOUtil.DEFAULT_BUFFER_SIZE]);
 	}
+
+	/** Returns the read buffer to be used by the current thread. */
+	protected long[] getBuffer() { return readBuffer.get(); }
 
 	protected long getId() { return id; }
 
@@ -110,6 +127,18 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 
 	protected final void setState(State next) {
 		state.set(next);
+	}
+
+	/** Uses the {@link #getCandidateLookup() candidate lookup} to translate
+	 * from the {@code indices} array to values in the {@code items} buffer. */
+	protected final void translate(long[] indices, Container[] items, int len) {
+		assert len<=indices.length;
+		assert len<=items.length;
+
+		LongFunction<Container> lookup = getCandidateLookup();
+		for (int i = 0; i < len; i++) {
+			items[i] = lookup.apply(indices[i]);
+		}
 	}
 
 	protected static abstract class OrderedSink implements CandidateSink {
@@ -157,7 +186,7 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 		private volatile ThreadVerifier threadVerifier;
 
 		private Throwable exception;
-		private boolean interrupted, finished;
+		private volatile boolean interrupted, finished;
 
 		public FilterJob(String label, QueryFilter filter, FilterContext context) {
 			this.label = requireNonNull(label);
@@ -168,10 +197,12 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 		public void interrupt() {
 			ThreadVerifier tv = threadVerifier;
 
+			boolean needsInterrupt = !finished && !interrupted;
+
 			finished = true;
 			interrupted = true;
 
-			if(tv!=null) {
+			if(tv!=null && needsInterrupt) {
 				tv.getThread().interrupt();
 			}
 		}
@@ -204,8 +235,23 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 		 * {@link Tripwire#ACTIVE active} to ensure lower load on frequent calls.
 		 */
 		public final void checkThread() {
-			checkState("hread verifier not initialized yet", threadVerifier!=null);
+			checkState("Thread verifier not initialized yet", threadVerifier!=null);
 			threadVerifier.checkThread();
+		}
+
+		/**
+		 * Delegates to {@link ThreadVerifier#checkNotThread()} on the internal verifier.
+		 * Before this call, client code should first check if {@link Tripwire} is actually
+		 * {@link Tripwire#ACTIVE active} to ensure lower load on frequent calls.
+		 */
+		public final void checkNotThread() {
+			checkState("Thread verifier not initialized yet", threadVerifier!=null);
+			threadVerifier.checkNotThread();
+		}
+
+		/** Hook for subclasses to intercept end of filter process */
+		protected void done() {
+			// no-op
 		}
 
 		/**
@@ -233,15 +279,20 @@ public abstract class AbstractFilterProcessor extends ChangeSource implements Qu
 
 				if(exception!=null) {
 					try {
+						//FIXME we violate the contract here since discard() might have already been called!
 						context.getSink().discard();
 					} catch (InterruptedException e) {
 						e.addSuppressed(exception);
 						exception = e;
 						interrupted = true;
 					}
+					if(log.isDebugEnabled()) {
+						log.debug("Filter process {} failed", label, exception);
+					}
 				}
 			} finally {
 				finished = true;
+				done();
 			}
 		}
 	}
