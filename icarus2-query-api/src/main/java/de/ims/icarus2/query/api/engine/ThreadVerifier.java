@@ -71,4 +71,11 @@ public final class ThreadVerifier {
 					String.format("Illegal access to '%s' by thread %s - only authorized for %s",
 							id, Thread.currentThread().getName(), thread.getName()));
 	}
+
+	public final void checkNotThread() {
+		if(Thread.currentThread()==thread)
+			throw new QueryException(QueryErrorCode.FOREIGN_THREAD_ACCESS,
+					String.format("Unespected access to '%s' by thread %s - any other thread should be used!",
+							id, Thread.currentThread().getName()));
+	}
 }
