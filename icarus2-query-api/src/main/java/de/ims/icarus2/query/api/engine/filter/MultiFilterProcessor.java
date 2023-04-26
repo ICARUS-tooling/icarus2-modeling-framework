@@ -25,8 +25,10 @@ import static de.ims.icarus2.util.Conditions.checkState;
 import static de.ims.icarus2.util.IcarusUtils.UNSET_LONG;
 import static java.util.Objects.requireNonNull;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.PrimitiveIterator;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 
 import de.ims.icarus2.GlobalErrorCode;
+import de.ims.icarus2.model.api.driver.indices.func.DualIntersectionOfLong;
 import de.ims.icarus2.model.api.driver.indices.func.HeapIntersectionOfLong;
 import de.ims.icarus2.model.api.members.container.Container;
 import de.ims.icarus2.query.api.QueryErrorCode;
@@ -62,7 +65,7 @@ public class MultiFilterProcessor extends AbstractFilterProcessor {
 	private MultiFilterProcessor(Builder builder) {
 		super(builder);
 
-		List<QueryFilter> filters = builder.getFilters();
+		List<QueryFilter> filters = new ObjectArrayList<>(builder.getFilters());
 		jobs = new ParallelJob[filters.size()];
 		queues = new BlockingLongBatchQueue[filters.size()];
 		delegates = new FilterDelegate[filters.size()];
@@ -166,12 +169,18 @@ public class MultiFilterProcessor extends AbstractFilterProcessor {
 
 	@VisibleForTesting
 	class Merger {
-		private final HeapIntersectionOfLong intersection;
+		private final PrimitiveIterator.OfLong intersection;
 
 		private volatile boolean broken = false;
 
 		Merger(PrimitiveIterator.OfLong[] sources) {
-			intersection = new HeapIntersectionOfLong(sources);
+			requireNonNull(sources);
+			checkArgument("Must have at least 2 index sources", sources.length>1);
+			if(sources.length==2) {
+				intersection = new DualIntersectionOfLong(sources[0], sources[1]);
+			} else {
+				intersection = new HeapIntersectionOfLong(sources);
+			}
 		}
 
 		synchronized int read(long[] buffer, int offset, int len) {
@@ -363,7 +372,7 @@ public class MultiFilterProcessor extends AbstractFilterProcessor {
 
 	public static class Builder extends BuilderBase<Builder, MultiFilterProcessor> {
 
-		private final List<QueryFilter> filters = new ObjectArrayList<>();
+		private final Set<QueryFilter> filters = new LinkedHashSet<>();
 
 		private Builder() { /* no-op */ }
 
@@ -373,7 +382,15 @@ public class MultiFilterProcessor extends AbstractFilterProcessor {
 			return this;
 		}
 
-		public List<QueryFilter> getFilters() { return filters; }
+		public Builder filters(QueryFilter...filters) {
+			requireNonNull(filters);
+			for(QueryFilter filter : filters) {
+				checkState("Filter already set", this.filters.add(filter));
+			}
+			return this;
+		}
+
+		public Set<QueryFilter> getFilters() { return filters; }
 
 		@Override
 		protected void validate() {
