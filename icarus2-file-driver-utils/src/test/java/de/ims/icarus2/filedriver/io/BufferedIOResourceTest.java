@@ -282,11 +282,17 @@ class BufferedIOResourceTest {
 	Stream<DynamicNode> testFlush() {
 		return basicTests((config, instance) -> {
 			try(ReadWriteAccessor accessor = instance.newAccessor(false)) {
-				Block[] blocks = IntStream.range(0, config.cacheSize/2)
-						.mapToObj(accessor::getBlock)
-						.toArray(Block[]::new);
+				final Block[] blocks;
+				accessor.begin();
+				try {
+					blocks = IntStream.range(0, config.cacheSize/2)
+							.mapToObj(accessor::getBlock)
+							.toArray(Block[]::new);
 
-				Stream.of(blocks).forEach(b -> accessor.lockBlock(b, config.bytesPerBlock));
+					Stream.of(blocks).forEach(b -> accessor.lockBlock(b, config.bytesPerBlock));
+				} finally {
+					accessor.end();
+				}
 
 				assertTrue(instance.hasLockedBlocks());
 				instance.flush();
