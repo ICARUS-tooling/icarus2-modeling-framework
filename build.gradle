@@ -226,6 +226,12 @@ subprojects {
 		classpath {
 			// Ensure the JMH configuration is on the eclipse classpath
 			plusConfigurations += [ configurations.jmhCompileClasspath ]
+			
+			downloadSources = true
+			downloadJavadoc = false
+		
+			// We assume all depending projects also want to access test hierarchies
+			containsTestFixtures = true
 
 			// Mark source folders in eclipse as "contains test files"
 			containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
