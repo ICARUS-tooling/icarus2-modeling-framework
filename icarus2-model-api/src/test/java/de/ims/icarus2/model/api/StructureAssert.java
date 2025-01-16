@@ -31,7 +31,7 @@ public class StructureAssert extends AbstractContainerAssert<StructureAssert, St
 		super(actual, StructureAssert.class);
 	}
 
-	Structure actual() {
+	public Structure actual() {
 		return actual;
 	}
 
