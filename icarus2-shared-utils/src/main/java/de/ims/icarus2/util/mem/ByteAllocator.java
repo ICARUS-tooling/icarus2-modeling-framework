@@ -261,6 +261,7 @@ public final class ByteAllocator implements AutoCloseable {
 		 * chunks if trying to access high index values early on.
 		 * @deprecated current implementation will only append, never over-generate buffer chunks!
 		 */
+		@Deprecated
 		GROW_TO_FIT,
 		;
 	}
