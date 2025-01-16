@@ -3,21 +3,24 @@ plugins {
 	id 'java-library'
 //	id 'java-test-fixtures'
 	id 'jacoco'
-	id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
+    id 'jacoco-report-aggregation'
+	id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
     id 'com.github.hierynomus.license' version '0.16.1' apply false
-    id 'com.diffplug.eclipse.apt' version '3.33.3' apply false
-	id 'nebula.lint' version '17.5.0'
-	id 'de.gliderpilot.semantic-release' version '1.4.2'
-    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+    id 'com.diffplug.eclipse.apt' version '4.2.0' apply false
+	id 'nebula.lint' version '20.5.5'
+//	id 'de.gliderpilot.semantic-release' version '1.4.2'
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
 }
 
 // Load version definitions for dependencies. Info will be stored in 'versions' map
 apply from: 'versions.gradle'
 
 description = 'ICARUS 2 framework root'
-	
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_23
+    targetCompatibility = JavaVersion.VERSION_23
+}
 
 allprojects {
 	apply plugin: 'eclipse'
@@ -34,15 +37,13 @@ allprojects {
 // Gradle Wrapper
 wrapper { 
 	// to upgrade wrapper: ./gradlew wrapper --distribution-type bin --gradle-version <version>
-	gradleVersion = "7.4" 
+	gradleVersion = "8.10.2" 
 }
 
 // Build Scan publishing
 buildScan {
 	termsOfServiceUrl = 'https://gradle.com/terms-of-service'
 	termsOfServiceAgree = 'yes'
-
-	publishAlways()
 }
 
 gradleLint {
@@ -70,9 +71,10 @@ subprojects {
 	apply plugin: 'com.github.johnrengelman.shadow'
 	apply plugin: 'com.diffplug.eclipse.apt'
 	
-  	sourceCompatibility = 1.8
-  	targetCompatibility = 1.8
-
+	java {
+	    sourceCompatibility = JavaVersion.VERSION_23
+	    targetCompatibility = JavaVersion.VERSION_23
+	}
 	sourceSets {
 		jmh {
 			compileClasspath += main.output + test.output
@@ -81,6 +83,8 @@ subprojects {
 	}
 
 	configurations {
+	
+		all*.exclude group: "xml-apis", module: "xml-apis"
 	
 		// COMPILE ENVIRONMENT
 		// default bug detection functionality
@@ -153,8 +157,9 @@ subprojects {
 		
 		// https://github.com/apiguardian-team/apiguardian
 		apiguardian "org.apiguardian:apiguardian-api:${versions.apiguardian}"		
-		// https://github.com/apiguardian-team/apiguardian
-		apiguardian "com.google.code.findbugs:jsr305:${versions.jsr305}"
+		// https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
+		apiguardian 'com.github.spotbugs:spotbugs-annotations:4.8.6'
+
 		
 		// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
 		json "com.fasterxml.jackson.core:jackson-databind:${versions.json}"
@@ -216,9 +221,9 @@ subprojects {
   	tasks.withType(JavaCompile) {
   		options.encoding = 'UTF-8'
     	options.fork = true
-		if(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_1_9)) {
-			options.compilerArgs.addAll(['--release', '8'])
-		}
+//		if(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_1_9)) {
+//			options.compilerArgs.addAll(['--release', '8'])
+//		}
  	}
 
 	 // Only relevant when developing with Eclipse IDE
@@ -427,14 +432,14 @@ subprojects {
 	// Create a jar with javadoc
 	task javadocJar(type: Jar) {
 		description = 'Bundle javadoc files'
-		classifier = 'javadoc'
+		archiveClassifier = 'javadoc'
 		from javadoc
 	}
 
 	// Create a jar with sources
 	task sourcesJar(type: Jar) {
 		description = 'Bundle source files'
-		classifier = 'sources'
+		archiveClassifier = 'sources'
 		from sourceSets.main.allSource
 	}
 
@@ -530,31 +535,37 @@ tasks.named('check') {
 		logger.info('Running Gradle {}', GradleVersion.current().toString())
 		logger.info('Using Java VM {}', org.gradle.internal.jvm.Jvm.current())
 	}
+	dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
 }
 
-// Filter coverage reports 
-def publishedProjects = subprojects.findAll { true } //TODO add filter pattern for subprojects
-
-task jacocoMerge(type: JacocoMerge) {
-	publishedProjects.each { subproject ->
-		executionData subproject.tasks.withType(Test)
-	}
-	doFirst {
-		executionData = files(executionData.findAll { it.exists() })
-	}
+task dumpVersions() {
+	logger.lifecycle('Running Gradle {}', GradleVersion.current().toString())
+	logger.lifecycle('Using Java VM {}', org.gradle.internal.jvm.Jvm.current())
 }
 
-task jacocoRootReport(type: JacocoReport, group: 'verification') {
-	description = 'Generates an aggregate coverage report from all subprojects'
-	dependsOn publishedProjects.test, jacocoMerge
+//// Filter coverage reports 
+//def publishedProjects = subprojects.findAll { true } //TODO add filter pattern for subprojects
+//
+//task jacocoMerge(type: JacocoMerge) {
+//	publishedProjects.each { subproject ->
+//		executionData subproject.tasks.withType(Test)
+//	}
+//	doFirst {
+//		executionData = files(executionData.findAll { it.exists() })
+//	}
+//}
 
-	additionalSourceDirs.from = files(publishedProjects.sourceSets.main.allSource.srcDirs)
-	sourceDirectories.from = files(publishedProjects.sourceSets.main.allSource.srcDirs)
-	classDirectories.from = files(publishedProjects.sourceSets.main.output)
-	executionData jacocoMerge.destinationFile
-
-	reports {
-		html.required = true // human readable
-		xml.required = true // required by codecov
-	}
-}
+//task jacocoRootReport(type: JacocoReport, group: 'verification') {
+//	description = 'Generates an aggregate coverage report from all subprojects'
+//	dependsOn publishedProjects.test, jacocoMerge
+//
+//	additionalSourceDirs.from = files(publishedProjects.sourceSets.main.allSource.srcDirs)
+//	sourceDirectories.from = files(publishedProjects.sourceSets.main.allSource.srcDirs)
+//	classDirectories.from = files(publishedProjects.sourceSets.main.output)
+//	executionData jacocoMerge.destinationFile
+//
+//	reports {
+//		html.required = true // human readable
+//		xml.required = true // required by codecov
+//	}
+//}
