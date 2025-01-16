@@ -23,11 +23,7 @@ options {
 	language = Java;
 }
 
-@parser::header {
-package de.ims.icarus2.query.api.iql.antlr;
-}
-
-@lexer::header {
+@header {
 package de.ims.icarus2.query.api.iql.antlr;
 import org.antlr.v4.runtime.misc.Interval;	
 }
