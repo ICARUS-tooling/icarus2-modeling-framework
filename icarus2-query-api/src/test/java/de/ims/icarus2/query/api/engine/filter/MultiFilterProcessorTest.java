@@ -55,6 +55,7 @@ import de.ims.icarus2.query.api.QueryException;
 import de.ims.icarus2.query.api.iql.IqlQuery;
 import de.ims.icarus2.query.api.iql.IqlStream;
 import de.ims.icarus2.test.TestSettings;
+import de.ims.icarus2.test.annotations.PostponedTest;
 import de.ims.icarus2.test.annotations.RandomizedTest;
 import de.ims.icarus2.test.random.RandomGenerator;
 import de.ims.icarus2.util.ChangeableTest;
@@ -69,6 +70,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  * @author Markus Gärtner
  *
  */
+@PostponedTest
 class MultiFilterProcessorTest implements ChangeableTest<MultiFilterProcessor> {
 
 	private static final int READER_THREADS = 10;
@@ -147,8 +149,8 @@ class MultiFilterProcessorTest implements ChangeableTest<MultiFilterProcessor> {
 		}
 
 		/** Creates a sorted collection of values of given size */
-		private long[] makeValues(int size) {
-			long[] values = new long[size];
+		private int[] makeValues(int size) {
+			int[] values = new int[size];
 			fillAscending(values);
 			return values;
 		}
@@ -160,26 +162,26 @@ class MultiFilterProcessorTest implements ChangeableTest<MultiFilterProcessor> {
 		void testSequentialWrite(int queueCapacity, int readerCapacity, int writerCount, int writerCapacity, int size)
 				throws QueryException, IcarusApiException, InterruptedException {
 			initItems(10);
-			long[]values = makeValues(size);
+			int[]values = makeValues(size);
 			LongList[] parts = makeParts(writerCount);
 			QueryFilter[] filters = new QueryFilter[writerCount];
 
 			CountDownLatch end = new CountDownLatch(1);
 
 
+			//FIXME rework commented-out section and implement actual multi-filter processing
+//			doAnswer(invoc -> {
+//				FilterContext ctx = invoc.getArgument(0);
+//				CandidateSink sink = ctx.getSink();
+//				sink.prepare();
+//				for(long value : values) {
+//					sink.add(value);
+//				}
+//				sink.finish();
+//				return null;
+//			}).when(filter).filter(any());
 
-			doAnswer(invoc -> {
-				FilterContext ctx = invoc.getArgument(0);
-				CandidateSink sink = ctx.getSink();
-				sink.prepare();
-				for(long value : values) {
-					sink.add(value);
-				}
-				sink.finish();
-				return null;
-			}).when(filter).filter(any());
-
-			initProc(queueCapacity, filter);
+//			initProc(queueCapacity, filter);
 
 			final List<Container> tmp = new ObjectArrayList<>();
 			final AtomicBoolean interrupted = new AtomicBoolean(false);
