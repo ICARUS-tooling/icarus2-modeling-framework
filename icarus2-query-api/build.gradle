@@ -37,31 +37,33 @@ sourceSets {
 	}
 }
 
-//generateGrammarSource {
-//	doLast {
-//	    println "Copying generated grammar lexer/parser files to main directory."
-//	    copy {
-//	        from "${buildDir}/generated-src/antlr/main"
-//	        into ".apt_generated"
-//	        include "**/*.java"
-//	    }
-//	}
-//}
+generateGrammarSource {
+	doLast {
+	    println "Copying generated grammar lexer/parser files to main directory."
+	    copy {
+	        from "${buildDir}/generated-src/antlr/main"
+	        into "src/main/antlr"
+	        include "**/*.java"
+	    }
+	}
+}
 
 generateTestGrammarSource {
+	dependsOn generateGrammarSource
+
 //	doFirst {
 //		println "${buildDir}/generated-src/antlr/main/de/ims/icarus2/query/api/iql/antlr".toString()
 //	}
 	arguments += ["-lib", "src/main/antlr/de/ims/icarus2/query/api/iql/antlr"]
 	
-//	doLast {
-//	    println "Copying generated grammar lexer/parser test files to main directory."
-//	    copy {
-//	        from "${buildDir}/generated-src/antlr/test"
-//	        into ".apt_generated_tests"
-//	        include "**/*.java"
-//	    }
-//	}
+	doLast {
+	    println "Copying generated test grammar lexer/parser files to test directory."
+	    copy {
+	        from "${buildDir}/generated-src/antlr/test"
+	        into "src/test/antlr"
+	        include "**/*.java"
+	    }
+	}
 }
 
 
