@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -196,6 +197,9 @@ public final class DiffUtils {
 		private EqualityChecker parent;
 		private final Class<?> targetClass;
 		private final List<FieldHandler> fieldHandlers = new ArrayList<>();
+		private boolean isBase = false;
+		
+		private static final Module JAVA_BASE = Module.class.getModule();
 
 		private static final String DEEP_HANDLING_PREFIX = "de.ims."; //$NON-NLS-1$
 
@@ -204,6 +208,11 @@ public final class DiffUtils {
 				throw new NullPointerException("Invalid targetClass"); //$NON-NLS-1$
 
 			this.targetClass = targetClass;
+			
+			if(targetClass.getModule()==JAVA_BASE) {
+				isBase = true;
+				return;
+			}
 
 			Class<?> parentClass = targetClass.getSuperclass();
 			if(parentClass!=null && parentClass!=Object.class) {
@@ -254,7 +263,10 @@ public final class DiffUtils {
 		}
 
 		boolean equals(Trace trace, Object obj1, Object obj2) throws IllegalArgumentException, IllegalAccessException {
-
+			if(isBase) {
+				return Objects.equals(obj1, obj2);
+			}
+			
 			if(parent!=null && !parent.equals(trace, obj1, obj2) && !trace.doDiff) {
 				return false;
 			}
