@@ -1054,7 +1054,7 @@ class ExpressionFactoryTest {
 				"func() ; func ; 0",
 			})
 			void testLiteralArgumentSum(String input, String name, int expected) {
-				doAnswer(inv -> {
+				when(context.resolve(isNull(), eq(name), any(), any(Expression[].class))).then(inv -> {
 					final Expression<?>[] args = Stream.of(inv.getArguments())
 							.skip(3)
 							.toArray(Expression[]::new);
@@ -1064,8 +1064,8 @@ class ExpressionFactoryTest {
 						.mapToLong(Expression::computeAsLong)
 						.sum();
 					}));
-				}).when(context).resolve(isNull(), eq(name), any(), any());
-
+				});
+				
 				Expression<?> parsed = parse(input);
 				assertThat(parsed.isInteger()).isTrue();
 				assertExpression(parsed, context, expected);
