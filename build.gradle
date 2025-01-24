@@ -115,6 +115,8 @@ subprojects {
 		uuid
 		assertj
 		
+		mockitoAgent
+		
 		// BENCHMARK ENVIRONMENT (JMH)
 		benchmark
 		
@@ -129,6 +131,9 @@ subprojects {
 	}
 	  	
 	dependencies {
+		mockitoAgent("org.mockito:mockito-core:${versions.mockito}") {
+	         transitive = false
+	     }
 	
 		// COMPILE ENVIRONMENT
 
@@ -288,6 +293,12 @@ subprojects {
 			exceptionFormat "full"
 		}
 	}
+	
+	 tasks {
+	     test {
+	         jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+	     }
+	 }
 	
 	/**
 	 * Specialized test tasks for integration, concurrency and very costly tests. 
