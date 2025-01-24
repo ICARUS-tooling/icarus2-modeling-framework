@@ -49,7 +49,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * The basic {@link FileDriver} and it's modules use the following set of keys
  * to store metadata (subclasses might define additional keys):
  * <p>
- * <b>Driver metadata "&lt;key&gt"</b>
+ * <b>Driver metadata "&lt;key&gt;"</b>
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
@@ -64,7 +64,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * </tr>
  * </table>
  * <p>
- * <b>File metadata "[file-index].&lt;key&gt"</b>
+ * <b>File metadata "[file-index].&lt;key&gt;"</b>
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
@@ -94,7 +94,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * </tr>
  * </table>
  * <p>
- * <b>Layer metadata "[layer-id].&lt;key&gt"</b>
+ * <b>Layer metadata "[layer-id].&lt;key&gt;"</b>
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
@@ -143,7 +143,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * </tr>
  * </table>
  * <p>
- * <b>Container/Structure metadata "[layer-id].[level].&lt;key&gt"</b>
+ * <b>Container/Structure metadata "[layer-id].[level].&lt;key&gt;"</b>
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
@@ -248,7 +248,7 @@ import de.ims.icarus2.model.manifest.types.ValueType;
  * </tr>
  * </table>
  * <p>
- * <b>Mapping metadata "mapping.[source-layer-id]-[target-layer-id].&lt;key&gt"</b>
+ * <b>Mapping metadata "mapping.[source-layer-id]-[target-layer-id].&lt;key&gt;"</b>
  * <table border="1">
  * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
  * <tr>
