@@ -105,7 +105,7 @@ public class Interval implements Cloneable, Comparable<Interval> {
 		return from<=to;
 	}
 
-	public boolean intersect(int grom, int to) {
+	public boolean intersect(int from, int to) {
 		this.from = Math.max(this.from, from);
 		this.to = Math.min(this.to, to);
 		return this.from<=this.to;
