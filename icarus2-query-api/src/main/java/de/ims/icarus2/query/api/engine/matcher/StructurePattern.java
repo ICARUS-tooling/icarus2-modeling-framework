@@ -400,22 +400,22 @@ public class StructurePattern {
 		}
 		int[][] makeBuffer(int initalSize) {
 			return IntStream.range(0, bufferCount)
-				.mapToObj(i -> new int[initalSize])
+				.mapToObj(_ -> new int[initalSize])
 				.toArray(int[][]::new);
 		}
 		Gate[] makeGates(int initialSize) {
 			return IntStream.range(0, gateCount)
-				.mapToObj(i -> new Gate(initialSize))
+				.mapToObj(_ -> new Gate(initialSize))
 				.toArray(Gate[]::new);
 		}
 		Anchor[] makeAnchors() {
 			return IntStream.range(0, anchorCount)
-					.mapToObj(i -> new Anchor())
+					.mapToObj(_ -> new Anchor())
 					.toArray(Anchor[]::new);
 		}
 		ClosureContext[] makeClosures(int initialSize) {
 			return IntStream.range(0, closureCount)
-					.mapToObj(i -> new ClosureContext(initialSize))
+					.mapToObj(_ -> new ClosureContext(initialSize))
 					.toArray(ClosureContext[]::new);
 		}
 		PermutationContext[] makePermutations() {
@@ -1823,7 +1823,7 @@ public class StructurePattern {
 
 			if(filterConstraint != null) {
 				expressionFactory = new ExpressionFactory(rootContext);
-				filter = new FilterDef(containerStore(), constraint(globalConstraint), rootContext);
+				filter = new FilterDef(containerStore(), constraint(filterConstraint), rootContext);
 				collectReferencedMembers();
 				expressionFactory = null;
 			}
