@@ -22,6 +22,7 @@ import java.awt.Component;
 import java.awt.FontMetrics;
 import java.text.Collator;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -730,7 +731,8 @@ public final class StringUtil {
 		}
 	}
 
-	private static DecimalFormat fractionDecimalFormat = new DecimalFormat("#,##0.00");
+	private static DecimalFormat fractionDecimalFormat = new DecimalFormat("#,##0.00", 
+			DecimalFormatSymbols.getInstance(Locale.US));
 
 	public static String formatDecimal(double value) {
 		synchronized (fractionDecimalFormat) {
