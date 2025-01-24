@@ -45,6 +45,9 @@ generateGrammarSource {
 	        into "src/main/antlr"
 	        include "**/*.java"
 	    }
+	    delete {
+	    	delete "${buildDir}/generated-src/antlr/main"
+	    }
 	}
 }
 
@@ -63,9 +66,15 @@ generateTestGrammarSource {
 	        into "src/test/antlr"
 	        include "**/*.java"
 	    }
+	    delete {
+	    	delete "${buildDir}/generated-src/antlr/test"
+	    }
 	}
 }
 
+sourcesJar {
+	duplicatesStrategy = 'exclude'
+}
 
 sourcesJar.dependsOn(generateGrammarSource)
 licenseMain.dependsOn(generateGrammarSource)
