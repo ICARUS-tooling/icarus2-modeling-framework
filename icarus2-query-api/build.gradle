@@ -37,19 +37,19 @@ sourceSets {
 	}
 }
 
-generateGrammarSource {
-	doLast {
-	    println "Copying generated grammar lexer/parser files to main directory."
-	    copy {
-	        from "${buildDir}/generated-src/antlr/main"
-	        into "src/main/antlr"
-	        include "**/*.java"
-	    }
-	    delete {
-	    	delete "${buildDir}/generated-src/antlr/main"
-	    }
-	}
-}
+//generateGrammarSource {
+//	doLast {
+//	    println "Copying generated grammar lexer/parser files to main directory."
+//	    copy {
+//	        from "${buildDir}/generated-src/antlr/main"
+//	        into "src/main/antlr"
+//	        include "**/*.java"
+//	    }
+//	    delete {
+//	    	delete "${buildDir}/generated-src/antlr/main"
+//	    }
+//	}
+//}
 
 generateTestGrammarSource {
 	dependsOn generateGrammarSource
@@ -59,17 +59,17 @@ generateTestGrammarSource {
 //	}
 	arguments += ["-lib", "src/main/antlr/de/ims/icarus2/query/api/iql/antlr"]
 	
-	doLast {
-	    println "Copying generated test grammar lexer/parser files to test directory."
-	    copy {
-	        from "${buildDir}/generated-src/antlr/test"
-	        into "src/test/antlr"
-	        include "**/*.java"
-	    }
-	    delete {
-	    	delete "${buildDir}/generated-src/antlr/test"
-	    }
-	}
+//	doLast {
+//	    println "Copying generated test grammar lexer/parser files to test directory."
+//	    copy {
+//	        from "${buildDir}/generated-src/antlr/test"
+//	        into "src/test/antlr"
+//	        include "**/*.java"
+//	    }
+//	    delete {
+//	    	delete "${buildDir}/generated-src/antlr/test"
+//	    }
+//	}
 }
 
 sourcesJar {
